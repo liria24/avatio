@@ -25,7 +25,7 @@ const modal_feedback = ref(false);
                     />
 
                     <Button
-                        to="https://github.com/Liria-works/avatio"
+                        to="https://github.com/liria24/avatio"
                         new-tab
                         icon="simple-icons:github"
                         aria-label="GitHub"

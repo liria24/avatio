@@ -79,5 +79,5 @@ Copylight © 2025 **[Liria][liria]**
 [badge-supabase]: https://svgl-badge.vercel.app/api/Database/Supabase?theme=dark
 [badge-nuxt]: https://svgl-badge.vercel.app/api/Framework/Nuxt?theme=dark
 [badge-tailwind]: https://svgl-badge.vercel.app/api/Framework/Tailwind%20CSS?theme=dark
-[contributors]: https://github.com/Liria-works/avatio/graphs/contributors
-[contributors-image]: https://contrib.rocks/image?repo=Liria-works/avatio&anon=1
+[contributors]: https://github.com/liria24/avatio/graphs/contributors
+[contributors-image]: https://contrib.rocks/image?repo=liria24/avatio&anon=1
