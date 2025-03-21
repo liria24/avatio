@@ -1,4 +1,5 @@
 import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server';
+import { z } from 'zod';
 
 export interface RequestBody {
     name: string;
@@ -15,33 +16,84 @@ export interface RequestBody {
     }[];
 }
 
-const returnError = (error: ErrorType) => ({ error, data: null });
+const returnError = (status: number, message: string) => ({
+    error: { status, message },
+    data: null,
+});
 
 export default defineEventHandler(
     async (
         event
     ): Promise<ApiResponse<{ id: number; image: string | null }>> => {
         const user = await serverSupabaseUser(event).catch(() => null);
-        if (!user) return { error: getErrors().general.forbidden, data: null };
+        if (!user)
+            return {
+                error: { status: 403, message: 'Forbidden.' },
+                data: null,
+            };
 
-        const supabase = await serverSupabaseClient(event);
-        const body: RequestBody = await readBody(event);
+        const supabase = await serverSupabaseClient<Database>(event);
+        const rawBody = await readBody(event);
         const limits = setupLimits();
-        const {
-            description: limitDescription,
-            tags: limitTags,
-            coAuthors: limitCoAuthors,
-            items: limitItems,
-        } = limits;
 
-        if (!body.name?.length)
-            return returnError(getErrors().publishSetup.noTitle);
-        if (body.description && body.description.length > limitDescription)
-            return returnError(getErrors().publishSetup.tooLongDescription);
-        if (body.tags.length > limitTags)
-            return returnError(getErrors().publishSetup.tooManyTags);
-        if (body.coAuthors.length > limitCoAuthors)
-            return returnError(getErrors().publishSetup.tooManyCoAuthors);
+        const setupSchema = z.object({
+            name: z
+                .string()
+                .min(1, 'Title is required.')
+                .max(limits.title, 'Title is too long.'),
+            description: z
+                .string()
+                .max(limits.description, 'Description is too long.')
+                .nullable(),
+            tags: z.array(z.string().min(1)).max(limits.tags, 'Too many tags.'),
+            coAuthors: z
+                .array(
+                    z.object({
+                        id: z.string(),
+                        note: z
+                            .string()
+                            .max(
+                                limits.coAuthorsNote,
+                                'Co-author note is too long.'
+                            ),
+                    })
+                )
+                .max(limits.coAuthors, 'Too many co-authors.'),
+            image: z.string().nullable(),
+            unity: z
+                .string()
+                .max(limits.unity, 'Unity version is too long.')
+                .nullable(),
+            items: z
+                .array(
+                    z.object({
+                        id: z.number(),
+                        category: z.enum([
+                            'avatar',
+                            'cloth',
+                            'accessory',
+                            'other',
+                            'hair',
+                            'shader',
+                            'texture',
+                            'tool',
+                        ]),
+                        note: z
+                            .string()
+                            .max(limits.itemsNote, 'Item note is too long.'),
+                        unsupported: z.boolean(),
+                    })
+                )
+                .min(1, 'Item is required.')
+                .max(limits.items, 'Too many items.'),
+        });
+
+        const result = setupSchema.safeParse(rawBody);
+
+        if (!result.success)
+            return returnError(500, result.error.issues[0]?.message);
+
+        const body = result.data;
 
         const { data: itemsDB } = await supabase
             .from('items')
@@ -50,13 +102,7 @@ export default defineEventHandler(
                 'id',
                 body.items.map((i) => i.id)
             );
-        if (!itemsDB)
-            return returnError(getErrors().publishSetup.itemCheckFailed);
-
-        if (!body.items.length)
-            return returnError(getErrors().publishSetup.noItems);
-        if (body.items.length > limitItems)
-            return returnError(getErrors().publishSetup.tooManyItems);
+        if (!itemsDB) return returnError(500, 'Internal item check failed.');
 
         let image: {
             path: string;
@@ -83,7 +129,7 @@ export default defineEventHandler(
                 },
             });
             if (!response.data)
-                return returnError(getErrors().publishSetup.uploadImage);
+                return returnError(500, 'Failed to upload image.');
             image = response.data;
         }
 
@@ -91,13 +137,13 @@ export default defineEventHandler(
             .from('setups')
             .insert({
                 name: body.name,
-                description: body.description,
+                description: body.description || '',
                 unity: body.unity?.length ? body.unity : null,
             })
             .select('id')
             .single();
         if (setupError)
-            return returnError(getErrors().publishSetup.insertSetup);
+            return returnError(500, 'Failed to insert on DB. Table: setups');
 
         const insertOperations = [
             supabase.from('setup_items').insert(
@@ -129,10 +175,20 @@ export default defineEventHandler(
         ] = await Promise.all(insertOperations);
 
         if (itemsError)
-            return returnError(getErrors().publishSetup.insertItems);
-        if (tagsError) return returnError(getErrors().publishSetup.insertTags);
+            return returnError(
+                500,
+                'Failed to insert on DB. Table: setup_items'
+            );
+        if (tagsError)
+            return returnError(
+                500,
+                'Failed to insert on DB. Table: setup_tags'
+            );
         if (coAuthorError)
-            return returnError(getErrors().publishSetup.insertCoAuthors);
+            return returnError(
+                500,
+                'Failed to insert on DB. Table: setup_coauthors'
+            );
 
         if (image) {
             const { error: imageError } = await supabase
@@ -144,7 +200,10 @@ export default defineEventHandler(
                     height: image.height,
                 });
             if (imageError)
-                return returnError(getErrors().publishSetup.insertImages);
+                return returnError(
+                    500,
+                    'Failed to insert on DB. Table: setup_images'
+                );
         }
 
         return {

@@ -14,38 +14,22 @@ const pasteFromClipboard = async () => {
 };
 
 const addItemFromURL = async () => {
-    if (!inputUrl.value)
-        return useToast().add(
-            getErrors().editSetup.emptyUrl.client!.title,
-            getErrors().editSetup.emptyUrl.client!.description
-        );
+    if (!inputUrl.value) return useToast().add('URLを入力してください。');
 
     try {
-        new URL(inputUrl.value);
+        const url = new URL(inputUrl.value);
+
+        if (url.hostname.split('.').slice(-2).join('.') !== 'booth.pm')
+            throw new Error();
+
+        const id = url.pathname.split('/').slice(-1)[0];
+
+        if (!id || !Number.isInteger(Number(id))) throw new Error();
+
+        emit('add', Number(id));
     } catch {
-        return useToast().add(
-            getErrors().editSetup.invalidUrl.client!.title,
-            getErrors().editSetup.invalidUrl.client!.description
-        );
+        return useToast().add('無効なURLです。');
     }
-
-    const url = new URL(inputUrl.value);
-
-    if (url.hostname.split('.').slice(-2).join('.') !== 'booth.pm')
-        return useToast().add(
-            getErrors().editSetup.invalidUrl.client!.title,
-            getErrors().editSetup.invalidUrl.client!.description
-        );
-
-    const id = url.pathname.split('/').slice(-1)[0];
-
-    if (!id || !Number.isInteger(Number(id)))
-        return useToast().add(
-            getErrors().editSetup.invalidUrl.client!.title,
-            getErrors().editSetup.invalidUrl.client!.description
-        );
-
-    emit('add', Number(id));
 };
 </script>
 

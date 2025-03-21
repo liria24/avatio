@@ -4,7 +4,6 @@ const user = useSupabaseUser();
 const client = useSupabaseClient();
 
 const userRefresh = async () => {
-    console.log('userRefresh');
     if (!user.value) return (userProfile.value.avatar = null);
 
     try {

@@ -26,11 +26,7 @@ const addItem = async (id: number) => {
     // outdated === true だった場合に、細かくエラーの理由を説明するほうが、
     // ユーザーが何回も追加を試さなくてもよくなりそう
 
-    if (!data)
-        return useToast().add(
-            getErrors().editSetup.addItemFailed.client!.title,
-            getErrors().editSetup.addItemFailed.client!.description
-        );
+    if (!data) return useToast().add('アイテムの追加に失敗しました。');
 
     const d: SetupItem = { ...data, note: '', unsupported: false };
 
@@ -38,10 +34,7 @@ const addItem = async (id: number) => {
     const target = items.value[categoryKey];
 
     if (target.some((i) => i.id === id))
-        useToast().add(
-            getErrors().publishSetup.sameItems.client!.title,
-            getErrors().publishSetup.sameItems.client!.description
-        );
+        useToast().add('同じアイテムを重複して登録することはできません。');
     else {
         target.push(d);
         modalSearchItem.value = false;
