@@ -1,6 +1,15 @@
-export const userProfile = ref<{ name: string | null; avatar: string | null }>({
-    name: '',
-    avatar: '',
+interface UserProfile {
+    id: string | null;
+    name: string | null;
+    avatar: string | null;
+    badges: Badge[];
+}
+
+export const userProfile = ref<UserProfile>({
+    id: null,
+    name: null,
+    avatar: null,
+    badges: [],
 });
 
 export const useSignOut = async () => {

@@ -22,7 +22,7 @@ const save = async () => await storage.set('ownerWarningBanner', true);
                 )
             }}
             <NuxtLink
-                to="https://github.com/Liria-works/avatio/issues/new/choose"
+                to="https://github.com/liria24/avatio/issues/new/choose"
                 target="_blank"
                 class="font-medium text-zinc-500 dark:text-zinc-400 hover:underline"
             >

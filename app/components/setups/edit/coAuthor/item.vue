@@ -19,7 +19,10 @@ const note = defineModel<string>('note', {
         class="p-2 rounded-lg flex flex-col gap-1.5 ring-1 ring-zinc-400 dark:ring-zinc-700"
     >
         <div class="flex gap-1.5 items-center">
-            <UiAvatar :url="props.avatar" alt="co-author" />
+            <UiAvatar
+                :url="useGetImage(props.avatar, { prefix: 'avatar' })"
+                alt="co-author"
+            />
             <span class="grow text-sm leading-none">{{ props.name }}</span>
             <Button variant="flat" class="p-2" @click="emit('remove')">
                 <Icon name="lucide:x" size="16" />

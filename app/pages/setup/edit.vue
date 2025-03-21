@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { z } from 'zod';
+
 const skipRouterHook = ref(false);
 
 const publishing = ref(false);
-const modalComplete = ref(false);
 const publishedSetupId = ref<number | null>(null);
+const modalComplete = ref(false);
+const modalPreview = ref(false);
 
 const items = ref<Record<ItemCategory, SetupItem[]>>({
     avatar: [],
@@ -30,6 +33,10 @@ const coAuthors = ref<
 >([]);
 const unity = ref<string>('');
 const image = ref<File | null>(null);
+const imageObjectUrl = computed(() => {
+    if (!image.value) return null;
+    return URL.createObjectURL(image.value);
+});
 
 const editImage = ref();
 
@@ -44,76 +51,98 @@ const itemsFlatten = computed(() => [
     ...items.value.other,
 ]);
 
-const errorCheck = (options: { toast?: boolean } = { toast: true }) => {
-    const returnError = (message: string | undefined) => {
+const limits = setupLimits();
+
+const setupSchema = z.object({
+    name: z
+        .string()
+        .min(1, 'タイトルを入力してください。')
+        .max(limits.title, `タイトルは最大${limits.title}字までです。`),
+    description: z
+        .string()
+        .max(limits.description, `説明は最大${limits.description}字までです。`),
+    tags: z
+        .array(z.string())
+        .max(limits.tags, `タグの数は最大${limits.tags}個までです。`),
+    coAuthors: z
+        .array(
+            z.object({
+                id: z.string(),
+                note: z
+                    .string()
+                    .max(
+                        limits.coAuthorsNote,
+                        `共同作者のメモは最大${limits.coAuthorsNote}字までです。`
+                    ),
+            })
+        )
+        .max(
+            limits.coAuthors,
+            `共同作者の数は最大${limits.coAuthors}人までです。`
+        ),
+    unity: z
+        .string()
+        .max(limits.unity, `Unityのバージョンは最大${limits.unity}字までです。`)
+        .nullable(),
+    items: z
+        .array(z.any())
+        .min(1, '最低1つのアイテムが必要です')
+        .max(limits.items, `アイテムの最大数は${limits.items}個です。`),
+    image: z
+        .string()
+        .nullable()
+        .refine(
+            (file) => !file || file.length <= 4.5 * 1024 * 1024,
+            '画像サイズが大きすぎます。3.5MB以下の画像が推奨されます。'
+        ),
+});
+
+const errorCheck = async (data: z.infer<typeof setupSchema>) => {
+    const result = setupSchema.safeParse(data);
+
+    if (!result.success) {
         publishing.value = false;
-        if (options.toast && message) useToast().add(message);
+        const firstError = result.error.errors[0];
+        if (firstError?.message) useToast().add(firstError.message);
+
         return true;
-    };
-
-    if (!title.value?.length)
-        return returnError(getErrors().publishSetup.noTitle.client?.title);
-
-    if (title.value.length > setupLimits().title)
-        return returnError(getErrors().publishSetup.tooLongTitle.client?.title);
-
-    if (description.value.length > setupLimits().description)
-        return returnError(
-            getErrors().publishSetup.tooLongDescription.client?.title
-        );
-
-    if (tags.value.length > setupLimits().tags)
-        return returnError(getErrors().publishSetup.tooManyTags.client?.title);
-
-    if (!itemsFlatten.value.length)
-        return returnError(getErrors().publishSetup.noItems.client?.title);
-    if (itemsFlatten.value.length > setupLimits().items)
-        return returnError(getErrors().publishSetup.tooManyItems.client?.title);
-
+    }
     return false;
 };
 
 const PublishSetup = async () => {
     publishing.value = true;
 
-    if (errorCheck()) return;
+    const data = {
+        name: title.value,
+        description: description.value,
+        unity: unity.value.length ? unity.value : null,
+        tags: tags.value,
+        coAuthors: coAuthors.value.map((i) => ({
+            id: i.id,
+            note: i.note,
+        })),
+        items: itemsFlatten.value.map((i) => ({
+            id: i.id,
+            category: i.category,
+            note: i.note,
+            unsupported: i.unsupported,
+        })),
+        image: image.value ? await convertFileToBase64(image.value) : null,
+    };
 
-    if (image.value && image.value.size > 3.5 * 1024 * 1024) {
-        publishing.value = false;
-        return useToast().add(
-            '画像サイズが大きすぎます',
-            '3.5MB以下の画像を選択してください'
-        );
-    }
+    if (await errorCheck(data)) return (publishing.value = false);
 
     type res = ApiResponse<{ id: number; image: string | null }>;
     const response = await $fetch<res>('/api/setup', {
         method: 'PUT',
-        body: {
-            name: title.value,
-            description: description.value,
-            unity: unity.value.length ? unity.value : null,
-            tags: tags.value,
-            coAuthors: coAuthors.value.map((i) => ({
-                id: i.id,
-                note: i.note,
-            })),
-            items: itemsFlatten.value.map((i) => ({
-                id: i.id,
-                category: i.category,
-                note: i.note,
-                unsupported: i.unsupported,
-            })),
-            image: image.value ? await convertFileToBase64(image.value) : null,
-        },
+        body: data,
     });
+    console.log(response);
 
     if (!response.data) {
         publishing.value = false;
-        return useToast().add(
-            '投稿に失敗しました',
-            response.error!.client?.title || '不明なエラー'
-        );
+        return useToast().add('投稿に失敗しました');
     }
 
     publishedSetupId.value = response.data.id;
@@ -167,7 +196,7 @@ useOGP({ title: 'セットアップ作成' });
 
 <template>
     <div class="relative size-full pb-5 lg:pl-[23rem]">
-        <EditSidebar
+        <SetupsEditSidebar
             v-model:publishing="publishing"
             v-model:title="title"
             v-model:description="description"
@@ -176,12 +205,13 @@ useOGP({ title: 'セットアップ作成' });
             v-model:unity="unity"
             v-model:image="image"
             class="static lg:absolute top-0 bottom-4 left-0 lg:w-[22rem] overflow-y-auto"
+            @preview="modalPreview = true"
             @publish="PublishSetup"
         />
 
         <UiDivider class="static lg:hidden my-8" />
 
-        <EditItems
+        <SetupsEditItems
             v-model="items"
             class="w-full h-full"
             @undo="undo"
@@ -202,5 +232,24 @@ useOGP({ title: 'セットアップ作成' });
             class="fixed lg:hidden bottom-3 right-3 rounded-full p-4 whitespace-nowrap hover:bg-zinc-700 hover:text-zinc-200 dark:text-zinc-900 dark:bg-zinc-300 hover:dark:text-zinc-100"
             @click="PublishSetup"
         />
+
+        <Modal v-model="modalPreview" class="max-w-4xl">
+            <SetupsViewer
+                preview
+                :title="title"
+                :description="description"
+                :tags="tags"
+                :co-authors="coAuthors"
+                :unity="unity"
+                :author="{
+                    id: userProfile.id!,
+                    name: userProfile.name!,
+                    avatar: userProfile.avatar,
+                    badges: userProfile.badges,
+                }"
+                :preview-images="imageObjectUrl ? [imageObjectUrl] : []"
+                :items="items"
+            />
+        </Modal>
     </div>
 </template>

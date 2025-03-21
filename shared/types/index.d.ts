@@ -25,6 +25,10 @@ export interface User extends Author {
     shops: { shop: Shop }[];
 }
 
+export interface CoAuthor extends Author {
+    note: string;
+}
+
 export interface Shop {
     id: string;
     name: string;
@@ -61,7 +65,7 @@ export interface SetupItem extends Item {
     unsupported: boolean;
 }
 
-export interface SetupImages {
+export interface SetupImage {
     name: string;
     width?: number | null;
     height?: number | null;
@@ -73,7 +77,7 @@ export interface SetupBase {
     name: string;
     description: string | null;
     author: Author;
-    images: SetupImages[];
+    images: SetupImage[];
     unity: string | null;
 }
 
@@ -93,7 +97,7 @@ export interface SetupDB extends SetupBase {
 
 export interface SetupClient extends SetupBase {
     tags: string[];
-    co_authors: (Author & { note: string })[];
+    co_authors: CoAuthor[];
     items: Record<string, SetupItem[]>;
 }
 
@@ -126,6 +130,11 @@ export interface DocumentData {
 export interface HeaderBadge {
     label: string;
     link: string;
+}
+
+export interface ErrorType {
+    status: number;
+    message: string;
 }
 
 export interface ApiResponse<Data> {

@@ -50,10 +50,6 @@ export default defineNuxtConfig({
                     name: 'viewport',
                     content: 'width=device-width, initial-scale=1',
                 },
-                {
-                    name: 'description',
-                    content: 'あなたのアバター改変を共有しよう',
-                },
                 { name: 'icon', content: '/favicon.svg' },
                 {
                     name: 'og:site_name',
@@ -67,16 +63,6 @@ export default defineNuxtConfig({
                     content: 'https://avatio.me',
                 },
                 { name: 'og:title', property: 'og:title', content: 'Avatio' },
-                {
-                    name: 'og:description',
-                    property: 'og:description',
-                    content: 'あなたのアバター改変を共有しよう',
-                },
-                {
-                    name: 'og:image',
-                    property: 'og:image',
-                    content: 'https://avatio.me/ogp_2.png',
-                },
                 { name: 'twitter:site', content: '@liria_work' },
                 { name: 'twitter:card', content: 'summary_large_image' },
             ],

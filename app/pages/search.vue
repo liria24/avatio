@@ -36,14 +36,18 @@ const search = async ({
     loading.value = true;
 
     const { data } = await client
-        .rpc('search_setups', {
-            word: word,
-            items: items,
-            tags: tags,
-            page: page,
-            per_page: perPage,
-        })
-        .returns<{
+        .rpc(
+            'search_setups',
+            {
+                word: word,
+                items: items,
+                tags: tags,
+                page: page,
+                per_page: perPage,
+            },
+            { get: true }
+        )
+        .overrideTypes<{
             results: (Omit<SetupDB, 'tags'> & { tags: string[] })[];
             has_more: boolean;
         }>();
@@ -122,7 +126,7 @@ useOGP({
             />
         </div>
 
-        <SetupsItem
+        <SetupsViewerItem
             v-if="resultItem"
             :size="'lg'"
             no-action

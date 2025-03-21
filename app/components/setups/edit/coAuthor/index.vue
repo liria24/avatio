@@ -31,7 +31,7 @@ const add = async (id: string) => {
         model.value.push({
             id: id,
             name: data.name,
-            avatar: useGetImage(data.avatar, { prefix: 'avatar' }),
+            avatar: data.avatar,
             note: '',
         });
         input.value = '';
@@ -110,7 +110,7 @@ watch(input, handleInputChange);
                 </div>
             </template>
         </Popup>
-        <EditCoAuthorItem
+        <SetupsEditCoAuthorItem
             v-for="(i, index) in model"
             :key="`coauthor-${index}`"
             :id="i.id"

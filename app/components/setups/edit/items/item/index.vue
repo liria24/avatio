@@ -113,7 +113,7 @@ const booth_url = 'https://booth.pm/ja/items/';
                 <div
                     class="self-stretch flex flex-col gap-1 items-center justify-between"
                 >
-                    <EditItemsItemMenu
+                    <SetupsEditItemsItemMenu
                         v-model:unsupported="unsupported"
                         @change-category="emit('changeCategory', $event)"
                         @remove="emit('remove')"
