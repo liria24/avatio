@@ -126,7 +126,7 @@ onMounted(async () => {
                         </NuxtLink>
                     </div>
 
-                    <SetupsItemInfo
+                    <SetupsViewerItemInfo
                         :url="url"
                         :likes="item.likes"
                         :price="item.price"
@@ -147,7 +147,7 @@ onMounted(async () => {
             </div>
         </div>
 
-        <SetupsItemInfo
+        <SetupsViewerItemInfo
             :url="url"
             :likes="item.likes"
             :price="item.price"
@@ -155,7 +155,7 @@ onMounted(async () => {
             class="static sm:hidden"
         />
 
-        <SetupsItemAttributes
+        <SetupsViewerItemAttributes
             :note="item.note"
             :unsupported="item.unsupported"
         />
