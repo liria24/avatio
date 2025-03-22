@@ -85,32 +85,29 @@ export const useOGP = ({
     const meta: object[] = [
         {
             property: 'og:url',
-            content: url ?? useBrowserLocation().value.href!,
+            content: url || useBrowserLocation().value.href!,
         },
         { property: 'og:title', content: title },
         {
-            property: 'og:image',
-            content: image ?? 'https://avatio.me/ogp.png',
-        },
-        { name: 'twitter:card', content: twitterCard ?? 'summary' },
-        { name: 'twitter:site', content: '@liria_work' },
-        { property: 'og:type', content: type ?? 'article' },
-    ];
-
-    if (description?.length) {
-        meta.push({
             name: 'description',
-            content: description,
-        });
-        meta.push({
+            content: description || null,
+        },
+        {
             property: 'og:description',
-            content: description,
-        });
-    }
+            content: description || null,
+        },
+        {
+            property: 'og:image',
+            content: image || 'https://avatio.me/ogp.png',
+        },
+        { name: 'twitter:card', content: twitterCard || 'summary' },
+        { name: 'twitter:site', content: '@liria_work' },
+        { property: 'og:type', content: type || 'article' },
+    ];
 
     return useHead({
         title: title,
-        titleTemplate: titleTemplate ?? '%s | Avatio',
+        titleTemplate: titleTemplate || '%s | Avatio',
         meta: meta,
     });
 };
