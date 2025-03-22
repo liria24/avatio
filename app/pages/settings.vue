@@ -1,7 +1,23 @@
 <script lang="ts" setup>
+import { z } from 'zod';
 const client = useSupabaseClient();
 const user = useSupabaseUser();
 if (!user.value) showError('ログインしてください');
+
+const userSettingsSchema = z.object({
+    name: z
+        .string()
+        .min(1, 'ユーザー名を入力してください')
+        .max(124, 'ユーザー名は124文字以内で入力してください')
+        .refine(
+            (name) => !/^\s+$/.test(name),
+            '空白のみのユーザー名は使用できません'
+        ),
+    bio: z.string().max(140, 'bioは140文字以内で入力してください'),
+    links: z
+        .array(z.string().url('有効なURLを入力してください'))
+        .max(8, 'リンクは8個以内に制限してください'),
+});
 
 const { data } = await client
     .from('users')
@@ -23,17 +39,22 @@ const links = ref<string[]>(data?.links ?? []);
 const saving = ref(false);
 
 const save = async () => {
-    if (name.value === '')
-        return useToast().add('ユーザー名を入力してください');
+    const validationResult = userSettingsSchema.safeParse({
+        name: name.value,
+        bio: bio.value,
+        links: links.value,
+    });
 
-    if (name.value.length > 124)
-        return useToast().add('ユーザー名は124文字以内で入力してください');
+    if (!validationResult.success) {
+        // バリデーションエラーがある場合、最初のエラーメッセージを表示
+        const formattedErrors = validationResult.error.format();
+        const firstError =
+            formattedErrors.name?._errors[0] ||
+            formattedErrors.bio?._errors[0] ||
+            formattedErrors.links?._errors[0];
 
-    if (bio.value.length > 140)
-        return useToast().add('bioは140文字以内で入力してください');
-
-    if (links.value.length > 8)
-        return useToast().add('リンクは8個以内に制限してください');
+        if (firstError) return useToast().add(firstError);
+    }
 
     saving.value = true;
 
@@ -77,9 +98,7 @@ const save = async () => {
 
     currentAvatar.value = avatarName;
     userProfile.value.name = name.value;
-    userProfile.value.avatar = avatarName
-        ? useGetImage(avatarName, { prefix: 'avatar' })
-        : null;
+    userProfile.value.avatar = avatarName || null;
     useToast().add('ユーザー情報を保存しました');
     saving.value = false;
 };
