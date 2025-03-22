@@ -70,19 +70,17 @@ const dateLocale = date.toLocaleString('ja-JP', {
                     {{ props.setup.name }}
                 </span>
 
-                <div
-                    v-if="props.setup.items.avatar?.length"
-                    class="flex items-center gap-1"
-                >
+                <div class="flex items-center gap-1">
                     <Icon
                         name="lucide:person-standing"
                         size="15"
-                        class="shrink-0 bg-zinc-300 dark:bg-zinc-300"
+                        class="shrink-0 text-zinc-300 dark:text-zinc-300"
                     />
                     <span
                         class="text-xs text-zinc-300 dark:text-zinc-300 break-all line-clamp-1 leading-none"
                     >
                         {{
+                            props.setup.items.avatar?.length &&
                             !props.setup.items.avatar[0]!.outdated
                                 ? useAvatarName(
                                       props.setup.items.avatar[0]!.name
@@ -110,8 +108,9 @@ const dateLocale = date.toLocaleString('ja-JP', {
 
             <div
                 v-else-if="
-                    !props.setup.items.avatar?.length ||
-                    props.setup.items.avatar[0]!.outdated
+                    (!props.setup.items.avatar?.length ||
+                        props.setup.items.avatar[0]!.outdated) &&
+                    !props.setup.images?.length
                 "
                 class="size-14 my-1.5 ml-1.5 rounded-lg flex shrink-0 items-center justify-center text-zinc-400 bg-zinc-300 dark:bg-zinc-600"
             >
@@ -128,19 +127,17 @@ const dateLocale = date.toLocaleString('ja-JP', {
                     {{ useSentence(props.setup.name) }}
                 </span>
 
-                <div
-                    v-if="props.setup.items.avatar?.length"
-                    class="flex items-center gap-1"
-                >
+                <div class="flex items-center gap-1">
                     <Icon
                         name="lucide:person-standing"
                         size="15"
-                        class="shrink-0 bg-zinc-500 dark:bg-zinc-400"
+                        class="shrink-0 text-zinc-500 dark:text-zinc-400"
                     />
                     <span
                         class="text-xs text-zinc-500 dark:text-zinc-400 break-all line-clamp-1 leading-none"
                     >
                         {{
+                            props.setup.items.avatar?.length &&
                             !props.setup.items.avatar[0]!.outdated
                                 ? useAvatarName(
                                       props.setup.items.avatar[0]!.name
