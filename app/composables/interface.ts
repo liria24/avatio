@@ -84,26 +84,26 @@ export const useOGP = ({
 }) => {
     const meta: object[] = [
         {
-            name: 'og:url',
+            property: 'og:url',
             content: url ?? useBrowserLocation().value.href!,
         },
-        { name: 'og:title', content: title },
+        { property: 'og:title', content: title },
         {
-            name: 'og:image',
+            property: 'og:image',
             content: image ?? 'https://avatio.me/ogp.png',
         },
         { name: 'twitter:card', content: twitterCard ?? 'summary' },
         { name: 'twitter:site', content: '@liria_work' },
-        { name: 'og:type', content: type ?? 'article' },
+        { property: 'og:type', content: type ?? 'article' },
     ];
 
-    if (description && description.length) {
+    if (description?.length) {
         meta.push({
             name: 'description',
             content: description,
         });
         meta.push({
-            name: 'og:description',
+            property: 'og:description',
             content: description,
         });
     }
