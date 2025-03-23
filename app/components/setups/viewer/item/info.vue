@@ -24,7 +24,7 @@ const { url, shop, price, likes } = defineProps<Props>();
                 class="text-zinc-700 dark:text-zinc-100"
             />
             <p
-                class="pb-px text-xs leading-0 whitespace-nowrap text-zinc-700 dark:text-zinc-100"
+                class="pb-px text-xs leading-0 whitespace-nowrap text-zinc-700 dark:text-zinc-300"
             >
                 {{ likes || '?' }}
             </p>
@@ -33,7 +33,7 @@ const { url, shop, price, likes } = defineProps<Props>();
         <NuxtLink
             :to="url"
             target="_blank"
-            class="text-sm font-semibold leading-0 whitespace-nowrap text-zinc-700 dark:text-zinc-300"
+            class="text-sm font-semibold leading-0 whitespace-nowrap text-zinc-600 dark:text-zinc-400"
         >
             {{ price ? price : '価格不明' }}
         </NuxtLink>
@@ -54,7 +54,7 @@ const { url, shop, price, likes } = defineProps<Props>();
                     class="size-5 rounded-md border border-zinc-300"
                 />
                 <span
-                    class="font-semibold text-xs line-clamp-1 break-all leading-none whitespace-nowrap text-zinc-700 dark:text-zinc-300"
+                    class="font-semibold text-xs line-clamp-1 break-all leading-none whitespace-nowrap text-zinc-600 dark:text-zinc-400"
                 >
                     {{ shop.name }}
                 </span>

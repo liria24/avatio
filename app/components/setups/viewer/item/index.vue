@@ -58,7 +58,7 @@ onMounted(async () => {
         v-if="loading"
         :class="
             twMerge(
-                'flex items-center px-6 ring-1 ring-zinc-300 dark:ring-zinc-600 rounded-lg overflow-clip',
+                'flex items-center px-6 ring-1 ring-zinc-300 dark:ring-zinc-700 rounded-lg overflow-clip',
                 props.class
             )
         "
@@ -74,7 +74,7 @@ onMounted(async () => {
         v-else
         :class="
             twMerge(
-                'p-1.5 flex flex-col gap-1.5 ring-1 ring-zinc-300 dark:ring-zinc-600 rounded-lg overflow-clip',
+                'p-1.5 flex flex-col gap-1.5 ring-1 ring-zinc-300 dark:ring-zinc-700 rounded-lg overflow-clip',
                 props.class
             )
         "

@@ -77,11 +77,11 @@ const categories: Record<string, { label: string; icon: string }> =
                 class="xl:hidden"
             />
 
-            <div class="w-full flex flex-col gap-5">
+            <div class="w-full flex flex-col gap-7">
                 <div
                     v-for="(value, key) in items"
                     :key="'category-' + key"
-                    class="empty:hidden flex flex-col gap-3"
+                    class="empty:hidden flex flex-col gap-5"
                 >
                     <template v-if="value.length">
                         <UiTitle
