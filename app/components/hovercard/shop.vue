@@ -27,11 +27,13 @@ const props = defineProps<Props>();
                     >
                         {{ props.shop.name }}
                     </span>
-                    <span
+                    <NuxtLink
+                        :to="`https://${props.shop.id}.booth.pm/`"
+                        target="_blank"
                         class="text-xs font-semibold leading-none text-zinc-700 dark:text-zinc-500"
                     >
                         {{ props.shop.id }}.booth.pm
-                    </span>
+                    </NuxtLink>
                 </div>
             </div>
         </template>
