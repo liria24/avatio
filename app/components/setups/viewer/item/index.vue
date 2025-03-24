@@ -43,8 +43,9 @@ onMounted(async () => {
         if (response.data)
             item.value = {
                 ...response.data,
-                note: '',
-                unsupported: false,
+                note: props.item.note ?? '',
+                unsupported: props.item.unsupported ?? false,
+                shapekeys: props.item.shapekeys ?? [],
             };
         if (!response.data) item.value.outdated = true;
     }
@@ -74,7 +75,7 @@ onMounted(async () => {
         v-else
         :class="
             twMerge(
-                'p-1.5 flex flex-col gap-1.5 ring-1 ring-zinc-300 dark:ring-zinc-700 rounded-lg overflow-clip',
+                'p-2 flex flex-col gap-2 ring-1 ring-zinc-300 dark:ring-zinc-700 rounded-lg overflow-clip',
                 props.class
             )
         "
@@ -156,8 +157,10 @@ onMounted(async () => {
         />
 
         <SetupsViewerItemAttributes
+            v-if="item.note || item.unsupported || item.shapekeys?.length"
             :note="item.note"
             :unsupported="item.unsupported"
+            :shapekeys="item.shapekeys"
         />
     </div>
 </template>

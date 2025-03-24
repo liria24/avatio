@@ -63,6 +63,7 @@ export interface Item {
 export interface SetupItem extends Item {
     note: string;
     unsupported: boolean;
+    shapekeys: { name: string; value: number }[];
 }
 
 export interface SetupImage {
@@ -92,6 +93,7 @@ export interface SetupDB extends SetupBase {
         note: string;
         unsupported: boolean;
         category: ItemCategory | null;
+        shapekeys: { name: string; value: number }[];
     }[];
 }
 

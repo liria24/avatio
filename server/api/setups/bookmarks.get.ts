@@ -67,7 +67,12 @@ export default defineEventHandler(
                             source
                         ),
                         note,
-                        unsupported
+                        unsupported,
+                        category,
+                        shapekeys:setup_item_shapekeys(
+                            name,
+                            value
+                        )
                     ),
                     tags:setup_tags(tag),
                     co_authors:setup_coauthors(

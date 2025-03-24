@@ -54,7 +54,7 @@ const { url, shop, price, likes } = defineProps<Props>();
                     class="size-5 rounded-md border border-zinc-300 dark:border-zinc-700"
                 />
                 <span
-                    class="font-semibold text-xs line-clamp-1 break-all leading-none whitespace-nowrap text-zinc-600 dark:text-zinc-400"
+                    class="font-semibold text-xs whitespace-nowrap text-zinc-600 dark:text-zinc-400"
                 >
                     {{ shop.name }}
                 </span>
