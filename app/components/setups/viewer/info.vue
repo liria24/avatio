@@ -17,7 +17,7 @@ const {
 </script>
 
 <template>
-    <div :class="['empty:hidden self-stretch flex flex-col gap-3', propClass]">
+    <div :class="['empty:hidden self-stretch flex flex-col gap-6', propClass]">
         <div
             v-if="tags?.length"
             class="items-center gap-1.5 flex flex-row flex-wrap"

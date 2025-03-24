@@ -81,10 +81,7 @@ const { note, unsupported, shapekeys } = defineProps<Props>();
                             class="p-3 rounded-lg flex flex-col gap-3 ring-1 ring-zinc-300 dark:ring-zinc-700"
                         >
                             <div
-                                v-for="(key, index) in [
-                                    ...shapekeys,
-                                    ...shapekeys,
-                                ]"
+                                v-for="(key, index) in shapekeys"
                                 :key="'shapekey-' + index"
                                 class="flex items-center justify-between gap-3"
                             >
@@ -93,11 +90,23 @@ const { note, unsupported, shapekeys } = defineProps<Props>();
                                 >
                                     {{ key.name }}
                                 </p>
-                                <p
-                                    class="leading-none text-zinc-800 dark:text-zinc-200"
+                                <button
+                                    type="button"
+                                    :class="[
+                                        'px-2 py-1 rounded-md cursor-pointer',
+                                        'font-mono leading-none text-zinc-800 dark:text-zinc-200',
+                                        'bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 hover:dark:bg-zinc-700',
+                                        'transition-colors duration-150 ease-in-out',
+                                    ]"
+                                    @click="
+                                        useWriteClipboard(key.value.toString());
+                                        useToast().add(
+                                            `${key.name} の値をコピーしました`
+                                        );
+                                    "
                                 >
                                     {{ key.value }}
-                                </p>
+                                </button>
                             </div>
                         </div>
                     </div>
