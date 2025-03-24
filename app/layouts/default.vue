@@ -2,8 +2,8 @@
 import { Analytics } from '@vercel/analytics/nuxt';
 
 const route = useRoute();
-const paddingExclude = ['/', '/release', '/setup/edit'];
-const footerExclude = ['/setup/edit'];
+const paddingExclude = ['/', '/release', '/setup/compose'];
+const footerExclude = ['/setup/compose'];
 
 const env = ref<string | undefined>(undefined);
 try {

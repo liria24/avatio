@@ -23,7 +23,7 @@ export default defineNuxtConfig({
     ],
     routeRules: {
         '/': { isr: 60 },
-        '/setup/edit': { ssr: false },
+        '/setup/compose': { ssr: false },
         '/faq': { isr: 600 },
         '/terms': { isr: 600 },
         '/privacy-policy': { isr: 600 },
@@ -126,7 +126,7 @@ export default defineNuxtConfig({
             '/confirm',
             '/login',
             '/search',
-            '/setup/edit',
+            '/setup/compose',
             '/settings',
             '/bookmarks',
         ],
@@ -223,7 +223,7 @@ export default defineNuxtConfig({
         redirectOptions: {
             login: '/login',
             callback: '/',
-            include: ['/setup/edit', '/settings', '/bookmarks'],
+            include: ['/setup/compose', '/settings', '/bookmarks'],
             exclude: [],
             cookieRedirect: false,
         },

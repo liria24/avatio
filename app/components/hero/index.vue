@@ -16,7 +16,7 @@
             あなたのアバター改変を共有しよう
         </p>
         <Button
-            to="/setup/edit"
+            to="/setup/compose"
             class="pr-6 pl-5 :mr-2 outline-1 rounded-full whitespace-nowrap hover:bg-zinc-700 hover:text-zinc-200 hover:dark:bg-zinc-300 hover:dark:text-zinc-800"
         >
             <span class="block">ログイン</span>

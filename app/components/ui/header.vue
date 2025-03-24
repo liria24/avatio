@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const route = useRoute();
-const excludePath = ['/setup/edit'];
+const excludePath = ['/setup/compose'];
 </script>
 
 <template>
