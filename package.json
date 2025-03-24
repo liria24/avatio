@@ -9,6 +9,10 @@
         "preview": "nuxt preview",
         "postinstall": "nuxt prepare"
     },
+    "packageManager": "bun@1.2.5",
+    "engines": {
+        "node": "22.14.0"
+    },
     "devDependencies": {
         "@iconify-json/entypo-social": "^1.2.2",
         "@iconify-json/fluent-color": "^1.2.8",
