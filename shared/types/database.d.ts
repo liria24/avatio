@@ -34,6 +34,29 @@ export type Database = {
     };
     public: {
         Tables: {
+            admin: {
+                Row: {
+                    created_at: string;
+                    user_id: string;
+                };
+                Insert: {
+                    created_at?: string;
+                    user_id: string;
+                };
+                Update: {
+                    created_at?: string;
+                    user_id?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: 'admin_user_id_fkey';
+                        columns: ['user_id'];
+                        isOneToOne: true;
+                        referencedRelation: 'users';
+                        referencedColumns: ['id'];
+                    },
+                ];
+            };
             bookmarks: {
                 Row: {
                     created_at: string;
@@ -409,13 +432,42 @@ export type Database = {
                     },
                 ];
             };
+            setup_item_shapekeys: {
+                Row: {
+                    id: number;
+                    name: string;
+                    setup_item_id: number;
+                    value: number;
+                };
+                Insert: {
+                    id?: number;
+                    name: string;
+                    setup_item_id: number;
+                    value: number;
+                };
+                Update: {
+                    id?: number;
+                    name?: string;
+                    setup_item_id?: number;
+                    value?: number;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: 'setup_item_shapekeys_setup_item_id_fkey';
+                        columns: ['setup_item_id'];
+                        isOneToOne: false;
+                        referencedRelation: 'setup_items';
+                        referencedColumns: ['id'];
+                    },
+                ];
+            };
             setup_items: {
                 Row: {
                     category:
                         | Database['public']['Enums']['item_category']
                         | null;
                     id: number;
-                    item_id: number | null;
+                    item_id: number;
                     note: string;
                     setup_id: number;
                     unsupported: boolean;
@@ -425,7 +477,7 @@ export type Database = {
                         | Database['public']['Enums']['item_category']
                         | null;
                     id?: number;
-                    item_id?: number | null;
+                    item_id: number;
                     note?: string;
                     setup_id: number;
                     unsupported?: boolean;
@@ -435,7 +487,7 @@ export type Database = {
                         | Database['public']['Enums']['item_category']
                         | null;
                     id?: number;
-                    item_id?: number | null;
+                    item_id?: number;
                     note?: string;
                     setup_id?: number;
                     unsupported?: boolean;
