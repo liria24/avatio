@@ -9,7 +9,7 @@ export default defineNuxtRouteMiddleware(async (_to, _from) => {
 
     const isMaintenance = (
         await $fetch(
-            `/api/edgeConfig/${env === 'development' ? 'isMaintenanceDev' : 'isMaintenance'}`
+            `/api/edge-config/${env === 'development' ? 'isMaintenanceDev' : 'isMaintenance'}`
         )
     ).value;
 

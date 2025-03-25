@@ -15,7 +15,7 @@ const GetBoothItem = async (
     event: H3Event,
     id: number
 ): Promise<ApiResponse<Item>> => {
-    const edgeConfig = await event.$fetch('/api/edgeConfig');
+    const edgeConfig = await event.$fetch('/api/edge-config');
     if (!edgeConfig.value)
         return {
             data: null,

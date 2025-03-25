@@ -2,7 +2,7 @@
 const badge = ref<HeaderBadge | null>(null);
 
 try {
-    const res = await $fetch('/api/edgeConfig/badgeMain');
+    const res = await $fetch('/api/edge-config/badgeMain');
     badge.value = res.value ? (res.value as unknown as HeaderBadge) : null;
 } catch (error) {
     console.error('Failed to fetch badge:', error);

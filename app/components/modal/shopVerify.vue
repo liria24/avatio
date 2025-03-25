@@ -45,7 +45,7 @@ const verify = async () => {
         return;
     }
 
-    const { verified: v } = await $fetch('/api/shopVerification/verify', {
+    const { verified: v } = await $fetch('/api/shop-verification/verify', {
         method: 'POST',
         body: {
             url: shopUrl.value,
@@ -65,7 +65,7 @@ const generateCode = async () => {
 
     code.value =
         (
-            await $fetch('/api/shopVerification/generateCode', {
+            await $fetch('/api/shop-verification/generate-code', {
                 method: 'POST',
             })
         ).code || '';

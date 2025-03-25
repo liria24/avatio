@@ -45,7 +45,7 @@ const get = async () => {
 };
 
 const unverify = async (id: string) => {
-    const { success } = await $fetch('/api/shopVerification/unverify', {
+    const { success } = await $fetch('/api/shop-verification/unverify', {
         method: 'POST',
         body: { shopId: id },
     });
