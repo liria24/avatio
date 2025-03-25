@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { z } from 'zod';
-
 const skipRouterHook = ref(false);
 
 const publishing = ref(false);
@@ -23,92 +21,9 @@ const { undo, redo } = useRefHistory(items, { deep: true });
 const title = ref<string>('');
 const description = ref<string>('');
 const tags = ref<string[]>([]);
-const coAuthors = ref<
-    {
-        id: string;
-        name: string;
-        avatar: string;
-        note: string;
-    }[]
->([]);
+const coAuthors = ref<CoAuthor[]>([]);
 const unity = ref<string>('');
 const image = ref<File | null>(null);
-const imageObjectUrl = computed(() => {
-    if (!image.value) return null;
-    return URL.createObjectURL(image.value);
-});
-
-const editImage = ref();
-
-const itemsFlatten = computed(() => [
-    ...items.value.avatar,
-    ...items.value.cloth,
-    ...items.value.accessory,
-    ...items.value.hair,
-    ...items.value.texture,
-    ...items.value.shader,
-    ...items.value.tool,
-    ...items.value.other,
-]);
-
-const limits = setupLimits();
-
-const setupSchema = z.object({
-    name: z
-        .string()
-        .min(1, 'タイトルを入力してください。')
-        .max(limits.title, `タイトルは最大${limits.title}字までです。`),
-    description: z
-        .string()
-        .max(limits.description, `説明は最大${limits.description}字までです。`),
-    tags: z
-        .array(z.string())
-        .max(limits.tags, `タグの数は最大${limits.tags}個までです。`),
-    coAuthors: z
-        .array(
-            z.object({
-                id: z.string(),
-                note: z
-                    .string()
-                    .max(
-                        limits.coAuthorsNote,
-                        `共同作者のメモは最大${limits.coAuthorsNote}字までです。`
-                    ),
-            })
-        )
-        .max(
-            limits.coAuthors,
-            `共同作者の数は最大${limits.coAuthors}人までです。`
-        ),
-    unity: z
-        .string()
-        .max(limits.unity, `Unityのバージョンは最大${limits.unity}字までです。`)
-        .nullable(),
-    items: z
-        .array(z.any())
-        .min(1, '最低1つのアイテムが必要です')
-        .max(limits.items, `アイテムの最大数は${limits.items}個です。`),
-    image: z
-        .string()
-        .nullable()
-        .refine(
-            (file) => !file || file.length <= 4.5 * 1024 * 1024,
-            '画像サイズが大きすぎます。3.5MB以下の画像が推奨されます。'
-        ),
-});
-
-const errorCheck = async (data: z.infer<typeof setupSchema>) => {
-    const result = setupSchema.safeParse(data);
-
-    if (!result.success) {
-        publishing.value = false;
-        const firstError = result.error.errors[0];
-        if (firstError?.message) useToast().add(firstError.message);
-
-        return true;
-    }
-    return false;
-};
 
 const PublishSetup = async () => {
     publishing.value = true;
@@ -122,23 +37,24 @@ const PublishSetup = async () => {
             id: i.id,
             note: i.note,
         })),
-        items: itemsFlatten.value.map((i) => ({
-            id: i.id,
-            category: i.category,
-            note: i.note,
-            unsupported: i.unsupported,
-        })),
+        items: Object.values(items.value)
+            .flat()
+            .map((i) => ({
+                id: i.id,
+                category: i.category,
+                note: i.note,
+                unsupported: i.unsupported,
+            })),
         image: image.value ? await convertFileToBase64(image.value) : null,
     };
 
-    if (await errorCheck(data)) return (publishing.value = false);
+    if (await setupErrorCheck(data)) return (publishing.value = false);
 
     type res = ApiResponse<{ id: number; image: string | null }>;
     const response = await $fetch<res>('/api/setup', {
         method: 'PUT',
         body: data,
     });
-    console.log(response);
 
     if (!response.data) {
         publishing.value = false;
@@ -167,7 +83,6 @@ const reset = () => {
         other: [],
     };
     image.value = null;
-    editImage.value.reset();
     publishedSetupId.value = null;
     publishing.value = false;
     skipRouterHook.value = false;
@@ -180,7 +95,9 @@ onBeforeRouteLeave((to, from, next) => {
         title.value ||
         description.value.length ||
         tags.value.length ||
-        itemsFlatten.value.length;
+        coAuthors.value.length ||
+        unity.value.length ||
+        image.value !== null;
 
     if (hasChanges) {
         const answer = window.confirm(
@@ -233,23 +150,15 @@ useOGP({ title: 'セットアップ作成' });
             @click="PublishSetup"
         />
 
-        <Modal v-model="modalPreview" class="max-w-4xl">
-            <SetupsViewer
-                preview
-                :title="title"
-                :description="description"
-                :tags="tags"
-                :co-authors="coAuthors"
-                :unity="unity"
-                :author="{
-                    id: userProfile.id!,
-                    name: userProfile.name!,
-                    avatar: userProfile.avatar,
-                    badges: userProfile.badges,
-                }"
-                :preview-images="imageObjectUrl ? [imageObjectUrl] : []"
-                :items="items"
-            />
-        </Modal>
+        <SetupsEditPreview
+            v-model:vis="modalPreview"
+            :title="title"
+            :description="description"
+            :tags="tags"
+            :co-authors="coAuthors"
+            :unity="unity"
+            :image="image"
+            :items="items"
+        />
     </div>
 </template>

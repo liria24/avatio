@@ -6,14 +6,7 @@ const emit = defineEmits(['publish', 'preview']);
 const title = defineModel<string>('title', { default: '' });
 const description = defineModel<string>('description', { default: '' });
 const tags = defineModel<string[]>('tags', { default: [] });
-const coAuthors = defineModel<
-    {
-        id: string;
-        name: string;
-        avatar: string;
-        note: string;
-    }[]
->('coAuthors', { default: [] });
+const coAuthors = defineModel<CoAuthor[]>('coAuthors', { default: [] });
 const unity = defineModel<string>('unity', { default: '' });
 const image = defineModel<File | null>('image', { default: null });
 const publishing = defineModel<boolean>('publishing', { default: false });
@@ -161,17 +154,20 @@ const attributesVisibility = ref({
                     class="w-full flex flex-col items-start gap-3"
                 >
                     <div class="w-full flex gap-2 items-center justify-between">
-                        <div
-                            class="w-full flex items-center gap-1 justify-between"
-                        >
-                            <UiTitle
-                                label="共同作者"
-                                icon="lucide:users-round"
+                        <UiTitle label="共同作者" icon="lucide:users-round" />
+                        <div class="flex items-center gap-1">
+                            <UiCount
+                                v-if="coAuthors.length"
+                                :count="coAuthors.length"
+                                :max="setupLimits().coAuthors"
                             />
                             <Button
                                 variant="flat"
                                 class="p-1.5"
-                                @click="attributesVisibility.coAuthors = false"
+                                @click="
+                                    attributesVisibility.coAuthors = false;
+                                    coAuthors = [];
+                                "
                             >
                                 <Icon
                                     name="lucide:x"
@@ -180,11 +176,6 @@ const attributesVisibility = ref({
                                 />
                             </Button>
                         </div>
-                        <UiCount
-                            v-if="coAuthors.length"
-                            :count="coAuthors.length"
-                            :max="setupLimits().coAuthors"
-                        />
                     </div>
                     <SetupsEditCoAuthor v-model="coAuthors" />
                 </div>
@@ -194,17 +185,23 @@ const attributesVisibility = ref({
                     class="w-full flex flex-col items-start gap-3"
                 >
                     <div class="w-full flex gap-2 items-center justify-between">
-                        <div
-                            class="w-full flex items-center gap-1 justify-between"
-                        >
-                            <UiTitle
-                                label="Unity バージョン"
-                                icon="simple-icons:unity"
+                        <UiTitle
+                            label="Unity バージョン"
+                            icon="simple-icons:unity"
+                        />
+                        <div class="flex items-center gap-1">
+                            <UiCount
+                                v-if="unity.length"
+                                :count="unity.length"
+                                :max="setupLimits().unity"
                             />
                             <Button
                                 variant="flat"
                                 class="p-1.5"
-                                @click="attributesVisibility.unity = false"
+                                @click="
+                                    attributesVisibility.unity = false;
+                                    unity = '';
+                                "
                             >
                                 <Icon
                                     name="lucide:x"
@@ -213,12 +210,6 @@ const attributesVisibility = ref({
                                 />
                             </Button>
                         </div>
-
-                        <UiCount
-                            v-if="unity.length"
-                            :count="unity.length"
-                            :max="setupLimits().unity"
-                        />
                     </div>
                     <UiTextinput
                         v-model="unity"
@@ -244,7 +235,7 @@ const attributesVisibility = ref({
                                 size="18"
                                 class="text-zinc-400"
                             />
-                            <span>アトリビュートを追加</span>
+                            <span>項目を追加</span>
                         </Button>
                     </template>
 

@@ -2,7 +2,7 @@
 interface Props {
     id: string;
     name: string;
-    avatar: string;
+    avatar?: string | null;
 }
 const props = defineProps<Props>();
 
