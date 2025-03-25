@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const user = useSupabaseUser();
-const route = useRoute();
+const route = useRoute('setup-id');
 
 const id = Number(route.params.id);
 const bookmark = ref(false);

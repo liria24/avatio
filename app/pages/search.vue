@@ -4,7 +4,7 @@ interface Query {
     item?: string;
     tag?: string | string[];
 }
-const route = useRoute();
+const route = useRoute('search');
 const client = useSupabaseClient();
 const query = ref<Query>(route.query);
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const route = useRoute();
+const route = useRoute('slug');
 const client = useSupabaseClient();
 
 if (!route.params.slug)

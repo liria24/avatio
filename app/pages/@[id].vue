@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-const route = useRoute();
+const route = useRoute('@id');
 const client = useSupabaseClient();
 const user = useSupabaseUser();
 const id = route.params.id
