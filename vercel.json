@@ -11,5 +11,15 @@
             "destination": "/compose",
             "permanent": true
         }
+    ],
+    "crons": [
+        {
+            "path": "/api/check/unused-setup-images",
+            "schedule": "0 0 * * *"
+        },
+        {
+            "path": "/api/check/unused-user-images",
+            "schedule": "0 0 * * *"
+        }
     ]
 }

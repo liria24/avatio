@@ -39,6 +39,7 @@ export default defineNuxtConfig({
         public: { r2: { domain: '' } },
         turnstile: { siteKey: '', secretKey: '' },
         r2: { endpoint: '', accessKey: '', secretKey: '' },
+        openai: { apiKey: '' },
     },
     app: {
         head: {

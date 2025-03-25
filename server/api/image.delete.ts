@@ -1,21 +1,9 @@
 import { serverSupabaseUser } from '#supabase/server';
-import { createStorage } from 'unstorage';
-import s3Driver from 'unstorage/drivers/s3';
-
-const runtime = useRuntimeConfig();
-
-const storage = createStorage({
-    driver: s3Driver({
-        accessKeyId: runtime.r2.accessKey,
-        secretAccessKey: runtime.r2.secretKey,
-        endpoint: runtime.r2.endpoint,
-        bucket: 'avatio',
-        region: 'auto',
-    }),
-});
 
 export default defineEventHandler(
     async (event): Promise<ApiResponse<{ path: string }>> => {
+        const storage = imageStorageClient();
+
         try {
             const user = await serverSupabaseUser(event);
             if (!user) throw new Error();

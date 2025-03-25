@@ -1,0 +1,47 @@
+import { serverSupabaseClient } from '#supabase/server';
+
+export default defineEventHandler(async (event) => {
+    const deleteCompleted = [];
+    const deleteFailed = [];
+
+    const storage = imageStorageClient();
+
+    const supabase = await serverSupabaseClient<Database>(event);
+
+    const { data } = await supabase.from('setup_images').select('name');
+
+    if (!data) return null;
+    const setupImages = data.map((i) => i.name);
+
+    const storageImages = (await storage.keys('setup'))
+        .map((image) => image.split(':').at(-1))
+        .filter((image) => image !== undefined && image !== null);
+
+    const unusedImages = storageImages.filter(
+        (image) => !setupImages.includes(image)
+    );
+
+    for (const image of unusedImages) {
+        const { data } = await supabase
+            .from('setup_images')
+            .select('name')
+            .eq('name', image)
+            .maybeSingle();
+
+        if (!data) {
+            await storage.del(`setup:${image}`);
+
+            if (await storage.has(`setup:${image}`)) {
+                console.error('Failed to delete image on R2.', image);
+                deleteFailed.push(image);
+            } else {
+                deleteCompleted.push(image);
+            }
+        }
+    }
+
+    return {
+        completed: deleteCompleted,
+        failed: deleteFailed,
+    };
+});

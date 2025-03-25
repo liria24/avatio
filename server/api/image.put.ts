@@ -1,6 +1,4 @@
 import sharp from 'sharp';
-import { createStorage } from 'unstorage';
-import s3Driver from 'unstorage/drivers/s3';
 import { serverSupabaseUser } from '#supabase/server';
 
 export interface RequestBody {
@@ -9,18 +7,6 @@ export interface RequestBody {
     resolution: number;
     prefix: string;
 }
-
-const runtime = useRuntimeConfig();
-
-const storage = createStorage({
-    driver: s3Driver({
-        accessKeyId: runtime.r2.accessKey,
-        secretAccessKey: runtime.r2.secretKey,
-        endpoint: runtime.r2.endpoint,
-        bucket: 'avatio',
-        region: 'auto',
-    }),
-});
 
 export default defineEventHandler(
     async (
@@ -33,6 +19,8 @@ export default defineEventHandler(
             height?: number;
         }>
     > => {
+        const storage = imageStorageClient();
+
         try {
             const user = await serverSupabaseUser(event);
             if (!user) throw new Error();
