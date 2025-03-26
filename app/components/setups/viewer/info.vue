@@ -1,13 +1,16 @@
 <script lang="ts" setup>
 interface Props {
-    tags?: string[];
+    title: string;
     description?: string | null;
+    tags?: string[];
     coAuthors?: (Partial<Pick<CoAuthor, 'badges'>> &
         Omit<CoAuthor, 'badges'>)[];
     unity?: string | null;
+    author: Author;
     class?: string | string[];
 }
 const {
+    author,
     tags,
     description,
     coAuthors,
@@ -17,25 +20,34 @@ const {
 </script>
 
 <template>
-    <div :class="['empty:hidden self-stretch flex flex-col gap-6', propClass]">
-        <div
-            v-if="tags?.length"
-            class="items-center gap-1.5 flex flex-row flex-wrap"
-        >
-            <Button
-                v-for="tag in tags"
-                :key="useId()"
-                :label="tag"
-                class="rounded-full"
-                @click="navigateTo(`/search?tag=${tag}`)"
-            />
+    <div :class="['empty:hidden h-fit flex flex-col gap-5', propClass]">
+        <div class="w-full flex flex-wrap gap-5 justify-between">
+            <div class="flex xl:flex-col items-center xl:items-start gap-7">
+                <NuxtLink
+                    :to="{
+                        name: '@id',
+                        params: { id: author.id },
+                    }"
+                    class="flex gap-1 items-center"
+                >
+                    <UiAvatar
+                        :url="useGetImage(author.avatar, { prefix: 'avatar' })"
+                        :alt="author.name"
+                    />
+                    <p
+                        class="pl-1 pb-0.5 text-left font-semibold text-zinc-800 dark:text-zinc-200"
+                    >
+                        {{ author.name }}
+                    </p>
+                    <BadgeUser :badges="author.badges" size="sm" />
+                </NuxtLink>
+            </div>
         </div>
 
         <div
             v-if="description?.length"
-            class="self-stretch rounded-lg flex flex-col gap-1.5"
+            class="self-stretch flex flex-col gap-2"
         >
-            <h2 class="text-zinc-500 text-sm mt-1 leading-none">説明</h2>
             <p
                 class="pl-1 text-sm/relaxed whitespace-pre-wrap break-keep [overflow-wrap:anywhere] text-zinc-900 dark:text-zinc-100"
             >
@@ -43,11 +55,36 @@ const {
             </p>
         </div>
 
+        <div v-if="tags?.length" class="self-stretch flex flex-col gap-3">
+            <div class="items-center gap-1.5 flex flex-row flex-wrap">
+                <Button
+                    v-for="tag in tags"
+                    :key="useId()"
+                    :label="tag"
+                    class="rounded-full text-xs px-3 py-2"
+                    @click="navigateTo(`/search?tag=${tag}`)"
+                />
+            </div>
+        </div>
+
         <div
-            v-if="coAuthors?.length"
-            class="self-stretch rounded-lg flex flex-col gap-3"
+            v-if="unity?.length"
+            class="w-fit px-3 py-2 rounded-full flex items-center gap-2 ring-1 ring-zinc-300 dark:ring-zinc-700"
         >
-            <h2 class="text-zinc-500 text-sm mt-1 leading-none">共同作者</h2>
+            <Icon
+                name="simple-icons:unity"
+                :size="14"
+                class="shrink-0 text-zinc-800 dark:text-zinc-200"
+            />
+            <p
+                class="text-xs leading-none whitespace-pre-wrap break-keep [overflow-wrap:anywhere] text-zinc-700 dark:text-zinc-300"
+            >
+                {{ useSentence(unity) }}
+            </p>
+        </div>
+
+        <div v-if="coAuthors?.length" class="self-stretch flex flex-col gap-3">
+            <h2 class="text-zinc-500 text-sm leading-none">共同作者</h2>
             <ul class="flex flex-col gap-2 pl-1">
                 <li
                     v-for="coAuthor in coAuthors"
@@ -85,20 +122,6 @@ const {
                     </p>
                 </li>
             </ul>
-        </div>
-
-        <div
-            v-if="unity?.length"
-            class="self-stretch rounded-lg flex flex-col gap-1.5"
-        >
-            <h2 class="text-zinc-500 text-sm mt-1 leading-none">
-                Unity バージョン
-            </h2>
-            <p
-                class="pl-1 text-sm/relaxed whitespace-pre-wrap break-keep [overflow-wrap:anywhere] text-zinc-900 dark:text-zinc-100"
-            >
-                {{ useSentence(unity) }}
-            </p>
         </div>
     </div>
 </template>

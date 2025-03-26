@@ -46,7 +46,9 @@ onMounted(async () => {
 </script>
 
 <template>
-    <div v-if="data" class="flex flex-col gap-8">
+    <div v-if="data" class="flex flex-col gap-5">
+        <UiBreadcrumb :items="[{ text: data.name }]" />
+
         <SetupsViewer
             :id="id"
             :created-at="data.created_at"
@@ -66,7 +68,7 @@ onMounted(async () => {
             icon="lucide:flag"
             :icon-size="16"
             variant="flat"
-            class="w-fit px-3 py-2 mt-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400 hover:bg-zinc-300 hover:dark:bg-zinc-700"
+            class="w-fit px-3 py-2 mt-6 text-xs font-semibold text-zinc-500 dark:text-zinc-400 hover:bg-zinc-300 hover:dark:bg-zinc-700"
             icon-class="text-red-400 dark:text-red-400"
             @click="
                 if (user) modalReport = true;

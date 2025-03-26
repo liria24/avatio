@@ -5,6 +5,7 @@ interface Props {
     url: string;
     alt: string;
     ariaHidden?: 'false' | 'true';
+    size?: number;
     iconSize?: number;
     class?: string | string[];
 }
@@ -14,9 +15,13 @@ const props = defineProps<Props>();
 
 <template>
     <AvatarRoot
+        :style="{
+            width: `${props.size ?? 32}px`,
+            height: `${props.size ?? 32}px`,
+        }"
         :class="
             twMerge(
-                'shrink-0 flex size-[32px] rounded-full items-center justify-center bg-zinc-200 dark:bg-zinc-700',
+                'shrink-0 flex rounded-full items-center justify-center bg-zinc-200 dark:bg-zinc-700',
                 props.class
             )
         "

@@ -137,7 +137,11 @@ onMounted(async () => {
                                 class="p-2.5 hover:bg-zinc-300 hover:dark:bg-zinc-600"
                             >
                                 <UiAvatar
-                                    :url="userProfile.avatar ?? ''"
+                                    :url="
+                                        useGetImage(userProfile.avatar, {
+                                            prefix: 'avatar',
+                                        })
+                                    "
                                     :alt="userProfile.name ?? ''"
                                 />
                                 <span>{{ userProfile.name }}</span>
