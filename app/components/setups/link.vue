@@ -45,20 +45,30 @@ const adjustColorForTheme = (hex: string, isDark: boolean) => {
     const luminance = getLuminance(hex);
     const { r, g, b } = hexToRgb(hex);
 
-    // ダークモードでは色を明るく、ライトモードでは色を暗くする
-    if (isDark && luminance < 0.5) {
-        const factor = Math.min(1, 0.7 / luminance);
-        return rgbToHex(
-            Math.min(255, r * factor),
-            Math.min(255, g * factor),
-            Math.min(255, b * factor)
-        );
-    } else if (!isDark && luminance > 0.7) {
-        const factor = 0.6 / luminance;
-        return rgbToHex(r * factor, g * factor, b * factor);
-    }
+    // ダークモード
+    if (isDark) {
+        // 明るさの下限と上限を設定
+        const targetLuminance = Math.max(0.4, Math.min(0.65, luminance));
+        const factor = targetLuminance / (luminance || 0.1);
 
-    return hex;
+        return rgbToHex(
+            Math.min(255, Math.max(30, r * factor)),
+            Math.min(255, Math.max(30, g * factor)),
+            Math.min(255, Math.max(30, b * factor))
+        );
+    }
+    // ライトモード
+    else {
+        // 暗さの下限と上限を設定
+        const targetLuminance = Math.max(0.25, Math.min(0.6, luminance));
+        const factor = targetLuminance / (luminance || 0.1);
+
+        return rgbToHex(
+            Math.min(220, Math.max(20, r * factor)),
+            Math.min(220, Math.max(20, g * factor)),
+            Math.min(220, Math.max(20, b * factor))
+        );
+    }
 };
 
 const extractImageColor = async (event: Event) => {
@@ -136,6 +146,10 @@ const linkClasses = computed(() => {
         'transition duration-50 ease-in-out',
         props.class
     );
+});
+
+onMounted(() => {
+    console.log('Link component mounted');
 });
 </script>
 
