@@ -68,11 +68,9 @@ watch(
                 <NuxtImg
                     v-if="setup.images.length"
                     :src="
-                        setup.images[0]?.name
-                            ? useGetImage(setup.images[0].name, {
-                                  prefix: 'setup',
-                              })
-                            : ''
+                        useGetImage(setup.images[0]?.name, {
+                            prefix: 'setup',
+                        })
                     "
                     class="max-h-64 rounded-lg"
                 />

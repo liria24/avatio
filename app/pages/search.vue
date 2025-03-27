@@ -148,7 +148,7 @@ useOGP({
                 <NuxtLink
                     v-for="i in popularAvatars"
                     :key="useId()"
-                    :to="`/search?item=${i.id}`"
+                    :to="{ name: 'search', query: { item: i.id } }"
                     :aria-label="i.name"
                     class="group relative size-32 rounded-lg overflow-hidden"
                 >

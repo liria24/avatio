@@ -93,7 +93,10 @@ const {
                     class="p-2 rounded-lg flex flex-col gap-1.5 ring-1 ring-zinc-300 dark:ring-zinc-700"
                 >
                     <NuxtLink
-                        :to="`/@${coAuthor.id}`"
+                        :to="{
+                            name: '@id',
+                            params: { id: coAuthor.id },
+                        }"
                         class="flex flex-row gap-2 items-center"
                     >
                         <UiAvatar
