@@ -72,12 +72,9 @@ onMounted(async () => {
 
         <template v-if="route.path !== '/login'">
             <ClientOnly>
-                <UiTooltip v-if="user" :text="userProfile.name ?? ''">
-                    <NuxtLink
-                        id="user"
-                        tabindex="0"
-                        :to="`/@${user?.id}`"
-                        class="hidden sm:flex select-none rounded-full items-center outline-4 outline-transparent hover:outline-zinc-300 hover:dark:outline-zinc-600 transition-all ease-in-out duration-100"
+                <PopupMe v-if="user">
+                    <div
+                        class="hidden sm:flex select-none rounded-full items-center outline-4 outline-transparent hover:outline-zinc-300 hover:dark:outline-zinc-600 transition-all ease-in-out duration-100 cursor-pointer"
                     >
                         <UiAvatar
                             :url="
@@ -88,8 +85,8 @@ onMounted(async () => {
                             :alt="userProfile.name ?? ''"
                             class="size-8"
                         />
-                    </NuxtLink>
-                </UiTooltip>
+                    </div>
+                </PopupMe>
 
                 <Button
                     v-else
