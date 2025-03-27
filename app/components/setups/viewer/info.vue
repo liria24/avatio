@@ -33,6 +33,7 @@ const {
                     <UiAvatar
                         :url="useGetImage(author.avatar, { prefix: 'avatar' })"
                         :alt="author.name"
+                        class="size-9"
                     />
                     <p
                         class="pl-1 pb-0.5 text-left font-semibold text-zinc-800 dark:text-zinc-200"
@@ -102,6 +103,7 @@ const {
                                 })
                             "
                             :alt="coAuthor.name"
+                            class="size-9"
                         />
                         <p
                             class="pl-1 text-black dark:text-white pb-0.5 text-left font-normal"

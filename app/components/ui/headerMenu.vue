@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 const route = useRoute();
 const user = useSupabaseUser();
-const client = useSupabaseClient();
+const client = useSupabaseClient<Database>();
 
 const userRefresh = async () => {
     if (!user.value) return (userProfile.value.avatar = null);
@@ -9,15 +9,14 @@ const userRefresh = async () => {
     try {
         const { data } = await client
             .from('users')
-            .select('id, name, avatar, badges:user_badges(name)')
+            .select('id, name, avatar, badges:user_badges(name, created_at)')
             .eq('id', user.value.id)
             .maybeSingle();
 
         userProfile.value.id = data?.id ?? null;
         userProfile.value.name = data?.name ?? null;
         userProfile.value.avatar = data?.avatar ?? null;
-        userProfile.value.badges =
-            data?.badges.map((badge) => badge.name) ?? [];
+        userProfile.value.badges = data?.badges ?? [];
     } catch {
         userProfile.value.id = null;
         userProfile.value.name = null;
@@ -87,6 +86,7 @@ onMounted(async () => {
                                 })
                             "
                             :alt="userProfile.name ?? ''"
+                            class="size-8"
                         />
                     </NuxtLink>
                 </UiTooltip>
@@ -143,6 +143,7 @@ onMounted(async () => {
                                         })
                                     "
                                     :alt="userProfile.name ?? ''"
+                                    class="size-8"
                                 />
                                 <span>{{ userProfile.name }}</span>
                             </Button>

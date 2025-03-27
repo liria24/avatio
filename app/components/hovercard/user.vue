@@ -16,13 +16,7 @@ const props = defineProps<Props>();
                 class="flex items-center gap-3"
             >
                 <UiAvatar
-                    :url="
-                        props.user.avatar
-                            ? useGetImage(props.user.avatar, {
-                                  prefix: 'avatar',
-                              })
-                            : ''
-                    "
+                    :url="useGetImage(props.user.avatar, { prefix: 'avatar' })"
                     :alt="props.user.name"
                     :icon-size="18"
                     class="size-10"

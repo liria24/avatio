@@ -22,6 +22,7 @@ const note = defineModel<string>('note', {
             <UiAvatar
                 :url="useGetImage(props.avatar, { prefix: 'avatar' })"
                 alt="co-author"
+                class="size-9"
             />
             <span class="grow text-sm leading-none">{{ props.name }}</span>
             <Button variant="flat" class="p-2" @click="emit('remove')">
