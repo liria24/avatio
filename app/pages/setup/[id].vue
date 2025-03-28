@@ -47,7 +47,12 @@ onMounted(async () => {
 
 <template>
     <div v-if="data" class="flex flex-col gap-5">
-        <UiBreadcrumb :items="[{ text: data.name }]" />
+        <UiBreadcrumb
+            :items="[
+                { text: data.author.name, href: `/@${data.author.id}` },
+                { text: data.name },
+            ]"
+        />
 
         <SetupsViewer
             :id="id"
