@@ -152,6 +152,7 @@ useOGP({ title: 'セットアップ作成' });
 
         <SetupsEditPreview
             v-model:vis="modalPreview"
+            :created-at="new Date().toISOString()"
             :title="title"
             :description="description"
             :tags="tags"

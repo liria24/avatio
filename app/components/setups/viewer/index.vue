@@ -45,7 +45,7 @@ const categories: Record<string, { label: string; icon: string }> =
                     {{ useSentence(title) }}
                 </h1>
                 <div class="w-full flex items-center gap-3 justify-between">
-                    <div class="ml-1 flex gap-1.5 items-center">
+                    <div class="ml-0.5 my-2 flex gap-1.5 items-center">
                         <Icon
                             name="lucide:calendar"
                             size="16"

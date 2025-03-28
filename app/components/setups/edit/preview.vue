@@ -4,8 +4,9 @@ const vis = defineModel<boolean>('vis', {
     required: true,
 });
 
-const { title, description, tags, coAuthors, unity, image, items } =
+const { createdAt, title, description, tags, coAuthors, unity, image, items } =
     defineProps<{
+        createdAt?: string;
         title: string;
         description: string;
         tags: string[];
@@ -25,6 +26,7 @@ const imageObjectUrl = computed(() => {
     <Modal v-model="vis" class="max-w-4xl">
         <SetupsViewer
             preview
+            :created-at="createdAt"
             :title="title"
             :description="description"
             :tags="tags"

@@ -35,12 +35,16 @@ const {
                         :alt="author.name"
                         class="size-9"
                     />
-                    <p
-                        class="pl-1 pb-0.5 text-left font-semibold text-zinc-800 dark:text-zinc-200"
+                    <div
+                        class="pl-1 flex flex-wrap gap-x-1 gap-y-0.5 items-center"
                     >
-                        {{ author.name }}
-                    </p>
-                    <BadgeUser :badges="author.badges" size="sm" />
+                        <p
+                            class="pb-0.5 text-left font-semibold text-zinc-800 dark:text-zinc-200"
+                        >
+                            {{ author.name }}
+                        </p>
+                        <BadgeUser :badges="author.badges" size="sm" />
+                    </div>
                 </NuxtLink>
             </div>
         </div>
