@@ -10,7 +10,10 @@ const excludePath = ['/setup/compose'];
                 <LogoAvatio class="w-24 sm:w-32" aria-label="Avatio" />
             </NuxtLink>
 
-            <BannerHeader v-if="!excludePath.includes(route.path)" />
+            <BannerHeader
+                v-if="!excludePath.includes(route.path)"
+                class="hidden sm:flex"
+            />
         </div>
         <UiHeaderMenu />
     </header>

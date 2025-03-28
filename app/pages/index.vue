@@ -16,7 +16,9 @@ useOGP({
 
 <template>
     <div class="w-full flex flex-col gap-6">
-        <Hero v-if="!user" />
+        <BannerHeader class="flex sm:hidden" />
+
+        <Hero v-if="!user" class="sm:mt-12 sm:mb-6" />
 
         <div v-if="user" class="flex flex-col items-start gap-5 w-full">
             <UiTitle label="ホーム" size="lg" />
