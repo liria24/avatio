@@ -1,16 +1,17 @@
 <script lang="ts" setup></script>
 
 <template>
-    <Popup>
+    <Popup class="p-1 gap-1">
         <template #trigger>
             <slot />
         </template>
 
         <template #content>
-            <NuxtLink
+            <Button
                 v-if="userProfile?.id"
                 :to="{ name: '@id', params: { id: userProfile.id } }"
-                class="flex items-center gap-3"
+                variant="flat"
+                class="py-2"
             >
                 <UiAvatar
                     :url="
@@ -21,14 +22,36 @@
                     :alt="userProfile.name ?? ''"
                     class="size-8"
                 />
-                <div class="flex flex-col gap-1.5">
-                    <span
-                        class="text-sm font-semibold leading-none text-zinc-700 dark:text-zinc-300"
-                    >
-                        {{ userProfile.name }}
-                    </span>
-                </div>
-            </NuxtLink>
+                <span
+                    class="text-sm font-semibold leading-none text-zinc-700 dark:text-zinc-300"
+                >
+                    {{ userProfile.name }}
+                </span>
+            </Button>
+            <Button :to="{ name: 'settings' }" variant="flat" class="py-2">
+                <Icon
+                    name="lucide:bolt"
+                    :size="20"
+                    class="text-zinc-700 dark:text-zinc-300"
+                />
+                <span
+                    class="text-sm font-semibold leading-none text-zinc-700 dark:text-zinc-300"
+                >
+                    設定
+                </span>
+            </Button>
+            <Button variant="flat" class="py-2" @click="useSignOut">
+                <Icon
+                    name="lucide:log-out"
+                    :size="20"
+                    class="text-zinc-700 dark:text-zinc-300"
+                />
+                <span
+                    class="text-sm font-semibold leading-none text-zinc-700 dark:text-zinc-300"
+                >
+                    ログアウト
+                </span>
+            </Button>
         </template>
     </Popup>
 </template>
