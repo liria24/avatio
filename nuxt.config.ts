@@ -39,7 +39,7 @@ export default defineNuxtConfig({
         public: { r2: { domain: '' } },
         turnstile: { siteKey: '', secretKey: '' },
         r2: { endpoint: '', accessKey: '', secretKey: '' },
-        openai: { apiKey: '' },
+        // openai: { apiKey: '' },
     },
     app: {
         head: {
@@ -98,26 +98,6 @@ export default defineNuxtConfig({
             's2.booth.pm', // booth
             import.meta.env.NUXT_PUBLIC_R2_DOMAIN.replace('https://', ''), // R2
         ],
-        presets: {
-            thumbnail: {
-                modifiers: {
-                    format: 'webp',
-                    sizes: '300px',
-                    quality: 85,
-                    loading: 'lazy',
-                    fit: 'cover',
-                },
-            },
-            avatarThumbnail: {
-                modifiers: {
-                    format: 'webp',
-                    sizes: '80px',
-                    quality: 80,
-                    loading: 'lazy',
-                    fit: 'cover',
-                },
-            },
-        },
     },
     robots: {
         allow: ['Twitterbot', 'facebookexternalhit'],

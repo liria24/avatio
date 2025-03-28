@@ -58,11 +58,7 @@ if (userData)
                 <div class="flex gap-6 items-center">
                     <UiAvatar
                         :url="
-                            userData.avatar
-                                ? useGetImage(userData.avatar, {
-                                      prefix: 'avatar',
-                                  })
-                                : ''
+                            useGetImage(userData.avatar, { prefix: 'avatar' })
                         "
                         :alt="userData.name"
                         :icon-size="36"

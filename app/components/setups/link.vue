@@ -6,11 +6,11 @@ interface Props {
     setup: SetupClient;
     class?: string;
 }
-const props = defineProps<Props>();
+const { noUser, setup, class: propClass } = defineProps<Props>();
 const emit = defineEmits(['click']);
 const colorMode = useColorMode();
 
-const date = new Date(props.setup.created_at);
+const date = new Date(setup.created_at);
 const dateLocale = computed(() => {
     return date.toLocaleString('ja-JP', {
         year: 'numeric',
@@ -20,20 +20,17 @@ const dateLocale = computed(() => {
 });
 
 const hasValidAvatar = computed(() => {
-    return (
-        !!props.setup.items.avatar?.length &&
-        !props.setup.items.avatar[0]?.outdated
-    );
+    return !!setup.items.avatar?.length && !setup.items.avatar[0]?.outdated;
 });
 
 const avatarName = computed(() => {
     if (!hasValidAvatar.value) return '不明なベースアバター';
-    const avatar = props.setup.items.avatar?.[0];
+    const avatar = setup.items.avatar?.[0];
     return avatar ? useAvatarName(avatar.name) : '不明なベースアバター';
 });
 
 const hasSetupImages = computed(() => {
-    return !!props.setup.images?.length && !!props.setup.images[0];
+    return !!setup.images?.length && !!setup.images[0];
 });
 
 const dominantColor = ref('');
@@ -144,19 +141,15 @@ const linkClasses = computed(() => {
             : 'hover:ring-2 hover:ring-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800',
         'hover:shadow-xl shadow-black/10 dark:shadow-white/10',
         'transition duration-50 ease-in-out',
-        props.class
+        propClass
     );
-});
-
-onMounted(() => {
-    console.log('Link component mounted');
 });
 </script>
 
 <template>
     <NuxtLink
         tabindex="0"
-        :to="{ name: 'setup-id', params: { id: props.setup.id } }"
+        :to="{ name: 'setup-id', params: { id: setup.id } }"
         :class="linkClasses"
         :style="elementStyle"
         @click="emit('click')"
@@ -164,21 +157,22 @@ onMounted(() => {
         <div v-if="hasSetupImages" class="relative w-full p-1.5">
             <NuxtImg
                 :src="
-                    useGetImage(props.setup.images[0]?.name, {
+                    useGetImage(setup.images[0]?.name, {
                         prefix: 'setup',
                     })
                 "
-                :alt="props.setup.name"
-                preset="thumbnail"
+                :alt="setup.name"
                 format="webp"
-                :width="props.setup.images[0]?.width ?? 640"
-                :height="props.setup.images[0]?.height ?? 360"
+                :width="setup.images[0]?.width ?? 640"
+                :height="setup.images[0]?.height ?? 360"
                 :placeholder="[
-                    props.setup.images[0]?.width ?? 192,
-                    props.setup.images[0]?.height ?? 108,
+                    setup.images[0]?.width ?? 192,
+                    setup.images[0]?.height ?? 108,
                     75,
                     5,
                 ]"
+                loading="lazy"
+                fit="cover"
                 class="size-full max-h-[420px] rounded-lg object-cover"
                 @load="extractImageColor"
             />
@@ -194,7 +188,7 @@ onMounted(() => {
                 <span
                     class="text-sm md:text-md font-medium break-all line-clamp-2 text-white"
                 >
-                    {{ props.setup.name }}
+                    {{ setup.name }}
                 </span>
 
                 <div class="flex items-center gap-1">
@@ -218,10 +212,14 @@ onMounted(() => {
                 :text="avatarName"
             >
                 <NuxtImg
-                    :src="props.setup.items.avatar?.[0]?.thumbnail"
-                    :alt="props.setup.name"
-                    preset="avatarThumbnail"
+                    :src="setup.items.avatar?.[0]?.thumbnail"
+                    :alt="setup.name"
                     :placeholder="[30, 30, 75, 5]"
+                    format="webp"
+                    :width="80"
+                    :height="80"
+                    loading="lazy"
+                    fit="cover"
                     class="h-14 md:h-20 my-1.5 ml-1.5 rounded-lg overflow-clip shrink-0 object-cover"
                 />
             </UiTooltip>
@@ -240,20 +238,18 @@ onMounted(() => {
                 <span
                     class="text-sm md:text-md font-medium text-zinc-700 dark:text-zinc-200 break-keep line-clamp-2"
                 >
-                    {{ useSentence(props.setup.name) }}
+                    {{ useSentence(setup.name) }}
                 </span>
 
                 <div class="flex items-center gap-2">
-                    <HovercardUser v-if="!noUser" :user="props.setup.author">
+                    <HovercardUser v-if="!noUser" :user="setup.author">
                         <UiAvatar
                             :url="
-                                props.setup.author.avatar
-                                    ? useGetImage(props.setup.author.avatar, {
-                                          prefix: 'avatar',
-                                      })
-                                    : ''
+                                useGetImage(setup.author.avatar, {
+                                    prefix: 'avatar',
+                                })
                             "
-                            :alt="props.setup.author.name ?? ''"
+                            :alt="setup.author.name ?? ''"
                             aria-hidden="true"
                             :icon-size="12"
                             class="size-5"
@@ -280,16 +276,14 @@ onMounted(() => {
                         {{ useDateElapsed(date) }}
                     </p>
                 </UiTooltip>
-                <HovercardUser v-if="!noUser" :user="props.setup.author">
+                <HovercardUser v-if="!noUser" :user="setup.author">
                     <UiAvatar
                         :url="
-                            props.setup.author.avatar
-                                ? useGetImage(props.setup.author.avatar, {
-                                      prefix: 'avatar',
-                                  })
-                                : ''
+                            useGetImage(setup.author.avatar, {
+                                prefix: 'avatar',
+                            })
                         "
-                        :alt="props.setup.author.name ?? ''"
+                        :alt="setup.author.name ?? ''"
                         aria-hidden="true"
                         :icon-size="12"
                         class="size-5"

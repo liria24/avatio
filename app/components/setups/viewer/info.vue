@@ -33,6 +33,7 @@ const {
                     <UiAvatar
                         :url="useGetImage(author.avatar, { prefix: 'avatar' })"
                         :alt="author.name"
+                        class="size-9"
                     />
                     <p
                         class="pl-1 pb-0.5 text-left font-semibold text-zinc-800 dark:text-zinc-200"
@@ -92,7 +93,10 @@ const {
                     class="p-2 rounded-lg flex flex-col gap-1.5 ring-1 ring-zinc-300 dark:ring-zinc-700"
                 >
                     <NuxtLink
-                        :to="`/@${coAuthor.id}`"
+                        :to="{
+                            name: '@id',
+                            params: { id: coAuthor.id },
+                        }"
                         class="flex flex-row gap-2 items-center"
                     >
                         <UiAvatar
@@ -102,6 +106,7 @@ const {
                                 })
                             "
                             :alt="coAuthor.name"
+                            class="size-9"
                         />
                         <p
                             class="pl-1 text-black dark:text-white pb-0.5 text-left font-normal"

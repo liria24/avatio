@@ -100,6 +100,7 @@ watch(input, handleInputChange);
                                     useGetImage(i.avatar, { prefix: 'avatar' })
                                 "
                                 :alt="i.name"
+                                class="size-9"
                             />
                             <span>{{ i.name }}</span>
                         </Button>

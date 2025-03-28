@@ -13,7 +13,7 @@ const { data: release } = await client
 <template>
     <NuxtLink
         v-if="release"
-        to="/release"
+        :to="{ name: 'release' }"
         tabindex="0"
         :class="[
             'cursor-pointer shrink px-3.5 py-3 rounded-xl',

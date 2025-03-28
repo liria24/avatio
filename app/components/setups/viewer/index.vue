@@ -37,25 +37,35 @@ const categories: Record<string, { label: string; icon: string }> =
 
 <template>
     <div class="relative w-full flex flex-col xl:flex-row items-start gap-8">
-        <div class="w-full flex flex-col items-center gap-6">
-            <div class="w-full flex flex-col gap-4 items-start">
+        <div class="w-full flex flex-col items-center gap-4">
+            <div class="w-full flex flex-col gap-1 items-start">
                 <h1
                     class="text-3xl font-bold break-keep [overflow-wrap:anywhere;] text-black dark:text-white"
                 >
                     {{ useSentence(title) }}
                 </h1>
-                <div class="ml-1 flex gap-1.5 items-center">
-                    <Icon
-                        name="lucide:calendar"
-                        size="16"
-                        class="text-zinc-500 dark:text-zinc-400"
+                <div class="w-full flex items-center gap-3 justify-between">
+                    <div class="ml-1 flex gap-1.5 items-center">
+                        <Icon
+                            name="lucide:calendar"
+                            size="16"
+                            class="text-zinc-500 dark:text-zinc-400"
+                        />
+                        <p
+                            v-if="createdAt?.length"
+                            class="text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap leading-none"
+                        >
+                            {{ useLocaledDate(new Date(createdAt)) }}
+                        </p>
+                    </div>
+                    <SetupsViewerOperate
+                        :preview="preview"
+                        :id="id"
+                        :title="title"
+                        :description="description"
+                        :author="author"
+                        @login="emit('login')"
                     />
-                    <p
-                        v-if="createdAt?.length"
-                        class="text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap leading-none"
-                    >
-                        {{ useLocaledDate(new Date(createdAt)) }}
-                    </p>
                 </div>
             </div>
 
@@ -81,15 +91,6 @@ const categories: Record<string, { label: string; icon: string }> =
             />
 
             <div class="xl:hidden w-full mt-3 flex flex-col gap-5">
-                <SetupsViewerOperate
-                    :preview="preview"
-                    :id="id"
-                    :title="title"
-                    :description="description"
-                    :author="author"
-                    @login="emit('login')"
-                />
-
                 <SetupsViewerInfo
                     :preview="preview"
                     :id="id"
@@ -129,14 +130,6 @@ const categories: Record<string, { label: string; icon: string }> =
         </div>
 
         <div class="w-full h-full xl:w-[440px] hidden xl:flex flex-col">
-            <SetupsViewerOperate
-                :preview="preview"
-                :id="id"
-                :title="title"
-                :description="description"
-                :author="author"
-                @login="emit('login')"
-            />
             <SetupsViewerInfo
                 :preview="preview"
                 :id="id"
@@ -148,7 +141,7 @@ const categories: Record<string, { label: string; icon: string }> =
                 :unity="unity"
                 :author="author"
                 @login="emit('login')"
-                class="sticky top-0 pt-6"
+                class="sticky top-3 pt-3"
             />
         </div>
     </div>

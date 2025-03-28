@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 const route = useRoute();
 const user = useSupabaseUser();
-const client = useSupabaseClient();
+const client = useSupabaseClient<Database>();
 
 const userRefresh = async () => {
     if (!user.value) return (userProfile.value.avatar = null);
@@ -9,15 +9,14 @@ const userRefresh = async () => {
     try {
         const { data } = await client
             .from('users')
-            .select('id, name, avatar, badges:user_badges(name)')
+            .select('id, name, avatar, badges:user_badges(name, created_at)')
             .eq('id', user.value.id)
             .maybeSingle();
 
         userProfile.value.id = data?.id ?? null;
         userProfile.value.name = data?.name ?? null;
         userProfile.value.avatar = data?.avatar ?? null;
-        userProfile.value.badges =
-            data?.badges.map((badge) => badge.name) ?? [];
+        userProfile.value.badges = data?.badges ?? [];
     } catch {
         userProfile.value.id = null;
         userProfile.value.name = null;
@@ -73,12 +72,9 @@ onMounted(async () => {
 
         <template v-if="route.path !== '/login'">
             <ClientOnly>
-                <UiTooltip v-if="user" :text="userProfile.name ?? ''">
-                    <NuxtLink
-                        id="user"
-                        tabindex="0"
-                        :to="`/@${user?.id}`"
-                        class="hidden sm:flex select-none rounded-full items-center outline-4 outline-transparent hover:outline-zinc-300 hover:dark:outline-zinc-600 transition-all ease-in-out duration-100"
+                <PopupMe v-if="user">
+                    <div
+                        class="hidden sm:flex select-none rounded-full items-center outline-4 outline-transparent hover:outline-zinc-300 hover:dark:outline-zinc-600 transition-all ease-in-out duration-100 cursor-pointer"
                     >
                         <UiAvatar
                             :url="
@@ -87,9 +83,10 @@ onMounted(async () => {
                                 })
                             "
                             :alt="userProfile.name ?? ''"
+                            class="size-8"
                         />
-                    </NuxtLink>
-                </UiTooltip>
+                    </div>
+                </PopupMe>
 
                 <Button
                     v-else
@@ -143,6 +140,7 @@ onMounted(async () => {
                                         })
                                     "
                                     :alt="userProfile.name ?? ''"
+                                    class="size-8"
                                 />
                                 <span>{{ userProfile.name }}</span>
                             </Button>

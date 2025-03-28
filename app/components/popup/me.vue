@@ -1,35 +1,34 @@
-<script lang="ts" setup>
-interface Props {
-    user: Author;
-}
-const { user } = defineProps<Props>();
-</script>
+<script lang="ts" setup></script>
 
 <template>
-    <Hovercard side="top" class="pl-3 pr-4 py-2.5">
+    <Popup>
         <template #trigger>
             <slot />
         </template>
+
         <template #content>
             <NuxtLink
-                :to="{ name: '@id', params: { id: user.id } }"
+                v-if="userProfile?.id"
+                :to="{ name: '@id', params: { id: userProfile.id } }"
                 class="flex items-center gap-3"
             >
                 <UiAvatar
-                    :url="useGetImage(user.avatar, { prefix: 'avatar' })"
-                    :alt="user.name"
-                    :icon-size="18"
-                    class="size-10"
+                    :url="
+                        useGetImage(userProfile.avatar, {
+                            prefix: 'avatar',
+                        })
+                    "
+                    :alt="userProfile.name ?? ''"
+                    class="size-8"
                 />
                 <div class="flex flex-col gap-1.5">
                     <span
                         class="text-sm font-semibold leading-none text-zinc-700 dark:text-zinc-300"
                     >
-                        {{ user.name }}
+                        {{ userProfile.name }}
                     </span>
-                    <BadgeUser :badges="user.badges" size="xs" />
                 </div>
             </NuxtLink>
         </template>
-    </Hovercard>
+    </Popup>
 </template>
