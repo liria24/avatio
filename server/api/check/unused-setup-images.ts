@@ -8,7 +8,12 @@ export default defineEventHandler(async (event) => {
 
     const supabase = await serverSupabaseClient<Database>(event);
 
-    const { data } = await supabase.from('setup_images').select('name');
+    const { data, error } = await supabase.from('setup_images').select('name');
+
+    if (error) {
+        console.error('Error fetching image from Supabase:', error);
+        return;
+    }
 
     if (!data) return null;
     const setupImages = data.map((i) => i.name);
@@ -22,11 +27,16 @@ export default defineEventHandler(async (event) => {
     );
 
     for (const image of unusedImages) {
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('setup_images')
             .select('name')
             .eq('name', image)
             .maybeSingle();
+
+        if (error) {
+            console.error('Error fetching image from Supabase:', error);
+            break;
+        }
 
         if (!data) {
             await storage.del(`setup:${image}`);
