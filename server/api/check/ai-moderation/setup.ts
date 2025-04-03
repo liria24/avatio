@@ -1,6 +1,6 @@
-import { generateObject } from 'ai';
-import { createOpenAI } from '@ai-sdk/openai';
-import { z } from 'zod';
+// import { generateObject } from 'ai';
+// import { createOpenAI } from '@ai-sdk/openai';
+// import { z } from 'zod';
 
 export default defineEventHandler(async (event) => {
     // 精度とコストに難があるためまだ運用しません
