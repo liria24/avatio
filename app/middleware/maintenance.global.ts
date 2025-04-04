@@ -7,11 +7,9 @@ export default defineNuxtRouteMiddleware(async (_to, _from) => {
         env = 'production';
     }
 
-    const isMaintenance = (
-        await $fetch(
-            `/api/edge-config/${env === 'development' ? 'isMaintenanceDev' : 'isMaintenance'}`
-        )
-    ).value;
+    const isMaintenance = await $fetch(
+        `/api/edge-config/${env === 'development' ? 'isMaintenanceDev' : 'isMaintenance'}`
+    );
 
     if (isMaintenance) {
         if (_to.path !== '/on-maintenance')

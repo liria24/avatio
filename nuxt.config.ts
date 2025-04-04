@@ -37,6 +37,7 @@ export default defineNuxtConfig({
     },
     runtimeConfig: {
         public: { r2: { domain: '' } },
+        adminKey: '',
         turnstile: { siteKey: '', secretKey: '' },
         r2: { endpoint: '', accessKey: '', secretKey: '' },
         // openai: { apiKey: '' },

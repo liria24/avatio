@@ -1,14 +1,12 @@
 export const useDeleteSetup = async (id: number) => {
-    const { error } = await $fetch<ApiResponse<{ id: number }>>('/api/setup', {
-        method: 'DELETE',
-        body: { id: id },
-    });
-
-    if (error)
-        return useToast().add(
-            'セットアップの削除に失敗しました',
-            `エラーコード : ${error.status}`
-        );
+    try {
+        await $fetch('/api/setup', {
+            method: 'DELETE',
+            body: { id: id },
+        });
+    } catch {
+        return useToast().add('セットアップの削除に失敗しました');
+    }
 
     useToast().add('セットアップを削除しました');
     navigateTo('/');

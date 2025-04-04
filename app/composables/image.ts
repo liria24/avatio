@@ -28,14 +28,7 @@ export const usePutImage = async (
     options: { resolution: number; size: number; prefix?: string }
 ) => {
     try {
-        const response = await $fetch<
-            ApiResponse<{
-                path: string;
-                prefix: string;
-                width?: number;
-                height?: number;
-            }>
-        >('/api/image', {
+        const response = await $fetch('/api/image', {
             method: 'PUT',
             body: {
                 image: await convertFileToBase64(file),
@@ -44,15 +37,11 @@ export const usePutImage = async (
                 prefix: options.prefix ?? '',
             },
         });
-        if (!response.data) {
-            console.error(response.error);
-            throw new Error();
-        }
         return {
-            name: response.data.path,
-            prefix: response.data.prefix,
-            width: response.data.width,
-            height: response.data.height,
+            name: response.path,
+            prefix: response.prefix,
+            width: response.width,
+            height: response.height,
         };
     } catch (error) {
         console.error('Failed to upload image:', error);

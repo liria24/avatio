@@ -50,21 +50,20 @@ const PublishSetup = async () => {
 
     if (await setupErrorCheck(data)) return (publishing.value = false);
 
-    type res = ApiResponse<{ id: number; image: string | null }>;
-    const response = await $fetch<res>('/api/setup', {
-        method: 'PUT',
-        body: data,
-    });
+    try {
+        const response = await $fetch('/api/setup', {
+            method: 'PUT',
+            body: data,
+        });
 
-    if (!response.data) {
-        publishing.value = false;
+        publishedSetupId.value = response.id;
+        skipRouterHook.value = true;
+        modalComplete.value = true;
+    } catch {
         return useToast().add('投稿に失敗しました');
+    } finally {
+        publishing.value = false;
     }
-
-    publishedSetupId.value = response.data.id;
-    publishing.value = false;
-    skipRouterHook.value = true;
-    modalComplete.value = true;
 };
 
 const reset = () => {

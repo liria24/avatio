@@ -138,8 +138,3 @@ export interface ErrorType {
     status: number;
     message: string;
 }
-
-export interface ApiResponse<Data> {
-    error: ErrorType | null;
-    data: Data | null;
-}

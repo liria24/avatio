@@ -6,28 +6,34 @@ interface RequestQuery {
     perPage: number;
 }
 
-export default defineEventHandler(
-    async (
-        event
-    ): Promise<ApiResponse<{ setups: SetupClient[]; hasMore: boolean }>> => {
-        try {
-            const user = await serverSupabaseUser(event);
-            if (!user) throw new Error();
-        } catch {
-            return {
-                error: { status: 403, message: 'Forbidden.' },
-                data: null,
-            };
-        }
+interface BookmarksResponse {
+    setups: SetupClient[];
+    hasMore: boolean;
+}
 
-        const query: RequestQuery = await getQuery(event);
+export default defineEventHandler(async (event): Promise<BookmarksResponse> => {
+    try {
+        const user = await serverSupabaseUser(event);
+        if (!user)
+            throw createError({
+                statusCode: 403,
+                message: 'Forbidden.',
+            });
+    } catch {
+        throw createError({
+            statusCode: 403,
+            message: 'Forbidden.',
+        });
+    }
 
-        const supabase = await serverSupabaseClient(event);
+    const query: RequestQuery = await getQuery(event);
 
-        const { data, count } = await supabase
-            .from('bookmarks')
-            .select(
-                `
+    const supabase = await serverSupabaseClient<Database>(event);
+
+    const { data, count } = await supabase
+        .from('bookmarks')
+        .select(
+            `
                 post(
                     id,
                     created_at,
@@ -89,33 +95,25 @@ export default defineEventHandler(
                     )
                 )
                 `,
-                { count: 'estimated' }
-            )
-            .range(
-                query.page * query.perPage,
-                query.page * query.perPage + (query.perPage - 1)
-            )
-            .order('created_at', { ascending: false })
-            .returns<{ post: SetupDB }[]>();
+            { count: 'estimated' }
+        )
+        .range(
+            query.page * query.perPage,
+            query.page * query.perPage + (query.perPage - 1)
+        )
+        .order('created_at', { ascending: false })
+        .overrideTypes<{ post: SetupDB }[]>();
 
-        if (!data || !count)
-            return {
-                data: null,
-                error: {
-                    status: 500,
-                    message: 'Failed to get setups.',
-                },
-            };
+    if (!data || !count)
+        throw createError({
+            statusCode: 500,
+            message: 'Failed to get setups.',
+        });
 
-        return {
-            data: {
-                setups: data
-                    .map((post) => post.post)
-                    .map((setup) => setupMoldingClient(setup)),
-                hasMore:
-                    count > query.page * query.perPage + (query.perPage - 1),
-            },
-            error: null,
-        };
-    }
-);
+    return {
+        setups: data
+            .map((post) => post.post)
+            .map((setup) => setupMoldingClient(setup)),
+        hasMore: count > query.page * query.perPage + (query.perPage - 1),
+    };
+});

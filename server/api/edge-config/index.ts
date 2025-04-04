@@ -3,11 +3,11 @@ import { getAll } from '@vercel/edge-config';
 export default defineEventHandler(async (_event) => {
     const value = await getAll();
 
-    if (!value) return { message: 'Not found', value: null, status: 404 };
+    if (!value)
+        throw createError({
+            statusCode: 404,
+            message: 'Edge Config not found',
+        });
 
-    return {
-        message: 'Success',
-        value: value,
-        status: 200,
-    };
+    return value;
 });

@@ -5,18 +5,20 @@ interface RequestQuery {
     perPage: number;
 }
 
-export default defineEventHandler(
-    async (
-        event
-    ): Promise<ApiResponse<{ setups: SetupClient[]; hasMore: boolean }>> => {
-        const query: RequestQuery = await getQuery(event);
+interface SetupsResponse {
+    setups: SetupClient[];
+    hasMore: boolean;
+}
 
-        const supabase = await serverSupabaseClient(event);
+export default defineEventHandler(async (event): Promise<SetupsResponse> => {
+    const query: RequestQuery = await getQuery(event);
 
-        const { data, count } = await supabase
-            .from('setups')
-            .select(
-                `
+    const supabase = await serverSupabaseClient<Database>(event);
+
+    const { data, count } = await supabase
+        .from('setups')
+        .select(
+            `
                 id,
                 created_at,
                 name,
@@ -77,31 +79,24 @@ export default defineEventHandler(
                     note
                 )
                 `,
-                { count: 'estimated' }
-            )
-            .range(
-                query.page * query.perPage,
-                query.page * query.perPage + (query.perPage - 1)
-            )
-            .order('created_at', { ascending: false })
-            .returns<SetupDB[]>();
+            { count: 'estimated' }
+        )
+        .range(
+            query.page * query.perPage,
+            query.page * query.perPage + (query.perPage - 1)
+        )
+        .order('created_at', { ascending: false })
+        .overrideTypes<SetupDB[]>();
 
-        if (!data || !count)
-            return {
-                data: null,
-                error: {
-                    status: 500,
-                    message: 'Failed to get setups.',
-                },
-            };
+    if (!data || !count)
+        throw createError({
+            statusCode: 500,
+            message: 'Failed to get setups.',
+        });
 
-        return {
-            data: {
-                setups: data.map((setup) => setupMoldingClient(setup)),
-                hasMore:
-                    count > query.page * query.perPage + (query.perPage - 1),
-            },
-            error: null,
-        };
-    }
-);
+    // 成功時は直接データを返す
+    return {
+        setups: data.map((setup) => setupMoldingClient(setup)),
+        hasMore: count > query.page * query.perPage + (query.perPage - 1),
+    };
+});

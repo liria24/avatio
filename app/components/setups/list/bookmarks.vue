@@ -8,27 +8,30 @@ const loading = ref(true);
 const get = async () => {
     loading.value = true;
 
-    const { data } = await $fetch<
-        ApiResponse<{ setups: SetupClient[]; hasMore: boolean }>
-    >('/api/setups/bookmarks', {
-        method: 'GET',
-        query: {
-            page: page.value,
-            perPage: setupsPerPage,
-        },
-    });
-    if (!data) return (loading.value = false);
+    try {
+        const response = await $fetch('/api/setups/bookmarks', {
+            method: 'GET',
+            query: {
+                page: page.value,
+                perPage: setupsPerPage,
+            },
+        });
 
-    setups.value = [...setups.value, ...data.setups];
-    page.value++;
-    hasMore.value = data.hasMore;
-
-    loading.value = false;
+        setups.value = [...setups.value, ...response.setups];
+        page.value++;
+        hasMore.value = response.hasMore;
+    } catch (e) {
+        console.error('セットアップの取得に失敗しました:', e);
+    } finally {
+        loading.value = false;
+    }
 };
 
-onMounted(async () => {
+try {
     await get();
-});
+} catch (e) {
+    console.error('初期ロード失敗:', e);
+}
 </script>
 
 <template>

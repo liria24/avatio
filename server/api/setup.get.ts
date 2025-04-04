@@ -4,16 +4,15 @@ export interface RequestQuery {
     id: number;
 }
 
-export default defineEventHandler(
-    async (event): Promise<ApiResponse<SetupClient>> => {
-        const query: RequestQuery = await getQuery(event);
+export default defineEventHandler(async (event): Promise<SetupClient> => {
+    const query: RequestQuery = await getQuery(event);
 
-        const supabase = await serverSupabaseClient<Database>(event);
+    const supabase = await serverSupabaseClient<Database>(event);
 
-        const { data } = await supabase
-            .from('setups')
-            .select(
-                `
+    const { data } = await supabase
+        .from('setups')
+        .select(
+            `
                 id,
                 created_at,
                 name,
@@ -74,24 +73,15 @@ export default defineEventHandler(
                     note
                 )
                 `
-            )
-            .eq('id', Number(query.id))
-            .maybeSingle<SetupDB>();
+        )
+        .eq('id', Number(query.id))
+        .maybeSingle<SetupDB>();
 
-        if (!data)
-            return {
-                data: null,
-                error: {
-                    status: 404,
-                    message: 'Failed to get setup.',
-                },
-            };
+    if (!data)
+        throw createError({
+            statusCode: 404,
+            message: 'Setup not found.',
+        });
 
-        const clientData = setupMoldingClient(data);
-
-        return {
-            data: clientData,
-            error: null,
-        };
-    }
-);
+    return setupMoldingClient(data);
+});

@@ -28,7 +28,12 @@ const addItem = async (id: number) => {
 
     if (!data) return useToast().add('アイテムの追加に失敗しました。');
 
-    const d: SetupItem = { ...data, note: '', unsupported: false };
+    const d: SetupItem = {
+        ...data,
+        shapekeys: [],
+        note: '',
+        unsupported: false,
+    };
 
     const categoryKey = data.category in items.value ? data.category : 'other';
     const target = items.value[categoryKey];

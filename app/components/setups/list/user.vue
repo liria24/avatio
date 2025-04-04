@@ -12,28 +12,37 @@ const loading = ref(true);
 
 const get = async () => {
     loading.value = true;
+
     if (!props.userId) return (loading.value = false);
 
-    const { data } = await $fetch<
-        ApiResponse<{ setups: SetupClient[]; hasMore: boolean }>
-    >('/api/setups/user', {
-        method: 'GET',
-        query: {
-            userId: props.userId,
-            page: page.value,
-            perPage: setupsPerPage,
-        },
-    });
-    if (!data) return (loading.value = false);
+    try {
+        const response = await $fetch('/api/setups/user', {
+            method: 'GET',
+            query: {
+                userId: props.userId,
+                page: page.value,
+                perPage: setupsPerPage,
+            },
+        });
 
-    setups.value = [...setups.value, ...data.setups];
-    page.value++;
-    hasMore.value = data.hasMore;
+        if (!response) return (loading.value = false);
 
-    loading.value = false;
+        setups.value = [...setups.value, ...response.setups];
+        page.value++;
+        hasMore.value = response.hasMore;
+    } catch (e) {
+        console.error('ユーザーセットアップの取得に失敗しました:', e);
+    } finally {
+        loading.value = false;
+    }
 };
-
-await get();
+// 初期ロード
+try {
+    await get();
+} catch (e) {
+    console.error('初期ロード失敗:', e);
+    loading.value = false;
+}
 </script>
 
 <template>

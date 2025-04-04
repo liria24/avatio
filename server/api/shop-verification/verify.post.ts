@@ -5,11 +5,10 @@ import {
 } from '#supabase/server';
 import type { H3Event } from 'h3';
 
-// レスポンス型の定義
-interface VerificationResponse {
+// 成功時のレスポンス型定義
+interface VerificationResult {
     url: string;
     verified: boolean;
-    error: boolean;
     message?: string;
 }
 
@@ -35,21 +34,28 @@ interface ShopInfo {
  * 8. バッジの付与
  */
 export default defineEventHandler(
-    async (event): Promise<VerificationResponse> => {
+    async (event): Promise<VerificationResult> => {
         // リクエストボディからURLを取得
         const body = await readBody<{ url: string }>(event);
         const { url } = body;
 
-        if (!url) return createErrorResponse(url, 'URLが必要です');
+        if (!url)
+            throw createError({
+                statusCode: 400,
+                message: 'URLが必要です',
+            });
 
         // ステップ1: ユーザーログインの確認
         const user = await serverSupabaseUser(event);
         if (!user) {
             console.error('Error: Needs login');
-            return createErrorResponse(url, 'ログインが必要です');
+            throw createError({
+                statusCode: 403,
+                message: 'ログインが必要です',
+            });
         }
 
-        const supabase = await serverSupabaseServiceRole(event);
+        const supabase = await serverSupabaseServiceRole<Database>(event);
 
         try {
             // ステップ2: URLのバリデーションと解析
@@ -57,22 +63,28 @@ export default defineEventHandler(
             try {
                 destinationUrl = new URL(url.toString());
                 // BOOTHのURLのみ許可
-                if (!destinationUrl.hostname.endsWith('.booth.pm')) {
-                    throw new Error('BOOTHのURLのみ認証できます');
-                }
+                if (!destinationUrl.hostname.endsWith('.booth.pm'))
+                    throw createError({
+                        statusCode: 400,
+                        message: 'BOOTHのURLのみ認証できます',
+                    });
             } catch (e) {
-                throw new Error(
-                    '不正なURL形式です: ' +
-                        (e instanceof Error ? e.message : '')
-                );
+                throw createError({
+                    statusCode: 400,
+                    message:
+                        '不正なURL形式です: ' +
+                        (e instanceof Error ? e.message : ''),
+                });
             }
 
             const baseUrl = `${destinationUrl.origin}${destinationUrl.pathname}`;
             const subDomain = boothSubDomain(url.toString());
 
-            if (!subDomain || subDomain.length < 2) {
-                throw new Error('有効なBOOTHショップURLではありません');
-            }
+            if (!subDomain || subDomain.length < 2)
+                throw createError({
+                    statusCode: 400,
+                    message: '有効なBOOTHショップURLではありません',
+                });
 
             // ステップ3: 既存の認証チェック
             const { data: existingUserShop, error: selectError } =
@@ -84,15 +96,18 @@ export default defineEventHandler(
 
             if (selectError) {
                 console.error('Error selecting user shop:', selectError);
-                throw new Error('ユーザーショップ情報の取得に失敗しました');
+                throw createError({
+                    statusCode: 500,
+                    message: 'ユーザーショップ情報の取得に失敗しました',
+                });
             }
 
             if (existingUserShop?.length) {
                 console.log('Already verified', subDomain, user.id);
+                // 既に認証済みの場合は成功として200を返す
                 return {
                     url,
                     verified: true,
-                    error: false,
                     message: '既に認証済みです',
                 };
             }
@@ -107,39 +122,29 @@ export default defineEventHandler(
             await performDatabaseOperations(event, user.id, shop);
 
             // 認証成功
+            setResponseStatus(event, 201); // 新しいリソース作成のため201
             return {
                 url,
                 verified: true,
-                error: false,
                 message: 'ショップの認証に成功しました',
             };
         } catch (error) {
-            // エラーハンドリング
             console.error('Error on verification:', error);
-            return createErrorResponse(
-                url,
-                error instanceof Error
-                    ? error.message
-                    : '認証処理中にエラーが発生しました'
-            );
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            if (error && (error as any).statusCode) throw error;
+
+            // その他のエラーは500としてスロー
+            throw createError({
+                statusCode: 500,
+                message:
+                    error instanceof Error
+                        ? error.message
+                        : '認証処理中にエラーが発生しました',
+            });
         }
     }
 );
-
-/**
- * エラーレスポンスを生成する関数
- */
-const createErrorResponse = (
-    url: string,
-    message: string
-): VerificationResponse => {
-    return {
-        url,
-        verified: false,
-        error: true,
-        message,
-    };
-};
 
 /**
  * ショップ情報を取得して解析する関数
@@ -156,7 +161,10 @@ const fetchAndParseShopInfo = async (
         });
     } catch (error) {
         console.error('Failed to fetch shop URL:', error);
-        throw new Error('ショップURLへのアクセスに失敗しました');
+        throw createError({
+            statusCode: 503,
+            message: 'ショップURLへのアクセスに失敗しました',
+        });
     }
 
     const $ = load(html);
@@ -219,7 +227,7 @@ const verifyAuthenticationCode = async (
     userId: string,
     shop: ShopInfo
 ): Promise<void> => {
-    const supabase = await serverSupabaseServiceRole(event);
+    const supabase = await serverSupabaseServiceRole<Database>(event);
 
     // 5.1: データベースから認証コードを取得
     const { data: codeData, error: codeError } = await supabase
@@ -230,11 +238,17 @@ const verifyAuthenticationCode = async (
 
     if (codeError) {
         console.error('Error fetching verification code:', codeError);
-        throw new Error('認証コードの取得に失敗しました');
+        throw createError({
+            statusCode: 500,
+            message: '認証コードの取得に失敗しました',
+        });
     }
 
     if (!codeData?.code)
-        throw new Error('ログインユーザーの認証コードが見つかりません');
+        throw createError({
+            statusCode: 400,
+            message: 'ログインユーザーの認証コードが見つかりません',
+        });
 
     // 5.2: 認証コードの有効期限チェック (10分以内)
     const TEN_MINUTES_MS = 1000 * 60 * 10;
@@ -244,17 +258,25 @@ const verifyAuthenticationCode = async (
     if (new Date() > codeExpiresAt) {
         await supabase.from('shop_verification').delete().eq('user_id', userId);
 
-        throw new Error(
-            '認証コードの有効期限が切れました。新しいコードを生成してください'
-        );
+        throw createError({
+            statusCode: 400,
+            message:
+                '認証コードの有効期限が切れました。新しいコードを生成してください',
+        });
     }
 
     // 5.3: ショップ説明文に認証コードが含まれているか確認
     if (!shop.description)
-        throw new Error('ショップの説明文を取得できませんでした');
+        throw createError({
+            statusCode: 400,
+            message: 'ショップの説明文を取得できませんでした',
+        });
 
     if (!shop.description.includes(codeData.code))
-        throw new Error('ショップの説明文に認証コードが見つかりませんでした');
+        throw createError({
+            statusCode: 400,
+            message: 'ショップの説明文に認証コードが見つかりませんでした',
+        });
 };
 
 /**
@@ -266,7 +288,7 @@ const performDatabaseOperations = async (
     userId: string,
     shop: ShopInfo
 ): Promise<void> => {
-    const supabase = await serverSupabaseServiceRole(event);
+    const supabase = await serverSupabaseServiceRole<Database>(event);
 
     try {
         // ステップ6: ショップデータの登録・更新
@@ -278,7 +300,10 @@ const performDatabaseOperations = async (
 
         if (shopSelectError) {
             console.error('Error selecting shop data:', shopSelectError);
-            throw new Error('ショップデータの検索に失敗しました');
+            throw createError({
+                statusCode: 500,
+                message: 'ショップデータの検索に失敗しました',
+            });
         }
 
         // ショップが存在しない場合は新規登録
@@ -294,7 +319,10 @@ const performDatabaseOperations = async (
 
             if (insertShopError) {
                 console.error('Error inserting shop data:', insertShopError);
-                throw new Error('ショップデータの登録に失敗しました');
+                throw createError({
+                    statusCode: 500,
+                    message: 'ショップデータの登録に失敗しました',
+                });
             }
         }
 
@@ -308,7 +336,10 @@ const performDatabaseOperations = async (
 
         if (userShopError) {
             console.error('Error inserting user shop relation:', userShopError);
-            throw new Error('ユーザーとショップの関連付けに失敗しました');
+            throw createError({
+                statusCode: 500,
+                message: 'ユーザーとショップの関連付けに失敗しました',
+            });
         }
 
         // 使用済み認証コードの削除
@@ -322,15 +353,21 @@ const performDatabaseOperations = async (
                 name: 'shop_owner',
             });
 
-        if (badgeUpsertError) {
+        if (badgeUpsertError)
+            // バッジ付与は重要でないため、エラーでも処理を続行
             console.error(
                 'Failed to assign shop_owner badge:',
                 badgeUpsertError
             );
-            // バッジ付与は重要でないため、エラーでも処理を続行
-        }
     } catch (error) {
         console.error('Database operation error:', error);
-        throw new Error('データベース操作中にエラーが発生しました');
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (error && (error as any).statusCode) throw error;
+
+        throw createError({
+            statusCode: 500,
+            message: 'データベース操作中にエラーが発生しました',
+        });
     }
 };

@@ -7,6 +7,7 @@ const bookmark = ref(false);
 
 const modalLogin = ref(false);
 const modalReport = ref(false);
+const response = ref<SetupClient | null>(null);
 
 if (!id)
     showError({
@@ -14,31 +15,28 @@ if (!id)
         message: 'IDが無効です',
     });
 
-const { data, error } = await $fetch<ApiResponse<SetupClient>>(`/api/setup`, {
-    method: 'GET',
-    query: { id },
-});
+try {
+    const data = await $fetch(`/api/setup`, {
+        method: 'GET',
+        query: { id },
+    });
 
-if (error && error.status === 404)
+    response.value = data;
+
+    useOGP({
+        title: `${data.name} @${data.author.name}`,
+        description: data.description,
+        image: data.images.length
+            ? useGetImage(data.images[0]!.name, { prefix: 'setup' })
+            : 'https://avatio.me/ogp.png',
+        twitterCard: data.images.length ? 'summary_large_image' : 'summary',
+    });
+} catch {
     showError({
         statusCode: 404,
         message: 'セットアップが見つかりませんでした',
     });
-
-if (error)
-    showError({
-        statusCode: 500,
-        message: 'セットアップの取得に失敗しました',
-    });
-
-useOGP({
-    title: `${data!.name} @${data!.author.name}`,
-    description: data!.description,
-    image: data!.images.length
-        ? useGetImage(data!.images[0]!.name, { prefix: 'setup' })
-        : 'https://avatio.me/ogp.png',
-    twitterCard: data!.images.length ? 'summary_large_image' : 'summary',
-});
+}
 
 onMounted(async () => {
     bookmark.value = await useCheckBookmark(id);
@@ -46,25 +44,25 @@ onMounted(async () => {
 </script>
 
 <template>
-    <div v-if="data" class="flex flex-col gap-5">
+    <div v-if="response" class="flex flex-col gap-5">
         <UiBreadcrumb
             :items="[
-                { text: data.author.name, href: `/@${data.author.id}` },
-                { text: data.name },
+                { text: response.author.name, href: `/@${response.author.id}` },
+                { text: response.name },
             ]"
         />
 
         <SetupsViewer
             :id="id"
-            :created-at="data.created_at"
-            :title="data.name"
-            :description="data.description"
-            :images="data.images"
-            :tags="data.tags"
-            :co-authors="data.co_authors"
-            :unity="data.unity"
-            :author="data.author"
-            :items="data.items"
+            :created-at="response.created_at"
+            :title="response.name"
+            :description="response.description"
+            :images="response.images"
+            :tags="response.tags"
+            :co-authors="response.co_authors"
+            :unity="response.unity"
+            :author="response.author"
+            :items="response.items"
             @login="modalLogin = true"
         />
 
@@ -87,7 +85,7 @@ onMounted(async () => {
                 @login-success="
                     modalLogin = false;
                     (async () => {
-                        if (!data) return;
+                        if (!response) return;
                         bookmark = await useCheckBookmark(id);
                     })();
                 "
