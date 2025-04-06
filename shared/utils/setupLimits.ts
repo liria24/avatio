@@ -8,5 +8,7 @@ export default () => {
         unity: 24,
         items: 32,
         itemsNote: 140,
+        shapekeys: 64,
+        shapekeyName: 64,
     };
 };

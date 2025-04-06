@@ -46,6 +46,11 @@ export type ItemCategory =
     | 'texture'
     | 'tool';
 
+export interface Shapekey {
+    name: string;
+    value: number;
+}
+
 export interface Item {
     id: number;
     updated_at: string;
@@ -63,7 +68,7 @@ export interface Item {
 export interface SetupItem extends Item {
     note: string;
     unsupported: boolean;
-    shapekeys: { name: string; value: number }[];
+    shapekeys: Shapekey[];
 }
 
 export interface SetupImage {
@@ -93,7 +98,7 @@ export interface SetupDB extends SetupBase {
         note: string;
         unsupported: boolean;
         category: ItemCategory | null;
-        shapekeys: { name: string; value: number }[];
+        shapekeys: Shapekey[];
     }[];
 }
 

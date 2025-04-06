@@ -149,6 +149,7 @@ const totalItemsCount = computed(() =>
                             v-for="item in value"
                             v-model:note="item.note"
                             v-model:unsupported="item.unsupported"
+                            v-model:shapekeys="item.shapekeys"
                             :key="'item-' + item.id"
                             :size="item.category === 'avatar' ? 'lg' : 'md'"
                             :item="item"

@@ -7,6 +7,9 @@ const note = defineModel<string>('note', {
 const unsupported = defineModel<boolean>('unsupported', {
     default: false,
 });
+const shapekeys = defineModel<Shapekey[]>('shapekeys', {
+    default: [],
+});
 
 const emit = defineEmits(['remove', 'changeCategory']);
 
@@ -17,6 +20,8 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
     size: 'md',
 });
+
+const modalRegisterShapekey = ref(false);
 
 const booth_url = 'https://booth.pm/ja/items/';
 </script>
@@ -116,6 +121,7 @@ const booth_url = 'https://booth.pm/ja/items/';
                     <SetupsEditItemsItemMenu
                         v-model:unsupported="unsupported"
                         @change-category="emit('changeCategory', $event)"
+                        @register-shapekey="modalRegisterShapekey = true"
                         @remove="emit('remove')"
                     />
 
@@ -162,5 +168,10 @@ const booth_url = 'https://booth.pm/ja/items/';
                 </p>
             </div>
         </div>
+
+        <ModalRegisterShapekey
+            v-model:visibility="modalRegisterShapekey"
+            v-model:shapekeys="shapekeys"
+        />
     </div>
 </template>
