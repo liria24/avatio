@@ -1,12 +1,33 @@
 import sharp from 'sharp';
 import { serverSupabaseUser } from '#supabase/server';
+import { z } from 'zod';
 
-export interface RequestBody {
-    image: string;
-    size: number;
-    resolution: number;
-    prefix: string;
-}
+const requestBodySchema = z.object({
+    // 画像データ（Base64文字列）
+    image: z
+        .string({
+            required_error: 'No file provided.',
+        })
+        .min(1, 'No file provided.'),
+
+    size: z
+        .number({
+            required_error: "Query parameter 'size' is required.",
+            invalid_type_error: 'Size must be a number.',
+        })
+        .positive('Size must be a positive number.'),
+
+    resolution: z
+        .number({
+            required_error: "Query parameter 'resolution' is required.",
+            invalid_type_error: 'Resolution must be a number.',
+        })
+        .positive('Resolution must be a positive number.'),
+
+    prefix: z.string(),
+});
+
+export type RequestBody = z.infer<typeof requestBodySchema>;
 
 export default defineEventHandler(
     async (
@@ -36,37 +57,18 @@ export default defineEventHandler(
             });
         }
 
-        const body: RequestBody = await readBody(event);
+        const rawBody = await readBody(event);
+        const result = requestBodySchema.safeParse(rawBody);
 
-        if (!body.image || !body.image.length) {
-            console.error('Validation error: No image provided');
+        if (!result.success) {
+            console.error('Validation error:', result.error.format());
             throw createError({
                 statusCode: 400,
-                message: 'No file provided.',
+                message: `リクエストデータが不正です: ${result.error.issues.map((i) => i.message).join(', ')}`,
             });
         }
 
-        if (!body.size || !body.resolution) {
-            console.error(
-                'Validation error: Missing size or resolution parameters'
-            );
-            throw createError({
-                statusCode: 400,
-                message:
-                    "Query parameter 'size' and 'resolution' are required.",
-            });
-        }
-
-        if (isNaN(body.resolution) || body.resolution <= 0) {
-            console.error(
-                'Validation error: Invalid resolution parameter:',
-                body.resolution
-            );
-            throw createError({
-                statusCode: 400,
-                message: 'Invalid size parameter.',
-            });
-        }
+        const body = result.data;
 
         try {
             const input = Buffer.from(

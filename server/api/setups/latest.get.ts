@@ -1,9 +1,25 @@
 import { serverSupabaseClient } from '#supabase/server';
+import { z } from 'zod';
 
-interface RequestQuery {
-    page: number;
-    perPage: number;
-}
+const requestQuerySchema = z.object({
+    page: z.coerce
+        .number({
+            invalid_type_error: 'ページ番号は数値である必要があります',
+        })
+        .int('ページ番号は整数である必要があります')
+        .nonnegative('ページ番号は0以上である必要があります')
+        .default(0),
+
+    perPage: z.coerce
+        .number({
+            invalid_type_error: '1ページあたりの件数は数値である必要があります',
+        })
+        .int('1ページあたりの件数は整数である必要があります')
+        .positive('1ページあたりの件数は正の数である必要があります')
+        .default(10),
+});
+
+export type RequestQuery = z.infer<typeof requestQuerySchema>;
 
 interface SetupsResponse {
     setups: SetupClient[];
@@ -11,8 +27,17 @@ interface SetupsResponse {
 }
 
 export default defineEventHandler(async (event): Promise<SetupsResponse> => {
-    const query: RequestQuery = await getQuery(event);
+    const rawQuery = await getQuery(event);
+    const result = requestQuerySchema.safeParse(rawQuery);
 
+    if (!result.success) {
+        throw createError({
+            statusCode: 400,
+            message: `不正なリクエスト: ${result.error.issues.map((i) => i.message).join(', ')}`,
+        });
+    }
+
+    const query = result.data;
     const supabase = await serverSupabaseClient<Database>(event);
 
     const { data, count } = await supabase

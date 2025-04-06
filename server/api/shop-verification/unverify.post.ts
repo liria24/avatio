@@ -2,20 +2,30 @@ import {
     serverSupabaseServiceRole,
     serverSupabaseUser,
 } from '#supabase/server';
+import { z } from 'zod';
 
-interface Body {
-    shopId: string;
-}
+const requestBodySchema = z.object({
+    shopId: z
+        .string({
+            required_error: 'ショップIDは必須です',
+            invalid_type_error: 'ショップIDは文字列である必要があります',
+        })
+        .min(1, 'ショップIDは空にできません'),
+});
+
+export type RequestBody = z.infer<typeof requestBodySchema>;
 
 export default defineEventHandler(async (event) => {
-    const { shopId } = await readBody<Body>(event);
+    const rawBody = await readBody(event);
+    const result = requestBodySchema.safeParse(rawBody);
 
-    // shopIdの検証
-    if (!shopId || typeof shopId !== 'string' || !shopId.trim())
+    if (!result.success)
         throw createError({
             statusCode: 400,
-            message: 'ショップIDは必須です',
+            message: `不正なリクエスト: ${result.error.issues.map((i) => i.message).join(', ')}`,
         });
+
+    const { shopId } = result.data;
 
     // ユーザー認証チェック
     const user = await serverSupabaseUser(event).catch(() => null);

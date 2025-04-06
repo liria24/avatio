@@ -1,4 +1,22 @@
 import { serverSupabaseUser } from '#supabase/server';
+import { z } from 'zod';
+
+const requestQuerySchema = z.object({
+    name: z
+        .string({
+            required_error: 'ファイル名は必須です',
+            invalid_type_error: 'ファイル名は文字列である必要があります',
+        })
+        .min(1, 'ファイル名は必須です'),
+
+    prefix: z
+        .string({
+            invalid_type_error: 'プレフィックスは文字列である必要があります',
+        })
+        .optional(),
+});
+
+export type RequestQuery = z.infer<typeof requestQuerySchema>;
 
 export default defineEventHandler(async (event): Promise<{ path: string }> => {
     const storage = imageStorageClient();
@@ -18,15 +36,17 @@ export default defineEventHandler(async (event): Promise<{ path: string }> => {
         });
     }
 
-    const query: { name: string; prefix: string } = getQuery(event);
+    const rawQuery = getQuery(event);
+    const result = requestQuerySchema.safeParse(rawQuery);
 
-    if (!query.name) {
+    if (!result.success) {
         throw createError({
             statusCode: 400,
-            message: 'No path provided.',
+            message: `不正なリクエスト: ${result.error.issues.map((i) => i.message).join(', ')}`,
         });
     }
 
+    const query = result.data;
     const target = query.prefix ? `${query.prefix}:${query.name}` : query.name;
 
     console.log('Deleting image on R2.', target);

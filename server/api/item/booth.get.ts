@@ -1,5 +1,18 @@
 import { serverSupabaseClient } from '#supabase/server';
 import type { H3Event } from 'h3';
+import { z } from 'zod';
+
+const requestQuerySchema = z.object({
+    id: z.coerce
+        .number({
+            required_error: 'IDは必須です',
+            invalid_type_error: 'IDは数値である必要があります',
+        })
+        .int('IDは整数である必要があります')
+        .positive('IDは正の値である必要があります'),
+});
+
+export type RequestQuery = z.infer<typeof requestQuerySchema>;
 
 interface fetchedItem extends Omit<Item, 'updated_at'> {
     tags: string[];
@@ -230,15 +243,16 @@ const GetBoothItem = async (event: H3Event, id: number): Promise<Item> => {
 };
 
 export default defineEventHandler(async (event): Promise<Item> => {
-    const query = getQuery(event);
-    const id = Number(query.id);
+    const rawQuery = getQuery(event);
+    const result = requestQuerySchema.safeParse(rawQuery);
 
-    if (isNaN(id) || id <= 0) {
+    if (!result.success)
         throw createError({
             statusCode: 400,
-            message: 'No ID or invalid ID provided',
+            message: `不正なリクエスト: ${result.error.issues.map((i) => i.message).join(', ')}`,
         });
-    }
+
+    const { id } = result.data;
 
     return GetBoothItem(event, id);
 });

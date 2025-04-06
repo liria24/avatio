@@ -1,10 +1,34 @@
 import { serverSupabaseClient } from '#supabase/server';
+import { z } from 'zod';
 
-interface RequestQuery {
-    userId: string;
-    page: number;
-    perPage: number;
-}
+const requestQuerySchema = z.object({
+    userId: z
+        .string({
+            required_error: 'User ID is required',
+            invalid_type_error: 'User ID must be a string',
+        })
+        .min(1, 'User ID cannot be empty'),
+
+    page: z.coerce
+        .number({
+            required_error: 'Page number is required',
+            invalid_type_error: 'Page must be a number',
+        })
+        .int('Page must be an integer')
+        .nonnegative('Page must be a non-negative number')
+        .default(0),
+
+    perPage: z.coerce
+        .number({
+            required_error: 'Items per page is required',
+            invalid_type_error: 'Items per page must be a number',
+        })
+        .int('Items per page must be an integer')
+        .positive('Items per page must be a positive number')
+        .default(10),
+});
+
+export type RequestQuery = z.infer<typeof requestQuerySchema>;
 
 interface SetupsResponse {
     setups: SetupClient[];
@@ -12,14 +36,17 @@ interface SetupsResponse {
 }
 
 export default defineEventHandler(async (event): Promise<SetupsResponse> => {
-    const query: RequestQuery = await getQuery(event);
+    const rawQuery = await getQuery(event);
+    const result = requestQuerySchema.safeParse(rawQuery);
 
-    if (!query.userId)
+    if (!result.success) {
         throw createError({
             statusCode: 400,
-            message: 'User ID is required',
+            message: `Invalid request: ${result.error.issues.map((i) => i.message).join(', ')}`,
         });
+    }
 
+    const query = result.data;
     const supabase = await serverSupabaseClient<Database>(event);
 
     const { data, count } = await supabase

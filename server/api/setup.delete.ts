@@ -1,8 +1,16 @@
 import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server';
+import { z } from 'zod';
 
-export interface RequestBody {
-    id: number;
-}
+const requestBodySchema = z.object({
+    id: z
+        .number({
+            required_error: 'idは必須です',
+            invalid_type_error: 'idは数値である必要があります',
+        })
+        .positive('idは正の数である必要があります'),
+});
+
+export type RequestBody = z.infer<typeof requestBodySchema>;
 
 export default defineEventHandler(async (event) => {
     try {
@@ -20,8 +28,17 @@ export default defineEventHandler(async (event) => {
         });
     }
 
-    const body: RequestBody = await readBody(event);
+    const rawBody = await readBody(event);
+    const result = requestBodySchema.safeParse(rawBody);
 
+    if (!result.success) {
+        throw createError({
+            statusCode: 400,
+            message: `不正なリクエスト: ${result.error.format()}`,
+        });
+    }
+
+    const body = result.data;
     const supabase = await serverSupabaseClient<Database>(event);
 
     const { data: setupData } = await supabase

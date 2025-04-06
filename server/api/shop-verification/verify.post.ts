@@ -4,6 +4,7 @@ import {
     serverSupabaseUser,
 } from '#supabase/server';
 import type { H3Event } from 'h3';
+import { z } from 'zod';
 
 // 成功時のレスポンス型定義
 interface VerificationResult {
@@ -20,6 +21,29 @@ interface ShopInfo {
     description: string;
 }
 
+const requestBodySchema = z.object({
+    url: z
+        .string({
+            required_error: 'URLが必要です',
+            invalid_type_error: 'URLは文字列である必要があります',
+        })
+        .min(1, 'URLが必要です')
+        .url('有効なURL形式である必要があります')
+        .refine(
+            (url) => {
+                try {
+                    const parsedUrl = new URL(url);
+                    return parsedUrl.hostname.endsWith('.booth.pm');
+                } catch {
+                    return false;
+                }
+            },
+            { message: 'BOOTHのURLのみ認証できます' }
+        ),
+});
+
+export type RequestBody = z.infer<typeof requestBodySchema>;
+
 /**
  * BOOTHショップ認証APIエンドポイント
  *
@@ -35,15 +59,17 @@ interface ShopInfo {
  */
 export default defineEventHandler(
     async (event): Promise<VerificationResult> => {
-        // リクエストボディからURLを取得
-        const body = await readBody<{ url: string }>(event);
-        const { url } = body;
+        const rawBody = await readBody(event);
+        const result = requestBodySchema.safeParse(rawBody);
 
-        if (!url)
+        if (!result.success) {
             throw createError({
                 statusCode: 400,
-                message: 'URLが必要です',
+                message: `不正なリクエスト: ${result.error.issues.map((i) => i.message).join(', ')}`,
             });
+        }
+
+        const { url } = result.data;
 
         // ステップ1: ユーザーログインの確認
         const user = await serverSupabaseUser(event);
@@ -58,25 +84,8 @@ export default defineEventHandler(
         const supabase = await serverSupabaseServiceRole<Database>(event);
 
         try {
-            // ステップ2: URLのバリデーションと解析
-            let destinationUrl: URL;
-            try {
-                destinationUrl = new URL(url.toString());
-                // BOOTHのURLのみ許可
-                if (!destinationUrl.hostname.endsWith('.booth.pm'))
-                    throw createError({
-                        statusCode: 400,
-                        message: 'BOOTHのURLのみ認証できます',
-                    });
-            } catch (e) {
-                throw createError({
-                    statusCode: 400,
-                    message:
-                        '不正なURL形式です: ' +
-                        (e instanceof Error ? e.message : ''),
-                });
-            }
-
+            // ステップ2: URLの解析
+            const destinationUrl = new URL(url);
             const baseUrl = `${destinationUrl.origin}${destinationUrl.pathname}`;
             const subDomain = boothSubDomain(url.toString());
 

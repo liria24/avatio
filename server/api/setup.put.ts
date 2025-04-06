@@ -2,20 +2,59 @@ import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server';
 import { z } from 'zod';
 import type { H3Event } from 'h3';
 
-export interface RequestBody {
-    name: string;
-    description: string;
-    tags: string[];
-    coAuthors: { id: string; note: string }[];
-    image: string | null;
-    unity?: string;
-    items: {
-        id: number;
-        category: ItemCategory;
-        note: string;
-        unsupported: boolean;
-    }[];
-}
+const limits = setupLimits();
+
+const setupSchema = z.object({
+    name: z
+        .string()
+        .min(1, 'Title is required.')
+        .max(limits.title, 'Title is too long.'),
+    description: z
+        .string()
+        .max(limits.description, 'Description is too long.')
+        .nullable(),
+    tags: z.array(z.string().min(1)).max(limits.tags, 'Too many tags.'),
+    coAuthors: z
+        .array(
+            z.object({
+                id: z.string(),
+                note: z
+                    .string()
+                    .max(limits.coAuthorsNote, 'Co-author note is too long.'),
+            })
+        )
+        .max(limits.coAuthors, 'Too many co-authors.'),
+    image: z.string().nullable(),
+    unity: z
+        .string()
+        .max(limits.unity, 'Unity version is too long.')
+        .nullable()
+        .optional(),
+    items: z
+        .array(
+            z.object({
+                id: z.number(),
+                category: z.enum([
+                    'avatar',
+                    'cloth',
+                    'accessory',
+                    'other',
+                    'hair',
+                    'shader',
+                    'texture',
+                    'tool',
+                ]),
+                note: z
+                    .string()
+                    .max(limits.itemsNote, 'Item note is too long.'),
+                unsupported: z.boolean(),
+            })
+        )
+        .min(1, 'Item is required.')
+        .max(limits.items, 'Too many items.'),
+});
+
+export type RequestBody = z.infer<typeof setupSchema>;
 
 export default defineEventHandler(async (event: H3Event) => {
     const user = await serverSupabaseUser(event).catch(() => null);
@@ -28,66 +67,13 @@ export default defineEventHandler(async (event: H3Event) => {
 
     const supabase = await serverSupabaseClient<Database>(event);
     const rawBody = await readBody(event);
-    const limits = setupLimits();
-
-    const setupSchema = z.object({
-        name: z
-            .string()
-            .min(1, 'Title is required.')
-            .max(limits.title, 'Title is too long.'),
-        description: z
-            .string()
-            .max(limits.description, 'Description is too long.')
-            .nullable(),
-        tags: z.array(z.string().min(1)).max(limits.tags, 'Too many tags.'),
-        coAuthors: z
-            .array(
-                z.object({
-                    id: z.string(),
-                    note: z
-                        .string()
-                        .max(
-                            limits.coAuthorsNote,
-                            'Co-author note is too long.'
-                        ),
-                })
-            )
-            .max(limits.coAuthors, 'Too many co-authors.'),
-        image: z.string().nullable(),
-        unity: z
-            .string()
-            .max(limits.unity, 'Unity version is too long.')
-            .nullable(),
-        items: z
-            .array(
-                z.object({
-                    id: z.number(),
-                    category: z.enum([
-                        'avatar',
-                        'cloth',
-                        'accessory',
-                        'other',
-                        'hair',
-                        'shader',
-                        'texture',
-                        'tool',
-                    ]),
-                    note: z
-                        .string()
-                        .max(limits.itemsNote, 'Item note is too long.'),
-                    unsupported: z.boolean(),
-                })
-            )
-            .min(1, 'Item is required.')
-            .max(limits.items, 'Too many items.'),
-    });
 
     const result = setupSchema.safeParse(rawBody);
 
     if (!result.success) {
         throw createError({
             statusCode: 400,
-            message: result.error.issues[0]?.message || 'Invalid request data',
+            message: `リクエストデータが不正です: ${result.error.issues.map((i) => i.message).join(', ')}`,
         });
     }
 
