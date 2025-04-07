@@ -16,6 +16,12 @@ useHead({
     >
         <UiHeader />
         <div
+            class="hidden noscript:flex justify-center items-center w-full p-4 ring-2 ring-red-500 bg-red-100 text-red-800 rounded-xl text-sm"
+        >
+            この Web サイトは JavaScript を使用しています。<br />
+            JavaScript が無効の場合、正しく表示されません。
+        </div>
+        <div
             :class="[
                 'w-full grow grid',
                 paddingExclude.includes(route.path)
