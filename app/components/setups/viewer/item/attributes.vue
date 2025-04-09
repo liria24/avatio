@@ -66,7 +66,7 @@ const { note, unsupported, shapekeys } = defineProps<Props>();
                                 label="シェイプキー"
                                 icon="lucide:shapes"
                             />
-                            <Button
+                            <!-- <Button
                                 tooltip="Unityコンポーネントとしてコピー"
                                 class="p-2"
                             >
@@ -75,7 +75,7 @@ const { note, unsupported, shapekeys } = defineProps<Props>();
                                     :size="18"
                                     class="shrink-0 text-zinc-800 dark:text-zinc-200"
                                 />
-                            </Button>
+                            </Button> -->
                         </div>
                         <div
                             class="p-3 rounded-lg flex flex-col gap-3 ring-1 ring-zinc-300 dark:ring-zinc-700"
