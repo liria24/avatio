@@ -5,180 +5,126 @@ interface CompressImageMessage {
     maxSize: number;
 }
 
-// リサイズ後のサイズを計算する関数（image.tsと同じロジック）
-function calculateResizedDimensions(
-    originalWidth: number,
-    originalHeight: number,
-    resolution: number
-): { width: number; height: number } {
-    let targetWidth = originalWidth;
-    let targetHeight = originalHeight;
+// リサイズ計算
+function calcResize(width: number, height: number, resolution: number) {
+    if (Math.max(width, height) <= resolution) return { width, height };
 
-    if (Math.max(originalWidth, originalHeight) > resolution) {
-        const aspectRatio = originalWidth / originalHeight;
-        if (originalWidth > originalHeight) {
-            targetWidth = resolution;
-            targetHeight = Math.round(resolution / aspectRatio);
-        } else {
-            targetHeight = resolution;
-            targetWidth = Math.round(resolution * aspectRatio);
-        }
-    }
-
-    return { width: targetWidth, height: targetHeight };
+    const ratio = width / height;
+    return width > height
+        ? { width: resolution, height: Math.round(resolution / ratio) }
+        : { height: resolution, width: Math.round(resolution * ratio) };
 }
 
-// 最適な圧縮品質を見つける関数（image.tsと共通の実装）
-async function findOptimalCompression(
-    compressFn: (quality: number) => Promise<Blob>,
-    maxSizeBytes: number,
-    onIterationProgress?: (iteration: number) => void
+// 最適な圧縮品質を探す
+async function optimizeCompression(
+    compress: (quality: number) => Promise<Blob>,
+    maxSize: number,
+    onProgress?: (i: number) => void
 ) {
-    let minQuality = 20;
-    let maxQuality = 90;
-    let bestQuality = minQuality;
-    let bestBlob: Blob | null = null;
+    let min = 20,
+        max = 90;
+    let bestQuality = min;
+    let bestBlob = null;
 
-    // 最初に高品質で試す
-    let currentQuality = maxQuality;
-    let blob = await compressFn(currentQuality);
+    // 高品質で試行
+    let blob = await compress(max);
+    if (blob.size <= maxSize) return { bestQuality: max, bestBlob: blob };
 
-    if (blob.size <= maxSizeBytes) {
-        bestBlob = blob;
-        bestQuality = currentQuality;
-    } else {
-        // 二分探索で最適な品質を探す
-        for (let i = 0; i < 5; i++) {
-            if (onIterationProgress) {
-                onIterationProgress(i);
-            }
+    // 二分探索で最適な品質を探す
+    for (let i = 0; i < 5; i++) {
+        if (onProgress) onProgress(i);
 
-            currentQuality = Math.floor((minQuality + maxQuality) / 2);
-            blob = await compressFn(currentQuality);
+        const quality = Math.floor((min + max) / 2);
+        blob = await compress(quality);
 
-            if (blob.size <= maxSizeBytes) {
-                bestBlob = blob;
-                bestQuality = currentQuality;
-                minQuality = currentQuality;
-            } else {
-                maxQuality = currentQuality - 1;
-            }
-
-            if (maxQuality - minQuality <= 2) break;
+        if (blob.size <= maxSize) {
+            bestBlob = blob;
+            bestQuality = quality;
+            min = quality;
+        } else {
+            max = quality - 1;
         }
 
-        // 適切な品質が見つからなかった場合
-        if (!bestBlob) {
-            bestQuality = minQuality;
-            bestBlob = await compressFn(minQuality);
-        }
+        if (max - min <= 2) break;
     }
 
-    return {
-        bestQuality,
-        bestBlob,
-    };
+    // 適切な品質が見つからなかった場合
+    if (!bestBlob) {
+        bestQuality = min;
+        bestBlob = await compress(min);
+    }
+
+    return { bestQuality, bestBlob };
 }
 
 self.onmessage = async (e: MessageEvent<CompressImageMessage>) => {
-    if (e.data.type === 'compress') {
-        const { imageData, resolution, maxSize } = e.data;
+    if (e.data.type !== 'compress') return;
 
-        try {
-            // 進捗通知
-            postMessage({
-                type: 'progress',
-                stage: '画像読み込み中',
-                percent: 10,
-            });
+    const { imageData, resolution, maxSize = 1.5 * 1024 * 1024 } = e.data;
 
-            // Base64からblobへ変換
-            const fetchResp = await fetch(imageData);
-            const fetchedBlob = await fetchResp.blob();
+    try {
+        // 進捗通知
+        const progress = (stage: string, percent: number) =>
+            postMessage({ type: 'progress', stage, percent });
 
-            // ImageBitmapを作成（ハードウェアアクセラレーション可能）
-            const originalImage = await createImageBitmap(fetchedBlob);
+        progress('画像読み込み中', 10);
 
-            // 元のサイズを取得
-            const originalWidth = originalImage.width;
-            const originalHeight = originalImage.height;
+        // 画像読み込み
+        const blob = await (await fetch(imageData)).blob();
+        const img = await createImageBitmap(blob);
 
-            // リサイズ計算
-            postMessage({
-                type: 'progress',
-                stage: 'リサイズ処理中',
-                percent: 30,
-            });
+        progress('リサイズ処理中', 30);
 
-            // 共通関数を使用してリサイズ後のサイズを計算
-            const { width: targetWidth, height: targetHeight } =
-                calculateResizedDimensions(
-                    originalWidth,
-                    originalHeight,
-                    resolution
-                );
+        // リサイズ計算
+        const { width, height } = calcResize(img.width, img.height, resolution);
 
-            // Offscreen Canvasの作成
-            const canvas = new OffscreenCanvas(targetWidth, targetHeight);
-            const ctx = canvas.getContext('2d', {
-                alpha: false,
-                desynchronized: true,
-                willReadFrequently: false,
-            });
+        // Canvas処理
+        const canvas = new OffscreenCanvas(width, height);
+        const ctx = canvas.getContext('2d', {
+            alpha: false,
+            desynchronized: true,
+            willReadFrequently: false,
+        });
 
-            if (!ctx) throw new Error('Canvas contextの取得に失敗しました');
+        if (!ctx) throw new Error('Canvas contextの取得に失敗しました');
 
-            // 高品質リサイズの実行
-            ctx.imageSmoothingEnabled = true;
-            ctx.imageSmoothingQuality = 'high';
-            ctx.drawImage(originalImage, 0, 0, targetWidth, targetHeight);
+        // 高品質リサイズ
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, width, height);
 
-            // 画像圧縮の実行
-            postMessage({ type: 'progress', stage: '画像圧縮中', percent: 60 });
+        progress('画像圧縮中', 60);
 
-            // 品質に応じた圧縮関数
-            const compressWithQuality = async (
-                quality: number
-            ): Promise<Blob> => {
-                return await canvas.convertToBlob({
+        // 圧縮処理
+        const result = await optimizeCompression(
+            (quality) =>
+                canvas.convertToBlob({
                     type: 'image/jpeg',
                     quality: quality / 100,
-                });
-            };
+                }),
+            maxSize,
+            (i) => progress(`圧縮最適化中 (${i + 1}/5)`, 60 + i * 8)
+        );
 
-            // 共通の二分探索関数を使用して最適な圧縮を見つける
-            const result = await findOptimalCompression(
-                compressWithQuality,
-                maxSize || 1.5 * 1024 * 1024,
-                (i) => {
-                    postMessage({
-                        type: 'progress',
-                        stage: `圧縮最適化中 (${i + 1}/5)`,
-                        percent: 60 + i * 8,
-                    });
-                }
-            );
+        progress('完了', 100);
 
-            postMessage({ type: 'progress', stage: '完了', percent: 100 });
-
-            // 結果をArrayBufferとして送信
-            const arrayBuffer = await result.bestBlob!.arrayBuffer();
-            postMessage(
-                {
-                    type: 'result',
-                    quality: result.bestQuality,
-                    size: result.bestBlob!.size,
-                    data: arrayBuffer,
-                    width: targetWidth,
-                    height: targetHeight,
-                },
-                { transfer: [arrayBuffer] }
-            );
-        } catch (error) {
-            postMessage({
-                type: 'error',
-                message: error instanceof Error ? error.message : String(error),
-            });
-        }
+        // 結果送信
+        const buffer = await result.bestBlob!.arrayBuffer();
+        postMessage(
+            {
+                type: 'result',
+                quality: result.bestQuality,
+                size: result.bestBlob!.size,
+                data: buffer,
+                width,
+                height,
+            },
+            { transfer: [buffer] }
+        );
+    } catch (error) {
+        postMessage({
+            type: 'error',
+            message: error instanceof Error ? error.message : String(error),
+        });
     }
 };

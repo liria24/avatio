@@ -160,6 +160,7 @@ useOGP({ title: 'セットアップ作成' });
             :unity="unity"
             :image="image"
             :items="items"
+            class="overflow-y-auto"
         />
     </div>
 </template>

@@ -144,7 +144,7 @@ export default defineEventHandler(async (event: H3Event) => {
                 method: 'PUT',
                 body: {
                     image: body.image,
-                    target: 'setup',
+                    prefix: 'setup',
                 },
             });
 

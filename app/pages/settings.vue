@@ -31,7 +31,7 @@ const { data } = await client
     }>();
 
 const name = ref<string>(data?.name ?? '');
-const avatar = ref<File | null>(null);
+const avatar = ref<Blob | null>(null);
 const currentAvatar = ref<string | null>(data?.avatar ?? null);
 const bio = ref<string>(data?.bio ?? '');
 const links = ref<string[]>(data?.links ?? []);
@@ -60,13 +60,32 @@ const save = async () => {
 
     let avatarName = currentAvatar.value;
     if (avatar.value) {
-        const uploaded = await usePutImage(avatar.value, {
-            target: 'avatar',
-            resolution: 512,
-            size: 300,
-        });
+        try {
+            const imageBlob = await useCompressImage(
+                await blobToBase64(avatar.value),
+                512,
+                { maxSize: 1.5 * 1024 * 1024 } // 1.5MB
+            );
 
-        if (!uploaded) {
+            const response = await $fetch('/api/image', {
+                method: 'PUT',
+                body: {
+                    image: await blobToBase64(imageBlob),
+                    prefix: 'avatar',
+                },
+            });
+
+            useToast().add(
+                'ユーザー情報の保存に失敗しました',
+                'アバターのアップロードでエラーが発生しました'
+            );
+            saving.value = false;
+
+            if (currentAvatar.value)
+                await useDeleteImage(currentAvatar.value, { target: 'avatar' });
+
+            avatarName = response.name;
+        } catch {
             useToast().add(
                 'ユーザー情報の保存に失敗しました',
                 'アバターのアップロードでエラーが発生しました'
@@ -74,11 +93,6 @@ const save = async () => {
             saving.value = false;
             return;
         }
-
-        if (currentAvatar.value)
-            await useDeleteImage(currentAvatar.value, { target: 'avatar' });
-
-        avatarName = uploaded.name;
     }
 
     const { error } = await client

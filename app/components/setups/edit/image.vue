@@ -8,25 +8,39 @@ const dropZoneRef = ref<HTMLDivElement>();
 const fileName = ref<string>('');
 const processing = ref(false);
 
+// Blob URLのクリーンアップ
+const cleanupBlobUrl = () => {
+    if (imagePreview.value?.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview.value);
+        imagePreview.value = null;
+    }
+};
+
+// 画像リセット処理
+const resetImage = () => {
+    reset();
+    image.value = null;
+    fileName.value = '';
+    cleanupBlobUrl();
+};
+
 // 画像処理関数
 const processImage = (file: File) => {
     processing.value = true;
-
     fileName.value = file.name;
+
+    // 既存のBlobをクリーンアップ
+    cleanupBlobUrl();
 
     fileToBase64(file)
         .then((base64Image) => useCompressImage(base64Image, 1920))
         .then((compressedBlob) => {
-            // 圧縮したファイルをimage.valueに保存
             image.value = compressedBlob;
-
-            // BlobをURLに変換してプレビュー表示
             imagePreview.value = URL.createObjectURL(compressedBlob);
         })
         .catch((error) => {
             console.error('画像処理に失敗しました:', error);
-            imagePreview.value = null;
-            image.value = null;
+            resetImage();
         })
         .finally(() => {
             processing.value = false;
@@ -38,55 +52,24 @@ const { open, reset, onChange } = useFileDialog({
     multiple: false,
 });
 
-onChange((files) => {
-    if (files?.length && files[0]) {
-        processImage(files[0]);
-    } else {
-        image.value = null;
-        imagePreview.value = null;
-        fileName.value = '';
-    }
-});
+// ファイル選択時の処理
+onChange((files) =>
+    files?.length && files[0] ? processImage(files[0]) : resetImage()
+);
 
-const onDrop = (files: File[] | null) => {
-    if (files && files.length === 1 && files[0]) {
-        processImage(files[0]);
-    } else {
-        image.value = null;
-        imagePreview.value = null;
-        fileName.value = '';
-    }
-};
-
-const resetImage = () => {
-    reset();
-    image.value = null;
-    fileName.value = '';
-
-    if (imagePreview.value?.startsWith('blob:')) {
-        URL.revokeObjectURL(imagePreview.value);
-    }
-    imagePreview.value = null;
-};
+// ドロップ時の処理
+const onDrop = (files: File[] | null) =>
+    files?.length === 1 && files[0] ? processImage(files[0]) : resetImage();
 
 const { isOverDropZone } = useDropZone(dropZoneRef, {
     onDrop,
-    dataTypes: [
-        'image/jpeg',
-        'image/png',
-        'image/webp',
-        'image/avif',
-        'image/tiff',
-    ],
+    dataTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/tiff'],
     multiple: false,
     preventDefaultForUnhandled: false,
 });
 
-onBeforeUnmount(() => {
-    if (imagePreview.value?.startsWith('blob:')) {
-        URL.revokeObjectURL(imagePreview.value);
-    }
-});
+// コンポーネントのアンマウント時にリソースをクリーンアップ
+onBeforeUnmount(cleanupBlobUrl);
 
 defineExpose({
     reset: resetImage,

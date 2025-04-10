@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-const avatar = defineModel<File | null>('avatar', {
+const avatar = defineModel<Blob | null>('avatar', {
     required: true,
     default: null,
 });
