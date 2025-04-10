@@ -61,7 +61,7 @@ const save = async () => {
     let avatarName = currentAvatar.value;
     if (avatar.value) {
         const uploaded = await usePutImage(avatar.value, {
-            prefix: 'avatar',
+            target: 'avatar',
             resolution: 512,
             size: 300,
         });
@@ -76,7 +76,7 @@ const save = async () => {
         }
 
         if (currentAvatar.value)
-            await useDeleteImage(currentAvatar.value, { prefix: 'avatar' });
+            await useDeleteImage(currentAvatar.value, { target: 'avatar' });
 
         avatarName = uploaded.name;
     }
@@ -118,7 +118,7 @@ const deleteAvatar = async () => {
         return useToast().add('アバターの削除に失敗しました');
     }
 
-    await useDeleteImage(currentAvatar.value, { prefix: 'avatar' });
+    await useDeleteImage(currentAvatar.value, { target: 'avatar' });
     userProfile.value.avatar = null;
     currentAvatar.value = null;
     useToast().add('アバターを削除しました');

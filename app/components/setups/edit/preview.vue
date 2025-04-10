@@ -12,7 +12,7 @@ const { createdAt, title, description, tags, coAuthors, unity, image, items } =
         tags: string[];
         coAuthors: Array<{ id: string; name: string; note: string }>;
         unity: string | null;
-        image: File | null;
+        image: Blob | null;
         items: Record<string, SetupItem[]>;
     }>();
 

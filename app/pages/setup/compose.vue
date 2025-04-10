@@ -23,34 +23,34 @@ const description = ref<string>('');
 const tags = ref<string[]>([]);
 const coAuthors = ref<CoAuthor[]>([]);
 const unity = ref<string>('');
-const image = ref<File | null>(null);
+const image = ref<Blob | null>(null);
 
 const PublishSetup = async () => {
     publishing.value = true;
 
-    const data = {
-        name: title.value,
-        description: description.value,
-        unity: unity.value.length ? unity.value : null,
-        tags: tags.value,
-        coAuthors: coAuthors.value.map((i) => ({
-            id: i.id,
-            note: i.note,
-        })),
-        items: Object.values(items.value)
-            .flat()
-            .map((i) => ({
-                id: i.id,
-                category: i.category,
-                note: i.note,
-                unsupported: i.unsupported,
-            })),
-        image: image.value ? await convertFileToBase64(image.value) : null,
-    };
-
-    if (await setupErrorCheck(data)) return (publishing.value = false);
-
     try {
+        const data = {
+            name: title.value,
+            description: description.value,
+            unity: unity.value.length ? unity.value : null,
+            tags: tags.value,
+            coAuthors: coAuthors.value.map((i) => ({
+                id: i.id,
+                note: i.note,
+            })),
+            items: Object.values(items.value)
+                .flat()
+                .map((i) => ({
+                    id: i.id,
+                    category: i.category,
+                    note: i.note,
+                    unsupported: i.unsupported,
+                })),
+            image: image.value ? await blobToBase64(image.value) : null,
+        };
+
+        if (await setupErrorCheck(data)) return (publishing.value = false);
+
         const response = await $fetch('/api/setup', {
             method: 'PUT',
             body: data,
@@ -59,7 +59,8 @@ const PublishSetup = async () => {
         publishedSetupId.value = response.id;
         skipRouterHook.value = true;
         modalComplete.value = true;
-    } catch {
+    } catch (error) {
+        console.error('投稿エラー:', error);
         return useToast().add('投稿に失敗しました');
     } finally {
         publishing.value = false;

@@ -71,6 +71,7 @@ const setupSchema = z.object({
 export type RequestBody = z.infer<typeof setupSchema>;
 
 // データベースエラー処理を簡素化するヘルパー関数
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const handleDbError = (table: string, error: any) => {
     console.error(`Failed to insert on DB. Table: ${table}`, error);
     throw createError({
@@ -133,7 +134,6 @@ export default defineEventHandler(async (event: H3Event) => {
 
     let image: {
         path: string;
-        prefix: string;
         width?: number;
         height?: number;
     } | null = null;
@@ -144,9 +144,7 @@ export default defineEventHandler(async (event: H3Event) => {
                 method: 'PUT',
                 body: {
                     image: body.image,
-                    resolution: 1920,
-                    size: 1500,
-                    prefix: 'setup',
+                    target: 'setup',
                 },
             });
 

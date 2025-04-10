@@ -1,6 +1,8 @@
 import tailwindcss from '@tailwindcss/vite';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/shared/types/database';
+import wasm from 'vite-plugin-wasm';
+import topLevelAwait from 'vite-plugin-top-level-await';
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -33,7 +35,7 @@ export default defineNuxtConfig({
         preset: 'vercel',
     },
     vite: {
-        plugins: [tailwindcss()],
+        plugins: [tailwindcss(), wasm(), topLevelAwait()],
     },
     runtimeConfig: {
         public: { r2: { domain: '' } },

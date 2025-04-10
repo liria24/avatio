@@ -1,48 +1,72 @@
 <script lang="ts" setup>
-const image = defineModel<File | null>({
+const image = defineModel<Blob | null>({
     default: null,
 });
 
-const imagePreview = ref<string | ArrayBuffer | null>(null);
+const imagePreview = ref<string | null>(null);
 const dropZoneRef = ref<HTMLDivElement>();
+const fileName = ref<string>('');
+const processing = ref(false);
 
-const { files, open, reset, onChange } = useFileDialog({
-    accept: 'image/png, image/jpeg, image/webp, image/avif, image/tiff',
+// 画像処理関数
+const processImage = (file: File) => {
+    processing.value = true;
+
+    fileName.value = file.name;
+
+    fileToBase64(file)
+        .then((base64Image) => useCompressImage(base64Image, 1920))
+        .then((compressedBlob) => {
+            // 圧縮したファイルをimage.valueに保存
+            image.value = compressedBlob;
+
+            // BlobをURLに変換してプレビュー表示
+            imagePreview.value = URL.createObjectURL(compressedBlob);
+        })
+        .catch((error) => {
+            console.error('画像処理に失敗しました:', error);
+            imagePreview.value = null;
+            image.value = null;
+        })
+        .finally(() => {
+            processing.value = false;
+        });
+};
+
+const { open, reset, onChange } = useFileDialog({
+    accept: 'image/png, image/jpeg, image/webp, image/tiff',
     multiple: false,
 });
 
 onChange((files) => {
     if (files?.length && files[0]) {
-        const file = files[0];
-        image.value = file;
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            if (!e.target) return;
-            imagePreview.value = e.target.result;
-        };
-        reader.readAsDataURL(file);
+        processImage(files[0]);
     } else {
         image.value = null;
         imagePreview.value = null;
+        fileName.value = '';
     }
 });
 
 const onDrop = (files: File[] | null) => {
     if (files && files.length === 1 && files[0]) {
-        const file = files[0];
-        image.value = file;
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            if (!e.target) return;
-            imagePreview.value = e.target.result;
-        };
-        reader.readAsDataURL(file);
+        processImage(files[0]);
     } else {
         image.value = null;
         imagePreview.value = null;
+        fileName.value = '';
     }
+};
+
+const resetImage = () => {
+    reset();
+    image.value = null;
+    fileName.value = '';
+
+    if (imagePreview.value?.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview.value);
+    }
+    imagePreview.value = null;
 };
 
 const { isOverDropZone } = useDropZone(dropZoneRef, {
@@ -55,63 +79,67 @@ const { isOverDropZone } = useDropZone(dropZoneRef, {
         'image/tiff',
     ],
     multiple: false,
-    // whether to prevent default behavior for unhandled events
     preventDefaultForUnhandled: false,
 });
 
+onBeforeUnmount(() => {
+    if (imagePreview.value?.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview.value);
+    }
+});
+
 defineExpose({
-    reset,
+    reset: resetImage,
 });
 </script>
 
 <template>
     <div class="w-full flex flex-col gap-3 items-start">
-        <button
-            v-if="!imagePreview"
-            ref="dropZoneRef"
-            type="button"
-            @click="open()"
-            :class="[
-                'h-40 w-full flex flex-col items-center justify-center',
-                'rounded-xl cursor-pointer',
-                'border-4 border-dashed border-zinc-300 dark:border-zinc-600',
-                isOverDropZone
-                    ? 'bg-zinc-500 dark:bg-zinc-400'
-                    : 'hover:bg-zinc-200 dark:hover:bg-black/15 ',
-            ]"
-        >
-            <Icon
-                name="lucide:plus"
-                class="text-4xl text-zinc-400 dark:text-zinc-500"
-            />
-            <span class="font-medium text-zinc-400 dark:text-zinc-500"
-                >画像を追加</span
+        <Icon v-if="processing" name="svg-spinners:ring-resize" :size="24" />
+        <template v-else>
+            <button
+                v-if="!imagePreview"
+                ref="dropZoneRef"
+                type="button"
+                @click="open()"
+                :class="[
+                    'h-40 w-full flex flex-col items-center justify-center',
+                    'rounded-xl cursor-pointer',
+                    'border-4 border-dashed border-zinc-300 dark:border-zinc-600',
+                    isOverDropZone
+                        ? 'bg-zinc-500 dark:bg-zinc-400'
+                        : 'hover:bg-zinc-200 dark:hover:bg-black/15 ',
+                ]"
             >
-        </button>
-        <div v-if="imagePreview" class="flex flex-col items-center gap-1 h-fit">
-            <div class="relative w-auto h-fit">
-                <NuxtImg
-                    :src="imagePreview.toString()"
-                    alt="Image Preview"
-                    class="object-contain max-h-64 rounded-xl"
+                <Icon
+                    name="lucide:plus"
+                    class="text-4xl text-zinc-400 dark:text-zinc-500"
                 />
-                <button
-                    @click="
-                        reset();
-                        image = null;
-                        imagePreview = null;
-                    "
-                    class="size-8 absolute top-2 right-2 bg-black/30 hover:bg-black/70 rounded-full p-1 backdrop-blur-lg"
+                <span class="font-medium text-zinc-400 dark:text-zinc-500"
+                    >画像を追加</span
                 >
-                    <Icon name="lucide:x" class="size-full bg-zinc-100" />
-                </button>
+            </button>
+            <div v-else class="flex flex-col items-center gap-1 h-fit">
+                <div class="relative w-auto h-fit">
+                    <NuxtImg
+                        :src="imagePreview"
+                        alt="Image Preview"
+                        class="object-contain max-h-64 rounded-xl"
+                    />
+                    <button
+                        @click="resetImage()"
+                        class="size-8 absolute top-2 right-2 bg-black/30 hover:bg-black/70 rounded-full p-1 backdrop-blur-lg"
+                    >
+                        <Icon name="lucide:x" class="size-full bg-zinc-100" />
+                    </button>
+                </div>
+                <div
+                    v-if="fileName"
+                    class="w-full line-clamp-1 break-all text-xs px-1 text-zinc-600 dark:text-zinc-400"
+                >
+                    {{ fileName }}
+                </div>
             </div>
-            <div
-                v-if="files && files.length && files[0]"
-                class="w-full line-clamp-1 break-all text-xs px-1 text-zinc-600 dark:text-zinc-400"
-            >
-                {{ files[0].name }}
-            </div>
-        </div>
+        </template>
     </div>
 </template>

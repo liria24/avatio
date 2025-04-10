@@ -3,28 +3,15 @@ import { serverSupabaseUser } from '#supabase/server';
 import { z } from 'zod';
 
 const requestBodySchema = z.object({
-    // 画像データ（Base64文字列）
     image: z
         .string({
             required_error: 'No file provided.',
         })
         .min(1, 'No file provided.'),
-
-    size: z
-        .number({
-            required_error: "Query parameter 'size' is required.",
-            invalid_type_error: 'Size must be a number.',
-        })
-        .positive('Size must be a positive number.'),
-
-    resolution: z
-        .number({
-            required_error: "Query parameter 'resolution' is required.",
-            invalid_type_error: 'Resolution must be a number.',
-        })
-        .positive('Resolution must be a positive number.'),
-
-    prefix: z.string(),
+    target: z.enum(['setup', 'avatar'], {
+        required_error: "Query parameter 'target' is required.",
+        invalid_type_error: "Target must be either 'setup' or 'avatar'.",
+    }),
 });
 
 export type RequestBody = z.infer<typeof requestBodySchema>;
@@ -34,7 +21,7 @@ export default defineEventHandler(
         event
     ): Promise<{
         path: string;
-        prefix: string;
+        target: 'setup' | 'avatar';
         width?: number;
         height?: number;
     }> => {
@@ -71,32 +58,26 @@ export default defineEventHandler(
         const body = result.data;
 
         try {
+            // クライアント側で圧縮済みの画像をデコード
             const input = Buffer.from(
                 body.image.split(',')[1] || body.image,
                 'base64'
             );
-            const image = sharp(input);
 
-            let resolution = body.resolution;
-            const width = (await image.metadata()).width;
-            const height = (await image.metadata()).height;
+            // サイズ制限の設定（MB）
+            const sizeLimits: Record<string, number> = {
+                setup: 5,
+                avatar: 1.5,
+            };
 
-            if (width && height) {
-                if (Math.max(width, height) < body.resolution) {
-                    resolution = Math.max(width, height);
-                }
-            }
+            // サイズバリデーション
+            if (input.length > sizeLimits[body.target] * 1024 * 1024)
+                throw createError({
+                    statusCode: 400,
+                    message: `画像サイズが大きすぎます。${sizeLimits[body.target]}MB以下にしてください。現在のサイズ: ${(input.length / (1024 * 1024)).toFixed(2)}MB`,
+                });
 
-            const compressed = await image
-                .resize({
-                    width: resolution,
-                    height: resolution,
-                    fit: 'inside',
-                })
-                .toFormat('jpeg')
-                .toBuffer();
-
-            const metadata = await sharp(compressed).metadata();
+            const metadata = await sharp(input).metadata();
 
             const unixTime = Math.floor(Date.now());
             let base64UnixTime = Buffer.from(unixTime.toString()).toString(
@@ -104,15 +85,14 @@ export default defineEventHandler(
             );
             base64UnixTime = base64UnixTime.replace(/[\\/:*?"<>|]/g, '');
 
-            const fileName = `${base64UnixTime}.jpg`;
-            const fileNamePrefixed = `${body.prefix.length ? `${body.prefix}:` : ''}${fileName}`;
+            const fileName = `${body.target}:${base64UnixTime}.jpg`;
 
-            await storage.setItemRaw(fileNamePrefixed, compressed);
+            await storage.setItemRaw(fileName, input);
 
-            if (!(await storage.has(fileNamePrefixed))) {
+            if (!(await storage.has(fileName))) {
                 console.error(
                     'Storage error: Failed to verify uploaded file existence:',
-                    fileNamePrefixed
+                    fileName
                 );
                 throw createError({
                     statusCode: 500,
@@ -120,13 +100,11 @@ export default defineEventHandler(
                 });
             }
 
-            // 画像アップロード成功時は201 Created
             setResponseStatus(event, 201);
 
-            // 直接データオブジェクトを返す
             return {
                 path: fileName,
-                prefix: body.prefix,
+                target: body.target,
                 width: metadata.width,
                 height: metadata.height,
             };
@@ -134,7 +112,10 @@ export default defineEventHandler(
             console.error('Image processing or upload error:', error);
             throw createError({
                 statusCode: 500,
-                message: "Unknown error. Couldn't upload image.",
+                message:
+                    error instanceof Error
+                        ? error.message
+                        : "Unknown error. Couldn't upload image.",
             });
         }
     }

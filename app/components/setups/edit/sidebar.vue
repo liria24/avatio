@@ -8,7 +8,7 @@ const description = defineModel<string>('description', { default: '' });
 const tags = defineModel<string[]>('tags', { default: [] });
 const coAuthors = defineModel<CoAuthor[]>('coAuthors', { default: [] });
 const unity = defineModel<string>('unity', { default: '' });
-const image = defineModel<File | null>('image', { default: null });
+const image = defineModel<Blob | null>('image', { default: null });
 const publishing = defineModel<boolean>('publishing', { default: false });
 
 const { class: propClass } = defineProps<{ class?: string | string[] }>();
