@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { twMerge } from 'tailwind-merge';
 
-const model = defineModel<string>({ default: '' });
+const model = defineModel<number>({ default: 0 });
 
 interface Prop {
     id?: string;
@@ -9,15 +9,14 @@ interface Prop {
     unstyled?: boolean;
     icon?: string;
     iconSize?: string | number;
-    placeholder?: string;
     disabled?: boolean;
-    autocomplete?: string;
-    autofocus?: boolean;
+    max?: number;
+    min?: number;
+    step?: number;
+    disableWheelChange?: boolean;
     class?: string | string[];
 }
 const props = defineProps<Prop>();
-
-const emit = defineEmits(['input', 'change', 'blur']);
 </script>
 
 <template>
@@ -42,20 +41,19 @@ const emit = defineEmits(['input', 'change', 'blur']);
             :size="props.iconSize || 18"
             class="text-zinc-400 dark:text-zinc-500"
         />
-        <input
-            :id="props.id"
-            ref="input"
-            :type="props.type || 'text'"
+        <NumberFieldRoot
             v-model="model"
-            :placeholder="props.placeholder"
+            :id="props.id"
             :disabled="props.disabled"
-            :autocomplete="props.autocomplete"
-            :autofocus="props.autofocus"
-            class="grow min-w-0 focus:outline-hidden placeholder:select-none bg-transparent placeholder-zinc-400 dark:placeholder-zinc-500"
-            @input="emit('input', $event)"
-            @blur="emit('blur', $event)"
-            @change="emit('change', $event)"
-        />
+            :disable-wheel-change="props.disableWheelChange"
+            :max="props.max"
+            :min="props.min"
+            :step="props.step"
+        >
+            <NumberFieldInput
+                class="grow min-w-0 focus:outline-hidden placeholder:select-none bg-transparent placeholder-zinc-400 dark:placeholder-zinc-500"
+            />
+        </NumberFieldRoot>
 
         <slot name="trailing" />
     </div>

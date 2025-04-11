@@ -244,7 +244,14 @@ const compressImageWasm = async (
 </script>
 
 <template>
-    <div>
-        <Icon name="svg-spinners:ring-resize" :size="24" />
+    <div class="size-full flex items-center justify-center gap-3">
+        <Icon
+            name="svg-spinners:ring-resize"
+            :size="24"
+            class="text-zinc-700 dark:text-zinc-300"
+        />
+        <span class="text-sm leading-none text-zinc-700 dark:text-zinc-300">
+            画像処理中...
+        </span>
     </div>
 </template>

@@ -21,10 +21,10 @@ const { url, shop, price, likes } = defineProps<Props>();
             <Icon
                 name="lucide:heart"
                 :size="15"
-                class="text-zinc-700 dark:text-zinc-100"
+                class="pb-px text-zinc-700 dark:text-zinc-100"
             />
             <p
-                class="pb-px text-xs leading-0 whitespace-nowrap text-zinc-700 dark:text-zinc-300"
+                class="text-xs font-[Geist] leading-none whitespace-nowrap text-zinc-700 dark:text-zinc-300"
             >
                 {{ likes || '?' }}
             </p>
@@ -33,9 +33,9 @@ const { url, shop, price, likes } = defineProps<Props>();
         <NuxtLink
             :to="url"
             target="_blank"
-            class="text-sm font-semibold leading-0 whitespace-nowrap text-zinc-600 dark:text-zinc-400"
+            class="text-sm font-[Geist] font-semibold leading-none whitespace-nowrap text-zinc-600 dark:text-zinc-400"
         >
-            {{ price ? price : '価格不明' }}
+            {{ price ? price : 'UNKNOWN' }}
         </NuxtLink>
 
         <HovercardShop :shop="shop">
