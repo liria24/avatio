@@ -76,7 +76,12 @@ export default defineNuxtConfig({
     experimental: {
         typedPages: true,
     },
-    fonts: { families: [{ name: 'Murecho', provider: 'google' }] },
+    fonts: {
+        families: [
+            { name: 'Murecho', provider: 'google' },
+            { name: 'Geist', provider: 'google' },
+        ],
+    },
     icon: {
         customCollections: [{ prefix: 'avatio', dir: './app/assets/icons' }],
         clientBundle: {

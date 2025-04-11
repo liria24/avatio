@@ -17,14 +17,28 @@ const setupSchema = z.object({
     coAuthors: z
         .array(
             z.object({
-                id: z.string(),
+                id: z.string().uuid(),
                 note: z
                     .string()
                     .max(limits.coAuthorsNote, 'Co-author note is too long.'),
             })
         )
         .max(limits.coAuthors, 'Too many co-authors.'),
-    image: z.string().nullable(),
+    images: z
+        .array(
+            z
+                .string()
+                .refine(
+                    (img) =>
+                        Buffer.from(img.split(',')[1] || img, 'base64')
+                            .length <=
+                        2 * 1024 * 1024,
+                    'Image is too large.'
+                )
+        )
+        .max(1, 'Too many images.')
+        .nullable()
+        .optional(),
     unity: z
         .string()
         .max(limits.unity, 'Unity version is too long.')
@@ -82,12 +96,11 @@ const handleDbError = (table: string, error: any) => {
 
 export default defineEventHandler(async (event: H3Event) => {
     const user = await serverSupabaseUser(event).catch(() => null);
-    if (!user) {
+    if (!user)
         throw createError({
             statusCode: 403,
             message: 'Forbidden.',
         });
-    }
 
     const supabase = await serverSupabaseClient<Database>(event);
     const rawBody = await readBody(event);
@@ -95,6 +108,7 @@ export default defineEventHandler(async (event: H3Event) => {
     const result = setupSchema.safeParse(rawBody);
 
     if (!result.success) {
+        console.error('Validation error:', result.error.format());
         throw createError({
             statusCode: 400,
             message: `リクエストデータが不正です: ${result.error.issues.map((i) => i.message).join(', ')}`,
@@ -132,29 +146,29 @@ export default defineEventHandler(async (event: H3Event) => {
         });
     }
 
-    let image: {
+    const uploadedImages: {
         path: string;
+        name: string;
         width?: number;
         height?: number;
-    } | null = null;
+    }[] = [];
 
-    if (body.image) {
-        try {
-            const response = await event.$fetch('/api/image', {
-                method: 'PUT',
-                body: {
-                    image: body.image,
-                    prefix: 'setup',
-                },
-            });
+    if (body.images?.length) {
+        for (const img of body.images) {
+            try {
+                const response = await event.$fetch('/api/image', {
+                    method: 'PUT',
+                    body: { image: img, prefix: 'setup' },
+                });
 
-            image = response;
-        } catch (error) {
-            console.error('Failed to upload image:', error);
-            throw createError({
-                statusCode: 500,
-                message: 'Failed to upload image.',
-            });
+                uploadedImages.push(response);
+            } catch (error) {
+                console.error('Failed to upload image:', error);
+                throw createError({
+                    statusCode: 500,
+                    message: 'Failed to upload image.',
+                });
+            }
         }
     }
 
@@ -186,12 +200,8 @@ export default defineEventHandler(async (event: H3Event) => {
     const [{ error: tagsError }, { error: coAuthorError }] =
         await Promise.all(insertOperations);
 
-    if (tagsError) {
-        handleDbError('setup_tags', tagsError);
-    }
-    if (coAuthorError) {
-        handleDbError('setup_coauthors', coAuthorError);
-    }
+    if (tagsError) handleDbError('setup_tags', tagsError);
+    if (coAuthorError) handleDbError('setup_coauthors', coAuthorError);
 
     for (const item of body.items) {
         const { data: itemData, error: itemError } = await supabase
@@ -225,21 +235,20 @@ export default defineEventHandler(async (event: H3Event) => {
         }
     }
 
-    if (image) {
-        const { error: imageError } = await supabase
-            .from('setup_images')
-            .insert({
-                name: image.path,
-                setup_id: setupData!.id,
-                width: image.width,
-                height: image.height,
-            });
-        if (imageError) handleDbError('setup_images', imageError);
+    if (uploadedImages.length) {
+        for (const img of uploadedImages) {
+            const { error: imageError } = await supabase
+                .from('setup_images')
+                .insert({
+                    name: img.name,
+                    setup_id: setupData!.id,
+                    width: img.width,
+                    height: img.height,
+                });
+            if (imageError) handleDbError('setup_images', imageError);
+        }
     }
 
     setResponseStatus(event, 201);
-    return {
-        id: setupData!.id,
-        image: image ? image.path : null,
-    };
+    return { id: setupData!.id };
 });

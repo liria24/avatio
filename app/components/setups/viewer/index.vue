@@ -53,7 +53,7 @@ const categories: Record<string, { label: string; icon: string }> =
                         />
                         <p
                             v-if="createdAt?.length"
-                            class="text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap leading-none"
+                            class="font-[Geist] text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap leading-none"
                         >
                             {{ useLocaledDate(new Date(createdAt)) }}
                         </p>

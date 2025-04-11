@@ -21,7 +21,9 @@ const props = defineProps<Props>();
         <div
             class="w-full px-3 pt-2.5 pb-1.5 flex gap-4 justify-between items-start"
         >
-            <ToastTitle class="font-bold">{{ props.title }}</ToastTitle>
+            <ToastTitle class="font-bold text-sm pt-0.5">
+                {{ props.title }}
+            </ToastTitle>
 
             <ToastClose
                 :class="[
@@ -32,7 +34,7 @@ const props = defineProps<Props>();
                 <Icon name="lucide:x" :size="16" />
             </ToastClose>
         </div>
-        <ToastDescription class="empty:hidden px-3 text-sm text-zinc-300">
+        <ToastDescription class="empty:hidden px-3 text-xs text-zinc-300">
             {{ props.description }}
         </ToastDescription>
 

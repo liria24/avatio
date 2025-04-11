@@ -46,7 +46,7 @@ const PublishSetup = async () => {
                     note: i.note,
                     unsupported: i.unsupported,
                 })),
-            image: image.value ? await blobToBase64(image.value) : null,
+            images: image.value ? [await blobToBase64(image.value)] : null,
         };
 
         if (await setupErrorCheck(data)) return (publishing.value = false);

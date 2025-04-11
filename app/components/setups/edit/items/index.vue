@@ -104,11 +104,16 @@ const totalItemsCount = computed(() =>
                 </div>
 
                 <Button
-                    icon="lucide:plus"
-                    label="アバター・アイテムを追加"
                     class="pl-4 pr-4.5 rounded-full"
                     @click="modalSearchItem = true"
-                />
+                >
+                    <Icon name="lucide:plus" :size="18" class="text-zinc-400" />
+                    <span
+                        class="text-sm font-medium leading-none sm:before:content-['アバター・']"
+                    >
+                        アイテムを追加
+                    </span>
+                </Button>
             </div>
         </div>
 

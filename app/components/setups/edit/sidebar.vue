@@ -14,10 +14,16 @@ const publishing = defineModel<boolean>('publishing', { default: false });
 const { class: propClass } = defineProps<{ class?: string | string[] }>();
 
 const router = useRouter();
+const workerSupported = ref(true);
 
 const attributesVisibility = ref({
     coAuthors: false,
     unity: false,
+});
+
+onMounted(() => {
+    if (typeof Worker === 'undefined' || typeof OffscreenCanvas === 'undefined')
+        workerSupported.value = false;
 });
 </script>
 
@@ -34,7 +40,7 @@ const attributesVisibility = ref({
         "
     >
         <div
-            class="hidden lg:flex z-[1] sticky top-0 left-0 right-0 p-5 gap-1 flex-col bg-zinc-100 dark:bg-zinc-800"
+            class="z-[1] sticky top-0 left-0 right-0 p-5 gap-1 flex flex-col lg:bg-zinc-100 lg:dark:bg-zinc-800"
         >
             <Button
                 :label="!publishing ? '公開' : '処理中'"
@@ -44,7 +50,7 @@ const attributesVisibility = ref({
                 :icon-size="18"
                 variant="flat"
                 :class="[
-                    'grow rounded-full px-4 whitespace-nowrap',
+                    'hidden lg:flex grow rounded-full px-4 whitespace-nowrap',
                     'bg-zinc-600 hover:bg-zinc-300 hover:dark:bg-zinc-700  dark:bg-zinc-300',
                     'text-zinc-200 hover:text-zinc-600 dark:text-zinc-900 hover:dark:text-zinc-100',
                 ]"
@@ -73,28 +79,12 @@ const attributesVisibility = ref({
         </div>
 
         <div class="p-5 pt-2 flex flex-col gap-8">
-            <div class="w-full flex flex-col items-start gap-3">
-                <div class="w-full flex gap-2 items-center justify-between">
-                    <UiTitle label="タイトル" icon="lucide:text" />
-                    <UiCount
-                        v-if="title.length"
-                        :count="title.length"
-                        :max="setupLimits().title"
-                    />
-                </div>
-                <UiTextarea
-                    v-model="title"
-                    placeholder="セットアップ名"
-                    class="w-full"
-                />
-            </div>
-
             <div
-                class="grid grid-flow-row sm:grid-cols-2 lg:grid-cols-1 lg:grid-flow-row gap-8"
+                class="grid grid-flow-row sm:grid-cols-2 lg:grid-cols-1 lg:grid-flow-row gap-6"
             >
                 <div class="w-full flex flex-col items-start gap-3">
-                    <div class="w-full flex gap-2 items-center justify-between">
-                        <UiTitle label="画像" icon="lucide:image" />
+                    <SetupsEditImage ref="editImage" v-model="image" />
+                    <div class="self-end flex flex-col items-end gap-1.5">
                         <PopupUploadImage>
                             <button
                                 type="button"
@@ -102,6 +92,7 @@ const attributesVisibility = ref({
                             >
                                 <Icon
                                     name="lucide:info"
+                                    size="16"
                                     class="text-indigo-400 dark:text-indigo-300"
                                 />
                                 <span
@@ -111,11 +102,63 @@ const attributesVisibility = ref({
                                 </span>
                             </button>
                         </PopupUploadImage>
+
+                        <Popup v-if="!workerSupported">
+                            <template #trigger>
+                                <button
+                                    type="button"
+                                    class="cursor-pointer flex items-center gap-1"
+                                >
+                                    <Icon
+                                        name="lucide:triangle-alert"
+                                        size="16"
+                                        class="text-orange-400 dark:text-orange-300"
+                                    />
+                                    <span
+                                        class="text-xs font-medium text-zinc-600 dark:text-zinc-300"
+                                    >
+                                        パフォーマンス警告
+                                    </span>
+                                </button>
+                            </template>
+
+                            <template #content>
+                                <div
+                                    class="flex flex-col gap-1.5 text-zinc-600 dark:text-zinc-400"
+                                >
+                                    <p class="text-sm/relaxed">
+                                        お使いの環境では Web Worker
+                                        がサポートされていないため、<br />
+                                        画像処理でパフォーマンスが低下する可能性があります。
+                                    </p>
+                                    <p class="text-sm/relaxed">
+                                        処理が完了するまでお待ちください。
+                                    </p>
+                                </div>
+                            </template>
+                        </Popup>
                     </div>
-                    <SetupsEditImage ref="editImage" v-model="image" />
                 </div>
 
                 <div class="flex flex-col gap-8">
+                    <div class="w-full flex flex-col items-start gap-3">
+                        <div
+                            class="w-full flex gap-2 items-center justify-between"
+                        >
+                            <UiTitle label="タイトル" icon="lucide:text" />
+                            <UiCount
+                                v-if="title.length"
+                                :count="title.length"
+                                :max="setupLimits().title"
+                            />
+                        </div>
+                        <UiTextarea
+                            v-model="title"
+                            placeholder="セットアップ名"
+                            class="w-full"
+                        />
+                    </div>
+
                     <div class="w-full flex flex-col items-start gap-3">
                         <div
                             class="w-full flex gap-2 items-center justify-between"
