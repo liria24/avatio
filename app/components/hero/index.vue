@@ -2,6 +2,8 @@
 import { twMerge } from 'tailwind-merge';
 
 const props = defineProps<{ class?: string | string[] }>();
+
+const user = useSupabaseUser();
 </script>
 
 <template>
@@ -25,7 +27,8 @@ const props = defineProps<{ class?: string | string[] }>();
             あなたのアバター改変を共有しよう
         </p>
         <Button
-            to="/setup/compose"
+            v-if="!user"
+            to="/login"
             class="px-5 rounded-full hover:bg-zinc-700 hover:text-zinc-200 hover:dark:bg-zinc-300 hover:dark:text-zinc-800"
         >
             <span class="pl-0.5">ログイン</span>
