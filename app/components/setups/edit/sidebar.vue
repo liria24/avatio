@@ -11,7 +11,7 @@ const unity = defineModel<string>('unity', { default: '' });
 const image = defineModel<Blob | null>('image', { default: null });
 const publishing = defineModel<boolean>('publishing', { default: false });
 
-const { class: propClass } = defineProps<{ class?: string | string[] }>();
+const props = defineProps<{ class?: string | string[] }>();
 
 const router = useRouter();
 const workerSupported = ref(true);
@@ -35,7 +35,7 @@ onMounted(() => {
                 'flex flex-col',
                 'lg:ring-2 ring-zinc-200 dark:ring-zinc-700',
                 'lg:bg-zinc-100 lg:dark:bg-zinc-800',
-                propClass
+                props.class
             )
         "
     >

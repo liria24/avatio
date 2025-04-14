@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { twMerge } from 'tailwind-merge';
 
-const { class: propClass } = defineProps<{ class?: string | string[] }>();
+const props = defineProps<{ class?: string | string[] }>();
 
 const client = useSupabaseClient();
 
@@ -27,7 +27,7 @@ const { data: release } = await client
                 'hover:ring-2 hover:ring-zinc-400 dark:hover:ring-zinc-600',
                 'focus-visible:ring-2 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600 focus:outline-0',
                 'transition-all duration-200 ease-in-out',
-                propClass
+                props.class
             )
         "
     >

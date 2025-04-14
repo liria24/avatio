@@ -2,7 +2,7 @@
 interface Props {
     user: Author;
 }
-const { user } = defineProps<Props>();
+const props = defineProps<Props>();
 </script>
 
 <template>
@@ -12,12 +12,12 @@ const { user } = defineProps<Props>();
         </template>
         <template #content>
             <NuxtLink
-                :to="{ name: '@id', params: { id: user.id } }"
+                :to="{ name: '@id', params: { id: props.user.id } }"
                 class="flex items-center gap-3"
             >
                 <UiAvatar
-                    :url="useGetImage(user.avatar, { prefix: 'avatar' })"
-                    :alt="user.name"
+                    :url="useGetImage(props.user.avatar, { prefix: 'avatar' })"
+                    :alt="props.user.name"
                     :icon-size="18"
                     class="size-10"
                 />
@@ -25,9 +25,9 @@ const { user } = defineProps<Props>();
                     <span
                         class="text-sm font-semibold leading-none text-zinc-700 dark:text-zinc-300"
                     >
-                        {{ user.name }}
+                        {{ props.user.name }}
                     </span>
-                    <BadgeUser :badges="user.badges" size="xs" />
+                    <BadgeUser :badges="props.user.badges" size="xs" />
                 </div>
             </NuxtLink>
         </template>

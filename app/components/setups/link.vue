@@ -6,11 +6,11 @@ interface Props {
     setup: SetupClient;
     class?: string;
 }
-const { noUser, setup, class: propClass } = defineProps<Props>();
+const props = defineProps<Props>();
 const emit = defineEmits(['click']);
 const colorMode = useColorMode();
 
-const date = new Date(setup.created_at);
+const date = new Date(props.setup.created_at);
 const dateLocale = computed(() => {
     return date.toLocaleString('ja-JP', {
         year: 'numeric',
@@ -20,17 +20,20 @@ const dateLocale = computed(() => {
 });
 
 const hasValidAvatar = computed(() => {
-    return !!setup.items.avatar?.length && !setup.items.avatar[0]?.outdated;
+    return (
+        !!props.setup.items.avatar?.length &&
+        !props.setup.items.avatar[0]?.outdated
+    );
 });
 
 const avatarName = computed(() => {
     if (!hasValidAvatar.value) return '不明なベースアバター';
-    const avatar = setup.items.avatar?.[0];
+    const avatar = props.setup.items.avatar?.[0];
     return avatar ? useAvatarName(avatar.name) : '不明なベースアバター';
 });
 
 const hasSetupImages = computed(() => {
-    return !!setup.images?.length && !!setup.images[0];
+    return !!props.setup.images?.length && !!props.setup.images[0];
 });
 
 const dominantColor = ref('');
@@ -141,7 +144,7 @@ const linkClasses = computed(() => {
             : 'hover:ring-2 hover:ring-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800',
         'hover:shadow-xl shadow-black/10 dark:shadow-white/10',
         'transition duration-50 ease-in-out',
-        propClass
+        props.class
     );
 });
 </script>

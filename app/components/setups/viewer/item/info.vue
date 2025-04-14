@@ -5,13 +5,13 @@ interface Props {
     price: string | null;
     likes: number | null;
 }
-const { url, shop, price, likes } = defineProps<Props>();
+const props = defineProps<Props>();
 </script>
 
 <template>
     <div class="pl-0.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
         <NuxtLink
-            :to="url"
+            :to="props.url"
             target="_blank"
             class="flex items-center gap-1.5 w-fit"
         >
@@ -23,12 +23,12 @@ const { url, shop, price, likes } = defineProps<Props>();
             <span
                 class="pt-px text-xs font-[Geist] font-semibold leading-0 whitespace-nowrap text-zinc-600 dark:text-zinc-400"
             >
-                {{ price || 'UNKNOWN' }}
+                {{ props.price || 'UNKNOWN' }}
             </span>
         </NuxtLink>
 
         <NuxtLink
-            :to="url"
+            :to="props.url"
             target="_blank"
             class="flex items-center gap-1.5 w-fit"
         >
@@ -40,19 +40,19 @@ const { url, shop, price, likes } = defineProps<Props>();
             <p
                 class="pt-px text-xs font-[Geist] leading-none whitespace-nowrap text-zinc-600 dark:text-zinc-400"
             >
-                {{ likes?.toLocaleString() || '?' }}
+                {{ props.likes?.toLocaleString() || '?' }}
             </p>
         </NuxtLink>
 
-        <HovercardShop :shop="shop">
+        <HovercardShop :shop="props.shop">
             <NuxtLink
-                :to="`https://${shop.id}.booth.pm/`"
+                :to="`https://${props.shop.id}.booth.pm/`"
                 target="_blank"
                 class="flex items-center gap-1.5 w-fit"
             >
                 <NuxtImg
-                    :src="shop.thumbnail ?? ''"
-                    :alt="shop.name"
+                    :src="props.shop.thumbnail ?? ''"
+                    :alt="props.shop.name"
                     :width="20"
                     :height="20"
                     format="webp"
@@ -62,10 +62,10 @@ const { url, shop, price, likes } = defineProps<Props>();
                 <span
                     class="font-semibold text-xs whitespace-nowrap text-zinc-600 dark:text-zinc-400"
                 >
-                    {{ shop.name }}
+                    {{ props.shop.name }}
                 </span>
                 <Icon
-                    v-if="shop.verified"
+                    v-if="props.shop.verified"
                     name="lucide:check"
                     :size="16"
                     class="shrink-0 size-3 text-zinc-700 dark:text-zinc-300"

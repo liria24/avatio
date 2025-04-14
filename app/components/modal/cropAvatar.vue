@@ -14,16 +14,16 @@ const emit = defineEmits<{
 interface Props {
     avatar: File | null;
 }
-const { avatar } = defineProps<Props>();
+const props = defineProps<Props>();
 
 const avatarObjectURL = ref<string | null>(null);
 watchEffect(() => {
-    if (!avatar) {
+    if (!props.avatar) {
         if (avatarObjectURL.value) URL.revokeObjectURL(avatarObjectURL.value);
         avatarObjectURL.value = null;
     } else {
         if (avatarObjectURL.value) URL.revokeObjectURL(avatarObjectURL.value);
-        avatarObjectURL.value = URL.createObjectURL(avatar);
+        avatarObjectURL.value = URL.createObjectURL(props.avatar);
     }
 });
 
@@ -82,7 +82,7 @@ const canvasToFile = async (
 
 const submitCroppedImage = async () => {
     // 画像のMIMEタイプを取得（元の画像と同じタイプを維持）
-    const mimeType = avatar?.type || 'image/png';
+    const mimeType = props.avatar?.type || 'image/png';
 
     const file = await canvasToFile(mimeType, 0.9);
     if (file) {

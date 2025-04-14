@@ -4,11 +4,11 @@ import confetti from 'canvas-confetti';
 interface Props {
     id: number | null;
 }
-const { id } = defineProps<Props>();
+const props = defineProps<Props>();
 const vis = defineModel<boolean>({ default: false });
 const emit = defineEmits(['continue']);
 
-const link = computed(() => `https://avatio.me/setup/${id}`);
+const link = computed(() => `https://avatio.me/setup/${props.id}`);
 const setup = ref<SetupClient | null>(null);
 const copied = ref(false);
 const loading = ref(false); // ローディング状態を保持
@@ -47,7 +47,7 @@ const fetchSetup = async (setupId: number) => {
 };
 
 watch(
-    () => id,
+    () => props.id,
     async (newId) => {
         if (!newId) return;
         await fetchSetup(newId);

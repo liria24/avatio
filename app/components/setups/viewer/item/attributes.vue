@@ -5,15 +5,15 @@ interface Props {
     shapekeys: { name: string; value: number }[];
 }
 
-const { note, unsupported, shapekeys } = defineProps<Props>();
+const props = defineProps<Props>();
 </script>
 
 <template>
     <div
-        :data-noted="note?.length ? true : false"
+        :data-noted="props.note?.length ? true : false"
         class="empty:hidden w-full p-2 data-[noted=false]:p-0 flex flex-col gap-1.5 rounded-lg ring-inset ring-1 data-[noted=false]:ring-0 ring-zinc-300 dark:ring-zinc-700"
     >
-        <div v-if="note?.length" class="px-1 gap-2 flex items-start">
+        <div v-if="props.note?.length" class="px-1 gap-2 flex items-start">
             <Icon
                 name="lucide:pen-line"
                 :size="15"
@@ -22,11 +22,14 @@ const { note, unsupported, shapekeys } = defineProps<Props>();
             <p
                 class="text-xs/relaxed text-left break-keep whitespace-break-spaces [overflow-wrap:anywhere] text-zinc-900 dark:text-zinc-100"
             >
-                {{ note }}
+                {{ props.note }}
             </p>
         </div>
         <div class="empty:hidden flex flex-wrap gap-3 items-center justify-end">
-            <div v-if="unsupported" class="px-3 py-2 gap-2 flex items-center">
+            <div
+                v-if="props.unsupported"
+                class="px-3 py-2 gap-2 flex items-center"
+            >
                 <Icon
                     name="lucide:user-round-x"
                     :size="15"
@@ -41,7 +44,7 @@ const { note, unsupported, shapekeys } = defineProps<Props>();
             <Popup side="right">
                 <template #trigger>
                     <Button
-                        v-if="shapekeys?.length"
+                        v-if="props.shapekeys?.length"
                         class="px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800"
                     >
                         <Icon
@@ -52,7 +55,7 @@ const { note, unsupported, shapekeys } = defineProps<Props>();
                         <p
                             class="pb-px font-medium text-xs/relaxed leading-none whitespace-nowrap text-zinc-600 dark:text-zinc-400"
                         >
-                            {{ shapekeys.length }} 個のシェイプキー
+                            {{ props.shapekeys.length }} 個のシェイプキー
                         </p>
                     </Button>
                 </template>
@@ -81,7 +84,7 @@ const { note, unsupported, shapekeys } = defineProps<Props>();
                             class="p-3 rounded-lg flex flex-col gap-3 ring-1 ring-zinc-300 dark:ring-zinc-700"
                         >
                             <div
-                                v-for="(key, index) in shapekeys"
+                                v-for="(key, index) in props.shapekeys"
                                 :key="'shapekey-' + index"
                                 class="flex items-center justify-between gap-3"
                             >

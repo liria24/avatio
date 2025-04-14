@@ -2,7 +2,7 @@
 import { twMerge } from 'tailwind-merge';
 import { VueDraggable } from 'vue-draggable-plus';
 
-const { class: propClass } = defineProps<{ class?: string | string[] }>();
+const props = defineProps<{ class?: string | string[] }>();
 const emit = defineEmits(['undo', 'redo']);
 
 const items = defineModel<Record<ItemCategory, SetupItem[]>>({
@@ -69,7 +69,9 @@ const totalItemsCount = computed(() =>
 
 <template>
     <div
-        :class="twMerge('relative flex-col items-center gap-8 flex', propClass)"
+        :class="
+            twMerge('relative flex-col items-center gap-8 flex', props.class)
+        "
     >
         <div class="w-full flex flex-col gap-4 items-stretch">
             <div class="gap-2 flex items-center">

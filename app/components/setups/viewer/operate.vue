@@ -7,7 +7,7 @@ interface Props {
     author: Author;
     class?: string | string[];
 }
-const { preview, id, title, author, description } = defineProps<Props>();
+const props = defineProps<Props>();
 
 const emit = defineEmits(['login']);
 
@@ -17,17 +17,17 @@ const bookmark = ref(false);
 const modalDelete = ref(false);
 
 const toggleBookmark = async () => {
-    if (!id) return;
+    if (!props.id) return;
     if (!user.value) return emit('login');
 
-    if (bookmark.value) await useRemoveBookmark(id);
-    else await useAddBookmark(id);
+    if (bookmark.value) await useRemoveBookmark(props.id);
+    else await useAddBookmark(props.id);
 
-    bookmark.value = await useCheckBookmark(id);
+    bookmark.value = await useCheckBookmark(props.id);
 };
 
 const remove = () => {
-    if (!id) return;
+    if (!props.id) return;
     modalDelete.value = true;
 };
 </script>
@@ -35,7 +35,7 @@ const remove = () => {
 <template>
     <div v-if="!preview" class="flex items-center gap-1">
         <Button
-            v-if="user?.id !== author.id"
+            v-if="user?.id !== props.author.id"
             :tooltip="bookmark ? 'ブックマークから削除' : 'ブックマーク'"
             :icon="bookmark ? 'lucide:bookmark-x' : 'lucide:bookmark'"
             :aria-label="bookmark ? 'ブックマークから削除' : 'ブックマーク'"
@@ -50,7 +50,7 @@ const remove = () => {
         />
 
         <Button
-            v-if="user?.id === author.id"
+            v-if="user?.id === props.author.id"
             tooltip="削除"
             aria-label="削除"
             icon="lucide:trash"
@@ -61,12 +61,12 @@ const remove = () => {
             @click="remove"
         />
 
-        <ModalDeleteSetup v-model="modalDelete" :id="Number(id)" />
+        <ModalDeleteSetup v-model="modalDelete" :id="Number(props.id)" />
 
         <PopupShare
-            :setup-name="title"
-            :setup-description="description ?? ''"
-            :setup-author="author.name"
+            :setup-name="props.title"
+            :setup-description="props.description ?? ''"
+            :setup-author="props.author.name"
         >
             <Button
                 icon="lucide:share-2"

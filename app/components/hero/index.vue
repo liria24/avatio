@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { twMerge } from 'tailwind-merge';
 
-const { class: propClass } = defineProps<{ class?: string | string[] }>();
+const props = defineProps<{ class?: string | string[] }>();
 </script>
 
 <template>
@@ -9,7 +9,7 @@ const { class: propClass } = defineProps<{ class?: string | string[] }>();
         :class="
             twMerge(
                 'relative self-center w-full max-w-xl py-12 flex flex-col items-center gap-6',
-                propClass
+                props.class
             )
         "
     >

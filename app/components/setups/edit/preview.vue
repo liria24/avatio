@@ -6,17 +6,7 @@ const vis = defineModel<boolean>('vis', {
     required: true,
 });
 
-const {
-    createdAt,
-    title,
-    description,
-    tags,
-    coAuthors,
-    unity,
-    image,
-    items,
-    class: classProp,
-} = defineProps<{
+const props = defineProps<{
     createdAt?: string;
     title: string;
     description: string;
@@ -29,21 +19,21 @@ const {
 }>();
 
 const imageObjectUrl = computed(() => {
-    if (!image) return null;
-    return URL.createObjectURL(image);
+    if (!props.image) return null;
+    return URL.createObjectURL(props.image);
 });
 </script>
 
 <template>
-    <Modal v-model="vis" :class="twMerge('max-w-4xl', classProp)">
+    <Modal v-model="vis" :class="twMerge('max-w-4xl', props.class)">
         <SetupsViewer
             preview
-            :created-at="createdAt"
-            :title="title"
-            :description="description"
-            :tags="tags"
-            :co-authors="coAuthors"
-            :unity="unity"
+            :created-at="props.createdAt"
+            :title="props.title"
+            :description="props.description"
+            :tags="props.tags"
+            :co-authors="props.coAuthors"
+            :unity="props.unity"
             :author="{
                 id: userProfile.id!,
                 name: userProfile.name!,
@@ -51,7 +41,7 @@ const imageObjectUrl = computed(() => {
                 badges: userProfile.badges,
             }"
             :preview-images="imageObjectUrl ? [imageObjectUrl] : []"
-            :items="items"
+            :items="props.items"
         />
     </Modal>
 </template>
