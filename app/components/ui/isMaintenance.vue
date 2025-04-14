@@ -2,8 +2,8 @@
 const isMaintenance = ref<boolean>(false);
 
 onMounted(async () => {
-    const res = await $fetch('/api/edgeConfig');
-    if (res.value) isMaintenance.value = res.value.isMaintenance as boolean;
+    const res = await $fetch('/api/edge-config');
+    if (res.value) isMaintenance.value = res.isMaintenance as boolean;
 });
 </script>
 

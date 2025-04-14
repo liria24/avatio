@@ -1,33 +1,70 @@
 import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server';
+import { z } from 'zod';
 
-interface RequestQuery {
-    userId: string;
-    page: number;
-    perPage: number;
+const requestQuerySchema = z.object({
+    userId: z
+        .string({
+            required_error: 'ユーザーIDは必須です',
+            invalid_type_error: 'ユーザーIDは文字列である必要があります',
+        })
+        .min(1, 'ユーザーIDは空にできません'),
+
+    page: z.coerce
+        .number({
+            invalid_type_error: 'ページ番号は数値である必要があります',
+        })
+        .int('ページ番号は整数である必要があります')
+        .nonnegative('ページ番号は0以上である必要があります')
+        .default(0),
+
+    perPage: z.coerce
+        .number({
+            invalid_type_error: '1ページあたりの件数は数値である必要があります',
+        })
+        .int('1ページあたりの件数は整数である必要があります')
+        .positive('1ページあたりの件数は正の数である必要があります')
+        .default(10),
+});
+
+export type RequestQuery = z.infer<typeof requestQuerySchema>;
+
+interface BookmarksResponse {
+    setups: SetupClient[];
+    hasMore: boolean;
 }
 
-export default defineEventHandler(
-    async (
-        event
-    ): Promise<ApiResponse<{ setups: SetupClient[]; hasMore: boolean }>> => {
-        try {
-            const user = await serverSupabaseUser(event);
-            if (!user) throw new Error();
-        } catch {
-            return {
-                error: { status: 403, message: 'Forbidden.' },
-                data: null,
-            };
-        }
+export default defineEventHandler(async (event): Promise<BookmarksResponse> => {
+    try {
+        const user = await serverSupabaseUser(event);
+        if (!user)
+            throw createError({
+                statusCode: 403,
+                message: 'Forbidden.',
+            });
+    } catch {
+        throw createError({
+            statusCode: 403,
+            message: 'Forbidden.',
+        });
+    }
 
-        const query: RequestQuery = await getQuery(event);
+    const rawQuery = await getQuery(event);
+    const result = requestQuerySchema.safeParse(rawQuery);
 
-        const supabase = await serverSupabaseClient(event);
+    if (!result.success) {
+        throw createError({
+            statusCode: 400,
+            message: `不正なリクエスト: ${result.error.issues.map((i) => i.message).join(', ')}`,
+        });
+    }
 
-        const { data, count } = await supabase
-            .from('bookmarks')
-            .select(
-                `
+    const query = result.data;
+    const supabase = await serverSupabaseClient<Database>(event);
+
+    const { data, count } = await supabase
+        .from('bookmarks')
+        .select(
+            `
                 post(
                     id,
                     created_at,
@@ -67,7 +104,12 @@ export default defineEventHandler(
                             source
                         ),
                         note,
-                        unsupported
+                        unsupported,
+                        category,
+                        shapekeys:setup_item_shapekeys(
+                            name,
+                            value
+                        )
                     ),
                     tags:setup_tags(tag),
                     co_authors:setup_coauthors(
@@ -84,33 +126,25 @@ export default defineEventHandler(
                     )
                 )
                 `,
-                { count: 'estimated' }
-            )
-            .range(
-                query.page * query.perPage,
-                query.page * query.perPage + (query.perPage - 1)
-            )
-            .order('created_at', { ascending: false })
-            .returns<{ post: SetupDB }[]>();
+            { count: 'estimated' }
+        )
+        .range(
+            query.page * query.perPage,
+            query.page * query.perPage + (query.perPage - 1)
+        )
+        .order('created_at', { ascending: false })
+        .overrideTypes<{ post: SetupDB }[]>();
 
-        if (!data || !count)
-            return {
-                data: null,
-                error: {
-                    status: 500,
-                    message: 'Failed to get setups.',
-                },
-            };
+    if (!data || !count)
+        throw createError({
+            statusCode: 500,
+            message: 'Failed to get setups.',
+        });
 
-        return {
-            data: {
-                setups: data
-                    .map((post) => post.post)
-                    .map((setup) => setupMoldingClient(setup)),
-                hasMore:
-                    count > query.page * query.perPage + (query.perPage - 1),
-            },
-            error: null,
-        };
-    }
-);
+    return {
+        setups: data
+            .map((post) => post.post)
+            .map((setup) => setupMoldingClient(setup)),
+        hasMore: count > query.page * query.perPage + (query.perPage - 1),
+    };
+});

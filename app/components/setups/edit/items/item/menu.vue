@@ -1,12 +1,12 @@
 <script lang="ts" setup>
-const emit = defineEmits(['remove', 'changeCategory']);
+const emit = defineEmits(['remove', 'changeCategory', 'registerShapekey']);
 
 const unsupported = defineModel<boolean>('unsupported', {
     default: false,
 });
 
 const windowClass = [
-    'min-w-[220px] ring-1 ring-zinc-300 dark:ring-zinc-700 bg-zinc-100 dark:bg-zinc-900 rounded-md p-2',
+    'min-w-[220px] mx-2.5 ring-1 ring-zinc-300 dark:ring-zinc-700 bg-zinc-100 dark:bg-zinc-900 rounded-md p-2',
     'shadow-lg shadow-black/20 dark:shadow-black/50',
     'data-[side=bottom]:mx-2 data-[side=bottom]:mb-2',
 ];
@@ -85,6 +85,18 @@ const buttonClass = [
                         <Icon name="lucide:check" size="18" />
                     </DropdownMenuItemIndicator>
                 </DropdownMenuCheckboxItem>
+
+                <DropdownMenuItem
+                    :class="buttonClass"
+                    @select="emit('registerShapekey')"
+                >
+                    <Icon
+                        name="lucide:diamond"
+                        size="18"
+                        class="text-zinc-600 dark:text-zinc-400"
+                    />
+                    <span class="grow">シェイプキーを登録</span>
+                </DropdownMenuItem>
 
                 <DropdownMenuSeparator
                     class="h-px bg-zinc-300 dark:bg-zinc-700 m-1"

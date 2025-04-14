@@ -12,17 +12,11 @@ const props = defineProps<Props>();
         </template>
         <template #content>
             <NuxtLink
-                :to="`/@${props.user.id}`"
+                :to="{ name: '@id', params: { id: props.user.id } }"
                 class="flex items-center gap-3"
             >
                 <UiAvatar
-                    :url="
-                        props.user.avatar
-                            ? useGetImage(props.user.avatar, {
-                                  prefix: 'avatar',
-                              })
-                            : ''
-                    "
+                    :url="useGetImage(props.user.avatar, { prefix: 'avatar' })"
                     :alt="props.user.name"
                     :icon-size="18"
                     class="size-10"

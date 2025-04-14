@@ -2,7 +2,7 @@
 import { twMerge } from 'tailwind-merge';
 import { VueDraggable } from 'vue-draggable-plus';
 
-const { class: propClass } = defineProps<{ class?: string | string[] }>();
+const props = defineProps<{ class?: string | string[] }>();
 const emit = defineEmits(['undo', 'redo']);
 
 const items = defineModel<Record<ItemCategory, SetupItem[]>>({
@@ -28,7 +28,12 @@ const addItem = async (id: number) => {
 
     if (!data) return useToast().add('アイテムの追加に失敗しました。');
 
-    const d: SetupItem = { ...data, note: '', unsupported: false };
+    const d: SetupItem = {
+        ...data,
+        shapekeys: [],
+        note: '',
+        unsupported: false,
+    };
 
     const categoryKey = data.category in items.value ? data.category : 'other';
     const target = items.value[categoryKey];
@@ -64,7 +69,9 @@ const totalItemsCount = computed(() =>
 
 <template>
     <div
-        :class="twMerge('relative flex-col items-center gap-8 flex', propClass)"
+        :class="
+            twMerge('relative flex-col items-center gap-8 flex', props.class)
+        "
     >
         <div class="w-full flex flex-col gap-4 items-stretch">
             <div class="gap-2 flex items-center">
@@ -91,7 +98,9 @@ const totalItemsCount = computed(() =>
                             size="16"
                             class="shrink-0 text-zinc-600 dark:text-zinc-400"
                         />
-                        <span class="text-xs leading-none whitespace-nowrap">
+                        <span
+                            class="pt-px font-[Geist] text-xs leading-none whitespace-nowrap"
+                        >
                             <span>{{ totalItemsCount }}</span>
                             <span v-if="totalItemsCount > 32">/ 32</span>
                         </span>
@@ -99,11 +108,16 @@ const totalItemsCount = computed(() =>
                 </div>
 
                 <Button
-                    icon="lucide:plus"
-                    label="アバター・アイテムを追加"
                     class="pl-4 pr-4.5 rounded-full"
                     @click="modalSearchItem = true"
-                />
+                >
+                    <Icon name="lucide:plus" :size="18" class="text-zinc-400" />
+                    <span
+                        class="text-sm font-medium leading-none sm:before:content-['アバター・']"
+                    >
+                        アイテムを追加
+                    </span>
+                </Button>
             </div>
         </div>
 
@@ -144,6 +158,7 @@ const totalItemsCount = computed(() =>
                             v-for="item in value"
                             v-model:note="item.note"
                             v-model:unsupported="item.unsupported"
+                            v-model:shapekeys="item.shapekeys"
                             :key="'item-' + item.id"
                             :size="item.category === 'avatar' ? 'lg' : 'md'"
                             :item="item"

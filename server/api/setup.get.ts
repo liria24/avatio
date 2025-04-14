@@ -1,19 +1,34 @@
 import { serverSupabaseClient } from '#supabase/server';
+import { z } from 'zod';
 
-export interface RequestQuery {
-    id: number;
-}
+const requestQuerySchema = z.object({
+    id: z.coerce
+        .number({
+            required_error: 'idは必須です',
+            invalid_type_error: 'idは数値である必要があります',
+        })
+        .positive('idは正の数である必要があります'),
+});
 
-export default defineEventHandler(
-    async (event): Promise<ApiResponse<SetupClient>> => {
-        const query: RequestQuery = await getQuery(event);
+export type RequestQuery = z.infer<typeof requestQuerySchema>;
 
-        const supabase = await serverSupabaseClient(event);
+export default defineEventHandler(async (event): Promise<SetupClient> => {
+    const rawQuery = await getQuery(event);
+    const result = requestQuerySchema.safeParse(rawQuery);
 
-        const { data } = await supabase
-            .from('setups')
-            .select(
-                `
+    if (!result.success)
+        throw createError({
+            statusCode: 400,
+            message: `不正なリクエスト: ${result.error.format()}`,
+        });
+
+    const query = result.data;
+    const supabase = await serverSupabaseClient<Database>(event);
+
+    const { data } = await supabase
+        .from('setups')
+        .select(
+            `
                 id,
                 created_at,
                 name,
@@ -54,7 +69,11 @@ export default defineEventHandler(
                     ),
                     note,
                     unsupported,
-                    category
+                    category,
+                    shapekeys:setup_item_shapekeys(
+                        name,
+                        value
+                    )
                 ),
                 tags:setup_tags(tag),
                 co_authors:setup_coauthors(
@@ -70,59 +89,53 @@ export default defineEventHandler(
                     note
                 )
                 `
-            )
-            .eq('id', Number(query.id))
-            .maybeSingle<SetupDB>();
+        )
+        .eq('id', query.id)
+        .maybeSingle<SetupDB>();
 
-        if (!data)
-            return {
-                data: null,
-                error: {
-                    status: 404,
-                    message: 'Failed to get setup.',
-                },
-            };
+    if (!data)
+        throw createError({
+            statusCode: 404,
+            message: 'Setup not found.',
+        });
 
-        // アイテムをカテゴリごとに動的にグループ化
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const groupedItems: Record<string, any[]> = {};
-        for (const i of data.items) {
-            if (!i.data) continue;
+    // アイテム情報の更新処理
+    if (data.items) {
+        const currentTime = new Date().getTime();
 
-            const category = i.category || i.data.category;
-            if (!groupedItems[category]) groupedItems[category] = [];
-            groupedItems[category].push({
-                ...i.data,
-                note: i.note,
-                unsupported: i.unsupported,
-            });
+        for (const item of data.items) {
+            if (item.data) {
+                const updatedAt = new Date(item.data.updated_at).getTime();
+                const timeDifference = currentTime - updatedAt;
+
+                // 時間の差分が1日を超えている場合、情報を更新
+                if (timeDifference > 24 * 60 * 60 * 1000) {
+                    try {
+                        // boothアイテム情報を取得
+                        const response = await event.$fetch('/api/item/booth', {
+                            query: { id: item.data.id },
+                        });
+
+                        if (response)
+                            // 取得したデータでアイテム情報を更新
+                            item.data = {
+                                ...response,
+                                // 元の情報を保持
+                                updated_at: new Date().toISOString(),
+                            };
+                        else
+                            // 情報取得できなかった場合はoutdatedフラグを立てる
+                            item.data.outdated = true;
+                    } catch (error) {
+                        console.error(
+                            `Failed to update item ${item.data.id}:`,
+                            error
+                        );
+                    }
+                }
+            }
         }
-
-        return {
-            data: {
-                id: data.id,
-                created_at: data.created_at,
-                author: {
-                    id: data.author!.id,
-                    name: data.author!.name || 'Unknown',
-                    avatar: data.author!.avatar,
-                    badges: data.author!.badges,
-                },
-                name: data.name,
-                description: data.description,
-                unity: data.unity,
-                tags: data.tags.map((t) => t.tag),
-                co_authors: data.co_authors.map((c) => ({
-                    id: c.user.id,
-                    name: c.user.name || 'Unknown',
-                    avatar: c.user.avatar,
-                    badges: c.user.badges,
-                    note: c.note,
-                })),
-                images: data.images,
-                items: groupedItems,
-            },
-            error: null,
-        };
     }
-);
+
+    return setupMoldingClient(data);
+});

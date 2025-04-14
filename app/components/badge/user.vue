@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 interface Props {
-    badges: Badge[];
+    badges?: Badge[];
     size?: 'xs' | 'sm' | 'md' | 'lg';
 }
 const props = withDefaults(defineProps<Props>(), {

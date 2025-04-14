@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const route = useRoute();
-const excludePath = ['/setup/edit'];
+const excludePath = ['/setup/compose'];
 </script>
 
 <template>
@@ -10,7 +10,10 @@ const excludePath = ['/setup/edit'];
                 <LogoAvatio class="w-24 sm:w-32" aria-label="Avatio" />
             </NuxtLink>
 
-            <BannerHeader v-if="!excludePath.includes(route.path)" />
+            <BannerHeader
+                v-if="!excludePath.includes(route.path)"
+                class="hidden sm:flex"
+            />
         </div>
         <UiHeaderMenu />
     </header>

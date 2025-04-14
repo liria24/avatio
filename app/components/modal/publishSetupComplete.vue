@@ -4,26 +4,31 @@ import confetti from 'canvas-confetti';
 interface Props {
     id: number | null;
 }
-const { id } = defineProps<Props>();
+const props = defineProps<Props>();
 const vis = defineModel<boolean>({ default: false });
 const emit = defineEmits(['continue']);
 
-const link = computed(() => `https://avatio.me/setup/${id}`);
+const link = computed(() => `https://avatio.me/setup/${props.id}`);
 const setup = ref<SetupClient | null>(null);
 const copied = ref(false);
+const loading = ref(false); // ローディング状態を保持
 
-watch(
-    () => id,
-    async () => {
-        if (!id) return;
+const fetchSetup = async (setupId: number) => {
+    if (!setupId) return;
 
-        const { data } = await $fetch<ApiResponse<SetupClient>>(`/api/setup`, {
+    loading.value = true;
+
+    try {
+        const response = await $fetch(`/api/setup`, {
             method: 'GET',
-            query: { id },
+            query: { id: setupId },
         });
 
-        setup.value = data ?? null;
+        if (!response) return;
 
+        setup.value = response;
+
+        // 成功時に紙吹雪エフェクト
         confetti({
             particleCount: 80,
             spread: 100,
@@ -34,13 +39,24 @@ watch(
             spread: 100,
             origin: { x: 1, y: 0.7 },
         });
+    } catch (e) {
+        console.error('セットアップ取得エラー:', e);
+    } finally {
+        loading.value = false;
+    }
+};
+
+watch(
+    () => props.id,
+    async (newId) => {
+        if (!newId) return;
+        await fetchSetup(newId);
     }
 );
 </script>
 
 <template>
     <Modal
-        v-if="setup"
         v-model="vis"
         @update:open="
             (() => {
@@ -61,18 +77,17 @@ watch(
             </DialogTitle>
         </template>
 
-        <div class="flex flex-col items-center gap-1">
+        <!-- セットアップ詳細表示 -->
+        <div v-if="setup" class="flex flex-col items-center gap-1">
             <div
                 class="w-full p-3 rounded-lg ring-1 ring-zinc-600 flex flex-col gap-2 items-center"
             >
                 <NuxtImg
                     v-if="setup.images.length"
                     :src="
-                        setup.images[0]?.name
-                            ? useGetImage(setup.images[0].name, {
-                                  prefix: 'setup',
-                              })
-                            : ''
+                        useGetImage(setup.images[0]?.name, {
+                            prefix: 'setup',
+                        })
                     "
                     class="max-h-64 rounded-lg"
                 />

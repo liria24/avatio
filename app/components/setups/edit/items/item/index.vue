@@ -7,6 +7,9 @@ const note = defineModel<string>('note', {
 const unsupported = defineModel<boolean>('unsupported', {
     default: false,
 });
+const shapekeys = defineModel<Shapekey[]>('shapekeys', {
+    default: [],
+});
 
 const emit = defineEmits(['remove', 'changeCategory']);
 
@@ -17,6 +20,8 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
     size: 'md',
 });
+
+const modalRegisterShapekey = ref(false);
 
 const booth_url = 'https://booth.pm/ja/items/';
 </script>
@@ -38,7 +43,7 @@ const booth_url = 'https://booth.pm/ja/items/';
         </div>
 
         <div class="w-full py-2 pr-2 flex flex-col gap-2">
-            <div class="w-full flex gap-2 items-start">
+            <div class="w-full flex gap-3 items-start">
                 <NuxtLink
                     :to="booth_url + props.item.id"
                     target="_blank"
@@ -76,27 +81,56 @@ const booth_url = 'https://booth.pm/ja/items/';
                         </UiTooltip>
                     </div>
 
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-4">
                         <NuxtLink
                             :to="booth_url + props.item.id"
                             target="_blank"
-                            class="text-sm font-semibold leading-none whitespace-nowrap text-zinc-700 dark:text-zinc-300"
+                            class="flex items-center gap-1.5 w-fit"
                         >
-                            {{ props.item.price }}
+                            <Icon
+                                name="mingcute:currency-cny-fill"
+                                :size="18"
+                                class="shrink-0 text-zinc-600 dark:text-zinc-400"
+                            />
+                            <span
+                                class="pt-px text-xs font-[Geist] font-semibold leading-0 whitespace-nowrap text-zinc-600 dark:text-zinc-400"
+                            >
+                                {{ props.item.price }}
+                            </span>
+                        </NuxtLink>
+
+                        <NuxtLink
+                            :to="booth_url + props.item.id"
+                            target="_blank"
+                            class="flex items-center gap-1.5 w-fit"
+                        >
+                            <Icon
+                                name="mingcute:heart-fill"
+                                :size="18"
+                                class="shrink-0 text-zinc-600 dark:text-zinc-400"
+                            />
+                            <span
+                                class="pt-px text-xs font-[Geist] font-semibold leading-0 whitespace-nowrap text-zinc-600 dark:text-zinc-400"
+                            >
+                                {{ props.item.likes?.toLocaleString() || '?' }}
+                            </span>
                         </NuxtLink>
 
                         <NuxtLink
                             :to="`https://${props.item.shop.id}.booth.pm/`"
                             target="_blank"
-                            class="flex items-center gap-1.5 w-fit"
+                            class="pl-0.5 flex items-center gap-1.5 w-fit"
                         >
                             <NuxtImg
                                 :src="props.item.shop.thumbnail ?? ''"
                                 :alt="props.item.shop.name"
-                                class="size-5 rounded-md select-none border border-zinc-300"
+                                :width="24"
+                                :height="24"
+                                fit="cover"
+                                class="size-5 rounded-md p-px select-none ring-1 ring-zinc-300 dark:ring-zinc-600"
                             />
                             <span
-                                class="text-xs font-semibold leading-none line-clamp-1 break-all text-zinc-700 dark:text-zinc-300 xs"
+                                class="text-xs font-semibold leading-none line-clamp-1 break-all text-zinc-600 dark:text-zinc-400"
                             >
                                 {{ props.item.shop.name }}
                             </span>
@@ -111,21 +145,46 @@ const booth_url = 'https://booth.pm/ja/items/';
                 </div>
 
                 <div
-                    class="self-stretch flex flex-col gap-1 items-center justify-between"
+                    class="self-stretch flex flex-col gap-1 items-end justify-between"
                 >
                     <SetupsEditItemsItemMenu
                         v-model:unsupported="unsupported"
                         @change-category="emit('changeCategory', $event)"
+                        @register-shapekey="modalRegisterShapekey = true"
                         @remove="emit('remove')"
                     />
 
-                    <UiTooltip v-if="unsupported" text="アバター非対応">
-                        <Icon
-                            name="lucide:user-round-x"
-                            size="16"
-                            class="text-zinc-300"
-                        />
-                    </UiTooltip>
+                    <div class="px-2 flex items-center gap-3">
+                        <UiTooltip v-if="unsupported" text="アバター非対応">
+                            <Icon
+                                name="lucide:user-round-x"
+                                size="16"
+                                class="text-zinc-300"
+                            />
+                        </UiTooltip>
+
+                        <UiTooltip
+                            v-if="shapekeys.length"
+                            :text="`${shapekeys.length}個のシェイプキー`"
+                        >
+                            <button
+                                type="button"
+                                class="flex items-center gap-0.5 select-none cursor-pointer"
+                                @click="modalRegisterShapekey = true"
+                            >
+                                <Icon
+                                    name="lucide:diamond"
+                                    size="16"
+                                    class="text-zinc-300"
+                                />
+                                <p
+                                    class="pb-0.5 text-xs text-zinc-700 dark:text-zinc-300 leading-none"
+                                >
+                                    {{ shapekeys.length }}
+                                </p>
+                            </button>
+                        </UiTooltip>
+                    </div>
                 </div>
             </div>
 
@@ -162,5 +221,10 @@ const booth_url = 'https://booth.pm/ja/items/';
                 </p>
             </div>
         </div>
+
+        <ModalRegisterShapekey
+            v-model:visibility="modalRegisterShapekey"
+            v-model:shapekeys="shapekeys"
+        />
     </div>
 </template>

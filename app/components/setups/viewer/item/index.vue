@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { twMerge } from 'tailwind-merge';
 
-type OptionalKeys = 'note' | 'unsupported';
+type OptionalKeys = 'note' | 'unsupported' | 'shapekeys';
 interface Props {
     size?: 'lg' | 'md';
     noAction?: boolean;
@@ -13,8 +13,6 @@ const props = withDefaults(defineProps<Props>(), {
     size: 'md',
     noAction: false,
 });
-
-const loading = ref(false);
 
 const sourceInfo = {
     booth: {
@@ -28,53 +26,15 @@ const item = ref<SetupItem>({
     ...props.item,
     note: props.item.note ?? '',
     unsupported: props.item.unsupported ?? false,
-});
-
-onMounted(async () => {
-    const timeDifference =
-        new Date().getTime() - new Date(props.item.updated_at).getTime();
-
-    // 時間の差分が1日を超えている場合、処理継続する
-    if (timeDifference > 24 * 60 * 60 * 1000) {
-        const response = await $fetch('/api/item/booth', {
-            query: { id: props.item.id },
-        });
-
-        if (response.data)
-            item.value = {
-                ...response.data,
-                note: '',
-                unsupported: false,
-            };
-        if (!response.data) item.value.outdated = true;
-    }
-
-    loading.value = false;
+    shapekeys: props.item.shapekeys ?? [],
 });
 </script>
 
 <template>
     <div
-        v-if="loading"
         :class="
             twMerge(
-                'flex items-center px-6 ring-1 ring-zinc-300 dark:ring-zinc-700 rounded-lg overflow-clip',
-                props.class
-            )
-        "
-    >
-        <Icon
-            name="svg-spinners:ring-resize"
-            size="24"
-            :class="props.size === 'lg' ? 'h-20 sm:h-32' : 'h-20'"
-        />
-    </div>
-
-    <div
-        v-else
-        :class="
-            twMerge(
-                'p-1.5 flex flex-col gap-1.5 ring-1 ring-zinc-300 dark:ring-zinc-700 rounded-lg overflow-clip',
+                'p-2 flex flex-col gap-2 ring-1 ring-zinc-300 dark:ring-zinc-700 rounded-lg overflow-clip',
                 props.class
             )
         "
@@ -156,8 +116,10 @@ onMounted(async () => {
         />
 
         <SetupsViewerItemAttributes
+            v-if="item.note || item.unsupported || item.shapekeys?.length"
             :note="item.note"
             :unsupported="item.unsupported"
+            :shapekeys="item.shapekeys"
         />
     </div>
 </template>

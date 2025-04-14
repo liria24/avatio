@@ -4,6 +4,7 @@ import { twMerge } from 'tailwind-merge';
 const model = defineModel<string>({ default: '' });
 
 interface Prop {
+    id?: string;
     type?: string;
     unstyled?: boolean;
     icon?: string;
@@ -17,8 +18,6 @@ interface Prop {
 const props = defineProps<Prop>();
 
 const emit = defineEmits(['input', 'change', 'blur']);
-
-const inputId = useId();
 </script>
 
 <template>
@@ -44,7 +43,7 @@ const inputId = useId();
             class="text-zinc-400 dark:text-zinc-500"
         />
         <input
-            :id="inputId"
+            :id="props.id"
             ref="input"
             :type="props.type || 'text'"
             v-model="model"

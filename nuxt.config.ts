@@ -1,6 +1,8 @@
 import tailwindcss from '@tailwindcss/vite';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/shared/types/database';
+import wasm from 'vite-plugin-wasm';
+import topLevelAwait from 'vite-plugin-top-level-await';
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -23,7 +25,7 @@ export default defineNuxtConfig({
     ],
     routeRules: {
         '/': { isr: 60 },
-        '/setup/edit': { ssr: false },
+        '/setup/compose': { ssr: false },
         '/faq': { isr: 600 },
         '/terms': { isr: 600 },
         '/privacy-policy': { isr: 600 },
@@ -33,12 +35,14 @@ export default defineNuxtConfig({
         preset: 'vercel',
     },
     vite: {
-        plugins: [tailwindcss()],
+        plugins: [tailwindcss(), wasm(), topLevelAwait()],
     },
     runtimeConfig: {
         public: { r2: { domain: '' } },
+        adminKey: '',
         turnstile: { siteKey: '', secretKey: '' },
         r2: { endpoint: '', accessKey: '', secretKey: '' },
+        // openai: { apiKey: '' },
     },
     app: {
         head: {
@@ -69,7 +73,15 @@ export default defineNuxtConfig({
             ],
         },
     },
-    fonts: { families: [{ name: 'Murecho', provider: 'google' }] },
+    experimental: {
+        typedPages: true,
+    },
+    fonts: {
+        families: [
+            { name: 'Murecho', provider: 'google' },
+            { name: 'Geist', provider: 'google' },
+        ],
+    },
     icon: {
         customCollections: [{ prefix: 'avatio', dir: './app/assets/icons' }],
         clientBundle: {
@@ -94,26 +106,6 @@ export default defineNuxtConfig({
             's2.booth.pm', // booth
             import.meta.env.NUXT_PUBLIC_R2_DOMAIN.replace('https://', ''), // R2
         ],
-        presets: {
-            thumbnail: {
-                modifiers: {
-                    format: 'webp',
-                    sizes: '300px',
-                    quality: 85,
-                    loading: 'lazy',
-                    fit: 'cover',
-                },
-            },
-            avatarThumbnail: {
-                modifiers: {
-                    format: 'webp',
-                    sizes: '80px',
-                    quality: 80,
-                    loading: 'lazy',
-                    fit: 'cover',
-                },
-            },
-        },
     },
     robots: {
         allow: ['Twitterbot', 'facebookexternalhit'],
@@ -126,7 +118,7 @@ export default defineNuxtConfig({
             '/confirm',
             '/login',
             '/search',
-            '/setup/edit',
+            '/setup/compose',
             '/settings',
             '/bookmarks',
         ],
@@ -223,7 +215,7 @@ export default defineNuxtConfig({
         redirectOptions: {
             login: '/login',
             callback: '/',
-            include: ['/setup/edit', '/settings', '/bookmarks'],
+            include: ['/setup/compose', '/settings', '/bookmarks'],
             exclude: [],
             cookieRedirect: false,
         },

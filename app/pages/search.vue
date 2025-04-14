@@ -4,7 +4,7 @@ interface Query {
     item?: string;
     tag?: string | string[];
 }
-const route = useRoute();
+const route = useRoute('search');
 const client = useSupabaseClient();
 const query = ref<Query>(route.query);
 
@@ -148,7 +148,7 @@ useOGP({
                 <NuxtLink
                     v-for="i in popularAvatars"
                     :key="useId()"
-                    :to="`/search?item=${i.id}`"
+                    :to="{ name: 'search', query: { item: i.id } }"
                     :aria-label="i.name"
                     class="group relative size-32 rounded-lg overflow-hidden"
                 >

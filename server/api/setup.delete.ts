@@ -1,83 +1,91 @@
 import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server';
+import { z } from 'zod';
 
-export interface RequestBody {
-    id: number;
-}
+const requestBodySchema = z.object({
+    id: z
+        .number({
+            required_error: 'idは必須です',
+            invalid_type_error: 'idは数値である必要があります',
+        })
+        .positive('idは正の数である必要があります'),
+});
 
-export default defineEventHandler(
-    async (event): Promise<ApiResponse<{ id: number }>> => {
+export type RequestBody = z.infer<typeof requestBodySchema>;
+
+export default defineEventHandler(async (event) => {
+    try {
+        const user = await serverSupabaseUser(event);
+        if (!user) {
+            throw createError({
+                statusCode: 403,
+                message: 'Forbidden.',
+            });
+        }
+    } catch {
+        throw createError({
+            statusCode: 403,
+            message: 'Forbidden.',
+        });
+    }
+
+    const rawBody = await readBody(event);
+    const result = requestBodySchema.safeParse(rawBody);
+
+    if (!result.success) {
+        throw createError({
+            statusCode: 400,
+            message: `不正なリクエスト: ${result.error.format()}`,
+        });
+    }
+
+    const body = result.data;
+    const supabase = await serverSupabaseClient<Database>(event);
+
+    const { data: setupData } = await supabase
+        .from('setups')
+        .select('images:setup_images(name)')
+        .eq('id', body.id)
+        .maybeSingle();
+
+    if (!setupData) {
+        throw createError({
+            statusCode: 404,
+            message: 'Setup not found.',
+        });
+    }
+
+    const { error } = await supabase.from('setups').delete().eq('id', body.id);
+
+    if (error) {
+        throw createError({
+            statusCode: 500,
+            message: 'Failed to delete setup.',
+        });
+    }
+
+    const failed = [];
+
+    // 画像削除処理
+    for (const image of setupData.images) {
         try {
-            const user = await serverSupabaseUser(event);
-            if (!user) throw new Error();
+            await event.$fetch(`/api/image`, {
+                method: 'DELETE',
+                query: { name: image.name, prefix: 'setup' },
+            });
         } catch {
-            return {
-                error: {
-                    status: 403,
-                    message: 'Forbidden.',
-                    client: { title: 'アクセス拒否' },
-                },
-                data: null,
-            };
+            failed.push(image.name);
         }
+    }
 
-        const body: RequestBody = await readBody(event);
-
-        const supabase = await serverSupabaseClient(event);
-
-        const { data: setupData } = await supabase
-            .from('setups')
-            .select('images:setup_images(name)')
-            .eq('id', body.id)
-            .maybeSingle();
-
-        if (!setupData)
-            return {
-                error: {
-                    status: 404,
-                    message: 'Failed to get setup.',
-                },
-                data: null,
-            };
-
-        const { error } = await supabase
-            .from('setups')
-            .delete()
-            .eq('id', body.id);
-
-        if (error)
-            return {
-                error: {
-                    status: 1,
-                    message: 'Failed to delete setup.',
-                },
-                data: null,
-            };
-
-        const failed = [];
-
-        for (const image of setupData.images) {
-            const res: ApiResponse<{ path: string }> = await event.$fetch(
-                `/api/image`,
-                {
-                    method: 'DELETE',
-                    query: { name: image.name, prefix: 'setup' },
-                }
-            );
-            if (res.error) failed.push(image.name);
-        }
-
-        if (failed.length)
-            return {
-                error: {
-                    status: 2,
-                    message: `Failed to delete images. ${failed.join(', ')}`,
-                },
-                data: null,
-            };
-
+    if (failed.length) {
+        // 画像削除に失敗してもセットアップ自体は削除されているので、警告として200で返す
+        setResponseStatus(event, 200);
         return {
-            error: null,
-            data: { id: body.id },
+            id: body.id,
+            warning: `Failed to delete some images: ${failed.join(', ')}`,
         };
     }
-);
+
+    setResponseStatus(event, 204);
+    return null;
+});

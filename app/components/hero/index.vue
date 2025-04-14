@@ -1,8 +1,17 @@
-<script lang="ts" setup></script>
+<script lang="ts" setup>
+import { twMerge } from 'tailwind-merge';
+
+const props = defineProps<{ class?: string | string[] }>();
+</script>
 
 <template>
     <div
-        class="relative self-center w-full max-w-xl mt-12 mb-6 py-12 flex flex-col items-center gap-6"
+        :class="
+            twMerge(
+                'relative self-center w-full max-w-xl py-12 flex flex-col items-center gap-6',
+                props.class
+            )
+        "
     >
         <HeroDotBackground class="absolute inset-0 w-full h-full" />
         <LogoAvatio
@@ -16,10 +25,10 @@
             あなたのアバター改変を共有しよう
         </p>
         <Button
-            to="/setup/edit"
-            class="pr-6 pl-5 :mr-2 outline-1 rounded-full whitespace-nowrap hover:bg-zinc-700 hover:text-zinc-200 hover:dark:bg-zinc-300 hover:dark:text-zinc-800"
+            to="/setup/compose"
+            class="px-5 rounded-full hover:bg-zinc-700 hover:text-zinc-200 hover:dark:bg-zinc-300 hover:dark:text-zinc-800"
         >
-            <span class="block">ログイン</span>
+            <span class="pl-0.5">ログイン</span>
         </Button>
     </div>
 </template>

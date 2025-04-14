@@ -1,15 +1,11 @@
 <script lang="ts" setup>
-const model = defineModel<
-    { id: string; name: string; avatar: string; note: string }[]
->({
+const model = defineModel<CoAuthor[]>({
     default: [],
 });
 
 const input = ref('');
 const searching = ref(false);
-const searchedUsers = ref<
-    { id: string; name: string; avatar: string; note: string }[]
->([]);
+const searchedUsers = ref<CoAuthor[]>([]);
 
 const user = useSupabaseUser();
 const client = useSupabaseClient();
@@ -31,7 +27,8 @@ const add = async (id: string) => {
         model.value.push({
             id: id,
             name: data.name,
-            avatar: data.avatar,
+            avatar: data.avatar || null,
+            badges: [],
             note: '',
         });
         input.value = '';
@@ -103,6 +100,7 @@ watch(input, handleInputChange);
                                     useGetImage(i.avatar, { prefix: 'avatar' })
                                 "
                                 :alt="i.name"
+                                class="size-9"
                             />
                             <span>{{ i.name }}</span>
                         </Button>

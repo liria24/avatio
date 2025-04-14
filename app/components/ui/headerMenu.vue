@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 const route = useRoute();
 const user = useSupabaseUser();
-const client = useSupabaseClient();
+const client = useSupabaseClient<Database>();
 
 const userRefresh = async () => {
     if (!user.value) return (userProfile.value.avatar = null);
@@ -9,15 +9,14 @@ const userRefresh = async () => {
     try {
         const { data } = await client
             .from('users')
-            .select('id, name, avatar, badges:user_badges(name)')
+            .select('id, name, avatar, badges:user_badges(name, created_at)')
             .eq('id', user.value.id)
             .maybeSingle();
 
         userProfile.value.id = data?.id ?? null;
         userProfile.value.name = data?.name ?? null;
         userProfile.value.avatar = data?.avatar ?? null;
-        userProfile.value.badges =
-            data?.badges.map((badge) => badge.name) ?? [];
+        userProfile.value.badges = data?.badges ?? [];
     } catch {
         userProfile.value.id = null;
         userProfile.value.name = null;
@@ -37,8 +36,10 @@ onMounted(async () => {
     <div class="items-center gap-2 flex">
         <div class="items-center gap-0.5 flex">
             <Button
-                v-if="user && !['/login', '/setup/edit'].includes(route.path)"
-                to="/setup/edit"
+                v-if="
+                    user && !['/login', '/setup/compose'].includes(route.path)
+                "
+                to="/setup/compose"
                 class="p-3 md:pr-6 md:pl-5 md:mr-2 outline-0 md:outline-1 md:rounded-full whitespace-nowrap hover:bg-zinc-700 hover:text-zinc-200 hover:dark:bg-zinc-300 hover:dark:text-zinc-800"
             >
                 <Icon name="lucide:plus" :size="18" />
@@ -71,12 +72,9 @@ onMounted(async () => {
 
         <template v-if="route.path !== '/login'">
             <ClientOnly>
-                <UiTooltip v-if="user" :text="userProfile.name ?? ''">
-                    <NuxtLink
-                        id="user"
-                        tabindex="0"
-                        :to="`/@${user?.id}`"
-                        class="hidden sm:flex select-none rounded-full items-center outline-4 outline-transparent hover:outline-zinc-300 hover:dark:outline-zinc-600 transition-all ease-in-out duration-100"
+                <PopupMe v-if="user">
+                    <div
+                        class="hidden sm:flex select-none rounded-full items-center outline-4 outline-transparent hover:outline-zinc-300 hover:dark:outline-zinc-600 transition-all ease-in-out duration-100 cursor-pointer"
                     >
                         <UiAvatar
                             :url="
@@ -85,9 +83,10 @@ onMounted(async () => {
                                 })
                             "
                             :alt="userProfile.name ?? ''"
+                            class="size-8"
                         />
-                    </NuxtLink>
-                </UiTooltip>
+                    </div>
+                </PopupMe>
 
                 <Button
                     v-else
@@ -135,8 +134,13 @@ onMounted(async () => {
                                 class="p-2.5 hover:bg-zinc-300 hover:dark:bg-zinc-600"
                             >
                                 <UiAvatar
-                                    :url="userProfile.avatar ?? ''"
+                                    :url="
+                                        useGetImage(userProfile.avatar, {
+                                            prefix: 'avatar',
+                                        })
+                                    "
                                     :alt="userProfile.name ?? ''"
+                                    class="size-8"
                                 />
                                 <span>{{ userProfile.name }}</span>
                             </Button>

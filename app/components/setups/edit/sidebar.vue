@@ -6,25 +6,24 @@ const emit = defineEmits(['publish', 'preview']);
 const title = defineModel<string>('title', { default: '' });
 const description = defineModel<string>('description', { default: '' });
 const tags = defineModel<string[]>('tags', { default: [] });
-const coAuthors = defineModel<
-    {
-        id: string;
-        name: string;
-        avatar: string;
-        note: string;
-    }[]
->('coAuthors', { default: [] });
+const coAuthors = defineModel<CoAuthor[]>('coAuthors', { default: [] });
 const unity = defineModel<string>('unity', { default: '' });
-const image = defineModel<File | null>('image', { default: null });
+const image = defineModel<Blob | null>('image', { default: null });
 const publishing = defineModel<boolean>('publishing', { default: false });
 
-const { class: propClass } = defineProps<{ class?: string | string[] }>();
+const props = defineProps<{ class?: string | string[] }>();
 
 const router = useRouter();
+const workerSupported = ref(true);
 
 const attributesVisibility = ref({
     coAuthors: false,
     unity: false,
+});
+
+onMounted(() => {
+    if (typeof Worker === 'undefined' || typeof OffscreenCanvas === 'undefined')
+        workerSupported.value = false;
 });
 </script>
 
@@ -36,12 +35,12 @@ const attributesVisibility = ref({
                 'flex flex-col',
                 'lg:ring-2 ring-zinc-200 dark:ring-zinc-700',
                 'lg:bg-zinc-100 lg:dark:bg-zinc-800',
-                propClass
+                props.class
             )
         "
     >
         <div
-            class="hidden lg:flex z-[1] sticky top-0 left-0 right-0 p-5 gap-1 flex-col bg-zinc-100 dark:bg-zinc-800"
+            class="z-[1] sticky top-0 left-0 right-0 p-5 gap-1 flex flex-col lg:bg-zinc-100 lg:dark:bg-zinc-800"
         >
             <Button
                 :label="!publishing ? '公開' : '処理中'"
@@ -51,7 +50,7 @@ const attributesVisibility = ref({
                 :icon-size="18"
                 variant="flat"
                 :class="[
-                    'grow rounded-full px-4 whitespace-nowrap',
+                    'hidden lg:flex grow rounded-full px-4 whitespace-nowrap',
                     'bg-zinc-600 hover:bg-zinc-300 hover:dark:bg-zinc-700  dark:bg-zinc-300',
                     'text-zinc-200 hover:text-zinc-600 dark:text-zinc-900 hover:dark:text-zinc-100',
                 ]"
@@ -80,28 +79,12 @@ const attributesVisibility = ref({
         </div>
 
         <div class="p-5 pt-2 flex flex-col gap-8">
-            <div class="w-full flex flex-col items-start gap-3">
-                <div class="w-full flex gap-2 items-center justify-between">
-                    <UiTitle label="タイトル" icon="lucide:text" />
-                    <UiCount
-                        v-if="title.length"
-                        :count="title.length"
-                        :max="setupLimits().title"
-                    />
-                </div>
-                <UiTextarea
-                    v-model="title"
-                    placeholder="セットアップ名"
-                    class="w-full"
-                />
-            </div>
-
             <div
-                class="grid grid-flow-row sm:grid-cols-2 lg:grid-cols-1 lg:grid-flow-row gap-8"
+                class="grid grid-flow-row sm:grid-cols-2 lg:grid-cols-1 lg:grid-flow-row gap-6"
             >
                 <div class="w-full flex flex-col items-start gap-3">
-                    <div class="w-full flex gap-2 items-center justify-between">
-                        <UiTitle label="画像" icon="lucide:image" />
+                    <SetupsEditImage ref="editImage" v-model="image" />
+                    <div class="self-end flex flex-col items-end gap-1.5">
                         <PopupUploadImage>
                             <button
                                 type="button"
@@ -109,6 +92,7 @@ const attributesVisibility = ref({
                             >
                                 <Icon
                                     name="lucide:info"
+                                    size="16"
                                     class="text-indigo-400 dark:text-indigo-300"
                                 />
                                 <span
@@ -118,11 +102,63 @@ const attributesVisibility = ref({
                                 </span>
                             </button>
                         </PopupUploadImage>
+
+                        <Popup v-if="!workerSupported">
+                            <template #trigger>
+                                <button
+                                    type="button"
+                                    class="cursor-pointer flex items-center gap-1"
+                                >
+                                    <Icon
+                                        name="lucide:triangle-alert"
+                                        size="16"
+                                        class="text-orange-400 dark:text-orange-300"
+                                    />
+                                    <span
+                                        class="text-xs font-medium text-zinc-600 dark:text-zinc-300"
+                                    >
+                                        パフォーマンス警告
+                                    </span>
+                                </button>
+                            </template>
+
+                            <template #content>
+                                <div
+                                    class="flex flex-col gap-1.5 text-zinc-600 dark:text-zinc-400"
+                                >
+                                    <p class="text-sm/relaxed">
+                                        お使いの環境では Web Worker
+                                        がサポートされていないため、<br />
+                                        画像処理でパフォーマンスが低下する可能性があります。
+                                    </p>
+                                    <p class="text-sm/relaxed">
+                                        処理が完了するまでお待ちください。
+                                    </p>
+                                </div>
+                            </template>
+                        </Popup>
                     </div>
-                    <SetupsEditImage ref="editImage" v-model="image" />
                 </div>
 
                 <div class="flex flex-col gap-8">
+                    <div class="w-full flex flex-col items-start gap-3">
+                        <div
+                            class="w-full flex gap-2 items-center justify-between"
+                        >
+                            <UiTitle label="タイトル" icon="lucide:text" />
+                            <UiCount
+                                v-if="title.length"
+                                :count="title.length"
+                                :max="setupLimits().title"
+                            />
+                        </div>
+                        <UiTextarea
+                            v-model="title"
+                            placeholder="セットアップ名"
+                            class="w-full"
+                        />
+                    </div>
+
                     <div class="w-full flex flex-col items-start gap-3">
                         <div
                             class="w-full flex gap-2 items-center justify-between"
@@ -161,17 +197,20 @@ const attributesVisibility = ref({
                     class="w-full flex flex-col items-start gap-3"
                 >
                     <div class="w-full flex gap-2 items-center justify-between">
-                        <div
-                            class="w-full flex items-center gap-1 justify-between"
-                        >
-                            <UiTitle
-                                label="共同作者"
-                                icon="lucide:users-round"
+                        <UiTitle label="共同作者" icon="lucide:users-round" />
+                        <div class="flex items-center gap-1">
+                            <UiCount
+                                v-if="coAuthors.length"
+                                :count="coAuthors.length"
+                                :max="setupLimits().coAuthors"
                             />
                             <Button
                                 variant="flat"
                                 class="p-1.5"
-                                @click="attributesVisibility.coAuthors = false"
+                                @click="
+                                    attributesVisibility.coAuthors = false;
+                                    coAuthors = [];
+                                "
                             >
                                 <Icon
                                     name="lucide:x"
@@ -180,11 +219,6 @@ const attributesVisibility = ref({
                                 />
                             </Button>
                         </div>
-                        <UiCount
-                            v-if="coAuthors.length"
-                            :count="coAuthors.length"
-                            :max="setupLimits().coAuthors"
-                        />
                     </div>
                     <SetupsEditCoAuthor v-model="coAuthors" />
                 </div>
@@ -194,17 +228,23 @@ const attributesVisibility = ref({
                     class="w-full flex flex-col items-start gap-3"
                 >
                     <div class="w-full flex gap-2 items-center justify-between">
-                        <div
-                            class="w-full flex items-center gap-1 justify-between"
-                        >
-                            <UiTitle
-                                label="Unity バージョン"
-                                icon="simple-icons:unity"
+                        <UiTitle
+                            label="Unity バージョン"
+                            icon="simple-icons:unity"
+                        />
+                        <div class="flex items-center gap-1">
+                            <UiCount
+                                v-if="unity.length"
+                                :count="unity.length"
+                                :max="setupLimits().unity"
                             />
                             <Button
                                 variant="flat"
                                 class="p-1.5"
-                                @click="attributesVisibility.unity = false"
+                                @click="
+                                    attributesVisibility.unity = false;
+                                    unity = '';
+                                "
                             >
                                 <Icon
                                     name="lucide:x"
@@ -213,12 +253,6 @@ const attributesVisibility = ref({
                                 />
                             </Button>
                         </div>
-
-                        <UiCount
-                            v-if="unity.length"
-                            :count="unity.length"
-                            :max="setupLimits().unity"
-                        />
                     </div>
                     <UiTextinput
                         v-model="unity"
@@ -244,7 +278,7 @@ const attributesVisibility = ref({
                                 size="18"
                                 class="text-zinc-400"
                             />
-                            <span>アトリビュートを追加</span>
+                            <span>項目を追加</span>
                         </Button>
                     </template>
 

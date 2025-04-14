@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-const avatar = defineModel<File | null>('avatar', {
+const avatar = defineModel<Blob | null>('avatar', {
     required: true,
     default: null,
 });
@@ -16,7 +16,7 @@ const modalCropAvatar = ref(false);
 const loading = ref(false);
 
 const { open, onChange, reset } = useFileDialog({
-    accept: 'image/png, image/jpeg, image/webp, image/avif, image/tiff',
+    accept: 'image/png, image/jpeg, image/webp, image/tiff',
     multiple: false,
 });
 

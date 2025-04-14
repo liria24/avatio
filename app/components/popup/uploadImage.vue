@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const types = ['PNG', 'JPEG', 'WebP', 'AVIF', 'TIFF'];
+const types = ['PNG', 'JPEG', 'WebP', 'TIFF'];
 </script>
 
 <template>

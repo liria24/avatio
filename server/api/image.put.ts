@@ -1,97 +1,78 @@
 import sharp from 'sharp';
-import { createStorage } from 'unstorage';
-import s3Driver from 'unstorage/drivers/s3';
 import { serverSupabaseUser } from '#supabase/server';
+import { z } from 'zod';
 
-export interface RequestBody {
-    image: string;
-    size: number;
-    resolution: number;
-    prefix: string;
-}
-
-const runtime = useRuntimeConfig();
-
-const storage = createStorage({
-    driver: s3Driver({
-        accessKeyId: runtime.r2.accessKey,
-        secretAccessKey: runtime.r2.secretKey,
-        endpoint: runtime.r2.endpoint,
-        bucket: 'avatio',
-        region: 'auto',
+const requestBodySchema = z.object({
+    image: z
+        .string({
+            required_error: 'No file provided.',
+        })
+        .min(1, 'No file provided.'),
+    prefix: z.enum(['setup', 'avatar'], {
+        required_error: 'No target provided.',
+        invalid_type_error: 'Invalid target provided.',
     }),
 });
+
+export type RequestBody = z.infer<typeof requestBodySchema>;
 
 export default defineEventHandler(
     async (
         event
-    ): Promise<
-        ApiResponse<{
-            path: string;
-            prefix: string;
-            width?: number;
-            height?: number;
-        }>
-    > => {
+    ): Promise<{
+        path: string;
+        name: string;
+        prefix: 'setup' | 'avatar';
+        width?: number;
+        height?: number;
+    }> => {
+        const storage = imageStorageClient();
+
         try {
             const user = await serverSupabaseUser(event);
-            if (!user) throw new Error();
-        } catch {
-            return {
-                error: { status: 403, message: 'Forbidden.' },
-                data: null,
-            };
+            if (!user) {
+                console.error('Authentication failed: User not found');
+                throw createError({
+                    statusCode: 403,
+                    message: 'Forbidden.',
+                });
+            }
+        } catch (error) {
+            console.error('Authentication error:', error);
+            throw createError({
+                statusCode: 403,
+                message: 'Forbidden.',
+            });
         }
 
-        const body: RequestBody = await readBody(event);
+        const rawBody = await readBody(event);
+        const result = requestBodySchema.safeParse(rawBody);
 
-        if (!body.image || !body.image.length)
-            return {
-                error: { status: 400, message: 'No file provided.' },
-                data: null,
-            };
+        if (!result.success) {
+            console.error('Validation error:', result.error.format());
+            throw createError({
+                statusCode: 400,
+                message: `リクエストデータが不正です: ${result.error.issues.map((i) => i.message).join(', ')}`,
+            });
+        }
 
-        if (!body.size || !body.resolution)
-            return {
-                error: {
-                    status: 400,
-                    message:
-                        "Query parameter 'size' and 'resolution' are required.",
-                },
-                data: null,
-            };
+        const body = result.data;
 
         try {
+            // クライアント側で圧縮済みの画像をデコード
             const input = Buffer.from(
                 body.image.split(',')[1] || body.image,
                 'base64'
             );
-            const image = sharp(input);
 
-            if (isNaN(body.resolution) || body.resolution <= 0)
-                return {
-                    error: { status: 400, message: 'Invalid size parameter.' },
-                    data: null,
-                };
+            // サイズバリデーション
+            if (input.length > 2 * 1024 * 1024)
+                throw createError({
+                    statusCode: 400,
+                    message: `画像サイズが大きすぎます。2MB以下にしてください。現在のサイズ: ${(input.length / (1024 * 1024)).toFixed(2)}MB`,
+                });
 
-            let resolution = body.resolution;
-            const width = (await image.metadata()).width;
-            const height = (await image.metadata()).height;
-
-            if (width && height)
-                if (Math.max(width, height) < body.resolution)
-                    resolution = Math.max(width, height);
-
-            const compressed = await image
-                .resize({
-                    width: resolution,
-                    height: resolution,
-                    fit: 'inside',
-                })
-                .toFormat('jpeg')
-                .toBuffer();
-
-            const metadata = await sharp(compressed).metadata();
+            const metadata = await sharp(input).metadata();
 
             const unixTime = Math.floor(Date.now());
             let base64UnixTime = Buffer.from(unixTime.toString()).toString(
@@ -99,34 +80,40 @@ export default defineEventHandler(
             );
             base64UnixTime = base64UnixTime.replace(/[\\/:*?"<>|]/g, '');
 
-            const fileName = `${base64UnixTime}.jpg`;
-            const fileNamePrefixed = `${body.prefix.length ? `${body.prefix}:` : ''}${fileName}`;
+            const filename = `${base64UnixTime}.jpg`;
+            const prefixedFileName = `${body.prefix}:${base64UnixTime}.jpg`;
 
-            await storage.setItemRaw(fileNamePrefixed, compressed);
-            if (!(await storage.has(fileNamePrefixed)))
-                return {
-                    error: { status: 500, message: 'Upload to R2 failed.' },
-                    data: null,
-                };
+            await storage.setItemRaw(prefixedFileName, input);
+
+            if (!(await storage.has(prefixedFileName))) {
+                console.error(
+                    'Storage error: Failed to verify uploaded file existence:',
+                    prefixedFileName
+                );
+                throw createError({
+                    statusCode: 500,
+                    message: 'Upload to R2 failed.',
+                });
+            }
+
+            setResponseStatus(event, 201);
 
             return {
-                error: null,
-                data: {
-                    path: fileName,
-                    prefix: body.prefix,
-                    width: metadata.width,
-                    height: metadata.height,
-                },
+                path: prefixedFileName,
+                name: filename,
+                prefix: body.prefix,
+                width: metadata.width,
+                height: metadata.height,
             };
         } catch (error) {
-            console.error(error);
-            return {
-                error: {
-                    status: 500,
-                    message: "Unknown error. Couldn't upload image.",
-                },
-                data: null,
-            };
+            console.error('Image processing or upload error:', error);
+            throw createError({
+                statusCode: 500,
+                message:
+                    error instanceof Error
+                        ? error.message
+                        : "Unknown error. Couldn't upload image.",
+            });
         }
     }
 );

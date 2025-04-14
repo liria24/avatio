@@ -8,15 +8,20 @@ export default defineEventHandler(async (event) => {
     let user: User | null;
     try {
         user = await serverSupabaseUser(event);
-        if (!user) throw new Error();
+        if (!user) {
+            throw createError({
+                statusCode: 403,
+                message: 'Forbidden.',
+            });
+        }
     } catch {
-        return {
-            error: { status: 403, message: 'Forbidden.' },
-            data: null,
-        };
+        throw createError({
+            statusCode: 403,
+            message: 'Forbidden.',
+        });
     }
 
-    const supabase = serverSupabaseServiceRole(event);
+    const supabase = serverSupabaseServiceRole<Database>(event);
 
     // const body = await readBody(event);
     // const plainPassword = body.plainPassword;
@@ -29,35 +34,31 @@ export default defineEventHandler(async (event) => {
 
     // if (checkPasswordError) {
     //     console.error(checkPasswordError);
-    //     return sendError(
-    //         event,
-    //         createError({
-    //             statusCode: 500,
-    //             statusMessage: 'Error on checking password.',
-    //         })
-    //     );
+    //     throw createError({
+    //         statusCode: 500,
+    //         message: 'Error on checking password.'
+    //     });
     // }
 
     // if (!checkPasswordResult) {
     //     console.error('Invalid password');
-    //     return sendError(
-    //         event,
-    //         createError({ statusCode: 401, statusMessage: 'Invalid password' })
-    //     );
+    //     throw createError({
+    //         statusCode: 401,
+    //         message: 'Invalid password'
+    //     });
     // }
 
-    const { data, error } = await supabase.auth.admin.deleteUser(user.id);
+    const { error } = await supabase.auth.admin.deleteUser(user.id);
 
     if (error) {
         console.error(error);
-        return sendError(
-            event,
-            createError({
-                statusCode: 500,
-                statusMessage: 'Error on deleting user.',
-            })
-        );
+        throw createError({
+            statusCode: 500,
+            message: 'Error on deleting user.',
+        });
     }
 
-    return data;
+    // ユーザー削除成功の場合、204 No Content が適切
+    setResponseStatus(event, 204);
+    return null;
 });

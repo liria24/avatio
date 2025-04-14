@@ -17,6 +17,7 @@ export default (setup: SetupDB): SetupClient => {
             ...i.data,
             note: i.note,
             unsupported: i.unsupported,
+            shapekeys: i.shapekeys,
         };
 
         items[item.category].push(item);

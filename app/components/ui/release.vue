@@ -3,7 +3,7 @@ interface Props {
     data: DocumentData;
     index: number;
 }
-const { data, index } = defineProps<Props>();
+const props = defineProps<Props>();
 
 const extended = ref(false);
 
@@ -18,7 +18,7 @@ const category: Record<string, string> = {
 <template>
     <div class="relative grid grid-flow-row sm:grid-cols-2 gap-5">
         <div
-            :data-index="index"
+            :data-index="props.index"
             class="absolute left-[13px] h-full w-0.5 bg-zinc-700 data-[index=0]:top-6"
         />
 
@@ -34,21 +34,23 @@ const category: Record<string, string> = {
                     <h2
                         class="text-2xl font-bold break-keep [overflow-wrap:anywhere;]"
                     >
-                        {{ useSentence(data.title) }}
+                        {{ useSentence(props.data.title) }}
                     </h2>
                     <div class="flex items-center gap-2">
                         <span class="text-sm text-zinc-400 whitespace-nowrap">
-                            {{ useLocaledDate(new Date(data.created_at)) }}
+                            {{
+                                useLocaledDate(new Date(props.data.created_at))
+                            }}
                         </span>
-                        <UiBadge v-if="data.category" class="text-xs">
-                            {{ category[data.category] }}
+                        <UiBadge v-if="props.data.category" class="text-xs">
+                            {{ category[props.data.category] }}
                         </UiBadge>
                     </div>
                     <p
-                        v-if="data.description?.length"
+                        v-if="props.data.description?.length"
                         class="text-sm text-zinc-400 break-keep [overflow-wrap:anywhere;]"
                     >
-                        {{ useSentence(data.description) }}
+                        {{ useSentence(props.data.description) }}
                     </p>
                 </div>
             </div>
@@ -56,16 +58,16 @@ const category: Record<string, string> = {
 
         <div class="pb-18 pl-12 sm:pl-0 gap-8 flex flex-col">
             <NuxtImg
-                v-if="data.thumbnail?.length"
-                :src="useGetImage(data.thumbnail, { prefix: 'release' })"
+                v-if="props.data.thumbnail?.length"
+                :src="useGetImage(props.data.thumbnail, { prefix: 'release' })"
                 fit="cover"
                 class="rounded-lg"
             />
 
             <div class="relative first:mt-5">
                 <UiMarkdown
-                    v-if="data.content"
-                    :content="data.content"
+                    v-if="props.data.content"
+                    :content="props.data.content"
                     :data-extended="extended"
                     class="prose-sm max-h-64 data-[extended=true]:max-h-full overflow-clip"
                 />

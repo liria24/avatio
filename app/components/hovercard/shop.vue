@@ -30,7 +30,7 @@ const props = defineProps<Props>();
                     <NuxtLink
                         :to="`https://${props.shop.id}.booth.pm/`"
                         target="_blank"
-                        class="text-xs font-semibold leading-none text-zinc-700 dark:text-zinc-500"
+                        class="text-xs font-semibold leading-none text-zinc-500 dark:text-zinc-500"
                     >
                         {{ props.shop.id }}.booth.pm
                     </NuxtLink>

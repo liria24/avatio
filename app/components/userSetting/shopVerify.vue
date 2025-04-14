@@ -45,13 +45,16 @@ const get = async () => {
 };
 
 const unverify = async (id: string) => {
-    const { success } = await $fetch('/api/shopVerification/unverify', {
-        method: 'POST',
-        body: { shopId: id },
-    });
+    try {
+        await $fetch('/api/shop-verification/unverify', {
+            method: 'POST',
+            body: { shopId: id },
+        });
 
-    if (success) useToast().add('認証を解除しました');
-    else useToast().add('認証の解除に失敗しました');
+        useToast().add('認証を解除しました');
+    } catch {
+        useToast().add('認証の解除に失敗しました');
+    }
 
     get();
 };
