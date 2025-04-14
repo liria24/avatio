@@ -57,7 +57,6 @@
         "canvas": "^3.1.0",
         "canvas-confetti": "^1.9.3",
         "cheerio": "^1.0.0",
-        "date-fns": "^4.1.0",
         "extract-colors": "^4.2.0",
         "image-size": "^2.0.2",
         "marked": "^15.0.8",
