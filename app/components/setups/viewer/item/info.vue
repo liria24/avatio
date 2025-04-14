@@ -38,7 +38,7 @@ const props = defineProps<Props>();
                 class="shrink-0 text-zinc-600 dark:text-zinc-400"
             />
             <p
-                class="pt-px text-xs font-[Geist] leading-none whitespace-nowrap text-zinc-600 dark:text-zinc-400"
+                class="pt-px text-xs font-[Geist] font-semibold leading-none whitespace-nowrap text-zinc-600 dark:text-zinc-400"
             >
                 {{ props.likes?.toLocaleString() || '?' }}
             </p>

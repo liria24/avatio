@@ -138,11 +138,11 @@ const gradientStyle = computed(() => {
 
 const linkClasses = computed(() => {
     return twMerge(
-        'group flex flex-col rounded-lg overflow-clip',
+        'group flex flex-col rounded-lg overflow-clip focus:outline-none',
         adjustedColor.value
-            ? 'hover:ring-2 hover:ring-[var(--dominant-color)] hover:bg-[var(--dominant-color)]/20'
-            : 'hover:ring-2 hover:ring-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800',
-        'hover:shadow-xl shadow-black/10 dark:shadow-white/10',
+            ? 'hover:ring-2 hover:ring-[var(--dominant-color)] hover:bg-[var(--dominant-color)]/20 focus:ring-2 focus:ring-[var(--dominant-color)] focus:bg-[var(--dominant-color)]/20'
+            : 'hover:ring-2 hover:ring-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:ring-2 focus:ring-zinc-400 focus:bg-zinc-100 dark:focus:bg-zinc-800',
+        'hover:shadow-xl focus-visible:shadow-xl shadow-black/10 dark:shadow-white/10',
         'transition duration-50 ease-in-out',
         props.class
     );
