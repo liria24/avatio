@@ -1,6 +1,6 @@
-import sharp from 'sharp';
 import { serverSupabaseUser } from '#supabase/server';
 import { z } from 'zod';
+import sizeOf from 'image-size';
 
 const requestBodySchema = z.object({
     image: z
@@ -72,7 +72,7 @@ export default defineEventHandler(
                     message: `画像サイズが大きすぎます。2MB以下にしてください。現在のサイズ: ${(input.length / (1024 * 1024)).toFixed(2)}MB`,
                 });
 
-            const metadata = await sharp(input).metadata();
+            const dimensions = sizeOf(input);
 
             const unixTime = Math.floor(Date.now());
             let base64UnixTime = Buffer.from(unixTime.toString()).toString(
@@ -102,8 +102,8 @@ export default defineEventHandler(
                 path: prefixedFileName,
                 name: filename,
                 prefix: body.prefix,
-                width: metadata.width,
-                height: metadata.height,
+                width: dimensions.width,
+                height: dimensions.height,
             };
         } catch (error) {
             console.error('Image processing or upload error:', error);
