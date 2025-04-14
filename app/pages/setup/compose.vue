@@ -43,6 +43,7 @@ const PublishSetup = async () => {
                 .map((i) => ({
                     id: i.id,
                     category: i.category,
+                    shapekeys: i.shapekeys,
                     note: i.note,
                     unsupported: i.unsupported,
                 })),

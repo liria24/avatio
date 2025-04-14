@@ -105,7 +105,12 @@ const { note, unsupported, shapekeys } = defineProps<Props>();
                                         );
                                     "
                                 >
-                                    {{ key.value }}
+                                    {{
+                                        key.value.toLocaleString(undefined, {
+                                            minimumFractionDigits: 1,
+                                            maximumFractionDigits: 4,
+                                        })
+                                    }}
                                 </button>
                             </div>
                         </div>

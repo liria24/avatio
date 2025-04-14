@@ -12,7 +12,8 @@ const setupSchema = z.object({
     description: z
         .string()
         .max(limits.description, 'Description is too long.')
-        .nullable(),
+        .nullable()
+        .optional(),
     tags: z.array(z.string().min(1)).max(limits.tags, 'Too many tags.'),
     coAuthors: z
         .array(
@@ -41,6 +42,10 @@ const setupSchema = z.object({
         .optional(),
     unity: z
         .string()
+        .regex(
+            /^20\d{2}\.\d+\.\d+[fbap]\d+$/,
+            'Invalid Unity version format. Expected format like: 2022.3.22f1'
+        )
         .max(limits.unity, 'Unity version is too long.')
         .nullable()
         .optional(),

@@ -96,7 +96,9 @@ const totalItemsCount = computed(() =>
                             size="16"
                             class="shrink-0 text-zinc-600 dark:text-zinc-400"
                         />
-                        <span class="text-xs leading-none whitespace-nowrap">
+                        <span
+                            class="pt-px font-[Geist] text-xs leading-none whitespace-nowrap"
+                        >
                             <span>{{ totalItemsCount }}</span>
                             <span v-if="totalItemsCount > 32">/ 32</span>
                         </span>

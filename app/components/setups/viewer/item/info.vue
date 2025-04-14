@@ -13,29 +13,35 @@ const { url, shop, price, likes } = defineProps<Props>();
         <NuxtLink
             :to="url"
             target="_blank"
-            :class="[
-                'mt-px pl-1.5 pr-[0.42rem] py-1 rounded-md flex items-center gap-1',
-                'ring-1 ring-pink-500/60',
-            ]"
+            class="flex items-center gap-1.5 w-fit"
         >
             <Icon
-                name="lucide:heart"
-                :size="15"
-                class="pb-px text-zinc-700 dark:text-zinc-100"
+                name="mingcute:currency-cny-fill"
+                :size="18"
+                class="shrink-0 text-zinc-600 dark:text-zinc-400"
             />
-            <p
-                class="text-xs font-[Geist] leading-none whitespace-nowrap text-zinc-700 dark:text-zinc-300"
+            <span
+                class="pt-px text-xs font-[Geist] font-semibold leading-0 whitespace-nowrap text-zinc-600 dark:text-zinc-400"
             >
-                {{ likes || '?' }}
-            </p>
+                {{ price || 'UNKNOWN' }}
+            </span>
         </NuxtLink>
 
         <NuxtLink
             :to="url"
             target="_blank"
-            class="text-sm font-[Geist] font-semibold leading-none whitespace-nowrap text-zinc-600 dark:text-zinc-400"
+            class="flex items-center gap-1.5 w-fit"
         >
-            {{ price ? price : 'UNKNOWN' }}
+            <Icon
+                name="mingcute:heart-fill"
+                :size="18"
+                class="shrink-0 text-zinc-600 dark:text-zinc-400"
+            />
+            <p
+                class="pt-px text-xs font-[Geist] leading-none whitespace-nowrap text-zinc-600 dark:text-zinc-400"
+            >
+                {{ likes?.toLocaleString() || '?' }}
+            </p>
         </NuxtLink>
 
         <HovercardShop :shop="shop">
