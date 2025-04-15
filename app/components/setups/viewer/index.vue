@@ -67,7 +67,7 @@ const categories: Record<string, { label: string; icon: string }> =
                 :alt="props.title"
                 :width="props.images[0]!.width ?? 640"
                 :height="props.images[0]!.height ?? 320"
-                class="w-full max-h-[70vh]"
+                class="w-full max-h-[900px] shrink-0 object-contain grow-0"
             />
             <UiImage
                 v-if="props.previewImages?.length && props.preview"
@@ -75,7 +75,7 @@ const categories: Record<string, { label: string; icon: string }> =
                 :alt="props.title"
                 :width="640"
                 :height="320"
-                class="w-full max-h-[70vh]"
+                class="w-full max-h-[900px] shrink-0 object-contain grow-0"
             />
 
             <div class="xl:hidden w-full mt-3 flex flex-col gap-5">
