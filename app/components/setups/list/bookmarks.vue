@@ -27,16 +27,18 @@ const get = async () => {
     }
 };
 
-try {
-    await get();
-} catch (e) {
-    console.error('初期ロード失敗:', e);
-}
+onMounted(async () => {
+    try {
+        await get();
+    } catch (e) {
+        console.error('初期ロード失敗:', e);
+    }
+});
 </script>
 
 <template>
     <div class="self-center w-full flex flex-col gap-3">
-        <SetupsListBase :setups="setups" />
+        <SetupsListBase :setups="setups" :loading="loading" />
         <ButtonLoadMore
             v-if="hasMore"
             :loading="loading"

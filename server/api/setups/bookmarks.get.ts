@@ -2,13 +2,6 @@ import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server';
 import { z } from 'zod';
 
 const requestQuerySchema = z.object({
-    userId: z
-        .string({
-            required_error: 'ユーザーIDは必須です',
-            invalid_type_error: 'ユーザーIDは文字列である必要があります',
-        })
-        .min(1, 'ユーザーIDは空にできません'),
-
     page: z.coerce
         .number({
             invalid_type_error: 'ページ番号は数値である必要があります',
@@ -36,35 +29,38 @@ interface BookmarksResponse {
 export default defineEventHandler(async (event): Promise<BookmarksResponse> => {
     try {
         const user = await serverSupabaseUser(event);
-        if (!user)
+        if (!user) {
+            console.error('認証エラー: ユーザーが見つかりません');
             throw createError({
                 statusCode: 403,
                 message: 'Forbidden.',
             });
-    } catch {
-        throw createError({
-            statusCode: 403,
-            message: 'Forbidden.',
-        });
-    }
+        }
 
-    const rawQuery = await getQuery(event);
-    const result = requestQuerySchema.safeParse(rawQuery);
+        const rawQuery = await getQuery(event);
+        const result = requestQuerySchema.safeParse(rawQuery);
 
-    if (!result.success) {
-        throw createError({
-            statusCode: 400,
-            message: `不正なリクエスト: ${result.error.issues.map((i) => i.message).join(', ')}`,
-        });
-    }
+        if (!result.success) {
+            const errorMessage = result.error.issues
+                .map((i) => i.message)
+                .join(', ');
+            console.error(
+                'クエリパラメータバリデーションエラー:',
+                errorMessage
+            );
+            throw createError({
+                statusCode: 400,
+                message: `不正なリクエスト: ${errorMessage}`,
+            });
+        }
 
-    const query = result.data;
-    const supabase = await serverSupabaseClient<Database>(event);
+        const query = result.data;
+        const supabase = await serverSupabaseClient<Database>(event);
 
-    const { data, count } = await supabase
-        .from('bookmarks')
-        .select(
-            `
+        const { data, count } = await supabase
+            .from('bookmarks')
+            .select(
+                `
                 post(
                     id,
                     created_at,
@@ -126,25 +122,38 @@ export default defineEventHandler(async (event): Promise<BookmarksResponse> => {
                     )
                 )
                 `,
-            { count: 'estimated' }
-        )
-        .range(
-            query.page * query.perPage,
-            query.page * query.perPage + (query.perPage - 1)
-        )
-        .order('created_at', { ascending: false })
-        .overrideTypes<{ post: SetupDB }[]>();
+                { count: 'estimated' }
+            )
+            .range(
+                query.page * query.perPage,
+                query.page * query.perPage + (query.perPage - 1)
+            )
+            .order('created_at', { ascending: false })
+            .throwOnError()
+            .overrideTypes<{ post: SetupDB }[]>();
 
-    if (!data || !count)
+        if (!data || !count) {
+            console.error(
+                'データ取得エラー: データまたはカウントが取得できませんでした'
+            );
+            throw createError({
+                statusCode: 500,
+                message: 'Failed to get setups.',
+            });
+        }
+
+        return {
+            setups: data
+                .filter((post) => post.post) // nullやundefinedをフィルタリング
+                .map((post) => post.post)
+                .map((setup) => setupMoldingClient(setup)),
+            hasMore: count > query.page * query.perPage + query.perPage,
+        };
+    } catch (error) {
+        console.error('ブックマークの取得中にエラーが発生しました:', error);
         throw createError({
             statusCode: 500,
-            message: 'Failed to get setups.',
+            message: 'Failed to get bookmarks.',
         });
-
-    return {
-        setups: data
-            .map((post) => post.post)
-            .map((setup) => setupMoldingClient(setup)),
-        hasMore: count > query.page * query.perPage + (query.perPage - 1),
-    };
+    }
 });

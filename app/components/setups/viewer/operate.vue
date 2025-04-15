@@ -30,6 +30,11 @@ const remove = () => {
     if (!props.id) return;
     modalDelete.value = true;
 };
+
+onMounted(async () => {
+    if (!props.id) return;
+    bookmark.value = await useCheckBookmark(props.id);
+});
 </script>
 
 <template>
