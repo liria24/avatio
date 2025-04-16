@@ -40,6 +40,13 @@ const setupSchema = z.object({
         .max(1, 'Too many images.')
         .nullable()
         .optional(),
+    og_image: z
+        .object({
+            positionX: z.number().optional(),
+            positionY: z.number().optional(),
+            width: z.number().optional(),
+        })
+        .optional(),
     unity: z
         .string()
         .regex(
@@ -252,6 +259,19 @@ export default defineEventHandler(async (event: H3Event) => {
                 });
             if (imageError) handleDbError('setup_images', imageError);
         }
+    }
+
+    if (body.og_image) {
+        const { error: ogImageError } = await supabase
+            .from('setup_og_image')
+            .insert({
+                setup_id: setupData!.id,
+                image: uploadedImages[0].name,
+                position_x: body.og_image.positionX || 50,
+                position_y: body.og_image.positionY || 50,
+                width: body.og_image.width || 100,
+            });
+        if (ogImageError) handleDbError('setup_og_image', ogImageError);
     }
 
     setResponseStatus(event, 201);

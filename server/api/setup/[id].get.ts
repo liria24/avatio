@@ -55,6 +55,12 @@ export default defineEventHandler(async (event): Promise<SetupClient> => {
                 width,
                 height
             ),
+            og_image:setup_og_image(
+                image,
+                position_x,
+                position_y,
+                width
+            ),
             items:setup_items(
                 data:item_id(
                     id,

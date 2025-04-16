@@ -48,6 +48,11 @@ const PublishSetup = async () => {
                     unsupported: i.unsupported,
                 })),
             images: image.value ? [await blobToBase64(image.value)] : null,
+            og_image: {
+                positionX: 50,
+                positionY: 50,
+                width: 100,
+            },
         };
 
         if (await setupErrorCheck(data)) return (publishing.value = false);
