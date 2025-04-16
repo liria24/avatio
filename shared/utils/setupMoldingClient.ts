@@ -24,10 +24,7 @@ export default (setup: SetupDB): SetupClient => {
     }
 
     return {
-        id: setup.id,
-        created_at: setup.created_at,
-        name: setup.name,
-        description: setup.description,
+        ...setup,
         author: {
             id: setup.author!.id,
             name: setup.author!.name || 'Unknown',
@@ -42,8 +39,6 @@ export default (setup: SetupDB): SetupClient => {
             badges: c.user.badges,
             note: c.note,
         })),
-        unity: setup.unity,
-        images: setup.images,
         items: items,
     };
 };
