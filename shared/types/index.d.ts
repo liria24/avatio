@@ -84,6 +84,12 @@ export interface SetupBase {
     description: string | null;
     author: Author;
     images: SetupImage[];
+    og_image: {
+        image: string;
+        position_x: number;
+        position_y: number;
+        width_percent: number;
+    } | null;
     unity: string | null;
 }
 

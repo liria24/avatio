@@ -10,18 +10,19 @@ export default defineNuxtConfig({
     compatibilityDate: '2024-08-21',
     devtools: { enabled: true, timeline: { enabled: true } },
     modules: [
-        'reka-ui/nuxt',
-        '@vueuse/nuxt',
+        '@nuxt/eslint',
+        '@nuxt/fonts',
         '@nuxt/icon',
         '@nuxt/image',
-        '@nuxt/fonts',
-        '@nuxtjs/color-mode',
-        '@nuxtjs/supabase',
-        '@nuxt/eslint',
         '@nuxt/scripts',
-        '@nuxtjs/turnstile',
+        '@nuxtjs/color-mode',
         '@nuxtjs/robots',
+        '@nuxtjs/supabase',
         '@nuxtjs/sitemap',
+        '@nuxtjs/turnstile',
+        '@vueuse/nuxt',
+        'nuxt-og-image',
+        'reka-ui/nuxt',
     ],
     routeRules: {
         '/': { isr: 60 },
@@ -80,6 +81,7 @@ export default defineNuxtConfig({
         families: [
             { name: 'Murecho', provider: 'google' },
             { name: 'Geist', provider: 'google' },
+            { name: 'Noto Sans JP', provider: 'google' },
         ],
     },
     icon: {
@@ -106,6 +108,24 @@ export default defineNuxtConfig({
             's2.booth.pm', // booth
             import.meta.env.NUXT_PUBLIC_R2_DOMAIN.replace('https://', ''), // R2
         ],
+    },
+    ogImage: {
+        defaults: {
+            width: 1200,
+            height: 630,
+            emojis: 'twemoji',
+            renderer: 'satori',
+            component: 'NuxtSeo',
+            cacheMaxAgeSeconds: 60 * 60 * 24 * 3,
+        },
+        fonts: [
+            'Noto+Sans+JP:400',
+            'Noto+Sans+JP:700',
+            'Murecho:400',
+            'Geist:400',
+            'Geist:700',
+        ],
+        componentDirs: ['ogImage'],
     },
     robots: {
         allow: ['Twitterbot', 'facebookexternalhit'],

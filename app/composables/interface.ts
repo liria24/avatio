@@ -98,7 +98,7 @@ export const useOGP = ({
         },
         {
             property: 'og:image',
-            content: image || 'https://avatio.me/ogp.png',
+            content: image,
         },
         { name: 'twitter:card', content: twitterCard || 'summary' },
         { name: 'twitter:site', content: '@liria_work' },
