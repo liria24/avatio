@@ -522,21 +522,21 @@ export type Database = {
                     position_x: number;
                     position_y: number;
                     setup_id: number;
-                    width_percent: number;
+                    width: number;
                 };
                 Insert: {
                     image: string;
                     position_x?: number;
                     position_y?: number;
                     setup_id: number;
-                    width_percent?: number;
+                    width?: number;
                 };
                 Update: {
                     image?: string;
                     position_x?: number;
                     position_y?: number;
                     setup_id?: number;
-                    width_percent?: number;
+                    width?: number;
                 };
                 Relationships: [
                     {
