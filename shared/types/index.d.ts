@@ -88,7 +88,7 @@ export interface SetupBase {
         image: string;
         position_x: number;
         position_y: number;
-        width_percent: number;
+        width: number;
     } | null;
     unity: string | null;
 }

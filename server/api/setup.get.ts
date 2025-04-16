@@ -52,7 +52,7 @@ export default defineEventHandler(async (event): Promise<SetupClient> => {
                     image,
                     position_x,
                     position_y,
-                    width_percent
+                    width
                 ),
                 items:setup_items(
                     data:item_id(

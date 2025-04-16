@@ -76,22 +76,36 @@ defineExpose({ reset: resetImage });
                     画像を追加
                 </span>
             </button>
-            <div v-else class="h-full flex items-center gap-2 justify-center">
-                <div
-                    class="relative h-full object-cover rounded-xl overflow-hidden"
-                >
-                    <NuxtImg
-                        :src="imagePreview"
-                        alt="Image Preview"
-                        class="h-full"
-                    />
-                    <button
-                        @click="resetImage()"
-                        class="size-8 absolute top-2 right-2 bg-black/30 hover:bg-black/70 rounded-full p-1 backdrop-blur-lg flex items-center justify-center cursor-pointer"
+            <div v-else class="w-full h-full flex flex-col items-center gap-2">
+                <div class="h-full flex items-center gap-2 justify-center">
+                    <div
+                        class="relative h-full object-cover rounded-xl overflow-hidden"
                     >
-                        <Icon name="lucide:x" class="size-full text-zinc-100" />
-                    </button>
+                        <NuxtImg
+                            :src="imagePreview"
+                            alt="Image Preview"
+                            class="h-full"
+                        />
+                        <button
+                            @click="resetImage()"
+                            class="size-8 absolute top-2 right-2 bg-black/30 hover:bg-black/70 rounded-full p-1 backdrop-blur-lg flex items-center justify-center cursor-pointer"
+                        >
+                            <Icon
+                                name="lucide:x"
+                                class="size-full text-zinc-100"
+                            />
+                        </button>
+                    </div>
                 </div>
+                <Button>
+                    <Icon
+                        name="lucide:image"
+                        class="text-zinc-400 dark:text-zinc-500"
+                    />
+                    <span class="font-medium text-zinc-400 dark:text-zinc-500">
+                        画像プレビューを調整
+                    </span>
+                </Button>
             </div>
         </template>
     </div>
