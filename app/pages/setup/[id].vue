@@ -25,10 +25,17 @@ try {
     useOGP({
         title: `${data.name} @${data.author.name}`,
         description: data.description,
-        image: data.images.length
-            ? useGetImage(data.images[0]!.name, { prefix: 'setup' })
-            : 'https://avatio.me/ogp.png',
         twitterCard: data.images.length ? 'summary_large_image' : 'summary',
+    });
+
+    defineOgImage({
+        component: 'setup',
+        props: {
+            image: data.images[0]!.name,
+            positionX: data.og_image?.position_x,
+            positionY: data.og_image?.position_y,
+            cropWidthPercent: data.og_image?.width_percent,
+        },
     });
 } catch {
     showError({
