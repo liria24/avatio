@@ -34,7 +34,7 @@ try {
             image: data.images[0]!.name,
             positionX: data.og_image?.position_x,
             positionY: data.og_image?.position_y,
-            cropWidthPercent: data.og_image?.width_percent,
+            cropWidthPercent: data.og_image?.width,
         },
     });
 } catch {
