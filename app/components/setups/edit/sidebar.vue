@@ -96,7 +96,7 @@ onMounted(() => {
                                     class="text-indigo-400 dark:text-indigo-300"
                                 />
                                 <span
-                                    class="text-xs font-medium text-zinc-600 dark:text-zinc-300"
+                                    class="text-xs font-medium text-zinc-600 dark:text-zinc-400"
                                 >
                                     画像の添付について
                                 </span>
