@@ -1,13 +1,10 @@
 <script setup lang="ts">
-const client = useSupabaseClient();
-
-const { data: releases } = await client
-    .from('releases')
-    .select(
-        'slug, created_at, updated_at, title, description, thumbnail, category, content, published'
-    )
-    .eq('published', true)
-    .order('created_at', { ascending: false });
+const releases = ref<DocumentData[]>([]);
+try {
+    releases.value = await $fetch('/api/releases');
+} catch (e) {
+    console.error(e);
+}
 
 useOGP({
     title: 'お知らせ',
