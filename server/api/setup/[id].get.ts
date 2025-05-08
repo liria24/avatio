@@ -1,40 +1,90 @@
 import { serverSupabaseClient } from '#supabase/server';
 import { z } from 'zod';
 
-const requestQuerySchema = z.object({
-    id: z.coerce
-        .number({
-            required_error: 'idは必須です',
-            invalid_type_error: 'idは数値である必要があります',
-        })
-        .positive('idは正の数である必要があります'),
-});
-
-export type RequestQuery = z.infer<typeof requestQuerySchema>;
-
 export default defineEventHandler(async (event): Promise<SetupClient> => {
-    const rawQuery = await getQuery(event);
-    const result = requestQuerySchema.safeParse(rawQuery);
+    const id = getRouterParam(event, 'id');
 
-    if (!result.success)
+    const idSchema = z
+        .string({
+            required_error: 'ID is required',
+            invalid_type_error: 'ID must be a string',
+        })
+        .refine(
+            (val) =>
+                !isNaN(Number(val)) &&
+                Number(val) > 0 &&
+                Number.isInteger(Number(val)),
+            { message: 'ID must be a positive integer' }
+        );
+
+    try {
+        idSchema.parse(id);
+    } catch (error) {
+        console.error('Invalid ID:', error);
         throw createError({
             statusCode: 400,
-            message: `不正なリクエスト: ${result.error.format()}`,
+            message:
+                error instanceof z.ZodError
+                    ? `Invalid request: ${error.errors[0]?.message || 'Invalid ID'}`
+                    : 'Invalid request: Invalid ID',
         });
+    }
 
-    const query = result.data;
     const supabase = await serverSupabaseClient<Database>(event);
 
     const { data } = await supabase
         .from('setups')
         .select(
             `
+            id,
+            created_at,
+            name,
+            description,
+            unity,
+            author(
                 id,
-                created_at,
                 name,
-                description,
-                unity,
-                author(
+                avatar,
+                badges:user_badges(
+                    created_at,
+                    name
+                )
+            ),
+            images:setup_images(
+                name,
+                width,
+                height
+            ),
+            items:setup_items(
+                data:item_id(
+                    id,
+                    updated_at,
+                    outdated,
+                    category,
+                    name,
+                    thumbnail,
+                    price,
+                    likes,
+                    shop:shop_id(
+                        id,
+                        name,
+                        thumbnail,
+                        verified
+                    ),
+                    nsfw,
+                    source
+                ),
+                note,
+                unsupported,
+                category,
+                shapekeys:setup_item_shapekeys(
+                    name,
+                    value
+                )
+            ),
+            tags:setup_tags(tag),
+            co_authors:setup_coauthors(
+                user:user_id(
                     id,
                     name,
                     avatar,
@@ -43,54 +93,11 @@ export default defineEventHandler(async (event): Promise<SetupClient> => {
                         name
                     )
                 ),
-                images:setup_images(
-                    name,
-                    width,
-                    height
-                ),
-                items:setup_items(
-                    data:item_id(
-                        id,
-                        updated_at,
-                        outdated,
-                        category,
-                        name,
-                        thumbnail,
-                        price,
-                        likes,
-                        shop:shop_id(
-                            id,
-                            name,
-                            thumbnail,
-                            verified
-                        ),
-                        nsfw,
-                        source
-                    ),
-                    note,
-                    unsupported,
-                    category,
-                    shapekeys:setup_item_shapekeys(
-                        name,
-                        value
-                    )
-                ),
-                tags:setup_tags(tag),
-                co_authors:setup_coauthors(
-                    user:user_id(
-                        id,
-                        name,
-                        avatar,
-                        badges:user_badges(
-                            created_at,
-                            name
-                        )
-                    ),
-                    note
-                )
-                `
+                note
+            )
+            `
         )
-        .eq('id', query.id)
+        .eq('id', Number(id)!)
         .maybeSingle<SetupDB>();
 
     if (!data)

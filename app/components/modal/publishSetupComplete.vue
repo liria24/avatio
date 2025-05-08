@@ -11,7 +11,7 @@ const emit = defineEmits(['continue']);
 const link = computed(() => `https://avatio.me/setup/${props.id}`);
 const setup = ref<SetupClient | null>(null);
 const copied = ref(false);
-const loading = ref(false); // ローディング状態を保持
+const loading = ref(false);
 
 const fetchSetup = async (setupId: number) => {
     if (!setupId) return;
@@ -19,16 +19,12 @@ const fetchSetup = async (setupId: number) => {
     loading.value = true;
 
     try {
-        const response = await $fetch(`/api/setup`, {
-            method: 'GET',
-            query: { id: setupId },
-        });
+        const response = await $fetch(`/api/setup/${setupId}`);
 
         if (!response) return;
 
         setup.value = response;
 
-        // 成功時に紙吹雪エフェクト
         confetti({
             particleCount: 80,
             spread: 100,

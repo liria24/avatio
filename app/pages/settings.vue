@@ -61,25 +61,15 @@ const save = async () => {
     let avatarName = currentAvatar.value;
     if (avatar.value) {
         try {
-            const imageBlob = await useCompressImage(
-                await blobToBase64(avatar.value),
-                512,
-                { maxSize: 1.5 * 1024 * 1024 } // 1.5MB
-            );
+// (Removed unused commented-out image compression code)
 
             const response = await $fetch('/api/image', {
                 method: 'PUT',
                 body: {
-                    image: await blobToBase64(imageBlob),
+                    image: await blobToBase64(avatar.value),
                     prefix: 'avatar',
                 },
             });
-
-            useToast().add(
-                'ユーザー情報の保存に失敗しました',
-                'アバターのアップロードでエラーが発生しました'
-            );
-            saving.value = false;
 
             if (currentAvatar.value)
                 await useDeleteImage(currentAvatar.value, { target: 'avatar' });

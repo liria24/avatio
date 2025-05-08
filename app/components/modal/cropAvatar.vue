@@ -2,6 +2,9 @@
 import { CircleStencil, Cropper, Preview } from 'vue-advanced-cropper';
 import 'vue-advanced-cropper/dist/style.css';
 
+const MAX_FILE_SIZE = 1.5 * 1024 * 1024; // 1.5MB
+const MAX_DIMENSION = 512; // 512px
+
 const vis = defineModel<boolean>({
     required: true,
     default: false,
@@ -48,31 +51,46 @@ const onCropChange = (data: {
     croppedImage.value = data;
 };
 
-const canvasToFile = async (
-    mimeType: string = 'image/png',
-    quality: number = 0.9,
-    filename: string = ''
-): Promise<File | null> => {
-    if (!cropperRef.value) return null;
+const resizeCanvas = (canvas: HTMLCanvasElement): HTMLCanvasElement => {
+    const resizedCanvas = document.createElement('canvas');
+    const ctx = resizedCanvas.getContext('2d');
+    if (!ctx) {
+        console.error('Failed to get canvas context');
+        throw new Error('Failed to get canvas context');
+    }
 
-    // クロップ結果を取得（canvas要素を含む）
-    const { canvas } = cropperRef.value.getResult();
-    if (!canvas) return null;
+    let { width, height } = canvas;
 
-    // canvasからBlobを生成
-    return new Promise<File | null>((resolve) => {
+    if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+        const ratio = Math.min(MAX_DIMENSION / width, MAX_DIMENSION / height);
+        width = Math.floor(width * ratio);
+        height = Math.floor(height * ratio);
+    }
+
+    resizedCanvas.width = width;
+    resizedCanvas.height = height;
+    ctx.drawImage(canvas, 0, 0, width, height);
+
+    return resizedCanvas;
+};
+
+const createBlobWithQuality = (
+    canvas: HTMLCanvasElement,
+    mimeType: string,
+    quality: number
+): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
         canvas.toBlob(
             (blob) => {
-                if (!blob) return resolve(null);
-
-                const extension = mimeType.split('/')[1] || 'png';
-                const finalFilename = filename || `avatar.${extension}`;
-
-                // BlobからFileオブジェクトを生成
-                const file = new File([blob], finalFilename, {
-                    type: mimeType,
-                });
-                resolve(file);
+                if (!blob) {
+                    const error = new Error(
+                        'Failed to create blob from canvas'
+                    );
+                    console.error(error);
+                    reject(error);
+                    return;
+                }
+                resolve(blob);
             },
             mimeType,
             quality
@@ -80,17 +98,81 @@ const canvasToFile = async (
     });
 };
 
-const submitCroppedImage = async () => {
-    // 画像のMIMEタイプを取得（元の画像と同じタイプを維持）
-    const mimeType = props.avatar?.type || 'image/png';
+const createFile = (
+    blob: Blob,
+    mimeType: string,
+    filename: string = ''
+): File => {
+    const extension = mimeType.split('/')[1] || 'png';
+    const finalFilename = filename || `avatar.${extension}`;
 
-    const file = await canvasToFile(mimeType, 0.9);
-    if (file) {
-        emit('submit', file);
-        avatarObjectURL.value = null;
+    return new File([blob], finalFilename, { type: mimeType });
+};
+
+const canvasToFile = async (
+    mimeType: string = 'image/png',
+    quality: number = 0.9,
+    filename: string = ''
+): Promise<File | null> => {
+    if (!cropperRef.value) {
+        console.error('Cropper reference is not available');
+        return null;
     }
 
-    vis.value = false;
+    const { canvas } = cropperRef.value.getResult();
+    if (!canvas) {
+        console.error('Canvas is not available from cropper result');
+        return null;
+    }
+
+    try {
+        const resizedCanvas = resizeCanvas(canvas);
+
+        let currentQuality = quality;
+        let blob = await createBlobWithQuality(
+            resizedCanvas,
+            mimeType,
+            currentQuality
+        );
+
+        while (blob.size > MAX_FILE_SIZE && currentQuality > 0.2) {
+            currentQuality = Math.max(0.2, currentQuality - 0.1);
+            console.log(
+                `File size ${(blob.size / 1024 / 1024).toFixed(2)}MB exceeds limit. Reducing quality to ${currentQuality}`
+            );
+
+            blob = await createBlobWithQuality(
+                resizedCanvas,
+                mimeType,
+                currentQuality
+            );
+        }
+
+        // Create file
+        return createFile(blob, mimeType, filename);
+    } catch (error) {
+        console.error('Error processing image:', error);
+        return null;
+    }
+};
+
+const submitCroppedImage = async () => {
+    const mimeType = props.avatar?.type || 'image/png';
+
+    try {
+        const file = await canvasToFile(mimeType, 0.9);
+        if (file) {
+            emit('submit', file);
+            if (avatarObjectURL.value) {
+                URL.revokeObjectURL(avatarObjectURL.value);
+            }
+        }
+    } catch (error) {
+        console.error('Failed to create cropped image:', error);
+    } finally {
+        avatarObjectURL.value = null;
+        vis.value = false;
+    }
 };
 </script>
 
