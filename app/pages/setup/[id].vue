@@ -16,9 +16,8 @@ if (!id)
     });
 
 try {
-    const data = await $fetch(`/api/setup`, {
+    const data = await $fetch(`/api/setup/${id}`, {
         method: 'GET',
-        query: { id },
     });
 
     response.value = data;

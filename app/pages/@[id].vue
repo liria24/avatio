@@ -1,6 +1,5 @@
 <script lang="ts" setup>
 const route = useRoute('@id');
-const client = useSupabaseClient();
 const user = useSupabaseUser();
 const id = route.params.id
     ? route.params.id.toString()
@@ -11,29 +10,23 @@ const id = route.params.id
 const modalReport = ref(false);
 const modalLogin = ref(false);
 
-const { data: userData } = await client
-    .from('users')
-    .select(
-        `
-        id,
-        name,
-        avatar,
-        bio,
-        links,
-        created_at,
-        badges:user_badges(created_at, name),
-        shops:user_shops(shop:shop_id(id, name, thumbnail, verified))
-        `
-    )
-    .eq('id', id || '')
-    .maybeSingle<User>();
+const userData = ref<User | null>(null);
 
-if (userData)
+try {
+    userData.value = await $fetch<User>(`/api/user/${id}`);
+} catch {
+    showError({
+        statusCode: 404,
+        message: 'ユーザーデータの取得に失敗しました',
+    });
+}
+
+if (userData.value)
     useOGP({
-        title: userData.name,
-        description: userData.bio,
-        image: userData.avatar
-            ? useGetImage(userData.avatar, { prefix: 'avatar' })
+        title: userData.value.name,
+        description: userData.value.bio,
+        image: userData.value.avatar
+            ? useGetImage(userData.value.avatar, { prefix: 'avatar' })
             : null,
     });
 </script>

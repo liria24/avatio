@@ -111,9 +111,8 @@ export const setupErrorCheck = async (data: z.infer<typeof setupSchema>) => {
 
 export const useDeleteSetup = async (id: number) => {
     try {
-        await $fetch('/api/setup', {
+        await $fetch(`/api/setup/${id}`, {
             method: 'DELETE',
-            body: { id: id },
         });
     } catch {
         return useToast().add('セットアップの削除に失敗しました');
