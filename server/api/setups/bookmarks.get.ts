@@ -57,7 +57,7 @@ export default defineEventHandler(async (event): Promise<BookmarksResponse> => {
         const query = result.data;
         const supabase = await serverSupabaseClient<Database>(event);
 
-        const { data, count } = await supabase
+        const { data, error, count } = await supabase
             .from('bookmarks')
             .select(
                 `
@@ -132,7 +132,7 @@ export default defineEventHandler(async (event): Promise<BookmarksResponse> => {
             .throwOnError()
             .overrideTypes<{ post: SetupDB }[]>();
 
-        if (!data || !count) {
+        if (error) {
             console.error(
                 'データ取得エラー: データまたはカウントが取得できませんでした'
             );
@@ -144,10 +144,10 @@ export default defineEventHandler(async (event): Promise<BookmarksResponse> => {
 
         return {
             setups: data
-                .filter((post) => post.post) // nullやundefinedをフィルタリング
+                .filter((post) => post.post)
                 .map((post) => post.post)
                 .map((setup) => setupMoldingClient(setup)),
-            hasMore: count > query.page * query.perPage + query.perPage,
+            hasMore: (count ?? 0) > query.page * query.perPage + query.perPage,
         };
     } catch (error) {
         console.error('ブックマークの取得中にエラーが発生しました:', error);

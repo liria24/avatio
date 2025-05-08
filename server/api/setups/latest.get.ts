@@ -40,7 +40,7 @@ export default defineEventHandler(async (event): Promise<SetupsResponse> => {
     const query = result.data;
     const supabase = await serverSupabaseClient<Database>(event);
 
-    const { data, count } = await supabase
+    const { data, error, count } = await supabase
         .from('setups')
         .select(
             `
@@ -113,15 +113,15 @@ export default defineEventHandler(async (event): Promise<SetupsResponse> => {
         .order('created_at', { ascending: false })
         .overrideTypes<SetupDB[]>();
 
-    if (!data || !count)
+    if (error)
         throw createError({
             statusCode: 500,
             message: 'Failed to get setups.',
         });
 
-    // 成功時は直接データを返す
     return {
         setups: data.map((setup) => setupMoldingClient(setup)),
-        hasMore: count > query.page * query.perPage + (query.perPage - 1),
+        hasMore:
+            (count ?? 0) > query.page * query.perPage + (query.perPage - 1),
     };
 });
