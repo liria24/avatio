@@ -61,11 +61,7 @@ const save = async () => {
     let avatarName = currentAvatar.value;
     if (avatar.value) {
         try {
-            // const imageBlob = await useCompressImage(
-            //     await blobToBase64(avatar.value),
-            //     512,
-            //     { maxSize: 1.5 * 1024 * 1024 } // 1.5MB
-            // );
+// (Removed unused commented-out image compression code)
 
             const response = await $fetch('/api/image', {
                 method: 'PUT',
