@@ -10,10 +10,3 @@ export const useGetImage = (
 
     return `${config.public.r2.domain}${prefix}/${img}`;
 };
-
-export const useDeleteImage = (name: string, options?: { target?: string }) => {
-    return $fetch('/api/image', {
-        method: 'DELETE',
-        query: { name, target: options?.target },
-    });
-};

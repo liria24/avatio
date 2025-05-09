@@ -1,7 +1,9 @@
 <script lang="ts" setup>
 import { z } from 'zod';
-const client = useSupabaseClient();
+
 const user = useSupabaseUser();
+const toast = useToast();
+
 if (!user.value) showError('ログインしてください');
 
 const userSettingsSchema = z.object({
@@ -16,27 +18,61 @@ const userSettingsSchema = z.object({
     bio: z.string().max(140, 'bioは140文字以内で入力してください'),
     links: z
         .array(z.string().url('有効なURLを入力してください'))
-        .max(8, 'リンクは8個以内に制限してください'),
+        .max(8, 'リンクは8個まで追加できます'),
 });
 
-const { data } = await client
-    .from('users')
-    .select('name, avatar, bio, links')
-    .eq('id', user.value!.id)
-    .maybeSingle<{
-        name: string;
-        avatar: string;
-        bio: string;
-        links: string[];
-    }>();
-
-const name = ref<string>(data?.name ?? '');
+const currentUserData = ref<User | null>(null);
+const name = ref<string>('');
 const avatar = ref<Blob | null>(null);
-const currentAvatar = ref<string | null>(data?.avatar ?? null);
-const bio = ref<string>(data?.bio ?? '');
-const links = ref<string[]>(data?.links ?? []);
-
+const currentAvatar = ref<string | null>(null);
+const bio = ref<string>('');
+const links = ref<string[]>([]);
 const saving = ref(false);
+
+// ユーザーデータの取得
+const fetchUserData = async () => {
+    try {
+        currentUserData.value = await $fetch(`/api/user/${user.value?.id}`);
+        name.value = currentUserData.value?.name ?? '';
+        currentAvatar.value = currentUserData.value?.avatar ?? null;
+        bio.value = currentUserData.value?.bio ?? '';
+        links.value = currentUserData.value?.links ?? [];
+    } catch (error) {
+        console.error('Error fetching user data:', error);
+    }
+};
+
+// ユーザーデータ更新の共通処理
+const updateUserData = async (deleteAvatarFlag = false) => {
+    saving.value = true;
+
+    try {
+        const response = await $fetch('/api/user', {
+            method: 'PATCH',
+            body: {
+                deleteAvatar: deleteAvatarFlag,
+                name: name.value,
+                bio: bio.value,
+                links: links.value,
+                newAvatar:
+                    avatar.value && !deleteAvatarFlag
+                        ? await blobToBase64(avatar.value)
+                        : null,
+            },
+        });
+
+        userProfile.value.name = response.name;
+        userProfile.value.avatar = response.avatar;
+        currentAvatar.value = response.avatar;
+
+        return response;
+    } catch (error) {
+        console.error('Error updating user data:', error);
+        throw error;
+    } finally {
+        saving.value = false;
+    }
+};
 
 const save = async () => {
     const validationResult = userSettingsSchema.safeParse({
@@ -46,94 +82,44 @@ const save = async () => {
     });
 
     if (!validationResult.success) {
-        // バリデーションエラーがある場合、最初のエラーメッセージを表示
         const formattedErrors = validationResult.error.format();
         const firstError =
             formattedErrors.name?._errors[0] ||
             formattedErrors.bio?._errors[0] ||
             formattedErrors.links?._errors[0];
 
-        if (firstError) return useToast().add(firstError);
-    }
-
-    saving.value = true;
-
-    let avatarName = currentAvatar.value;
-    if (avatar.value) {
-        try {
-// (Removed unused commented-out image compression code)
-
-            const response = await $fetch('/api/image', {
-                method: 'PUT',
-                body: {
-                    image: await blobToBase64(avatar.value),
-                    prefix: 'avatar',
-                },
-            });
-
-            if (currentAvatar.value)
-                await useDeleteImage(currentAvatar.value, { target: 'avatar' });
-
-            avatarName = response.name;
-        } catch {
-            useToast().add(
-                'ユーザー情報の保存に失敗しました',
-                'アバターのアップロードでエラーが発生しました'
-            );
-            saving.value = false;
+        if (firstError) {
+            toast.add(firstError);
             return;
         }
     }
 
-    const { error } = await client
-        .from('users')
-        .update({
-            name: name.value,
-            bio: bio.value,
-            avatar: avatarName,
-            links: links.value,
-        })
-        .eq('id', user.value!.id);
-
-    if (error) {
-        saving.value = false;
-        return useToast().add('ユーザー情報の保存に失敗しました');
+    try {
+        await updateUserData(false);
+        toast.add('ユーザー情報を保存しました');
+    } catch {
+        toast.add('ユーザー情報の保存に失敗しました');
     }
-
-    currentAvatar.value = avatarName;
-    userProfile.value.name = name.value;
-    userProfile.value.avatar = avatarName || null;
-    useToast().add('ユーザー情報を保存しました');
-    saving.value = false;
 };
 
 const deleteAvatar = async () => {
     if (!currentAvatar.value) return;
 
-    saving.value = true;
-
-    const { error } = await client
-        .from('users')
-        .update({ avatar: null })
-        .eq('id', user.value!.id);
-
-    if (error) {
-        saving.value = false;
-        return useToast().add('アバターの削除に失敗しました');
+    try {
+        await updateUserData(true);
+        toast.add('アバターを削除しました');
+    } catch {
+        toast.add('ユーザー情報の保存に失敗しました');
     }
-
-    await useDeleteImage(currentAvatar.value, { target: 'avatar' });
-    userProfile.value.avatar = null;
-    currentAvatar.value = null;
-    useToast().add('アバターを削除しました');
-    saving.value = false;
 };
+
+await fetchUserData();
 
 useOGP({ title: 'ユーザー設定' });
 </script>
 
 <template>
-    <div v-if="!data" class="w-full flex flex-col items-center">
+    <div v-if="!currentUserData" class="w-full flex flex-col items-center">
         <p class="text-zinc-400 mt-5">ユーザーデータの取得に失敗しました</p>
     </div>
 
@@ -180,7 +166,7 @@ useOGP({ title: 'ユーザー設定' });
                 <div class="grow flex items-center justify-between">
                     <UiTitle label="bio" icon="lucide:text" is="h2" />
                     <p
-                        :data-exceeded="bio?.length > 141"
+                        :data-exceeded="bio?.length > 140"
                         class="text-sm font-medium whitespace-nowrap text-zinc-700 dark:text-zinc-400 data-[exceeded=true]:text-red-400 dark:data-[exceeded=true]:text-red-400"
                     >
                         {{ bio?.length || 0 }} / 140
