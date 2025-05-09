@@ -90,8 +90,7 @@ const setupSchema = z.object({
 export type RequestBody = z.infer<typeof setupSchema>;
 
 // データベースエラー処理を簡素化するヘルパー関数
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const handleDbError = (table: string, error: any) => {
+const handleDbError = (table: string, error: unknown) => {
     console.error(`Failed to insert on DB. Table: ${table}`, error);
     throw createError({
         statusCode: 500,
@@ -100,28 +99,32 @@ const handleDbError = (table: string, error: any) => {
 };
 
 export default defineEventHandler(async (event: H3Event) => {
+    // ユーザー認証チェック
     const user = await serverSupabaseUser(event).catch(() => null);
-    if (!user)
+    if (!user) {
+        console.error('Authentication failed: No user found');
         throw createError({
             statusCode: 403,
-            message: 'Forbidden.',
+            message: 'Forbidden. Authentication required.',
         });
+    }
 
     const supabase = await serverSupabaseClient<Database>(event);
     const rawBody = await readBody(event);
 
+    // リクエストデータ検証
     const result = setupSchema.safeParse(rawBody);
-
     if (!result.success) {
         console.error('Validation error:', result.error.format());
         throw createError({
             statusCode: 400,
-            message: `リクエストデータが不正です: ${result.error.issues.map((i) => i.message).join(', ')}`,
+            message: `Invalid request data: ${result.error.issues.map((i) => i.message).join(', ')}`,
         });
     }
 
     const body = result.data;
 
+    // アイテム存在確認
     const { data: itemsDB, error: itemsError } = await supabase
         .from('items')
         .select('id, category')
@@ -129,6 +132,7 @@ export default defineEventHandler(async (event: H3Event) => {
             'id',
             body.items.map((i) => i.id)
         );
+
     if (itemsError || !itemsDB) {
         console.error(
             'Internal item check failed:',
@@ -145,12 +149,14 @@ export default defineEventHandler(async (event: H3Event) => {
     const missingItems = requestedItemIds.filter((id) => !foundItemIds.has(id));
 
     if (missingItems.length > 0) {
+        console.error(`Missing items detected: ${missingItems.join(', ')}`);
         throw createError({
             statusCode: 400,
             message: `Missing items: ${missingItems.join(', ')}`,
         });
     }
 
+    // 画像アップロード処理
     const uploadedImages: {
         path: string;
         name: string;
@@ -159,24 +165,24 @@ export default defineEventHandler(async (event: H3Event) => {
     }[] = [];
 
     if (body.images?.length) {
-        for (const img of body.images) {
-            try {
-                const response = await event.$fetch('/api/image', {
+        try {
+            const imagePromises = body.images.map((img) =>
+                event.$fetch('/api/image', {
                     method: 'PUT',
                     body: { image: img, prefix: 'setup' },
-                });
-
-                uploadedImages.push(response);
-            } catch (error) {
-                console.error('Failed to upload image:', error);
-                throw createError({
-                    statusCode: 500,
-                    message: 'Failed to upload image.',
-                });
-            }
+                })
+            );
+            uploadedImages.push(...(await Promise.all(imagePromises)));
+        } catch (error) {
+            console.error('Failed to upload image:', error);
+            throw createError({
+                statusCode: 500,
+                message: 'Failed to upload image.',
+            });
         }
     }
 
+    // セットアップデータ挿入
     const { data: setupData, error: setupError } = await supabase
         .from('setups')
         .insert({
@@ -189,30 +195,30 @@ export default defineEventHandler(async (event: H3Event) => {
 
     if (setupError || !setupData) handleDbError('setups', setupError);
 
-    const insertOperations = [
-        supabase
-            .from('setup_tags')
-            .insert(body.tags.map((tag) => ({ setup_id: setupData!.id, tag }))),
-        supabase.from('setup_coauthors').insert(
-            body.coAuthors.map((coauthor) => ({
-                setup_id: setupData!.id,
-                user_id: coauthor.id,
-                note: coauthor.note,
-            }))
-        ),
-    ];
+    const setupId = setupData!.id;
 
-    const [{ error: tagsError }, { error: coAuthorError }] =
-        await Promise.all(insertOperations);
+    // タグとコラボレーター情報挿入
+    const tagData = body.tags.map((tag) => ({ setup_id: setupId, tag }));
+    const coauthorData = body.coAuthors.map((coauthor) => ({
+        setup_id: setupId,
+        user_id: coauthor.id,
+        note: coauthor.note,
+    }));
+
+    const [{ error: tagsError }, { error: coAuthorError }] = await Promise.all([
+        supabase.from('setup_tags').insert(tagData),
+        supabase.from('setup_coauthors').insert(coauthorData),
+    ]);
 
     if (tagsError) handleDbError('setup_tags', tagsError);
     if (coAuthorError) handleDbError('setup_coauthors', coAuthorError);
 
+    // アイテム情報挿入
     for (const item of body.items) {
         const { data: itemData, error: itemError } = await supabase
             .from('setup_items')
             .insert({
-                setup_id: setupData!.id,
+                setup_id: setupId,
                 item_id: item.id,
                 note: item.note,
                 unsupported: item.unsupported,
@@ -223,37 +229,39 @@ export default defineEventHandler(async (event: H3Event) => {
 
         if (itemError || !itemData) handleDbError('setup_items', itemError);
 
+        // シェイプキー情報挿入
         if (item.shapekeys?.length) {
-            const shapekeyOperations = item.shapekeys.map((shapekey) =>
-                supabase.from('setup_item_shapekeys').insert({
-                    setup_item_id: itemData!.id,
-                    name: shapekey.name,
-                    value: shapekey.value,
-                })
-            );
+            const shapekeyData = item.shapekeys.map((shapekey) => ({
+                setup_item_id: itemData!.id,
+                name: shapekey.name,
+                value: shapekey.value,
+            }));
 
-            const shapekeyResults = await Promise.all(shapekeyOperations);
+            const { error: shapekeysError } = await supabase
+                .from('setup_item_shapekeys')
+                .insert(shapekeyData);
 
-            for (const result of shapekeyResults)
-                if (result.error)
-                    handleDbError('setup_shapekeys', result.error);
+            if (shapekeysError)
+                handleDbError('setup_shapekeys', shapekeysError);
         }
     }
 
+    // 画像情報挿入
     if (uploadedImages.length) {
-        for (const img of uploadedImages) {
-            const { error: imageError } = await supabase
-                .from('setup_images')
-                .insert({
-                    name: img.name,
-                    setup_id: setupData!.id,
-                    width: img.width,
-                    height: img.height,
-                });
-            if (imageError) handleDbError('setup_images', imageError);
-        }
+        const imageData = uploadedImages.map((img) => ({
+            name: img.name,
+            setup_id: setupId,
+            width: img.width,
+            height: img.height,
+        }));
+
+        const { error: imagesError } = await supabase
+            .from('setup_images')
+            .insert(imageData);
+
+        if (imagesError) handleDbError('setup_images', imagesError);
     }
 
     setResponseStatus(event, 201);
-    return { id: setupData!.id };
+    return { id: setupId };
 });

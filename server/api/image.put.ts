@@ -28,6 +28,7 @@ export default defineEventHandler(
     }> => {
         const storage = imageStorageClient();
 
+        // Authenticate user
         try {
             const user = await serverSupabaseUser(event);
             if (!user) {
@@ -45,6 +46,7 @@ export default defineEventHandler(
             });
         }
 
+        // Validate request body
         const rawBody = await readBody(event);
         const result = requestBodySchema.safeParse(rawBody);
 
@@ -52,39 +54,49 @@ export default defineEventHandler(
             console.error('Validation error:', result.error.format());
             throw createError({
                 statusCode: 400,
-                message: `リクエストデータが不正です: ${result.error.issues.map((i) => i.message).join(', ')}`,
+                message: `Invalid request data: ${result.error.issues.map((i) => i.message).join(', ')}`,
             });
         }
 
         const body = result.data;
 
         try {
-            // クライアント側で圧縮済みの画像をデコード
-            const input = Buffer.from(
-                body.image.split(',')[1] || body.image,
-                'base64'
-            );
+            // Decode the compressed image from client
+            const base64Data = body.image.includes(',')
+                ? body.image.split(',')[1]
+                : body.image;
 
-            // サイズバリデーション
-            if (input.length > 2 * 1024 * 1024)
+            const input = Buffer.from(base64Data, 'base64');
+
+            // Size validation
+            const maxSizeMB = 2;
+            const sizeInMB = input.length / (1024 * 1024);
+            if (sizeInMB > maxSizeMB) {
+                console.error(
+                    `Image size exceeds limit: ${sizeInMB.toFixed(2)}MB`
+                );
                 throw createError({
                     statusCode: 400,
-                    message: `画像サイズが大きすぎます。2MB以下にしてください。現在のサイズ: ${(input.length / (1024 * 1024)).toFixed(2)}MB`,
+                    message: `Image is too large. Maximum size is ${maxSizeMB}MB. Current size: ${sizeInMB.toFixed(2)}MB`,
                 });
+            }
 
             const dimensions = sizeOf(input);
 
+            // Generate unique filename using timestamp
             const unixTime = Math.floor(Date.now());
-            let base64UnixTime = Buffer.from(unixTime.toString()).toString(
-                'base64'
-            );
-            base64UnixTime = base64UnixTime.replace(/[\\/:*?"<>|]/g, '');
+            const base64UnixTime = Buffer.from(unixTime.toString())
+                .toString('base64')
+                .replace(/[\/+=]/g, ''); // Remove problematic base64 chars
 
-            const filename = `${base64UnixTime}.jpg`;
-            const prefixedFileName = `${body.prefix}:${base64UnixTime}.jpg`;
+            const extension = 'jpg'; // Consider detecting actual format
+            const filename = `${base64UnixTime}.${extension}`;
+            const prefixedFileName = `${body.prefix}:${filename}`;
 
+            // Upload to storage
             await storage.setItemRaw(prefixedFileName, input);
 
+            // Verify upload success
             if (!(await storage.has(prefixedFileName))) {
                 console.error(
                     'Storage error: Failed to verify uploaded file existence:',
@@ -92,7 +104,7 @@ export default defineEventHandler(
                 );
                 throw createError({
                     statusCode: 500,
-                    message: 'Upload to R2 failed.',
+                    message: 'Upload to storage failed.',
                 });
             }
 

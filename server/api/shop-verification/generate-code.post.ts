@@ -5,89 +5,72 @@ import {
 } from '#supabase/server';
 
 /**
- * セキュアなランダム文字列を生成する関数
+ * Generate a secure random string
  */
-const generateSecureRandomString = (length: number): string => {
-    return crypto
+const generateSecureRandomString = (length: number): string =>
+    crypto
         .randomBytes(Math.ceil(length / 2))
         .toString('hex')
         .slice(0, length);
-};
 
 export default defineEventHandler(async (event): Promise<{ code: string }> => {
     try {
         const user = await serverSupabaseUser(event);
 
         if (!user?.id) {
-            console.error('Error: ユーザーがログインしていません');
+            console.error('Error: User not authenticated');
             throw createError({
                 statusCode: 403,
-                message: 'ログインが必要です',
+                message: 'Authentication required',
             });
         }
 
         const supabase = await serverSupabaseServiceRole<Database>(event);
+        const userId = user.id;
 
-        // 既存のコードを確認・削除
-        const { data: oldData, error: selectError } = await supabase
+        // Delete existing code if any
+        const { error: deleteError } = await supabase
             .from('shop_verification')
-            .select('code, user_id, created_at')
-            .eq('user_id', user.id);
+            .delete()
+            .eq('user_id', userId);
 
-        if (selectError) {
-            console.error('Error getting existing code:', selectError);
-            throw createError({
-                statusCode: 500,
-                message: '既存コードの確認中にエラーが発生しました',
-            });
+        if (deleteError) {
+            console.error(
+                'Error deleting existing verification code:',
+                deleteError
+            );
+            // Continue execution even if deletion fails
         }
 
-        // 既存のコードがあれば削除
-        if (oldData?.length) {
-            const { error: deleteError } = await supabase
-                .from('shop_verification')
-                .delete()
-                .eq('user_id', user.id);
-
-            if (deleteError)
-                // 削除に失敗しても続行
-                console.error('Error deleting old code:', deleteError);
-        }
-
-        // 新しいコードを生成
+        // Generate and store new code
         const code = generateSecureRandomString(64);
-
-        // コードをデータベースに保存
         const { data, error: insertError } = await supabase
             .from('shop_verification')
             .insert({
-                code: code,
-                user_id: user.id,
+                code,
+                user_id: userId,
             })
-            .select();
+            .select('code');
 
-        if (insertError || !data) {
+        if (insertError || !data?.length) {
             console.error('Error inserting verification code:', insertError);
             throw createError({
                 statusCode: 500,
-                message: '認証コードの生成に失敗しました',
+                message: 'Failed to generate verification code',
             });
         }
 
-        // 成功時は201 Created（新しいリソース作成）
+        // Return 201 Created for new resource creation
         setResponseStatus(event, 201);
-
-        return {
-            code: code,
-        };
+        return { code };
     } catch (error) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // Re-throw if it's already a handled error
         if (error && (error as any).statusCode) throw error;
 
         console.error('Unexpected error generating code:', error);
         throw createError({
             statusCode: 500,
-            message: '予期せぬエラーが発生しました',
+            message: 'An unexpected error occurred',
         });
     }
 });

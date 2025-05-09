@@ -31,7 +31,7 @@ const emit = defineEmits(['update:open']);
                 :data-anchor="props.anchor"
                 :class="
                     twMerge(
-                        'z-[100] fixed place-self-center max-h-[85vh] w-[90vw] max-w-[450px] p-6 flex flex-col gap-5',
+                        'z-[100] fixed place-self-center max-h-[85vh] w-[90vw] max-w-[450px] p-4 flex flex-col gap-3.5',
                         'rounded-2xl bg-zinc-100 dark:bg-zinc-900 focus:outline-hidden border border-zinc-300 dark:border-zinc-700',
                         'shadow-xl shadow-black/10 dark:shadow-black/50',
                         'animate-in slide-in-from-bottom-3 fade-in ease-in-out',

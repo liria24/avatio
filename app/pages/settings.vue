@@ -96,6 +96,7 @@ const save = async () => {
 
     try {
         await updateUserData(false);
+        avatar.value = null;
         toast.add('ユーザー情報を保存しました');
     } catch {
         toast.add('ユーザー情報の保存に失敗しました');

@@ -45,18 +45,25 @@ const verify = async () => {
         return;
     }
 
-    const { verified: v } = await $fetch('/api/shop-verification/verify', {
-        method: 'POST',
-        body: {
-            url: shopUrl.value,
-        },
-    });
+    try {
+        verifying.value = true;
 
-    if (v) {
-        emit('refresh');
-        verified.value = true;
-    } else {
+        const { verified: v } = await $fetch('/api/shop-verification/verify', {
+            method: 'POST',
+            body: { url: shopUrl.value },
+        });
+
+        if (v) {
+            emit('refresh');
+            verified.value = true;
+            useToast().add('認証に成功しました');
+        } else {
+            useToast().add('認証に失敗しました');
+        }
+    } catch (e) {
         useToast().add('認証に失敗しました');
+    } finally {
+        verifying.value = false;
     }
 };
 

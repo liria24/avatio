@@ -19,7 +19,6 @@ export default defineEventHandler(async (event): Promise<DocumentData> => {
         );
 
     try {
-        if (!slug) throw new Error('Slug is required');
         slugSchema.parse(slug);
     } catch (error) {
         console.error('Invalid Slug:', error);
@@ -40,7 +39,7 @@ export default defineEventHandler(async (event): Promise<DocumentData> => {
             'slug, created_at, updated_at, title, content, thumbnail, published'
         )
         .eq('published', true)
-        .eq('slug', slug)
+        .eq('slug', slug!)
         .maybeSingle<DocumentData>();
 
     if (error) {
