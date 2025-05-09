@@ -180,7 +180,9 @@ onMounted(() => {
                 </DialogTitle>
             </template>
 
-            <p class="py-6 text-sm">ショップオーナー認証を解除しますか？</p>
+            <p class="py-3 px-2 text-zinc-700 dark:text-zinc-300 text-sm">
+                ショップオーナー認証を解除しますか？
+            </p>
 
             <template #footer>
                 <div class="gap-1.5 flex items-center justify-between">
@@ -193,6 +195,7 @@ onMounted(() => {
                         label="認証を解除"
                         @click="
                             () => {
+                                modalUnverify = false;
                                 if (unverifyId) unverify(unverifyId);
                             }
                         "

@@ -4,14 +4,14 @@ import { z } from 'zod';
 const requestQuerySchema = z.object({
     name: z
         .string({
-            required_error: 'ファイル名は必須です',
-            invalid_type_error: 'ファイル名は文字列である必要があります',
+            required_error: 'File name is required',
+            invalid_type_error: 'File name must be a string',
         })
-        .min(1, 'ファイル名は必須です'),
+        .min(1, 'File name is required'),
 
     prefix: z
         .string({
-            invalid_type_error: 'プレフィックスは文字列である必要があります',
+            invalid_type_error: 'Prefix must be a string',
         })
         .optional(),
 });
@@ -21,48 +21,62 @@ export type RequestQuery = z.infer<typeof requestQuerySchema>;
 export default defineEventHandler(async (event): Promise<{ path: string }> => {
     const storage = imageStorageClient();
 
+    // ユーザー認証のエラーハンドリングを簡略化
     try {
         const user = await serverSupabaseUser(event);
         if (!user) {
+            console.error('Authentication failed: User not found');
             throw createError({
                 statusCode: 403,
-                message: 'Forbidden.',
+                message: 'Forbidden: User authentication required',
             });
         }
-    } catch {
+    } catch (error) {
+        console.error('Authentication error:', error);
         throw createError({
             statusCode: 403,
-            message: 'Forbidden.',
+            message: 'Forbidden: Authentication failed',
         });
     }
 
+    // クエリパラメータのバリデーション
     const rawQuery = getQuery(event);
     const result = requestQuerySchema.safeParse(rawQuery);
 
     if (!result.success) {
+        const errorMessage = result.error.issues
+            .map((i) => i.message)
+            .join(', ');
+        console.error(`Invalid request: ${errorMessage}`);
         throw createError({
             statusCode: 400,
-            message: `不正なリクエスト: ${result.error.issues.map((i) => i.message).join(', ')}`,
+            message: `Bad request: ${errorMessage}`,
         });
     }
 
     const query = result.data;
     const target = query.prefix ? `${query.prefix}:${query.name}` : query.name;
 
-    console.log('Deleting image on R2.', target);
-    await storage.del(target);
+    console.log('Deleting image on storage:', target);
 
-    if (await storage.has(target)) {
-        console.error('Failed to delete image on R2.', target);
+    try {
+        await storage.del(target);
+
+        // 削除後の検証
+        if (await storage.has(target)) {
+            console.error('Failed to delete image on storage:', target);
+            throw createError({
+                statusCode: 500,
+                message: 'Delete operation on storage failed',
+            });
+        }
+
+        return { path: target };
+    } catch (error) {
+        console.error('Error during image deletion:', error);
         throw createError({
             statusCode: 500,
-            message: 'Delete on R2 failed.',
+            message: 'Failed to delete image: internal server error',
         });
     }
-
-    // 削除成功時は200 OKと削除した情報を返す
-    setResponseStatus(event, 200);
-    return {
-        path: target,
-    };
 });

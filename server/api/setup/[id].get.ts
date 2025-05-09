@@ -1,5 +1,6 @@
 import { serverSupabaseClient } from '#supabase/server';
 import { z } from 'zod';
+import type { H3Event } from 'h3';
 
 export default defineEventHandler(async (event): Promise<SetupClient> => {
     const id = getRouterParam(event, 'id');
@@ -31,6 +32,7 @@ export default defineEventHandler(async (event): Promise<SetupClient> => {
     }
 
     const supabase = await serverSupabaseClient<Database>(event);
+    const numericId = Number(id);
 
     const { data } = await supabase
         .from('setups')
@@ -97,52 +99,63 @@ export default defineEventHandler(async (event): Promise<SetupClient> => {
             )
             `
         )
-        .eq('id', Number(id)!)
+        .eq('id', numericId)
         .maybeSingle<SetupDB>();
 
-    if (!data)
+    if (!data) {
+        console.error(`Setup not found: ID=${numericId}`);
         throw createError({
             statusCode: 404,
             message: 'Setup not found.',
         });
+    }
 
     // アイテム情報の更新処理
-    if (data.items) {
-        const currentTime = new Date().getTime();
-
-        for (const item of data.items) {
-            if (item.data) {
-                const updatedAt = new Date(item.data.updated_at).getTime();
-                const timeDifference = currentTime - updatedAt;
-
-                // 時間の差分が1日を超えている場合、情報を更新
-                if (timeDifference > 24 * 60 * 60 * 1000) {
-                    try {
-                        // boothアイテム情報を取得
-                        const response = await event.$fetch('/api/item/booth', {
-                            query: { id: item.data.id },
-                        });
-
-                        if (response)
-                            // 取得したデータでアイテム情報を更新
-                            item.data = {
-                                ...response,
-                                // 元の情報を保持
-                                updated_at: new Date().toISOString(),
-                            };
-                        else
-                            // 情報取得できなかった場合はoutdatedフラグを立てる
-                            item.data.outdated = true;
-                    } catch (error) {
-                        console.error(
-                            `Failed to update item ${item.data.id}:`,
-                            error
-                        );
-                    }
-                }
-            }
-        }
-    }
+    await updateItemsIfNeeded(event, data.items);
 
     return setupMoldingClient(data);
 });
+
+// アイテム情報が古い場合に更新する関数
+const updateItemsIfNeeded = async (
+    event: H3Event,
+    items: {
+        data: Item | null;
+        note: string;
+        unsupported: boolean;
+        category: ItemCategory | null;
+        shapekeys: Shapekey[];
+    }[]
+) => {
+    if (!items?.length) return;
+
+    const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+    const currentTime = Date.now();
+
+    for (const item of items) {
+        if (!item.data) continue;
+
+        const updatedAt = new Date(item.data.updated_at).getTime();
+        if (currentTime - updatedAt <= ONE_DAY_MS) continue;
+
+        try {
+            // boothアイテム情報を取得
+            const response = await event.$fetch('/api/item/booth', {
+                query: { id: item.data.id },
+            });
+
+            if (response) {
+                // 取得したデータでアイテム情報を更新
+                item.data = {
+                    ...response,
+                    updated_at: new Date().toISOString(),
+                };
+            } else {
+                // 情報取得できなかった場合はoutdatedフラグを立てる
+                item.data.outdated = true;
+            }
+        } catch (error) {
+            console.error(`Failed to update item ${item.data.id}:`, error);
+        }
+    }
+};
