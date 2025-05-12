@@ -87,7 +87,7 @@ export default defineEventHandler(
             const unixTime = Math.floor(Date.now());
             const base64UnixTime = Buffer.from(unixTime.toString())
                 .toString('base64')
-                .replace(/[\/+=]/g, ''); // Remove problematic base64 chars
+                .replace(/[\\/+=]/g, ''); // Remove problematic base64 chars
 
             const extension = 'jpg'; // Consider detecting actual format
             const filename = `${base64UnixTime}.${extension}`;
