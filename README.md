@@ -56,7 +56,7 @@ Avatioはオープンソースプロジェクトです。
 ・
 [プライバシーポリシー][avatio-privacy]
 
-Copylight © 2025 **[Liria][liria]**
+Copyright © 2025 **[Liria][liria]**
 
 </div>
 
