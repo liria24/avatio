@@ -65,7 +65,7 @@ const modal_feedback = ref(false);
             <div class="flex gap-1 items-center">
                 <p class="text-zinc-500 text-sm">Copyright © 2025</p>
                 <Button
-                    to="https://liria.work"
+                    to="https://liria.me"
                     new-tab
                     label="Liria"
                     icon="avatio:liria"
