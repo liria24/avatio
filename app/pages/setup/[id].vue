@@ -39,11 +39,6 @@ if (setup.value)
             ? getImage(setup.value.images[0]!.name, { prefix: 'setup' })
             : 'https://avatio.me/ogp.png',
     })
-else
-    showError({
-        statusCode: 404,
-        message: 'セットアップが見つかりませんでした',
-    })
 </script>
 
 <template>

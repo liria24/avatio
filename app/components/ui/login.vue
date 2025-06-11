@@ -1,12 +1,7 @@
 <script setup lang="ts">
 const token = ref()
 
-let env: string | undefined
-try {
-    env = process?.env?.NODE_ENV
-} catch {
-    env = 'production'
-}
+const isDev = import.meta.dev
 const mailAddressLogin = ref({ email: '', password: '' })
 const handleLogin = async () => {
     try {
@@ -36,10 +31,7 @@ const handleLogin = async () => {
                 @click="useLoginWithTwitter"
             />
 
-            <div
-                v-if="env === 'development'"
-                class="flex w-full flex-col gap-2"
-            >
+            <div v-if="isDev" class="flex w-full flex-col gap-2">
                 <p>Development only</p>
                 <UiTextinput v-model="mailAddressLogin.email" />
                 <UiTextinput

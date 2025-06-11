@@ -1,7 +1,18 @@
 <script setup lang="ts">
 const user = useSupabaseUser()
 
-const mode = ref<'all' | 'mine' | 'bookmark'>('all')
+const mode = ref<'latest' | 'user' | 'bookmarks'>('latest')
+
+const setupsPerPage: number = 50
+const page = ref(0)
+
+const { setups, hasMore, status, fetchMoreSetups } = useFetchSetups(mode, {
+    query: computed(() => ({
+        page: page.value,
+        perPage: setupsPerPage,
+        userId: user.value?.id || null,
+    })),
+})
 
 defineSeo({
     type: 'website',
@@ -26,40 +37,50 @@ defineSeo({
                     variant="flat"
                     :class="[
                         'text-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-700',
-                        mode === 'all' ? 'bg-zinc-200 dark:bg-zinc-700' : '',
+                        mode === 'latest' ? 'bg-zinc-200 dark:bg-zinc-700' : '',
                     ]"
-                    @click="mode = 'all'"
+                    @click="mode = 'latest'"
                 />
                 <Button
                     label="自分の投稿"
                     variant="flat"
                     :class="[
                         'text-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-700',
-                        mode === 'mine' ? 'bg-zinc-200 dark:bg-zinc-700' : '',
+                        mode === 'user' ? 'bg-zinc-200 dark:bg-zinc-700' : '',
                     ]"
-                    @click="mode = 'mine'"
+                    @click="mode = 'user'"
                 />
                 <Button
                     label="ブックマーク"
                     variant="flat"
                     :class="[
                         'text-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-700',
-                        mode === 'bookmark'
+                        mode === 'bookmarks'
                             ? 'bg-zinc-200 dark:bg-zinc-700'
                             : '',
                     ]"
-                    @click="mode = 'bookmark'"
+                    @click="mode = 'bookmarks'"
                 />
             </div>
-
-            <SetupsListHome v-if="mode === 'all'" />
-            <SetupsListUser
-                v-else-if="mode === 'mine'"
-                :user-id="user ? user.id : null"
-            />
-            <SetupsListBookmarks v-else-if="mode === 'bookmark'" />
+            <div class="flex w-full flex-col gap-3 self-center">
+                <SetupsList :setups="setups" :loading="status === 'pending'" />
+                <ButtonLoadMore
+                    v-if="hasMore"
+                    :loading="status === 'pending'"
+                    class="w-full"
+                    @click="fetchMoreSetups"
+                />
+            </div>
         </div>
 
-        <SetupsListHome v-else />
+        <div v-else class="flex w-full flex-col gap-3 self-center">
+            <SetupsList :setups="setups" :loading="status === 'pending'" />
+            <ButtonLoadMore
+                v-if="hasMore"
+                :loading="status === 'pending'"
+                class="w-full"
+                @click="fetchMoreSetups"
+            />
+        </div>
     </div>
 </template>

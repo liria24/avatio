@@ -21,6 +21,17 @@ try {
     })
 }
 
+const setupsPerPage: number = 50
+const page = ref(0)
+
+const { setups, hasMore, status, fetchMoreSetups } = useFetchSetups('user', {
+    query: computed(() => ({
+        page: page.value,
+        perPage: setupsPerPage,
+        userId: userData.value?.id || null,
+    })),
+})
+
 if (userData.value)
     defineSeo({
         title: userData.value.name,
@@ -197,7 +208,15 @@ const onLoginSuccess = () => {
         <div class="flex w-full flex-col gap-5 px-2">
             <UiTitle label="セットアップ" icon="lucide:shirt" />
 
-            <SetupsListUser :user-id="userData.id" />
+            <div class="flex w-full flex-col gap-3 self-center">
+                <SetupsList :setups="setups" :loading="status === 'pending'" />
+                <ButtonLoadMore
+                    v-if="hasMore"
+                    :loading="status === 'pending'"
+                    class="w-full"
+                    @click="fetchMoreSetups"
+                />
+            </div>
         </div>
     </div>
 </template>

@@ -194,7 +194,7 @@ defineSeo({
                 v-if="resultSetups.length"
                 class="flex flex-col gap-2 lg:grid lg:grid-cols-1"
             >
-                <SetupsListBase :setups="resultSetups" />
+                <SetupsList :setups="resultSetups" />
                 <ButtonLoadMore
                     v-if="hasMore"
                     :loading="loading"
