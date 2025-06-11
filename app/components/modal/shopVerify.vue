@@ -60,7 +60,7 @@ const verify = async () => {
         } else {
             useToast().add('認証に失敗しました')
         }
-    } catch (e) {
+    } catch {
         useToast().add('認証に失敗しました')
     } finally {
         verifying.value = false
@@ -78,6 +78,11 @@ const generateCode = async () => {
         ).code || ''
 
     codeGenerating.value = false
+}
+
+const copyCode = () => {
+    writeClipboard(code.value)
+    copied.value = true
 }
 
 watchEffect(() => {
@@ -150,10 +155,7 @@ watchEffect(() => {
                             variant="flat"
                             tooltip="コードをコピー"
                             class="ml-2 p-2"
-                            @click="
-                                writeClipboard(code)
-                                copied = true
-                            "
+                            @click="copyCode"
                         >
                             <Icon v-if="!copied" name="lucide:copy" size="16" />
                             <Icon v-else name="lucide:check" size="16" />

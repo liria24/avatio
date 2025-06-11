@@ -1,9 +1,14 @@
 <script lang="ts" setup>
-const setups = ref<SetupClient[]>([])
+// const setups = ref<SetupClient[]>([])
 const setupsPerPage: number = 50
 const page = ref(0)
 const hasMore = ref(false)
 const loading = ref(true)
+
+const { setups } = useFetchSetups('latest', {
+    query: { page: page.value, perPage: setupsPerPage },
+})
+console.log('setups', setups.value)
 
 const get = async () => {
     loading.value = true
@@ -16,7 +21,6 @@ const get = async () => {
             },
         })
 
-        setups.value = [...setups.value, ...response.setups]
         page.value++
         hasMore.value = response.hasMore
     } catch (e) {

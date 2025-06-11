@@ -35,6 +35,11 @@ const fileSelect = () => {
     open()
 }
 
+const removeAvatar = () => {
+    croppingImage.value = null
+    emit('deleteAvatar')
+}
+
 watchEffect(() => {
     if (avatar.value) {
         const reader = new FileReader()
@@ -120,10 +125,7 @@ watchEffect(() => {
                         <Button
                             variant="flat"
                             class="w-full"
-                            @click="
-                                croppingImage = null
-                                emit('deleteAvatar')
-                            "
+                            @click="removeAvatar"
                         >
                             <Icon
                                 name="lucide:trash"

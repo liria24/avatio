@@ -42,6 +42,18 @@ const fetchSetup = async (setupId: number) => {
     }
 }
 
+const copy = (link: string) => {
+    writeClipboard(link)
+    copied.value = true
+}
+
+const onContinue = () => {
+    setup.value = null
+    copied.value = false
+    emit('continue')
+    vis.value = false
+}
+
 watch(
     () => props.id,
     async (newId) => {
@@ -98,14 +110,7 @@ watch(
                 >
                     {{ link }}
                 </NuxtLink>
-                <Button
-                    variant="flat"
-                    class="ml-2 p-2"
-                    @click="
-                        writeClipboard(link)
-                        copied = true
-                    "
-                >
+                <Button variant="flat" class="ml-2 p-2" @click="copy(link)">
                     <Icon v-if="!copied" name="lucide:copy" size="16" />
                     <Icon v-else name="lucide:check" size="16" />
                 </Button>
@@ -132,14 +137,7 @@ watch(
         </div>
 
         <template #footer>
-            <Button
-                @click="
-                    setup = null
-                    copied = false
-                    emit('continue')
-                    vis = false
-                "
-            >
+            <Button @click="onContinue">
                 <Icon name="lucide:plus" size="18" />
                 <span>続けて投稿</span>
             </Button>

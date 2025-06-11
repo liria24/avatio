@@ -21,6 +21,16 @@ const attributesVisibility = ref({
     unity: false,
 })
 
+const deleteCoAuthor = () => {
+    attributesVisibility.value.coAuthors = false
+    coAuthors.value = []
+}
+
+const deleteUnity = () => {
+    attributesVisibility.value.unity = false
+    unity.value = ''
+}
+
 onMounted(() => {
     if (typeof Worker === 'undefined' || typeof OffscreenCanvas === 'undefined')
         workerSupported.value = false
@@ -207,10 +217,7 @@ onMounted(() => {
                             <Button
                                 variant="flat"
                                 class="p-1.5"
-                                @click="
-                                    attributesVisibility.coAuthors = false
-                                    coAuthors = []
-                                "
+                                @click="deleteCoAuthor"
                             >
                                 <Icon
                                     name="lucide:x"
@@ -241,10 +248,7 @@ onMounted(() => {
                             <Button
                                 variant="flat"
                                 class="p-1.5"
-                                @click="
-                                    attributesVisibility.unity = false
-                                    unity = ''
-                                "
+                                @click="deleteUnity"
                             >
                                 <Icon
                                     name="lucide:x"
