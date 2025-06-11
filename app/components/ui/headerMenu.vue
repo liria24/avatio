@@ -1,46 +1,46 @@
 <script lang="ts" setup>
-const route = useRoute();
-const user = useSupabaseUser();
-const client = useSupabaseClient<Database>();
+const route = useRoute()
+const user = useSupabaseUser()
+const client = useSupabaseClient<Database>()
 
 const userRefresh = async () => {
-    if (!user.value) return (userProfile.value.avatar = null);
+    if (!user.value) return (userProfile.value.avatar = null)
 
     try {
         const { data } = await client
             .from('users')
             .select('id, name, avatar, badges:user_badges(name, created_at)')
             .eq('id', user.value.id)
-            .maybeSingle();
+            .maybeSingle()
 
-        userProfile.value.id = data?.id ?? null;
-        userProfile.value.name = data?.name ?? null;
-        userProfile.value.avatar = data?.avatar ?? null;
-        userProfile.value.badges = data?.badges ?? [];
+        userProfile.value.id = data?.id ?? null
+        userProfile.value.name = data?.name ?? null
+        userProfile.value.avatar = data?.avatar ?? null
+        userProfile.value.badges = data?.badges ?? []
     } catch {
-        userProfile.value.id = null;
-        userProfile.value.name = null;
-        userProfile.value.avatar = null;
-        userProfile.value.badges = [];
+        userProfile.value.id = null
+        userProfile.value.name = null
+        userProfile.value.avatar = null
+        userProfile.value.badges = []
     }
-};
+}
 
-watchEffect(async () => await userRefresh());
+watchEffect(async () => await userRefresh())
 
 onMounted(async () => {
-    if (user.value) await userRefresh();
-});
+    if (user.value) await userRefresh()
+})
 </script>
 
 <template>
-    <div class="items-center gap-2 flex">
-        <div class="items-center gap-0.5 flex">
+    <div class="flex items-center gap-2">
+        <div class="flex items-center gap-0.5">
             <Button
                 v-if="
                     user && !['/login', '/setup/compose'].includes(route.path)
                 "
                 to="/setup/compose"
-                class="p-3 md:pr-6 md:pl-5 md:mr-2 outline-0 md:outline-1 md:rounded-full whitespace-nowrap hover:bg-zinc-700 hover:text-zinc-200 hover:dark:bg-zinc-300 hover:dark:text-zinc-800"
+                class="p-3 whitespace-nowrap outline-0 hover:bg-zinc-700 hover:text-zinc-200 md:mr-2 md:rounded-full md:pr-6 md:pl-5 md:outline-1 hover:dark:bg-zinc-300 hover:dark:text-zinc-800"
             >
                 <Icon name="lucide:plus" :size="18" />
                 <span class="hidden md:block">セットアップを投稿</span>
@@ -53,7 +53,7 @@ onMounted(async () => {
                 aria-label="検索"
                 icon="lucide:search"
                 variant="flat"
-                class="hidden sm:block p-2.5 hover:bg-zinc-300 hover:dark:bg-zinc-600"
+                class="hidden p-2.5 hover:bg-zinc-300 sm:block hover:dark:bg-zinc-600"
             />
 
             <Button
@@ -64,7 +64,7 @@ onMounted(async () => {
                 tooltip="ブックマーク"
                 aria-label="ブックマーク"
                 variant="flat"
-                class="hidden sm:block p-2.5 hover:bg-zinc-300 hover:dark:bg-zinc-600"
+                class="hidden p-2.5 hover:bg-zinc-300 sm:block hover:dark:bg-zinc-600"
             />
 
             <ButtonTheme class="hidden sm:block" />
@@ -74,11 +74,11 @@ onMounted(async () => {
             <ClientOnly>
                 <PopupMe v-if="user">
                     <div
-                        class="hidden sm:flex select-none rounded-full items-center outline-4 outline-transparent hover:outline-zinc-300 hover:dark:outline-zinc-600 transition-all ease-in-out duration-100 cursor-pointer"
+                        class="hidden cursor-pointer items-center rounded-full outline-4 outline-transparent transition-all duration-100 ease-in-out select-none hover:outline-zinc-300 sm:flex hover:dark:outline-zinc-600"
                     >
                         <UiAvatar
                             :url="
-                                useGetImage(userProfile.avatar, {
+                                getImage(userProfile.avatar, {
                                     prefix: 'avatar',
                                 })
                             "
@@ -94,7 +94,7 @@ onMounted(async () => {
                     to="/login"
                     label="ログイン"
                     variant="flat"
-                    class="hidden sm:block px-4 py-3 rounded-lg text-zinc-100 bg-zinc-500 dark:bg-zinc-600 hover:bg-zinc-600 hover:dark:bg-zinc-500"
+                    class="hidden rounded-lg bg-zinc-500 px-4 py-3 text-zinc-100 hover:bg-zinc-600 sm:block dark:bg-zinc-600 hover:dark:bg-zinc-500"
                 />
             </ClientOnly>
         </template>
@@ -135,7 +135,7 @@ onMounted(async () => {
                             >
                                 <UiAvatar
                                     :url="
-                                        useGetImage(userProfile.avatar, {
+                                        getImage(userProfile.avatar, {
                                             prefix: 'avatar',
                                         })
                                     "
@@ -150,7 +150,7 @@ onMounted(async () => {
                                 to="/login"
                                 label="ログイン"
                                 variant="flat"
-                                class="px-4 py-3 rounded-lg text-zinc-100 bg-zinc-500 dark:bg-zinc-600 hover:bg-zinc-600 hover:dark:bg-zinc-500"
+                                class="rounded-lg bg-zinc-500 px-4 py-3 text-zinc-100 hover:bg-zinc-600 dark:bg-zinc-600 hover:dark:bg-zinc-500"
                             />
                         </ClientOnly>
                     </template>

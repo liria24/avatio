@@ -1,22 +1,22 @@
 <script lang="ts" setup>
 const shops = ref<
     {
-        id: string;
-        name: string;
-        thumbnail: string;
-        verified_at: string;
+        id: string
+        name: string
+        thumbnail: string
+        verified_at: string
     }[]
->([]);
-const getting = ref(false);
-const modalAdd = ref(false);
-const modalUnverify = ref(false);
-const unverifyId = ref<string | null>(null);
+>([])
+const getting = ref(false)
+const modalAdd = ref(false)
+const modalUnverify = ref(false)
+const unverifyId = ref<string | null>(null)
 
 const get = async () => {
-    getting.value = true;
+    getting.value = true
 
-    const user = useSupabaseUser();
-    const client = useSupabaseClient();
+    const user = useSupabaseUser()
+    const client = useSupabaseClient()
 
     const { data } = await client
         .from('user_shops')
@@ -31,7 +31,7 @@ const get = async () => {
         )
         `
         )
-        .eq('user_id', user.value?.id);
+        .eq('user_id', user.value?.id)
 
     shops.value =
         data?.map((shop) => ({
@@ -39,29 +39,34 @@ const get = async () => {
             name: shop.shop.name,
             thumbnail: shop.shop.thumbnail,
             verified_at: shop.created_at,
-        })) ?? [];
+        })) ?? []
 
-    getting.value = false;
-};
+    getting.value = false
+}
 
 const unverify = async (id: string) => {
     try {
         await $fetch('/api/shop-verification/unverify', {
             method: 'POST',
             body: { shopId: id },
-        });
+        })
 
-        useToast().add('認証を解除しました');
+        useToast().add('認証を解除しました')
     } catch {
-        useToast().add('認証の解除に失敗しました');
+        useToast().add('認証の解除に失敗しました')
     }
 
-    get();
-};
+    get()
+}
+
+const onUnverify = (id: string) => {
+    unverifyId.value = id
+    modalUnverify.value = true
+}
 
 onMounted(() => {
-    get();
-});
+    get()
+})
 </script>
 
 <template>
@@ -74,7 +79,7 @@ onMounted(() => {
             <UiTitle label="オーナー認証" icon="lucide:store" is="h2" />
         </template>
 
-        <div v-if="getting" class="w-full flex items-center justify-center">
+        <div v-if="getting" class="flex w-full items-center justify-center">
             <Icon
                 name="svg-spinners:ring-resize"
                 size="24"
@@ -82,10 +87,10 @@ onMounted(() => {
             />
         </div>
 
-        <div v-else class="w-full px-3 flex flex-col gap-2 items-center">
+        <div v-else class="flex w-full flex-col items-center gap-2 px-3">
             <table
                 v-if="shops?.length"
-                class="table-auto w-full text-xs sm:text-sm"
+                class="w-full table-auto text-xs sm:text-sm"
             >
                 <thead>
                     <tr>
@@ -100,7 +105,7 @@ onMounted(() => {
                     <tr v-for="item in shops" :key="item.id">
                         <td class="px-1 py-1">
                             <div
-                                class="flex flex-col sm:flex-row items-start sm:items-center gap-x-3 gap-y-1"
+                                class="flex flex-col items-start gap-x-3 gap-y-1 sm:flex-row sm:items-center"
                             >
                                 <NuxtImg
                                     :src="item.thumbnail"
@@ -149,10 +154,7 @@ onMounted(() => {
                                 tooltip="認証解除"
                                 variant="flat"
                                 class="p-2"
-                                @click="
-                                    unverifyId = item.id;
-                                    modalUnverify = true;
-                                "
+                                @click="onUnverify(item.id)"
                             >
                                 <Icon name="lucide:x" size="16" />
                             </Button>
@@ -180,12 +182,12 @@ onMounted(() => {
                 </DialogTitle>
             </template>
 
-            <p class="py-3 px-2 text-zinc-700 dark:text-zinc-300 text-sm">
+            <p class="px-2 py-3 text-sm text-zinc-700 dark:text-zinc-300">
                 ショップオーナー認証を解除しますか？
             </p>
 
             <template #footer>
-                <div class="gap-1.5 flex items-center justify-between">
+                <div class="flex items-center justify-between gap-1.5">
                     <Button
                         label="キャンセル"
                         variant="flat"
@@ -195,8 +197,8 @@ onMounted(() => {
                         label="認証を解除"
                         @click="
                             () => {
-                                modalUnverify = false;
-                                if (unverifyId) unverify(unverifyId);
+                                modalUnverify = false
+                                if (unverifyId) unverify(unverifyId)
                             }
                         "
                     />

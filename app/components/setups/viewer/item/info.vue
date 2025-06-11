@@ -1,19 +1,19 @@
 <script lang="ts" setup>
 interface Props {
-    url: string;
-    shop: Shop;
-    price: string | null;
-    likes: number | null;
+    url: string
+    shop: Shop
+    price: string | null
+    likes: number | null
 }
-const props = defineProps<Props>();
+const props = defineProps<Props>()
 </script>
 
 <template>
-    <div class="pl-0.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+    <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 pl-0.5">
         <NuxtLink
             :to="props.url"
             target="_blank"
-            class="flex items-center gap-1.5 w-fit"
+            class="flex w-fit items-center gap-1.5"
         >
             <Icon
                 name="mingcute:currency-cny-fill"
@@ -21,7 +21,7 @@ const props = defineProps<Props>();
                 class="shrink-0 text-zinc-600 dark:text-zinc-400"
             />
             <span
-                class="pt-px text-xs font-[Geist] font-semibold leading-0 whitespace-nowrap text-zinc-600 dark:text-zinc-400"
+                class="pt-px font-[Geist] text-xs leading-0 font-semibold whitespace-nowrap text-zinc-600 dark:text-zinc-400"
             >
                 {{ props.price || 'UNKNOWN' }}
             </span>
@@ -30,7 +30,7 @@ const props = defineProps<Props>();
         <NuxtLink
             :to="props.url"
             target="_blank"
-            class="flex items-center gap-1.5 w-fit"
+            class="flex w-fit items-center gap-1.5"
         >
             <Icon
                 name="mingcute:heart-fill"
@@ -38,7 +38,7 @@ const props = defineProps<Props>();
                 class="shrink-0 text-zinc-600 dark:text-zinc-400"
             />
             <p
-                class="pt-px text-xs font-[Geist] font-semibold leading-none whitespace-nowrap text-zinc-600 dark:text-zinc-400"
+                class="pt-px font-[Geist] text-xs leading-none font-semibold whitespace-nowrap text-zinc-600 dark:text-zinc-400"
             >
                 {{ props.likes?.toLocaleString() || '?' }}
             </p>
@@ -48,7 +48,7 @@ const props = defineProps<Props>();
             <NuxtLink
                 :to="`https://${props.shop.id}.booth.pm/`"
                 target="_blank"
-                class="flex items-center gap-1.5 w-fit"
+                class="flex w-fit items-center gap-1.5"
             >
                 <NuxtImg
                     :src="props.shop.thumbnail ?? ''"
@@ -60,7 +60,7 @@ const props = defineProps<Props>();
                     class="size-5 rounded-md border border-zinc-300 dark:border-zinc-700"
                 />
                 <span
-                    class="font-semibold text-xs whitespace-nowrap text-zinc-600 dark:text-zinc-400"
+                    class="text-xs font-semibold whitespace-nowrap text-zinc-600 dark:text-zinc-400"
                 >
                     {{ props.shop.name }}
                 </span>
@@ -68,7 +68,7 @@ const props = defineProps<Props>();
                     v-if="props.shop.verified"
                     name="lucide:check"
                     :size="16"
-                    class="shrink-0 size-3 text-zinc-700 dark:text-zinc-300"
+                    class="size-3 shrink-0 text-zinc-700 dark:text-zinc-300"
                 />
             </NuxtLink>
         </HovercardShop>

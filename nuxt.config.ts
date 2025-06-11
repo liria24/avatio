@@ -1,14 +1,17 @@
-import tailwindcss from '@tailwindcss/vite';
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from '@/shared/types/database';
-import wasm from 'vite-plugin-wasm';
-import topLevelAwait from 'vite-plugin-top-level-await';
+import type { Database } from '@/shared/types/database'
+import { createClient } from '@supabase/supabase-js'
+import tailwindcss from '@tailwindcss/vite'
+import topLevelAwait from 'vite-plugin-top-level-await'
+import wasm from 'vite-plugin-wasm'
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
     future: { compatibilityVersion: 4 },
+
     compatibilityDate: '2024-08-21',
+
     devtools: { enabled: true, timeline: { enabled: true } },
+
     modules: [
         'reka-ui/nuxt',
         '@vueuse/nuxt',
@@ -23,6 +26,7 @@ export default defineNuxtConfig({
         '@nuxtjs/robots',
         '@nuxtjs/sitemap',
     ],
+
     routeRules: {
         '/': { isr: 60 },
         '/setup/compose': { ssr: false },
@@ -30,20 +34,20 @@ export default defineNuxtConfig({
         '/terms': { isr: 600 },
         '/privacy-policy': { isr: 600 },
     },
+
     css: ['~/assets/css/main.css'],
-    nitro: {
-        preset: 'vercel',
-    },
+
     vite: {
         plugins: [tailwindcss(), wasm(), topLevelAwait()],
     },
+
     runtimeConfig: {
         public: { r2: { domain: '' } },
         adminKey: '',
         turnstile: { siteKey: '', secretKey: '' },
         r2: { endpoint: '', accessKey: '', secretKey: '' },
-        // openai: { apiKey: '' },
     },
+
     app: {
         head: {
             htmlAttrs: { lang: 'ja', prefix: 'og: https://ogp.me/ns#' },
@@ -68,20 +72,22 @@ export default defineNuxtConfig({
                     property: 'og:description',
                     content: 'あなたのアバター改変を共有しよう',
                 },
-                { name: 'twitter:site', content: '@liria_work' },
+                { name: 'twitter:site', content: '@liria_24' },
                 { name: 'twitter:card', content: 'summary_large_image' },
             ],
         },
     },
-    experimental: {
-        typedPages: true,
-    },
+
     fonts: {
         families: [
             { name: 'Murecho', provider: 'google' },
             { name: 'Geist', provider: 'google' },
         ],
+        defaults: {
+            weights: [100, 200, 300, 300, 400, 500, 600, 700, 800, 900],
+        },
     },
+
     icon: {
         customCollections: [{ prefix: 'avatio', dir: './app/assets/icons' }],
         clientBundle: {
@@ -100,6 +106,7 @@ export default defineNuxtConfig({
             includeCustomCollections: true,
         },
     },
+
     image: {
         domains: [
             'booth.pximg.net', // booth
@@ -107,11 +114,13 @@ export default defineNuxtConfig({
             import.meta.env.NUXT_PUBLIC_R2_DOMAIN.replace('https://', ''), // R2
         ],
     },
+
     robots: {
         allow: ['Twitterbot', 'facebookexternalhit'],
         blockNonSeoBots: true,
         blockAiBots: true,
     },
+
     sitemap: {
         sitemaps: true,
         exclude: [
@@ -126,7 +135,7 @@ export default defineNuxtConfig({
             const supabase = createClient<Database>(
                 import.meta.env.SUPABASE_URL,
                 import.meta.env.SUPABASE_ANON_KEY
-            );
+            )
 
             const permanent = [
                 {
@@ -165,23 +174,23 @@ export default defineNuxtConfig({
                         },
                     ],
                 },
-            ];
+            ]
 
             const { data: setupsData, error: setupsError } = await supabase
                 .from('setups')
                 .select('id, created_at, name, images:setup_images(name)')
-                .order('created_at', { ascending: true });
+                .order('created_at', { ascending: true })
 
             const setups = setupsError
                 ? []
                 : setupsData.map(
                       (setup: {
-                          id: number;
-                          created_at: string;
-                          name: string;
-                          images: { name: string }[];
+                          id: number
+                          created_at: string
+                          name: string
+                          images: { name: string }[]
                       }) => {
-                          const image = setup.images[0]?.name;
+                          const image = setup.images[0]?.name
 
                           return {
                               loc: `/setup/${setup.id}`,
@@ -190,23 +199,24 @@ export default defineNuxtConfig({
                                   ? [{ loc: image, title: setup.name }]
                                   : [],
                               changefreq: 'never',
-                          };
+                          }
                       }
-                  );
+                  )
 
             const { data: usersData, error: usersError } = await supabase
                 .from('users')
-                .select('id');
+                .select('id')
 
             const users = usersError
                 ? []
                 : usersData.map((user: { id: string }) => {
-                      return { loc: `/@${user.id}` };
-                  });
+                      return { loc: `/@${user.id}` }
+                  })
 
-            return [...permanent, ...setups, ...users];
+            return [...permanent, ...setups, ...users]
         },
     },
+
     supabase: {
         url: import.meta.env.SUPABASE_URL,
         key: import.meta.env.SUPABASE_ANON_KEY,
@@ -226,8 +236,23 @@ export default defineNuxtConfig({
         },
         types: '@/shared/types/database.d.ts',
     },
+
     turnstile: { siteKey: import.meta.env.NUXT_TURNSTILE_SITE_KEY },
-});
+
+    nitro: {
+        preset: 'vercel',
+        experimental: {
+            asyncContext: true,
+            openAPI: true,
+        },
+    },
+
+    experimental: {
+        typedPages: true,
+        scanPageMeta: true,
+        payloadExtraction: true,
+    },
+})
 
 //
 //                       _oo0oo_

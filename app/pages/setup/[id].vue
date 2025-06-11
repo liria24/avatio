@@ -1,45 +1,53 @@
 <script setup lang="ts">
-const user = useSupabaseUser();
-const route = useRoute('setup-id');
+const user = useSupabaseUser()
+const route = useRoute('setup-id')
 
-const id = Number(route.params.id);
-const bookmark = ref(false);
+const id = Number(route.params.id)
+const bookmark = ref(false)
 
-const modalLogin = ref(false);
-const modalReport = ref(false);
-const response = ref<SetupClient | null>(null);
+const modalLogin = ref(false)
+const modalReport = ref(false)
+const response = ref<SetupClient | null>(null)
 
 if (!id)
     showError({
         statusCode: 404,
         message: 'IDが無効です',
-    });
+    })
 
 try {
-    const data = await $fetch(`/api/setup/${id}`, {
-        method: 'GET',
-    });
+    const data = await $fetch(`/api/setup/${id}`)
 
-    response.value = data;
+    response.value = data
 
-    useOGP({
+    defineSeo({
         title: `${data.name} @${data.author.name}`,
-        description: data.description,
+        description: data.description || undefined,
         image: data.images.length
-            ? useGetImage(data.images[0]!.name, { prefix: 'setup' })
+            ? getImage(data.images[0]!.name, { prefix: 'setup' })
             : 'https://avatio.me/ogp.png',
-        twitterCard: data.images.length ? 'summary_large_image' : 'summary',
-    });
+    })
 } catch {
     showError({
         statusCode: 404,
         message: 'セットアップが見つかりませんでした',
-    });
+    })
+}
+
+const onReportClick = () => {
+    if (user.value) modalReport.value = true
+    else modalLogin.value = true
+}
+
+const onLoginSuccess = async () => {
+    modalLogin.value = false
+    if (!response.value) return
+    bookmark.value = await useCheckBookmark(id)
 }
 
 onMounted(async () => {
-    bookmark.value = await useCheckBookmark(id);
-});
+    bookmark.value = await useCheckBookmark(id)
+})
 </script>
 
 <template>
@@ -70,24 +78,15 @@ onMounted(async () => {
             icon="lucide:flag"
             :icon-size="16"
             variant="flat"
-            class="w-fit px-3 py-2 mt-6 text-xs font-semibold text-zinc-500 dark:text-zinc-400 hover:bg-zinc-300 hover:dark:bg-zinc-700"
+            class="mt-6 w-fit px-3 py-2 text-xs font-semibold text-zinc-500 hover:bg-zinc-300 dark:text-zinc-400 hover:dark:bg-zinc-700"
             icon-class="text-red-400 dark:text-red-400"
-            @click="
-                if (user) modalReport = true;
-                else modalLogin = true;
-            "
+            @click="onReportClick"
         />
 
         <Modal v-model="modalLogin">
             <UiLogin
                 :redirect="`/setup/${route.params.id}`"
-                @login-success="
-                    modalLogin = false;
-                    (async () => {
-                        if (!response) return;
-                        bookmark = await useCheckBookmark(id);
-                    })();
-                "
+                @login-success="onLoginSuccess"
             />
         </Modal>
 

@@ -1,10 +1,10 @@
-import { parseURL } from 'ufo';
+import { parseURL } from 'ufo'
 
 interface IconMapping {
-    label: string;
-    pattern: RegExp;
-    icon: string;
-    iconSize?: number;
+    label: string
+    pattern: RegExp
+    icon: string
+    iconSize?: number
 }
 
 const domainIconMappings: IconMapping[] = [
@@ -197,18 +197,18 @@ const domainIconMappings: IconMapping[] = [
         pattern: /^(www\.)?skeb\.jp$/,
         icon: 'token:skeb',
     },
-];
+]
 
-export const getLinkInfo = (url: string) => {
-    const parsed = parseURL(url);
-    if (!parsed.host) return { label: null, icon: 'lucide:link', iconSize: 20 };
+export default (url: string) => {
+    const parsed = parseURL(url)
+    if (!parsed.host) return { label: null, icon: 'lucide:link', iconSize: 20 }
 
-    const host = parsed.host.toLowerCase();
-    const mapping = domainIconMappings.find((m) => m.pattern.test(host));
+    const host = parsed.host.toLowerCase()
+    const mapping = domainIconMappings.find((m) => m.pattern.test(host))
 
     return {
         label: mapping?.label || null,
         icon: mapping?.icon || 'lucide:link',
         iconSize: mapping?.iconSize || 20,
-    };
-};
+    }
+}

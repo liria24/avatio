@@ -1,26 +1,24 @@
 <script setup lang="ts">
-const user = useSupabaseUser();
+const user = useSupabaseUser()
 
-const mode = ref<'all' | 'mine' | 'bookmark'>('all');
+const mode = ref<'all' | 'mine' | 'bookmark'>('all')
 
-useOGP({
-    url: 'https://avatio.me',
+defineSeo({
     type: 'website',
     title: 'Avatio',
     titleTemplate: '%s',
     description: 'あなたのアバター改変を共有しよう',
     image: 'https://avatio.me/ogp_2.png',
-    twitterCard: 'summary_large_image',
-});
+})
 </script>
 
 <template>
-    <div class="w-full flex flex-col gap-6">
+    <div class="flex w-full flex-col gap-6">
         <BannerHeader class="flex sm:hidden" />
 
         <Hero v-if="!user" class="sm:mt-12 sm:mb-6" />
 
-        <div v-if="user" class="flex flex-col items-start gap-5 w-full">
+        <div v-if="user" class="flex w-full flex-col items-start gap-5">
             <UiTitle label="ホーム" size="lg" />
             <div class="flex flex-wrap items-center gap-1">
                 <Button

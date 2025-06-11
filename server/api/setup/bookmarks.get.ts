@@ -1,61 +1,30 @@
-import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server';
-import { z } from 'zod';
+import { z } from 'zod/v4'
 
-const requestQuerySchema = z.object({
+const query = z.object({
     page: z.coerce
-        .number({
-            invalid_type_error: 'ページ番号は数値である必要があります',
-        })
-        .int('ページ番号は整数である必要があります')
-        .nonnegative('ページ番号は0以上である必要があります')
+        .number('Page number must be a number')
+        .int('Page number must be an integer')
+        .nonnegative('Page number must be 0 or greater')
         .default(0),
 
     perPage: z.coerce
-        .number({
-            invalid_type_error: '1ページあたりの件数は数値である必要があります',
-        })
-        .int('1ページあたりの件数は整数である必要があります')
-        .positive('1ページあたりの件数は正の数である必要があります')
+        .number('Items per page must be a number')
+        .int('Items per page must be an integer')
+        .positive('Items per page must be a positive number')
         .default(10),
-});
-
-export type RequestQuery = z.infer<typeof requestQuerySchema>;
+})
 
 interface BookmarksResponse {
-    setups: SetupClient[];
-    hasMore: boolean;
+    setups: SetupClient[]
+    hasMore: boolean
 }
 
-export default defineEventHandler(async (event): Promise<BookmarksResponse> => {
+export default defineEventHandler(async (): Promise<BookmarksResponse> => {
     try {
-        const user = await serverSupabaseUser(event);
-        if (!user) {
-            console.error('認証エラー: ユーザーが見つかりません');
-            throw createError({
-                statusCode: 403,
-                message: 'Forbidden.',
-            });
-        }
+        await checkSupabaseUser()
 
-        const rawQuery = await getQuery(event);
-        const result = requestQuerySchema.safeParse(rawQuery);
-
-        if (!result.success) {
-            const errorMessage = result.error.issues
-                .map((i) => i.message)
-                .join(', ');
-            console.error(
-                'クエリパラメータバリデーションエラー:',
-                errorMessage
-            );
-            throw createError({
-                statusCode: 400,
-                message: `不正なリクエスト: ${errorMessage}`,
-            });
-        }
-
-        const query = result.data;
-        const supabase = await serverSupabaseClient<Database>(event);
+        const { page, perPage } = await validateQuery(query)
+        const supabase = await getSupabaseServerClient()
 
         const { data, error, count } = await supabase
             .from('bookmarks')
@@ -124,22 +93,19 @@ export default defineEventHandler(async (event): Promise<BookmarksResponse> => {
                 `,
                 { count: 'estimated' }
             )
-            .range(
-                query.page * query.perPage,
-                query.page * query.perPage + (query.perPage - 1)
-            )
+            .range(page * perPage, page * perPage + (perPage - 1))
             .order('created_at', { ascending: false })
             .throwOnError()
-            .overrideTypes<{ post: SetupDB }[]>();
+            .overrideTypes<{ post: SetupDB }[]>()
 
         if (error) {
             console.error(
-                'データ取得エラー: データまたはカウントが取得できませんでした'
-            );
+                'Data retrieval error: Failed to get data or count from bookmarks table.'
+            )
             throw createError({
                 statusCode: 500,
                 message: 'Failed to get setups.',
-            });
+            })
         }
 
         return {
@@ -147,13 +113,13 @@ export default defineEventHandler(async (event): Promise<BookmarksResponse> => {
                 .filter((post) => post.post)
                 .map((post) => post.post)
                 .map((setup) => setupMoldingClient(setup)),
-            hasMore: (count ?? 0) > query.page * query.perPage + query.perPage,
-        };
+            hasMore: (count ?? 0) > page * perPage + perPage,
+        }
     } catch (error) {
-        console.error('ブックマークの取得中にエラーが発生しました:', error);
+        console.error('Error occurred while fetching bookmarks:', error)
         throw createError({
             statusCode: 500,
             message: 'Failed to get bookmarks.',
-        });
+        })
     }
-});
+})

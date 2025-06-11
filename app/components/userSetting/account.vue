@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-const modalDeleteUser = ref<boolean>(false);
+const modalDeleteUser = ref<boolean>(false)
 </script>
 
 <template>
@@ -25,10 +25,10 @@ const modalDeleteUser = ref<boolean>(false);
         </div> -->
 
         <div
-            class="gap-3 p-3 rounded-lg flex flex-col border border-red-300 dark:border-red-400"
+            class="flex flex-col gap-3 rounded-lg border border-red-300 p-3 dark:border-red-400"
         >
             <UiTitle label="DANGER ZONE" icon="lucide:circle-alert" is="h2" />
-            <div class="w-full pl-3 flex gap-2 justify-between items-center">
+            <div class="flex w-full items-center justify-between gap-2 pl-3">
                 <div class="flex flex-col gap-1">
                     <h3 class="text-sm font-semibold">アカウント削除</h3>
                     <p class="text-xs">
@@ -38,7 +38,7 @@ const modalDeleteUser = ref<boolean>(false);
                 </div>
                 <Button
                     label="アカウント削除"
-                    class="text-red-500 dark:text-red-400 hover:text-white hover:dark:text-white hover:bg-red-500 hover:dark:bg-red-800 hover:outline-red-400 hover:dark:outline-red-700"
+                    class="text-red-500 hover:bg-red-500 hover:text-white hover:outline-red-400 dark:text-red-400 hover:dark:bg-red-800 hover:dark:text-white hover:dark:outline-red-700"
                     @click="modalDeleteUser = true"
                 />
             </div>

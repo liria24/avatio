@@ -1,20 +1,20 @@
 <script lang="ts" setup>
-import { marked } from 'marked';
-import { twMerge } from 'tailwind-merge';
+import { marked } from 'marked'
+import { twMerge } from 'tailwind-merge'
 
 interface Props {
-    content: string;
-    class?: string | string[];
+    content: string
+    class?: string | string[]
 }
-const props = defineProps<Props>();
+const props = defineProps<Props>()
 
-const main = await marked.parse(props.content, { breaks: true });
+const main = await marked.parse(props.content, { breaks: true })
 </script>
 
 <template>
     <!-- eslint-disable vue/no-v-html -->
     <div
-        v-html="useSentence(main)"
+        v-html="lineBreak(main)"
         :class="
             twMerge(
                 'max-w-none',

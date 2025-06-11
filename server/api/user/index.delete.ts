@@ -1,39 +1,18 @@
-import {
-    serverSupabaseServiceRole,
-    serverSupabaseUser,
-} from '#supabase/server';
-import type { User } from '@supabase/supabase-js';
+export default defineEventHandler(async () => {
+    const { id } = await checkSupabaseUser()
 
-export default defineEventHandler(async (event) => {
-    let user: User | null;
-    try {
-        user = await serverSupabaseUser(event);
-        if (!user) {
-            throw createError({
-                statusCode: 403,
-                message: 'Forbidden.',
-            });
-        }
-    } catch {
-        throw createError({
-            statusCode: 403,
-            message: 'Forbidden.',
-        });
-    }
+    const supabase = await getSupabaseServiceRoleClient()
 
-    const supabase = serverSupabaseServiceRole<Database>(event);
-
-    const { error } = await supabase.auth.admin.deleteUser(user.id);
+    const { error } = await supabase.auth.admin.deleteUser(id)
 
     if (error) {
-        console.error(error);
+        console.error(error)
         throw createError({
             statusCode: 500,
             message: 'Error on deleting user.',
-        });
+        })
     }
 
-    // ユーザー削除成功の場合、204 No Content が適切
-    setResponseStatus(event, 204);
-    return null;
-});
+    setResponseStatus(useEvent(), 204)
+    return null
+})

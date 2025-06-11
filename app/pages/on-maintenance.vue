@@ -1,14 +1,14 @@
 <script lang="ts" setup>
 definePageMeta({
     layout: 'blank',
-});
+})
 </script>
 
 <template>
-    <div class="w-full my-24 flex flex-col gap-6 items-center">
-        <LogoAvatio class="w-64 mb-24" aria-label="Avatio" />
+    <div class="my-24 flex w-full flex-col items-center gap-6">
+        <LogoAvatio class="mb-24 w-64" aria-label="Avatio" />
         <h1
-            class="flex text-7xl font-extrabold font-['Montserrat'] text-zinc-500 dark:text-zinc-400"
+            class="flex font-['Montserrat'] text-7xl font-extrabold text-zinc-500 dark:text-zinc-400"
         >
             503
         </h1>
@@ -16,7 +16,7 @@ definePageMeta({
             メンテナンス中
         </p>
         <p
-            class="text-sm text-center font-bold text-zinc-500 dark:text-zinc-400"
+            class="text-center text-sm font-bold text-zinc-500 dark:text-zinc-400"
         >
             ご迷惑をおかけしますが、時間をおいて再度お試しください
         </p>

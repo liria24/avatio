@@ -1,27 +1,27 @@
 <script lang="ts" setup>
-import { twMerge } from 'tailwind-merge';
+import { twMerge } from 'tailwind-merge'
 
 const vis = defineModel<boolean>('vis', {
     default: false,
     required: true,
-});
+})
 
 const props = defineProps<{
-    createdAt?: string;
-    title: string;
-    description: string;
-    tags: string[];
-    coAuthors: Array<{ id: string; name: string; note: string }>;
-    unity: string | null;
-    image: Blob | null;
-    items: Record<string, SetupItem[]>;
-    class?: string | string[];
-}>();
+    createdAt?: string
+    title: string
+    description: string
+    tags: string[]
+    coAuthors: Array<{ id: string; name: string; note: string }>
+    unity: string | null
+    image: Blob | null
+    items: Record<string, SetupItem[]>
+    class?: string | string[]
+}>()
 
 const imageObjectUrl = computed(() => {
-    if (!props.image) return null;
-    return URL.createObjectURL(props.image);
-});
+    if (!props.image) return null
+    return URL.createObjectURL(props.image)
+})
 </script>
 
 <template>

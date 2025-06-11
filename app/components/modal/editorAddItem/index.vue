@@ -1,31 +1,31 @@
 <script lang="ts" setup>
 const vis = defineModel<boolean>({
     default: false,
-});
-const emit = defineEmits(['add']);
+})
+const emit = defineEmits(['add'])
 
-const ignoreCategories = ['hair', 'texture', 'tool'];
+const ignoreCategories = ['hair', 'texture', 'tool']
 
-const searchWord = ref<string>('');
+const searchWord = ref<string>('')
 const searchItems = ref<
     {
-        id: number;
-        name: string;
-        thumbnail: string;
-        shop: string;
-        category: string;
+        id: number
+        name: string
+        thumbnail: string
+        shop: string
+        category: string
     }[]
->([]);
-const categoryFilter = ref<string[]>([]);
-const searching = ref<boolean>(false);
+>([])
+const categoryFilter = ref<string[]>([])
+const searching = ref<boolean>(false)
 
-const client = useSupabaseClient();
+const client = useSupabaseClient()
 
 const handleInputChange = useDebounceFn(
     async (value) => {
-        searching.value = true;
+        searching.value = true
 
-        if (!value.length) return (searching.value = false);
+        if (!value.length) return (searching.value = false)
 
         const { data } = await client.rpc('search_items', {
             keyword: value.toString(),
@@ -35,34 +35,40 @@ const handleInputChange = useDebounceFn(
                       .filter((id) => !categoryFilter.value.includes(id))
                 : [],
             num: 20,
-        });
-        searchItems.value = data ?? [];
+        })
+        searchItems.value = data ?? []
 
-        searching.value = false;
+        searching.value = false
     },
     400,
     { maxWait: 1000 }
-); // 400～1000ms デバウンス
+) // 400～1000ms デバウンス
+
+const onClick = (key: string) => {
+    if (categoryFilter.value.includes(key))
+        categoryFilter.value = categoryFilter.value.filter((v) => v !== key)
+    else categoryFilter.value = [...categoryFilter.value, key]
+}
 
 watch(searchWord, (newValue) => {
-    handleInputChange(newValue);
-});
+    handleInputChange(newValue)
+})
 watch(categoryFilter, () => {
-    handleInputChange(searchWord.value);
-});
+    handleInputChange(searchWord.value)
+})
 watchEffect(() => {
     if (vis.value) {
-        searchWord.value = '';
-        searchItems.value = [];
+        searchWord.value = ''
+        searchItems.value = []
     }
-});
+})
 </script>
 
 <template>
     <Modal
         v-model="vis"
         :anchor="searchWord.length ? 'top' : 'center'"
-        class="transition-all mt-12 p-0 rounded-none border-0 bg-transparent dark:bg-transparent shadow-none"
+        class="mt-12 rounded-none border-0 bg-transparent p-0 shadow-none transition-all dark:bg-transparent"
     >
         <ModalEditorAddItemUrl
             v-if="!searchWord.length"
@@ -74,29 +80,21 @@ watchEffect(() => {
 
         <div
             v-if="searchWord.length"
-            class="p-1 shrink-0 flex items-center gap-1 overflow-x-auto overflow-y-visible"
+            class="flex shrink-0 items-center gap-1 overflow-x-auto overflow-y-visible p-1"
         >
             <template v-for="(value, key) in itemCategories()">
                 <Button
                     v-if="!ignoreCategories.includes(key)"
                     :label="value.label"
                     :class="[
-                        'px-3 py-2 rounded-full',
+                        'rounded-full px-3 py-2',
                         key
                             ? categoryFilter.includes(key)
-                                ? 'bg-zinc-700 dark:bg-zinc-300 hover:bg-zinc-500 hover:dark:bg-zinc-400 text-zinc-100 dark:text-zinc-900'
-                                : 'bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 hover:dark:bg-zinc-600'
+                                ? 'bg-zinc-700 text-zinc-100 hover:bg-zinc-500 dark:bg-zinc-300 dark:text-zinc-900 hover:dark:bg-zinc-400'
+                                : 'bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 hover:dark:bg-zinc-600'
                             : '',
                     ]"
-                    @click="
-                        () => {
-                            if (categoryFilter.includes(key))
-                                categoryFilter = categoryFilter.filter(
-                                    (v) => v !== key
-                                );
-                            else categoryFilter = [...categoryFilter, key];
-                        }
-                    "
+                    @click="onClick(key)"
                 />
             </template>
         </div>

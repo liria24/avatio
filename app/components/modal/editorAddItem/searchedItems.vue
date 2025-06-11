@@ -1,25 +1,25 @@
 <script lang="ts" setup>
 const searchItems = defineModel<
     {
-        id: number;
-        name: string;
-        thumbnail: string;
-        shop: string;
-        category: string;
+        id: number
+        name: string
+        thumbnail: string
+        shop: string
+        category: string
     }[]
 >('items', {
     default: [],
-});
+})
 const searching = defineModel<boolean>('searching', {
     default: false,
-});
-const emit = defineEmits(['add']);
+})
+const emit = defineEmits(['add'])
 </script>
 
 <template>
     <div
         :class="[
-            'min-h-[30vh] p-4 rounded-2xl flex',
+            'flex min-h-[30vh] rounded-2xl p-4',
             'ring-1 ring-zinc-300 dark:ring-zinc-700',
             'bg-zinc-100 dark:bg-zinc-900',
             'shadow-xl shadow-black/10 dark:shadow-black/50',
@@ -27,19 +27,19 @@ const emit = defineEmits(['add']);
     >
         <div
             v-if="searching"
-            class="self-center size-full flex items-center justify-center"
+            class="flex size-full items-center justify-center self-center"
         >
             <Icon name="i-svg-spinners-ring-resize" size="20" />
         </div>
 
         <div
             v-else
-            class="max-h-[60vh] w-full flex flex-col gap-6 overflow-y-auto"
+            class="flex max-h-[60vh] w-full flex-col gap-6 overflow-y-auto"
         >
             <div
-                v-for="c in Object.values(itemCategories())"
-                :key="useId()"
-                class="empty:hidden w-full flex flex-col gap-3"
+                v-for="(c, index) in Object.values(itemCategories())"
+                :key="'category-' + index"
+                class="flex w-full flex-col gap-3 empty:hidden"
             >
                 <template
                     v-if="
@@ -77,12 +77,12 @@ const emit = defineEmits(['add']);
                                 class="size-10 rounded-lg object-cover"
                             />
                             <p
-                                class="grow text-left text-sm line-clamp-1 break-all text-zinc-800 dark:text-zinc-200"
+                                class="line-clamp-1 grow text-left text-sm break-all text-zinc-800 dark:text-zinc-200"
                             >
                                 {{ i.name }}
                             </p>
                             <p
-                                class="min-w-20 max-w-32 text-xs text-right line-clamp-1 break-all text-zinc-600 dark:text-zinc-400"
+                                class="line-clamp-1 max-w-32 min-w-20 text-right text-xs break-all text-zinc-600 dark:text-zinc-400"
                             >
                                 {{ i.shop }}
                             </p>

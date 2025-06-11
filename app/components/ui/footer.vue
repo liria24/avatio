@@ -1,22 +1,22 @@
 <script setup lang="ts">
-const modal_feedback = ref(false);
+const modal_feedback = ref(false)
 </script>
 
 <template>
-    <footer class="self-stretch flex flex-col gap-10">
+    <footer class="flex flex-col gap-10 self-stretch">
         <BannerOwnerWarning />
 
         <UiDivider icon="avatio:avatio" />
 
         <div
-            class="flex flex-wrap gap-x-6 gap-y-2 pb-10 items-center justify-center"
+            class="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 pb-10"
         >
             <div
-                class="flex-wrap flex items-center justify-center gap-x-4 gap-y-2 text-zinc-700 dark:text-white"
+                class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-zinc-700 dark:text-white"
             >
                 <div class="flex items-center gap-2">
                     <Button
-                        to="https://x.com/liria_work"
+                        to="https://x.com/liria_24"
                         new-tab
                         icon="simple-icons:x"
                         aria-label="X"
@@ -45,7 +45,7 @@ const modal_feedback = ref(false);
                 </div>
             </div>
             <div
-                class="items-center justify-center gap-x-4 gap-y-2 flex flex-wrap"
+                class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2"
             >
                 <!-- <Button
                     label="Avatioについて"
@@ -62,15 +62,15 @@ const modal_feedback = ref(false);
                     variant="link"
                 />
             </div>
-            <div class="flex gap-1 items-center">
-                <p class="text-zinc-500 text-sm">Copyright © 2025</p>
+            <div class="flex items-center gap-1">
+                <p class="text-sm text-zinc-500">Copyright © 2025</p>
                 <Button
                     to="https://liria.me"
                     new-tab
                     label="Liria"
                     icon="avatio:liria"
                     variant="link"
-                    class="gap-1 text-sm font-[Montserrat] font-semibold"
+                    class="gap-1 font-[Montserrat] text-sm font-semibold"
                 />
             </div>
         </div>

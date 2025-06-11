@@ -1,12 +1,12 @@
 <script lang="ts" setup>
 interface Props {
-    user: Author;
+    user: Author
 }
-const props = defineProps<Props>();
+const props = defineProps<Props>()
 </script>
 
 <template>
-    <Hovercard side="top" class="pl-3 pr-4 py-2.5">
+    <Hovercard side="top" class="py-2.5 pr-4 pl-3">
         <template #trigger>
             <slot />
         </template>
@@ -16,14 +16,14 @@ const props = defineProps<Props>();
                 class="flex items-center gap-3"
             >
                 <UiAvatar
-                    :url="useGetImage(props.user.avatar, { prefix: 'avatar' })"
+                    :url="getImage(props.user.avatar, { prefix: 'avatar' })"
                     :alt="props.user.name"
                     :icon-size="18"
                     class="size-10"
                 />
                 <div class="flex flex-col gap-1.5">
                     <span
-                        class="text-sm font-semibold leading-none text-zinc-700 dark:text-zinc-300"
+                        class="text-sm leading-none font-semibold text-zinc-700 dark:text-zinc-300"
                     >
                         {{ props.user.name }}
                     </span>

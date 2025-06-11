@@ -40,6 +40,6 @@ export default () => {
             label: 'その他',
             icon: 'lucide:package',
         },
-    };
-    return categories;
-};
+    }
+    return categories
+}

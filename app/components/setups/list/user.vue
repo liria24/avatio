@@ -1,52 +1,51 @@
 <script lang="ts" setup>
 interface Props {
-    userId: string | null;
+    userId: string | null
 }
-const props = defineProps<Props>();
+const props = defineProps<Props>()
 
-const setups = ref<SetupClient[]>([]);
-const setupsPerPage: number = 50;
-const page = ref(0);
-const hasMore = ref(false);
-const loading = ref(true);
+const setups = ref<SetupClient[]>([])
+const setupsPerPage: number = 50
+const page = ref(0)
+const hasMore = ref(false)
+const loading = ref(true)
 
 const get = async () => {
-    loading.value = true;
+    loading.value = true
 
-    if (!props.userId) return (loading.value = false);
+    if (!props.userId) return (loading.value = false)
 
     try {
-        const response = await $fetch('/api/setups/user', {
-            method: 'GET',
+        const response = await $fetch('/api/setup/user', {
             query: {
                 userId: props.userId,
                 page: page.value,
                 perPage: setupsPerPage,
             },
-        });
+        })
 
-        if (!response) return (loading.value = false);
+        if (!response) return (loading.value = false)
 
-        setups.value = [...setups.value, ...response.setups];
-        page.value++;
-        hasMore.value = response.hasMore;
+        setups.value = [...setups.value, ...response.setups]
+        page.value++
+        hasMore.value = response.hasMore
     } catch (e) {
-        console.error('ユーザーセットアップの取得に失敗しました:', e);
+        console.error('ユーザーセットアップの取得に失敗しました:', e)
     } finally {
-        loading.value = false;
+        loading.value = false
     }
-};
+}
 // 初期ロード
 try {
-    await get();
+    await get()
 } catch (e) {
-    console.error('初期ロード失敗:', e);
-    loading.value = false;
+    console.error('初期ロード失敗:', e)
+    loading.value = false
 }
 </script>
 
 <template>
-    <div class="self-center w-full flex flex-col gap-3">
+    <div class="flex w-full flex-col gap-3 self-center">
         <SetupsListBase :setups="setups" :loading="loading" />
         <ButtonLoadMore
             v-if="hasMore"

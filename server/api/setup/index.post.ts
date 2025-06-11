@@ -1,8 +1,6 @@
-import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server';
-import { z } from 'zod';
-import type { H3Event } from 'h3';
+import { z } from 'zod/v4'
 
-const limits = setupLimits();
+const limits = setupLimits()
 
 const setupSchema = z.object({
     name: z
@@ -85,44 +83,27 @@ const setupSchema = z.object({
         )
         .min(1, 'Item is required.')
         .max(limits.items, 'Too many items.'),
-});
+})
 
-export type RequestBody = z.infer<typeof setupSchema>;
+export type RequestBody = z.infer<typeof setupSchema>
 
 // データベースエラー処理を簡素化するヘルパー関数
 const handleDbError = (table: string, error: unknown) => {
-    console.error(`Failed to insert on DB. Table: ${table}`, error);
+    console.error(`Failed to insert on DB. Table: ${table}`, error)
     throw createError({
         statusCode: 500,
         message: `Failed to insert on DB. Table: ${table}`,
-    });
-};
+    })
+}
 
-export default defineEventHandler(async (event: H3Event) => {
+export default defineEventHandler(async () => {
+    const event = useEvent()
+
     // ユーザー認証チェック
-    const user = await serverSupabaseUser(event).catch(() => null);
-    if (!user) {
-        console.error('Authentication failed: No user found');
-        throw createError({
-            statusCode: 403,
-            message: 'Forbidden. Authentication required.',
-        });
-    }
+    await checkSupabaseUser()
 
-    const supabase = await serverSupabaseClient<Database>(event);
-    const rawBody = await readBody(event);
-
-    // リクエストデータ検証
-    const result = setupSchema.safeParse(rawBody);
-    if (!result.success) {
-        console.error('Validation error:', result.error.format());
-        throw createError({
-            statusCode: 400,
-            message: `Invalid request data: ${result.error.issues.map((i) => i.message).join(', ')}`,
-        });
-    }
-
-    const body = result.data;
+    const supabase = await getSupabaseServerClient()
+    const body = await validateBody(setupSchema)
 
     // アイテム存在確認
     const { data: itemsDB, error: itemsError } = await supabase
@@ -131,54 +112,54 @@ export default defineEventHandler(async (event: H3Event) => {
         .in(
             'id',
             body.items.map((i) => i.id)
-        );
+        )
 
     if (itemsError || !itemsDB) {
         console.error(
             'Internal item check failed:',
             itemsError || 'itemsDB is null'
-        );
+        )
         throw createError({
             statusCode: 500,
             message: 'Internal item check failed.',
-        });
+        })
     }
 
-    const foundItemIds = new Set(itemsDB.map((item) => item.id));
-    const requestedItemIds = body.items.map((item) => item.id);
-    const missingItems = requestedItemIds.filter((id) => !foundItemIds.has(id));
+    const foundItemIds = new Set(itemsDB.map((item) => item.id))
+    const requestedItemIds = body.items.map((item) => item.id)
+    const missingItems = requestedItemIds.filter((id) => !foundItemIds.has(id))
 
     if (missingItems.length > 0) {
-        console.error(`Missing items detected: ${missingItems.join(', ')}`);
+        console.error(`Missing items detected: ${missingItems.join(', ')}`)
         throw createError({
             statusCode: 400,
             message: `Missing items: ${missingItems.join(', ')}`,
-        });
+        })
     }
 
     // 画像アップロード処理
     const uploadedImages: {
-        path: string;
-        name: string;
-        width?: number;
-        height?: number;
-    }[] = [];
+        path: string
+        name: string
+        width?: number
+        height?: number
+    }[] = []
 
     if (body.images?.length) {
         try {
             const imagePromises = body.images.map((img) =>
                 event.$fetch('/api/image', {
-                    method: 'PUT',
+                    method: 'POST',
                     body: { image: img, prefix: 'setup' },
                 })
-            );
-            uploadedImages.push(...(await Promise.all(imagePromises)));
+            )
+            uploadedImages.push(...(await Promise.all(imagePromises)))
         } catch (error) {
-            console.error('Failed to upload image:', error);
+            console.error('Failed to upload image:', error)
             throw createError({
                 statusCode: 500,
                 message: 'Failed to upload image.',
-            });
+            })
         }
     }
 
@@ -191,27 +172,27 @@ export default defineEventHandler(async (event: H3Event) => {
             unity: body.unity?.length ? body.unity : null,
         })
         .select('id')
-        .single();
+        .single()
 
-    if (setupError || !setupData) handleDbError('setups', setupError);
+    if (setupError || !setupData) handleDbError('setups', setupError)
 
-    const setupId = setupData!.id;
+    const setupId = setupData!.id
 
     // タグとコラボレーター情報挿入
-    const tagData = body.tags.map((tag) => ({ setup_id: setupId, tag }));
+    const tagData = body.tags.map((tag) => ({ setup_id: setupId, tag }))
     const coauthorData = body.coAuthors.map((coauthor) => ({
         setup_id: setupId,
         user_id: coauthor.id,
         note: coauthor.note,
-    }));
+    }))
 
     const [{ error: tagsError }, { error: coAuthorError }] = await Promise.all([
         supabase.from('setup_tags').insert(tagData),
         supabase.from('setup_coauthors').insert(coauthorData),
-    ]);
+    ])
 
-    if (tagsError) handleDbError('setup_tags', tagsError);
-    if (coAuthorError) handleDbError('setup_coauthors', coAuthorError);
+    if (tagsError) handleDbError('setup_tags', tagsError)
+    if (coAuthorError) handleDbError('setup_coauthors', coAuthorError)
 
     // アイテム情報挿入
     for (const item of body.items) {
@@ -225,9 +206,9 @@ export default defineEventHandler(async (event: H3Event) => {
                 category: item.category,
             })
             .select()
-            .maybeSingle();
+            .maybeSingle()
 
-        if (itemError || !itemData) handleDbError('setup_items', itemError);
+        if (itemError || !itemData) handleDbError('setup_items', itemError)
 
         // シェイプキー情報挿入
         if (item.shapekeys?.length) {
@@ -235,14 +216,13 @@ export default defineEventHandler(async (event: H3Event) => {
                 setup_item_id: itemData!.id,
                 name: shapekey.name,
                 value: shapekey.value,
-            }));
+            }))
 
             const { error: shapekeysError } = await supabase
                 .from('setup_item_shapekeys')
-                .insert(shapekeyData);
+                .insert(shapekeyData)
 
-            if (shapekeysError)
-                handleDbError('setup_shapekeys', shapekeysError);
+            if (shapekeysError) handleDbError('setup_shapekeys', shapekeysError)
         }
     }
 
@@ -253,15 +233,15 @@ export default defineEventHandler(async (event: H3Event) => {
             setup_id: setupId,
             width: img.width,
             height: img.height,
-        }));
+        }))
 
         const { error: imagesError } = await supabase
             .from('setup_images')
-            .insert(imageData);
+            .insert(imageData)
 
-        if (imagesError) handleDbError('setup_images', imagesError);
+        if (imagesError) handleDbError('setup_images', imagesError)
     }
 
-    setResponseStatus(event, 201);
-    return { id: setupId };
-});
+    setResponseStatus(event, 201)
+    return { id: setupId }
+})

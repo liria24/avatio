@@ -7,7 +7,7 @@
             :description="toast.description"
         />
         <ToastViewport
-            class="z-[2147483647] fixed bottom-0 right-0 p-3 flex flex-col gap-2 items-end list-none"
+            class="fixed right-0 bottom-0 z-[2147483647] flex list-none flex-col items-end gap-2 p-3"
         />
     </ToastProvider>
 </template>

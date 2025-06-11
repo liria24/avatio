@@ -1,44 +1,29 @@
-import { serverSupabaseClient } from '#supabase/server';
-import { z } from 'zod';
+import { z } from 'zod/v4'
 
-const requestQuerySchema = z.object({
+const query = z.object({
+    userId: z.string('User ID is required').min(1, 'User ID cannot be empty'),
+
     page: z.coerce
-        .number({
-            invalid_type_error: 'ページ番号は数値である必要があります',
-        })
-        .int('ページ番号は整数である必要があります')
-        .nonnegative('ページ番号は0以上である必要があります')
+        .number('Page number is required')
+        .int('Page must be an integer')
+        .nonnegative('Page must be a non-negative number')
         .default(0),
 
     perPage: z.coerce
-        .number({
-            invalid_type_error: '1ページあたりの件数は数値である必要があります',
-        })
-        .int('1ページあたりの件数は整数である必要があります')
-        .positive('1ページあたりの件数は正の数である必要があります')
+        .number('Items per page is required')
+        .int('Items per page must be an integer')
+        .positive('Items per page must be a positive number')
         .default(10),
-});
-
-export type RequestQuery = z.infer<typeof requestQuerySchema>;
+})
 
 interface SetupsResponse {
-    setups: SetupClient[];
-    hasMore: boolean;
+    setups: SetupClient[]
+    hasMore: boolean
 }
 
-export default defineEventHandler(async (event): Promise<SetupsResponse> => {
-    const rawQuery = await getQuery(event);
-    const result = requestQuerySchema.safeParse(rawQuery);
-
-    if (!result.success) {
-        throw createError({
-            statusCode: 400,
-            message: `不正なリクエスト: ${result.error.issues.map((i) => i.message).join(', ')}`,
-        });
-    }
-
-    const query = result.data;
-    const supabase = await serverSupabaseClient<Database>(event);
+export default defineEventHandler(async (): Promise<SetupsResponse> => {
+    const { page, perPage, userId } = await validateQuery(query)
+    const supabase = await getSupabaseServerClient()
 
     const { data, error, count } = await supabase
         .from('setups')
@@ -79,7 +64,6 @@ export default defineEventHandler(async (event): Promise<SetupsResponse> => {
                             verified
                         ),
                         nsfw,
-                        likes,
                         source
                     ),
                     note,
@@ -106,22 +90,20 @@ export default defineEventHandler(async (event): Promise<SetupsResponse> => {
                 `,
             { count: 'estimated' }
         )
-        .range(
-            query.page * query.perPage,
-            query.page * query.perPage + (query.perPage - 1)
-        )
+        .eq('author', userId)
+        .range(page * perPage, page * perPage + (perPage - 1))
         .order('created_at', { ascending: false })
-        .overrideTypes<SetupDB[]>();
+        .overrideTypes<SetupDB[]>()
 
     if (error)
         throw createError({
             statusCode: 500,
             message: 'Failed to get setups.',
-        });
+        })
 
+    // 成功時は直接データを返す
     return {
         setups: data.map((setup) => setupMoldingClient(setup)),
-        hasMore:
-            (count ?? 0) > query.page * query.perPage + (query.perPage - 1),
-    };
-});
+        hasMore: (count ?? 0) > page * perPage + perPage,
+    }
+})

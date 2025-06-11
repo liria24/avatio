@@ -1,12 +1,12 @@
 <script lang="ts" setup>
-import { twMerge } from 'tailwind-merge';
+import { twMerge } from 'tailwind-merge'
 
 interface Props {
-    disabled?: boolean;
-    side?: 'top' | 'bottom' | 'left' | 'right';
-    sideOffset?: number;
-    closeDelay?: number;
-    class?: string | string[];
+    disabled?: boolean
+    side?: 'top' | 'bottom' | 'left' | 'right'
+    sideOffset?: number
+    closeDelay?: number
+    class?: string | string[]
 }
 const props = withDefaults(defineProps<Props>(), {
     disabled: false,
@@ -14,7 +14,7 @@ const props = withDefaults(defineProps<Props>(), {
     side: 'bottom',
     sideOffset: 5,
     closeDelay: 0,
-});
+})
 </script>
 
 <template>
@@ -29,7 +29,7 @@ const props = withDefaults(defineProps<Props>(), {
                 :side-offset="props.sideOffset"
                 :class="
                     twMerge(
-                        'max-w-[90vw] rounded-xl bg-zinc-100 dark:bg-zinc-900 p-5 z-[200] shadow-lg shadow-black/10 border border-zinc-300 dark:border-zinc-700',
+                        'z-[200] max-w-[90vw] rounded-xl border border-zinc-300 bg-zinc-100 p-5 shadow-lg shadow-black/10 dark:border-zinc-700 dark:bg-zinc-900',
                         'animate-in fade-in data-[side=bottom]:slide-in-from-top-1 data-[side=top]:slide-in-from-bottom-1 data-[side=left]:slide-in-from-right-1 data-[side=right]:slide-in-from-left-1',
                         props.class
                     )

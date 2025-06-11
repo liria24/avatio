@@ -1,30 +1,13 @@
-import { serverSupabaseClient } from '#supabase/server';
-import { z } from 'zod';
+import { z } from 'zod/v4'
 
-export default defineEventHandler(async (event) => {
-    const id = getRouterParam(event, 'id');
+const params = z.object({
+    id: z.uuid('Invalid UUID format'),
+})
 
-    const idSchema = z
-        .string({
-            required_error: 'ID is required',
-            invalid_type_error: 'ID must be a string',
-        })
-        .uuid('Invalid UUID format');
+export default defineEventHandler(async () => {
+    const { id } = await validateParams(params)
 
-    try {
-        idSchema.parse(id);
-    } catch (error) {
-        console.error('Invalid ID:', error);
-        throw createError({
-            statusCode: 400,
-            message:
-                error instanceof z.ZodError
-                    ? `Invalid request: ${error.errors[0]?.message || 'Invalid ID'}`
-                    : 'Invalid request: Invalid ID',
-        });
-    }
-
-    const supabase = await serverSupabaseClient<Database>(event);
+    const supabase = await getSupabaseServerClient()
 
     const { data, error } = await supabase
         .from('users')
@@ -36,23 +19,23 @@ export default defineEventHandler(async (event) => {
             `
         )
         .eq('id', id!)
-        .maybeSingle<User>();
+        .maybeSingle<User>()
 
     if (error) {
-        console.error('Database error:', error);
+        console.error('Database error:', error)
         throw createError({
             statusCode: 500,
             message: `Database error: ${error.message}`,
-        });
+        })
     }
 
     if (!data) {
-        console.error(`User with ID ${id} not found`);
+        console.error(`User with ID ${id} not found`)
         throw createError({
             statusCode: 404,
             message: `User with ID ${id} not found`,
-        });
+        })
     }
 
-    return data;
-});
+    return data
+})

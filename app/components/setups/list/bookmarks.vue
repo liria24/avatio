@@ -1,43 +1,42 @@
 <script lang="ts" setup>
-const setups = ref<SetupClient[]>([]);
-const setupsPerPage: number = 50;
-const page = ref(0);
-const hasMore = ref(false);
-const loading = ref(true);
+const setups = ref<SetupClient[]>([])
+const setupsPerPage: number = 50
+const page = ref(0)
+const hasMore = ref(false)
+const loading = ref(true)
 
 const get = async () => {
-    loading.value = true;
+    loading.value = true
 
     try {
-        const response = await $fetch('/api/setups/bookmarks', {
-            method: 'GET',
+        const response = await $fetch('/api/setup/bookmarks', {
             query: {
                 page: page.value,
                 perPage: setupsPerPage,
             },
-        });
+        })
 
-        setups.value = [...setups.value, ...response.setups];
-        page.value++;
-        hasMore.value = response.hasMore;
+        setups.value = [...setups.value, ...response.setups]
+        page.value++
+        hasMore.value = response.hasMore
     } catch (e) {
-        console.error('セットアップの取得に失敗しました:', e);
+        console.error('セットアップの取得に失敗しました:', e)
     } finally {
-        loading.value = false;
+        loading.value = false
     }
-};
+}
 
 onMounted(async () => {
     try {
-        await get();
+        await get()
     } catch (e) {
-        console.error('初期ロード失敗:', e);
+        console.error('初期ロード失敗:', e)
     }
-});
+})
 </script>
 
 <template>
-    <div class="self-center w-full flex flex-col gap-3">
+    <div class="flex w-full flex-col gap-3 self-center">
         <SetupsListBase :setups="setups" :loading="loading" />
         <ButtonLoadMore
             v-if="hasMore"

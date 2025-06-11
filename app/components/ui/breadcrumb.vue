@@ -1,8 +1,8 @@
 <script lang="ts" setup>
 interface Props {
-    items: { text: string; href?: string }[];
+    items: { text: string; href?: string }[]
 }
-const props = defineProps<Props>();
+const props = defineProps<Props>()
 </script>
 
 <template>
@@ -12,7 +12,7 @@ const props = defineProps<Props>();
                 <li class="flex items-center gap-1">
                     <NuxtLink
                         to="/"
-                        class="p-1 rounded-lg flex hover:bg-zinc-200 hover:dark:bg-zinc-800"
+                        class="flex rounded-lg p-1 hover:bg-zinc-200 hover:dark:bg-zinc-800"
                     >
                         <Icon
                             name="lucide:house"
@@ -35,9 +35,9 @@ const props = defineProps<Props>();
                         :to="item.href"
                         :data-linked="item.href ? true : false"
                         :class="[
-                            'p-1 rounded-lg flex',
+                            'flex rounded-lg p-1',
                             'data-[linked=true]:hover:bg-zinc-200 data-[linked=true]:hover:dark:bg-zinc-800',
-                            'text-xs group-last:font-bold leading-none whitespace-nowrap',
+                            'text-xs leading-none whitespace-nowrap group-last:font-bold',
                             'text-zinc-500 dark:text-zinc-400',
                         ]"
                     >

@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import { marked } from 'marked';
+import { marked } from 'marked'
 
 const props = defineProps<{
-    data: DocumentData;
-    type?: 'release' | 'info';
-    imagePrefix?: 'release' | 'static';
-}>();
+    data: DocumentData
+    type?: 'release' | 'info'
+    imagePrefix?: 'release' | 'static'
+}>()
 
-const main = await marked.parse(props.data.content, { breaks: true });
+const main = await marked.parse(props.data.content, { breaks: true })
 
-const createdAt = new Date(props.data.created_at);
-const updatedAt = new Date(props.data.updated_at);
+const createdAt = new Date(props.data.created_at)
+const updatedAt = new Date(props.data.updated_at)
 </script>
 
 <template>
-    <article class="w-full my-3 flex flex-col gap-10">
+    <article class="my-3 flex w-full flex-col gap-10">
         <div class="flex flex-col gap-4">
             <div class="-ml-4 flex items-center gap-1">
                 <template v-if="props.type === 'release'">
@@ -47,7 +47,7 @@ const updatedAt = new Date(props.data.updated_at);
             <NuxtImg
                 v-if="props.data.thumbnail?.length"
                 :src="
-                    useGetImage(props.data.thumbnail, {
+                    getImage(props.data.thumbnail, {
                         prefix: imagePrefix || 'release',
                     })
                 "

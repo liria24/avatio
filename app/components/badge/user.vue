@@ -1,28 +1,28 @@
 <script lang="ts" setup>
 interface Props {
-    badges?: Badge[];
-    size?: 'xs' | 'sm' | 'md' | 'lg';
+    badges?: Badge[]
+    size?: 'xs' | 'sm' | 'md' | 'lg'
 }
 const props = withDefaults(defineProps<Props>(), {
     badges: () => [],
     size: 'md',
-});
+})
 
 const getBaseSize = () => {
-    if (props.size === 'xs') return 14;
-    if (props.size === 'sm') return 16;
-    if (props.size === 'lg') return 26;
-    return 22;
-};
+    if (props.size === 'xs') return 14
+    if (props.size === 'sm') return 16
+    if (props.size === 'lg') return 26
+    return 22
+}
 
 const getIconSize = (multiplier: number) =>
-    Math.round(getBaseSize() * multiplier);
+    Math.round(getBaseSize() * multiplier)
 </script>
 
 <template>
     <div
         v-if="props.badges?.length"
-        class="empty:hidden flex gap-1 items-center"
+        class="flex items-center gap-1 empty:hidden"
     >
         <UiTooltip
             v-if="props.badges.find((b) => b.name === 'developer')"

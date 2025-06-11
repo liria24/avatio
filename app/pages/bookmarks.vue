@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-useOGP({
+defineSeo({
     title: 'ブックマーク',
-});
+})
 </script>
 
 <template>

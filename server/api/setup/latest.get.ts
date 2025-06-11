@@ -1,53 +1,27 @@
-import { serverSupabaseClient } from '#supabase/server';
-import { z } from 'zod';
+import { z } from 'zod/v4'
 
-const requestQuerySchema = z.object({
-    userId: z
-        .string({
-            required_error: 'User ID is required',
-            invalid_type_error: 'User ID must be a string',
-        })
-        .min(1, 'User ID cannot be empty'),
-
+const query = z.object({
     page: z.coerce
-        .number({
-            required_error: 'Page number is required',
-            invalid_type_error: 'Page must be a number',
-        })
-        .int('Page must be an integer')
-        .nonnegative('Page must be a non-negative number')
+        .number('Page number must be a number')
+        .int('Page number must be an integer')
+        .nonnegative('Page number must be 0 or greater')
         .default(0),
 
     perPage: z.coerce
-        .number({
-            required_error: 'Items per page is required',
-            invalid_type_error: 'Items per page must be a number',
-        })
+        .number('Items per page must be a number')
         .int('Items per page must be an integer')
         .positive('Items per page must be a positive number')
         .default(10),
-});
-
-export type RequestQuery = z.infer<typeof requestQuerySchema>;
+})
 
 interface SetupsResponse {
-    setups: SetupClient[];
-    hasMore: boolean;
+    setups: SetupClient[]
+    hasMore: boolean
 }
 
-export default defineEventHandler(async (event): Promise<SetupsResponse> => {
-    const rawQuery = await getQuery(event);
-    const result = requestQuerySchema.safeParse(rawQuery);
-
-    if (!result.success) {
-        throw createError({
-            statusCode: 400,
-            message: `Invalid request: ${result.error.issues.map((i) => i.message).join(', ')}`,
-        });
-    }
-
-    const query = result.data;
-    const supabase = await serverSupabaseClient<Database>(event);
+export default defineEventHandler(async (): Promise<SetupsResponse> => {
+    const { page, perPage } = await validateQuery(query)
+    const supabase = await getSupabaseServerClient()
 
     const { data, error, count } = await supabase
         .from('setups')
@@ -88,6 +62,7 @@ export default defineEventHandler(async (event): Promise<SetupsResponse> => {
                             verified
                         ),
                         nsfw,
+                        likes,
                         source
                     ),
                     note,
@@ -114,23 +89,18 @@ export default defineEventHandler(async (event): Promise<SetupsResponse> => {
                 `,
             { count: 'estimated' }
         )
-        .eq('author', query.userId)
-        .range(
-            query.page * query.perPage,
-            query.page * query.perPage + (query.perPage - 1)
-        )
+        .range(page * perPage, page * perPage + (perPage - 1))
         .order('created_at', { ascending: false })
-        .overrideTypes<SetupDB[]>();
+        .overrideTypes<SetupDB[]>()
 
     if (error)
         throw createError({
             statusCode: 500,
             message: 'Failed to get setups.',
-        });
+        })
 
-    // 成功時は直接データを返す
     return {
         setups: data.map((setup) => setupMoldingClient(setup)),
-        hasMore: (count ?? 0) > query.page * query.perPage + query.perPage,
-    };
-});
+        hasMore: (count ?? 0) > page * perPage + (perPage - 1),
+    }
+})

@@ -1,11 +1,11 @@
 <script lang="ts" setup>
 const username = defineModel<string>({
     default: '',
-});
+})
 
 const props = defineProps<{
-    class?: string | string[];
-}>();
+    class?: string | string[]
+}>()
 </script>
 
 <template>

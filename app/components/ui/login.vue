@@ -1,31 +1,31 @@
 <script setup lang="ts">
-const token = ref();
+const token = ref()
 
-let env: string | undefined;
+let env: string | undefined
 try {
-    env = process?.env?.NODE_ENV;
+    env = process?.env?.NODE_ENV
 } catch {
-    env = 'production';
+    env = 'production'
 }
-const mailAddressLogin = ref({ email: '', password: '' });
+const mailAddressLogin = ref({ email: '', password: '' })
 const handleLogin = async () => {
     try {
         await useLogin(
             mailAddressLogin.value.email,
             mailAddressLogin.value.password,
             token.value
-        );
-        navigateTo('/');
+        )
+        navigateTo('/')
     } catch (error) {
-        console.error(error);
+        console.error(error)
     }
-};
+}
 </script>
 
 <template>
     <UiCard>
-        <div class="min-w-80 flex flex-col gap-4 items-center">
-            <div class="font-bold text-2xl my-4">ログイン</div>
+        <div class="flex min-w-80 flex-col items-center gap-4">
+            <div class="my-4 text-2xl font-bold">ログイン</div>
 
             <Button
                 :disabled="!token"
@@ -38,7 +38,7 @@ const handleLogin = async () => {
 
             <div
                 v-if="env === 'development'"
-                class="w-full flex flex-col gap-2"
+                class="flex w-full flex-col gap-2"
             >
                 <p>Development only</p>
                 <UiTextinput v-model="mailAddressLogin.email" />
@@ -61,7 +61,7 @@ const handleLogin = async () => {
 
         <template #footer>
             <div class="flex flex-col gap-2">
-                <div class="self-center flex gap-1.5 items-center">
+                <div class="flex items-center gap-1.5 self-center">
                     <Button to="/terms" variant="link"> 利用規約 </Button>
                     <Button to="/privacy-policy" variant="link">
                         プライバシーポリシー

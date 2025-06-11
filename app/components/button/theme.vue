@@ -1,10 +1,10 @@
 <script lang="ts" setup>
 interface Props {
-    label?: boolean;
+    label?: boolean
 }
-const props = defineProps<Props>();
+const props = defineProps<Props>()
 
-const colorMode = useColorMode();
+const colorMode = useColorMode()
 </script>
 
 <template>

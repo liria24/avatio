@@ -1,28 +1,28 @@
 <script lang="ts" setup>
 const model = defineModel<CoAuthor[]>({
     default: [],
-});
+})
 
-const input = ref('');
-const searching = ref(false);
-const searchedUsers = ref<CoAuthor[]>([]);
+const input = ref('')
+const searching = ref(false)
+const searchedUsers = ref<CoAuthor[]>([])
 
-const user = useSupabaseUser();
-const client = useSupabaseClient();
+const user = useSupabaseUser()
+const client = useSupabaseClient()
 
 const add = async (id: string) => {
     if (id.length) {
         if (id === user.value?.id)
             return useToast().add(
                 '自身を共同作者として追加することはできません'
-            );
+            )
 
         const { data } = await client
             .from('users')
             .select('id, name, avatar')
             .eq('id', id)
-            .maybeSingle();
-        if (!data) return useToast().add('ユーザーが見つかりませんでした');
+            .maybeSingle()
+        if (!data) return useToast().add('ユーザーが見つかりませんでした')
 
         model.value.push({
             id: id,
@@ -30,41 +30,41 @@ const add = async (id: string) => {
             avatar: data.avatar || null,
             badges: [],
             note: '',
-        });
-        input.value = '';
+        })
+        input.value = ''
     }
-};
+}
 
 const remove = (index: number) => {
-    model.value.splice(index, 1);
-};
+    model.value.splice(index, 1)
+}
 
 const handleInputChange = useDebounceFn(
     async (value: string) => {
         if (value.length) {
-            searching.value = true;
+            searching.value = true
 
             const { data } = await client.rpc('search_users', {
                 keyword: value,
                 num: 20,
-            });
+            })
 
-            searchedUsers.value = data ?? [];
-            searching.value = false;
+            searchedUsers.value = data ?? []
+            searching.value = false
         } else {
-            searchedUsers.value = [];
+            searchedUsers.value = []
         }
     },
     400,
     { maxWait: 1000 }
-); // 400～1000ms デバウンス
+) // 400～1000ms デバウンス
 
 // watch のコールバックを直接 debounced 関数に渡す
-watch(input, handleInputChange);
+watch(input, handleInputChange)
 </script>
 
 <template>
-    <div class="w-full flex flex-col gap-2">
+    <div class="flex w-full flex-col gap-2">
         <Popup v-if="model.length < 5" side="top">
             <template #trigger>
                 <Button variant="flat">
@@ -74,7 +74,7 @@ watch(input, handleInputChange);
             </template>
 
             <template #content>
-                <div class="flex flex-col gap-2 text-sm min-w-48">
+                <div class="flex min-w-48 flex-col gap-2 text-sm">
                     <UiTextinput
                         v-model="input"
                         placeholder="ユーザー名"
@@ -87,18 +87,16 @@ watch(input, handleInputChange);
                         size="18"
                     />
 
-                    <div v-else class="empty:hidden flex flex-col gap-1">
+                    <div v-else class="flex flex-col gap-1 empty:hidden">
                         <Button
                             v-for="i in searchedUsers"
                             :key="`coauthor-${i.id}`"
                             variant="flat"
-                            class="p-2 justify-start"
+                            class="justify-start p-2"
                             @click="add(i.id)"
                         >
                             <UiAvatar
-                                :url="
-                                    useGetImage(i.avatar, { prefix: 'avatar' })
-                                "
+                                :url="getImage(i.avatar, { prefix: 'avatar' })"
                                 :alt="i.name"
                                 class="size-9"
                             />

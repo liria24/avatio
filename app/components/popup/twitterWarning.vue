@@ -3,7 +3,7 @@
 <template>
     <Popup>
         <template #trigger>
-            <div class="cursor-pointer flex items-center gap-1.5">
+            <div class="flex cursor-pointer items-center gap-1.5">
                 <Icon
                     name="lucide:info"
                     class="text-red-400 dark:text-red-300"
@@ -30,7 +30,7 @@
                 <p class="text-sm/relaxed font-bold">エラー例 :</p>
                 <NuxtImg
                     :src="
-                        useGetImage('twitter-login-error.png', {
+                        getImage('twitter-login-error.png', {
                             prefix: 'static',
                         })
                     "

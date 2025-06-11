@@ -1,26 +1,26 @@
 <script lang="ts" setup>
 interface Props {
-    id: string;
-    name: string;
-    avatar?: string | null;
+    id: string
+    name: string
+    avatar?: string | null
 }
-const props = defineProps<Props>();
+const props = defineProps<Props>()
 
-const emit = defineEmits(['remove', 'update:note']);
+const emit = defineEmits(['remove', 'update:note'])
 
 const note = defineModel<string>('note', {
     required: true,
     default: '',
-});
+})
 </script>
 
 <template>
     <div
-        class="p-2 rounded-lg flex flex-col gap-1.5 ring-1 ring-zinc-400 dark:ring-zinc-700"
+        class="flex flex-col gap-1.5 rounded-lg p-2 ring-1 ring-zinc-400 dark:ring-zinc-700"
     >
-        <div class="flex gap-1.5 items-center">
+        <div class="flex items-center gap-1.5">
             <UiAvatar
-                :url="useGetImage(props.avatar, { prefix: 'avatar' })"
+                :url="getImage(props.avatar, { prefix: 'avatar' })"
                 alt="co-author"
                 class="size-9"
             />

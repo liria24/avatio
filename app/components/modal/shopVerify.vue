@@ -1,21 +1,21 @@
 <script lang="ts" setup>
-const emit = defineEmits(['refresh']);
-const vis = defineModel<boolean>({ default: false });
+const emit = defineEmits(['refresh'])
+const vis = defineModel<boolean>({ default: false })
 const shops = defineModel<
     {
-        id: string;
-        name: string;
-        thumbnail: string;
-        verified_at: string;
+        id: string
+        name: string
+        thumbnail: string
+        verified_at: string
     }[]
->('shops', { default: [] });
+>('shops', { default: [] })
 
-const codeGenerating = ref(false);
-const verifying = ref(false);
-const verified = ref(false);
-const code = ref<string>('');
-const copied = ref(false);
-const shopUrl = ref<string>('');
+const codeGenerating = ref(false)
+const verifying = ref(false)
+const verified = ref(false)
+const code = ref<string>('')
+const copied = ref(false)
+const shopUrl = ref<string>('')
 
 const check = () => {
     try {
@@ -24,72 +24,72 @@ const check = () => {
             !code.value?.length ||
             codeGenerating.value
         )
-            return false;
+            return false
 
-        const url = new URL(shopUrl.value);
+        const url = new URL(shopUrl.value)
 
-        if (url.hostname.endsWith('.booth.pm')) return true;
-        else return false;
+        if (url.hostname.endsWith('.booth.pm')) return true
+        else return false
     } catch {
-        return false;
+        return false
     }
-};
+}
 
 const verify = async () => {
-    if (!check()) return;
+    if (!check()) return
 
-    const subDomain = boothSubDomain(shopUrl.value);
-    if (!subDomain) return;
+    const subDomain = boothSubDomain(shopUrl.value)
+    if (!subDomain) return
     if (shops.value.find((shop) => shop.id === subDomain)) {
-        useToast().add('このショップは既に認証済みです');
-        return;
+        useToast().add('このショップは既に認証済みです')
+        return
     }
 
     try {
-        verifying.value = true;
+        verifying.value = true
 
         const { verified: v } = await $fetch('/api/shop-verification/verify', {
             method: 'POST',
             body: { url: shopUrl.value },
-        });
+        })
 
         if (v) {
-            emit('refresh');
-            verified.value = true;
-            useToast().add('認証に成功しました');
+            emit('refresh')
+            verified.value = true
+            useToast().add('認証に成功しました')
         } else {
-            useToast().add('認証に失敗しました');
+            useToast().add('認証に失敗しました')
         }
     } catch (e) {
-        useToast().add('認証に失敗しました');
+        useToast().add('認証に失敗しました')
     } finally {
-        verifying.value = false;
+        verifying.value = false
     }
-};
+}
 
 const generateCode = async () => {
-    codeGenerating.value = true;
+    codeGenerating.value = true
 
     code.value =
         (
             await $fetch('/api/shop-verification/generate-code', {
                 method: 'POST',
             })
-        ).code || '';
+        ).code || ''
 
-    codeGenerating.value = false;
-};
+    codeGenerating.value = false
+}
 
 watchEffect(() => {
     if (vis.value) {
-        code.value = '';
-        shopUrl.value = '';
-        copied.value = false;
-        verified.value = false;
-        verifying.value = false;
-        codeGenerating.value = false;
+        code.value = ''
+        shopUrl.value = ''
+        copied.value = false
+        verified.value = false
+        verifying.value = false
+        codeGenerating.value = false
     }
-});
+})
 </script>
 
 <template>
@@ -139,9 +139,9 @@ watchEffect(() => {
                         size="24"
                         class="self-center text-zinc-600 dark:text-zinc-400"
                     />
-                    <div v-else class="px-2 flex items-center gap-2">
+                    <div v-else class="flex items-center gap-2 px-2">
                         <span
-                            class="text-sm text-zinc-600 dark:text-zinc-400 break-all"
+                            class="text-sm break-all text-zinc-600 dark:text-zinc-400"
                         >
                             {{ code }}
                         </span>
@@ -151,8 +151,8 @@ watchEffect(() => {
                             tooltip="コードをコピー"
                             class="ml-2 p-2"
                             @click="
-                                useWriteClipboard(code);
-                                copied = true;
+                                writeClipboard(code)
+                                copied = true
                             "
                         >
                             <Icon v-if="!copied" name="lucide:copy" size="16" />
@@ -163,7 +163,7 @@ watchEffect(() => {
             </div>
 
             <div
-                class="rounded-md p-3 flex items-center gap-2 ring-1 ring-zinc-300 dark:ring-zinc-700"
+                class="flex items-center gap-2 rounded-md p-3 ring-1 ring-zinc-300 dark:ring-zinc-700"
             >
                 <Icon
                     name="lucide:info"
@@ -177,7 +177,7 @@ watchEffect(() => {
         </template>
 
         <template v-else>
-            <div class="w-full flex flex-col gap-5 items-center">
+            <div class="flex w-full flex-col items-center gap-5">
                 <Icon
                     name="lucide:circle-check"
                     size="64"
@@ -185,7 +185,7 @@ watchEffect(() => {
                 />
 
                 <div
-                    class="rounded-md p-3 flex flex-col gap-2 ring-1 ring-red-400 dark:ring-red-400/70"
+                    class="flex flex-col gap-2 rounded-md p-3 ring-1 ring-red-400 dark:ring-red-400/70"
                 >
                     <p class="text-sm text-zinc-700 dark:text-zinc-300">
                         紹介文に記載したコードを忘れずに削除してください！
@@ -197,7 +197,7 @@ watchEffect(() => {
         <template #footer>
             <div
                 v-if="!verified"
-                class="gap-1.5 flex items-center justify-between"
+                class="flex items-center justify-between gap-1.5"
             >
                 <Button
                     label="キャンセル"
@@ -207,7 +207,7 @@ watchEffect(() => {
                 <Button :disabled="!check()" label="認証" @click="verify" />
             </div>
 
-            <div v-else class="gap-1.5 flex items-center justify-end">
+            <div v-else class="flex items-center justify-end gap-1.5">
                 <Button label="閉じる" variant="flat" @click="vis = false" />
             </div>
         </template>

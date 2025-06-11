@@ -1,13 +1,13 @@
 <script lang="ts" setup>
-import { twMerge } from 'tailwind-merge';
+import { twMerge } from 'tailwind-merge'
 
 interface Props {
-    loading: boolean;
-    class?: string | string[];
+    loading: boolean
+    class?: string | string[]
 }
-const props = defineProps<Props>();
+const props = defineProps<Props>()
 
-const emit = defineEmits(['click']);
+const emit = defineEmits(['click'])
 </script>
 
 <template>

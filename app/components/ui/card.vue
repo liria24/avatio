@@ -1,23 +1,23 @@
 <script lang="ts" setup>
-import { twMerge } from 'tailwind-merge';
+import { twMerge } from 'tailwind-merge'
 
 interface Props {
-    divider?: boolean;
-    class?: string | string[];
-    headerClass?: string | string[];
-    contentClass?: string | string[];
-    footerClass?: string | string[];
+    divider?: boolean
+    class?: string | string[]
+    headerClass?: string | string[]
+    contentClass?: string | string[]
+    footerClass?: string | string[]
 }
 const props = withDefaults(defineProps<Props>(), {
     divider: true,
-});
+})
 </script>
 
 <template>
     <div
         :class="
             twMerge(
-                'rounded-lg flex flex-col ring-1 ring-zinc-300 dark:ring-zinc-600',
+                'flex flex-col rounded-lg ring-1 ring-zinc-300 dark:ring-zinc-600',
                 props.divider
                     ? 'divide-y divide-zinc-300 dark:divide-zinc-600'
                     : '',
@@ -27,7 +27,7 @@ const props = withDefaults(defineProps<Props>(), {
     >
         <div
             v-if="$slots.header && $slots.header({}).length"
-            :class="twMerge('empty:hidden px-4 py-3', props.headerClass)"
+            :class="twMerge('px-4 py-3 empty:hidden', props.headerClass)"
         >
             <slot name="header" />
         </div>
@@ -35,7 +35,7 @@ const props = withDefaults(defineProps<Props>(), {
             v-if="$slots.default && $slots.default({}).length"
             :class="
                 twMerge(
-                    'empty:hidden px-4',
+                    'px-4 empty:hidden',
                     props.divider ? 'py-3' : 'py-1',
                     props.contentClass
                 )
@@ -45,7 +45,7 @@ const props = withDefaults(defineProps<Props>(), {
         </div>
         <div
             v-if="$slots.footer && $slots.footer({}).length"
-            :class="twMerge('empty:hidden px-4 py-3', props.footerClass)"
+            :class="twMerge('px-4 py-3 empty:hidden', props.footerClass)"
         >
             <slot name="footer" />
         </div>
