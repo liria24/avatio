@@ -55,6 +55,7 @@ export default defineNuxtConfig({
         url: 'https://avatio.me',
         name: 'Avatio',
         description: 'あなたのアバター改変を共有しよう',
+        trailingSlash: false,
     },
 
     app: {
