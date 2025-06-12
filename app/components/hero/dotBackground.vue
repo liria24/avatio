@@ -41,6 +41,10 @@ onMounted(() => {
     window.addEventListener('resize', resizeCanvas)
     resizeCanvas()
 
+    onUnmounted(() => {
+        window.removeEventListener('resize', resizeCanvas)
+    })
+
     watch(
         [pointerX, pointerY],
         ([newX, newY]) => {
