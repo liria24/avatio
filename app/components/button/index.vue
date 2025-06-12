@@ -1,22 +1,22 @@
 <script setup lang="ts">
-import { twMerge } from 'tailwind-merge';
+import { twMerge } from 'tailwind-merge'
 
 interface Props {
-    id?: string;
-    disabled?: boolean;
-    tabindex?: number;
-    type?: 'button' | 'submit' | 'reset';
+    id?: string
+    disabled?: boolean
+    tabindex?: number
+    type?: 'button' | 'submit' | 'reset'
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    to?: any;
-    newTab?: boolean;
-    icon?: string;
-    iconSize?: number;
-    label?: string;
-    ariaLabel?: string;
-    variant?: 'outline' | 'flat' | 'link';
-    tooltip?: string;
-    class?: string | string[];
-    iconClass?: string;
+    to?: any
+    newTab?: boolean
+    icon?: string
+    iconSize?: number
+    label?: string
+    ariaLabel?: string
+    variant?: 'outline' | 'flat' | 'link'
+    tooltip?: string
+    class?: string | string[]
+    iconClass?: string
 }
 const props = withDefaults(defineProps<Props>(), {
     disabled: false,
@@ -29,21 +29,21 @@ const props = withDefaults(defineProps<Props>(), {
     ariaLabel: '',
     variant: 'outline',
     tooltip: '',
-});
+})
 
-const emit = defineEmits(['click']);
+const emit = defineEmits(['click'])
 
 const Link = defineNuxtLink({
     componentName: 'Link',
     prefetch: false,
-});
+})
 
 const variantClass = {
     outline:
         'outline outline-1 outline-zinc-400 dark:outline-zinc-600 focus:outline-zinc-600 focus:outline-2',
     flat: 'focus:outline-hidden focus-visible:ring-2 focus-visible:ring-zinc-600 dark:focus-visible:ring-zinc-400',
     link: 'p-1 text-xs font-semibold text-zinc-600 hover:text-zinc-400 dark:text-zinc-400 hover:dark:text-zinc-500 hover:bg-transparent hover:dark:bg-transparent',
-};
+}
 </script>
 
 <template>
@@ -62,8 +62,8 @@ const variantClass = {
                 twMerge(
                     props.disabled ? 'cursor-not-allowed' : 'cursor-pointer',
                     props.icon.length ? 'p-3' : 'px-4 py-3',
-                    'rounded-lg flex gap-2 items-center justify-center',
-                    'text-sm font-semibold align-middle leading-none',
+                    'flex items-center justify-center gap-2 rounded-lg',
+                    'align-middle text-sm leading-none font-semibold',
                     'bg-transparent dark:bg-transparent',
                     'text-zinc-800 dark:text-zinc-200',
                     props.disabled
@@ -86,7 +86,7 @@ const variantClass = {
 
                 <p
                     v-if="props.label.length"
-                    class="empty:hidden whitespace-nowrap leading-none"
+                    class="leading-none whitespace-nowrap empty:hidden"
                 >
                     {{ props.label }}
                 </p>

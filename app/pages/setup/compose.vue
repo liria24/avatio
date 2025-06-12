@@ -1,10 +1,10 @@
 <script setup lang="ts">
-const skipRouterHook = ref(false);
+const skipRouterHook = ref(false)
 
-const publishing = ref(false);
-const publishedSetupId = ref<number | null>(null);
-const modalComplete = ref(false);
-const modalPreview = ref(false);
+const publishing = ref(false)
+const publishedSetupId = ref<number | null>(null)
+const modalComplete = ref(false)
+const modalPreview = ref(false)
 
 const items = ref<Record<ItemCategory, SetupItem[]>>({
     avatar: [],
@@ -15,21 +15,21 @@ const items = ref<Record<ItemCategory, SetupItem[]>>({
     shader: [],
     tool: [],
     other: [],
-});
-const { undo, redo } = useRefHistory(items, { deep: true });
+})
+const { undo, redo } = useRefHistory(items, { deep: true })
 
-const title = ref<string>('');
-const description = ref<string>('');
-const tags = ref<string[]>([]);
-const coAuthors = ref<CoAuthor[]>([]);
-const unity = ref<string>('');
-const image = ref<Blob | null>(null);
+const title = ref<string>('')
+const description = ref<string>('')
+const tags = ref<string[]>([])
+const coAuthors = ref<CoAuthor[]>([])
+const unity = ref<string>('')
+const image = ref<Blob | null>(null)
 
 const PublishSetup = async () => {
-    publishing.value = true;
+    publishing.value = true
 
     try {
-        const data = {
+        const body = {
             name: title.value,
             description: description.value,
             unity: unity.value.length ? unity.value : null,
@@ -48,31 +48,28 @@ const PublishSetup = async () => {
                     unsupported: i.unsupported,
                 })),
             images: image.value ? [await blobToBase64(image.value)] : null,
-        };
+        }
 
-        if (await setupErrorCheck(data)) return (publishing.value = false);
+        if (await setupErrorCheck(body)) return (publishing.value = false)
 
-        const response = await $fetch('/api/setup', {
-            method: 'PUT',
-            body: data,
-        });
+        const response = await $fetch('/api/setup', { method: 'POST', body })
 
-        publishedSetupId.value = response.id;
-        skipRouterHook.value = true;
-        modalComplete.value = true;
+        publishedSetupId.value = response.id
+        skipRouterHook.value = true
+        modalComplete.value = true
     } catch (error) {
-        console.error('投稿エラー:', error);
-        return useToast().add('投稿に失敗しました');
+        console.error('投稿エラー:', error)
+        return useToast().add('投稿に失敗しました')
     } finally {
-        publishing.value = false;
+        publishing.value = false
     }
-};
+}
 
 const reset = () => {
-    title.value = '';
-    description.value = '';
-    tags.value = [];
-    coAuthors.value = [];
+    title.value = ''
+    description.value = ''
+    tags.value = []
+    coAuthors.value = []
     items.value = {
         avatar: [],
         cloth: [],
@@ -82,15 +79,15 @@ const reset = () => {
         shader: [],
         tool: [],
         other: [],
-    };
-    image.value = null;
-    publishedSetupId.value = null;
-    publishing.value = false;
-    skipRouterHook.value = false;
-};
+    }
+    image.value = null
+    publishedSetupId.value = null
+    publishing.value = false
+    skipRouterHook.value = false
+}
 
 onBeforeRouteLeave((to, from, next) => {
-    if (skipRouterHook.value) return next(true);
+    if (skipRouterHook.value) return next(true)
 
     const hasChanges =
         title.value ||
@@ -98,18 +95,18 @@ onBeforeRouteLeave((to, from, next) => {
         tags.value.length ||
         coAuthors.value.length ||
         unity.value.length ||
-        image.value !== null;
+        image.value !== null
 
     if (hasChanges) {
         const answer = window.confirm(
             '入力された内容が破棄されます。よろしいですか？'
-        );
-        return next(answer);
+        )
+        return next(answer)
     }
-    return next(true);
-});
+    return next(true)
+})
 
-useOGP({ title: 'セットアップ作成' });
+defineSeo({ title: 'セットアップ作成' })
 </script>
 
 <template>
@@ -122,16 +119,16 @@ useOGP({ title: 'セットアップ作成' });
             v-model:co-authors="coAuthors"
             v-model:unity="unity"
             v-model:image="image"
-            class="static lg:absolute top-0 bottom-4 left-0 lg:w-[22rem] overflow-y-auto"
+            class="static top-0 bottom-4 left-0 overflow-y-auto lg:absolute lg:w-[22rem]"
             @preview="modalPreview = true"
             @publish="PublishSetup"
         />
 
-        <UiDivider class="static lg:hidden my-8" />
+        <UiDivider class="static my-8 lg:hidden" />
 
         <SetupsEditItems
             v-model="items"
-            class="w-full h-full"
+            class="h-full w-full"
             @undo="undo"
             @redo="redo"
         />
@@ -147,7 +144,7 @@ useOGP({ title: 'セットアップ作成' });
             :icon="!publishing ? 'lucide:upload' : 'i-svg-spinners-ring-resize'"
             :icon-size="18"
             variant="flat"
-            class="fixed lg:hidden bottom-3 right-3 rounded-full p-4 whitespace-nowrap hover:bg-zinc-700 hover:text-zinc-200 dark:text-zinc-900 dark:bg-zinc-300 hover:dark:text-zinc-100"
+            class="fixed right-3 bottom-3 rounded-full p-4 whitespace-nowrap hover:bg-zinc-700 hover:text-zinc-200 lg:hidden dark:bg-zinc-300 dark:text-zinc-900 hover:dark:text-zinc-100"
             @click="PublishSetup"
         />
 

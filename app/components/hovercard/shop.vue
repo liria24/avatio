@@ -1,12 +1,12 @@
 <script lang="ts" setup>
 interface Props {
-    shop: Shop;
+    shop: Shop
 }
-const props = defineProps<Props>();
+const props = defineProps<Props>()
 </script>
 
 <template>
-    <Hovercard side="top" class="pl-3 pr-4 py-2.5">
+    <Hovercard side="top" class="py-2.5 pr-4 pl-3">
         <template #trigger>
             <slot />
         </template>
@@ -23,14 +23,14 @@ const props = defineProps<Props>();
                 />
                 <div class="flex flex-col gap-1.5">
                     <span
-                        class="text-sm font-semibold leading-none text-zinc-700 dark:text-zinc-300"
+                        class="text-sm leading-none font-semibold text-zinc-700 dark:text-zinc-300"
                     >
                         {{ props.shop.name }}
                     </span>
                     <NuxtLink
                         :to="`https://${props.shop.id}.booth.pm/`"
                         target="_blank"
-                        class="text-xs font-semibold leading-none text-zinc-500 dark:text-zinc-500"
+                        class="text-xs leading-none font-semibold text-zinc-500 dark:text-zinc-500"
                     >
                         {{ props.shop.id }}.booth.pm
                     </NuxtLink>

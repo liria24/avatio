@@ -3,36 +3,36 @@
 const note = defineModel<string>('note', {
     required: true,
     default: '',
-});
+})
 const unsupported = defineModel<boolean>('unsupported', {
     default: false,
-});
+})
 const shapekeys = defineModel<Shapekey[]>('shapekeys', {
     default: [],
-});
+})
 
-const emit = defineEmits(['remove', 'changeCategory']);
+const emit = defineEmits(['remove', 'changeCategory'])
 
 interface Props {
-    size?: 'md' | 'lg';
-    item: Item;
+    size?: 'md' | 'lg'
+    item: Item
 }
 const props = withDefaults(defineProps<Props>(), {
     size: 'md',
-});
+})
 
-const modalRegisterShapekey = ref(false);
+const modalRegisterShapekey = ref(false)
 
-const booth_url = 'https://booth.pm/ja/items/';
+const booth_url = 'https://booth.pm/ja/items/'
 </script>
 
 <template>
     <div
-        class="flex items-center ring-2 ring-zinc-300 dark:ring-zinc-700 rounded-lg overflow-clip"
+        class="flex items-center overflow-clip rounded-lg ring-2 ring-zinc-300 dark:ring-zinc-700"
     >
-        <div class="draggable cursor-move w-10 h-full p-1.5">
+        <div class="draggable h-full w-10 cursor-move p-1.5">
             <div
-                class="size-full rounded-lg flex items-center justify-center hover:bg-zinc-800 transition duration-150"
+                class="flex size-full items-center justify-center rounded-lg transition duration-150 hover:bg-zinc-800"
             >
                 <Icon
                     name="lucide:grip-vertical"
@@ -42,8 +42,8 @@ const booth_url = 'https://booth.pm/ja/items/';
             </div>
         </div>
 
-        <div class="w-full py-2 pr-2 flex flex-col gap-2">
-            <div class="w-full flex gap-3 items-start">
+        <div class="flex w-full flex-col gap-2 py-2 pr-2">
+            <div class="flex w-full items-start gap-3">
                 <NuxtLink
                     :to="booth_url + props.item.id"
                     target="_blank"
@@ -58,17 +58,17 @@ const booth_url = 'https://booth.pm/ja/items/';
                     />
                 </NuxtLink>
 
-                <div class="self-center w-full flex flex-col gap-3 items-start">
-                    <div class="gap-2 flex items-center">
+                <div class="flex w-full flex-col items-start gap-3 self-center">
+                    <div class="flex items-center gap-2">
                         <NuxtLink
                             :to="booth_url + props.item.id"
                             target="_blank"
                             class="w-fit gap-2"
                         >
                             <p
-                                class="w-fit text-sm font-medium leading-normal break-before-all line-clamp-2 text-black dark:text-white"
+                                class="line-clamp-2 w-fit break-before-all text-sm leading-normal font-medium text-black dark:text-white"
                             >
-                                {{ useSentence(props.item.name) }}
+                                {{ lineBreak(props.item.name) }}
                             </p>
                         </NuxtLink>
 
@@ -85,7 +85,7 @@ const booth_url = 'https://booth.pm/ja/items/';
                         <NuxtLink
                             :to="booth_url + props.item.id"
                             target="_blank"
-                            class="flex items-center gap-1.5 w-fit"
+                            class="flex w-fit items-center gap-1.5"
                         >
                             <Icon
                                 name="mingcute:currency-cny-fill"
@@ -93,7 +93,7 @@ const booth_url = 'https://booth.pm/ja/items/';
                                 class="shrink-0 text-zinc-600 dark:text-zinc-400"
                             />
                             <span
-                                class="pt-px text-xs font-[Geist] font-semibold leading-0 whitespace-nowrap text-zinc-600 dark:text-zinc-400"
+                                class="pt-px font-[Geist] text-xs leading-0 font-semibold whitespace-nowrap text-zinc-600 dark:text-zinc-400"
                             >
                                 {{ props.item.price }}
                             </span>
@@ -102,7 +102,7 @@ const booth_url = 'https://booth.pm/ja/items/';
                         <NuxtLink
                             :to="booth_url + props.item.id"
                             target="_blank"
-                            class="flex items-center gap-1.5 w-fit"
+                            class="flex w-fit items-center gap-1.5"
                         >
                             <Icon
                                 name="mingcute:heart-fill"
@@ -110,7 +110,7 @@ const booth_url = 'https://booth.pm/ja/items/';
                                 class="shrink-0 text-zinc-600 dark:text-zinc-400"
                             />
                             <span
-                                class="pt-px text-xs font-[Geist] font-semibold leading-0 whitespace-nowrap text-zinc-600 dark:text-zinc-400"
+                                class="pt-px font-[Geist] text-xs leading-0 font-semibold whitespace-nowrap text-zinc-600 dark:text-zinc-400"
                             >
                                 {{ props.item.likes?.toLocaleString() || '?' }}
                             </span>
@@ -119,7 +119,7 @@ const booth_url = 'https://booth.pm/ja/items/';
                         <NuxtLink
                             :to="`https://${props.item.shop.id}.booth.pm/`"
                             target="_blank"
-                            class="pl-0.5 flex items-center gap-1.5 w-fit"
+                            class="flex w-fit items-center gap-1.5 pl-0.5"
                         >
                             <NuxtImg
                                 :src="props.item.shop.thumbnail ?? ''"
@@ -127,10 +127,10 @@ const booth_url = 'https://booth.pm/ja/items/';
                                 :width="24"
                                 :height="24"
                                 fit="cover"
-                                class="size-5 rounded-md p-px select-none ring-1 ring-zinc-300 dark:ring-zinc-600"
+                                class="size-5 rounded-md p-px ring-1 ring-zinc-300 select-none dark:ring-zinc-600"
                             />
                             <span
-                                class="text-xs font-semibold leading-none line-clamp-1 break-all text-zinc-600 dark:text-zinc-400"
+                                class="line-clamp-1 text-xs leading-none font-semibold break-all text-zinc-600 dark:text-zinc-400"
                             >
                                 {{ props.item.shop.name }}
                             </span>
@@ -138,14 +138,14 @@ const booth_url = 'https://booth.pm/ja/items/';
                                 v-if="props.item.shop.verified"
                                 name="lucide:check"
                                 size="16"
-                                class="shrink-0 size-3 text-zinc-700 dark:text-zinc-300"
+                                class="size-3 shrink-0 text-zinc-700 dark:text-zinc-300"
                             />
                         </NuxtLink>
                     </div>
                 </div>
 
                 <div
-                    class="self-stretch flex flex-col gap-1 items-end justify-between"
+                    class="flex flex-col items-end justify-between gap-1 self-stretch"
                 >
                     <SetupsEditItemsItemMenu
                         v-model:unsupported="unsupported"
@@ -154,7 +154,7 @@ const booth_url = 'https://booth.pm/ja/items/';
                         @remove="emit('remove')"
                     />
 
-                    <div class="px-2 flex items-center gap-3">
+                    <div class="flex items-center gap-3 px-2">
                         <UiTooltip v-if="unsupported" text="アバター非対応">
                             <Icon
                                 name="lucide:user-round-x"
@@ -169,7 +169,7 @@ const booth_url = 'https://booth.pm/ja/items/';
                         >
                             <button
                                 type="button"
-                                class="flex items-center gap-0.5 select-none cursor-pointer"
+                                class="flex cursor-pointer items-center gap-0.5 select-none"
                                 @click="modalRegisterShapekey = true"
                             >
                                 <Icon
@@ -178,7 +178,7 @@ const booth_url = 'https://booth.pm/ja/items/';
                                     class="text-zinc-300"
                                 />
                                 <p
-                                    class="pb-0.5 text-xs text-zinc-700 dark:text-zinc-300 leading-none"
+                                    class="pb-0.5 text-xs leading-none text-zinc-700 dark:text-zinc-300"
                                 >
                                     {{ shapekeys.length }}
                                 </p>
@@ -188,12 +188,12 @@ const booth_url = 'https://booth.pm/ja/items/';
                 </div>
             </div>
 
-            <div class="w-full flex flex-col gap-2">
+            <div class="flex w-full flex-col gap-2">
                 <div
                     :data-exceeded="note.length > 140"
                     :class="[
-                        'w-full px-3 py-2 gap-2 flex items-center rounded-lg bg-zinc-100 dark:bg-zinc-800',
-                        'ring-inset ring-1 ring-zinc-300 dark:ring-zinc-700',
+                        'flex w-full items-center gap-2 rounded-lg bg-zinc-100 px-3 py-2 dark:bg-zinc-800',
+                        'ring-1 ring-zinc-300 ring-inset dark:ring-zinc-700',
                         'data-[exceeded=true]:ring-red-400 data-[exceeded=true]:dark:ring-red-400',
                     ]"
                 >
@@ -201,7 +201,7 @@ const booth_url = 'https://booth.pm/ja/items/';
                         v-if="!note.length"
                         name="lucide:pen-line"
                         :size="18"
-                        class="self-start shrink-0 mt-[0.1rem] text-zinc-400 dark:text-zinc-400"
+                        class="mt-[0.1rem] shrink-0 self-start text-zinc-400 dark:text-zinc-400"
                     />
                     <UiCount v-else :count="note.length" :max="140" />
                     <UiTextarea

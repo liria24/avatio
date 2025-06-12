@@ -1,14 +1,14 @@
 <script setup lang="ts">
-const user = useSupabaseUser();
-if (user.value) navigateTo('/');
+const user = useSupabaseUser()
+if (user.value) navigateTo('/')
 
-useOGP({
+defineSeo({
     title: 'ログイン',
-});
+})
 </script>
 
 <template>
-    <div class="w-full flex flex-col items-center gap-5 my-10">
+    <div class="my-10 flex w-full flex-col items-center gap-5">
         <UiLogin />
         <Button
             to="/"

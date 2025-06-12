@@ -1,22 +1,22 @@
 <script lang="ts" setup>
-import { twMerge } from 'tailwind-merge';
+import { twMerge } from 'tailwind-merge'
 
-const model = defineModel<number>({ default: 0 });
+const model = defineModel<number>({ default: 0 })
 
 interface Prop {
-    id?: string;
-    type?: string;
-    unstyled?: boolean;
-    icon?: string;
-    iconSize?: string | number;
-    disabled?: boolean;
-    max?: number;
-    min?: number;
-    step?: number;
-    disableWheelChange?: boolean;
-    class?: string | string[];
+    id?: string
+    type?: string
+    unstyled?: boolean
+    icon?: string
+    iconSize?: string | number
+    disabled?: boolean
+    max?: number
+    min?: number
+    step?: number
+    disableWheelChange?: boolean
+    class?: string | string[]
 }
-const props = defineProps<Prop>();
+const props = defineProps<Prop>()
 </script>
 
 <template>
@@ -26,9 +26,9 @@ const props = defineProps<Prop>();
                 props.unstyled
                     ? 'flex items-center gap-2'
                     : twMerge(
-                          'px-2.5 py-2 rounded-lg flex items-center gap-2',
+                          'flex items-center gap-2 rounded-lg px-2.5 py-2',
                           'text-sm text-black dark:text-white',
-                          'ring-inset ring-1 hover:ring-2 focus-within:ring-2 ring-zinc-400 dark:ring-zinc-700 focus-within:ring-zinc-700',
+                          'ring-1 ring-zinc-400 ring-inset focus-within:ring-2 focus-within:ring-zinc-700 hover:ring-2 dark:ring-zinc-700',
                           'transition-all duration-100 ease-in-out'
                       ),
                 props.class
@@ -51,7 +51,7 @@ const props = defineProps<Prop>();
             :step="props.step"
         >
             <NumberFieldInput
-                class="grow min-w-0 focus:outline-hidden placeholder:select-none bg-transparent placeholder-zinc-400 dark:placeholder-zinc-500"
+                class="min-w-0 grow bg-transparent placeholder-zinc-400 placeholder:select-none focus:outline-hidden dark:placeholder-zinc-500"
             />
         </NumberFieldRoot>
 

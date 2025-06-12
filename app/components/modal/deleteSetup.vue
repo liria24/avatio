@@ -1,11 +1,16 @@
 <script lang="ts" setup>
 const props = defineProps<{
-    id: number;
-}>();
+    id: number
+}>()
 
 const vis = defineModel<boolean>({
     default: false,
-});
+})
+
+const onDelete = () => {
+    useDeleteSetup(props.id)
+    vis.value = false
+}
 </script>
 
 <template>
@@ -15,21 +20,18 @@ const vis = defineModel<boolean>({
         </template>
 
         <span
-            class="w-full text-md font-normal text-zinc-800 dark:text-zinc-100 text-center"
+            class="text-md w-full text-center font-normal text-zinc-800 dark:text-zinc-100"
         >
             セットアップを削除します。<br />
             この操作は取り消せません。よろしいですか？
         </span>
 
         <template #footer>
-            <div class="flex gap-2 items-center justify-end">
+            <div class="flex items-center justify-end gap-2">
                 <Button
                     label="削除"
-                    class="text-red-500 dark:text-red-400 hover:text-white hover:dark:text-white hover:bg-red-500 hover:dark:bg-red-800 hover:outline-red-400 hover:dark:outline-red-700"
-                    @click="
-                        useDeleteSetup(props.id);
-                        vis = false;
-                    "
+                    class="text-red-500 hover:bg-red-500 hover:text-white hover:outline-red-400 dark:text-red-400 hover:dark:bg-red-800 hover:dark:text-white hover:dark:outline-red-700"
+                    @click="onDelete"
                 />
                 <Button label="キャンセル" @click="vis = false" />
             </div>

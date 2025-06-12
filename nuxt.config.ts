@@ -1,16 +1,17 @@
-import tailwindcss from '@tailwindcss/vite';
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from '@/shared/types/database';
-import wasm from 'vite-plugin-wasm';
-import topLevelAwait from 'vite-plugin-top-level-await';
+import tailwindcss from '@tailwindcss/vite'
+import { defineOrganization } from 'nuxt-schema-org/schema'
+import topLevelAwait from 'vite-plugin-top-level-await'
+import wasm from 'vite-plugin-wasm'
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
     future: { compatibilityVersion: 4 },
+
     compatibilityDate: '2024-08-21',
+
     devtools: { enabled: true, timeline: { enabled: true } },
+
     modules: [
-        'reka-ui/nuxt',
         '@vueuse/nuxt',
         '@nuxt/icon',
         '@nuxt/image',
@@ -22,7 +23,12 @@ export default defineNuxtConfig({
         '@nuxtjs/turnstile',
         '@nuxtjs/robots',
         '@nuxtjs/sitemap',
+        'nuxt-link-checker',
+        'nuxt-schema-org',
+        'nuxt-seo-utils',
+        'reka-ui/nuxt',
     ],
+
     routeRules: {
         '/': { isr: 60 },
         '/setup/compose': { ssr: false },
@@ -30,20 +36,21 @@ export default defineNuxtConfig({
         '/terms': { isr: 600 },
         '/privacy-policy': { isr: 600 },
     },
+
     css: ['~/assets/css/main.css'],
-    nitro: {
-        preset: 'vercel',
-    },
+
     vite: {
         plugins: [tailwindcss(), wasm(), topLevelAwait()],
     },
+
     runtimeConfig: {
         public: { r2: { domain: '' } },
         adminKey: '',
         turnstile: { siteKey: '', secretKey: '' },
         r2: { endpoint: '', accessKey: '', secretKey: '' },
-        // openai: { apiKey: '' },
+        liria: { accessToken: '' },
     },
+
     app: {
         head: {
             htmlAttrs: { lang: 'ja', prefix: 'og: https://ogp.me/ns#' },
@@ -68,20 +75,22 @@ export default defineNuxtConfig({
                     property: 'og:description',
                     content: 'あなたのアバター改変を共有しよう',
                 },
-                { name: 'twitter:site', content: '@liria_work' },
+                { name: 'twitter:site', content: '@liria_24' },
                 { name: 'twitter:card', content: 'summary_large_image' },
             ],
         },
     },
-    experimental: {
-        typedPages: true,
-    },
+
     fonts: {
         families: [
             { name: 'Murecho', provider: 'google' },
             { name: 'Geist', provider: 'google' },
         ],
+        defaults: {
+            weights: [100, 200, 300, 300, 400, 500, 600, 700, 800, 900],
+        },
     },
+
     icon: {
         customCollections: [{ prefix: 'avatio', dir: './app/assets/icons' }],
         clientBundle: {
@@ -100,6 +109,7 @@ export default defineNuxtConfig({
             includeCustomCollections: true,
         },
     },
+
     image: {
         domains: [
             'booth.pximg.net', // booth
@@ -107,11 +117,27 @@ export default defineNuxtConfig({
             import.meta.env.NUXT_PUBLIC_R2_DOMAIN.replace('https://', ''), // R2
         ],
     },
+
     robots: {
         allow: ['Twitterbot', 'facebookexternalhit'],
         blockNonSeoBots: true,
         blockAiBots: true,
     },
+
+    schemaOrg: {
+        identity: defineOrganization({
+            name: 'Liria',
+            description: 'Small Circle by Liry24',
+            logo: {
+                url: '/logo-liria.png',
+                width: 460,
+                height: 460,
+            },
+            email: 'hello@liria.me',
+            sameAs: ['https://x.com/liria_24', 'https://github.com/liria24'],
+        }),
+    },
+
     sitemap: {
         sitemaps: true,
         exclude: [
@@ -122,91 +148,9 @@ export default defineNuxtConfig({
             '/settings',
             '/bookmarks',
         ],
-        urls: async () => {
-            const supabase = createClient<Database>(
-                import.meta.env.SUPABASE_URL,
-                import.meta.env.SUPABASE_ANON_KEY
-            );
-
-            const permanent = [
-                {
-                    loc: '/',
-                    images: [
-                        {
-                            loc: '/ogp.png',
-                            changefreq: 'never',
-                            title: 'Avatio',
-                        },
-                    ],
-                },
-                {
-                    loc: '/faq',
-                    images: [
-                        { loc: '/ogp.png', changefreq: 'never', title: 'FAQ' },
-                    ],
-                },
-                {
-                    loc: '/terms',
-                    images: [
-                        {
-                            loc: '/ogp.png',
-                            changefreq: 'never',
-                            title: '利用規約',
-                        },
-                    ],
-                },
-                {
-                    loc: '/privacy-policy',
-                    images: [
-                        {
-                            loc: '/ogp.png',
-                            changefreq: 'never',
-                            title: 'プライバシーポリシー',
-                        },
-                    ],
-                },
-            ];
-
-            const { data: setupsData, error: setupsError } = await supabase
-                .from('setups')
-                .select('id, created_at, name, images:setup_images(name)')
-                .order('created_at', { ascending: true });
-
-            const setups = setupsError
-                ? []
-                : setupsData.map(
-                      (setup: {
-                          id: number;
-                          created_at: string;
-                          name: string;
-                          images: { name: string }[];
-                      }) => {
-                          const image = setup.images[0]?.name;
-
-                          return {
-                              loc: `/setup/${setup.id}`,
-                              lastmod: setup.created_at,
-                              images: image
-                                  ? [{ loc: image, title: setup.name }]
-                                  : [],
-                              changefreq: 'never',
-                          };
-                      }
-                  );
-
-            const { data: usersData, error: usersError } = await supabase
-                .from('users')
-                .select('id');
-
-            const users = usersError
-                ? []
-                : usersData.map((user: { id: string }) => {
-                      return { loc: `/@${user.id}` };
-                  });
-
-            return [...permanent, ...setups, ...users];
-        },
+        sources: ['/api/__sitemap__/urls'],
     },
+
     supabase: {
         url: import.meta.env.SUPABASE_URL,
         key: import.meta.env.SUPABASE_ANON_KEY,
@@ -226,8 +170,23 @@ export default defineNuxtConfig({
         },
         types: '@/shared/types/database.d.ts',
     },
+
     turnstile: { siteKey: import.meta.env.NUXT_TURNSTILE_SITE_KEY },
-});
+
+    nitro: {
+        preset: 'vercel',
+        experimental: {
+            asyncContext: true,
+            openAPI: true,
+        },
+    },
+
+    experimental: {
+        typedPages: true,
+        scanPageMeta: true,
+        payloadExtraction: true,
+    },
+})
 
 //
 //                       _oo0oo_

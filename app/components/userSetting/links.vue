@@ -1,40 +1,40 @@
 <script lang="ts" setup>
-import { VueDraggable } from 'vue-draggable-plus';
+import { VueDraggable } from 'vue-draggable-plus'
 
-const links = defineModel<string[]>({ default: [] });
+const links = defineModel<string[]>({ default: [] })
 
-const linkInput = ref<string>('');
+const linkInput = ref<string>('')
 
 const addLink = async () => {
-    if (linkInput.value === '') return;
+    if (linkInput.value === '') return
 
     if (links.value.includes(linkInput.value))
-        return useToast().add('リンクが重複しています');
+        return useToast().add('リンクが重複しています')
 
     if (links.value.length >= 8)
-        return useToast().add('リンクは最大 8 つまでです');
+        return useToast().add('リンクは最大 8 つまでです')
 
     try {
-        new URL(linkInput.value);
+        new URL(linkInput.value)
     } catch {
-        return useToast().add('URL が不正です');
+        return useToast().add('URL が不正です')
     }
 
-    links.value.push(linkInput.value);
-    linkInput.value = '';
-};
+    links.value.push(linkInput.value)
+    linkInput.value = ''
+}
 
 const removeLink = async (link: string) => {
-    links.value = links.value.filter((i) => i !== link);
-};
+    links.value = links.value.filter((i) => i !== link)
+}
 
 const pasteFromClipboard = async () =>
-    (linkInput.value = await navigator.clipboard.readText());
+    (linkInput.value = await navigator.clipboard.readText())
 </script>
 
 <template>
-    <div class="w-full flex flex-col gap-2">
-        <div class="flex gap-1 items-center w-full">
+    <div class="flex w-full flex-col gap-2">
+        <div class="flex w-full items-center gap-1">
             <UiTextinput
                 v-model="linkInput"
                 autocomplete="off"
@@ -62,7 +62,7 @@ const pasteFromClipboard = async () =>
             <Button
                 label="追加"
                 size="sm"
-                class="pr-3 h-[40px]"
+                class="h-[40px] pr-3"
                 @click="addLink"
             />
         </div>
@@ -71,7 +71,7 @@ const pasteFromClipboard = async () =>
             v-model="links"
             :animation="150"
             handle=".draggable"
-            class="empty:hidden w-full flex flex-wrap items-center gap-2"
+            class="flex w-full flex-wrap items-center gap-2 empty:hidden"
         >
             <UiTooltip
                 v-for="(i, index) in links"
@@ -79,9 +79,9 @@ const pasteFromClipboard = async () =>
                 :text="i"
             >
                 <div
-                    class="rounded-lg flex items-center ring-1 ring-zinc-400 dark:ring-zinc-600"
+                    class="flex items-center rounded-lg ring-1 ring-zinc-400 dark:ring-zinc-600"
                 >
-                    <div class="grid px-1.5 py-2.5 draggable cursor-move">
+                    <div class="draggable grid cursor-move px-1.5 py-2.5">
                         <Icon
                             name="lucide:grip-vertical"
                             size="18"

@@ -1,29 +1,29 @@
 <script lang="ts" setup>
-const route = useRoute();
-const paddingExclude = ['/', '/release', '/setup/compose'];
-const footerExclude = ['/setup/compose'];
+const route = useRoute()
+const paddingExclude = ['/', '/release', '/setup/compose']
+const footerExclude = ['/setup/compose']
 
 useHead({
     title: 'Avatio',
     link: [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
     meta: [{ name: 'lang', content: 'ja' }],
-});
+})
 </script>
 
 <template>
     <div
-        class="max-w-7xl min-h-screen mx-auto pt-6 px-6 lg:px-8 flex flex-col gap-6 md:gap-8 items-center"
+        class="mx-auto flex min-h-screen max-w-7xl flex-col items-center gap-6 px-6 pt-6 md:gap-8 lg:px-8"
     >
         <UiHeader />
         <div
-            class="hidden noscript:flex justify-center items-center w-full p-4 ring-2 ring-red-500 bg-red-100 text-red-800 rounded-xl text-sm"
+            class="hidden w-full items-center justify-center rounded-xl bg-red-100 p-4 text-sm text-red-800 ring-2 ring-red-500 noscript:flex"
         >
             この Web サイトは JavaScript を使用しています。<br />
             JavaScript が無効の場合、正しく表示されません。
         </div>
         <div
             :class="[
-                'w-full grow grid',
+                'grid w-full grow',
                 paddingExclude.includes(route.path)
                     ? 'px-4'
                     : 'md:px-20 lg:px-32',

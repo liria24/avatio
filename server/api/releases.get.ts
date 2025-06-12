@@ -1,7 +1,5 @@
-import { serverSupabaseClient } from '#supabase/server';
-
-export default defineEventHandler(async (event) => {
-    const supabase = await serverSupabaseClient<Database>(event);
+export default defineEventHandler(async () => {
+    const supabase = await getSupabaseServerClient()
 
     const { data, error } = await supabase
         .from('releases')
@@ -9,13 +7,13 @@ export default defineEventHandler(async (event) => {
             'slug, created_at, updated_at, title, description, thumbnail, category, content, published'
         )
         .eq('published', true)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
 
     if (error)
         throw createError({
             statusCode: 500,
             message: error.message,
-        });
+        })
 
-    return data;
-});
+    return data
+})

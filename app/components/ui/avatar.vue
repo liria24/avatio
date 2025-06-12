@@ -1,22 +1,22 @@
 <script lang="ts" setup>
-import { twMerge } from 'tailwind-merge';
+import { twMerge } from 'tailwind-merge'
 
 interface Props {
-    url: string;
-    alt: string;
-    ariaHidden?: 'false' | 'true';
-    iconSize?: number;
-    class?: string | string[];
+    url: string
+    alt: string
+    ariaHidden?: 'false' | 'true'
+    iconSize?: number
+    class?: string | string[]
 }
 
-const props = defineProps<Props>();
+const props = defineProps<Props>()
 </script>
 
 <template>
     <AvatarRoot
         :class="
             twMerge(
-                'shrink-0 flex rounded-full items-center justify-center bg-zinc-200 dark:bg-zinc-700',
+                'flex shrink-0 items-center justify-center rounded-full bg-zinc-200 dark:bg-zinc-700',
                 props.class
             )
         "

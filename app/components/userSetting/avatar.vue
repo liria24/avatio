@@ -2,56 +2,61 @@
 const avatar = defineModel<Blob | null>('avatar', {
     required: true,
     default: null,
-});
+})
 const currentAvatar = defineModel<string | null>('currentAvatar', {
     required: true,
     default: null,
-});
+})
 
-const emit = defineEmits(['deleteAvatar']);
+const emit = defineEmits(['deleteAvatar'])
 
-const croppingImage = ref<File | null>(null);
-const imageCroppedPreview = ref<string | null>(null);
-const modalCropAvatar = ref(false);
-const loading = ref(false);
+const croppingImage = ref<File | null>(null)
+const imageCroppedPreview = ref<string | null>(null)
+const modalCropAvatar = ref(false)
+const loading = ref(false)
 
 const { open, onChange, reset } = useFileDialog({
     accept: 'image/png, image/jpeg, image/webp, image/tiff',
     multiple: false,
-});
+})
 
 onChange((files) => {
     if (files?.length && files[0]) {
-        const file = files[0];
-        croppingImage.value = file;
-        modalCropAvatar.value = true;
+        const file = files[0]
+        croppingImage.value = file
+        modalCropAvatar.value = true
     } else {
-        croppingImage.value = null;
+        croppingImage.value = null
     }
-});
+})
 
 const fileSelect = () => {
-    reset();
-    open();
-};
+    reset()
+    open()
+}
+
+const removeAvatar = () => {
+    croppingImage.value = null
+    emit('deleteAvatar')
+}
 
 watchEffect(() => {
     if (avatar.value) {
-        const reader = new FileReader();
+        const reader = new FileReader()
         reader.onload = (e) => {
-            if (!e.target) return;
-            imageCroppedPreview.value = e.target.result as string;
-        };
-        reader.readAsDataURL(avatar.value);
+            if (!e.target) return
+            imageCroppedPreview.value = e.target.result as string
+        }
+        reader.readAsDataURL(avatar.value)
     } else {
-        imageCroppedPreview.value = null;
+        imageCroppedPreview.value = null
     }
-});
+})
 </script>
 
 <template>
     <div
-        class="relative size-20 shrink-0 rounded-full overflow-hidden flex items-center justify-center bg-zinc-200 dark:bg-zinc-700"
+        class="relative flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700"
     >
         <Icon
             v-if="loading"
@@ -72,7 +77,7 @@ watchEffect(() => {
         />
         <NuxtImg
             v-else-if="currentAvatar?.length"
-            :src="useGetImage(currentAvatar, { prefix: 'avatar' })"
+            :src="getImage(currentAvatar, { prefix: 'avatar' })"
             alt="アバター"
             width="80"
             height="80"
@@ -93,13 +98,13 @@ watchEffect(() => {
                 <button
                     v-if="!loading"
                     type="button"
-                    class="absolute inset-0 hover:bg-black/20 rounded-full cursor-pointer"
+                    class="absolute inset-0 cursor-pointer rounded-full hover:bg-black/20"
                 />
             </template>
 
             <template #content>
                 <div
-                    class="flex flex-col items-stretch gap-0.5 text-sm min-w-48"
+                    class="flex min-w-48 flex-col items-stretch gap-0.5 text-sm"
                 >
                     <PopoverClose class="w-full">
                         <Button
@@ -120,10 +125,7 @@ watchEffect(() => {
                         <Button
                             variant="flat"
                             class="w-full"
-                            @click="
-                                croppingImage = null;
-                                emit('deleteAvatar');
-                            "
+                            @click="removeAvatar"
                         >
                             <Icon
                                 name="lucide:trash"

@@ -1,7 +1,7 @@
 <script lang="ts" setup></script>
 
 <template>
-    <Popup class="p-1 gap-1">
+    <Popup class="gap-1 p-1">
         <template #trigger>
             <slot />
         </template>
@@ -15,7 +15,7 @@
             >
                 <UiAvatar
                     :url="
-                        useGetImage(userProfile.avatar, {
+                        getImage(userProfile.avatar, {
                             prefix: 'avatar',
                         })
                     "
@@ -23,7 +23,7 @@
                     class="size-8"
                 />
                 <span
-                    class="text-sm font-semibold leading-none text-zinc-700 dark:text-zinc-300"
+                    class="text-sm leading-none font-semibold text-zinc-700 dark:text-zinc-300"
                 >
                     {{ userProfile.name }}
                 </span>
@@ -35,7 +35,7 @@
                     class="text-zinc-700 dark:text-zinc-300"
                 />
                 <span
-                    class="text-sm font-semibold leading-none text-zinc-700 dark:text-zinc-300"
+                    class="text-sm leading-none font-semibold text-zinc-700 dark:text-zinc-300"
                 >
                     設定
                 </span>
@@ -47,7 +47,7 @@
                     class="text-zinc-700 dark:text-zinc-300"
                 />
                 <span
-                    class="text-sm font-semibold leading-none text-zinc-700 dark:text-zinc-300"
+                    class="text-sm leading-none font-semibold text-zinc-700 dark:text-zinc-300"
                 >
                     ログアウト
                 </span>

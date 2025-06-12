@@ -1,15 +1,15 @@
 <script lang="ts" setup>
-const emit = defineEmits(['add']);
+const emit = defineEmits(['add'])
 
 const quickAvatarsOwned = ref<
     { id: number; name: string; thumbnail: string }[] | null
->(null);
+>(null)
 
 const getOwnedAvatars = async () => {
-    const client = useSupabaseClient();
-    const user = useSupabaseUser();
+    const client = useSupabaseClient()
+    const user = useSupabaseUser()
 
-    if (!user.value) return null;
+    if (!user.value) return null
 
     const { data } = await client
         .from('setups')
@@ -30,18 +30,18 @@ const getOwnedAvatars = async () => {
             {
                 items: {
                     data: {
-                        id: number;
-                        outdated: boolean;
-                        category: string;
-                        name: string;
-                        thumbnail: string;
-                        nsfw: boolean;
-                    };
-                }[];
+                        id: number
+                        outdated: boolean
+                        category: string
+                        name: string
+                        thumbnail: string
+                        nsfw: boolean
+                    }
+                }[]
             }[]
-        >();
+        >()
 
-    if (!data) return null;
+    if (!data) return null
 
     const avatars = [
         ...new Map(
@@ -51,16 +51,16 @@ const getOwnedAvatars = async () => {
                 .flat()
                 .map((obj) => [obj.id, obj])
         ).values(),
-    ].slice(0, 6);
+    ].slice(0, 6)
 
-    return avatars;
-};
+    return avatars
+}
 
-quickAvatarsOwned.value = await getOwnedAvatars();
+quickAvatarsOwned.value = await getOwnedAvatars()
 </script>
 
 <template>
-    <div class="flex flex-wrap gap-2 items-center justify-center">
+    <div class="flex flex-wrap items-center justify-center gap-2">
         <Button
             v-for="i in quickAvatarsOwned"
             :key="'owned-avatar-' + i.id"
@@ -73,7 +73,7 @@ quickAvatarsOwned.value = await getOwnedAvatars();
                 height="40"
                 class="rounded-lg"
             />
-            <span>{{ useAvatarName(i.name) }}</span>
+            <span>{{ avatarShortName(i.name) }}</span>
         </Button>
     </div>
 </template>

@@ -1,15 +1,15 @@
 <script lang="ts" setup>
-const emit = defineEmits(['remove', 'changeCategory', 'registerShapekey']);
+const emit = defineEmits(['remove', 'changeCategory', 'registerShapekey'])
 
 const unsupported = defineModel<boolean>('unsupported', {
     default: false,
-});
+})
 
 const windowClass = [
     'min-w-[220px] mx-2.5 ring-1 ring-zinc-300 dark:ring-zinc-700 bg-zinc-100 dark:bg-zinc-900 rounded-md p-2',
     'shadow-lg shadow-black/20 dark:shadow-black/50',
     'data-[side=bottom]:mx-2 data-[side=bottom]:mb-2',
-];
+]
 const buttonClass = [
     'cursor-pointer',
     'p-2 rounded-lg flex gap-2 items-center justify-start',
@@ -17,7 +17,7 @@ const buttonClass = [
     'bg-transparent dark:bg-transparent hover:bg-zinc-200 dark:hover:bg-zinc-600',
     'focus:outline-hidden focus-visible:ring-2 focus-visible:ring-zinc-600 dark:focus-visible:ring-zinc-400',
     'transition duration-100 ease-in-out',
-];
+]
 </script>
 
 <template>
@@ -35,7 +35,7 @@ const buttonClass = [
                 <DropdownMenuSub>
                     <DropdownMenuSubTrigger :class="buttonClass">
                         <DropdownMenuItemIndicator
-                            class="absolute left-0 w-[25px] inline-flex items-center justify-center"
+                            class="absolute left-0 inline-flex w-[25px] items-center justify-center"
                         >
                             <Icon name="lucide:check" size="18" />
                         </DropdownMenuItemIndicator>
@@ -99,7 +99,7 @@ const buttonClass = [
                 </DropdownMenuItem>
 
                 <DropdownMenuSeparator
-                    class="h-px bg-zinc-300 dark:bg-zinc-700 m-1"
+                    class="m-1 h-px bg-zinc-300 dark:bg-zinc-700"
                 />
 
                 <DropdownMenuItem :class="buttonClass" @select="emit('remove')">

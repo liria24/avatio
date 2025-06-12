@@ -56,7 +56,7 @@ Avatioはオープンソースプロジェクトです。
 ・
 [プライバシーポリシー][avatio-privacy]
 
-Copylight © 2025 **[Liria][liria]**
+Copyright © 2025 **[Liria][liria]**
 
 </div>
 
@@ -66,7 +66,7 @@ Copylight © 2025 **[Liria][liria]**
 [avatio]: https://avatio.me
 [avatio-terms]: https://avatio.me/terms
 [avatio-privacy]: https://avatio.me/privacy-policy
-[liria]: https://liria.work
+[liria]: https://liria.me
 [vercel]: https://vercel.com
 [cloudflare]: https://cloudflare.com
 [supabase]: https://supabase.com

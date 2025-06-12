@@ -1,8 +1,8 @@
 <script lang="ts" setup>
 interface Props {
-    byLiria?: boolean;
+    byLiria?: boolean
 }
-const props = defineProps<Props>();
+const props = defineProps<Props>()
 </script>
 
 <template>

@@ -1,13 +1,13 @@
 <script lang="ts" setup>
 const searchWord = defineModel<string>({
     default: '',
-});
+})
 </script>
 
 <template>
     <div
         :class="[
-            'px-5 py-4 rounded-2xl flex flex-col gap-3',
+            'flex flex-col gap-3 rounded-2xl px-5 py-4',
             'ring-1 ring-zinc-300 dark:ring-zinc-700',
             'bg-zinc-100 dark:bg-zinc-900',
             'shadow-xl shadow-black/10 dark:shadow-black/50',
@@ -15,7 +15,7 @@ const searchWord = defineModel<string>({
     >
         <div
             v-if="!searchWord.length"
-            class="flex items-center gap-2 justify-between text-zinc-600 dark:text-zinc-400"
+            class="flex items-center justify-between gap-2 text-zinc-600 dark:text-zinc-400"
         >
             <label for="search" class="text-sm"> Avatioから検索 </label>
 

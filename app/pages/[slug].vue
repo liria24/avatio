@@ -1,9 +1,9 @@
 <script setup lang="ts">
-const route = useRoute('slug');
-const client = useSupabaseClient();
+const route = useRoute('slug')
+const client = useSupabaseClient()
 
 if (!route.params.slug)
-    throw showError({ statusCode: 404, message: 'Page Not Found' });
+    throw showError({ statusCode: 404, message: 'Page Not Found' })
 
 const { data } = await client
     .from('info')
@@ -12,13 +12,13 @@ const { data } = await client
     )
     .eq('published', true)
     .eq('slug', route.params.slug.toString())
-    .maybeSingle<DocumentData>();
+    .maybeSingle<DocumentData>()
 
 if (data)
-    useOGP({
+    defineSeo({
         title: data.title,
-        image: data.thumbnail,
-    });
+        image: data.thumbnail || undefined,
+    })
 </script>
 
 <template>
@@ -26,7 +26,7 @@ if (data)
 
     <div v-else class="flex flex-col items-center gap-10 pt-10">
         <h2
-            class="flex text-9xl font-extrabold font-['Montserrat'] text-zinc-500 dark:text-zinc-400"
+            class="flex font-['Montserrat'] text-9xl font-extrabold text-zinc-500 dark:text-zinc-400"
         >
             404
         </h2>

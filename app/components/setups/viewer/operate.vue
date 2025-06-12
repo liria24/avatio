@@ -1,40 +1,40 @@
 <script lang="ts" setup>
 interface Props {
-    preview?: boolean;
-    id?: number;
-    title: string;
-    description?: string | null;
-    author: Author;
-    class?: string | string[];
+    preview?: boolean
+    id?: number
+    title: string
+    description?: string | null
+    author: Author
+    class?: string | string[]
 }
-const props = defineProps<Props>();
+const props = defineProps<Props>()
 
-const emit = defineEmits(['login']);
+const emit = defineEmits(['login'])
 
-const user = useSupabaseUser();
+const user = useSupabaseUser()
 
-const bookmark = ref(false);
-const modalDelete = ref(false);
+const bookmark = ref(false)
+const modalDelete = ref(false)
 
 const toggleBookmark = async () => {
-    if (!props.id) return;
-    if (!user.value) return emit('login');
+    if (!props.id) return
+    if (!user.value) return emit('login')
 
-    if (bookmark.value) await useRemoveBookmark(props.id);
-    else await useAddBookmark(props.id);
+    if (bookmark.value) await useRemoveBookmark(props.id)
+    else await useAddBookmark(props.id)
 
-    bookmark.value = await useCheckBookmark(props.id);
-};
+    bookmark.value = await useCheckBookmark(props.id)
+}
 
 const remove = () => {
-    if (!props.id) return;
-    modalDelete.value = true;
-};
+    if (!props.id) return
+    modalDelete.value = true
+}
 
 onMounted(async () => {
-    if (!props.id) return;
-    bookmark.value = await useCheckBookmark(props.id);
-});
+    if (!props.id) return
+    bookmark.value = await useCheckBookmark(props.id)
+})
 </script>
 
 <template>

@@ -1,12 +1,12 @@
 <script setup lang="ts">
 const props = withDefaults(
     defineProps<{
-        is?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | 'span';
-        size?: 'md' | 'lg';
-        label: string;
-        icon?: string;
-        trailing?: string;
-        trailingIcon?: string;
+        is?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | 'span'
+        size?: 'md' | 'lg'
+        label: string
+        icon?: string
+        trailing?: string
+        trailingIcon?: string
     }>(),
     {
         is: 'h1',
@@ -16,12 +16,12 @@ const props = withDefaults(
         trailingIcon: 'lucide:arrow-right',
         infomation: '',
     }
-);
+)
 </script>
 
 <template>
     <div class="flex items-center justify-between">
-        <div class="items-center gap-1.5 inline-flex">
+        <div class="inline-flex items-center gap-1.5">
             <Icon
                 v-if="props.icon.length"
                 :name="props.icon"
@@ -31,7 +31,7 @@ const props = withDefaults(
             <component
                 :is="props.is"
                 :class="[
-                    'text-black dark:text-white whitespace-nowrap',
+                    'whitespace-nowrap text-black dark:text-white',
                     props.size === 'md'
                         ? 'text-[15px] font-medium'
                         : 'text-xl font-bold',
@@ -40,8 +40,8 @@ const props = withDefaults(
                 {{ props.label }}
             </component>
         </div>
-        <button v-if="props.trailing" class="items-center gap-1 inline-flex">
-            <div class="text-black dark:text-zinc-400 text-sm">
+        <button v-if="props.trailing" class="inline-flex items-center gap-1">
+            <div class="text-sm text-black dark:text-zinc-400">
                 {{ props.trailing }}
             </div>
             <Icon

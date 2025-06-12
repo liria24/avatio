@@ -1,15 +1,14 @@
-import { get } from '@vercel/edge-config';
+import { get } from '@vercel/edge-config'
+import { z } from 'zod/v4'
 
-export default defineEventHandler(async (event) => {
-    const key = getRouterParam(event, 'key');
+const params = z.object({
+    key: z.string('Key must be a string').min(1, 'Key cannot be empty'),
+})
 
-    if (!key)
-        throw createError({
-            statusCode: 400,
-            message: 'No key provided',
-        });
+export default defineEventHandler(async () => {
+    const { key } = await validateParams(params)
 
-    const value = await get(key);
+    const value = await get(key)
 
-    return value;
-});
+    return value
+})

@@ -1,50 +1,48 @@
 <script lang="ts" setup>
 interface Props {
-    preview?: boolean;
-    id?: number;
-    createdAt?: string;
-    title: string;
-    description?: string | null;
-    tags?: string[];
-    coAuthors?: (Partial<Pick<CoAuthor, 'badges'>> &
-        Omit<CoAuthor, 'badges'>)[];
-    unity?: string | null;
-    author: Author;
-    images?: SetupImage[];
-    previewImages?: string[];
-    items: Record<string, SetupItem[]>;
+    preview?: boolean
+    id?: number
+    createdAt?: string
+    title: string
+    description?: string | null
+    tags?: string[]
+    coAuthors?: (Partial<Pick<CoAuthor, 'badges'>> & Omit<CoAuthor, 'badges'>)[]
+    unity?: string | null
+    author: Author
+    images?: SetupImage[]
+    previewImages?: string[]
+    items: Record<string, SetupItem[]>
 }
 
-const props = defineProps<Props>();
+const props = defineProps<Props>()
 
-const emit = defineEmits(['login']);
+const emit = defineEmits(['login'])
 
 const categories: Record<string, { label: string; icon: string }> =
-    itemCategories();
+    itemCategories()
 </script>
 
 <template>
-    <div class="relative w-full flex flex-col xl:flex-row items-start gap-8">
-        <div class="w-full flex flex-col items-center gap-4">
-            <div class="w-full flex flex-col gap-1 items-start">
+    <div class="relative flex w-full flex-col items-start gap-8 xl:flex-row">
+        <div class="flex w-full flex-col items-center gap-4">
+            <div class="flex w-full flex-col items-start gap-1">
                 <h1
-                    class="text-3xl font-bold break-keep [overflow-wrap:anywhere;] text-black dark:text-white"
+                    class="[overflow-wrap:anywhere;] text-3xl font-bold break-keep text-black dark:text-white"
                 >
-                    {{ useSentence(props.title) }}
+                    {{ lineBreak(props.title) }}
                 </h1>
-                <div class="w-full flex items-center gap-3 justify-between">
-                    <div class="ml-0.5 my-2 flex gap-1.5 items-center">
+                <div class="flex w-full items-center justify-between gap-3">
+                    <div class="my-2 ml-0.5 flex items-center gap-1.5">
                         <Icon
                             name="lucide:calendar"
                             size="16"
                             class="text-zinc-500 dark:text-zinc-400"
                         />
-                        <p
+                        <NuxtTime
                             v-if="props.createdAt?.length"
-                            class="font-[Geist] text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap leading-none"
-                        >
-                            {{ useLocaledDate(new Date(props.createdAt)) }}
-                        </p>
+                            :datetime="props.createdAt"
+                            class="font-[Geist] text-sm leading-none whitespace-nowrap text-zinc-500 dark:text-zinc-400"
+                        />
                     </div>
                     <SetupsViewerOperate
                         :preview="props.preview"
@@ -60,14 +58,14 @@ const categories: Record<string, { label: string; icon: string }> =
             <UiImage
                 v-if="props.images?.length && !props.preview"
                 :src="
-                    useGetImage(props.images[0]!.name, {
+                    getImage(props.images[0]!.name, {
                         prefix: 'setup',
                     })
                 "
                 :alt="props.title"
                 :width="props.images[0]!.width ?? 640"
                 :height="props.images[0]!.height ?? 320"
-                class="w-full max-h-[900px] shrink-0 object-contain grow-0"
+                class="max-h-[900px] w-full shrink-0 grow-0 object-contain"
             />
             <UiImage
                 v-if="props.previewImages?.length && props.preview"
@@ -75,10 +73,10 @@ const categories: Record<string, { label: string; icon: string }> =
                 :alt="props.title"
                 :width="640"
                 :height="320"
-                class="w-full max-h-[900px] shrink-0 object-contain grow-0"
+                class="max-h-[900px] w-full shrink-0 grow-0 object-contain"
             />
 
-            <div class="xl:hidden w-full mt-3 flex flex-col gap-5">
+            <div class="mt-3 flex w-full flex-col gap-5 xl:hidden">
                 <SetupsViewerInfo
                     :preview="props.preview"
                     :id="props.id"
@@ -94,11 +92,11 @@ const categories: Record<string, { label: string; icon: string }> =
                 />
             </div>
 
-            <div class="w-full mt-3 flex flex-col gap-7">
+            <div class="mt-3 flex w-full flex-col gap-7">
                 <div
                     v-for="(value, key) in props.items"
                     :key="'category-' + key"
-                    class="empty:hidden flex flex-col gap-5"
+                    class="flex flex-col gap-5 empty:hidden"
                 >
                     <template v-if="value.length">
                         <UiTitle
@@ -117,7 +115,7 @@ const categories: Record<string, { label: string; icon: string }> =
             </div>
         </div>
 
-        <div class="w-full h-full xl:w-[440px] hidden xl:flex flex-col">
+        <div class="hidden h-full w-full flex-col xl:flex xl:w-[440px]">
             <SetupsViewerInfo
                 :preview="props.preview"
                 :id="props.id"

@@ -8,19 +8,19 @@ export default (setup: SetupDB): SetupClient => {
         shader: [],
         tool: [],
         other: [],
-    };
+    }
 
     for (const i of setup.items) {
-        if (!i.data) continue;
+        if (!i.data) continue
 
         const item = {
             ...i.data,
             note: i.note,
             unsupported: i.unsupported,
             shapekeys: i.shapekeys,
-        };
+        }
 
-        items[item.category].push(item);
+        items[item.category].push(item)
     }
 
     return {
@@ -45,5 +45,5 @@ export default (setup: SetupDB): SetupClient => {
         unity: setup.unity,
         images: setup.images,
         items: items,
-    };
-};
+    }
+}
