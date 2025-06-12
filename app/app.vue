@@ -5,7 +5,7 @@ const isDev = import.meta.dev
 </script>
 
 <template>
-    <Html>
+    <Html lang="ja">
         <Body
             class="bg-zinc-50 text-black transition duration-50 ease-in-out dark:bg-zinc-900 dark:text-white"
         >
