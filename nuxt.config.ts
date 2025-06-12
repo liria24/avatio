@@ -51,6 +51,12 @@ export default defineNuxtConfig({
         liria: { accessToken: '' },
     },
 
+    site: {
+        url: 'https://avatio.me',
+        name: 'Avatio',
+        description: 'あなたのアバター改変を共有しよう',
+    },
+
     app: {
         head: {
             htmlAttrs: { lang: 'ja', prefix: 'og: https://ogp.me/ns#' },
