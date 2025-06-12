@@ -1,4 +1,5 @@
 import tailwindcss from '@tailwindcss/vite'
+import { defineOrganization } from 'nuxt-schema-org/schema'
 import topLevelAwait from 'vite-plugin-top-level-await'
 import wasm from 'vite-plugin-wasm'
 
@@ -11,7 +12,6 @@ export default defineNuxtConfig({
     devtools: { enabled: true, timeline: { enabled: true } },
 
     modules: [
-        'reka-ui/nuxt',
         '@vueuse/nuxt',
         '@nuxt/icon',
         '@nuxt/image',
@@ -23,6 +23,10 @@ export default defineNuxtConfig({
         '@nuxtjs/turnstile',
         '@nuxtjs/robots',
         '@nuxtjs/sitemap',
+        'nuxt-link-checker',
+        'nuxt-schema-org',
+        'nuxt-seo-utils',
+        'reka-ui/nuxt',
     ],
 
     routeRules: {
@@ -118,6 +122,20 @@ export default defineNuxtConfig({
         allow: ['Twitterbot', 'facebookexternalhit'],
         blockNonSeoBots: true,
         blockAiBots: true,
+    },
+
+    schemaOrg: {
+        identity: defineOrganization({
+            name: 'Liria',
+            description: 'Small Circle by Liry24',
+            logo: {
+                url: '/logo-liria.png',
+                width: 460,
+                height: 460,
+            },
+            email: 'hello@liria.me',
+            sameAs: ['https://x.com/liria_24', 'https://github.com/liria24'],
+        }),
     },
 
     sitemap: {
