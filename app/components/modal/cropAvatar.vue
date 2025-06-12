@@ -1,78 +1,78 @@
 <script lang="ts" setup>
-import { CircleStencil, Cropper, Preview } from 'vue-advanced-cropper';
-import 'vue-advanced-cropper/dist/style.css';
+import { CircleStencil, Cropper, Preview } from 'vue-advanced-cropper'
+import 'vue-advanced-cropper/dist/style.css'
 
-const MAX_FILE_SIZE = 1.5 * 1024 * 1024; // 1.5MB
-const MAX_DIMENSION = 512; // 512px
+const MAX_FILE_SIZE = 1.5 * 1024 * 1024 // 1.5MB
+const MAX_DIMENSION = 512 // 512px
 
 const vis = defineModel<boolean>({
     required: true,
     default: false,
-});
+})
 
 const emit = defineEmits<{
-    (e: 'submit', file: File): void;
-}>();
+    (e: 'submit', file: File): void
+}>()
 
 interface Props {
-    avatar: File | null;
+    avatar: File | null
 }
-const props = defineProps<Props>();
+const props = defineProps<Props>()
 
-const avatarObjectURL = ref<string | null>(null);
+const avatarObjectURL = ref<string | null>(null)
 watchEffect(() => {
     if (!props.avatar) {
-        if (avatarObjectURL.value) URL.revokeObjectURL(avatarObjectURL.value);
-        avatarObjectURL.value = null;
+        if (avatarObjectURL.value) URL.revokeObjectURL(avatarObjectURL.value)
+        avatarObjectURL.value = null
     } else {
-        if (avatarObjectURL.value) URL.revokeObjectURL(avatarObjectURL.value);
-        avatarObjectURL.value = URL.createObjectURL(props.avatar);
+        if (avatarObjectURL.value) URL.revokeObjectURL(avatarObjectURL.value)
+        avatarObjectURL.value = URL.createObjectURL(props.avatar)
     }
-});
+})
 
 onUnmounted(() => {
     if (avatarObjectURL.value) {
-        URL.revokeObjectURL(avatarObjectURL.value);
-        avatarObjectURL.value = null;
+        URL.revokeObjectURL(avatarObjectURL.value)
+        avatarObjectURL.value = null
     }
-});
+})
 
-const cropperRef = ref<InstanceType<typeof Cropper> | null>(null);
+const cropperRef = ref<InstanceType<typeof Cropper> | null>(null)
 
 const croppedImage = ref<{
-    image: { src: string };
-    coordinates: object;
-} | null>(null);
+    image: { src: string }
+    coordinates: object
+} | null>(null)
 
 const onCropChange = (data: {
-    image: { src: string };
-    coordinates: object;
+    image: { src: string }
+    coordinates: object
 }) => {
-    croppedImage.value = data;
-};
+    croppedImage.value = data
+}
 
 const resizeCanvas = (canvas: HTMLCanvasElement): HTMLCanvasElement => {
-    const resizedCanvas = document.createElement('canvas');
-    const ctx = resizedCanvas.getContext('2d');
+    const resizedCanvas = document.createElement('canvas')
+    const ctx = resizedCanvas.getContext('2d')
     if (!ctx) {
-        console.error('Failed to get canvas context');
-        throw new Error('Failed to get canvas context');
+        console.error('Failed to get canvas context')
+        throw new Error('Failed to get canvas context')
     }
 
-    let { width, height } = canvas;
+    let { width, height } = canvas
 
     if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
-        const ratio = Math.min(MAX_DIMENSION / width, MAX_DIMENSION / height);
-        width = Math.floor(width * ratio);
-        height = Math.floor(height * ratio);
+        const ratio = Math.min(MAX_DIMENSION / width, MAX_DIMENSION / height)
+        width = Math.floor(width * ratio)
+        height = Math.floor(height * ratio)
     }
 
-    resizedCanvas.width = width;
-    resizedCanvas.height = height;
-    ctx.drawImage(canvas, 0, 0, width, height);
+    resizedCanvas.width = width
+    resizedCanvas.height = height
+    ctx.drawImage(canvas, 0, 0, width, height)
 
-    return resizedCanvas;
-};
+    return resizedCanvas
+}
 
 const createBlobWithQuality = (
     canvas: HTMLCanvasElement,
@@ -83,31 +83,29 @@ const createBlobWithQuality = (
         canvas.toBlob(
             (blob) => {
                 if (!blob) {
-                    const error = new Error(
-                        'Failed to create blob from canvas'
-                    );
-                    console.error(error);
-                    reject(error);
-                    return;
+                    const error = new Error('Failed to create blob from canvas')
+                    console.error(error)
+                    reject(error)
+                    return
                 }
-                resolve(blob);
+                resolve(blob)
             },
             mimeType,
             quality
-        );
-    });
-};
+        )
+    })
+}
 
 const createFile = (
     blob: Blob,
     mimeType: string,
     filename: string = ''
 ): File => {
-    const extension = mimeType.split('/')[1] || 'png';
-    const finalFilename = filename || `avatar.${extension}`;
+    const extension = mimeType.split('/')[1] || 'png'
+    const finalFilename = filename || `avatar.${extension}`
 
-    return new File([blob], finalFilename, { type: mimeType });
-};
+    return new File([blob], finalFilename, { type: mimeType })
+}
 
 const canvasToFile = async (
     mimeType: string = 'image/png',
@@ -115,71 +113,71 @@ const canvasToFile = async (
     filename: string = ''
 ): Promise<File | null> => {
     if (!cropperRef.value) {
-        console.error('Cropper reference is not available');
-        return null;
+        console.error('Cropper reference is not available')
+        return null
     }
 
-    const { canvas } = cropperRef.value.getResult();
+    const { canvas } = cropperRef.value.getResult()
     if (!canvas) {
-        console.error('Canvas is not available from cropper result');
-        return null;
+        console.error('Canvas is not available from cropper result')
+        return null
     }
 
     try {
-        const resizedCanvas = resizeCanvas(canvas);
+        const resizedCanvas = resizeCanvas(canvas)
 
-        let currentQuality = quality;
+        let currentQuality = quality
         let blob = await createBlobWithQuality(
             resizedCanvas,
             mimeType,
             currentQuality
-        );
+        )
 
         while (blob.size > MAX_FILE_SIZE && currentQuality > 0.2) {
-            currentQuality = Math.max(0.2, currentQuality - 0.1);
+            currentQuality = Math.max(0.2, currentQuality - 0.1)
             console.log(
                 `File size ${(blob.size / 1024 / 1024).toFixed(2)}MB exceeds limit. Reducing quality to ${currentQuality}`
-            );
+            )
 
             blob = await createBlobWithQuality(
                 resizedCanvas,
                 mimeType,
                 currentQuality
-            );
+            )
         }
 
         // Create file
-        return createFile(blob, mimeType, filename);
+        return createFile(blob, mimeType, filename)
     } catch (error) {
-        console.error('Error processing image:', error);
-        return null;
+        console.error('Error processing image:', error)
+        return null
     }
-};
+}
 
 const submitCroppedImage = async () => {
-    const mimeType = props.avatar?.type || 'image/png';
+    const mimeType = props.avatar?.type || 'image/png'
 
     try {
-        const file = await canvasToFile(mimeType, 0.9);
+        const file = await canvasToFile(mimeType, 0.9)
         if (file) {
-            emit('submit', file);
+            emit('submit', file)
             if (avatarObjectURL.value) {
-                URL.revokeObjectURL(avatarObjectURL.value);
+                URL.revokeObjectURL(avatarObjectURL.value)
             }
         }
     } catch (error) {
-        console.error('Failed to create cropped image:', error);
+        console.error('Failed to create cropped image:', error)
     } finally {
-        avatarObjectURL.value = null;
-        vis.value = false;
+        avatarObjectURL.value = null
+        vis.value = false
     }
-};
+}
 </script>
 
 <template>
     <Modal v-model="vis">
         <div
-            class="flex flex-col items-center gap-5 overflow-y-auto overflow-x-hidden"
+            class="flex flex-col items-center gap-5 overflow-x-hidden overflow-y-auto"
         >
             <cropper
                 v-if="avatarObjectURL"
@@ -188,7 +186,7 @@ const submitCroppedImage = async () => {
                 :stencil-component="CircleStencil"
                 :auto-zoom="true"
                 :debounce="false"
-                class="shrink-0 rounded-lg overflow-hidden"
+                class="shrink-0 overflow-hidden rounded-lg"
                 @change="onCropChange"
             />
             <div
@@ -200,27 +198,27 @@ const submitCroppedImage = async () => {
                     :height="100"
                     :image="croppedImage.image"
                     :coordinates="croppedImage.coordinates"
-                    class="shrink-0 rounded-full overflow-hidden"
+                    class="shrink-0 overflow-hidden rounded-full"
                 />
                 <preview
                     :width="64"
                     :height="64"
                     :image="croppedImage.image"
                     :coordinates="croppedImage.coordinates"
-                    class="shrink-0 rounded-full overflow-hidden"
+                    class="shrink-0 overflow-hidden rounded-full"
                 />
                 <preview
                     :width="32"
                     :height="32"
                     :image="croppedImage.image"
                     :coordinates="croppedImage.coordinates"
-                    class="shrink-0 rounded-full overflow-hidden"
+                    class="shrink-0 overflow-hidden rounded-full"
                 />
             </div>
         </div>
 
         <template #footer>
-            <div class="gap-1.5 flex items-center justify-between">
+            <div class="flex items-center justify-between gap-1.5">
                 <Button
                     label="キャンセル"
                     variant="flat"

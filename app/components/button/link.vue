@@ -1,23 +1,23 @@
 <script lang="ts" setup>
 interface Props {
-    link: string;
+    link: string
 }
-const props = defineProps<Props>();
+const props = defineProps<Props>()
 
-const modal = ref(false);
-const isButtonEnabled = ref(false);
+const modal = ref(false)
+const isButtonEnabled = ref(false)
 
-const data = getLinkInfo(props.link);
+const data = getLinkInfo(props.link)
 
 watch(modal, (newValue) => {
     if (newValue) {
         // モーダルが開いたとき
-        isButtonEnabled.value = false;
+        isButtonEnabled.value = false
         setTimeout(() => {
-            isButtonEnabled.value = true;
-        }, 1500);
+            isButtonEnabled.value = true
+        }, 1500)
     }
-});
+})
 </script>
 
 <template>
@@ -25,7 +25,7 @@ watch(modal, (newValue) => {
         :tooltip="props.link"
         :aria-label="props.link"
         variant="flat"
-        class="h-9 min-w-9 px-2 py-0 rounded-lg flex items-center justify-center"
+        class="flex h-9 min-w-9 items-center justify-center rounded-lg px-2 py-0"
         @click="modal = true"
     >
         <Icon
@@ -42,7 +42,7 @@ watch(modal, (newValue) => {
 
         <p>リンクが安全かどうか必ず確認してください！</p>
         <span
-            class="p-3 rounded-lg text-sm break-all ring-1 ring-zinc-400 dark:ring-zinc-600"
+            class="rounded-lg p-3 text-sm break-all ring-1 ring-zinc-400 dark:ring-zinc-600"
         >
             {{ props.link }}
         </span>

@@ -1,26 +1,26 @@
 <script lang="ts" setup>
 interface Query {
-    q?: string;
-    item?: string;
-    tag?: string | string[];
+    q?: string
+    item?: string
+    tag?: string | string[]
 }
-const route = useRoute('search');
-const client = useSupabaseClient();
-const query = ref<Query>(route.query);
+const route = useRoute('search')
+const client = useSupabaseClient()
+const query = ref<Query>(route.query)
 
-const loading = ref(false);
-const hasMore = ref(false);
-const searchWord = ref<string>((route.query.q as string) ?? '');
-const resultSetups = ref<SetupClient[]>([]);
-const resultItem = ref<Item | null>(null);
-const page = ref<number>(0);
-const perPage = 20;
+const loading = ref(false)
+const hasMore = ref(false)
+const searchWord = ref<string>((route.query.q as string) ?? '')
+const resultSetups = ref<SetupClient[]>([])
+const resultItem = ref<Item | null>(null)
+const page = ref<number>(0)
+const perPage = 20
 
 const popularAvatars = ref<{ id: number; name: string; thumbnail: string }[]>(
     []
-);
-const { data } = await client.rpc('popular_avatars').limit(24);
-if (data) popularAvatars.value = data;
+)
+const { data } = await client.rpc('popular_avatars').limit(24)
+if (data) popularAvatars.value = data
 
 const search = async ({
     word,
@@ -28,12 +28,12 @@ const search = async ({
     tags,
     page,
 }: {
-    word: string;
-    items: number[];
-    tags: string[];
-    page: number;
+    word: string
+    items: number[]
+    tags: string[]
+    page: number
 }) => {
-    loading.value = true;
+    loading.value = true
 
     const { data } = await client
         .rpc(
@@ -48,26 +48,26 @@ const search = async ({
             { get: true }
         )
         .overrideTypes<{
-            results: (Omit<SetupDB, 'tags'> & { tags: string[] })[];
-            has_more: boolean;
-        }>();
+            results: (Omit<SetupDB, 'tags'> & { tags: string[] })[]
+            has_more: boolean
+        }>()
 
     if (data) {
         resultSetups.value = [
             ...resultSetups.value,
             ...data.results.map((s) => {
-                const setup = { ...s, tags: s.tags.map((t) => ({ tag: t })) };
-                return setupMoldingClient(setup);
+                const setup = { ...s, tags: s.tags.map((t) => ({ tag: t })) }
+                return setupMoldingClient(setup)
             }),
-        ];
-        hasMore.value = data.has_more;
+        ]
+        hasMore.value = data.has_more
     }
-    loading.value = false;
-};
+    loading.value = false
+}
 
 const pagenate = async (options?: { initiate?: boolean }) => {
-    if (options?.initiate) page.value = 0;
-    else page.value++;
+    if (options?.initiate) page.value = 0
+    else page.value++
 
     await search({
         word: searchWord.value,
@@ -78,29 +78,29 @@ const pagenate = async (options?: { initiate?: boolean }) => {
                 : [query.value.tag]
             : [],
         page: page.value,
-    });
-};
+    })
+}
 
 // クエリパラメータの変更を監視
 watch(
     () => route.query,
     async (newQuery: Query) => {
-        query.value = newQuery;
-        searchWord.value = newQuery.q ?? '';
-        resultItem.value = null;
-        resultSetups.value = [];
+        query.value = newQuery
+        searchWord.value = newQuery.q ?? ''
+        resultItem.value = null
+        resultSetups.value = []
 
         if (newQuery.item)
-            resultItem.value = await useFetchBooth(parseInt(newQuery.item));
+            resultItem.value = await useFetchBooth(parseInt(newQuery.item))
 
-        return pagenate({ initiate: true });
+        return pagenate({ initiate: true })
     },
     { immediate: true }
-);
+)
 
-useOGP({
+defineSeo({
     title: 'セットアップ検索',
-});
+})
 </script>
 
 <template>
@@ -109,8 +109,8 @@ useOGP({
             <UiTitle label="検索オプション" icon="lucide:menu" />
         </div>
     </div> -->
-    <div class="w-full flex flex-col items-stretch gap-5">
-        <div class="w-full flex flex-col gap-3 pt-4">
+    <div class="flex w-full flex-col items-stretch gap-5">
+        <div class="flex w-full flex-col gap-3 pt-4">
             <!-- <UiTitle
                     label="セットアップ検索"
                     icon="lucide:search"
@@ -144,21 +144,21 @@ useOGP({
                 icon="lucide:user-round"
                 size="lg"
             />
-            <div class="flex flex-wrap gap-5 items-center justify-center">
+            <div class="flex flex-wrap items-center justify-center gap-5">
                 <NuxtLink
                     v-for="i in popularAvatars"
                     :key="useId()"
                     :to="{ name: 'search', query: { item: i.id } }"
                     :aria-label="i.name"
-                    class="group relative size-32 rounded-lg overflow-hidden"
+                    class="group relative size-32 overflow-hidden rounded-lg"
                 >
                     <div
-                        class="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-200"
+                        class="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-all duration-200 group-hover:opacity-100"
                     >
                         <span
-                            class="p-1 text-sm text-center font-semibold text-white"
+                            class="p-1 text-center text-sm font-semibold text-white"
                         >
-                            {{ useAvatarName(i.name) }}
+                            {{ avatarShortName(i.name) }}
                         </span>
                     </div>
                     <NuxtImg
@@ -170,7 +170,7 @@ useOGP({
                         format="webp"
                         fit="cover"
                         loading="lazy"
-                        class="rounded-lg shrink-0 overflow-hidden"
+                        class="shrink-0 overflow-hidden rounded-lg"
                     >
                         <img
                             v-if="isLoaded"
@@ -192,9 +192,9 @@ useOGP({
         <template v-if="Object.keys(query).length">
             <div
                 v-if="resultSetups.length"
-                class="flex flex-col lg:grid lg:grid-cols-1 gap-2"
+                class="flex flex-col gap-2 lg:grid lg:grid-cols-1"
             >
-                <SetupsListBase :setups="resultSetups" />
+                <SetupsList :setups="resultSetups" />
                 <ButtonLoadMore
                     v-if="hasMore"
                     :loading="loading"

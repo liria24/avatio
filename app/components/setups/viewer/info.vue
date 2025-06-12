@@ -1,31 +1,30 @@
 <script lang="ts" setup>
 interface Props {
-    title: string;
-    description?: string | null;
-    tags?: string[];
-    coAuthors?: (Partial<Pick<CoAuthor, 'badges'>> &
-        Omit<CoAuthor, 'badges'>)[];
-    unity?: string | null;
-    author: Author;
-    class?: string | string[];
+    title: string
+    description?: string | null
+    tags?: string[]
+    coAuthors?: (Partial<Pick<CoAuthor, 'badges'>> & Omit<CoAuthor, 'badges'>)[]
+    unity?: string | null
+    author: Author
+    class?: string | string[]
 }
-const props = defineProps<Props>();
+const props = defineProps<Props>()
 </script>
 
 <template>
-    <div :class="['empty:hidden h-fit flex flex-col gap-5', props.class]">
-        <div class="w-full flex flex-wrap gap-5 justify-between">
-            <div class="flex xl:flex-col items-center xl:items-start gap-7">
+    <div :class="['flex h-fit flex-col gap-5 empty:hidden', props.class]">
+        <div class="flex w-full flex-wrap justify-between gap-5">
+            <div class="flex items-center gap-7 xl:flex-col xl:items-start">
                 <NuxtLink
                     :to="{
                         name: '@id',
                         params: { id: props.author.id },
                     }"
-                    class="flex gap-1 items-center"
+                    class="flex items-center gap-1"
                 >
                     <UiAvatar
                         :url="
-                            useGetImage(props.author.avatar, {
+                            getImage(props.author.avatar, {
                                 prefix: 'avatar',
                             })
                         "
@@ -33,7 +32,7 @@ const props = defineProps<Props>();
                         class="size-9"
                     />
                     <div
-                        class="pl-1 flex flex-wrap gap-x-1 gap-y-0.5 items-center"
+                        class="flex flex-wrap items-center gap-x-1 gap-y-0.5 pl-1"
                     >
                         <p
                             class="pb-0.5 text-left font-semibold text-zinc-800 dark:text-zinc-200"
@@ -48,22 +47,22 @@ const props = defineProps<Props>();
 
         <div
             v-if="props.description?.length"
-            class="self-stretch flex flex-col gap-2"
+            class="flex flex-col gap-2 self-stretch"
         >
             <p
-                class="pl-1 text-sm/relaxed whitespace-pre-wrap break-keep [overflow-wrap:anywhere] text-zinc-900 dark:text-zinc-100"
+                class="pl-1 text-sm/relaxed [overflow-wrap:anywhere] break-keep whitespace-pre-wrap text-zinc-900 dark:text-zinc-100"
             >
-                {{ useSentence(props.description) }}
+                {{ lineBreak(props.description) }}
             </p>
         </div>
 
-        <div v-if="props.tags?.length" class="self-stretch flex flex-col gap-3">
-            <div class="items-center gap-1.5 flex flex-row flex-wrap">
+        <div v-if="props.tags?.length" class="flex flex-col gap-3 self-stretch">
+            <div class="flex flex-row flex-wrap items-center gap-1.5">
                 <Button
                     v-for="tag in props.tags"
                     :key="useId()"
                     :label="tag"
-                    class="rounded-full text-xs px-3 py-2"
+                    class="rounded-full px-3 py-2 text-xs"
                     @click="navigateTo(`/search?tag=${tag}`)"
                 />
             </div>
@@ -71,7 +70,7 @@ const props = defineProps<Props>();
 
         <div
             v-if="props.unity?.length"
-            class="w-fit px-3 py-2 rounded-full flex items-center gap-2 ring-1 ring-zinc-300 dark:ring-zinc-700"
+            class="flex w-fit items-center gap-2 rounded-full px-3 py-2 ring-1 ring-zinc-300 dark:ring-zinc-700"
         >
             <Icon
                 name="simple-icons:unity"
@@ -79,33 +78,33 @@ const props = defineProps<Props>();
                 class="shrink-0 text-zinc-800 dark:text-zinc-200"
             />
             <p
-                class="text-xs leading-none whitespace-pre-wrap break-keep [overflow-wrap:anywhere] text-zinc-700 dark:text-zinc-300"
+                class="text-xs leading-none [overflow-wrap:anywhere] break-keep whitespace-pre-wrap text-zinc-700 dark:text-zinc-300"
             >
-                {{ useSentence(props.unity) }}
+                {{ lineBreak(props.unity) }}
             </p>
         </div>
 
         <div
             v-if="props.coAuthors?.length"
-            class="self-stretch flex flex-col gap-3"
+            class="flex flex-col gap-3 self-stretch"
         >
-            <h2 class="text-zinc-500 text-sm leading-none">共同作者</h2>
+            <h2 class="text-sm leading-none text-zinc-500">共同作者</h2>
             <ul class="flex flex-col gap-2 pl-1">
                 <li
                     v-for="coAuthor in props.coAuthors"
                     :key="coAuthor.id"
-                    class="p-2 rounded-lg flex flex-col gap-1.5 ring-1 ring-zinc-300 dark:ring-zinc-700"
+                    class="flex flex-col gap-1.5 rounded-lg p-2 ring-1 ring-zinc-300 dark:ring-zinc-700"
                 >
                     <NuxtLink
                         :to="{
                             name: '@id',
                             params: { id: coAuthor.id },
                         }"
-                        class="flex flex-row gap-2 items-center"
+                        class="flex flex-row items-center gap-2"
                     >
                         <UiAvatar
                             :url="
-                                useGetImage(coAuthor.avatar, {
+                                getImage(coAuthor.avatar, {
                                     prefix: 'avatar',
                                 })
                             "
@@ -113,7 +112,7 @@ const props = defineProps<Props>();
                             class="size-9"
                         />
                         <p
-                            class="pl-1 text-black dark:text-white pb-0.5 text-left font-normal"
+                            class="pb-0.5 pl-1 text-left font-normal text-black dark:text-white"
                         >
                             {{ coAuthor.name }}
                         </p>

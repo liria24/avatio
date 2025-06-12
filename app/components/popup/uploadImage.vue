@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const types = ['PNG', 'JPEG', 'WebP', 'TIFF'];
+const types = ['PNG', 'JPEG', 'WebP', 'TIFF']
 </script>
 
 <template>
@@ -13,7 +13,7 @@ const types = ['PNG', 'JPEG', 'WebP', 'TIFF'];
                 <p class="text-sm font-bold text-zinc-600 dark:text-zinc-200">
                     対応形式
                 </p>
-                <div class="flex flex-wrap gap-1 items-center">
+                <div class="flex flex-wrap items-center gap-1">
                     <UiBadge v-for="i in types" :key="useId()">
                         {{ i }}
                     </UiBadge>

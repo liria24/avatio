@@ -1,20 +1,17 @@
 {
-    "deno.enable": true,
-    "deno.enablePaths": ["supabase/functions"],
-    "deno.lint": true,
-    "deno.unstable": [
-        "bare-node-builtins",
-        "byonm",
-        "sloppy-imports",
-        "unsafe-proto",
-        "webgpu",
-        "broadcast-channel",
-        "worker-options",
-        "cron",
-        "kv",
-        "ffi",
-        "fs",
-        "http",
-        "net"
-    ]
+    "files.associations": {
+        "*.css": "tailwindcss"
+    },
+    "editor.quickSuggestions": {
+        "strings": "on"
+    },
+    "tailwindCSS.classAttributes": ["class", "ui"],
+    "tailwindCSS.experimental.classRegex": [
+        [
+            "ui:\\s*{([^)]*)\\s*}",
+            "(?:'|\"|`)([^']*)(?:'|\"|`)",
+            "class:\\s*?[\"'`]([^\"'`]*).*?,"
+        ]
+    ],
+    "typescript.tsdk": "node_modules\\typescript\\lib"
 }

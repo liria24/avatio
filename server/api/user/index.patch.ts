@@ -1,11 +1,6 @@
-import {
-    serverSupabaseServiceRole,
-    serverSupabaseUser,
-} from '#supabase/server';
-import type { User } from '@supabase/supabase-js';
-import { z } from 'zod';
+import { z } from 'zod/v4'
 
-const userSettingsSchema = z.object({
+const body = z.object({
     deleteAvatar: z.boolean().nullable(),
     name: z
         .string()
@@ -28,59 +23,35 @@ const userSettingsSchema = z.object({
             'Image is too large.'
         )
         .nullable(),
-});
+})
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async () => {
+    const event = useEvent()
+
     // Authenticate user
-    let user: User | null;
-    try {
-        user = await serverSupabaseUser(event);
-        if (!user) {
-            console.error('Authentication failed: No user found');
-            throw createError({
-                statusCode: 403,
-                message: 'Forbidden.',
-            });
-        }
-    } catch (error) {
-        console.error('Authentication error:', error);
-        throw createError({
-            statusCode: 403,
-            message: 'Forbidden.',
-        });
-    }
+    const user = await checkSupabaseUser()
+    const supabase = await getSupabaseServiceRoleClient()
 
-    const supabase = serverSupabaseServiceRole<Database>(event);
-
-    // Validate request body
-    const rawBody = await readBody(event);
-    const result = userSettingsSchema.safeParse(rawBody);
-    if (!result.success) {
-        console.error('Validation error:', result.error.format());
-        throw createError({
-            statusCode: 400,
-            message: `Invalid request data: ${result.error.issues.map((i) => i.message).join(', ')}`,
-        });
-    }
-    const body = result.data;
+    const { deleteAvatar, name, bio, links, newAvatar } =
+        await validateBody(body)
 
     // Get current user data
     const { data: oldUserData, error: fetchError } = await supabase
         .from('users')
         .select('name, avatar, bio, links')
         .eq('id', user.id)
-        .single();
+        .single()
 
     if (fetchError || !oldUserData) {
-        console.error('User not found:', user.id, fetchError);
+        console.error('User not found:', user.id, fetchError)
         throw createError({
             statusCode: 404,
             message: 'User not found.',
-        });
+        })
     }
 
     // Handle avatar deletion (note: avatar deletion ignores field updates as per requirements)
-    if (body.deleteAvatar) {
+    if (deleteAvatar) {
         try {
             await event.$fetch('/api/image', {
                 method: 'DELETE',
@@ -88,13 +59,13 @@ export default defineEventHandler(async (event) => {
                     name: oldUserData.avatar,
                     prefix: 'avatar',
                 },
-            });
+            })
         } catch (error) {
-            console.error('Error deleting avatar:', error);
+            console.error('Error deleting avatar:', error)
             throw createError({
                 statusCode: 500,
                 message: 'Error deleting avatar.',
-            });
+            })
         }
 
         const { data, error } = await supabase
@@ -107,14 +78,14 @@ export default defineEventHandler(async (event) => {
             })
             .eq('id', user.id)
             .select()
-            .single();
+            .single()
 
         if (error) {
-            console.error('Error deleting user avatar:', error);
+            console.error('Error deleting user avatar:', error)
             throw createError({
                 statusCode: 500,
                 message: 'Error deleting user avatar.',
-            });
+            })
         }
 
         return {
@@ -122,38 +93,38 @@ export default defineEventHandler(async (event) => {
             bio: data.bio,
             avatar: data.avatar,
             links: data.links,
-        };
+        }
     }
 
     // Handle new avatar upload
-    if (body.newAvatar) {
+    if (newAvatar) {
         try {
             const response = await event.$fetch('/api/image', {
-                method: 'PUT',
+                method: 'POST',
                 body: {
-                    image: body.newAvatar,
+                    image: newAvatar,
                     prefix: 'avatar',
                 },
-            });
+            })
 
             const { data, error } = await supabase
                 .from('users')
                 .update({
-                    name: body.name,
-                    bio: body.bio,
+                    name,
+                    bio,
                     avatar: response.name,
-                    links: body.links,
+                    links,
                 })
                 .eq('id', user.id)
                 .select()
-                .single();
+                .single()
 
             if (error) {
-                console.error('Error updating user with new avatar:', error);
+                console.error('Error updating user with new avatar:', error)
                 throw createError({
                     statusCode: 500,
                     message: 'Error updating user.',
-                });
+                })
             }
 
             return {
@@ -161,13 +132,13 @@ export default defineEventHandler(async (event) => {
                 bio: data.bio,
                 avatar: data.avatar,
                 links: data.links,
-            };
+            }
         } catch (error) {
-            console.error('Error uploading avatar:', error);
+            console.error('Error uploading avatar:', error)
             throw createError({
                 statusCode: 500,
                 message: 'Error uploading avatar.',
-            });
+            })
         }
     }
 
@@ -175,21 +146,21 @@ export default defineEventHandler(async (event) => {
     const { data, error } = await supabase
         .from('users')
         .update({
-            name: body.name,
-            bio: body.bio,
+            name,
+            bio,
             avatar: oldUserData.avatar,
-            links: body.links,
+            links,
         })
         .eq('id', user.id)
         .select()
-        .single();
+        .single()
 
     if (error) {
-        console.error('Error updating user:', error);
+        console.error('Error updating user:', error)
         throw createError({
             statusCode: 500,
             message: 'Error updating user.',
-        });
+        })
     }
 
     const response = {
@@ -197,7 +168,7 @@ export default defineEventHandler(async (event) => {
         bio: data.bio,
         avatar: data.avatar,
         links: data.links,
-    };
+    }
 
-    return response;
-});
+    return response
+})

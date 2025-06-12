@@ -1,30 +1,40 @@
 <script lang="ts" setup>
-import { twMerge } from 'tailwind-merge';
+import { twMerge } from 'tailwind-merge'
 
-const emit = defineEmits(['publish', 'preview']);
+const emit = defineEmits(['publish', 'preview'])
 
-const title = defineModel<string>('title', { default: '' });
-const description = defineModel<string>('description', { default: '' });
-const tags = defineModel<string[]>('tags', { default: [] });
-const coAuthors = defineModel<CoAuthor[]>('coAuthors', { default: [] });
-const unity = defineModel<string>('unity', { default: '' });
-const image = defineModel<Blob | null>('image', { default: null });
-const publishing = defineModel<boolean>('publishing', { default: false });
+const title = defineModel<string>('title', { default: '' })
+const description = defineModel<string>('description', { default: '' })
+const tags = defineModel<string[]>('tags', { default: [] })
+const coAuthors = defineModel<CoAuthor[]>('coAuthors', { default: [] })
+const unity = defineModel<string>('unity', { default: '' })
+const image = defineModel<Blob | null>('image', { default: null })
+const publishing = defineModel<boolean>('publishing', { default: false })
 
-const props = defineProps<{ class?: string | string[] }>();
+const props = defineProps<{ class?: string | string[] }>()
 
-const router = useRouter();
-const workerSupported = ref(true);
+const router = useRouter()
+const workerSupported = ref(true)
 
 const attributesVisibility = ref({
     coAuthors: false,
     unity: false,
-});
+})
+
+const deleteCoAuthor = () => {
+    attributesVisibility.value.coAuthors = false
+    coAuthors.value = []
+}
+
+const deleteUnity = () => {
+    attributesVisibility.value.unity = false
+    unity.value = ''
+}
 
 onMounted(() => {
     if (typeof Worker === 'undefined' || typeof OffscreenCanvas === 'undefined')
-        workerSupported.value = false;
-});
+        workerSupported.value = false
+})
 </script>
 
 <template>
@@ -33,14 +43,14 @@ onMounted(() => {
             twMerge(
                 'relative rounded-lg',
                 'flex flex-col',
-                'lg:ring-2 ring-zinc-200 dark:ring-zinc-700',
+                'ring-zinc-200 lg:ring-2 dark:ring-zinc-700',
                 'lg:bg-zinc-100 lg:dark:bg-zinc-800',
                 props.class
             )
         "
     >
         <div
-            class="z-[1] sticky top-0 left-0 right-0 p-5 gap-1 flex flex-col lg:bg-zinc-100 lg:dark:bg-zinc-800"
+            class="sticky top-0 right-0 left-0 z-[1] flex flex-col gap-1 p-5 lg:bg-zinc-100 lg:dark:bg-zinc-800"
         >
             <Button
                 :label="!publishing ? '公開' : '処理中'"
@@ -50,15 +60,15 @@ onMounted(() => {
                 :icon-size="18"
                 variant="flat"
                 :class="[
-                    'hidden lg:flex grow rounded-full px-4 whitespace-nowrap',
-                    'bg-zinc-600 hover:bg-zinc-300 hover:dark:bg-zinc-700  dark:bg-zinc-300',
+                    'hidden grow rounded-full px-4 whitespace-nowrap lg:flex',
+                    'bg-zinc-600 hover:bg-zinc-300 dark:bg-zinc-300 hover:dark:bg-zinc-700',
                     'text-zinc-200 hover:text-zinc-600 dark:text-zinc-900 hover:dark:text-zinc-100',
                 ]"
                 @click="emit('publish')"
             >
             </Button>
 
-            <div class="grid grid-cols-2 gap-1 items-center">
+            <div class="grid grid-cols-2 items-center gap-1">
                 <Button
                     label="プレビュー"
                     icon="lucide:scan-eye"
@@ -78,17 +88,17 @@ onMounted(() => {
             </div>
         </div>
 
-        <div class="p-5 pt-2 flex flex-col gap-8">
+        <div class="flex flex-col gap-8 p-5 pt-2">
             <div
-                class="grid grid-flow-row sm:grid-cols-2 lg:grid-cols-1 lg:grid-flow-row gap-6"
+                class="grid grid-flow-row gap-6 sm:grid-cols-2 lg:grid-flow-row lg:grid-cols-1"
             >
-                <div class="w-full flex flex-col items-start gap-3">
+                <div class="flex w-full flex-col items-start gap-3">
                     <SetupsEditImage ref="editImage" v-model="image" />
-                    <div class="self-end flex flex-col items-end gap-1.5">
+                    <div class="flex flex-col items-end gap-1.5 self-end">
                         <PopupUploadImage>
                             <button
                                 type="button"
-                                class="cursor-pointer flex items-center gap-1"
+                                class="flex cursor-pointer items-center gap-1"
                             >
                                 <Icon
                                     name="lucide:info"
@@ -107,7 +117,7 @@ onMounted(() => {
                             <template #trigger>
                                 <button
                                     type="button"
-                                    class="cursor-pointer flex items-center gap-1"
+                                    class="flex cursor-pointer items-center gap-1"
                                 >
                                     <Icon
                                         name="lucide:triangle-alert"
@@ -141,9 +151,9 @@ onMounted(() => {
                 </div>
 
                 <div class="flex flex-col gap-8">
-                    <div class="w-full flex flex-col items-start gap-3">
+                    <div class="flex w-full flex-col items-start gap-3">
                         <div
-                            class="w-full flex gap-2 items-center justify-between"
+                            class="flex w-full items-center justify-between gap-2"
                         >
                             <UiTitle label="タイトル" icon="lucide:text" />
                             <UiCount
@@ -159,9 +169,9 @@ onMounted(() => {
                         />
                     </div>
 
-                    <div class="w-full flex flex-col items-start gap-3">
+                    <div class="flex w-full flex-col items-start gap-3">
                         <div
-                            class="w-full flex gap-2 items-center justify-between"
+                            class="flex w-full items-center justify-between gap-2"
                         >
                             <UiTitle label="説明" icon="lucide:text" />
                             <UiCount
@@ -177,9 +187,9 @@ onMounted(() => {
                         />
                     </div>
 
-                    <div class="w-full flex flex-col items-start gap-3">
+                    <div class="flex w-full flex-col items-start gap-3">
                         <div
-                            class="w-full flex gap-2 items-center justify-between"
+                            class="flex w-full items-center justify-between gap-2"
                         >
                             <UiTitle label="タグ" icon="lucide:tags" />
                             <UiCount
@@ -194,9 +204,9 @@ onMounted(() => {
 
                 <div
                     v-if="attributesVisibility.coAuthors"
-                    class="w-full flex flex-col items-start gap-3"
+                    class="flex w-full flex-col items-start gap-3"
                 >
-                    <div class="w-full flex gap-2 items-center justify-between">
+                    <div class="flex w-full items-center justify-between gap-2">
                         <UiTitle label="共同作者" icon="lucide:users-round" />
                         <div class="flex items-center gap-1">
                             <UiCount
@@ -207,10 +217,7 @@ onMounted(() => {
                             <Button
                                 variant="flat"
                                 class="p-1.5"
-                                @click="
-                                    attributesVisibility.coAuthors = false;
-                                    coAuthors = [];
-                                "
+                                @click="deleteCoAuthor"
                             >
                                 <Icon
                                     name="lucide:x"
@@ -225,9 +232,9 @@ onMounted(() => {
 
                 <div
                     v-if="attributesVisibility.unity"
-                    class="w-full flex flex-col items-start gap-3"
+                    class="flex w-full flex-col items-start gap-3"
                 >
-                    <div class="w-full flex gap-2 items-center justify-between">
+                    <div class="flex w-full items-center justify-between gap-2">
                         <UiTitle
                             label="Unity バージョン"
                             icon="simple-icons:unity"
@@ -241,10 +248,7 @@ onMounted(() => {
                             <Button
                                 variant="flat"
                                 class="p-1.5"
-                                @click="
-                                    attributesVisibility.unity = false;
-                                    unity = '';
-                                "
+                                @click="deleteUnity"
                             >
                                 <Icon
                                     name="lucide:x"
@@ -283,7 +287,7 @@ onMounted(() => {
                     </template>
 
                     <template #content>
-                        <div class="flex flex-col gap-0.5 text-sm min-w-32">
+                        <div class="flex min-w-32 flex-col gap-0.5 text-sm">
                             <PopoverClose
                                 v-if="!attributesVisibility.coAuthors"
                             >

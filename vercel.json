@@ -1,11 +1,15 @@
 {
+    "$schema": "https://openapi.vercel.sh/vercel.json",
     "framework": "nuxtjs",
-    "redirects": [
+    "cleanUrls": true,
+    "trailingSlash": false,
+    "crons": [
         {
-            "source": "/admin",
-            "destination": "https://admin.liria.work",
-            "permanent": true
-        },
+            "path": "/api/admin/report",
+            "schedule": "0 22 * * *"
+        }
+    ],
+    "redirects": [
         {
             "source": "/edit",
             "destination": "/compose",

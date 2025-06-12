@@ -1,34 +1,39 @@
 <script lang="ts" setup>
 interface Props {
-    note: string | null;
-    unsupported: boolean;
-    shapekeys: { name: string; value: number }[];
+    note: string | null
+    unsupported: boolean
+    shapekeys: { name: string; value: number }[]
 }
 
-const props = defineProps<Props>();
+const props = defineProps<Props>()
+
+const copy = (key: { name: string; value: number }) => {
+    writeClipboard(key.value.toString())
+    useToast().add(`${key.name} の値をコピーしました`)
+}
 </script>
 
 <template>
     <div
         :data-noted="props.note?.length ? true : false"
-        class="empty:hidden w-full p-2 data-[noted=false]:p-0 flex flex-col gap-1.5 rounded-lg ring-inset ring-1 data-[noted=false]:ring-0 ring-zinc-300 dark:ring-zinc-700"
+        class="flex w-full flex-col gap-1.5 rounded-lg p-2 ring-1 ring-zinc-300 ring-inset empty:hidden data-[noted=false]:p-0 data-[noted=false]:ring-0 dark:ring-zinc-700"
     >
-        <div v-if="props.note?.length" class="px-1 gap-2 flex items-start">
+        <div v-if="props.note?.length" class="flex items-start gap-2 px-1">
             <Icon
                 name="lucide:pen-line"
                 :size="15"
-                class="shrink-0 mt-[0.2rem] text-zinc-400 dark:text-zinc-400"
+                class="mt-[0.2rem] shrink-0 text-zinc-400 dark:text-zinc-400"
             />
             <p
-                class="text-xs/relaxed text-left break-keep whitespace-break-spaces [overflow-wrap:anywhere] text-zinc-900 dark:text-zinc-100"
+                class="text-left text-xs/relaxed [overflow-wrap:anywhere] break-keep whitespace-break-spaces text-zinc-900 dark:text-zinc-100"
             >
                 {{ props.note }}
             </p>
         </div>
-        <div class="empty:hidden flex flex-wrap gap-3 items-center justify-end">
+        <div class="flex flex-wrap items-center justify-end gap-3 empty:hidden">
             <div
                 v-if="props.unsupported"
-                class="px-3 py-2 gap-2 flex items-center"
+                class="flex items-center gap-2 px-3 py-2"
             >
                 <Icon
                     name="lucide:user-round-x"
@@ -36,7 +41,7 @@ const props = defineProps<Props>();
                     class="shrink-0 text-zinc-400 dark:text-zinc-400"
                 />
                 <p
-                    class="font-medium text-xs leading-none text-left text-zinc-500 dark:text-zinc-400"
+                    class="text-left text-xs leading-none font-medium text-zinc-500 dark:text-zinc-400"
                 >
                     アバター非対応
                 </p>
@@ -45,7 +50,7 @@ const props = defineProps<Props>();
                 <template #trigger>
                     <Button
                         v-if="props.shapekeys?.length"
-                        class="px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800"
+                        class="rounded-lg bg-zinc-100 px-3 py-2 dark:bg-zinc-800"
                     >
                         <Icon
                             name="lucide:shapes"
@@ -53,7 +58,7 @@ const props = defineProps<Props>();
                             class="shrink-0 text-zinc-400 dark:text-zinc-400"
                         />
                         <p
-                            class="pb-px font-medium text-xs/relaxed leading-none whitespace-nowrap text-zinc-600 dark:text-zinc-400"
+                            class="pb-px text-xs/relaxed leading-none font-medium whitespace-nowrap text-zinc-600 dark:text-zinc-400"
                         >
                             {{ props.shapekeys.length }} 個のシェイプキー
                         </p>
@@ -61,9 +66,9 @@ const props = defineProps<Props>();
                 </template>
 
                 <template #content>
-                    <div class="flex flex-col gap-3 text-sm min-w-48">
+                    <div class="flex min-w-48 flex-col gap-3 text-sm">
                         <div
-                            class="w-full flex items-center justify-between gap-2"
+                            class="flex w-full items-center justify-between gap-2"
                         >
                             <UiTitle
                                 label="シェイプキー"
@@ -81,7 +86,7 @@ const props = defineProps<Props>();
                             </Button> -->
                         </div>
                         <div
-                            class="p-3 rounded-lg flex flex-col gap-3 ring-1 ring-zinc-300 dark:ring-zinc-700"
+                            class="flex flex-col gap-3 rounded-lg p-3 ring-1 ring-zinc-300 dark:ring-zinc-700"
                         >
                             <div
                                 v-for="(key, index) in props.shapekeys"
@@ -96,17 +101,12 @@ const props = defineProps<Props>();
                                 <button
                                     type="button"
                                     :class="[
-                                        'px-2 py-1 rounded-md cursor-pointer',
+                                        'cursor-pointer rounded-md px-2 py-1',
                                         'font-mono leading-none text-zinc-800 dark:text-zinc-200',
-                                        'bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 hover:dark:bg-zinc-700',
+                                        'bg-zinc-200 hover:bg-zinc-300 dark:bg-zinc-800 hover:dark:bg-zinc-700',
                                         'transition-colors duration-150 ease-in-out',
                                     ]"
-                                    @click="
-                                        useWriteClipboard(key.value.toString());
-                                        useToast().add(
-                                            `${key.name} の値をコピーしました`
-                                        );
-                                    "
+                                    @click="copy(key)"
                                 >
                                     {{
                                         key.value.toLocaleString(undefined, {

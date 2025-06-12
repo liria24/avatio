@@ -1,15 +1,15 @@
 <script lang="ts" setup>
-import { twMerge } from 'tailwind-merge';
+import { twMerge } from 'tailwind-merge'
 
 interface Props {
-    label?: string;
+    label?: string
 }
-const props = defineProps<Props>();
+const props = defineProps<Props>()
 
 const model = defineModel<boolean>({
     default: false,
-});
-const inputId = useId();
+})
+const inputId = useId()
 </script>
 
 <template>
@@ -22,8 +22,8 @@ const inputId = useId();
                 twMerge(
                     'form-checkbox size-4 rounded-sm bg-white dark:bg-zinc-800',
                     'checked:bg-zinc-700 dark:checked:border-transparent',
-                    'focus-visible:ring-2 focus-visible:ring-zinc-500 dark:focus-visible:ring-zinc-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-900 focus-visible:bg-zinc-700',
-                    'focus:ring-0 focus:ring-transparent focus:ring-offset-transparent focus:bg-zinc-700'
+                    'focus-visible:bg-zinc-700 focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-zinc-400 dark:focus-visible:ring-offset-zinc-900',
+                    'focus:bg-zinc-700 focus:ring-0 focus:ring-transparent focus:ring-offset-transparent'
                 )
             "
         />

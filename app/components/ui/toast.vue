@@ -1,40 +1,40 @@
 <script lang="ts" setup>
 interface Props {
-    title: string;
-    description?: string;
+    title: string
+    description?: string
 }
 
-const props = defineProps<Props>();
+const props = defineProps<Props>()
 </script>
 
 <template>
     <ToastRoot
         v-slot="{ duration, remaining }"
         :class="[
-            'w-fit min-w-md rounded-lg p-1 flex flex-col gap-2 items-start overflow-hidden',
-            'ring-1 ring-zinc-300 dark:ring-zinc-700 bg-zinc-50 dark:bg-zinc-950',
+            'flex w-fit min-w-md flex-col items-start gap-2 overflow-hidden rounded-lg p-1',
+            'bg-zinc-50 ring-1 ring-zinc-300 dark:bg-zinc-950 dark:ring-zinc-700',
             'shadow-lg shadow-black/10 dark:shadow-black',
             'animate-in data-[state=open]:fade-in',
             'data-[swipe=move]:translate-x-[var(--reka-toast-swipe-move-x)]',
         ]"
     >
         <div
-            class="w-full px-3 pt-2.5 pb-1.5 flex gap-4 justify-between items-start"
+            class="flex w-full items-start justify-between gap-4 px-3 pt-2.5 pb-1.5"
         >
-            <ToastTitle class="font-bold text-sm pt-0.5">
+            <ToastTitle class="pt-0.5 text-sm font-bold">
                 {{ props.title }}
             </ToastTitle>
 
             <ToastClose
                 :class="[
-                    'p-1 cursor-pointer rounded-md flex',
+                    'flex cursor-pointer rounded-md p-1',
                     'hover:bg-zinc-600',
                 ]"
             >
                 <Icon name="lucide:x" :size="16" />
             </ToastClose>
         </div>
-        <ToastDescription class="empty:hidden px-3 text-xs text-zinc-300">
+        <ToastDescription class="px-3 text-xs text-zinc-300 empty:hidden">
             {{ props.description }}
         </ToastDescription>
 

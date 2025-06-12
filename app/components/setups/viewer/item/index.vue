@@ -1,40 +1,39 @@
 <script lang="ts" setup>
-import { twMerge } from 'tailwind-merge';
+import { twMerge } from 'tailwind-merge'
 
-type OptionalKeys = 'note' | 'unsupported' | 'shapekeys';
+type OptionalKeys = 'note' | 'unsupported' | 'shapekeys'
 interface Props {
-    size?: 'lg' | 'md';
-    noAction?: boolean;
-    item: Partial<Pick<SetupItem, OptionalKeys>> &
-        Omit<SetupItem, OptionalKeys>;
-    class?: string | string[];
+    size?: 'lg' | 'md'
+    noAction?: boolean
+    item: Partial<Pick<SetupItem, OptionalKeys>> & Omit<SetupItem, OptionalKeys>
+    class?: string | string[]
 }
 const props = withDefaults(defineProps<Props>(), {
     size: 'md',
     noAction: false,
-});
+})
 
 const sourceInfo = {
     booth: {
         id: 'booth',
         generateUrl: (id: number) => `https://booth.pm/ja/items/${id}`,
     },
-};
+}
 
-const url = sourceInfo.booth.generateUrl(props.item.id);
+const url = sourceInfo.booth.generateUrl(props.item.id)
 const item = ref<SetupItem>({
     ...props.item,
     note: props.item.note ?? '',
     unsupported: props.item.unsupported ?? false,
     shapekeys: props.item.shapekeys ?? [],
-});
+})
 </script>
 
 <template>
     <div
         :class="
             twMerge(
-                'p-2 flex flex-col gap-2 ring-1 ring-zinc-300 dark:ring-zinc-700 rounded-lg overflow-clip',
+                'flex flex-col gap-2 overflow-clip rounded-lg p-2 ring-1 ring-zinc-300 dark:ring-zinc-700',
                 props.class
             )
         "
@@ -45,7 +44,7 @@ const item = ref<SetupItem>({
                 target="_blank"
                 :data-size="props.size"
                 :class="[
-                    'shrink-0 rounded-lg object-cover select-none overflow-hidden flex items-center',
+                    'flex shrink-0 items-center overflow-hidden rounded-lg object-cover select-none',
                 ]"
             >
                 <NuxtImg
@@ -60,12 +59,12 @@ const item = ref<SetupItem>({
                     :height="props.size === 'lg' ? 128 : 80"
                     :data-size="props.size"
                     :data-nsfw="item.nsfw"
-                    class="object-cover rounded-lg text-xs size-20 data-[size=lg]:sm:size-32 data-[nsfw=true]:blur-md"
+                    class="size-20 rounded-lg object-cover text-xs data-[nsfw=true]:blur-md data-[size=lg]:sm:size-32"
                 />
             </NuxtLink>
 
-            <div class="w-full self-stretch gap-1 justify-between flex">
-                <div class="grow self-center py-1.5 flex flex-col gap-2">
+            <div class="flex w-full justify-between gap-1 self-stretch">
+                <div class="flex grow flex-col gap-2 self-center py-1.5">
                     <div class="flex items-center gap-2">
                         <UiTooltip v-if="item.nsfw" text="NSFW">
                             <Icon
@@ -77,11 +76,11 @@ const item = ref<SetupItem>({
                         <NuxtLink :to="url" target="_blank" class="w-fit gap-2">
                             <p
                                 :class="[
-                                    'font-medium text-sm/relaxed sm:text-base/relaxed text-left text-zinc-900 dark:text-zinc-100',
-                                    'line-clamp-3 break-keep [overflow-wrap:anywhere]',
+                                    'text-left text-sm/relaxed font-medium text-zinc-900 sm:text-base/relaxed dark:text-zinc-100',
+                                    'line-clamp-3 [overflow-wrap:anywhere] break-keep',
                                 ]"
                             >
-                                {{ useSentence(item.name) }}
+                                {{ lineBreak(item.name) }}
                             </p>
                         </NuxtLink>
                     </div>

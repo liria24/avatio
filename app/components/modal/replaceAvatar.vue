@@ -1,15 +1,20 @@
 <script lang="ts" setup>
 const vis = defineModel<boolean>({
     default: false,
-});
+})
 
 interface Props {
-    from: SetupItem | null;
-    to: SetupItem | null;
+    from: SetupItem | null
+    to: SetupItem | null
 }
-const props = defineProps<Props>();
+const props = defineProps<Props>()
 
-const emit = defineEmits(['accept', 'close']);
+const emit = defineEmits(['accept', 'close'])
+
+const onReplace = () => {
+    emit('accept')
+    emit('close')
+}
 </script>
 
 <template>
@@ -21,10 +26,10 @@ const emit = defineEmits(['accept', 'close']);
             />
         </template>
 
-        <div class="gap-4 flex flex-col items-center">
+        <div class="flex flex-col items-center gap-4">
             <p>ベースアバターを置き換えますか？</p>
 
-            <div class="p-1 gap-2 flex flex-col items-center">
+            <div class="flex flex-col items-center gap-2 p-1">
                 <SetupsViewerItem
                     v-if="props.from"
                     no-action
@@ -36,14 +41,8 @@ const emit = defineEmits(['accept', 'close']);
         </div>
 
         <template #footer>
-            <div class="w-full flex gap-2 items-center justify-end">
-                <Button
-                    label="置換"
-                    @click="
-                        emit('accept');
-                        emit('close');
-                    "
-                />
+            <div class="flex w-full items-center justify-end gap-2">
+                <Button label="置換" @click="onReplace" />
                 <Button label="キャンセル" @click="() => emit('close')" />
             </div>
         </template>

@@ -1,10 +1,10 @@
 <script lang="ts" setup>
-import { z } from 'zod';
+import { z } from 'zod/v4'
 
-const user = useSupabaseUser();
-const toast = useToast();
+const user = useSupabaseUser()
+const toast = useToast()
 
-if (!user.value) showError('ログインしてください');
+if (!user.value) showError('ログインしてください')
 
 const userSettingsSchema = z.object({
     name: z
@@ -17,34 +17,34 @@ const userSettingsSchema = z.object({
         ),
     bio: z.string().max(140, 'bioは140文字以内で入力してください'),
     links: z
-        .array(z.string().url('有効なURLを入力してください'))
+        .array(z.url('有効なURLを入力してください'))
         .max(8, 'リンクは8個まで追加できます'),
-});
+})
 
-const currentUserData = ref<User | null>(null);
-const name = ref<string>('');
-const avatar = ref<Blob | null>(null);
-const currentAvatar = ref<string | null>(null);
-const bio = ref<string>('');
-const links = ref<string[]>([]);
-const saving = ref(false);
+const currentUserData = ref<User | null>(null)
+const name = ref<string>('')
+const avatar = ref<Blob | null>(null)
+const currentAvatar = ref<string | null>(null)
+const bio = ref<string>('')
+const links = ref<string[]>([])
+const saving = ref(false)
 
 // ユーザーデータの取得
 const fetchUserData = async () => {
     try {
-        currentUserData.value = await $fetch(`/api/user/${user.value?.id}`);
-        name.value = currentUserData.value?.name ?? '';
-        currentAvatar.value = currentUserData.value?.avatar ?? null;
-        bio.value = currentUserData.value?.bio ?? '';
-        links.value = currentUserData.value?.links ?? [];
+        currentUserData.value = await $fetch(`/api/user/${user.value?.id}`)
+        name.value = currentUserData.value?.name ?? ''
+        currentAvatar.value = currentUserData.value?.avatar ?? null
+        bio.value = currentUserData.value?.bio ?? ''
+        links.value = currentUserData.value?.links ?? []
     } catch (error) {
-        console.error('Error fetching user data:', error);
+        console.error('Error fetching user data:', error)
     }
-};
+}
 
 // ユーザーデータ更新の共通処理
 const updateUserData = async (deleteAvatarFlag = false) => {
-    saving.value = true;
+    saving.value = true
 
     try {
         const response = await $fetch('/api/user', {
@@ -59,72 +59,72 @@ const updateUserData = async (deleteAvatarFlag = false) => {
                         ? await blobToBase64(avatar.value)
                         : null,
             },
-        });
+        })
 
-        userProfile.value.name = response.name;
-        userProfile.value.avatar = response.avatar;
-        currentAvatar.value = response.avatar;
+        userProfile.value.name = response.name
+        userProfile.value.avatar = response.avatar
+        currentAvatar.value = response.avatar
 
-        return response;
+        return response
     } catch (error) {
-        console.error('Error updating user data:', error);
-        throw error;
+        console.error('Error updating user data:', error)
+        throw error
     } finally {
-        saving.value = false;
+        saving.value = false
     }
-};
+}
 
 const save = async () => {
     const validationResult = userSettingsSchema.safeParse({
         name: name.value,
         bio: bio.value,
         links: links.value,
-    });
+    })
 
     if (!validationResult.success) {
-        const formattedErrors = validationResult.error.format();
+        const formattedErrors = validationResult.error.format()
         const firstError =
             formattedErrors.name?._errors[0] ||
             formattedErrors.bio?._errors[0] ||
-            formattedErrors.links?._errors[0];
+            formattedErrors.links?._errors[0]
 
         if (firstError) {
-            toast.add(firstError);
-            return;
+            toast.add(firstError)
+            return
         }
     }
 
     try {
-        await updateUserData(false);
-        avatar.value = null;
-        toast.add('ユーザー情報を保存しました');
+        await updateUserData(false)
+        avatar.value = null
+        toast.add('ユーザー情報を保存しました')
     } catch {
-        toast.add('ユーザー情報の保存に失敗しました');
+        toast.add('ユーザー情報の保存に失敗しました')
     }
-};
+}
 
 const deleteAvatar = async () => {
-    if (!currentAvatar.value) return;
+    if (!currentAvatar.value) return
 
     try {
-        await updateUserData(true);
-        toast.add('アバターを削除しました');
+        await updateUserData(true)
+        toast.add('アバターを削除しました')
     } catch {
-        toast.add('ユーザー情報の保存に失敗しました');
+        toast.add('ユーザー情報の保存に失敗しました')
     }
-};
+}
 
-await fetchUserData();
+await fetchUserData()
 
-useOGP({ title: 'ユーザー設定' });
+defineSeo({ title: 'ユーザー設定' })
 </script>
 
 <template>
-    <div v-if="!currentUserData" class="w-full flex flex-col items-center">
-        <p class="text-zinc-400 mt-5">ユーザーデータの取得に失敗しました</p>
+    <div v-if="!currentUserData" class="flex w-full flex-col items-center">
+        <p class="mt-5 text-zinc-400">ユーザーデータの取得に失敗しました</p>
     </div>
 
-    <div v-else class="w-full px-2 flex flex-col gap-4">
+    <div v-else class="flex w-full flex-col gap-4 px-2">
         <div class="flex items-center justify-between">
             <UiTitle
                 label="プロフィール"
@@ -135,17 +135,17 @@ useOGP({ title: 'ユーザー設定' });
         </div>
 
         <div
-            class="w-full p-5 rounded-xl flex flex-col gap-6 ring-1 ring-zinc-300 dark:ring-zinc-600"
+            class="flex w-full flex-col gap-6 rounded-xl p-5 ring-1 ring-zinc-300 dark:ring-zinc-600"
         >
-            <div class="grow flex items-center gap-8">
+            <div class="flex grow items-center gap-8">
                 <UserSettingAvatar
                     v-model:avatar="avatar"
                     v-model:current-avatar="currentAvatar"
                     @delete-avatar="deleteAvatar"
                 />
 
-                <div class="grow flex flex-col gap-2">
-                    <div class="grow flex items-center justify-between">
+                <div class="flex grow flex-col gap-2">
+                    <div class="flex grow items-center justify-between">
                         <UiTitle
                             label="ユーザー名"
                             icon="lucide:pencil"
@@ -163,12 +163,12 @@ useOGP({ title: 'ユーザー設定' });
                 </div>
             </div>
 
-            <div class="grow flex flex-col gap-2">
-                <div class="grow flex items-center justify-between">
+            <div class="flex grow flex-col gap-2">
+                <div class="flex grow items-center justify-between">
                     <UiTitle label="bio" icon="lucide:text" is="h2" />
                     <p
                         :data-exceeded="bio?.length > 140"
-                        class="text-sm font-medium whitespace-nowrap text-zinc-700 dark:text-zinc-400 data-[exceeded=true]:text-red-400 dark:data-[exceeded=true]:text-red-400"
+                        class="text-sm font-medium whitespace-nowrap text-zinc-700 data-[exceeded=true]:text-red-400 dark:text-zinc-400 dark:data-[exceeded=true]:text-red-400"
                     >
                         {{ bio?.length || 0 }} / 140
                     </p>
@@ -177,12 +177,12 @@ useOGP({ title: 'ユーザー設定' });
                 <UserSettingBio v-model="bio" />
             </div>
 
-            <div class="grow flex flex-col gap-2">
-                <div class="grow flex items-center justify-between">
+            <div class="flex grow flex-col gap-2">
+                <div class="flex grow items-center justify-between">
                     <UiTitle label="リンク" icon="lucide:link" is="h2" />
                     <p
                         :data-exceeded="links?.length > 8"
-                        class="text-sm font-medium whitespace-nowrap text-zinc-700 dark:text-zinc-400 data-[exceeded=true]:text-red-400 dark:data-[exceeded=true]:text-red-400"
+                        class="text-sm font-medium whitespace-nowrap text-zinc-700 data-[exceeded=true]:text-red-400 dark:text-zinc-400 dark:data-[exceeded=true]:text-red-400"
                     >
                         {{ links?.length || 0 }} / 8
                     </p>

@@ -1,28 +1,28 @@
 <script lang="ts" setup>
-const vis = defineModel<boolean>({ default: false });
-const client = useSupabaseClient();
+const vis = defineModel<boolean>({ default: false })
+const client = useSupabaseClient()
 
-const feedback = ref<string>('');
+const feedback = ref<string>('')
 
 const Submit = async () => {
     if (!feedback.value.length)
-        return useToast().add('フィードバックを入力してください');
+        return useToast().add('フィードバックを入力してください')
 
     const { error } = await client
         .from('feedback')
-        .insert({ contents: feedback.value });
+        .insert({ contents: feedback.value })
 
-    if (error) return useToast().add('フィードバックの送信に失敗');
+    if (error) return useToast().add('フィードバックの送信に失敗')
 
-    useToast().add('フィードバックを送信しました');
-    vis.value = false;
-};
+    useToast().add('フィードバックを送信しました')
+    vis.value = false
+}
 </script>
 
 <template>
     <Modal v-model="vis">
         <template #header>
-            <div class="flex items-center gap-2 justify-between">
+            <div class="flex items-center justify-between gap-2">
                 <DialogTitle>
                     <UiTitle label="フィードバック" icon="lucide:lightbulb" />
                 </DialogTitle>
@@ -30,7 +30,7 @@ const Submit = async () => {
                 <HovercardFeedback>
                     <Icon
                         name="lucide:info"
-                        class="shrink-0 size-4 text-zinc-400 dark:text-zinc-300"
+                        class="size-4 shrink-0 text-zinc-400 dark:text-zinc-300"
                     />
                 </HovercardFeedback>
             </div>
@@ -45,13 +45,13 @@ const Submit = async () => {
                 />
                 <Icon
                     name="simple-icons:markdown"
-                    class="absolute right-2 bottom-1 size-6 shrink-0 select-none bg-zinc-500"
+                    class="absolute right-2 bottom-1 size-6 shrink-0 bg-zinc-500 select-none"
                 />
             </div>
         </div>
 
         <template #footer>
-            <div class="gap-1.5 flex items-center justify-between">
+            <div class="flex items-center justify-between gap-1.5">
                 <Button
                     label="キャンセル"
                     variant="flat"

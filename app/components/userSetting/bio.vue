@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 const bio = defineModel<string>({
     default: '',
-});
+})
 </script>
 
 <template>

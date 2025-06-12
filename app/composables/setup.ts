@@ -1,6 +1,6 @@
-import { z } from 'zod';
+import { z } from 'zod/v4'
 
-const limits = setupLimits();
+const limits = setupLimits()
 
 export const setupSchema = z.object({
     name: z
@@ -87,74 +87,74 @@ export const setupSchema = z.object({
             z.string().refine((img) => {
                 const base64Data = img.includes(',')
                     ? img.split(',')[1] || ''
-                    : img;
-                const sizeInBytes = (base64Data.length * 3) / 4;
-                return sizeInBytes <= 2 * 1024 * 1024;
+                    : img
+                const sizeInBytes = (base64Data.length * 3) / 4
+                return sizeInBytes <= 2 * 1024 * 1024
             }, '画像サイズが大きすぎます。圧縮に失敗しているか、非対応画像の可能性があります。')
         )
         .max(1, '画像は最大1枚までです。')
         .nullable()
         .optional(),
-});
+})
 
 export const setupErrorCheck = async (data: z.infer<typeof setupSchema>) => {
-    const result = setupSchema.safeParse(data);
+    const result = setupSchema.safeParse(data)
 
     if (!result.success) {
-        const firstError = result.error.errors[0];
-        if (firstError?.message) useToast().add(firstError.message);
+        const firstError = result.error.issues[0]
+        if (firstError?.message) useToast().add(firstError.message)
 
-        return true;
+        return true
     }
-    return false;
-};
+    return false
+}
 
 export const useDeleteSetup = async (id: number) => {
     try {
         await $fetch(`/api/setup/${id}`, {
             method: 'DELETE',
-        });
+        })
     } catch {
-        return useToast().add('セットアップの削除に失敗しました');
+        return useToast().add('セットアップの削除に失敗しました')
     }
 
-    useToast().add('セットアップを削除しました');
-    navigateTo('/');
-};
+    useToast().add('セットアップを削除しました')
+    navigateTo('/')
+}
 
 export const useAddBookmark = async (id: number) => {
-    const client = useSupabaseClient();
-    const { data, error } = await client.from('bookmarks').insert({ post: id });
-    if (error) throw error;
+    const client = useSupabaseClient()
+    const { data, error } = await client.from('bookmarks').insert({ post: id })
+    if (error) throw error
 
-    useToast().add('ブックマークに追加しました。');
-    return data;
-};
+    useToast().add('ブックマークに追加しました。')
+    return data
+}
 
 export const useRemoveBookmark = async (id: number) => {
-    const client = useSupabaseClient();
+    const client = useSupabaseClient()
     const { data, error } = await client
         .from('bookmarks')
         .delete()
-        .eq('post', id);
-    if (error) throw error;
+        .eq('post', id)
+    if (error) throw error
 
-    useToast().add('ブックマークから削除しました。');
-    return data;
-};
+    useToast().add('ブックマークから削除しました。')
+    return data
+}
 
 export const useCheckBookmark = async (id: number) => {
-    const client = useSupabaseClient();
-    const user = useSupabaseUser();
+    const client = useSupabaseClient()
+    const user = useSupabaseUser()
 
-    if (!user.value) return false;
+    if (!user.value) return false
 
     const { data, error } = await client
         .from('bookmarks')
         .select('post')
         .eq('user_id', user.value.id)
-        .eq('post', id);
-    if (error) throw error;
+        .eq('post', id)
+    if (error) throw error
 
-    return Boolean(data.length);
-};
+    return Boolean(data.length)
+}

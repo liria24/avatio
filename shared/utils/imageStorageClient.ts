@@ -1,7 +1,7 @@
-import { createStorage } from 'unstorage';
-import s3Driver from 'unstorage/drivers/s3';
+import { createStorage } from 'unstorage'
+import s3Driver from 'unstorage/drivers/s3'
 
-const runtime = useRuntimeConfig();
+const runtime = useRuntimeConfig()
 
 export default () =>
     createStorage({
@@ -12,4 +12,4 @@ export default () =>
             bucket: 'avatio',
             region: 'auto',
         }),
-    });
+    })

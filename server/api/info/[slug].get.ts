@@ -1,37 +1,21 @@
-import { serverSupabaseClient } from '#supabase/server';
-import { z } from 'zod';
-import { DocumentData } from '~~/shared/types';
+import { z } from 'zod/v4'
 
-export default defineEventHandler(async (event): Promise<DocumentData> => {
-    const slug = getRouterParam(event, 'slug');
-
-    const slugSchema = z
-        .string({
-            required_error: 'Slug is required',
-            invalid_type_error: 'Slug must be a string',
-        })
+const params = z.object({
+    slug: z
+        .string('Slug is required')
         .refine(
             (val) =>
                 !isNaN(Number(val)) &&
                 Number(val) > 0 &&
                 Number.isInteger(Number(val)),
             { message: 'Slug must be a positive integer' }
-        );
+        ),
+})
 
-    try {
-        slugSchema.parse(slug);
-    } catch (error) {
-        console.error('Invalid Slug:', error);
-        throw createError({
-            statusCode: 400,
-            message:
-                error instanceof z.ZodError
-                    ? `Invalid request: ${error.errors[0]?.message || 'Invalid Slug'}`
-                    : 'Invalid request: Invalid Slug',
-        });
-    }
+export default defineEventHandler(async (): Promise<DocumentData> => {
+    const { slug } = await validateParams(params)
 
-    const supabase = await serverSupabaseClient<Database>(event);
+    const supabase = await getSupabaseServerClient()
 
     const { data, error } = await supabase
         .from('info')
@@ -40,23 +24,23 @@ export default defineEventHandler(async (event): Promise<DocumentData> => {
         )
         .eq('published', true)
         .eq('slug', slug!)
-        .maybeSingle<DocumentData>();
+        .maybeSingle<DocumentData>()
 
     if (error) {
-        console.error('Failed to fetch info data:', error);
+        console.error('Failed to fetch info data:', error)
         throw createError({
             statusCode: 500,
             message: 'Failed to fetch info data.',
-        });
+        })
     }
 
     if (!data) {
-        console.error('No info data found for slug:', slug);
+        console.error('No info data found for slug:', slug)
         throw createError({
             statusCode: 404,
             message: 'Info not found.',
-        });
+        })
     }
 
-    return data;
-});
+    return data
+})

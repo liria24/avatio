@@ -1,44 +1,65 @@
 <script lang="ts" setup>
-const route = useRoute('@id');
-const user = useSupabaseUser();
+const route = useRoute('@id')
+const user = useSupabaseUser()
 const id = route.params.id
     ? route.params.id.toString()
     : user.value
       ? user.value.id
-      : null;
+      : null
 
-const modalReport = ref(false);
-const modalLogin = ref(false);
+const modalReport = ref(false)
+const modalLogin = ref(false)
 
-const userData = ref<User | null>(null);
+const userData = ref<User | null>(null)
 
 try {
-    userData.value = await $fetch<User>(`/api/user/${id}`);
+    userData.value = await $fetch<User>(`/api/user/${id}`)
 } catch {
     showError({
         statusCode: 404,
         message: 'ユーザーデータの取得に失敗しました',
-    });
+    })
 }
 
+const setupsPerPage: number = 50
+const page = ref(0)
+
+const { setups, hasMore, status, fetchMoreSetups } = useFetchSetups('user', {
+    query: computed(() => ({
+        page: page.value,
+        perPage: setupsPerPage,
+        userId: userData.value?.id || null,
+    })),
+})
+
 if (userData.value)
-    useOGP({
+    defineSeo({
         title: userData.value.name,
         description: userData.value.bio,
         image: userData.value.avatar
-            ? useGetImage(userData.value.avatar, { prefix: 'avatar' })
-            : null,
-    });
+            ? getImage(userData.value.avatar, { prefix: 'avatar' })
+            : undefined,
+    })
+
+const onReportClick = () => {
+    if (user.value) modalReport.value = true
+    else modalLogin.value = true
+}
+
+const onLoginSuccess = () => {
+    modalLogin.value = false
+    modalReport.value = true
+}
 </script>
 
 <template>
-    <div v-if="!userData" class="w-full flex flex-col items-center">
-        <p class="text-zinc-400 mt-5">ユーザーデータの取得に失敗しました</p>
+    <div v-if="!userData" class="flex w-full flex-col items-center">
+        <p class="mt-5 text-zinc-400">ユーザーデータの取得に失敗しました</p>
     </div>
 
-    <div v-else class="w-full flex flex-col px-2 gap-6">
-        <div class="w-full flex flex-col gap-3">
-            <div class="mb-2 grid sm:hidden grid-cols-2 gap-1.5">
+    <div v-else class="flex w-full flex-col gap-6 px-2">
+        <div class="flex w-full flex-col gap-3">
+            <div class="mb-2 grid grid-cols-2 gap-1.5 sm:hidden">
                 <Button to="/settings" aria-label="プロフィールを編集">
                     プロフィール編集
                 </Button>
@@ -47,19 +68,17 @@ if (userData.value)
                 </Button>
             </div>
 
-            <div class="w-full flex items-center justify-between">
-                <div class="flex gap-6 items-center">
+            <div class="flex w-full items-center justify-between">
+                <div class="flex items-center gap-6">
                     <UiAvatar
-                        :url="
-                            useGetImage(userData.avatar, { prefix: 'avatar' })
-                        "
+                        :url="getImage(userData.avatar, { prefix: 'avatar' })"
                         :alt="userData.name"
                         :icon-size="36"
                         class="size-14 sm:size-20"
                     />
                     <div class="flex flex-col gap-1">
                         <div
-                            class="flex flex-wrap gap-x-3 gap-y-1 items-center"
+                            class="flex flex-wrap items-center gap-x-3 gap-y-1"
                         >
                             <p class="text-2xl font-bold">
                                 {{ userData.name }}
@@ -71,13 +90,16 @@ if (userData.value)
                         </div>
                         <p class="text-sm text-zinc-500">
                             アカウント作成日 :
-                            {{ useLocaledDate(new Date(userData.created_at)) }}
+                            <NuxtTime
+                                :datetime="userData.created_at"
+                                class="text-zinc-400"
+                            />
                         </p>
                     </div>
                 </div>
                 <div
                     v-if="user && user.id === userData.id"
-                    class="hidden sm:flex items-center gap-1"
+                    class="hidden items-center gap-1 sm:flex"
                 >
                     <Button
                         to="/settings"
@@ -99,7 +121,7 @@ if (userData.value)
                 </div>
             </div>
 
-            <div class="empty:hidden w-full px-2 flex flex-col gap-3">
+            <div class="flex w-full flex-col gap-3 px-2 empty:hidden">
                 <div
                     v-if="userData.links?.length"
                     class="flex flex-wrap items-center gap-2"
@@ -113,13 +135,13 @@ if (userData.value)
 
                 <div
                     v-if="userData.bio?.length"
-                    class="w-full rounded-xl px-4 py-3 gap-1 flex flex-col border border-zinc-400 dark:border-zinc-600"
+                    class="flex w-full flex-col gap-1 rounded-xl border border-zinc-400 px-4 py-3 dark:border-zinc-600"
                 >
-                    <span class="text-zinc-500 text-sm mt-[-2px]">bio</span>
+                    <span class="mt-[-2px] text-sm text-zinc-500">bio</span>
                     <p
-                        class="text-sm text-relaxed break-keep whitespace-break-spaces [overflow-wrap:anywhere]"
+                        class="text-relaxed text-sm [overflow-wrap:anywhere] break-keep whitespace-break-spaces"
                     >
-                        {{ useSentence(userData.bio) }}
+                        {{ lineBreak(userData.bio) }}
                     </p>
                 </div>
             </div>
@@ -130,32 +152,26 @@ if (userData.value)
                 icon="lucide:flag"
                 :icon-size="16"
                 variant="flat"
-                class="self-end px-3 py-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400 hover:bg-zinc-300 hover:dark:bg-zinc-700"
+                class="self-end px-3 py-2 text-xs font-semibold text-zinc-500 hover:bg-zinc-300 dark:text-zinc-400 hover:dark:bg-zinc-700"
                 icon-class="text-red-400 dark:text-red-400"
-                @click="
-                    if (user) modalReport = true;
-                    else modalLogin = true;
-                "
+                @click="onReportClick"
             />
             <ModalReportUser v-model="modalReport" :id="userData.id" />
             <Modal v-model="modalLogin">
                 <UiLogin
                     :redirect="`/@${userData.id}`"
-                    @login-success="
-                        modalLogin = false;
-                        modalReport = true;
-                    "
+                    @login-success="onLoginSuccess"
                 />
             </Modal>
         </div>
 
         <div
             v-if="userData.shops?.length"
-            class="w-full mb-4 flex flex-col gap-5 px-2"
+            class="mb-4 flex w-full flex-col gap-5 px-2"
         >
             <UiTitle label="ショップ" icon="lucide:store" />
 
-            <div class="px-2 flex flex-wrap items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2 px-2">
                 <Button
                     v-for="i in userData.shops"
                     :key="useId()"
@@ -173,14 +189,14 @@ if (userData.value)
                         fit="cover"
                         class="rounded-lg ring-1 ring-zinc-300 dark:ring-zinc-700"
                     />
-                    <div class="flex flex-col gap-1 items-start">
+                    <div class="flex flex-col items-start gap-1">
                         <span
-                            class="text-sm font-semibold leading-none text-zinc-800 dark:text-zinc-300"
+                            class="text-sm leading-none font-semibold text-zinc-800 dark:text-zinc-300"
                         >
                             {{ i.shop.name }}
                         </span>
                         <span
-                            class="text-xs font-normal leading-none text-zinc-500 dark:text-zinc-500"
+                            class="text-xs leading-none font-normal text-zinc-500 dark:text-zinc-500"
                         >
                             {{ i.shop.id }}.booth.pm
                         </span>
@@ -189,10 +205,18 @@ if (userData.value)
             </div>
         </div>
 
-        <div class="w-full flex flex-col gap-5 px-2">
+        <div class="flex w-full flex-col gap-5 px-2">
             <UiTitle label="セットアップ" icon="lucide:shirt" />
 
-            <SetupsListUser :user-id="userData.id" />
+            <div class="flex w-full flex-col gap-3 self-center">
+                <SetupsList :setups="setups" :loading="status === 'pending'" />
+                <ButtonLoadMore
+                    v-if="hasMore"
+                    :loading="status === 'pending'"
+                    class="w-full"
+                    @click="fetchMoreSetups"
+                />
+            </div>
         </div>
     </div>
 </template>
