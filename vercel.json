@@ -1,5 +1,14 @@
 {
+    "$schema": "https://openapi.vercel.sh/vercel.json",
     "framework": "nuxtjs",
+    "cleanUrls": true,
+    "trailingSlash": false,
+    "crons": [
+        {
+            "path": "/api/admin/report",
+            "schedule": "0 22 * * *"
+        }
+    ],
     "redirects": [
         {
             "source": "/edit",

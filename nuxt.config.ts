@@ -1,5 +1,3 @@
-import type { Database } from '@/shared/types/database'
-import { createClient } from '@supabase/supabase-js'
 import tailwindcss from '@tailwindcss/vite'
 import topLevelAwait from 'vite-plugin-top-level-await'
 import wasm from 'vite-plugin-wasm'
@@ -46,6 +44,7 @@ export default defineNuxtConfig({
         adminKey: '',
         turnstile: { siteKey: '', secretKey: '' },
         r2: { endpoint: '', accessKey: '', secretKey: '' },
+        liria: { accessToken: '' },
     },
 
     app: {
@@ -131,90 +130,7 @@ export default defineNuxtConfig({
             '/settings',
             '/bookmarks',
         ],
-        urls: async () => {
-            const supabase = createClient<Database>(
-                import.meta.env.SUPABASE_URL,
-                import.meta.env.SUPABASE_ANON_KEY
-            )
-
-            const permanent = [
-                {
-                    loc: '/',
-                    images: [
-                        {
-                            loc: '/ogp.png',
-                            changefreq: 'never',
-                            title: 'Avatio',
-                        },
-                    ],
-                },
-                {
-                    loc: '/faq',
-                    images: [
-                        { loc: '/ogp.png', changefreq: 'never', title: 'FAQ' },
-                    ],
-                },
-                {
-                    loc: '/terms',
-                    images: [
-                        {
-                            loc: '/ogp.png',
-                            changefreq: 'never',
-                            title: '利用規約',
-                        },
-                    ],
-                },
-                {
-                    loc: '/privacy-policy',
-                    images: [
-                        {
-                            loc: '/ogp.png',
-                            changefreq: 'never',
-                            title: 'プライバシーポリシー',
-                        },
-                    ],
-                },
-            ]
-
-            const { data: setupsData, error: setupsError } = await supabase
-                .from('setups')
-                .select('id, created_at, name, images:setup_images(name)')
-                .order('created_at', { ascending: true })
-
-            const setups = setupsError
-                ? []
-                : setupsData.map(
-                      (setup: {
-                          id: number
-                          created_at: string
-                          name: string
-                          images: { name: string }[]
-                      }) => {
-                          const image = setup.images[0]?.name
-
-                          return {
-                              loc: `/setup/${setup.id}`,
-                              lastmod: setup.created_at,
-                              images: image
-                                  ? [{ loc: image, title: setup.name }]
-                                  : [],
-                              changefreq: 'never',
-                          }
-                      }
-                  )
-
-            const { data: usersData, error: usersError } = await supabase
-                .from('users')
-                .select('id')
-
-            const users = usersError
-                ? []
-                : usersData.map((user: { id: string }) => {
-                      return { loc: `/@${user.id}` }
-                  })
-
-            return [...permanent, ...setups, ...users]
-        },
+        sources: ['/api/__sitemap__/urls'],
     },
 
     supabase: {
