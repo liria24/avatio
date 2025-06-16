@@ -36,10 +36,11 @@ const onClick = () => {
             {{ lineBreak('よりご連絡をお願いします。') }}
         </p>
 
-        <Button
+        <UButton
             icon="lucide:x"
-            variant="flat"
-            class="place-self-end rounded-full p-2"
+            variant="ghost"
+            size="sm"
+            class="place-self-end"
             @click="onClick"
         />
     </div>

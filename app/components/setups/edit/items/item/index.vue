@@ -72,13 +72,17 @@ const booth_url = 'https://booth.pm/ja/items/'
                             </p>
                         </NuxtLink>
 
-                        <UiTooltip v-if="props.item.nsfw" text="NSFW">
+                        <UTooltip
+                            v-if="props.item.nsfw"
+                            text="NSFW"
+                            :delay-duration="0"
+                        >
                             <Icon
                                 name="lucide:heart"
                                 size="18"
                                 class="text-pink-400"
                             />
-                        </UiTooltip>
+                        </UTooltip>
                     </div>
 
                     <div class="flex items-center gap-4">
@@ -155,17 +159,22 @@ const booth_url = 'https://booth.pm/ja/items/'
                     />
 
                     <div class="flex items-center gap-3 px-2">
-                        <UiTooltip v-if="unsupported" text="アバター非対応">
+                        <UTooltip
+                            v-if="unsupported"
+                            text="アバター非対応"
+                            :delay-duration="0"
+                        >
                             <Icon
                                 name="lucide:user-round-x"
                                 size="16"
                                 class="text-zinc-300"
                             />
-                        </UiTooltip>
+                        </UTooltip>
 
-                        <UiTooltip
+                        <UTooltip
                             v-if="shapekeys.length"
                             :text="`${shapekeys.length}個のシェイプキー`"
+                            :delay-duration="0"
                         >
                             <button
                                 type="button"
@@ -183,7 +192,7 @@ const booth_url = 'https://booth.pm/ja/items/'
                                     {{ shapekeys.length }}
                                 </p>
                             </button>
-                        </UiTooltip>
+                        </UTooltip>
                     </div>
                 </div>
             </div>

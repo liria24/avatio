@@ -3,6 +3,8 @@ const vis = defineModel<boolean>({ default: false })
 
 const props = defineProps<{ id: string }>()
 
+const toast = useToast()
+
 const choices = ref({
     spam: {
         label: 'スパム',
@@ -36,12 +38,16 @@ const Submit = async () => {
         !choices.value.infringement.value &&
         !choices.value.other.value
     )
-        return useToast().add('報告の理由を選択してください')
+        return toast.add({
+            title: '報告の理由を選択してください',
+            color: 'warning',
+        })
 
     if (choices.value.other && !additional.value.length)
-        return useToast().add(
-            '"その他"を選択した場合は、理由を入力してください'
-        )
+        return toast.add({
+            title: '"その他"を選択した場合は、理由を入力してください',
+            color: 'warning',
+        })
 
     const { error } = await client.from('report_user').insert({
         reportee: props.id,
@@ -53,13 +59,17 @@ const Submit = async () => {
     })
     if (error) {
         console.error(error)
-        return useToast().add(
-            '報告の送信に失敗しました',
-            'もう一度お試しください'
-        )
+        return toast.add({
+            title: '報告の送信に失敗しました',
+            description: 'もう一度お試しください',
+            color: 'error',
+        })
     }
 
-    useToast().add('報告が送信されました', 'ご協力ありがとうございます')
+    toast.add({
+        title: '報告が送信されました',
+        description: 'ご協力ありがとうございます',
+    })
     vis.value = false
 }
 </script>

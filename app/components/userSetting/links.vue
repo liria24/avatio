@@ -3,21 +3,26 @@ import { VueDraggable } from 'vue-draggable-plus'
 
 const links = defineModel<string[]>({ default: [] })
 
+const toast = useToast()
+
 const linkInput = ref<string>('')
 
 const addLink = async () => {
     if (linkInput.value === '') return
 
     if (links.value.includes(linkInput.value))
-        return useToast().add('リンクが重複しています')
+        return toast.add({ title: 'リンクが重複しています', color: 'warning' })
 
     if (links.value.length >= 8)
-        return useToast().add('リンクは最大 8 つまでです')
+        return toast.add({
+            title: 'リンクは最大 8 つまでです',
+            color: 'warning',
+        })
 
     try {
         new URL(linkInput.value)
     } catch {
-        return useToast().add('URL が不正です')
+        return toast.add({ title: 'URL が不正です', color: 'error' })
     }
 
     links.value.push(linkInput.value)
@@ -73,10 +78,11 @@ const pasteFromClipboard = async () =>
             handle=".draggable"
             class="flex w-full flex-wrap items-center gap-2 empty:hidden"
         >
-            <UiTooltip
+            <UTooltip
                 v-for="(i, index) in links"
                 :key="'link-' + index"
                 :text="i"
+                :delay-duration="0"
             >
                 <div
                     class="flex items-center rounded-lg ring-1 ring-zinc-400 dark:ring-zinc-600"
@@ -100,7 +106,7 @@ const pasteFromClipboard = async () =>
                         @click="removeLink(i)"
                     />
                 </div>
-            </UiTooltip>
+            </UTooltip>
         </VueDraggable>
     </div>
 </template>

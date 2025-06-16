@@ -86,7 +86,7 @@ export default defineNuxtConfig({
 
     fonts: {
         families: [
-            { name: 'Murecho', provider: 'google' },
+            { name: 'Noto Sans JP', provider: 'google' },
             { name: 'Geist', provider: 'google' },
         ],
         defaults: {

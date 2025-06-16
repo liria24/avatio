@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 const emit = defineEmits(['add'])
 
+const toast = useToast()
+
 const inputUrl = ref<string>('')
 const adding = ref(false)
 
@@ -14,7 +16,8 @@ const pasteFromClipboard = async () => {
 }
 
 const addItemFromURL = async () => {
-    if (!inputUrl.value) return useToast().add('URLを入力してください。')
+    if (!inputUrl.value)
+        return toast.add({ title: 'URLを入力してください。', color: 'warning' })
 
     try {
         const url = new URL(inputUrl.value)
@@ -28,7 +31,7 @@ const addItemFromURL = async () => {
 
         emit('add', Number(id))
     } catch {
-        return useToast().add('無効なURLです。')
+        return toast.add({ title: '無効なURLです。', color: 'error' })
     }
 }
 </script>

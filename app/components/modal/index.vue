@@ -45,9 +45,9 @@ const emit = defineEmits(['update:open'])
                 "
             >
                 <slot name="header" />
-                <UiDivider v-if="slots.header && slots.header().length" />
+                <USeparator v-if="slots.header && slots.header().length" />
                 <slot />
-                <UiDivider v-if="slots.footer && slots.footer().length" />
+                <USeparator v-if="slots.footer && slots.footer().length" />
                 <slot name="footer" />
 
                 <!-- <DialogClose

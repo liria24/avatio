@@ -1,20 +1,28 @@
 <script lang="ts" setup>
 const vis = defineModel<boolean>({ default: false })
 const client = useSupabaseClient()
+const toast = useToast()
 
 const feedback = ref<string>('')
 
 const Submit = async () => {
     if (!feedback.value.length)
-        return useToast().add('フィードバックを入力してください')
+        return toast.add({
+            title: 'フィードバックを入力してください',
+            color: 'warning',
+        })
 
     const { error } = await client
         .from('feedback')
         .insert({ contents: feedback.value })
 
-    if (error) return useToast().add('フィードバックの送信に失敗')
+    if (error)
+        return toast.add({
+            title: 'フィードバックの送信に失敗',
+            color: 'error',
+        })
 
-    useToast().add('フィードバックを送信しました')
+    toast.add({ title: 'フィードバックを送信しました' })
     vis.value = false
 }
 </script>

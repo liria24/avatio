@@ -98,11 +98,13 @@ export const setupSchema = z.object({
 })
 
 export const setupErrorCheck = async (data: z.infer<typeof setupSchema>) => {
+    const toast = useToast()
+
     const result = setupSchema.safeParse(data)
 
     if (!result.success) {
         const firstError = result.error.issues[0]
-        if (firstError?.message) useToast().add(firstError.message)
+        if (firstError?.message) toast.add({ title: firstError.message })
 
         return true
     }
@@ -110,28 +112,37 @@ export const setupErrorCheck = async (data: z.infer<typeof setupSchema>) => {
 }
 
 export const useDeleteSetup = async (id: number) => {
+    const toast = useToast()
+
     try {
         await $fetch(`/api/setup/${id}`, {
             method: 'DELETE',
         })
     } catch {
-        return useToast().add('セットアップの削除に失敗しました')
+        return toast.add({
+            title: 'セットアップの削除に失敗しました',
+            color: 'error',
+        })
     }
 
-    useToast().add('セットアップを削除しました')
+    toast.add({ title: 'セットアップを削除しました' })
     navigateTo('/')
 }
 
 export const useAddBookmark = async (id: number) => {
+    const toast = useToast()
+
     const client = useSupabaseClient()
     const { data, error } = await client.from('bookmarks').insert({ post: id })
     if (error) throw error
 
-    useToast().add('ブックマークに追加しました。')
+    toast.add({ title: 'ブックマークに追加しました。' })
     return data
 }
 
 export const useRemoveBookmark = async (id: number) => {
+    const toast = useToast()
+
     const client = useSupabaseClient()
     const { data, error } = await client
         .from('bookmarks')
@@ -139,7 +150,7 @@ export const useRemoveBookmark = async (id: number) => {
         .eq('post', id)
     if (error) throw error
 
-    useToast().add('ブックマークから削除しました。')
+    toast.add({ title: 'ブックマークから削除しました。' })
     return data
 }
 

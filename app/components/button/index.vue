@@ -47,7 +47,7 @@ const variantClass = {
 </script>
 
 <template>
-    <UiTooltip :text="props.tooltip">
+    <UTooltip :text="props.tooltip" :delay-duration="0">
         <component
             :id="props.id"
             :tabindex="props.tabindex"
@@ -92,5 +92,5 @@ const variantClass = {
                 </p>
             </slot>
         </component>
-    </UiTooltip>
+    </UTooltip>
 </template>

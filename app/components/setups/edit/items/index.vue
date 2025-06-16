@@ -5,6 +5,8 @@ import { VueDraggable } from 'vue-draggable-plus'
 const props = defineProps<{ class?: string | string[] }>()
 const emit = defineEmits(['undo', 'redo'])
 
+const toast = useToast()
+
 const items = defineModel<Record<ItemCategory, SetupItem[]>>({
     default: {
         avatar: [],
@@ -26,7 +28,11 @@ const addItem = async (id: number) => {
     // outdated === true だった場合に、細かくエラーの理由を説明するほうが、
     // ユーザーが何回も追加を試さなくてもよくなりそう
 
-    if (!data) return useToast().add('アイテムの追加に失敗しました。')
+    if (!data)
+        return toast.add({
+            title: 'アイテムの追加に失敗しました。',
+            color: 'error',
+        })
 
     const d: SetupItem = {
         ...data,
@@ -39,7 +45,10 @@ const addItem = async (id: number) => {
     const target = items.value[categoryKey]
 
     if (target.some((i) => i.id === id))
-        useToast().add('同じアイテムを重複して登録することはできません。')
+        toast.add({
+            title: '同じアイテムを重複して登録することはできません。',
+            color: 'warning',
+        })
     else {
         target.push(d)
         modalSearchItem.value = false

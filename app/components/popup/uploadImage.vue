@@ -14,9 +14,9 @@ const types = ['PNG', 'JPEG', 'WebP', 'TIFF']
                     対応形式
                 </p>
                 <div class="flex flex-wrap items-center gap-1">
-                    <UiBadge v-for="i in types" :key="useId()">
+                    <UBadge v-for="i in types" :key="useId()">
                         {{ i }}
-                    </UiBadge>
+                    </UBadge>
                 </div>
             </div>
             <div class="flex flex-col gap-1.5 text-zinc-600 dark:text-zinc-400">

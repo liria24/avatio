@@ -66,13 +66,17 @@ const item = ref<SetupItem>({
             <div class="flex w-full justify-between gap-1 self-stretch">
                 <div class="flex grow flex-col gap-2 self-center py-1.5">
                     <div class="flex items-center gap-2">
-                        <UiTooltip v-if="item.nsfw" text="NSFW">
+                        <UTooltip
+                            v-if="item.nsfw"
+                            text="NSFW"
+                            :delay-duration="0"
+                        >
                             <Icon
                                 name="lucide:heart"
                                 :size="18"
                                 class="text-pink-400"
                             />
-                        </UiTooltip>
+                        </UTooltip>
                         <NuxtLink :to="url" target="_blank" class="w-fit gap-2">
                             <p
                                 :class="[

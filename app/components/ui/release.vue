@@ -39,9 +39,10 @@ const category: Record<string, string> = {
                             :datetime="props.data.created_at"
                             class="text-sm whitespace-nowrap text-zinc-400"
                         />
-                        <UiBadge v-if="props.data.category" class="text-xs">
-                            {{ category[props.data.category] }}
-                        </UiBadge>
+                        <UBadge
+                            v-if="props.data.category"
+                            :label="category[props.data.category]"
+                        />
                     </div>
                     <p
                         v-if="props.data.description?.length"

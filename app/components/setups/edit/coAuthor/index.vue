@@ -3,6 +3,8 @@ const model = defineModel<CoAuthor[]>({
     default: [],
 })
 
+const toast = useToast()
+
 const input = ref('')
 const searching = ref(false)
 const searchedUsers = ref<CoAuthor[]>([])
@@ -13,16 +15,20 @@ const client = useSupabaseClient()
 const add = async (id: string) => {
     if (id.length) {
         if (id === user.value?.id)
-            return useToast().add(
-                '自身を共同作者として追加することはできません'
-            )
+            return toast.add({
+                title: '自身を共同作者として追加することはできません',
+            })
 
         const { data } = await client
             .from('users')
             .select('id, name, avatar')
             .eq('id', id)
             .maybeSingle()
-        if (!data) return useToast().add('ユーザーが見つかりませんでした')
+        if (!data)
+            return toast.add({
+                title: 'ユーザーが見つかりませんでした',
+                color: 'warning',
+            })
 
         model.value.push({
             id: id,

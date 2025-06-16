@@ -12,7 +12,6 @@ const isDev = import.meta.dev
             <Analytics />
             <NuxtPage />
         </NuxtLayout>
-        <UiToaster />
         <UiIsMaintenance
             v-if="isDev"
             class="fixed right-0 bottom-0 m-2 opacity-40 empty:hidden"
