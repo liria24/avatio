@@ -21,6 +21,16 @@ defineSeo({
     description: 'あなたのアバター改変を共有しよう',
     image: 'https://avatio.me/ogp_2.png',
 })
+useSchemaOrg([
+    defineWebSite({
+        name: 'Avatio',
+        description: 'あなたのアバター改変を共有しよう',
+        inLanguage: 'ja-JP',
+        potentialAction: defineSearchAction({
+            target: '/search?q={search_term_string}',
+        }),
+    }),
+])
 </script>
 
 <template>

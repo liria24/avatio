@@ -32,15 +32,6 @@ const { setups, hasMore, status, fetchMoreSetups } = useFetchSetups('user', {
     })),
 })
 
-if (userData.value)
-    defineSeo({
-        title: userData.value.name,
-        description: userData.value.bio,
-        image: userData.value.avatar
-            ? getImage(userData.value.avatar, { prefix: 'avatar' })
-            : undefined,
-    })
-
 const onReportClick = () => {
     if (user.value) modalReport.value = true
     else modalLogin.value = true
@@ -49,6 +40,31 @@ const onReportClick = () => {
 const onLoginSuccess = () => {
     modalLogin.value = false
     modalReport.value = true
+}
+
+if (userData.value) {
+    defineSeo({
+        title: userData.value.name,
+        description: userData.value.bio,
+        image: userData.value.avatar
+            ? getImage(userData.value.avatar, { prefix: 'avatar' })
+            : undefined,
+    })
+    useSchemaOrg([
+        defineWebPage({
+            name: userData.value.name,
+            description: userData.value.bio,
+            datePublished: userData.value.created_at,
+        }),
+        definePerson({
+            name: userData.value.name,
+            description: userData.value.bio,
+            image: userData.value.avatar
+                ? getImage(userData.value.avatar, { prefix: 'avatar' })
+                : undefined,
+            sameAs: userData.value.links,
+        }),
+    ])
 }
 </script>
 

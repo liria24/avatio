@@ -31,7 +31,7 @@ onMounted(async () => {
     bookmark.value = await useCheckBookmark(id)
 })
 
-if (setup.value)
+if (setup.value) {
     defineSeo({
         title: `${setup.value.name} @${setup.value.author.name}`,
         description: setup.value.description || undefined,
@@ -39,6 +39,30 @@ if (setup.value)
             ? getImage(setup.value.images[0]!.name, { prefix: 'setup' })
             : 'https://avatio.me/ogp.png',
     })
+    useSchemaOrg([
+        defineWebPage({
+            name: setup.value.name,
+            description: setup.value.description,
+            datePublished: setup.value.created_at,
+            author: {
+                '@type': 'Person',
+                name: setup.value.author.name,
+                url: `/@${setup.value.author.id}`,
+            },
+            primaryImageOfPage: getImage(setup.value.images[0]!.name, {
+                prefix: 'setup',
+            }),
+            breadcrumb: defineBreadcrumb({
+                itemListElement: [
+                    { name: 'ホーム', item: '/' },
+                    { name: 'セットアップ', item: '/setup' },
+                    { name: setup.value.name, item: `/setup/${id}` },
+                ],
+            }),
+            inLanguage: 'ja-JP',
+        }),
+    ])
+}
 </script>
 
 <template>

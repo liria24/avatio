@@ -101,6 +101,11 @@ watch(
 defineSeo({
     title: 'セットアップ検索',
 })
+useSchemaOrg([
+    defineWebPage({
+        '@type': ['CollectionPage', 'SearchResultsPage'],
+    }),
+])
 </script>
 
 <template>
