@@ -30,7 +30,6 @@ export default defineNuxtConfig({
     ],
 
     routeRules: {
-        '/': { isr: 60 },
         '/setup/compose': { ssr: false },
         '/faq': { isr: 600 },
         '/terms': { isr: 600 },
