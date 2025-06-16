@@ -1,18 +1,18 @@
 <script setup lang="ts">
-const user = useSupabaseUser()
+// const user = useSupabaseUser()
 
-const mode = ref<'latest' | 'user' | 'bookmarks'>('latest')
+// const mode = ref<'latest' | 'user' | 'bookmarks'>('latest')
 
-const setupsPerPage: number = 50
-const page = ref(0)
+// const setupsPerPage: number = 50
+// const page = ref(0)
 
-const { setups, hasMore, status, fetchMoreSetups } = useFetchSetups(mode, {
-    query: computed(() => ({
-        page: page.value,
-        perPage: setupsPerPage,
-        userId: user.value?.id || null,
-    })),
-})
+// const { setups, hasMore, status, fetchMoreSetups } = useFetchSetups(mode, {
+//     query: computed(() => ({
+//         page: page.value,
+//         perPage: setupsPerPage,
+//         userId: user.value?.id || null,
+//     })),
+// })
 
 defineSeo({
     type: 'website',
@@ -35,7 +35,7 @@ useSchemaOrg([
 
 <template>
     <div class="flex w-full flex-col gap-6">
-        <BannerHeader class="flex sm:hidden" />
+        <!-- <BannerHeader class="flex sm:hidden" />
 
         <Hero v-if="!user" class="sm:mt-12 sm:mb-6" />
 
@@ -91,6 +91,6 @@ useSchemaOrg([
                 class="w-full"
                 @click="fetchMoreSetups"
             />
-        </div>
+        </div> -->
     </div>
 </template>
