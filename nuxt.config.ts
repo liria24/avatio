@@ -13,13 +13,10 @@ export default defineNuxtConfig({
 
     modules: [
         '@vueuse/nuxt',
-        '@nuxt/icon',
         '@nuxt/image',
-        '@nuxt/fonts',
-        '@nuxtjs/color-mode',
+        '@nuxt/ui',
         '@nuxtjs/supabase',
         '@nuxt/eslint',
-        '@nuxt/scripts',
         '@nuxtjs/turnstile',
         '@nuxtjs/robots',
         '@nuxtjs/sitemap',
@@ -174,7 +171,7 @@ export default defineNuxtConfig({
                 flowType: 'pkce',
             },
         },
-        types: '@/shared/types/database.d.ts',
+        types: '@/shared/types/database.ts',
     },
 
     turnstile: { siteKey: import.meta.env.NUXT_TURNSTILE_SITE_KEY },
