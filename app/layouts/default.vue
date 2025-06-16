@@ -2,12 +2,6 @@
 const route = useRoute()
 const paddingExclude = ['/', '/release', '/setup/compose']
 const footerExclude = ['/setup/compose']
-
-useHead({
-    title: 'Avatio',
-    link: [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
-    meta: [{ name: 'lang', content: 'ja' }],
-})
 </script>
 
 <template>
