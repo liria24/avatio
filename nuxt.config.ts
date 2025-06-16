@@ -7,7 +7,7 @@ import wasm from 'vite-plugin-wasm'
 export default defineNuxtConfig({
     future: { compatibilityVersion: 4 },
 
-    compatibilityDate: '2024-08-21',
+    compatibilityDate: '2024-11-01',
 
     devtools: { enabled: true, timeline: { enabled: true } },
 
