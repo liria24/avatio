@@ -24,59 +24,66 @@ const getIconSize = (multiplier: number) =>
         v-if="props.badges?.length"
         class="flex items-center gap-1 empty:hidden"
     >
-        <UiTooltip
+        <UTooltip
             v-if="props.badges.find((b) => b.name === 'developer')"
             text="デベロッパー"
+            :delay-duration="0"
         >
             <Icon name="fluent-color:code-block-24" :size="getIconSize(1.2)" />
-        </UiTooltip>
+        </UTooltip>
 
-        <UiTooltip
+        <UTooltip
             v-if="props.badges.find((b) => b.name === 'contributor')"
             text="コントリビューター"
+            :delay-duration="0"
         >
             <Icon
                 name="fluent-color:animal-paw-print-24"
                 :size="getIconSize(1)"
             />
-        </UiTooltip>
+        </UTooltip>
 
-        <UiTooltip
+        <UTooltip
             v-if="props.badges.find((b) => b.name === 'translator')"
             text="翻訳者"
+            :delay-duration="0"
         >
             <Icon name="fluent-color:chat-multiple-24" :size="getIconSize(1)" />
-        </UiTooltip>
+        </UTooltip>
 
-        <UiTooltip
+        <UTooltip
             v-if="props.badges.find((b) => b.name === 'alpha_tester')"
             text="アルファテスター"
+            :delay-duration="0"
         >
             <Icon name="fluent-color:ribbon-star-24" :size="getIconSize(1)" />
-        </UiTooltip>
+        </UTooltip>
 
-        <UiTooltip
+        <UTooltip
             v-if="props.badges.find((b) => b.name === 'shop_owner')"
             text="ショップオーナー"
+            :delay-duration="0"
         >
             <Icon
                 name="fluent-color:building-store-24"
                 :size="getIconSize(1)"
             />
-        </UiTooltip>
+        </UTooltip>
 
-        <UiTooltip
+        <UTooltip
             v-if="props.badges.find((b) => b.name === 'patrol')"
             text="パトロール"
+            :delay-duration="0"
         >
             <Icon name="fluent-color:shield-24" :size="getIconSize(1)" />
-        </UiTooltip>
+        </UTooltip>
 
-        <UiTooltip
+        <UTooltip
             v-if="props.badges.find((b) => b.name === 'idea_man')"
             text="アイデアマン"
+            :delay-duration="0"
         >
             <Icon name="fluent-color:lightbulb-24" :size="getIconSize(1)" />
-        </UiTooltip>
+        </UTooltip>
     </div>
 </template>

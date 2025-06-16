@@ -42,33 +42,19 @@ useSchemaOrg([
         <div v-if="user" class="flex w-full flex-col items-start gap-5">
             <UiTitle label="ホーム" size="lg" />
             <div class="flex flex-wrap items-center gap-1">
-                <Button
+                <UButton
                     label="最新"
-                    variant="flat"
-                    :class="[
-                        'text-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-700',
-                        mode === 'latest' ? 'bg-zinc-200 dark:bg-zinc-700' : '',
-                    ]"
+                    :variant="mode === 'latest' ? 'solid' : 'ghost'"
                     @click="mode = 'latest'"
                 />
-                <Button
+                <UButton
                     label="自分の投稿"
-                    variant="flat"
-                    :class="[
-                        'text-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-700',
-                        mode === 'user' ? 'bg-zinc-200 dark:bg-zinc-700' : '',
-                    ]"
+                    :variant="mode === 'user' ? 'solid' : 'ghost'"
                     @click="mode = 'user'"
                 />
-                <Button
+                <UButton
                     label="ブックマーク"
-                    variant="flat"
-                    :class="[
-                        'text-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-700',
-                        mode === 'bookmarks'
-                            ? 'bg-zinc-200 dark:bg-zinc-700'
-                            : '',
-                    ]"
+                    :variant="mode === 'bookmarks' ? 'solid' : 'ghost'"
                     @click="mode = 'bookmarks'"
                 />
             </div>

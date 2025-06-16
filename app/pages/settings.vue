@@ -89,7 +89,7 @@ const save = async () => {
             formattedErrors.links?._errors[0]
 
         if (firstError) {
-            toast.add(firstError)
+            toast.add({ title: firstError, color: 'error' })
             return
         }
     }
@@ -97,9 +97,9 @@ const save = async () => {
     try {
         await updateUserData(false)
         avatar.value = null
-        toast.add('ユーザー情報を保存しました')
+        toast.add({ title: 'ユーザー情報を保存しました' })
     } catch {
-        toast.add('ユーザー情報の保存に失敗しました')
+        toast.add({ title: 'ユーザー情報の保存に失敗しました', color: 'error' })
     }
 }
 
@@ -108,9 +108,9 @@ const deleteAvatar = async () => {
 
     try {
         await updateUserData(true)
-        toast.add('アバターを削除しました')
+        toast.add({ title: 'アバターを削除しました' })
     } catch {
-        toast.add('ユーザー情報の保存に失敗しました')
+        toast.add({ title: 'ユーザー情報の保存に失敗しました', color: 'error' })
     }
 }
 
@@ -191,7 +191,7 @@ defineSeo({ title: 'ユーザー設定' })
                 <UserSettingLinks v-model="links" />
             </div>
 
-            <UiDivider />
+            <USeparator />
 
             <Button :disabled="saving" @click="save">
                 <Icon

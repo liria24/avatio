@@ -10,6 +10,8 @@ const shops = defineModel<
     }[]
 >('shops', { default: [] })
 
+const toast = useToast()
+
 const codeGenerating = ref(false)
 const verifying = ref(false)
 const verified = ref(false)
@@ -41,7 +43,7 @@ const verify = async () => {
     const subDomain = boothSubDomain(shopUrl.value)
     if (!subDomain) return
     if (shops.value.find((shop) => shop.id === subDomain)) {
-        useToast().add('このショップは既に認証済みです')
+        toast.add({ title: 'このショップは既に認証済みです', color: 'warning' })
         return
     }
 
@@ -56,12 +58,12 @@ const verify = async () => {
         if (v) {
             emit('refresh')
             verified.value = true
-            useToast().add('認証に成功しました')
+            toast.add({ title: '認証に成功しました' })
         } else {
-            useToast().add('認証に失敗しました')
+            toast.add({ title: '認証に失敗しました', color: 'error' })
         }
     } catch {
-        useToast().add('認証に失敗しました')
+        toast.add({ title: '認証に失敗しました', color: 'error' })
     } finally {
         verifying.value = false
     }

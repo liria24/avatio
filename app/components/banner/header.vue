@@ -36,7 +36,7 @@ const { data: release } = await client
             {{ release.short_title }}
         </span>
 
-        <UiDivider class="mx-1 flex w-6" />
+        <USeparator class="mx-1 flex w-6" />
 
         <span
             class="line-clamp-1 text-xs leading-none text-zinc-500 dark:text-zinc-400"

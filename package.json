@@ -11,7 +11,7 @@
     },
     "packageManager": "bun@1.2.16",
     "engines": {
-        "node": "22.15.1"
+        "node": "22.x"
     },
     "devDependencies": {
         "@iconify-json/entypo-social": "^1.2.2",

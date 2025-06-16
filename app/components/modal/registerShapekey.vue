@@ -2,15 +2,18 @@
 const vis = defineModel<boolean>('visibility', { default: false })
 const shapekeys = defineModel<Shapekey[]>('shapekeys', { default: [] })
 
+const toast = useToast()
+
 const name = ref('')
 const value = ref(0)
 
 const register = () => {
     if (!name.value.length) return
     if (name.value.length > setupLimits().shapekeyName) {
-        useToast().add(
-            `シェイプキー名は${setupLimits().shapekeyName}文字以内で入力してください`
-        )
+        toast.add({
+            title: `シェイプキー名は${setupLimits().shapekeyName}文字以内で入力してください`,
+            color: 'warning',
+        })
         return
     }
 
@@ -74,7 +77,7 @@ const register = () => {
                 </div>
             </div>
 
-            <UiDivider />
+            <USeparator />
 
             <div class="flex flex-col gap-5">
                 <div class="flex items-center gap-2">

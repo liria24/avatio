@@ -15,6 +15,6 @@ const excludePath = ['/setup/compose']
                 class="hidden sm:flex"
             />
         </div>
-        <UiHeaderMenu />
+        <HeaderMenu />
     </header>
 </template>

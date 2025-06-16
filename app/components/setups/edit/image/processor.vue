@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import { PhotonImage, resize, SamplingFilter } from '@silvia-odwyer/photon'
 
+const toast = useToast()
+
 // 定数を抽出
 const DEFAULT_MAX_SIZE = 1.5 * 1024 * 1024 // 1.5MB
 const DEFAULT_RESOLUTION = 1920
@@ -25,7 +27,7 @@ watchEffect(async () => {
         processedImage.value = compressedBlob
     } catch (error) {
         console.error('画像処理に失敗しました:', error)
-        useToast().add('画像処理に失敗しました')
+        toast.add({ title: '画像処理に失敗しました', color: 'error' })
     } finally {
         processingImage.value = null
     }

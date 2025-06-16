@@ -210,9 +210,10 @@ const linkClasses = computed(() => {
         </div>
 
         <div class="flex w-full items-center">
-            <UiTooltip
+            <UTooltip
                 v-if="!hasSetupImages && hasValidAvatar"
                 :text="avatarName"
+                :delay-duration="0"
             >
                 <NuxtImg
                     :src="setup.items.avatar?.[0]?.thumbnail"
@@ -225,7 +226,7 @@ const linkClasses = computed(() => {
                     fit="cover"
                     class="my-1.5 ml-1.5 h-14 shrink-0 overflow-clip rounded-lg object-cover md:h-20"
                 />
-            </UiTooltip>
+            </UTooltip>
 
             <div
                 v-else-if="!hasValidAvatar && !hasSetupImages"
@@ -258,13 +259,13 @@ const linkClasses = computed(() => {
                             class="size-5"
                         />
                     </HovercardUser>
-                    <UiTooltip :text="dateLocale">
+                    <UTooltip :text="dateLocale" :delay-duration="0">
                         <NuxtTime
                             :datetime="date"
                             relative
                             class="text-xs whitespace-nowrap text-zinc-600 dark:text-zinc-400"
                         />
-                    </UiTooltip>
+                    </UTooltip>
                 </div>
             </div>
 
@@ -272,13 +273,13 @@ const linkClasses = computed(() => {
                 v-else
                 class="flex w-full items-center justify-end gap-2 px-2 pb-2"
             >
-                <UiTooltip :text="dateLocale">
+                <UTooltip :text="dateLocale" :delay-duration="0">
                     <NuxtTime
                         :datetime="date"
                         relative
                         class="text-xs whitespace-nowrap text-zinc-600 dark:text-zinc-400"
                     />
-                </UiTooltip>
+                </UTooltip>
                 <HovercardUser v-if="!noUser" :user="setup.author">
                     <UiAvatar
                         :url="

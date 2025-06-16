@@ -10,11 +10,11 @@ defineSeo({
 <template>
     <div class="my-10 flex w-full flex-col items-center gap-5">
         <UiLogin />
-        <Button
+        <UButton
             to="/"
             label="ホームに戻る"
             icon="lucide:arrow-left"
-            variant="flat"
+            variant="ghost"
         />
     </div>
 </template>

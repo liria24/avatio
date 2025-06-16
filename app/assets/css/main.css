@@ -4,7 +4,7 @@
 @plugin 'tailwindcss-animate';
 
 @theme {
-    --font-sans: 'Murecho', 'Geist', sans-serif;
+    --font-sans: 'Noto Sans JP', 'Geist', sans-serif;
 }
 
 html {

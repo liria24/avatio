@@ -7,9 +7,11 @@ interface Props {
 
 const props = defineProps<Props>()
 
+const toast = useToast()
+
 const copy = (key: { name: string; value: number }) => {
     writeClipboard(key.value.toString())
-    useToast().add(`${key.name} の値をコピーしました`)
+    toast.add({ title: `${key.name} の値をコピーしました` })
 }
 </script>
 

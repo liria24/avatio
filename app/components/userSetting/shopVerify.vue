@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+const toast = useToast()
+
 const shops = ref<
     {
         id: string
@@ -51,9 +53,9 @@ const unverify = async (id: string) => {
             body: { shopId: id },
         })
 
-        useToast().add('認証を解除しました')
+        toast.add({ title: '認証を解除しました' })
     } catch {
-        useToast().add('認証の解除に失敗しました')
+        toast.add({ title: '認証の解除に失敗しました', color: 'error' })
     }
 
     get()
@@ -70,11 +72,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <UiCard
-        :divider="false"
-        class="pb-4"
-        header-class="flex gap-4 items-center justify-between"
-    >
+    <UCard>
         <template #header>
             <UiTitle label="オーナー認証" icon="lucide:store" is="h2" />
         </template>
@@ -205,5 +203,5 @@ onMounted(() => {
                 </div>
             </template>
         </Modal>
-    </UiCard>
+    </UCard>
 </template>

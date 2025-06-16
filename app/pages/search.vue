@@ -138,7 +138,7 @@ useSchemaOrg([
             :item="resultItem"
         />
 
-        <UiDivider class="mx-3 my-5" />
+        <USeparator class="mx-3 my-5" />
 
         <div
             v-if="!Object.keys(query).length && popularAvatars.length"

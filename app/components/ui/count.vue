@@ -29,7 +29,7 @@ const dashOffset = computed(
 </script>
 
 <template>
-    <UiTooltip :text="`${count} / ${props.max}`">
+    <UTooltip :text="`${count} / ${props.max}`" :delay-duration="0">
         <div>
             <svg
                 :width="size"
@@ -62,5 +62,5 @@ const dashOffset = computed(
                 />
             </svg>
         </div>
-    </UiTooltip>
+    </UTooltip>
 </template>

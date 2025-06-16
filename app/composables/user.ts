@@ -38,6 +38,7 @@ export const useSignUp = async (
     token: string
 ) => {
     const supabase = useSupabaseClient()
+    const toast = useToast()
 
     const { error } = await supabase.auth.signUp({
         email: email,
@@ -46,11 +47,12 @@ export const useSignUp = async (
     })
     if (error) throw error
 
-    useToast().add('サインアップしました。')
+    toast.add({ title: 'サインアップしました。' })
 }
 
 export const useLoginWithTwitter = async () => {
     const supabase = useSupabaseClient()
+    const toast = useToast()
 
     const { error } = await supabase.auth.signInWithOAuth({
         provider: 'twitter',
@@ -58,6 +60,6 @@ export const useLoginWithTwitter = async () => {
 
     if (error) {
         navigateTo('/login')
-        useToast().add('ログインに失敗しました。')
+        toast.add({ title: 'ログインに失敗しました。', color: 'error' })
     }
 }

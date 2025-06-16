@@ -1,4 +1,6 @@
 <script setup lang="ts">
+const toast = useToast()
+
 const skipRouterHook = ref(false)
 
 const publishing = ref(false)
@@ -59,7 +61,7 @@ const PublishSetup = async () => {
         modalComplete.value = true
     } catch (error) {
         console.error('投稿エラー:', error)
-        return useToast().add('投稿に失敗しました')
+        return toast.add({ title: '投稿に失敗しました', color: 'error' })
     } finally {
         publishing.value = false
     }
@@ -124,7 +126,7 @@ defineSeo({ title: 'セットアップ作成' })
             @publish="PublishSetup"
         />
 
-        <UiDivider class="static my-8 lg:hidden" />
+        <USeparator class="static my-8 lg:hidden" />
 
         <SetupsEditItems
             v-model="items"
