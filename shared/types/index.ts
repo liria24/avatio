@@ -1,145 +1,310 @@
-export interface Badge {
-    name:
-        | 'developer'
-        | 'contributor'
-        | 'translator'
-        | 'alpha_tester'
-        | 'shop_owner'
-        | 'patrol'
-        | 'idea_man'
-    created_at: string
+import {
+    bookmarks,
+    feedbacks,
+    itemCategory,
+    items,
+    itemSource,
+    setupCoauthors,
+    setupImages,
+    setupItems,
+    setupItemShapekeys,
+    setupReports,
+    setups,
+    setupTags,
+    setupTools,
+    shops,
+    tools,
+    user,
+    userBadge,
+    userBadges,
+    userReports,
+    userShops,
+} from '@@/database/schema'
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
+import { z } from 'zod/v4'
+
+export const userBadgeSchema = z.enum(userBadge.enumValues)
+export type UserBadge = z.infer<typeof userBadgeSchema>
+
+export const itemSourceSchema = z.enum(itemSource.enumValues)
+export type ItemSource = z.infer<typeof itemSourceSchema>
+
+export const itemCategorySchema = z.enum(itemCategory.enumValues)
+export type ItemCategory = z.infer<typeof itemCategorySchema>
+
+export const shopsSelectSchema = createSelectSchema(shops)
+export const shopsInsertSchema = createInsertSchema(shops)
+export const shopsPublicSchema = shopsSelectSchema.pick({
+    id: true,
+    name: true,
+    image: true,
+    verified: true,
+})
+export type Shop = z.infer<typeof shopsPublicSchema>
+
+export const userShopsSelectSchema = createSelectSchema(userShops)
+export const userShopsInsertSchema = createInsertSchema(userShops)
+
+export const userBadgesSelectSchema = createSelectSchema(userBadges)
+export const userBadgesInsertSchema = createInsertSchema(userBadges)
+
+export const userSelectSchema = createSelectSchema(user)
+export const userInsertSchema = createInsertSchema(user)
+export const userPublicSchema = userSelectSchema
+    .pick({
+        id: true,
+        name: true,
+        image: true,
+        bio: true,
+        links: true,
+    })
+    .extend({
+        createdAt: z.string(),
+        badges: z
+            .array(
+                userBadgesSelectSchema
+                    .pick({
+                        badge: true,
+                    })
+                    .extend({
+                        createdAt: z.string(),
+                    })
+            )
+            .optional(),
+        shops: z
+            .array(
+                userShopsSelectSchema
+                    .omit({
+                        id: true,
+                        userId: true,
+                        shopId: true,
+                    })
+                    .extend({
+                        createdAt: z.string(),
+                        shop: shopsPublicSchema,
+                    })
+            )
+            .optional(),
+    })
+export type User = z.infer<typeof userPublicSchema>
+export type UserWithSetups = z.infer<typeof userPublicSchema> & {
+    setups: Omit<Setup, 'user'>[]
 }
 
-export interface Author {
-    id: string
-    name: string
-    avatar?: string | null
-    badges: Badge[]
+export const itemsSelectSchema = createSelectSchema(items)
+export const itemsInsertSchema = createInsertSchema(items)
+export const itemsPublicSchema = itemsSelectSchema
+    .pick({
+        id: true,
+        source: true,
+        category: true,
+        name: true,
+        image: true,
+        price: true,
+        likes: true,
+        nsfw: true,
+    })
+    .extend({
+        shop: shopsPublicSchema,
+    })
+export type Item = z.infer<typeof itemsPublicSchema>
+
+export const toolsSelectSchema = createSelectSchema(tools)
+export const toolsInsertSchema = createInsertSchema(tools)
+export const toolsPublicSchema = toolsSelectSchema.pick({
+    name: true,
+    description: true,
+    image: true,
+    url: true,
+})
+
+export const setupItemShapekeysSelectSchema =
+    createSelectSchema(setupItemShapekeys)
+export const setupItemShapekeysInsertSchema =
+    createInsertSchema(setupItemShapekeys)
+
+export const setupItemsSelectSchema = createSelectSchema(setupItems)
+export const setupItemsInsertSchema = createInsertSchema(setupItems)
+export const setupItemsPublicSchema = z.intersection(
+    setupItemsSelectSchema.pick({
+        unsupported: true,
+    }),
+    itemsPublicSchema.extend({
+        shop: shopsPublicSchema,
+        shapekeys: z.array(
+            setupItemShapekeysSelectSchema.pick({
+                name: true,
+                value: true,
+            })
+        ),
+    })
+)
+export type SetupItem = z.infer<typeof setupItemsPublicSchema>
+
+export const setupTagsSelectSchema = createSelectSchema(setupTags)
+export const setupTagsInsertSchema = createInsertSchema(setupTags)
+
+export const setupImagesSelectSchema = createSelectSchema(setupImages)
+export const setupImagesInsertSchema = createInsertSchema(setupImages)
+
+export const setupCoauthorsSelectSchema = createSelectSchema(setupCoauthors)
+export const setupCoauthorsInsertSchema = createInsertSchema(setupCoauthors)
+
+export const setupToolsSelectSchema = createSelectSchema(setupTools)
+export const setupToolsInsertSchema = createInsertSchema(setupTools)
+
+export const setupsSelectSchema = createSelectSchema(setups)
+export const setupsInsertSchema = createInsertSchema(setups)
+export const setupsPublicSchema = setupsSelectSchema
+    .pick({
+        id: true,
+        name: true,
+        description: true,
+    })
+    .extend({
+        createdAt: z.string(),
+        updatedAt: z.string(),
+        user: userPublicSchema,
+        items: z.array(
+            z.intersection(
+                setupItemsSelectSchema.pick({
+                    unsupported: true,
+                }),
+                itemsSelectSchema
+                    .pick({
+                        id: true,
+                        source: true,
+                        category: true,
+                        name: true,
+                        image: true,
+                        price: true,
+                        likes: true,
+                        nsfw: true,
+                    })
+                    .extend({
+                        shop: shopsPublicSchema,
+                        shapekeys: z.array(
+                            setupItemShapekeysSelectSchema.pick({
+                                name: true,
+                                value: true,
+                            })
+                        ),
+                    })
+            )
+        ),
+        images: z
+            .array(
+                setupImagesSelectSchema.pick({
+                    url: true,
+                    width: true,
+                    height: true,
+                })
+            )
+            .optional(),
+        tags: z
+            .array(
+                setupTagsSelectSchema.pick({
+                    tag: true,
+                })
+            )
+            .optional(),
+        coauthors: z
+            .array(
+                setupCoauthorsSelectSchema.pick({
+                    userId: true,
+                    note: true,
+                })
+            )
+            .optional(),
+        tools: z
+            .array(
+                setupToolsSelectSchema.pick({
+                    toolId: true,
+                    note: true,
+                })
+            )
+            .optional(),
+    })
+export type Setup = z.infer<typeof setupsPublicSchema>
+
+export const bookmarksSelectSchema = createSelectSchema(bookmarks)
+export const bookmarksInsertSchema = createInsertSchema(bookmarks)
+export const bookmarksPublicSchema = bookmarksSelectSchema
+    .pick({
+        userId: true,
+    })
+    .extend({
+        createdAt: z.string(),
+        setup: setupsPublicSchema,
+    })
+export type Bookmark = z.infer<typeof bookmarksPublicSchema>
+
+export const feedbacksSelectSchema = createSelectSchema(feedbacks)
+export const feedbacksInsertSchema = createInsertSchema(feedbacks)
+export const feedbacksPublicSchema = feedbacksSelectSchema
+    .pick({
+        userId: true,
+        comment: true,
+        isClosed: true,
+    })
+    .extend({
+        createdAt: z.string(),
+    })
+export type Feedback = z.infer<typeof feedbacksPublicSchema>
+
+export const setupReportsSelectSchema = createSelectSchema(setupReports)
+export const setupReportsInsertSchema = createInsertSchema(setupReports)
+export const setupReportsPublicSchema = setupReportsSelectSchema
+    .pick({
+        reporterId: true,
+        spam: true,
+        hate: true,
+        infringe: true,
+        badImage: true,
+        other: true,
+        comment: true,
+        isResolved: true,
+    })
+    .extend({
+        createdAt: z.string(),
+        setup: setupsPublicSchema,
+    })
+export type SetupReport = z.infer<typeof setupReportsPublicSchema>
+
+export const userReportsSelectSchema = createSelectSchema(userReports)
+export const userReportsInsertSchema = createInsertSchema(userReports)
+export const userReportsPublicSchema = userReportsSelectSchema
+    .pick({
+        spam: true,
+        hate: true,
+        infringe: true,
+        badImage: true,
+        other: true,
+        comment: true,
+        isResolved: true,
+    })
+    .extend({
+        createdAt: z.string(),
+        reporter: userPublicSchema,
+        reportee: userPublicSchema,
+    })
+export type UserReport = z.infer<typeof userReportsPublicSchema>
+
+export interface PaginationResponse<T> {
+    data: T
+    pagination: {
+        page: number
+        limit: number
+        total: number
+        totalPages: number
+        hasNext: boolean
+        hasPrev: boolean
+    }
 }
 
-export interface User extends Author {
-    created_at: string
-    bio: string
-    links: string[]
-    setups: SetupClient[]
-    shops: { shop: Shop }[]
-}
-
-export interface CoAuthor extends Author {
-    note: string
-}
-
-export interface Shop {
-    id: string
-    name: string
-    thumbnail: string | null
-    verified: boolean
-}
-
-export type ItemCategory =
-    | 'avatar'
-    | 'cloth'
-    | 'accessory'
-    | 'other'
-    | 'hair'
-    | 'shader'
-    | 'texture'
-    | 'tool'
-
-export interface Shapekey {
-    name: string
-    value: number
-}
-
-export interface Item {
-    id: number
-    updated_at: string
-    category: ItemCategory
-    name: string
-    thumbnail: string
-    price: string | null
-    likes: number | null
-    shop: Shop
-    nsfw: boolean
-    outdated: boolean
-    source: string | null
-}
-
-export interface SetupItem extends Item {
-    note: string
-    unsupported: boolean
-    shapekeys: Shapekey[]
-}
-
-export interface SetupImage {
-    name: string
-    width?: number | null
-    height?: number | null
-}
-
-export interface SetupBase {
-    id: number
-    created_at: string
-    name: string
-    description: string | null
-    author: Author
-    images: SetupImage[]
-    unity: string | null
-}
-
-export interface SetupDB extends SetupBase {
-    tags: { tag: string }[]
-    co_authors: {
-        user: Author
-        note: string
-    }[]
-    items: {
-        data: Item | null
-        note: string
-        unsupported: boolean
-        category: ItemCategory | null
-        shapekeys: Shapekey[]
-    }[]
-}
-
-export interface SetupClient extends SetupBase {
-    tags: string[]
-    co_authors: CoAuthor[]
-    items: Record<string, SetupItem[]>
-}
-
-export interface CategoryAttr {
-    label: string
-    icon: string
-    items: SetupItem[]
-}
-
-export interface CategorizedSetupItems {
-    avatar: CategoryAttr
-    cloth: CategoryAttr
-    accessory: CategoryAttr
-    other: CategoryAttr
-}
-
-export interface DocumentData {
-    slug: string
-    created_at: string
-    updated_at: string
-    short_title?: string
-    title: string
-    description?: string
-    thumbnail?: string | null
-    category?: 'news' | 'update' | 'event' | 'blog'
-    content: string
-    published: boolean
-}
-
-export interface HeaderBadge {
-    label: string
-    link: string
-}
-
-export interface ErrorType {
-    status: number
-    message: string
+export interface EdgeConfig {
+    allowedBoothCategoryId: number[]
+    forceUpdateItem: boolean
+    isMaintenance: boolean
+    isMaintenanceDev: boolean
 }

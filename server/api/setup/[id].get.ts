@@ -1,134 +1,191 @@
+import database from '@@/database'
 import { z } from 'zod/v4'
 
 const params = z.object({
-    id: z.union([z.number(), z.string().transform(Number)]),
+    id: z.union([z.string().transform((val) => Number(val)), z.number()]),
 })
 
-export default defineEventHandler(async (): Promise<SetupClient> => {
-    const { id } = await validateParams(params)
-    const supabase = await getSupabaseServerClient()
+export default defineApi<Setup>(
+    async () => {
+        const { id } = await validateParams(params)
 
-    const { data } = await supabase
-        .from('setups')
-        .select(
-            `
-            id,
-            created_at,
-            name,
-            description,
-            unity,
-            author(
-                id,
-                name,
-                avatar,
-                badges:user_badges(
-                    created_at,
-                    name
-                )
-            ),
-            images:setup_images(
-                name,
-                width,
-                height
-            ),
-            items:setup_items(
-                data:item_id(
-                    id,
-                    updated_at,
-                    outdated,
-                    category,
-                    name,
-                    thumbnail,
-                    price,
-                    likes,
-                    shop:shop_id(
-                        id,
-                        name,
-                        thumbnail,
-                        verified
-                    ),
-                    nsfw,
-                    source
-                ),
-                note,
-                unsupported,
-                category,
-                shapekeys:setup_item_shapekeys(
-                    name,
-                    value
-                )
-            ),
-            tags:setup_tags(tag),
-            co_authors:setup_coauthors(
-                user:user_id(
-                    id,
-                    name,
-                    avatar,
-                    badges:user_badges(
-                        created_at,
-                        name
-                    )
-                ),
-                note
-            )
-            `
-        )
-        .eq('id', id)
-        .maybeSingle<SetupDB>()
-
-    if (!data) {
-        console.error(`Setup not found: ID=${id}`)
-        throw createError({
-            statusCode: 404,
-            message: 'Setup not found.',
+        const data = await database.query.setups.findFirst({
+            where: (setups, { eq, and }) =>
+                and(eq(setups.id, id), eq(setups.visibility, true)),
+            columns: {
+                id: true,
+                createdAt: true,
+                updatedAt: true,
+                name: true,
+                description: true,
+            },
+            with: {
+                user: {
+                    columns: {
+                        id: true,
+                        createdAt: true,
+                        name: true,
+                        image: true,
+                        bio: true,
+                        links: true,
+                    },
+                    with: {
+                        badges: {
+                            columns: {
+                                badge: true,
+                                createdAt: true,
+                            },
+                        },
+                        shops: {
+                            columns: {
+                                id: true,
+                                createdAt: true,
+                            },
+                            with: {
+                                shop: {
+                                    columns: {
+                                        id: true,
+                                        name: true,
+                                        image: true,
+                                        verified: true,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                items: {
+                    columns: {
+                        unsupported: true,
+                    },
+                    with: {
+                        item: {
+                            columns: {
+                                id: true,
+                                updatedAt: true,
+                                source: true,
+                                category: true,
+                                name: true,
+                                image: true,
+                                price: true,
+                                likes: true,
+                                nsfw: true,
+                            },
+                            with: {
+                                shop: {
+                                    columns: {
+                                        id: true,
+                                        name: true,
+                                        image: true,
+                                        verified: true,
+                                    },
+                                },
+                            },
+                        },
+                        shapekeys: {
+                            columns: {
+                                name: true,
+                                value: true,
+                            },
+                        },
+                    },
+                },
+                images: {
+                    columns: {
+                        url: true,
+                        width: true,
+                        height: true,
+                    },
+                },
+                tags: {
+                    columns: {
+                        tag: true,
+                    },
+                },
+                coauthors: {
+                    columns: {
+                        userId: true,
+                        note: true,
+                    },
+                },
+                tools: {
+                    columns: {
+                        toolId: true,
+                        note: true,
+                    },
+                },
+            },
         })
-    }
 
-    // アイテム情報の更新処理
-    await updateItemsIfNeeded(data.items)
-
-    return setupMoldingClient(data)
-})
-
-// アイテム情報が古い場合に更新する関数
-const updateItemsIfNeeded = async (
-    items: {
-        data: Item | null
-        note: string
-        unsupported: boolean
-        category: ItemCategory | null
-        shapekeys: Shapekey[]
-    }[]
-) => {
-    if (!items?.length) return
-
-    const ONE_DAY_MS = 24 * 60 * 60 * 1000
-    const currentTime = Date.now()
-
-    for (const item of items) {
-        if (!item.data) continue
-
-        const updatedAt = new Date(item.data.updated_at).getTime()
-        if (currentTime - updatedAt <= ONE_DAY_MS) continue
-
-        try {
-            // boothアイテム情報を取得
-            const response = await useEvent().$fetch('/api/item/booth', {
-                query: { id: item.data.id },
+        if (!data)
+            throw createError({
+                statusCode: 404,
+                statusMessage: 'Setup not found',
             })
 
-            if (response) {
-                // 取得したデータでアイテム情報を更新
-                item.data = {
-                    ...response,
-                    updated_at: new Date().toISOString(),
+        const items: SetupItem[] = []
+
+        for (const item of data.items) {
+            const timeDifference =
+                new Date().getTime() - new Date(item.item.updatedAt).getTime()
+            if (timeDifference < 24 * 60 * 60 * 1000)
+                items.push({
+                    ...item.item,
+                    unsupported: item.unsupported,
+                    shapekeys: item.shapekeys,
+                })
+            else {
+                try {
+                    const response = await useEvent().$fetch<Item>(
+                        `/api/item/booth/${item.item.id}`
+                    )
+                    items.push({
+                        ...response,
+                        unsupported: item.unsupported,
+                        shapekeys: item.shapekeys,
+                    })
+                } catch (error) {
+                    console.error(error)
                 }
-            } else {
-                // 情報取得できなかった場合はoutdatedフラグを立てる
-                item.data.outdated = true
             }
-        } catch (error) {
-            console.error(`Failed to update item ${item.data.id}:`, error)
         }
+
+        return {
+            id: data.id,
+            createdAt: data.createdAt.toISOString(),
+            updatedAt: data.updatedAt.toISOString(),
+            user: {
+                id: data.user.id,
+                createdAt: data.user.createdAt.toISOString(),
+                name: data.user.name,
+                image: data.user.image,
+                bio: data.user.bio,
+                links: data.user.links,
+                badges: data.user.badges.map((badge) => ({
+                    badge: badge.badge,
+                    createdAt: badge.createdAt.toISOString(),
+                })),
+                shops: data.user.shops.map((shop) => ({
+                    id: shop.id,
+                    createdAt: shop.createdAt.toISOString(),
+                    shop: {
+                        id: shop.shop.id,
+                        name: shop.shop.name,
+                        image: shop.shop.image,
+                        verified: shop.shop.verified,
+                    },
+                })),
+            },
+            name: data.name,
+            description: data.description,
+            items,
+            images: data.images,
+            tags: data.tags,
+            coauthors: data.coauthors,
+            tools: data.tools,
+        }
+    },
+    {
+        errorMessage: 'Failed to get setups',
     }
-}
+)

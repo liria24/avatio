@@ -1,19 +1,14 @@
 {
     "$schema": "https://openapi.vercel.sh/vercel.json",
-    "framework": "nuxtjs",
     "cleanUrls": true,
     "trailingSlash": false,
     "crons": [
         {
-            "path": "/api/admin/report",
-            "schedule": "0 22 * * *"
+            "path": "/api/job/refresh-product-views",
+            "schedule": "0 8,20 * * *"
         }
     ],
     "redirects": [
-        {
-            "source": "/edit",
-            "destination": "/compose",
-            "permanent": true
-        }
+        { "source": "/glossary", "destination": "/", "permanent": false }
     ]
 }

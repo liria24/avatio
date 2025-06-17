@@ -1,6 +1,6 @@
 <script lang="ts" setup>
+const session = await useGetSession()
 const route = useRoute()
-const paddingExclude = ['/', '/release', '/setup/compose']
 const footerExclude = ['/setup/compose']
 const modal_feedback = ref(false)
 </script>
@@ -23,61 +23,60 @@ const modal_feedback = ref(false)
                     この Web サイトは JavaScript を使用しています。<br />
                     JavaScript が無効の場合、正しく表示されません。
                 </div>
-                <main
-                    :class="[
-                        'grid w-full grow',
-                        paddingExclude.includes(route.path)
-                            ? 'px-4'
-                            : 'md:px-20 lg:px-32',
-                    ]"
-                >
+                <main class="grid w-full grow">
                     <slot />
                 </main>
 
                 <footer
                     v-if="!footerExclude.includes(route.path)"
-                    class="flex flex-col gap-10 self-stretch"
+                    class="flex flex-col gap-10 self-stretch pb-8"
                 >
                     <USeparator icon="avatio:avatio" />
 
                     <BannerOwnerWarning />
 
                     <div
-                        class="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 pb-10"
+                        class="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 pb-0"
                     >
                         <div
                             class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-zinc-700 dark:text-white"
                         >
                             <div class="flex items-center gap-2">
-                                <Button
+                                <UButton
                                     to="https://x.com/liria_24"
-                                    new-tab
+                                    target="_blank"
                                     icon="simple-icons:x"
                                     aria-label="X"
-                                    variant="flat"
+                                    variant="ghost"
+                                    size="sm"
                                     class="p-2"
                                 />
 
-                                <Button
+                                <UButton
                                     to="https://github.com/liria24/avatio"
-                                    new-tab
+                                    target="_blank"
                                     icon="simple-icons:github"
                                     aria-label="GitHub"
-                                    variant="flat"
+                                    variant="ghost"
+                                    size="sm"
                                     class="p-2"
                                 />
                             </div>
 
                             <div class="flex items-center gap-4">
-                                <Button
-                                    to="/release"
+                                <UButton
+                                    :to="$localePath('/release')"
                                     label="お知らせ"
                                     variant="link"
+                                    size="sm"
+                                    class="p-0"
                                 />
 
-                                <Button
+                                <UButton
                                     label="フィードバック"
                                     variant="link"
+                                    size="sm"
+                                    class="p-0"
                                     @click="modal_feedback = true"
                                 />
                             </div>
@@ -85,38 +84,49 @@ const modal_feedback = ref(false)
                         <div
                             class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2"
                         >
-                            <Button to="/faq" label="FAQ" variant="link" />
-
-                            <Button
-                                to="/terms"
-                                label="利用規約"
+                            <UButton
+                                :to="$localePath('/faq')"
+                                label="FAQ"
                                 variant="link"
+                                size="sm"
+                                class="p-0"
                             />
 
-                            <Button
-                                to="/privacy-policy"
+                            <UButton
+                                :to="$localePath('/terms')"
+                                label="利用規約"
+                                variant="link"
+                                size="sm"
+                                class="p-0"
+                            />
+
+                            <UButton
+                                :to="$localePath('/privacy-policy')"
                                 label="プライバシーポリシー"
                                 variant="link"
+                                size="sm"
+                                class="p-0"
                             />
                         </div>
                         <div class="flex items-center gap-1">
                             <p class="text-sm text-zinc-500">
                                 Copyright © 2025
                             </p>
-                            <Button
+                            <UButton
                                 to="https://liria.me"
-                                new-tab
+                                target="_blank"
                                 label="Liria"
                                 icon="avatio:liria"
                                 variant="link"
-                                class="gap-1 font-[Montserrat] text-sm font-semibold"
+                                size="sm"
+                                class="gap-1 p-0 pl-0.5 font-[Montserrat] text-sm font-semibold"
                             />
                         </div>
                     </div>
-
-                    <ModalFeedback v-model="modal_feedback" />
                 </footer>
             </UContainer>
+            <ModalLogin v-if="!session && route.path === '/login'" />
+            <!-- <ModalFeedback v-model="modal_feedback" /> -->
         </Body>
     </Html>
 </template>

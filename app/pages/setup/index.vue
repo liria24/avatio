@@ -1,3 +1,8 @@
 <script lang="ts" setup>
-navigateTo('/')
+definePageMeta({
+    middleware: defineNuxtRouteMiddleware(() => {
+        const localePath = useLocalePath()
+        return navigateTo(localePath('/'))
+    }),
+})
 </script>

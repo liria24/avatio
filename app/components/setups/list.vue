@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 interface Porps {
     loading?: boolean
-    setups: SetupClient[]
+    setups: Setup[]
     minColumns?: number
     maxColumns?: number
     ssrColumns?: number

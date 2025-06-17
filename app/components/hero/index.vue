@@ -3,7 +3,7 @@ import { twMerge } from 'tailwind-merge'
 
 const props = defineProps<{ class?: string | string[] }>()
 
-const user = useSupabaseUser()
+const session = await useGetSession()
 </script>
 
 <template>
@@ -26,12 +26,14 @@ const user = useSupabaseUser()
         >
             あなたのアバター改変を共有しよう
         </p>
-        <Button
-            v-if="!user"
-            to="/login"
+        <UButton
+            v-if="!session"
+            :to="$localePath('/login')"
+            label="ログイン"
+            variant="outline"
+            size="lg"
+            color="neutral"
             class="rounded-full px-5 hover:bg-zinc-700 hover:text-zinc-200 hover:dark:bg-zinc-300 hover:dark:text-zinc-800"
-        >
-            <span class="pl-0.5">ログイン</span>
-        </Button>
+        />
     </div>
 </template>

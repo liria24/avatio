@@ -1,13 +1,11 @@
 import { getAll } from '@vercel/edge-config'
 
-export default defineEventHandler(async () => {
-    const value = await getAll()
-
-    if (!value)
-        throw createError({
-            statusCode: 404,
-            message: 'Edge Config not found',
-        })
-
-    return value
-})
+export default defineApi(
+    async () => {
+        const value = await getAll<EdgeConfig>()
+        return value
+    },
+    {
+        errorMessage: 'Failed to get item.',
+    }
+)

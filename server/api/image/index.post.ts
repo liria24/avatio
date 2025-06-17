@@ -1,94 +1,90 @@
-import sizeOf from 'image-size'
+import { consola } from 'consola'
+import sharp from 'sharp'
+import { createStorage } from 'unstorage'
+import s3Driver from 'unstorage/drivers/s3'
 import { z } from 'zod/v4'
 
-const body = z.object({
-    image: z.string('No file provided.').min(1, 'Image cannot be empty.'),
-    prefix: z.enum(
-        ['setup', 'avatar'],
-        'Invalid prefix. Must be "setup" or "avatar".'
-    ),
+// 許可される画像タイプ
+const ALLOWED_MIME_TYPES = [
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+    'image/webp',
+    'image/gif',
+] as const
+
+type AllowedMimeType = (typeof ALLOWED_MIME_TYPES)[number]
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // ファイルサイズ制限（10MB）
+
+const formData = z.object({
+    file: z
+        .instanceof(File, { message: 'File is required' })
+        .refine((file) => file.size <= MAX_FILE_SIZE, {
+            message: `File size must be less than ${MAX_FILE_SIZE / 1024 / 1024}MB`,
+        })
+        .refine(
+            (file) => ALLOWED_MIME_TYPES.includes(file.type as AllowedMimeType),
+            { message: 'File must be a valid image format' }
+        ),
+    path: z
+        .string()
+        .min(1, { message: 'Path is required' })
+        .regex(/^[a-zA-Z0-9\-_/]+$/, {
+            message: 'Path contains invalid characters',
+        })
+        .refine((path) => !path.includes('..'), {
+            message: 'Path traversal is not allowed',
+        }),
 })
 
-export default defineEventHandler(
-    async (
-        event
-    ): Promise<{
-        path: string
-        name: string
-        prefix: 'setup' | 'avatar'
-        width?: number
-        height?: number
-    }> => {
-        const storage = imageStorageClient()
+const generateJpgFilename = (randomLength: number = 6) => {
+    const timestamp = Date.now().toString(36) // 36進数でタイムスタンプを短縮
+    const random = Math.random()
+        .toString(36)
+        .substring(2, 2 + randomLength)
 
-        await checkSupabaseUser()
+    return `${timestamp}${random}.jpg`
+}
 
-        const { image, prefix } = await validateBody(body)
+export default defineApi(
+    async () => {
+        const { file, path } = await validateFormData(formData)
 
-        try {
-            // Decode the compressed image from client
-            const base64Data = image.includes(',') ? image.split(',')[1] : image
+        const config = useRuntimeConfig()
 
-            const input = Buffer.from(base64Data, 'base64')
+        const storage = createStorage({
+            driver: s3Driver({
+                accessKeyId: config.r2.accessKey,
+                secretAccessKey: config.r2.secretKey,
+                endpoint: config.r2.endpoint,
+                bucket: 'avatio',
+                region: 'auto',
+            }),
+        })
 
-            // Size validation
-            const maxSizeMB = 2
-            const sizeInMB = input.length / (1024 * 1024)
-            if (sizeInMB > maxSizeMB) {
-                console.error(
-                    `Image size exceeds limit: ${sizeInMB.toFixed(2)}MB`
-                )
-                throw createError({
-                    statusCode: 400,
-                    message: `Image is too large. Maximum size is ${maxSizeMB}MB. Current size: ${sizeInMB.toFixed(2)}MB`,
-                })
-            }
+        consola.start('Processing and uploading image to Blob Storage...')
 
-            const dimensions = sizeOf(input)
+        const processedBuffer = Buffer.from(await file.arrayBuffer())
+        const metadata = await sharp(processedBuffer).metadata()
+        const image = await sharp(processedBuffer).jpeg().toBuffer()
+        const jpgFilename = generateJpgFilename()
 
-            // Generate unique filename using timestamp
-            const unixTime = Math.floor(Date.now())
-            const base64UnixTime = Buffer.from(unixTime.toString())
-                .toString('base64')
-                .replace(/[\\/+=]/g, '') // Remove problematic base64 chars
+        // パスの正規化
+        const normalizedPath = path.replace(/\/+/g, '/').replace(/^\/|\/$/g, '')
+        const fullPath = `${normalizedPath.split('/').join(':')}:${jpgFilename}`
 
-            const extension = 'jpg' // Consider detecting actual format
-            const filename = `${base64UnixTime}.${extension}`
-            const prefixedFileName = `${prefix}:${filename}`
+        await storage.setItemRaw(fullPath, image)
 
-            // Upload to storage
-            await storage.setItemRaw(prefixedFileName, input)
-
-            // Verify upload success
-            if (!(await storage.has(prefixedFileName))) {
-                console.error(
-                    'Storage error: Failed to verify uploaded file existence:',
-                    prefixedFileName
-                )
-                throw createError({
-                    statusCode: 500,
-                    message: 'Upload to storage failed.',
-                })
-            }
-
-            setResponseStatus(event, 201)
-
-            return {
-                path: prefixedFileName,
-                name: filename,
-                prefix: prefix,
-                width: dimensions.width,
-                height: dimensions.height,
-            }
-        } catch (error) {
-            console.error('Image processing or upload error:', error)
-            throw createError({
-                statusCode: 500,
-                message:
-                    error instanceof Error
-                        ? error.message
-                        : "Unknown error. Couldn't upload image.",
-            })
+        consola.success('Image processed and uploaded successfully')
+        return {
+            url: `${config.public.r2.domain}/${normalizedPath}/${jpgFilename}`,
+            width: metadata.width,
+            height: metadata.height,
         }
+    },
+    {
+        errorMessage: 'Failed to upload image',
+        requireSession: true,
     }
 )

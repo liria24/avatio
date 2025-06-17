@@ -4,58 +4,42 @@ interface Query {
     userId?: string | null
 }
 
-export const useFetchSetups = (
-    type: MaybeRef<'latest' | 'user' | 'bookmarks'> = 'latest',
-    options?: {
-        query: MaybeRef<Query>
-        key?: MaybeRef<string>
-        dedupe?: 'cancel' | 'defer'
-        lazy?: boolean
-        getCachedData?: (key: string) => SetupClient[]
-    }
-) => {
+export const useFetchSetups = (options?: {
+    query: MaybeRef<Query>
+    key?: MaybeRef<string>
+    dedupe?: 'cancel' | 'defer'
+    lazy?: boolean
+    getCachedData?: (key: string) => Setup[]
+}) => {
     const nuxtApp = useNuxtApp()
     const {
         query,
-        key = computed(() => `setups-${unref(type)}-${unref(query)}`),
+        key = computed(() => `setups-${JSON.stringify(unref(query))}`),
         dedupe = 'defer',
         lazy = true,
         getCachedData = (key: string) =>
             nuxtApp.payload.data[key] || nuxtApp.static.data[key],
     } = options || {}
 
-    const routes = {
-        latest: '/api/setup/latest',
-        user: '/api/setup/user',
-        bookmarks: '/api/setup/bookmarks',
-    }
-
-    interface ResponseData {
-        setups: SetupClient[]
-        hasMore: boolean
-    }
-
-    const fetchOptions = {
-        query,
-        key,
-        dedupe,
-        lazy,
-        getCachedData,
-        default: () => ({
-            setups: [],
-            hasMore: false,
-        }),
-    }
-
-    const { data, status, refresh } = useFetch<ResponseData>(
-        computed(() => routes[unref(type)]),
-        fetchOptions
+    const { data, status, refresh } = useFetch<PaginationResponse<Setup[]>>(
+        '/api/setup',
+        {
+            query,
+            key,
+            dedupe,
+            lazy,
+            getCachedData,
+        }
     )
 
     const setups = computed(() => {
-        return data.value?.setups || []
+        return data.value?.data || []
     })
-    const hasMore = computed(() => data.value?.hasMore || false)
+
+    const hasMore = computed(() => {
+        if (!data.value?.pagination) return false
+        return data.value.pagination.hasNext
+    })
 
     const fetchMoreSetups = async () => {
         try {
@@ -66,18 +50,26 @@ export const useFetchSetups = (
                 page: currentPage + 1,
             }
 
-            const moreData = await $fetch<ResponseData>(routes[unref(type)], {
-                query: nextPageQuery,
-            })
+            const moreData = await $fetch<PaginationResponse<Setup[]>>(
+                '/api/setup',
+                {
+                    query: nextPageQuery,
+                }
+            )
 
-            if (moreData && data.value) {
-                // 既存の配列に新しいデータを追加
-                data.value.setups = [...data.value.setups, ...moreData.setups]
-                data.value.hasMore = moreData.hasMore
+            if (moreData?.data && data.value?.data) {
+                data.value = {
+                    ...data.value,
+                    data: [...data.value.data, ...moreData.data],
+                    pagination: moreData.pagination,
+                }
 
-                // クエリのページ番号も更新
-                if (query && typeof query === 'object' && 'page' in query)
-                    query.page = currentPage + 1
+                const queryValue = unref(query)
+                if (isRef(query)) {
+                    query.value = { ...queryValue, page: currentPage + 1 }
+                } else if (queryValue && typeof queryValue === 'object') {
+                    Object.assign(queryValue, { page: currentPage + 1 })
+                }
             }
 
             return moreData

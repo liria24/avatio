@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import type { DropdownMenuItem } from '@nuxt/ui'
 
+const localePath = useLocalePath()
 const route = useRoute()
-const user = useSupabaseUser()
-const client = useSupabaseClient<Database>()
+const session = await useGetSession()
 
 const menuItems = ref<DropdownMenuItem[][]>([
     [
@@ -11,7 +11,7 @@ const menuItems = ref<DropdownMenuItem[][]>([
             label: 'プロフィール',
             icon: 'lucide:user-round',
             onSelect: () => {
-                if (user.value) navigateTo(`/@${user.value.id}`)
+                if (session.value) navigateTo(`/@${session.value.user.id}`)
                 else navigateTo('/login')
             },
         },
@@ -25,38 +25,13 @@ const menuItems = ref<DropdownMenuItem[][]>([
         {
             label: 'ログアウト',
             icon: 'lucide:log-out',
-            onSelect: () => useSignOut(),
+            onSelect: async () => {
+                const result = await authClient.signOut()
+                if (result.data?.success) navigateTo(localePath('/'))
+            },
         },
     ],
 ])
-
-const userRefresh = async () => {
-    if (!user.value) return (userProfile.value.avatar = null)
-
-    try {
-        const { data } = await client
-            .from('users')
-            .select('id, name, avatar, badges:user_badges(name, created_at)')
-            .eq('id', user.value.id)
-            .maybeSingle()
-
-        userProfile.value.id = data?.id ?? null
-        userProfile.value.name = data?.name ?? null
-        userProfile.value.avatar = data?.avatar ?? null
-        userProfile.value.badges = data?.badges ?? []
-    } catch {
-        userProfile.value.id = null
-        userProfile.value.name = null
-        userProfile.value.avatar = null
-        userProfile.value.badges = []
-    }
-}
-
-watchEffect(async () => await userRefresh())
-
-onMounted(async () => {
-    if (user.value) await userRefresh()
-})
 </script>
 
 <template>
@@ -64,14 +39,14 @@ onMounted(async () => {
         <div class="flex items-center gap-1">
             <UButton
                 v-if="
-                    user && !['/login', '/setup/compose'].includes(route.path)
+                    session &&
+                    !['/login', '/setup/compose'].includes(route.path)
                 "
-                to="/setup/compose"
+                :to="$localePath('/setup/compose')"
                 icon="lucide:plus"
                 color="neutral"
                 class="md:rounded-full md:py-3 md:pr-6 md:pl-5"
             >
-                <!-- <Icon name="lucide:plus" size="20" /> -->
                 <span class="hidden whitespace-nowrap md:inline">
                     セットアップを投稿
                 </span>
@@ -83,7 +58,7 @@ onMounted(async () => {
                 :delay-duration="0"
             >
                 <UButton
-                    to="/search"
+                    :to="$localePath('/search')"
                     aria-label="検索"
                     icon="lucide:search"
                     variant="ghost"
@@ -91,44 +66,43 @@ onMounted(async () => {
             </UTooltip>
 
             <UTooltip
-                v-if="user && route.path !== '/login'"
+                v-if="session && route.path !== '/login'"
                 text="ブックマーク"
                 :delay-duration="0"
             >
                 <UButton
-                    to="/bookmarks"
+                    :to="$localePath('/bookmarks')"
                     icon="lucide:bookmark"
                     aria-label="ブックマーク"
                     variant="ghost"
                 />
             </UTooltip>
 
-            <ButtonTheme />
+            <HeaderThemeButton />
         </div>
 
         <template v-if="route.path !== '/login'">
             <ClientOnly>
-                <UDropdownMenu v-if="user" :items="menuItems">
+                <UDropdownMenu v-if="session" :items="menuItems">
                     <UAvatar
-                        :src="
-                            getImage(userProfile.avatar, {
-                                prefix: 'avatar',
-                            })
-                        "
-                        :alt="userProfile.name ?? ''"
+                        :src="session.user.image"
+                        :alt="session.user.name"
                         class="hidden size-8 cursor-pointer outline-0 outline-zinc-300 transition-all select-none hover:outline-4 sm:block dark:outline-zinc-600"
                     />
                 </UDropdownMenu>
 
-                <UButton
-                    v-else
-                    id="login"
-                    to="/login"
-                    label="ログイン"
-                    variant="solid"
-                    size="lg"
-                    class="hidden sm:block"
-                />
+                <ModalLogin v-else-if="!session && route.path !== '/login'">
+                    <UButton
+                        label="ログイン"
+                        variant="solid"
+                        size="lg"
+                        class="hidden sm:block"
+                    />
+                </ModalLogin>
+
+                <template #fallback>
+                    <USkeleton class="h-8 w-8 rounded-full" />
+                </template>
             </ClientOnly>
         </template>
     </div>
