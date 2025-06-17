@@ -204,7 +204,7 @@ const linkClasses = computed(() => {
                 :delay-duration="0"
             >
                 <NuxtImg
-                    :src="firstAvatar.image"
+                    :src="firstAvatar.image || undefined"
                     :alt="firstAvatar.name"
                     :placeholder="[30, 30, 75, 5]"
                     format="webp"
@@ -218,7 +218,7 @@ const linkClasses = computed(() => {
 
             <div
                 v-else-if="!firstAvatar && !props.setup.images?.length"
-                class="my-1.5 ml-1.5 flex size-14 shrink-0 items-center justify-center rounded-lg bg-zinc-300 text-zinc-400 dark:bg-zinc-600"
+                class="text-muted my-1.5 ml-1.5 flex size-14 shrink-0 items-center justify-center rounded-lg bg-zinc-300"
             >
                 ?
             </div>
@@ -228,14 +228,14 @@ const linkClasses = computed(() => {
                 class="flex w-full flex-col items-start justify-center gap-2 pr-2 pl-3"
             >
                 <span
-                    class="md:text-md line-clamp-2 text-sm font-medium break-keep text-zinc-700 dark:text-zinc-200"
+                    class="md:text-md text-toned line-clamp-2 text-sm font-medium break-keep"
                 >
                     {{ lineBreak(setup.name) }}
                 </span>
 
                 <div class="flex items-center gap-2">
                     <UAvatar
-                        :src="props.setup.user.image"
+                        :src="props.setup.user.image || undefined"
                         :alt="props.setup.user.name"
                         aria-hidden="true"
                         size="sm"
@@ -252,7 +252,7 @@ const linkClasses = computed(() => {
                         <NuxtTime
                             :datetime="date"
                             relative
-                            class="text-xs whitespace-nowrap text-zinc-600 dark:text-zinc-400"
+                            class="text-muted text-xs whitespace-nowrap"
                         />
                     </UTooltip>
                 </div>
@@ -266,11 +266,11 @@ const linkClasses = computed(() => {
                     <NuxtTime
                         :datetime="date"
                         relative
-                        class="text-xs whitespace-nowrap text-zinc-600 dark:text-zinc-400"
+                        class="text-muted text-xs whitespace-nowrap"
                     />
                 </UTooltip>
                 <UAvatar
-                    :src="setup.user.image"
+                    :src="setup.user.image || undefined"
                     :alt="setup.user.name"
                     aria-hidden="true"
                     size="2xs"

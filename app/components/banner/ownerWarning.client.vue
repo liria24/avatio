@@ -20,7 +20,7 @@ const onClick = () => {
 
 <template>
     <div v-if="visible" class="flex items-center justify-between gap-2 px-2">
-        <p class="text-xs break-keep text-zinc-700 dark:text-zinc-300">
+        <p class="text-toned text-xs break-keep">
             {{
                 lineBreak(
                     'あなたがアバター・アイテムの制作者であり、Avatioに掲載されることを拒否したい場合は、お手数ですが'
@@ -29,7 +29,7 @@ const onClick = () => {
             <NuxtLink
                 to="https://github.com/liria24/avatio/issues/new/choose"
                 target="_blank"
-                class="font-medium text-zinc-500 hover:underline dark:text-zinc-400"
+                class="font-medium hover:underline"
             >
                 こちら
             </NuxtLink>

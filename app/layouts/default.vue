@@ -39,9 +39,9 @@ const modal_feedback = ref(false)
                         class="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 pb-0"
                     >
                         <div
-                            class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-zinc-700 dark:text-white"
+                            class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2"
                         >
-                            <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-0.5">
                                 <UButton
                                     to="https://x.com/liria_24"
                                     target="_blank"
@@ -109,9 +109,7 @@ const modal_feedback = ref(false)
                             />
                         </div>
                         <div class="flex items-center gap-1">
-                            <p class="text-sm text-zinc-500">
-                                Copyright © 2025
-                            </p>
+                            <p class="text-dimmed text-sm">Copyright © 2025</p>
                             <UButton
                                 to="https://liria.me"
                                 target="_blank"

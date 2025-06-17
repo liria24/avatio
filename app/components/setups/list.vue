@@ -23,7 +23,7 @@ const props = withDefaults(defineProps<Porps>(), {
 
     <p
         v-else-if="!props.setups || !props.setups.length"
-        class="mt-4 self-center text-center text-sm text-zinc-500 dark:text-zinc-400"
+        class="text-muted mt-4 self-center text-center text-sm"
     >
         セットアップが見つかりませんでした
     </p>

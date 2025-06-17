@@ -21,9 +21,7 @@ const session = await useGetSession()
             aria-label="Avatio by Liria"
             class="w-64 sm:w-96"
         />
-        <p
-            class="sm:text-md text-sm font-medium text-zinc-600 dark:text-zinc-400"
-        >
+        <p class="sm:text-md text-muted text-sm font-medium">
             あなたのアバター改変を共有しよう
         </p>
         <UButton

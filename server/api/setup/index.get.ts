@@ -160,8 +160,43 @@ export default defineApi<PaginationResponse<Setup[]>>(
                 },
                 coauthors: {
                     columns: {
-                        userId: true,
                         note: true,
+                    },
+                    with: {
+                        user: {
+                            columns: {
+                                id: true,
+                                createdAt: true,
+                                name: true,
+                                image: true,
+                                bio: true,
+                                links: true,
+                            },
+                            with: {
+                                badges: {
+                                    columns: {
+                                        badge: true,
+                                        createdAt: true,
+                                    },
+                                },
+                                shops: {
+                                    columns: {
+                                        id: true,
+                                        createdAt: true,
+                                    },
+                                    with: {
+                                        shop: {
+                                            columns: {
+                                                id: true,
+                                                name: true,
+                                                image: true,
+                                                verified: true,
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
                     },
                 },
                 tools: {
@@ -224,8 +259,30 @@ export default defineApi<PaginationResponse<Setup[]>>(
                 })),
             })),
             images: setup.images,
-            tags: setup.tags,
-            coauthors: setup.coauthors,
+            tags: setup.tags.map((tag) => tag.tag),
+            coauthors: setup.coauthors.map((coauthor) => ({
+                id: coauthor.user.id,
+                createdAt: coauthor.user.createdAt.toISOString(),
+                name: coauthor.user.name,
+                image: coauthor.user.image,
+                bio: coauthor.user.bio,
+                links: coauthor.user.links,
+                badges: coauthor.user.badges.map((badge) => ({
+                    badge: badge.badge,
+                    createdAt: badge.createdAt.toISOString(),
+                })),
+                shops: coauthor.user.shops.map((shop) => ({
+                    id: shop.id,
+                    createdAt: shop.createdAt.toISOString(),
+                    shop: {
+                        id: shop.shop.id,
+                        name: shop.shop.name,
+                        image: shop.shop.image,
+                        verified: shop.shop.verified,
+                    },
+                })),
+                note: coauthor.note,
+            })),
             tools: setup.tools,
         }))
 

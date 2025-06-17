@@ -201,19 +201,15 @@ export const setupsPublicSchema = setupsSelectSchema
                 })
             )
             .optional(),
-        tags: z
-            .array(
-                setupTagsSelectSchema.pick({
-                    tag: true,
-                })
-            )
-            .optional(),
+        tags: z.string().array().optional(),
         coauthors: z
             .array(
-                setupCoauthorsSelectSchema.pick({
-                    userId: true,
-                    note: true,
-                })
+                z.intersection(
+                    userPublicSchema,
+                    setupCoauthorsSelectSchema.pick({
+                        note: true,
+                    })
+                )
             )
             .optional(),
         tools: z
