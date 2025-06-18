@@ -45,6 +45,7 @@ export default defineApi<Setup>(
                                 shop: {
                                     columns: {
                                         id: true,
+                                        platform: true,
                                         name: true,
                                         image: true,
                                         verified: true,
@@ -57,13 +58,14 @@ export default defineApi<Setup>(
                 items: {
                     columns: {
                         unsupported: true,
+                        note: true,
                     },
                     with: {
                         item: {
                             columns: {
                                 id: true,
                                 updatedAt: true,
-                                source: true,
+                                platform: true,
                                 category: true,
                                 name: true,
                                 image: true,
@@ -75,6 +77,7 @@ export default defineApi<Setup>(
                                 shop: {
                                     columns: {
                                         id: true,
+                                        platform: true,
                                         name: true,
                                         image: true,
                                         verified: true,
@@ -132,6 +135,7 @@ export default defineApi<Setup>(
                                         shop: {
                                             columns: {
                                                 id: true,
+                                                platform: true,
                                                 name: true,
                                                 image: true,
                                                 verified: true,
@@ -167,6 +171,7 @@ export default defineApi<Setup>(
                 items.push({
                     ...item.item,
                     unsupported: item.unsupported,
+                    note: item.note,
                     shapekeys: item.shapekeys,
                 })
             else {
@@ -177,6 +182,7 @@ export default defineApi<Setup>(
                     items.push({
                         ...response,
                         unsupported: item.unsupported,
+                        note: item.note,
                         shapekeys: item.shapekeys,
                     })
                 } catch (error) {
@@ -203,12 +209,7 @@ export default defineApi<Setup>(
                 shops: data.user.shops.map((shop) => ({
                     id: shop.id,
                     createdAt: shop.createdAt.toISOString(),
-                    shop: {
-                        id: shop.shop.id,
-                        name: shop.shop.name,
-                        image: shop.shop.image,
-                        verified: shop.shop.verified,
-                    },
+                    shop: shop.shop,
                 })),
             },
             name: data.name,
@@ -230,12 +231,7 @@ export default defineApi<Setup>(
                 shops: coauthor.user.shops.map((shop) => ({
                     id: shop.id,
                     createdAt: shop.createdAt.toISOString(),
-                    shop: {
-                        id: shop.shop.id,
-                        name: shop.shop.name,
-                        image: shop.shop.image,
-                        verified: shop.shop.verified,
-                    },
+                    shop: shop.shop,
                 })),
                 note: coauthor.note,
             })),

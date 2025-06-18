@@ -25,10 +25,14 @@ const props = defineProps<Props>()
                     <div
                         class="flex flex-wrap items-center gap-x-1 gap-y-0.5 pl-1"
                     >
-                        <p class="pb-0.5 text-left text-sm font-semibold">
+                        <p class="text-left text-sm font-semibold">
                             {{ props.user.name }}
                         </p>
-                        <!-- <BadgeUser :badges="props.user.badges" size="sm" /> -->
+                        <UserBadges
+                            :badges="props.user.badges"
+                            size="sm"
+                            class="ml-1"
+                        />
                     </div>
                 </NuxtLink>
             </div>
@@ -93,15 +97,16 @@ const props = defineProps<Props>()
                         <UAvatar
                             :src="coAuthor.image || undefined"
                             :alt="coAuthor.name"
+                            size="sm"
                         />
-                        <p class="pb-0.5 pl-1 text-left">
+                        <p class="text-left text-sm">
                             {{ coAuthor.name }}
                         </p>
-                        <!-- <BadgeUser
+                        <UserBadges
                             v-if="coAuthor.badges?.length"
                             :badges="coAuthor.badges"
                             size="sm"
-                        /> -->
+                        />
                     </NuxtLink>
                     <p
                         v-if="coAuthor.note?.length"

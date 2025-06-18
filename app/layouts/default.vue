@@ -14,7 +14,7 @@ const modal_feedback = ref(false)
         </Head>
         <Body>
             <UContainer
-                class="flex min-h-[100dvh] flex-col items-center gap-6 pt-6 md:gap-8"
+                class="flex min-h-dvh flex-col items-center gap-6 pt-6 md:gap-8"
             >
                 <Header />
                 <div

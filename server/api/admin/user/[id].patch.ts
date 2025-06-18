@@ -36,7 +36,7 @@ export default defineApi(
                 body: { userId, role: body.role },
             })
 
-        if (body.ban !== undefined && body.ban !== null) {
+        if (body.ban !== undefined && body.ban !== null)
             if (body.ban)
                 await auth.api.banUser({
                     headers,
@@ -53,7 +53,6 @@ export default defineApi(
                         userId,
                     },
                 })
-        }
 
         return
     },

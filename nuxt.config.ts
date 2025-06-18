@@ -64,8 +64,8 @@ export default defineNuxtConfig({
     },
 
     routeRules: {
-        '/terms': { prerender: true },
-        '/privacy-policy': { prerender: true },
+        '/terms': { prerender: import.meta.dev ? false : true },
+        '/privacy-policy': { prerender: import.meta.dev ? false : true },
         '/api/__sitemap__/urls': { isr: 60 * 60 * 6 },
     },
 
@@ -198,13 +198,6 @@ export default defineNuxtConfig({
 
     nitro: {
         preset: 'vercel',
-        storage: {
-            redis: {
-                driver: 'upstash',
-                url: import.meta.env.NUXT_UPSTASH_KV_REST_API_URL || '',
-                token: import.meta.env.NUXT_UPSTASH_KV_REST_API_TOKEN || '',
-            },
-        },
         experimental: {
             asyncContext: true,
             openAPI: true,

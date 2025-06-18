@@ -3,7 +3,7 @@ import {
     feedbacks,
     itemCategory,
     items,
-    itemSource,
+    platform,
     setupCoauthors,
     setupImages,
     setupItems,
@@ -26,8 +26,8 @@ import { z } from 'zod/v4'
 export const userBadgeSchema = z.enum(userBadge.enumValues)
 export type UserBadge = z.infer<typeof userBadgeSchema>
 
-export const itemSourceSchema = z.enum(itemSource.enumValues)
-export type ItemSource = z.infer<typeof itemSourceSchema>
+export const platformSchema = z.enum(platform.enumValues)
+export type Platform = z.infer<typeof platformSchema>
 
 export const itemCategorySchema = z.enum(itemCategory.enumValues)
 export type ItemCategory = z.infer<typeof itemCategorySchema>
@@ -36,6 +36,7 @@ export const shopsSelectSchema = createSelectSchema(shops)
 export const shopsInsertSchema = createInsertSchema(shops)
 export const shopsPublicSchema = shopsSelectSchema.pick({
     id: true,
+    platform: true,
     name: true,
     image: true,
     verified: true,
@@ -88,7 +89,7 @@ export const userPublicSchema = userSelectSchema
     })
 export type User = z.infer<typeof userPublicSchema>
 export type UserWithSetups = z.infer<typeof userPublicSchema> & {
-    setups: Omit<Setup, 'user'>[]
+    setups: Setup[]
 }
 
 export const itemsSelectSchema = createSelectSchema(items)
@@ -96,7 +97,7 @@ export const itemsInsertSchema = createInsertSchema(items)
 export const itemsPublicSchema = itemsSelectSchema
     .pick({
         id: true,
-        source: true,
+        platform: true,
         category: true,
         name: true,
         image: true,
@@ -128,6 +129,7 @@ export const setupItemsInsertSchema = createInsertSchema(setupItems)
 export const setupItemsPublicSchema = z.intersection(
     setupItemsSelectSchema.pick({
         unsupported: true,
+        note: true,
     }),
     itemsPublicSchema.extend({
         shop: shopsPublicSchema,
@@ -165,33 +167,7 @@ export const setupsPublicSchema = setupsSelectSchema
         createdAt: z.string(),
         updatedAt: z.string(),
         user: userPublicSchema,
-        items: z.array(
-            z.intersection(
-                setupItemsSelectSchema.pick({
-                    unsupported: true,
-                }),
-                itemsSelectSchema
-                    .pick({
-                        id: true,
-                        source: true,
-                        category: true,
-                        name: true,
-                        image: true,
-                        price: true,
-                        likes: true,
-                        nsfw: true,
-                    })
-                    .extend({
-                        shop: shopsPublicSchema,
-                        shapekeys: z.array(
-                            setupItemShapekeysSelectSchema.pick({
-                                name: true,
-                                value: true,
-                            })
-                        ),
-                    })
-            )
-        ),
+        items: z.array(setupItemsPublicSchema),
         images: z
             .array(
                 setupImagesSelectSchema.pick({

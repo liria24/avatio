@@ -1,12 +1,9 @@
 <script setup lang="ts">
 // const session = await useGetSession()
-const route = useRoute('setup-id')
+const route = useRoute()
+const toast = useToast()
 
 const id = Number(route.params.id)
-// const bookmark = ref(false)
-
-const modalLogin = ref(false)
-// const modalReport = ref(false)
 
 const { setup, status } = useFetchSetup(id)
 
@@ -15,21 +12,6 @@ if (status.value === 'success' && !id)
         statusCode: 404,
         message: 'IDが無効です',
     })
-
-// const onReportClick = () => {
-//     if (session.value) modalReport.value = true
-//     else modalLogin.value = true
-// }
-
-// const onLoginSuccess = async () => {
-//     modalLogin.value = false
-//     if (!setup.value) return
-//     bookmark.value = await useCheckBookmark(id)
-// }
-
-// onMounted(async () => {
-//     bookmark.value = await useCheckBookmark(id)
-// })
 
 if (setup.value) {
     defineSeo({
@@ -62,16 +44,43 @@ if (setup.value) {
         }),
     ])
 }
+
+const deleteSetup = async () => {
+    try {
+        await $fetch(`/api/setup/${id}`, {
+            method: 'DELETE',
+        })
+        toast.add({
+            title: 'セットアップが削除されました',
+            description: 'セットアップが正常に削除されました。',
+            color: 'success',
+        })
+        navigateTo('/setup')
+    } catch (error) {
+        toast.add({
+            title: 'セットアップの削除に失敗しました',
+            description:
+                error instanceof Error
+                    ? error.message
+                    : '不明なエラーが発生しました',
+            color: 'error',
+        })
+    }
+}
 </script>
 
 <template>
     <div v-if="setup" class="flex flex-col items-start gap-5">
-        <!-- <UiBreadcrumb
+        <UBreadcrumb
             :items="[
-                { text: setup.user.name, href: `/@${setup.user.id}` },
-                { text: setup.name },
+                { label: setup.user.name, to: `/@${setup.user.id}` },
+                { label: setup.name },
             ]"
-        /> -->
+            :ui="{
+                link: 'text-xs',
+                separatorIcon: 'size-4',
+            }"
+        />
 
         <SetupsViewer
             :setup-id="id"
@@ -83,9 +92,7 @@ if (setup.value) {
             :co-authors="setup.coauthors"
             :user="setup.user"
             :items="setup.items"
-            @login="modalLogin = true"
+            @delete="deleteSetup"
         />
-
-        <!-- <ModalReportSetup v-model="modalReport" :id="Number(id)" /> -->
     </div>
 </template>

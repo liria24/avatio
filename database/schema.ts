@@ -23,7 +23,7 @@ export const userBadge = pgEnum('user_badge', [
     'idea_man',
 ])
 
-export const itemSource = pgEnum('item_source', ['booth'])
+export const platform = pgEnum('platform', ['booth'])
 
 export const itemCategory = pgEnum('item_category', [
     'avatar',
@@ -37,61 +37,6 @@ export const itemCategory = pgEnum('item_category', [
 ])
 
 export const authSchema = pgSchema('auth')
-
-// export const user = authSchema.table(
-//     'user',
-//     {
-//         id: text().primaryKey(),
-//         name: text().notNull(),
-//         email: text().notNull().unique(),
-//         emailVerified: boolean('email_verified').default(false).notNull(),
-//         image: text(),
-//         createdAt: timestamp('created_at').defaultNow().notNull(),
-//         updatedAt: timestamp('updated_at').defaultNow().notNull(),
-//         role: text(),
-//         banned: boolean(),
-//         banReason: text('ban_reason'),
-//         banExpires: timestamp('ban_expires'),
-//         bio: text(),
-//         links: text().array(),
-//     },
-//     (table) => [index('user_email_index').on(table.email)]
-// )
-
-// export const account = authSchema.table(
-//     'account',
-//     {
-//         id: text().primaryKey(),
-//         accountId: text('account_id').notNull(),
-//         providerId: text('provider_id').notNull(),
-//         userId: text('user_id')
-//             .notNull()
-//             .references(() => user.id, { onDelete: 'cascade' }),
-//         accessToken: text('access_token'),
-//         refreshToken: text('refresh_token'),
-//         idToken: text('id_token'),
-//         accessTokenExpiresAt: timestamp('access_token_expires_at'),
-//         refreshTokenExpiresAt: timestamp('refresh_token_expires_at'),
-//         scope: text(),
-//         password: text(),
-//         createdAt: timestamp('created_at').notNull(),
-//         updatedAt: timestamp('updated_at').notNull(),
-//     },
-//     (table) => [index('account_user_id_index').on(table.userId)]
-// )
-
-// export const verification = authSchema.table(
-//     'verification',
-//     {
-//         id: text().primaryKey(),
-//         identifier: text().notNull(),
-//         value: text().notNull(),
-//         expiresAt: timestamp('expires_at').notNull(),
-//         createdAt: timestamp('created_at').defaultNow().notNull(),
-//         updatedAt: timestamp('updated_at').defaultNow().notNull(),
-//     },
-//     (table) => [index('verification_identifier_index').on(table.identifier)]
-// )
 
 export const user = authSchema.table(
     'user',
@@ -176,7 +121,7 @@ export const rateLimit = authSchema.table(
 export const userShops = authSchema.table(
     'user_shops',
     {
-        id: text().primaryKey(),
+        id: integer().primaryKey().generatedAlwaysAsIdentity(),
         createdAt: timestamp('created_at').defaultNow().notNull(),
         userId: text('user_id').notNull(),
         shopId: text('shop_id').notNull(),
@@ -223,7 +168,7 @@ export const userShopVerification = authSchema.table(
 export const userBadges = authSchema.table(
     'user_badges',
     {
-        id: text().primaryKey(),
+        id: integer().primaryKey().generatedAlwaysAsIdentity(),
         createdAt: timestamp('created_at').defaultNow().notNull(),
         userId: text('user_id').notNull(),
         badge: userBadge().notNull(),
@@ -246,6 +191,7 @@ export const shops = pgTable(
         id: text().primaryKey(),
         createdAt: timestamp('created_at').defaultNow().notNull(),
         updatedAt: timestamp('updated_at').defaultNow().notNull(),
+        platform: platform().notNull(),
         name: text().notNull(),
         image: text(),
         verified: boolean().default(false).notNull(),
@@ -262,7 +208,7 @@ export const items = pgTable(
         id: integer().primaryKey(),
         createdAt: timestamp('created_at').defaultNow().notNull(),
         updatedAt: timestamp('updated_at').defaultNow().notNull(),
-        source: itemSource().notNull(),
+        platform: platform().notNull(),
         outdated: boolean().default(false).notNull(),
         shopId: text('shop_id').notNull(),
         name: text().notNull(),

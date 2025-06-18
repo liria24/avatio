@@ -1,8 +1,207 @@
 <script lang="ts" setup>
 const route = useRoute()
-const user = await $fetch(`/api/user/${route.params.id}`)
+const session = await useGetSession()
+const id = route.params.id as string
+
+const { user, status } = useFetchUser(id)
+
+if (status.value === 'success' && !user.value)
+    showError({
+        statusCode: 404,
+        message: 'IDが無効です',
+    })
+
+const links = computed(() =>
+    user.value?.links?.map((link) => {
+        const attributes = linkAttributes(link)
+        return {
+            label: attributes.label,
+            icon: attributes.icon,
+            to: link,
+        }
+    })
+)
+
+if (user.value) {
+    defineSeo({
+        title: user.value.name,
+        description: user.value.bio || undefined,
+        image: user.value.image || undefined,
+    })
+    useSchemaOrg([
+        defineWebPage({
+            name: user.value.name,
+            description: user.value.bio,
+            datePublished: user.value.createdAt,
+        }),
+        definePerson({
+            name: user.value.name,
+            description: user.value.bio,
+            image: user.value.image || undefined,
+            sameAs: user.value.links || undefined,
+        }),
+    ])
+}
 </script>
 
 <template>
-    <div>{{ user }}</div>
+    <div
+        v-if="(status === 'success' && !user) || status === 'error'"
+        class="flex w-full flex-col items-center"
+    >
+        <p class="mt-5 text-zinc-400">ユーザーデータの取得に失敗しました</p>
+    </div>
+
+    <div v-else-if="user" class="flex w-full flex-col gap-6 px-2">
+        <div class="flex w-full flex-col items-start gap-3">
+            <div
+                class="flex w-full flex-col items-start justify-between gap-3 sm:flex-row sm:items-center"
+            >
+                <div class="flex items-center gap-6">
+                    <UAvatar
+                        :src="user.image || undefined"
+                        :alt="user.name"
+                        class="size-14 sm:size-20"
+                    />
+                    <div class="flex flex-col gap-1">
+                        <div
+                            class="flex flex-wrap items-center gap-x-3 gap-y-1"
+                        >
+                            <p class="text-2xl font-bold">
+                                {{ user.name }}
+                            </p>
+                            <UserBadges
+                                v-if="user.badges"
+                                :badges="user.badges"
+                            />
+                        </div>
+                        <p class="text-dimmed text-sm">
+                            アカウント作成日:
+                            <NuxtTime
+                                :datetime="user.createdAt"
+                                class="text-muted font-[Geist]"
+                            />
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1 self-end sm:self-auto">
+                    <UButton
+                        v-if="session?.user.id === user.id"
+                        :to="$localePath('/settings')"
+                        label="プロフィールを編集"
+                        icon="lucide:pen-line"
+                        variant="ghost"
+                        size="sm"
+                        class="self-end"
+                    />
+                    <ModalReportUser v-else-if="session" :user-id="user.id">
+                        <UButton
+                            label="ユーザーを報告"
+                            icon="lucide:flag"
+                            variant="ghost"
+                            size="sm"
+                            class="self-end"
+                        />
+                    </ModalReportUser>
+                    <ModalLogin v-else>
+                        <UButton
+                            label="ユーザーを報告"
+                            icon="lucide:flag"
+                            variant="ghost"
+                            size="sm"
+                            class="self-end"
+                        />
+                    </ModalLogin>
+                </div>
+            </div>
+
+            <div class="flex w-full flex-col gap-3 px-2 empty:hidden">
+                <div
+                    v-if="links?.length"
+                    class="flex flex-wrap items-center gap-2"
+                >
+                    <UButton
+                        v-for="(link, index) in links"
+                        :key="'link-' + index"
+                        :to="link.to"
+                        target="_blank"
+                        :icon="link.icon"
+                        variant="ghost"
+                    />
+                </div>
+
+                <div
+                    v-if="user.bio?.length"
+                    class="flex w-full flex-col gap-1 rounded-xl border border-zinc-400 px-4 py-3 dark:border-zinc-600"
+                >
+                    <span class="mt-[-2px] text-sm text-zinc-500">bio</span>
+                    <p
+                        class="text-relaxed text-sm [overflow-wrap:anywhere] break-keep whitespace-break-spaces"
+                    >
+                        {{ lineBreak(user.bio) }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div
+            v-if="user.shops?.length"
+            class="mb-4 flex w-full flex-col gap-5 px-2"
+        >
+            <div class="flex items-center gap-2">
+                <Icon name="lucide:store" />
+                <h2 class="text-xl font-semibold">ショップ</h2>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+                <UButton
+                    v-for="(shop, index) in user.shops"
+                    :key="'shop-' + index"
+                    :to="`https://${shop.shop.id}.booth.pm`"
+                    target="_blank"
+                    variant="soft"
+                    class="gap-2 p-3"
+                >
+                    <NuxtImg
+                        :src="shop.shop.image || undefined"
+                        :alt="shop.shop.name"
+                        :width="32"
+                        :height="32"
+                        format="webp"
+                        fit="cover"
+                        class="rounded-lg ring-1 ring-zinc-300 dark:ring-zinc-700"
+                    />
+                    <div class="flex flex-col items-start gap-1">
+                        <span
+                            class="text-sm leading-none font-semibold text-zinc-800 dark:text-zinc-300"
+                        >
+                            {{ shop.shop.name }}
+                        </span>
+                        <span
+                            class="text-xs leading-none font-normal text-zinc-500 dark:text-zinc-500"
+                        >
+                            {{ shop.shop.id }}.booth.pm
+                        </span>
+                    </div>
+                </UButton>
+            </div>
+        </div>
+
+        <div class="flex w-full flex-col gap-5 px-2">
+            <div class="flex items-center gap-2">
+                <Icon name="lucide:shirt" size="22" class="text-muted" />
+                <h2 class="text-xl leading-none font-semibold text-nowrap">
+                    セットアップ
+                </h2>
+            </div>
+
+            <div class="flex w-full flex-col gap-3 self-center">
+                <SetupsList
+                    v-if="user && user.setups"
+                    :setups="user.setups"
+                    :loading="status === 'pending'"
+                />
+            </div>
+        </div>
+    </div>
 </template>

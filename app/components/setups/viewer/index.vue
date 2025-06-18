@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import type { DropdownMenuItem } from '@nuxt/ui'
+
 interface Props {
     preview?: boolean
     setupId?: number
@@ -14,9 +16,80 @@ interface Props {
 }
 const props = defineProps<Props>()
 
-const emit = defineEmits(['login'])
+const emit = defineEmits(['delete'])
 
 const session = await useGetSession()
+const toast = useToast()
+
+const shareX = useSocialShare({
+    network: 'x',
+    title: `${props.title} @${props.user.name} | Avatio`,
+    image: props.images?.[0]?.url || undefined,
+})
+const shareBluesky = useSocialShare({
+    network: 'bluesky',
+    title: `${props.title} @${props.user.name} | Avatio`,
+    image: props.images?.[0]?.url || undefined,
+})
+const shareLine = useSocialShare({
+    network: 'line',
+    title: `${props.title} @${props.user.name} | Avatio`,
+    image: props.images?.[0]?.url || undefined,
+})
+
+const socialShareItems = ref<DropdownMenuItem[]>([
+    [
+        {
+            label: 'リンクをコピー',
+            icon: 'lucide:link',
+            onSelect: () => {
+                navigator.clipboard
+                    .writeText(window.location.href)
+                    .then(() => {
+                        toast.add({ title: 'リンクがコピーされました' })
+                    })
+                    .catch(() => {
+                        toast.add({
+                            title: 'リンクのコピーに失敗しました',
+                            color: 'error',
+                        })
+                    })
+            },
+        },
+    ],
+    [
+        {
+            label: 'X',
+            icon: 'simple-icons:x',
+            onSelect: () => {
+                navigateTo(shareX.value.shareUrl, {
+                    external: true,
+                    open: { target: '_blank' },
+                })
+            },
+        },
+        {
+            label: 'Bluesky',
+            icon: 'simple-icons:bluesky',
+            onSelect: () => {
+                navigateTo(shareBluesky.value.shareUrl, {
+                    external: true,
+                    open: { target: '_blank' },
+                })
+            },
+        },
+        {
+            label: 'LINE',
+            icon: 'simple-icons:line',
+            onSelect: () => {
+                navigateTo(shareLine.value.shareUrl, {
+                    external: true,
+                    open: { target: '_blank' },
+                })
+            },
+        },
+    ],
+])
 
 const bookmark = ref(false)
 const bookmarkButtonStyle = computed(() => ({
@@ -24,13 +97,38 @@ const bookmarkButtonStyle = computed(() => ({
     label: bookmark.value ? 'ブックマークから削除' : 'ブックマーク',
 }))
 
-// const categories: Record<string, { label: string; icon: string }> =
-//     itemCategories()
+const categoryAttributes = itemCategoryAttributes()
+
+const categorizedItems = computed(() => {
+    const itemsByCategory = props.items.reduce(
+        (acc, item) => {
+            const category = item.category || 'other'
+            if (!acc[category]) acc[category] = []
+            acc[category].push(item)
+            return acc
+        },
+        {} as Record<string, SetupItem[]>
+    )
+
+    const orderedCategories: Record<string, SetupItem[]> = {}
+
+    // itemCategoryAttributesで定義された順序でプロパティを追加
+    for (const categoryKey of Object.keys(categoryAttributes))
+        if (itemsByCategory[categoryKey])
+            orderedCategories[categoryKey] = itemsByCategory[categoryKey]
+
+    // itemCategoryAttributesに定義されていないカテゴリがあれば最後に追加
+    for (const [categoryKey, items] of Object.entries(itemsByCategory))
+        if (!orderedCategories[categoryKey])
+            orderedCategories[categoryKey] = items
+
+    return orderedCategories
+})
 </script>
 
 <template>
     <div class="relative flex w-full flex-col items-start gap-8 xl:flex-row">
-        <div class="flex w-full flex-col items-center gap-4">
+        <div class="flex w-full flex-col items-start gap-4">
             <div class="flex w-full flex-col items-start gap-1">
                 <h1
                     class="text-highlighted text-3xl font-bold wrap-anywhere break-keep"
@@ -51,96 +149,176 @@ const bookmarkButtonStyle = computed(() => ({
                         />
                     </div>
                     <div v-if="!preview" class="flex items-center gap-0.5">
-                        <UButton
-                            v-if="session?.user.id !== props.user.id"
-                            :icon="bookmarkButtonStyle.icon"
-                            :aria-label="bookmarkButtonStyle.label"
-                            variant="ghost"
-                            size="sm"
-                            class="p-2"
-                        />
+                        <template v-if="session?.user.id === props.user.id">
+                            <UModal title="セットアップを削除">
+                                <UButton
+                                    tooltip="削除"
+                                    aria-label="削除"
+                                    icon="lucide:trash"
+                                    variant="ghost"
+                                    size="sm"
+                                    class="p-2"
+                                />
 
-                        <UButton
-                            v-if="session?.user.id !== props.user.id"
-                            icon="lucide:flag"
-                            aria-label="報告"
-                            variant="ghost"
-                            size="sm"
-                            class="p-2"
-                        />
+                                <template #body>
+                                    <UAlert
+                                        icon="lucide:trash"
+                                        title="本当に削除しますか？"
+                                        description="この操作は取り消すことができません。"
+                                        color="warning"
+                                        variant="subtle"
+                                    />
+                                </template>
 
-                        <UButton
-                            v-if="session?.user.id === props.user.id"
-                            tooltip="削除"
-                            aria-label="削除"
-                            icon="lucide:trash"
-                            variant="ghost"
-                            size="sm"
-                            class="p-2"
-                        />
+                                <template #footer>
+                                    <UButton
+                                        label="削除"
+                                        color="error"
+                                        size="lg"
+                                        block
+                                        @click="emit('delete')"
+                                    />
+                                </template>
+                            </UModal>
+                        </template>
 
-                        <UButton
-                            icon="lucide:share-2"
-                            aria-label="シェア"
-                            variant="ghost"
-                            size="sm"
-                            class="p-2"
-                        />
+                        <template v-else>
+                            <UButton
+                                :icon="bookmarkButtonStyle.icon"
+                                :aria-label="bookmarkButtonStyle.label"
+                                variant="ghost"
+                                size="sm"
+                                class="p-2"
+                            />
+
+                            <ModalReportSetup
+                                v-if="session"
+                                :setup-id="props.setupId!"
+                            >
+                                <UButton
+                                    icon="lucide:flag"
+                                    aria-label="報告"
+                                    variant="ghost"
+                                    size="sm"
+                                    class="p-2"
+                                />
+                            </ModalReportSetup>
+                            <ModalLogin v-else>
+                                <UButton
+                                    icon="lucide:flag"
+                                    aria-label="報告"
+                                    variant="ghost"
+                                    size="sm"
+                                    class="p-2"
+                                />
+                            </ModalLogin>
+                        </template>
+
+                        <UDropdownMenu
+                            :items="socialShareItems"
+                            :content="{
+                                align: 'center',
+                                side: 'bottom',
+                                sideOffset: 8,
+                            }"
+                            :ui="{
+                                content: 'w-40',
+                            }"
+                        >
+                            <UButton
+                                icon="lucide:share-2"
+                                aria-label="シェア"
+                                variant="ghost"
+                                size="sm"
+                                class="p-2"
+                            />
+                        </UDropdownMenu>
                     </div>
                 </div>
             </div>
 
-            <!-- <UiImage
+            <UModal
                 v-if="props.images?.length && !props.preview"
-                :src="props.images[0]!.url"
-                :alt="props.title"
-                :width="props.images[0]!.width ?? 640"
-                :height="props.images[0]!.height ?? 320"
-                class="max-h-[900px] w-full shrink-0 grow-0 object-contain"
-            />
-            <UiImage
-                v-if="props.previewImages?.length && props.preview"
-                :src="props.previewImages[0]!"
-                :alt="props.title"
-                :width="640"
-                :height="320"
-                class="max-h-[900px] w-full shrink-0 grow-0 object-contain"
-            /> -->
-
-            <div class="mt-3 flex w-full flex-col gap-5 xl:hidden">
-                <SetupsViewerInfo
-                    :preview="props.preview"
-                    :setup-id="props.setupId"
-                    :created-at="props.createdAt"
-                    :title="props.title"
-                    :description="props.description"
-                    :tags="props.tags"
-                    :co-authors="props.coAuthors"
-                    :user="props.user"
-                    class="w-full"
-                    @login="emit('login')"
+                :ui="{ content: 'bg-transparent ring-0' }"
+            >
+                <NuxtImg
+                    :src="props.images[0]?.url"
+                    :alt="props.title"
+                    :width="props.images[0]?.width ?? 640"
+                    :height="props.images[0]?.height ?? 320"
+                    class="h-full max-h-[720px] w-fit shrink-0 grow-0 cursor-zoom-in overflow-hidden rounded-lg object-contain"
                 />
-            </div>
+
+                <template #content>
+                    <NuxtImg
+                        :src="props.images[0]?.url"
+                        :alt="props.title"
+                        class="size-full shrink-0 grow-0 object-contain"
+                    />
+                </template>
+            </UModal>
+
+            <UModal
+                v-if="props.previewImages?.length && props.preview"
+                :ui="{ content: 'bg-transparent ring-0' }"
+            >
+                <NuxtImg
+                    :src="props.previewImages[0]!"
+                    :alt="props.title"
+                    :width="640"
+                    :height="320"
+                    class="max-h-[720px] w-full shrink-0 grow-0 cursor-zoom-in object-contain"
+                />
+
+                <template #content>
+                    <NuxtImg
+                        :src="props.previewImages[0]!"
+                        :alt="props.title"
+                        class="size-full shrink-0 grow-0 object-contain"
+                    />
+                </template>
+            </UModal>
+
+            <SetupsViewerInfo
+                :preview="props.preview"
+                :setup-id="props.setupId"
+                :created-at="props.createdAt"
+                :title="props.title"
+                :description="props.description"
+                :tags="props.tags"
+                :co-authors="props.coAuthors"
+                :user="props.user"
+                class="mt-3 w-full xl:hidden"
+            />
 
             <div class="mt-3 flex w-full flex-col gap-7">
                 <div
-                    v-for="(value, key) in props.items"
+                    v-for="(value, key) in categorizedItems"
                     :key="'category-' + key"
-                    class="flex flex-col gap-5 empty:hidden"
+                    class="flex flex-col gap-4 empty:hidden"
                 >
-                    <!-- <template v-if="value.length">
-                        <UiTitle
-                            :label="categories[key]?.label || key"
-                            :icon="categories[key]?.icon"
-                            is="h2"
-                        />
+                    <template v-if="value.length">
+                        <div class="flex items-center gap-2">
+                            <Icon
+                                :name="
+                                    categoryAttributes[key]?.icon ||
+                                    'lucide:box'
+                                "
+                                :size="22"
+                                class="text-muted shrink-0"
+                            />
+                            <h2
+                                class="text-lg leading-none font-semibold text-nowrap"
+                            >
+                                {{ categoryAttributes[key]?.label || key }}
+                            </h2>
+                        </div>
                         <SetupsViewerItem
                             v-for="(item, index) in value"
                             :key="`item-${key}-${index}`"
-                            :size="key === 'avatar' ? 'lg' : 'md'"
                             :item="item"
                         />
-                    </template> -->
+                    </template>
                 </div>
             </div>
         </div>
@@ -156,7 +334,6 @@ const bookmarkButtonStyle = computed(() => ({
                 :co-authors="props.coAuthors"
                 :user="props.user"
                 class="sticky top-3 pt-3"
-                @login="emit('login')"
             />
         </div>
     </div>

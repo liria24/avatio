@@ -100,6 +100,7 @@ export default defineApi<PaginationResponse<Setup[]>>(
                                 shop: {
                                     columns: {
                                         id: true,
+                                        platform: true,
                                         name: true,
                                         image: true,
                                         verified: true,
@@ -111,15 +112,15 @@ export default defineApi<PaginationResponse<Setup[]>>(
                 },
                 items: {
                     columns: {
-                        id: true,
                         unsupported: true,
+                        note: true,
                     },
                     with: {
                         item: {
                             columns: {
                                 id: true,
                                 updatedAt: true,
-                                source: true,
+                                platform: true,
                                 category: true,
                                 name: true,
                                 image: true,
@@ -131,6 +132,7 @@ export default defineApi<PaginationResponse<Setup[]>>(
                                 shop: {
                                     columns: {
                                         id: true,
+                                        platform: true,
                                         name: true,
                                         image: true,
                                         verified: true,
@@ -188,6 +190,7 @@ export default defineApi<PaginationResponse<Setup[]>>(
                                         shop: {
                                             columns: {
                                                 id: true,
+                                                platform: true,
                                                 name: true,
                                                 image: true,
                                                 verified: true,
@@ -226,12 +229,7 @@ export default defineApi<PaginationResponse<Setup[]>>(
                 shops: setup.user.shops.map((shop) => ({
                     id: shop.id,
                     createdAt: shop.createdAt.toISOString(),
-                    shop: {
-                        id: shop.shop.id,
-                        name: shop.shop.name,
-                        image: shop.shop.image,
-                        verified: shop.shop.verified,
-                    },
+                    shop: shop.shop,
                 })),
             },
             name: setup.name,
@@ -239,24 +237,20 @@ export default defineApi<PaginationResponse<Setup[]>>(
             items: setup.items.map((item) => ({
                 id: item.item.id,
                 updatedAt: item.item.updatedAt.toISOString(),
-                source: item.item.source,
+                platform: item.item.platform,
                 category: item.item.category,
                 name: item.item.name,
                 image: item.item.image,
                 price: item.item.price,
                 likes: item.item.likes,
                 nsfw: item.item.nsfw,
-                shop: {
-                    id: item.item.shop.id,
-                    name: item.item.shop.name,
-                    image: item.item.shop.image,
-                    verified: item.item.shop.verified,
-                },
+                shop: item.item.shop,
                 unsupported: item.unsupported,
                 shapekeys: item.shapekeys.map((shapekey) => ({
                     name: shapekey.name,
                     value: shapekey.value,
                 })),
+                note: item.note,
             })),
             images: setup.images,
             tags: setup.tags.map((tag) => tag.tag),
@@ -274,12 +268,7 @@ export default defineApi<PaginationResponse<Setup[]>>(
                 shops: coauthor.user.shops.map((shop) => ({
                     id: shop.id,
                     createdAt: shop.createdAt.toISOString(),
-                    shop: {
-                        id: shop.shop.id,
-                        name: shop.shop.name,
-                        image: shop.shop.image,
-                        verified: shop.shop.verified,
-                    },
+                    shop: shop.shop,
                 })),
                 note: coauthor.note,
             })),

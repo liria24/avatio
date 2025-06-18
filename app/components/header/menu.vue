@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import type { DropdownMenuItem } from '@nuxt/ui'
 
-const localePath = useLocalePath()
 const route = useRoute()
 const session = await useGetSession()
 
@@ -25,10 +24,7 @@ const menuItems = ref<DropdownMenuItem[][]>([
         {
             label: 'ログアウト',
             icon: 'lucide:log-out',
-            onSelect: async () => {
-                const result = await authClient.signOut()
-                if (result.data?.success) navigateTo(localePath('/'))
-            },
+            onSelect: logout,
         },
     ],
 ])
@@ -85,7 +81,7 @@ const menuItems = ref<DropdownMenuItem[][]>([
             <ClientOnly>
                 <UDropdownMenu v-if="session" :items="menuItems">
                     <UAvatar
-                        :src="session.user.image"
+                        :src="session.user.image || undefined"
                         :alt="session.user.name"
                         class="hidden size-8 cursor-pointer outline-0 outline-zinc-300 transition-all select-none hover:outline-4 sm:block dark:outline-zinc-600"
                     />

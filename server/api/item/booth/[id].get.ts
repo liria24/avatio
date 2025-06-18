@@ -69,12 +69,13 @@ export default defineApi<Item>(
                     likes: true,
                     nsfw: true,
                     outdated: true,
-                    source: true,
+                    platform: true,
                 },
                 with: {
                     shop: {
                         columns: {
                             id: true,
+                            platform: true,
                             name: true,
                             image: true,
                             verified: true,
@@ -88,24 +89,7 @@ export default defineApi<Item>(
                     new Date().getTime() - new Date(data.updatedAt).getTime()
 
                 // 24時間以内かつoutdatedでない場合はキャッシュを返す
-                if (timeDifference < 24 * 60 * 60 * 1000) {
-                    return {
-                        id: data.id,
-                        source: data.source,
-                        category: data.category,
-                        name: data.name,
-                        image: data.image,
-                        price: data.price,
-                        likes: data.likes,
-                        nsfw: data.nsfw,
-                        shop: {
-                            id: data.shop.id,
-                            name: data.shop.name,
-                            image: data.shop.image,
-                            verified: data.shop.verified,
-                        },
-                    }
-                }
+                if (timeDifference < 24 * 60 * 60 * 1000) return data
             }
         }
 
@@ -152,7 +136,7 @@ export default defineApi<Item>(
             price,
             likes: Number(boothData.wish_lists_count) || 0,
             nsfw: Boolean(boothData.is_adult),
-            source: 'booth' as ItemSource,
+            platform: 'booth' as Platform,
             shopId: boothData.shop.subdomain,
         }
 
@@ -161,6 +145,7 @@ export default defineApi<Item>(
             .insert(shops)
             .values({
                 id: boothData.shop.subdomain,
+                platform: 'booth',
                 name: boothData.shop.name,
                 image: boothData.shop.thumbnail_url || '',
                 verified: Boolean(boothData.shop.verified),
@@ -189,7 +174,7 @@ export default defineApi<Item>(
 
         return {
             id: boothData.id,
-            source: 'booth' as ItemSource,
+            platform: 'booth' as Platform,
             category,
             name: boothData.name,
             image: boothData.images[0]?.original || '',
@@ -198,6 +183,7 @@ export default defineApi<Item>(
             nsfw: Boolean(boothData.is_adult),
             shop: {
                 id: boothData.shop.subdomain,
+                platform: 'booth' as Platform,
                 name: boothData.shop.name,
                 image: boothData.shop.thumbnail_url || '',
                 verified: Boolean(boothData.shop.verified),
