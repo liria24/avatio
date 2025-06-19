@@ -1,5 +1,5 @@
 import database from '@@/database'
-import { setups, setupTags } from '@@/database/schema'
+import { setupItems, setups, setupTags } from '@@/database/schema'
 import { eq, type SQL } from 'drizzle-orm'
 import { z } from 'zod/v4'
 
@@ -8,6 +8,7 @@ const query = z.object({
     orderBy: z.enum(['createdAt', 'name']).optional().default('createdAt'),
     sort: z.enum(['asc', 'desc']).optional().default('desc'),
     userId: z.string().optional(),
+    itemId: z.union([z.string(), z.array(z.string())]).optional(),
     tag: z.union([z.string(), z.array(z.string())]).optional(),
     page: z.coerce.number().min(1).optional().default(1),
     limit: z.coerce.number().min(1).max(1000).optional().default(24),
@@ -15,7 +16,7 @@ const query = z.object({
 
 export default defineApi<PaginationResponse<Setup[]>>(
     async () => {
-        const { q, orderBy, sort, userId, tag, page, limit } =
+        const { q, orderBy, sort, userId, itemId, tag, page, limit } =
             await validateQuery(query)
 
         const offset = (page - 1) * limit
@@ -31,9 +32,29 @@ export default defineApi<PaginationResponse<Setup[]>>(
             where: (setups, { eq, and, ilike, exists, inArray }) => {
                 const conditions: SQL[] = [eq(setups.visibility, true)]
 
+                if (q) conditions.push(ilike(setups.name, `%${q}%`))
+
                 if (userId) conditions.push(eq(setups.userId, userId))
 
-                if (q) conditions.push(ilike(setups.name, `%${q}%`))
+                if (itemId)
+                    conditions.push(
+                        exists(
+                            database
+                                .select()
+                                .from(setupItems)
+                                .where(
+                                    and(
+                                        eq(setupItems.setupId, setups.id),
+                                        inArray(
+                                            setupItems.itemId,
+                                            Array.isArray(itemId)
+                                                ? itemId
+                                                : [itemId]
+                                        )
+                                    )
+                                )
+                        )
+                    )
 
                 if (tag)
                     conditions.push(

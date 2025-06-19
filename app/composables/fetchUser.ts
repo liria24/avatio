@@ -5,6 +5,7 @@ export const useFetchUser = (
         dedupe?: 'cancel' | 'defer'
         lazy?: boolean
         getCachedData?: (key: string) => UserWithSetups | undefined
+        immediate?: boolean
     }
 ) => {
     const nuxtApp = useNuxtApp()
@@ -12,6 +13,7 @@ export const useFetchUser = (
         key = computed(() => `user-${unref(id)}`),
         dedupe = 'defer',
         lazy = true,
+        immediate = true,
     } = options || {}
 
     const finalGetCachedData =
@@ -22,7 +24,14 @@ export const useFetchUser = (
 
     const { data, status, refresh } = useFetch<UserWithSetups>(
         `/api/user/${unref(id)}`,
-        { key, dedupe, lazy, getCachedData: finalGetCachedData }
+        {
+            key,
+            dedupe,
+            lazy,
+            getCachedData: finalGetCachedData,
+            immediate,
+            watch: false,
+        }
     )
 
     return { user: data, status, fetchUser: refresh }

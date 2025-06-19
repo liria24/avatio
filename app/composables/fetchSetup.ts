@@ -5,6 +5,7 @@ export const useFetchSetup = (
         dedupe?: 'cancel' | 'defer'
         lazy?: boolean
         getCachedData?: (key: string) => Setup | undefined
+        immediate?: boolean
     }
 ) => {
     const nuxtApp = useNuxtApp()
@@ -12,17 +13,25 @@ export const useFetchSetup = (
         key = computed(() => `setup-${unref(id)}`),
         dedupe = 'defer',
         lazy = true,
+        immediate = true,
     } = options || {}
 
     const finalGetCachedData =
         options && 'getCachedData' in options
-            ? options.getCachedData // 明示的にundefinedが渡された場合もそのまま使用
+            ? options.getCachedData
             : (key: string) =>
-                  nuxtApp.payload.data[key] || nuxtApp.static.data[key] // プロパティが省略された場合のデフォルト
+                  nuxtApp.payload.data[key] || nuxtApp.static.data[key]
 
     const { data, status, refresh } = useFetch<Setup>(
         `/api/setup/${unref(id)}`,
-        { key, dedupe, lazy, getCachedData: finalGetCachedData }
+        {
+            key,
+            dedupe,
+            lazy,
+            getCachedData: finalGetCachedData,
+            immediate,
+            watch: false,
+        }
     )
 
     return { setup: data, status, fetchSetup: refresh }

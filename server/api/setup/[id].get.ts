@@ -7,6 +7,9 @@ const params = z.object({
 
 export default defineApi<Setup>(
     async () => {
+        const event = useEvent()
+        const config = useRuntimeConfig(event)
+
         const { id } = await validateParams(params)
 
         const data = await database.query.setups.findFirst({
@@ -176,8 +179,16 @@ export default defineApi<Setup>(
                 })
             else {
                 try {
-                    const response = await useEvent().$fetch<Item>(
-                        `/api/item/booth/${item.item.id}`
+                    const response = await event.$fetch<Item>(
+                        `/api/item/${item.item.id}`,
+                        {
+                            headers: {
+                                authorization: `Bearer ${config.adminKey}`,
+                            },
+                            query: {
+                                platform: item.item.platform,
+                            },
+                        }
                     )
                     items.push({
                         ...response,
@@ -186,7 +197,7 @@ export default defineApi<Setup>(
                         shapekeys: item.shapekeys,
                     })
                 } catch (error) {
-                    console.error(error)
+                    console.error('Error fetching item:', error)
                 }
             }
         }
@@ -240,5 +251,6 @@ export default defineApi<Setup>(
     },
     {
         errorMessage: 'Failed to get setups',
+        ratelimit: true,
     }
 )

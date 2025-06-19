@@ -205,7 +205,7 @@ export const shops = pgTable(
 export const items = pgTable(
     'items',
     {
-        id: integer().primaryKey(),
+        id: text().primaryKey(),
         createdAt: timestamp('created_at').defaultNow().notNull(),
         updatedAt: timestamp('updated_at').defaultNow().notNull(),
         platform: platform().notNull(),
@@ -277,7 +277,7 @@ export const setupItems = pgTable(
     'setup_items',
     {
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
-        itemId: integer('item_id').notNull(),
+        itemId: text('item_id').notNull(),
         setupId: integer('setup_id').notNull(),
         category: itemCategory().notNull(),
         unsupported: boolean('unsupported').default(false).notNull(),

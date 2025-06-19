@@ -1,11 +1,11 @@
 <script lang="ts" setup>
 interface Props {
-    noAction?: boolean
     item: SetupItem
+    actions?: boolean
     class?: string | string[] | null
 }
 const props = withDefaults(defineProps<Props>(), {
-    noAction: false,
+    actions: true,
     class: null,
 })
 
@@ -69,7 +69,7 @@ const copy = (key: { name: string; value: number }) => {
                             <p
                                 class="line-clamp-3 text-left text-sm/relaxed font-medium wrap-anywhere break-keep sm:text-base/relaxed"
                             >
-                                {{ lineBreak(item.name) }}
+                                {{ useLineBreak(item.name) }}
                             </p>
                         </NuxtLink>
                     </div>
@@ -173,7 +173,7 @@ const copy = (key: { name: string; value: number }) => {
                 </div>
 
                 <UTooltip
-                    v-if="!props.noAction"
+                    v-if="props.actions"
                     text="このアイテムを含むセットアップを検索"
                 >
                     <UButton

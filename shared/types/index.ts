@@ -201,14 +201,10 @@ export type Setup = z.infer<typeof setupsPublicSchema>
 
 export const bookmarksSelectSchema = createSelectSchema(bookmarks)
 export const bookmarksInsertSchema = createInsertSchema(bookmarks)
-export const bookmarksPublicSchema = bookmarksSelectSchema
-    .pick({
-        userId: true,
-    })
-    .extend({
-        createdAt: z.string(),
-        setup: setupsPublicSchema,
-    })
+export const bookmarksPublicSchema = z.object({
+    createdAt: z.string(),
+    setup: setupsPublicSchema,
+})
 export type Bookmark = z.infer<typeof bookmarksPublicSchema>
 
 export const feedbacksSelectSchema = createSelectSchema(feedbacks)

@@ -92,9 +92,14 @@ const socialShareItems = ref<DropdownMenuItem[]>([
 ])
 
 const bookmark = ref(false)
-const bookmarkButtonStyle = computed(() => ({
-    icon: bookmark.value ? 'lucide:bookmark-x' : 'lucide:bookmark',
+const bookmarkButtonStyle = computed<{
+    icon: string
+    label: string
+    color: 'secondary' | 'primary'
+}>(() => ({
+    icon: bookmark.value ? 'lucide:bookmark-check' : 'lucide:bookmark',
     label: bookmark.value ? 'ブックマークから削除' : 'ブックマーク',
+    color: bookmark.value ? 'secondary' : 'primary',
 }))
 
 const categoryAttributes = itemCategoryAttributes()
@@ -124,6 +129,55 @@ const categorizedItems = computed(() => {
 
     return orderedCategories
 })
+
+const applyBookmark = useDebounceFn(async (isBookmarked: boolean) => {
+    try {
+        if (isBookmarked)
+            await $fetch(`/api/setup/bookmark/${props.setupId}`, {
+                method: 'POST',
+            })
+        else
+            await $fetch(`/api/setup/bookmark/${props.setupId}`, {
+                method: 'DELETE',
+            })
+
+        toast.add({
+            title: isBookmarked
+                ? 'ブックマークしました'
+                : 'ブックマークを解除しました',
+            color: isBookmarked ? 'success' : 'info',
+        })
+    } catch (error) {
+        console.error('ブックマークの適用に失敗:', error)
+        toast.add({
+            title: 'ブックマークの適用に失敗しました',
+            color: 'error',
+        })
+        return
+    }
+}, 500)
+
+const toggleBookmark = () => {
+    bookmark.value = !bookmark.value
+    applyBookmark(bookmark.value)
+}
+
+onMounted(async () => {
+    if (props.setupId && session.value) {
+        try {
+            const response = await $fetch<PaginationResponse<Bookmark[]>>(
+                '/api/setup/bookmark',
+                {
+                    query: { setupId: props.setupId, limit: 1 },
+                }
+            )
+            if (response.data.length) bookmark.value = true
+            else bookmark.value = false
+        } catch (error) {
+            console.error('ブックマークの取得に失敗:', error)
+        }
+    }
+})
 </script>
 
 <template>
@@ -133,7 +187,7 @@ const categorizedItems = computed(() => {
                 <h1
                     class="text-highlighted text-3xl font-bold wrap-anywhere break-keep"
                 >
-                    {{ lineBreak(props.title) }}
+                    {{ useLineBreak(props.title) }}
                 </h1>
                 <div class="flex w-full items-center justify-between gap-3">
                     <div class="ml-0.5 flex items-center gap-1.5">
@@ -149,6 +203,27 @@ const categorizedItems = computed(() => {
                         />
                     </div>
                     <div v-if="!preview" class="flex items-center gap-0.5">
+                        <UButton
+                            v-if="session"
+                            :icon="bookmarkButtonStyle.icon"
+                            :aria-label="bookmarkButtonStyle.label"
+                            :color="bookmarkButtonStyle.color"
+                            variant="ghost"
+                            size="sm"
+                            class="p-2"
+                            @click="toggleBookmark"
+                        />
+                        <ModalLogin v-else>
+                            <UButton
+                                :icon="bookmarkButtonStyle.icon"
+                                :aria-label="bookmarkButtonStyle.label"
+                                :color="bookmarkButtonStyle.color"
+                                variant="ghost"
+                                size="sm"
+                                class="p-2"
+                            />
+                        </ModalLogin>
+
                         <template v-if="session?.user.id === props.user.id">
                             <UModal title="セットアップを削除">
                                 <UButton
@@ -183,14 +258,6 @@ const categorizedItems = computed(() => {
                         </template>
 
                         <template v-else>
-                            <UButton
-                                :icon="bookmarkButtonStyle.icon"
-                                :aria-label="bookmarkButtonStyle.label"
-                                variant="ghost"
-                                size="sm"
-                                class="p-2"
-                            />
-
                             <ModalReportSetup
                                 v-if="session"
                                 :setup-id="props.setupId!"

@@ -24,7 +24,9 @@ const checkCronAuth = async (
     const { authorization } = getHeaders(useEvent())
 
     const isCronValid = authorization === `Bearer ${process.env.CRON_SECRET}`
-    const isAdminUser = session?.user?.role === 'admin'
+    const isAdminUser =
+        session?.user?.role === 'admin' ||
+        authorization === `Bearer ${config.adminKey}`
 
     if (!isCronValid && !isAdminUser)
         throw createError({
@@ -37,8 +39,13 @@ const checkRateLimit = async (
     session: Session | null | undefined,
     options: ApiOptions
 ): Promise<void> => {
+    const { authorization } = getHeaders(useEvent())
+    const isAdminUser =
+        session?.user?.role === 'admin' ||
+        authorization === `Bearer ${config.adminKey}`
+
     // adminユーザーまたはレート制限が無効な場合はスキップ
-    if (!options.ratelimit || session?.user?.role === 'admin') return
+    if (!options.ratelimit || isAdminUser) return
 
     const identifier =
         session?.user?.id || getRequestIP(useEvent()) || 'anonymous'

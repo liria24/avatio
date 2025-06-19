@@ -45,7 +45,7 @@ const props = defineProps<Props>()
             <p
                 class="pl-1 text-sm/relaxed wrap-anywhere break-keep whitespace-pre-wrap"
             >
-                {{ lineBreak(props.description) }}
+                {{ useLineBreak(props.description) }}
             </p>
         </div>
 
@@ -75,7 +75,7 @@ const props = defineProps<Props>()
             <p
                 class="text-xs leading-none [overflow-wrap:anywhere] break-keep whitespace-pre-wrap text-zinc-700 dark:text-zinc-300"
             >
-                {{ lineBreak(props.unity) }}
+                {{ useLineBreak(props.unity) }}
             </p>
         </div> -->
 

@@ -138,7 +138,7 @@ if (user.value) {
                     <p
                         class="text-relaxed text-sm [overflow-wrap:anywhere] break-keep whitespace-break-spaces"
                     >
-                        {{ lineBreak(user.bio) }}
+                        {{ useLineBreak(user.bio) }}
                     </p>
                 </div>
             </div>
@@ -149,8 +149,10 @@ if (user.value) {
             class="mb-4 flex w-full flex-col gap-5 px-2"
         >
             <div class="flex items-center gap-2">
-                <Icon name="lucide:store" />
-                <h2 class="text-xl font-semibold">ショップ</h2>
+                <Icon name="lucide:store" size="22" class="text-muted" />
+                <h2 class="text-xl leading-none font-semibold text-nowrap">
+                    ショップ
+                </h2>
             </div>
 
             <div class="flex flex-wrap items-center gap-2">

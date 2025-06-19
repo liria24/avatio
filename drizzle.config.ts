@@ -5,7 +5,7 @@ export default defineConfig({
     dialect: 'postgresql',
     schema: './database/schema.ts',
     dbCredentials: {
-        url: process?.env?.NUXT_DATABASE_URL || '',
+        url: process?.env?.NUXT_NEON_DATABASE_URL || '',
     },
     schemaFilter: ['public', 'auth', 'bookmark', 'feedback'],
     tablesFilter: ['*'],

@@ -1,18 +1,16 @@
 <script setup lang="ts">
 const session = await useGetSession()
+const route = useRoute()
+const router = useRouter()
 
-const mode = ref<'latest' | 'user' | 'bookmarks'>('latest')
+type Tab = 'latest' | 'me' | 'bookmarks'
 
-const setupsPerPage: number = 50
-const page = ref(1)
+const tab = ref<Tab>((route.query.tab as Tab) || 'latest')
 
-const { setups, hasMore, status, fetchMoreSetups } = useFetchSetups({
-    query: computed(() => ({
-        page: page.value,
-        perPage: setupsPerPage,
-        userId: (mode.value === 'user' && session.value?.user.id) || null,
-    })),
-})
+const changeTab = (newTab: Tab) => {
+    tab.value = newTab
+    router.push({ query: { tab: newTab !== 'latest' ? newTab : undefined } })
+}
 
 defineSeo({
     type: 'website',
@@ -44,45 +42,31 @@ useSchemaOrg([
             <div class="flex flex-wrap items-center gap-1">
                 <UButton
                     label="最新"
-                    :variant="mode === 'latest' ? 'solid' : 'ghost'"
+                    :variant="tab === 'latest' ? 'solid' : 'ghost'"
                     color="neutral"
                     class="px-4 py-2"
-                    @click="mode = 'latest'"
+                    @click="changeTab('latest')"
                 />
                 <UButton
                     label="自分の投稿"
-                    :variant="mode === 'user' ? 'solid' : 'ghost'"
+                    :variant="tab === 'me' ? 'solid' : 'ghost'"
                     color="neutral"
                     class="px-4 py-2"
-                    @click="mode = 'user'"
+                    @click="changeTab('me')"
                 />
                 <UButton
                     label="ブックマーク"
-                    :variant="mode === 'bookmarks' ? 'solid' : 'ghost'"
+                    :variant="tab === 'bookmarks' ? 'solid' : 'ghost'"
                     color="neutral"
                     class="px-4 py-2"
-                    @click="mode = 'bookmarks'"
+                    @click="changeTab('bookmarks')"
                 />
             </div>
-            <div class="flex w-full flex-col gap-3 self-center">
-                <SetupsList :setups="setups" :loading="status === 'pending'" />
-                <UButton
-                    v-if="hasMore"
-                    :loading="status === 'pending'"
-                    label="もっと見る"
-                    @click="fetchMoreSetups()"
-                />
-            </div>
+            <SetupsListLatest v-if="tab === 'latest'" />
+            <SetupsListUser v-if="tab === 'me'" :user-id="session?.user.id" />
+            <SetupsListBookmarks v-if="tab === 'bookmarks'" />
         </div>
 
-        <div v-else class="flex w-full flex-col gap-3 self-center">
-            <SetupsList :setups="setups" :loading="status === 'pending'" />
-            <UButton
-                v-if="hasMore"
-                :loading="status === 'pending'"
-                label="もっと見る"
-                @click="fetchMoreSetups()"
-            />
-        </div>
+        <SetupsListLatest v-else />
     </div>
 </template>

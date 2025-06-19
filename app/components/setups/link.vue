@@ -230,7 +230,7 @@ const linkClasses = computed(() => {
                 <span
                     class="md:text-md text-toned line-clamp-2 text-sm font-medium break-keep"
                 >
-                    {{ lineBreak(setup.name) }}
+                    {{ useLineBreak(setup.name) }}
                 </span>
 
                 <div class="flex items-center gap-2">

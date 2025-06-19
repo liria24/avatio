@@ -43,10 +43,6 @@ export default defineNuxtConfig({
     runtimeConfig: {
         adminKey: '',
         liria: { accessToken: '' },
-        databaseUrl: '',
-        betterAuth: {
-            secret: '',
-        },
         r2: { endpoint: '', accessKey: '', secretKey: '' },
         upstash: {
             kv: {
@@ -58,7 +54,6 @@ export default defineNuxtConfig({
         },
         turnstile: { siteKey: '', secretKey: '' },
         public: {
-            siteUrl: '',
             r2: { domain: '' },
         },
     },

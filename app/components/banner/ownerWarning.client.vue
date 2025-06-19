@@ -22,7 +22,7 @@ const onClick = () => {
     <div v-if="visible" class="flex items-center justify-between gap-2 px-2">
         <p class="text-toned text-xs break-keep">
             {{
-                lineBreak(
+                useLineBreak(
                     'あなたがアバター・アイテムの制作者であり、Avatioに掲載されることを拒否したい場合は、お手数ですが'
                 )
             }}
@@ -33,7 +33,7 @@ const onClick = () => {
             >
                 こちら
             </NuxtLink>
-            {{ lineBreak('よりご連絡をお願いします。') }}
+            {{ useLineBreak('よりご連絡をお願いします。') }}
         </p>
 
         <UButton
