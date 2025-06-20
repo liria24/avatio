@@ -215,7 +215,7 @@ export const items = pgTable(
         category: itemCategory().notNull(),
         image: text(),
         price: text().notNull(),
-        likes: integer().default(0).notNull(),
+        likes: integer(),
         nsfw: boolean().default(false).notNull(),
     },
     (table) => [

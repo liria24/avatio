@@ -6,11 +6,13 @@ import {
     TagsInputItemDelete,
     TagsInputInput,
 } from 'reka-ui'
+
 const route = useRoute()
 const router = useRouter()
 const nuxtApp = useNuxtApp()
 
 const isSearched = ref(false)
+const openedItemSearchPopover = ref(false)
 
 interface Query {
     q: string
@@ -19,18 +21,19 @@ interface Query {
     page: number
     perPage: number
 }
+
+// 配列の正規化関数
+const normalizeArray = (value: unknown): string[] => {
+    if (Array.isArray(value)) {
+        return value.filter((item): item is string => typeof item === 'string')
+    }
+    return value != null ? [String(value)] : []
+}
+
 const query = reactive<Query>({
     q: (route.query.q as string) || '',
-    itemId: Array.isArray(route.query.itemId)
-        ? route.query.itemId.filter((id): id is string => id != null)
-        : route.query.itemId != null
-          ? [route.query.itemId as string]
-          : [],
-    tag: Array.isArray(route.query.tag)
-        ? route.query.tag.filter((tag): tag is string => tag != null)
-        : route.query.tag != null
-          ? [route.query.tag as string]
-          : [],
+    itemId: normalizeArray(route.query.itemId),
+    tag: normalizeArray(route.query.tag),
     page: 1,
     perPage: 50,
 })
@@ -60,6 +63,26 @@ const {
 const setups = ref<Setup[]>([])
 const queryItems = ref<Item[]>([])
 
+// アイテムの重複チェック
+const hasQueryItem = (id: string) =>
+    queryItems.value.some((item) => item.id === id)
+
+// アイテムを非同期で取得
+const fetchItemsById = async (ids: string[]) => {
+    const newIds = ids.filter((id) => !hasQueryItem(id))
+
+    for (const id of newIds) {
+        try {
+            const item = await $fetch<Item | null>(`/api/item/${id}`)
+            if (item) {
+                queryItems.value.push(item)
+            }
+        } catch (error) {
+            console.error(`Failed to fetch item with ID ${id}:`, error)
+        }
+    }
+}
+
 const loadMoreSetups = () => {
     if (hasMore.value) {
         query.page += 1
@@ -68,46 +91,80 @@ const loadMoreSetups = () => {
 }
 
 const search = async () => {
-    if (!query.q.length && !query.itemId.length && !query.tag.length) {
-        router.push({
-            query: {
-                q: undefined,
-                itemId: undefined,
-                tag: undefined,
-            },
-        })
+    const hasSearchParams =
+        query.q.length || query.itemId.length || query.tag.length
+
+    if (!hasSearchParams) {
         await fetchPopularAvatars()
         isSearched.value = false
         return
     }
 
-    if (query.itemId.length)
-        for (const id of query.itemId)
-            if (!queryItems.value.some((item) => item.id === id)) {
-                const item = await $fetch<Item | null>(`/api/item/${id}`)
-                if (item) queryItems.value.push(item)
-            }
+    if (query.itemId.length) {
+        await fetchItemsById(query.itemId)
+    }
 
-    query.page = 1
-    setups.value = []
-    router.push({
-        query: {
-            q: query.q.length ? query.q : undefined,
-            itemId: query.itemId.length ? query.itemId : undefined,
-            tag: query.tag.length ? query.tag : undefined,
-        },
-    })
     await fetchSetups()
     setups.value = fetchedSetups.value || []
     isSearched.value = true
 }
 
+const updateQuery = (updates: Partial<Pick<Query, 'itemId' | 'tag'>>) => {
+    router.push({
+        query: {
+            ...route.query,
+            ...Object.fromEntries(
+                Object.entries(updates).map(([key, value]) => [
+                    key,
+                    Array.isArray(value) && value.length ? value : undefined,
+                ])
+            ),
+        },
+    })
+}
+
 const onSelectPopularAvatar = (id: string) => {
     if (!query.itemId.includes(id)) {
-        query.itemId.push(id)
+        updateQuery({ itemId: [...query.itemId, id] })
     }
-    search()
 }
+
+const onSelectItemSearch = (id: string) => {
+    if (!query.itemId.includes(id)) {
+        updateQuery({ itemId: [...query.itemId, id] })
+    }
+    openedItemSearchPopover.value = false
+}
+
+const removeQueryItem = (id: string) => {
+    const newItemIds = query.itemId.filter((itemId) => itemId !== id)
+    queryItems.value = queryItems.value.filter((item) => item.id !== id)
+    updateQuery({ itemId: newItemIds })
+}
+
+// URLクエリの変更を監視
+watch(
+    () => route.query,
+    (newQuery) => {
+        console.log('Route query changed:', newQuery)
+
+        Object.assign(query, {
+            q: (newQuery.q as string) || '',
+            itemId: normalizeArray(newQuery.itemId),
+            tag: normalizeArray(newQuery.tag),
+            page: 1,
+        })
+
+        setups.value = []
+        isSearched.value = false
+        search()
+    }
+)
+
+// 詳細オプションの表示状態
+const shouldShowDetails = computed(
+    () => !!(query.itemId?.length || query.tag?.length || query.q?.length)
+)
 
 await search()
 </script>
@@ -131,13 +188,7 @@ await search()
             />
 
             <UCollapsible
-                :default-open="
-                    !!(
-                        query.itemId?.length ||
-                        query.tag?.length ||
-                        query.q?.length
-                    )
-                "
+                :default-open="shouldShowDetails"
                 class="data-[state=open]:bg-elevated flex flex-col gap-2 rounded-lg"
             >
                 <UButton
@@ -156,6 +207,7 @@ await search()
 
                 <template #content>
                     <div class="mx-1 flex w-full flex-col gap-3 rounded-lg p-2">
+                        <!-- アイテム選択セクション -->
                         <div class="flex w-full flex-col gap-2">
                             <div class="flex items-center gap-1">
                                 <Icon
@@ -173,26 +225,55 @@ await search()
                             <div
                                 class="flex w-full flex-wrap items-center gap-2"
                             >
-                                <div v-for="item in queryItems" :key="item.id">
+                                <div
+                                    v-for="item in queryItems"
+                                    :key="item.id"
+                                    class="bg-accented flex max-w-56 items-center gap-2 rounded-lg p-2"
+                                >
                                     <NuxtImg
                                         :src="item.image || undefined"
                                         :height="100"
-                                        class="h-12 rounded-lg"
+                                        class="h-9 rounded-lg"
+                                        :alt="item.name"
+                                    />
+                                    <p class="line-clamp-2 text-xs">
+                                        {{ item.name }}
+                                    </p>
+                                    <UButton
+                                        icon="lucide:x"
+                                        variant="ghost"
+                                        size="sm"
+                                        :aria-label="`Remove ${item.name}`"
+                                        @click="removeQueryItem(item.id)"
                                     />
                                 </div>
-                                <UButton
-                                    :label="
-                                        query.itemId.length
-                                            ? undefined
-                                            : 'アイテムを選択'
-                                    "
-                                    icon="lucide:plus"
-                                    variant="ghost"
-                                    class="p-4"
-                                />
+
+                                <UPopover
+                                    v-model:open="openedItemSearchPopover"
+                                    :content="{ side: 'right', align: 'start' }"
+                                >
+                                    <UButton
+                                        :label="
+                                            query.itemId.length
+                                                ? undefined
+                                                : 'アイテムを選択'
+                                        "
+                                        icon="lucide:plus"
+                                        variant="ghost"
+                                        class="p-4"
+                                        aria-label="Add item"
+                                    />
+
+                                    <template #content>
+                                        <ItemSearch
+                                            @select="onSelectItemSearch"
+                                        />
+                                    </template>
+                                </UPopover>
                             </div>
                         </div>
 
+                        <!-- タグ入力セクション -->
                         <div class="flex w-full flex-col gap-1.5">
                             <div class="flex items-center gap-1">
                                 <Icon
@@ -209,10 +290,7 @@ await search()
 
                             <TagsInputRoot
                                 v-model="query.tag"
-                                :class="[
-                                    'flex w-full flex-wrap items-center gap-2 rounded-lg p-2',
-                                    'ring-1 ring-zinc-400 ring-inset focus-within:ring-2 focus-within:ring-zinc-700 hover:ring-2 dark:ring-zinc-700',
-                                ]"
+                                class="flex w-full flex-wrap items-center gap-2 rounded-lg p-2 ring-1 ring-zinc-400 ring-inset focus-within:ring-2 focus-within:ring-zinc-700 hover:ring-2 dark:ring-zinc-700"
                             >
                                 <TagsInputItem
                                     v-for="item in query.tag"
@@ -222,11 +300,7 @@ await search()
                                 >
                                     <TagsInputItemText class="pl-2 text-sm" />
                                     <TagsInputItemDelete
-                                        :class="[
-                                            'flex cursor-pointer items-center justify-center rounded-full p-1',
-                                            'hover:bg-zinc-300 hover:dark:bg-zinc-700',
-                                            'transition duration-100 ease-in-out',
-                                        ]"
+                                        class="flex cursor-pointer items-center justify-center rounded-full p-1 transition duration-100 ease-in-out hover:bg-zinc-300 hover:dark:bg-zinc-700"
                                     >
                                         <Icon name="lucide:x" />
                                     </TagsInputItemDelete>
@@ -246,6 +320,7 @@ await search()
 
         <USeparator />
 
+        <!-- 人気アバター表示 -->
         <div v-if="!isSearched" class="flex flex-col gap-6">
             <div class="flex items-center gap-2">
                 <Icon
@@ -257,11 +332,12 @@ await search()
                     人気のアバターから検索
                 </h2>
             </div>
+
             <div class="flex flex-wrap items-center justify-center gap-5">
                 <button
                     v-for="(avatar, index) in popularAvatars"
                     :key="`avatar-${index}`"
-                    :aria-label="avatar.name"
+                    :aria-label="`Search for ${avatar.name}`"
                     class="group relative size-32 cursor-pointer overflow-hidden rounded-lg"
                     @click="onSelectPopularAvatar(avatar.id)"
                 >
@@ -274,6 +350,7 @@ await search()
                             {{ avatarShortName(avatar.name) }}
                         </span>
                     </div>
+
                     <NuxtImg
                         v-slot="{ src, isLoaded }"
                         :src="avatar.image || undefined"
@@ -288,6 +365,7 @@ await search()
                         <img
                             v-if="isLoaded"
                             :src="src"
+                            :alt="avatar.name"
                             :width="256"
                             :height="256"
                         />
@@ -302,6 +380,7 @@ await search()
             </div>
         </div>
 
+        <!-- 検索結果表示 -->
         <div
             v-else-if="setups.length"
             class="flex flex-col gap-2 lg:grid lg:grid-cols-1"
@@ -311,10 +390,11 @@ await search()
                 v-if="hasMore"
                 :loading="status === 'pending'"
                 label="もっと見る"
-                @click="loadMoreSetups()"
+                @click="loadMoreSetups"
             />
         </div>
 
+        <!-- 結果なし表示 -->
         <p v-else class="text-center text-zinc-700 dark:text-zinc-300">
             セットアップが見つかりませんでした
         </p>

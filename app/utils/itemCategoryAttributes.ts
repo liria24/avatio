@@ -1,4 +1,4 @@
-export default (): Record<string, { label: string; icon: string }> => ({
+export default (): Record<ItemCategory, { label: string; icon: string }> => ({
     avatar: {
         label: 'ベースアバター',
         icon: 'lucide:person-standing',
@@ -7,7 +7,7 @@ export default (): Record<string, { label: string; icon: string }> => ({
         label: 'ヘア',
         icon: 'mingcute:hair-line',
     },
-    cloth: {
+    clothing: {
         label: '衣装',
         icon: 'lucide:shirt',
     },

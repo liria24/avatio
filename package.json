@@ -22,6 +22,7 @@
         "@nuxtjs/robots": "5.2.11",
         "@nuxtjs/sitemap": "7.4.1",
         "@stefanobartoletti/nuxt-social-share": "1.2.3",
+        "@supabase/supabase-js": "^2.50.0",
         "@tailwindcss/vite": "^4.1.10",
         "@tiptap/extensions": "^3.0.0-beta.5",
         "@tiptap/pm": "^3.0.0-beta.5",
