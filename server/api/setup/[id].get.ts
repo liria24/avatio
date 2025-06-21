@@ -75,6 +75,7 @@ export default defineApi<Setup>(
                                 price: true,
                                 likes: true,
                                 nsfw: true,
+                                outdated: true,
                             },
                             with: {
                                 shop: {
@@ -152,7 +153,7 @@ export default defineApi<Setup>(
                 },
                 tools: {
                     columns: {
-                        toolId: true,
+                        toolSlug: true,
                         note: true,
                     },
                 },
@@ -166,39 +167,79 @@ export default defineApi<Setup>(
             })
 
         const items: SetupItem[] = []
+        let failedItemsCount = 0
 
-        for (const item of data.items) {
+        const expiredItems = data.items.filter((item) => {
             const timeDifference =
                 new Date().getTime() - new Date(item.item.updatedAt).getTime()
-            if (timeDifference < 24 * 60 * 60 * 1000)
-                items.push({
-                    ...item.item,
-                    unsupported: item.unsupported,
-                    note: item.note,
-                    shapekeys: item.shapekeys,
-                })
-            else {
-                try {
-                    const response = await event.$fetch<Item>(
-                        `/api/item/${item.item.id}`,
-                        {
-                            headers: {
-                                authorization: `Bearer ${config.adminKey}`,
-                            },
-                            query: {
-                                platform: item.item.platform,
-                            },
-                        }
-                    )
-                    items.push({
+            return timeDifference >= 24 * 60 * 60 * 1000
+        })
+
+        const validItems = data.items.filter((item) => {
+            const timeDifference =
+                new Date().getTime() - new Date(item.item.updatedAt).getTime()
+            return timeDifference < 24 * 60 * 60 * 1000
+        })
+
+        // 有効なアイテムを処理（outdatedなものは除外）
+        for (const item of validItems) {
+            if (item.item.outdated) {
+                failedItemsCount++
+                continue
+            }
+            items.push({
+                ...item.item,
+                unsupported: item.unsupported,
+                note: item.note,
+                shapekeys: item.shapekeys,
+            })
+        }
+
+        // 期限切れのアイテムを並行して更新
+        const expiredItemsPromises = expiredItems.map(async (item) => {
+            try {
+                const response = await $fetch<Item>(
+                    `/api/item/${item.item.id}`,
+                    {
+                        headers: {
+                            authorization: `Bearer ${config.adminKey}`,
+                        },
+                        query: {
+                            platform: item.item.platform,
+                        },
+                    }
+                )
+                return {
+                    success: true,
+                    data: {
                         ...response,
                         unsupported: item.unsupported,
                         note: item.note,
                         shapekeys: item.shapekeys,
-                    })
-                } catch (error) {
-                    console.error('Error fetching item:', error)
+                    },
                 }
+            } catch (error) {
+                console.error(`Failed to fetch item ${item.item.id}:`, error)
+                return {
+                    success: false,
+                    data: null,
+                }
+            }
+        })
+
+        // 並行処理の結果を待機して処理
+        const expiredItemsResults = await Promise.all(expiredItemsPromises)
+
+        for (const result of expiredItemsResults) {
+            if (result.success && result.data) {
+                // 更新後もoutdatedの場合は除外
+                if (result.data.outdated) {
+                    failedItemsCount++
+                    continue
+                }
+                items.push(result.data)
+            } else {
+                failedItemsCount++
             }
         }
 
@@ -247,6 +288,7 @@ export default defineApi<Setup>(
                 note: coauthor.note,
             })),
             tools: data.tools,
+            failedItemsCount,
         }
     },
     {

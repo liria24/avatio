@@ -234,7 +234,7 @@ export const items = pgTable(
 export const tools = pgTable(
     'tools',
     {
-        id: integer().primaryKey().generatedAlwaysAsIdentity(),
+        slug: text().primaryKey(),
         createdAt: timestamp('created_at').defaultNow().notNull(),
         updatedAt: timestamp('updated_at').defaultNow().notNull(),
         name: text().notNull(),
@@ -243,7 +243,7 @@ export const tools = pgTable(
         image: text(),
     },
     (table) => [
-        index('tools_id_index').on(table.id),
+        index('tools_id_index').on(table.slug),
         index('tools_name_index').on(table.name),
     ]
 )
@@ -251,7 +251,7 @@ export const tools = pgTable(
 export const setups = pgTable(
     'setups',
     {
-        id: integer().primaryKey().generatedAlwaysAsIdentity(),
+        id: integer().primaryKey().generatedByDefaultAsIdentity(),
         createdAt: timestamp('created_at').defaultNow().notNull(),
         updatedAt: timestamp('updated_at').defaultNow().notNull(),
         userId: text('user_id').notNull(),
@@ -279,7 +279,7 @@ export const setupItems = pgTable(
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
         itemId: text('item_id').notNull(),
         setupId: integer('setup_id').notNull(),
-        category: itemCategory().notNull(),
+        category: itemCategory(),
         unsupported: boolean('unsupported').default(false).notNull(),
         note: text(),
     },
@@ -400,14 +400,14 @@ export const setupTools = pgTable(
     {
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
         setupId: integer('setup_id').notNull(),
-        toolId: integer('tool_id').notNull(),
-        version: text('version'),
+        toolSlug: text('tool_slug').notNull(),
+        version: text(),
         note: text(),
     },
     (table) => [
         index('setup_tools_id_index').on(table.id),
         index('setup_tools_setup_id_index').on(table.setupId),
-        index('setup_tools_tool_id_index').on(table.toolId),
+        index('setup_tools_tool_slug_index').on(table.toolSlug),
         foreignKey({
             name: 'setup_tools_setup_id_fkey',
             columns: [table.setupId],
@@ -416,9 +416,9 @@ export const setupTools = pgTable(
             .onDelete('cascade')
             .onUpdate('cascade'),
         foreignKey({
-            name: 'setup_tools_tool_id_fkey',
-            columns: [table.toolId],
-            foreignColumns: [tools.id],
+            name: 'setup_tools_tool_slug_fkey',
+            columns: [table.toolSlug],
+            foreignColumns: [tools.slug],
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
@@ -691,8 +691,8 @@ export const setupToolsRelations = relations(setupTools, ({ one }) => ({
         references: [setups.id],
     }),
     tool: one(tools, {
-        fields: [setupTools.toolId],
-        references: [tools.id],
+        fields: [setupTools.toolSlug],
+        references: [tools.slug],
     }),
 }))
 

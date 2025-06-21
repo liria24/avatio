@@ -5,7 +5,7 @@ const toast = useToast()
 
 const id = Number(route.params.id)
 
-const { setup, status } = useFetchSetup(id)
+const { setup, status } = await useFetchSetup(id)
 
 if (status.value === 'success' && !id)
     showError({
@@ -85,13 +85,16 @@ const deleteSetup = async () => {
         <SetupsViewer
             :setup-id="id"
             :created-at="setup.createdAt"
-            :title="setup.name"
+            :updated-at="setup.updatedAt"
+            :user="setup.user"
+            :name="setup.name"
             :description="setup.description"
             :images="setup.images"
             :tags="setup.tags"
-            :co-authors="setup.coauthors"
-            :user="setup.user"
+            :coauthors="setup.coauthors"
+            :tools="setup.tools"
             :items="setup.items"
+            :failed-items-count="setup.failedItemsCount"
             @delete="deleteSetup"
         />
     </div>

@@ -7,6 +7,8 @@ const props = defineProps<{ userId: string }>()
 
 const toast = useToast()
 
+const submitting = ref(false)
+
 const schema = z
     .object({
         reportReason: z.string().array().min(1, '報告の理由を選択してください'),
@@ -50,7 +52,11 @@ const Submit = async () => {
             description: 'ご協力ありがとうございます。',
             color: 'success',
         })
+
+        submitting.value = false
         open.value = false
+        state.reportReason = []
+        state.comment = ''
     } catch (error) {
         toast.add({
             title: '報告の送信に失敗しました',
@@ -127,17 +133,37 @@ const Submit = async () => {
                         placeholder="その他の理由を入力"
                         class="w-full"
                     />
+
+                    <template #hint>
+                        <UTooltip
+                            text="Markdownをサポートしています"
+                            :content="{ side: 'top' }"
+                            :delay-duration="50"
+                        >
+                            <Icon
+                                name="simple-icons:markdown"
+                                size="20"
+                                class="text-dimmed -my-1 mr-0.5"
+                            />
+                        </UTooltip>
+                    </template>
                 </UFormField>
 
                 <USeparator />
 
                 <div class="flex w-full items-center justify-end gap-1.5">
                     <UButton
+                        :disabled="submitting"
                         label="キャンセル"
                         variant="ghost"
                         @click="open = false"
                     />
-                    <UButton label="報告" color="neutral" @click="Submit()" />
+                    <UButton
+                        :loading="submitting"
+                        label="報告"
+                        color="neutral"
+                        @click="Submit()"
+                    />
                 </div>
             </UForm>
         </template>

@@ -68,9 +68,8 @@ const copy = (key: { name: string; value: number }) => {
                         <NuxtLink :to="url" target="_blank" class="w-fit gap-2">
                             <p
                                 class="line-clamp-3 text-left text-sm/relaxed font-medium wrap-anywhere break-keep sm:text-base/relaxed"
-                            >
-                                {{ useLineBreak(item.name) }}
-                            </p>
+                                v-html="useLineBreak(item.name)"
+                            />
                         </NuxtLink>
                     </div>
 
@@ -197,13 +196,13 @@ const copy = (key: { name: string; value: number }) => {
                     class="text-muted mt-[0.2rem] shrink-0"
                 />
                 <p
-                    class="text-left text-xs/relaxed wrap-anywhere break-keep whitespace-break-spaces"
-                >
-                    {{ item.note }}
-                </p>
+                    class="text-left text-xs/relaxed wrap-anywhere break-keep whitespace-pre-wrap"
+                    v-html="useLineBreak(item.note)"
+                />
             </div>
             <div
-                class="flex flex-wrap items-center justify-end gap-3 empty:hidden"
+                v-if="item.shapekeys?.length || item.unsupported"
+                class="flex flex-wrap items-center justify-end gap-3"
             >
                 <div
                     v-if="item.unsupported"

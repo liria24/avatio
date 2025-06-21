@@ -155,7 +155,7 @@ export default defineApi<Bookmark>(
                         },
                         tools: {
                             columns: {
-                                toolId: true,
+                                toolSlug: true,
                                 note: true,
                             },
                         },

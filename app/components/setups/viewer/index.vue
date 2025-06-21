@@ -2,17 +2,17 @@
 import type { DropdownMenuItem } from '@nuxt/ui'
 
 interface Props {
-    preview?: boolean
-    setupId?: number
-    createdAt?: string
-    title: string
+    setupId: number
+    createdAt: string
+    updatedAt: string
+    name: string
     description?: string | null
     tags?: string[]
-    coAuthors?: (User & { note: string | null })[]
+    coauthors?: SetupCoauthor[]
     user: User
-    images?: { url: string; width: number; height: number }[]
-    previewImages?: string[]
+    images?: SetupImage[]
     items: SetupItem[]
+    failedItemsCount?: number
 }
 const props = defineProps<Props>()
 
@@ -23,17 +23,17 @@ const toast = useToast()
 
 const shareX = useSocialShare({
     network: 'x',
-    title: `${props.title} @${props.user.name} | Avatio`,
+    title: `${props.name} @${props.user.name} | Avatio`,
     image: props.images?.[0]?.url || undefined,
 })
 const shareBluesky = useSocialShare({
     network: 'bluesky',
-    title: `${props.title} @${props.user.name} | Avatio`,
+    title: `${props.name} @${props.user.name} | Avatio`,
     image: props.images?.[0]?.url || undefined,
 })
 const shareLine = useSocialShare({
     network: 'line',
-    title: `${props.title} @${props.user.name} | Avatio`,
+    title: `${props.name} @${props.user.name} | Avatio`,
     image: props.images?.[0]?.url || undefined,
 })
 
@@ -163,7 +163,7 @@ const toggleBookmark = () => {
 }
 
 onMounted(async () => {
-    if (props.setupId && session.value) {
+    if (session.value) {
         try {
             const response = await $fetch<PaginationResponse<Bookmark[]>>(
                 '/api/setup/bookmark',
@@ -171,7 +171,7 @@ onMounted(async () => {
                     query: { setupId: props.setupId, limit: 1 },
                 }
             )
-            if (response.data.length) bookmark.value = true
+            if (response.data?.length) bookmark.value = true
             else bookmark.value = false
         } catch (error) {
             console.error('ブックマークの取得に失敗:', error)
@@ -186,9 +186,8 @@ onMounted(async () => {
             <div class="flex w-full flex-col items-start gap-1">
                 <h1
                     class="text-highlighted text-3xl font-bold wrap-anywhere break-keep"
-                >
-                    {{ useLineBreak(props.title) }}
-                </h1>
+                    v-html="useLineBreak(props.name)"
+                />
                 <div class="flex w-full items-center justify-between gap-3">
                     <div class="ml-0.5 flex items-center gap-1.5">
                         <Icon
@@ -202,7 +201,7 @@ onMounted(async () => {
                             class="text-muted font-[Geist] text-sm leading-none text-nowrap"
                         />
                     </div>
-                    <div v-if="!preview" class="flex items-center gap-0.5">
+                    <div class="flex items-center gap-0.5">
                         <UButton
                             v-if="session"
                             :icon="bookmarkButtonStyle.icon"
@@ -305,12 +304,12 @@ onMounted(async () => {
             </div>
 
             <UModal
-                v-if="props.images?.length && !props.preview"
-                :ui="{ content: 'bg-transparent ring-0' }"
+                v-if="props.images?.length"
+                :ui="{ content: 'bg-transparent ring-0 max-h-dvh max-w-dvh' }"
             >
                 <NuxtImg
                     :src="props.images[0]?.url"
-                    :alt="props.title"
+                    :alt="props.name"
                     :width="props.images[0]?.width ?? 640"
                     :height="props.images[0]?.height ?? 320"
                     class="h-full max-h-[720px] w-fit shrink-0 grow-0 cursor-zoom-in overflow-hidden rounded-lg object-contain"
@@ -319,41 +318,19 @@ onMounted(async () => {
                 <template #content>
                     <NuxtImg
                         :src="props.images[0]?.url"
-                        :alt="props.title"
-                        class="size-full shrink-0 grow-0 object-contain"
-                    />
-                </template>
-            </UModal>
-
-            <UModal
-                v-if="props.previewImages?.length && props.preview"
-                :ui="{ content: 'bg-transparent ring-0' }"
-            >
-                <NuxtImg
-                    :src="props.previewImages[0]!"
-                    :alt="props.title"
-                    :width="640"
-                    :height="320"
-                    class="max-h-[720px] w-full shrink-0 grow-0 cursor-zoom-in object-contain"
-                />
-
-                <template #content>
-                    <NuxtImg
-                        :src="props.previewImages[0]!"
-                        :alt="props.title"
-                        class="size-full shrink-0 grow-0 object-contain"
+                        :alt="props.name"
+                        class="size-full object-contain"
                     />
                 </template>
             </UModal>
 
             <SetupsViewerInfo
-                :preview="props.preview"
                 :setup-id="props.setupId"
                 :created-at="props.createdAt"
-                :title="props.title"
+                :title="props.name"
                 :description="props.description"
                 :tags="props.tags"
-                :co-authors="props.coAuthors"
+                :co-authors="props.coauthors"
                 :user="props.user"
                 class="mt-3 w-full xl:hidden"
             />
@@ -364,20 +341,25 @@ onMounted(async () => {
                     :key="'category-' + key"
                     class="flex flex-col gap-4 empty:hidden"
                 >
-                    <template v-if="value.length">
+                    <template v-if="value?.length">
                         <div class="flex items-center gap-2">
                             <Icon
                                 :name="
-                                    categoryAttributes[key]?.icon ||
-                                    'lucide:box'
+                                    categoryAttributes[
+                                        key as keyof typeof categoryAttributes
+                                    ]?.icon || 'lucide:box'
                                 "
                                 :size="22"
                                 class="text-muted shrink-0"
                             />
                             <h2
-                                class="text-lg leading-none font-semibold text-nowrap"
+                                class="pb-0.5 text-lg leading-none font-semibold text-nowrap"
                             >
-                                {{ categoryAttributes[key]?.label || key }}
+                                {{
+                                    categoryAttributes[
+                                        key as keyof typeof categoryAttributes
+                                    ]?.label || key
+                                }}
                             </h2>
                         </div>
                         <SetupsViewerItem
@@ -387,18 +369,44 @@ onMounted(async () => {
                         />
                     </template>
                 </div>
+
+                <template v-if="props.failedItemsCount">
+                    <USeparator />
+
+                    <UAlert
+                        icon="lucide:circle-question-mark"
+                        :title="`${props.failedItemsCount}個のアイテムが取得できませんでした`"
+                        description="削除されたか、非公開になっている可能性があります。"
+                        variant="subtle"
+                        orientation="horizontal"
+                        :actions="[
+                            {
+                                label: '不具合を報告',
+                                variant: 'soft',
+                                onClick: () => {
+                                    navigateTo(
+                                        'https://github.com/liria24/avatio/issues/new/choose',
+                                        {
+                                            external: true,
+                                            open: { target: '_blank' },
+                                        }
+                                    )
+                                },
+                            },
+                        ]"
+                    />
+                </template>
             </div>
         </div>
 
         <div class="hidden h-full w-full flex-col xl:flex xl:w-[440px]">
             <SetupsViewerInfo
-                :preview="props.preview"
                 :setup-id="props.setupId"
                 :created-at="props.createdAt"
-                :title="props.title"
+                :title="props.name"
                 :description="props.description"
                 :tags="props.tags"
-                :co-authors="props.coAuthors"
+                :co-authors="props.coauthors"
                 :user="props.user"
                 class="sticky top-3 pt-3"
             />

@@ -2,7 +2,6 @@
 const session = await useGetSession()
 const route = useRoute()
 const footerExclude = ['/setup/compose']
-const modal_feedback = ref(false)
 </script>
 
 <template>
@@ -72,13 +71,22 @@ const modal_feedback = ref(false)
                                     class="p-0"
                                 />
 
-                                <UButton
-                                    label="フィードバック"
-                                    variant="link"
-                                    size="sm"
-                                    class="p-0"
-                                    @click="modal_feedback = true"
-                                />
+                                <ModalFeedback v-if="session">
+                                    <UButton
+                                        label="フィードバック"
+                                        variant="link"
+                                        size="sm"
+                                        class="p-0"
+                                    />
+                                </ModalFeedback>
+                                <ModalLogin v-else>
+                                    <UButton
+                                        label="フィードバック"
+                                        variant="link"
+                                        size="sm"
+                                        class="p-0"
+                                    />
+                                </ModalLogin>
                             </div>
                         </div>
                         <div

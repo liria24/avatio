@@ -146,7 +146,7 @@ export default defineApi<UserWithSetups>(
                         },
                         tools: {
                             columns: {
-                                toolId: true,
+                                toolSlug: true,
                                 note: true,
                             },
                         },

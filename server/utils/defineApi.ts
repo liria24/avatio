@@ -13,7 +13,7 @@ const redis = new Redis({
 
 const ratelimit = new Ratelimit({
     redis,
-    limiter: Ratelimit.slidingWindow(16, '1 m'),
+    limiter: Ratelimit.slidingWindow(32, '1 m'),
     analytics: true,
     prefix: '@upstash/ratelimit',
 })

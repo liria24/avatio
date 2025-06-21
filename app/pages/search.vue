@@ -58,6 +58,7 @@ const {
     query,
     getCachedData: undefined,
     immediate: false,
+    watch: false,
 })
 
 const setups = ref<Setup[]>([])

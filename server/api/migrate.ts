@@ -1,5 +1,16 @@
 import database from '@@/database'
-import { account, items, shops, user } from '@@/database/schema'
+import {
+    account,
+    items,
+    setupCoauthors,
+    setupImages,
+    setupItems,
+    setupItemShapekeys,
+    setups,
+    setupTags,
+    shops,
+    user,
+} from '@@/database/schema'
 import { createClient } from '@supabase/supabase-js'
 
 type User = {
@@ -167,6 +178,120 @@ const migrateFromSupabase = async () => {
             }))
         )
         .onConflictDoNothing()
+
+    const setupsSupabase = (
+        await supabase.from('setups').select(
+            `
+            id,
+            created_at,
+            name,
+            description,
+            author,
+            unity,
+            setup_tags(
+                tag
+            ),
+            setup_images(
+                name,
+                width,
+                height
+            ),
+            setup_coauthors(
+                user_id,
+                note
+            ),
+            setup_items(
+                item_id,
+                note,
+                unsupported,
+                category,
+                setup_item_shapekeys(
+                    name,
+                    value
+                )
+            )
+            `
+        )
+    ).data
+    if (!setupsSupabase) throw new Error('Failed to fetch setups from Supabase')
+
+    for (const setup of setupsSupabase) {
+        const resSetup = await database
+            .insert(setups)
+            .values({
+                id: setup.id,
+                createdAt: new Date(setup.created_at),
+                updatedAt: new Date(setup.created_at),
+                userId: setup.author,
+                name: setup.name,
+                description: setup.description,
+            })
+            .onConflictDoNothing()
+            .returning({ id: setups.id })
+        if (resSetup[0]) {
+            if (setup.setup_tags.length)
+                await database
+                    .insert(setupTags)
+                    .values(
+                        setup.setup_tags.map((tag) => ({
+                            setupId: resSetup[0].id,
+                            tag: tag.tag,
+                        }))
+                    )
+                    .onConflictDoNothing()
+            if (setup.setup_images.length)
+                await database
+                    .insert(setupImages)
+                    .values(
+                        setup.setup_images.map((image) => ({
+                            setupId: resSetup[0].id,
+                            url: `https://images.avatio.me/setup/${image.name}`,
+                            width: image.width,
+                            height: image.height,
+                        }))
+                    )
+                    .onConflictDoNothing()
+            if (setup.setup_coauthors.length)
+                await database
+                    .insert(setupCoauthors)
+                    .values(
+                        setup.setup_coauthors.map((coauthor) => ({
+                            setupId: resSetup[0].id,
+                            userId: coauthor.user_id,
+                            note: coauthor.note || null,
+                        }))
+                    )
+                    .onConflictDoNothing()
+            for (const item of setup.setup_items) {
+                const resItem = await database
+                    .insert(setupItems)
+                    .values({
+                        setupId: resSetup[0].id,
+                        itemId: item.item_id,
+                        note: item.note || null,
+                        unsupported: item.unsupported || false,
+                        category:
+                            item.category === 'cloth'
+                                ? 'clothing'
+                                : item.category,
+                    })
+                    .onConflictDoNothing()
+                    .returning({ id: setupItems.id })
+                if (item.setup_item_shapekeys?.length) {
+                    await database
+                        .insert(setupItemShapekeys)
+                        .values(
+                            item.setup_item_shapekeys.map((shapekey) => ({
+                                setupItemId: resItem[0].id,
+                                name: shapekey.name,
+                                value: shapekey.value,
+                            }))
+                        )
+                        .onConflictDoNothing()
+                }
+            }
+        }
+    }
 
     return resultUsers
 }

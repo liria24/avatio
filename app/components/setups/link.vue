@@ -229,9 +229,8 @@ const linkClasses = computed(() => {
             >
                 <span
                     class="md:text-md text-toned line-clamp-2 text-sm font-medium break-keep"
-                >
-                    {{ useLineBreak(setup.name) }}
-                </span>
+                    v-html="useLineBreak(setup.name)"
+                />
 
                 <div class="flex items-center gap-2">
                     <UPopover v-if="!props.noUser" mode="hover">
@@ -239,7 +238,7 @@ const linkClasses = computed(() => {
                             :src="props.setup.user.image || undefined"
                             :alt="props.setup.user.name"
                             aria-hidden="true"
-                            size="sm"
+                            size="2xs"
                         />
 
                         <template #content>

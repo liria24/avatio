@@ -148,6 +148,7 @@ export default defineApi<PaginationResponse<Setup[]>>(
                                 price: true,
                                 likes: true,
                                 nsfw: true,
+                                outdated: true,
                             },
                             with: {
                                 shop: {
@@ -225,7 +226,7 @@ export default defineApi<PaginationResponse<Setup[]>>(
                 },
                 tools: {
                     columns: {
-                        toolId: true,
+                        toolSlug: true,
                         note: true,
                     },
                 },
@@ -255,24 +256,26 @@ export default defineApi<PaginationResponse<Setup[]>>(
             },
             name: setup.name,
             description: setup.description,
-            items: setup.items.map((item) => ({
-                id: item.item.id,
-                updatedAt: item.item.updatedAt.toISOString(),
-                platform: item.item.platform,
-                category: item.item.category,
-                name: item.item.name,
-                image: item.item.image,
-                price: item.item.price,
-                likes: item.item.likes,
-                nsfw: item.item.nsfw,
-                shop: item.item.shop,
-                unsupported: item.unsupported,
-                shapekeys: item.shapekeys.map((shapekey) => ({
-                    name: shapekey.name,
-                    value: shapekey.value,
+            items: setup.items
+                .filter((item) => !item.item.outdated)
+                .map((item) => ({
+                    id: item.item.id,
+                    updatedAt: item.item.updatedAt.toISOString(),
+                    platform: item.item.platform,
+                    category: item.item.category,
+                    name: item.item.name,
+                    image: item.item.image,
+                    price: item.item.price,
+                    likes: item.item.likes,
+                    nsfw: item.item.nsfw,
+                    shop: item.item.shop,
+                    unsupported: item.unsupported,
+                    shapekeys: item.shapekeys.map((shapekey) => ({
+                        name: shapekey.name,
+                        value: shapekey.value,
+                    })),
+                    note: item.note,
                 })),
-                note: item.note,
-            })),
             images: setup.images,
             tags: setup.tags.map((tag) => tag.tag),
             coauthors: setup.coauthors.map((coauthor) => ({
@@ -294,6 +297,8 @@ export default defineApi<PaginationResponse<Setup[]>>(
                 note: coauthor.note,
             })),
             tools: setup.tools,
+            failedItemsCount: setup.items.filter((item) => item.item.outdated)
+                .length,
         }))
 
         return {

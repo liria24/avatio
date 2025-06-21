@@ -1,3 +1,5 @@
+import type { MultiWatchSources } from 'vue'
+
 interface Query {
     page?: number
     perPage?: number
@@ -11,6 +13,7 @@ export const useFetchBookmarks = (options?: {
     lazy?: boolean
     getCachedData?: (key: string) => Bookmark[]
     immediate?: boolean
+    watch?: false | MultiWatchSources | undefined
 }) => {
     const nuxtApp = useNuxtApp()
     const {
@@ -19,6 +22,7 @@ export const useFetchBookmarks = (options?: {
         dedupe = 'defer',
         lazy = true,
         immediate = true,
+        watch = undefined,
     } = options || {}
 
     const finalGetCachedData =
@@ -36,7 +40,7 @@ export const useFetchBookmarks = (options?: {
             lazy,
             getCachedData: finalGetCachedData,
             immediate,
-            watch: false,
+            watch,
         }
     )
 

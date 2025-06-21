@@ -1,3 +1,5 @@
+import type { MultiWatchSources } from 'vue'
+
 interface Query {
     page?: number
     perPage?: number
@@ -11,6 +13,7 @@ export const useFetchSetups = (options?: {
     lazy?: boolean
     getCachedData?: (key: string) => Setup[]
     immediate?: boolean
+    watch?: false | MultiWatchSources | undefined
 }) => {
     const nuxtApp = useNuxtApp()
     const {
@@ -19,6 +22,7 @@ export const useFetchSetups = (options?: {
         dedupe = 'defer',
         lazy = true,
         immediate = true,
+        watch = undefined,
     } = options || {}
 
     const finalGetCachedData =
@@ -47,7 +51,7 @@ export const useFetchSetups = (options?: {
                 },
             }),
             immediate,
-            watch: false,
+            watch,
         }
     )
 

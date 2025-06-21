@@ -1,3 +1,5 @@
+import type { MultiWatchSources } from 'vue'
+
 export const useFetchSetup = (
     id: MaybeRef<number>,
     options?: {
@@ -6,6 +8,7 @@ export const useFetchSetup = (
         lazy?: boolean
         getCachedData?: (key: string) => Setup | undefined
         immediate?: boolean
+        watch?: false | MultiWatchSources | undefined
     }
 ) => {
     const nuxtApp = useNuxtApp()
@@ -14,6 +17,7 @@ export const useFetchSetup = (
         dedupe = 'defer',
         lazy = true,
         immediate = true,
+        watch = undefined,
     } = options || {}
 
     const finalGetCachedData =
@@ -30,7 +34,7 @@ export const useFetchSetup = (
             lazy,
             getCachedData: finalGetCachedData,
             immediate,
-            watch: false,
+            watch,
         }
     )
 

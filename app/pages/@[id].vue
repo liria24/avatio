@@ -137,9 +137,8 @@ if (user.value) {
                     <span class="mt-[-2px] text-sm text-zinc-500">bio</span>
                     <p
                         class="text-relaxed text-sm [overflow-wrap:anywhere] break-keep whitespace-break-spaces"
-                    >
-                        {{ useLineBreak(user.bio) }}
-                    </p>
+                        v-html="useLineBreak(user.bio)"
+                    />
                 </div>
             </div>
         </div>

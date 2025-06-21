@@ -255,7 +255,7 @@ export default defineApi<PaginationResponse<Bookmark[]>>(
                         },
                         tools: {
                             columns: {
-                                toolId: true,
+                                toolSlug: true,
                                 note: true,
                             },
                         },

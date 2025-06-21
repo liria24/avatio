@@ -107,6 +107,7 @@ export const itemsPublicSchema = itemsSelectSchema
     })
     .extend({
         shop: shopsPublicSchema,
+        outdated: z.boolean().optional(),
     })
 export type Item = z.infer<typeof itemsPublicSchema>
 
@@ -148,9 +149,22 @@ export const setupTagsInsertSchema = createInsertSchema(setupTags)
 
 export const setupImagesSelectSchema = createSelectSchema(setupImages)
 export const setupImagesInsertSchema = createInsertSchema(setupImages)
+export const setupImagesPublicSchema = setupImagesSelectSchema.pick({
+    url: true,
+    width: true,
+    height: true,
+})
+export type SetupImage = z.infer<typeof setupImagesPublicSchema>
 
 export const setupCoauthorsSelectSchema = createSelectSchema(setupCoauthors)
 export const setupCoauthorsInsertSchema = createInsertSchema(setupCoauthors)
+export const setupCoauthorsPublicSchema = z.intersection(
+    setupCoauthorsSelectSchema.pick({
+        note: true,
+    }),
+    userPublicSchema
+)
+export type SetupCoauthor = z.infer<typeof setupCoauthorsPublicSchema>
 
 export const setupToolsSelectSchema = createSelectSchema(setupTools)
 export const setupToolsInsertSchema = createInsertSchema(setupTools)
@@ -191,11 +205,12 @@ export const setupsPublicSchema = setupsSelectSchema
         tools: z
             .array(
                 setupToolsSelectSchema.pick({
-                    toolId: true,
+                    toolSlug: true,
                     note: true,
                 })
             )
             .optional(),
+        failedItemsCount: z.number().optional(),
     })
 export type Setup = z.infer<typeof setupsPublicSchema>
 

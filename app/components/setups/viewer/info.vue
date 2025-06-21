@@ -1,10 +1,9 @@
 <script lang="ts" setup>
 interface Props {
-    title: string
     description?: string | null
-    tags?: string[]
-    coAuthors?: (User & { note: string | null })[]
     user: User
+    tags?: string[]
+    coauthors?: SetupCoauthor[]
     class?: string | string[]
 }
 const props = defineProps<Props>()
@@ -44,9 +43,8 @@ const props = defineProps<Props>()
         >
             <p
                 class="pl-1 text-sm/relaxed wrap-anywhere break-keep whitespace-pre-wrap"
-            >
-                {{ useLineBreak(props.description) }}
-            </p>
+                v-html="useLineBreak(props.description)"
+            />
         </div>
 
         <div v-if="props.tags?.length" class="flex flex-col gap-3 self-stretch">
@@ -80,13 +78,13 @@ const props = defineProps<Props>()
         </div> -->
 
         <div
-            v-if="props.coAuthors?.length"
+            v-if="props.coauthors?.length"
             class="flex flex-col gap-3 self-stretch"
         >
             <h2 class="text-toned text-sm leading-none">共同作者</h2>
             <ul class="flex flex-col gap-2 pl-1">
                 <li
-                    v-for="coAuthor in props.coAuthors"
+                    v-for="coAuthor in props.coauthors"
                     :key="coAuthor.id"
                     class="ring-muted flex flex-col gap-1.5 rounded-lg p-2 ring-1"
                 >
