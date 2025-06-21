@@ -1,11 +1,12 @@
 ## 技術スタック
 
-- Nuxt 3
+- Nuxt 3 (compatibilityVersion: 4)
 - NuxtUI v3 (TailwindCSS v4)
 - TypeScript
 - Zod
 - Neon postgres
 - Drizzle ORM
+- Cloudflare R2
 - Better Auth
 - bun (パッケージマネージャ)
 - Vercel
