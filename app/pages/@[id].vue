@@ -198,9 +198,9 @@ if (user.value) {
 
             <div class="flex w-full flex-col gap-3 self-center">
                 <SetupsList
-                    v-if="user && user.setups"
-                    :setups="user.setups"
-                    :loading="status === 'pending'"
+                    v-if="user.setups"
+                    v-model:setups="user.setups"
+                    v-model:status="status"
                 />
             </div>
         </div>

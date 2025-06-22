@@ -77,7 +77,7 @@ const migrateFromSupabase = async () => {
                 email: user.email || '',
                 name: userPublic?.name || null,
                 image: userPublic?.avatar
-                    ? `https://images.avatio.me/avatar/${userPublic.avatar}`
+                    ? `${process.env.NUXT_PUBLIC_R2_DOMAIN}/avatar/${userPublic.avatar}`
                     : user.user_metadata.avatar_url || null,
                 bio: userPublic?.bio || null,
                 links: userPublic?.links || null,
@@ -245,7 +245,7 @@ const migrateFromSupabase = async () => {
                     .values(
                         setup.setup_images.map((image) => ({
                             setupId: resSetup[0].id,
-                            url: `https://images.avatio.me/setup/${image.name}`,
+                            url: `${process.env.NUXT_PUBLIC_R2_DOMAIN}/setup/${image.name}`,
                             width: image.width,
                             height: image.height,
                         }))
