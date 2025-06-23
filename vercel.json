@@ -4,11 +4,15 @@
     "trailingSlash": false,
     "crons": [
         {
-            "path": "/api/job/refresh-product-views",
-            "schedule": "0 8,20 * * *"
+            "path": "/api/admin/report",
+            "schedule": "0 22 * * *"
         }
     ],
     "redirects": [
-        { "source": "/glossary", "destination": "/", "permanent": false }
+        {
+            "source": "/edit",
+            "destination": "/compose",
+            "permanent": true
+        }
     ]
 }
