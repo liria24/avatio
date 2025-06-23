@@ -1,5 +1,5 @@
 import database from '@@/database'
-import { bookmarks, setupTags, setups } from '@@/database/schema'
+import { bookmarks, setupTags, setups, user } from '@@/database/schema'
 import { eq, type SQL } from 'drizzle-orm'
 import { z } from 'zod/v4'
 
@@ -36,9 +36,28 @@ export default defineApi<PaginationResponse<Bookmark[]>>(
             }),
             limit,
             offset,
-            where: (bookmarks, { eq, and, ilike, exists, inArray }) => {
+            where: (
+                bookmarks,
+                { eq, or, and, ilike, exists, inArray, isNull }
+            ) => {
                 const conditions: SQL[] = [
                     eq(bookmarks.userId, session!.user.id),
+                    exists(
+                        database
+                            .select()
+                            .from(setups)
+                            .innerJoin(user, eq(setups.userId, user.id))
+                            .where(
+                                and(
+                                    eq(setups.id, bookmarks.setupId),
+                                    isNull(setups.hidAt),
+                                    or(
+                                        isNull(user.banned),
+                                        eq(user.banned, false)
+                                    )
+                                )
+                            )
+                    ),
                 ]
 
                 if (userId)
@@ -124,6 +143,8 @@ export default defineApi<PaginationResponse<Bookmark[]>>(
                         updatedAt: true,
                         name: true,
                         description: true,
+                        hidAt: true,
+                        hidReason: true,
                     },
                     with: {
                         user: {
@@ -212,6 +233,24 @@ export default defineApi<PaginationResponse<Bookmark[]>>(
                             },
                         },
                         coauthors: {
+                            where: (
+                                coauthors,
+                                { eq, or, and, exists, isNull }
+                            ) =>
+                                exists(
+                                    database
+                                        .select()
+                                        .from(user)
+                                        .where(
+                                            and(
+                                                eq(user.id, coauthors.userId),
+                                                or(
+                                                    eq(user.banned, false),
+                                                    isNull(user.banned)
+                                                )
+                                            )
+                                        )
+                                ),
                             columns: {
                                 note: true,
                             },
@@ -270,6 +309,8 @@ export default defineApi<PaginationResponse<Bookmark[]>>(
                 id: bookmark.setup.id,
                 createdAt: bookmark.setup.createdAt.toISOString(),
                 updatedAt: bookmark.setup.updatedAt.toISOString(),
+                hidAt: bookmark.setup.hidAt?.toISOString() || null,
+                hidReason: bookmark.setup.hidReason,
                 user: {
                     id: bookmark.setup.user.id,
                     createdAt: bookmark.setup.user.createdAt.toISOString(),

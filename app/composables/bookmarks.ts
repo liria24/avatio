@@ -1,14 +1,13 @@
 import type { UseFetchOptions } from 'nuxt/app'
 
-export const useSetup = async (
-    id: number,
-    options?: UseFetchOptions<Setup>
+export const useBookmarks = async (
+    options?: UseFetchOptions<PaginationResponse<Bookmark[]>>
 ) => {
     const nuxtApp = useNuxtApp()
 
-    const defaultOptions: UseFetchOptions<Setup> = {
+    const defaultOptions: UseFetchOptions<PaginationResponse<Bookmark[]>> = {
         key: computed(
-            () => `setup-${id}-${JSON.stringify(unref(options?.query))}`
+            () => `bookmarks-${JSON.stringify(unref(options?.query))}`
         ),
         getCachedData: (key: string) =>
             nuxtApp.payload.data[key] || nuxtApp.static.data[key],
@@ -21,9 +20,8 @@ export const useSetup = async (
         }),
     }
 
-    return useFetch<Setup>(id.toString(), {
+    return useFetch<PaginationResponse<Bookmark[]>>('/api/setup/bookmark', {
         ...defaultOptions,
         ...options,
-        baseURL: '/api/setup/',
     })
 }

@@ -1,6 +1,6 @@
 import database from '@@/database'
-import { setupItems, setups, setupTags } from '@@/database/schema'
-import { eq, type SQL } from 'drizzle-orm'
+import { setupItems, setups, setupTags, user } from '@@/database/schema'
+import { isNull, type SQL } from 'drizzle-orm'
 import { z } from 'zod/v4'
 
 const query = z.object({
@@ -23,14 +23,31 @@ export default defineApi<PaginationResponse<Setup[]>>(
 
         const data = await database.query.setups.findMany({
             extras: (table) => ({
-                count: database
-                    .$count(setups, eq(table.visibility, true))
-                    .as('count'),
+                count: database.$count(setups, isNull(table.hidAt)).as('count'),
             }),
             limit,
             offset,
-            where: (setups, { eq, and, ilike, exists, inArray }) => {
-                const conditions: SQL[] = [eq(setups.visibility, true)]
+            where: (
+                setups,
+                { eq, or, and, ilike, exists, inArray, isNull }
+            ) => {
+                const conditions: SQL[] = [
+                    isNull(setups.hidAt),
+                    exists(
+                        database
+                            .select()
+                            .from(user)
+                            .where(
+                                and(
+                                    eq(user.id, setups.userId),
+                                    or(
+                                        eq(user.banned, false),
+                                        isNull(user.banned)
+                                    )
+                                )
+                            )
+                    ),
+                ]
 
                 if (q) conditions.push(ilike(setups.name, `%${q}%`))
 
@@ -94,6 +111,8 @@ export default defineApi<PaginationResponse<Setup[]>>(
                 userId: true,
                 name: true,
                 description: true,
+                hidAt: true,
+                hidReason: true,
             },
             with: {
                 user: {
@@ -183,6 +202,21 @@ export default defineApi<PaginationResponse<Setup[]>>(
                     },
                 },
                 coauthors: {
+                    where: (coauthors, { eq, or, and, exists, isNull }) =>
+                        exists(
+                            database
+                                .select()
+                                .from(user)
+                                .where(
+                                    and(
+                                        eq(user.id, coauthors.userId),
+                                        or(
+                                            eq(user.banned, false),
+                                            isNull(user.banned)
+                                        )
+                                    )
+                                )
+                        ),
                     columns: {
                         note: true,
                     },
@@ -237,6 +271,8 @@ export default defineApi<PaginationResponse<Setup[]>>(
             id: setup.id,
             createdAt: setup.createdAt.toISOString(),
             updatedAt: setup.updatedAt.toISOString(),
+            hidAt: setup.hidAt?.toISOString() || null,
+            hidReason: setup.hidReason,
             user: {
                 id: setup.user.id,
                 createdAt: setup.user.createdAt.toISOString(),

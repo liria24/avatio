@@ -1,4 +1,5 @@
 import database from '@@/database'
+import { setups, user } from '@@/database/schema'
 import { z } from 'zod/v4'
 
 const params = z.object({
@@ -10,7 +11,26 @@ export default defineApi<Bookmark>(
         const { id } = await validateParams(params)
 
         const data = await database.query.bookmarks.findFirst({
-            where: (bookmarks, { eq }) => eq(bookmarks.id, id),
+            where: (bookmarks, { eq, or, and, exists, isNull }) =>
+                and(
+                    eq(bookmarks.id, id),
+                    exists(
+                        database
+                            .select()
+                            .from(setups)
+                            .innerJoin(user, eq(setups.userId, user.id))
+                            .where(
+                                and(
+                                    eq(setups.id, bookmarks.setupId),
+                                    isNull(setups.hidAt),
+                                    or(
+                                        isNull(user.banned),
+                                        eq(user.banned, false)
+                                    )
+                                )
+                            )
+                    )
+                ),
             columns: {
                 id: true,
                 createdAt: true,
@@ -24,6 +44,8 @@ export default defineApi<Bookmark>(
                         updatedAt: true,
                         name: true,
                         description: true,
+                        hidAt: true,
+                        hidReason: true,
                     },
                     with: {
                         user: {
@@ -112,6 +134,24 @@ export default defineApi<Bookmark>(
                             },
                         },
                         coauthors: {
+                            where: (
+                                coauthors,
+                                { eq, or, and, exists, isNull }
+                            ) =>
+                                exists(
+                                    database
+                                        .select()
+                                        .from(user)
+                                        .where(
+                                            and(
+                                                eq(user.id, coauthors.userId),
+                                                or(
+                                                    eq(user.banned, false),
+                                                    isNull(user.banned)
+                                                )
+                                            )
+                                        )
+                                ),
                             columns: {
                                 note: true,
                             },
@@ -176,6 +216,8 @@ export default defineApi<Bookmark>(
                 id: data.setup.id,
                 createdAt: data.setup.createdAt.toISOString(),
                 updatedAt: data.setup.updatedAt.toISOString(),
+                hidAt: data.setup.hidAt?.toISOString() || null,
+                hidReason: data.setup.hidReason,
                 user: {
                     ...data.setup.user,
                     createdAt: data.setup.user.createdAt.toISOString(),

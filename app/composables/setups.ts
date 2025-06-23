@@ -23,6 +23,10 @@ export const useSetups = (
         dedupe: 'defer',
         lazy: false,
         immediate: true,
+        headers: computed(() => {
+            if (import.meta.server && nuxtApp.ssrContext?.event.headers)
+                return nuxtApp.ssrContext.event.headers
+        }),
     }
 
     return useFetch<PaginationResponse<Setup[]>>('/api/setup', {

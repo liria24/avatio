@@ -2,12 +2,7 @@
 const setupsPerPage: number = 50
 const page = ref(1)
 
-const {
-    bookmarks: fetchedBookmarks,
-    hasMore,
-    status,
-    fetchBookmarks,
-} = await useFetchBookmarks({
+const { data, status, refresh } = await useBookmarks({
     query: computed(() => ({
         page: page.value,
         perPage: setupsPerPage,
@@ -17,16 +12,15 @@ const {
 const setups = ref<Setup[]>([])
 
 const loadMoreSetups = () => {
-    if (hasMore.value) {
+    if (data.value?.pagination.hasNext) {
         page.value += 1
-        fetchBookmarks()
+        refresh()
     }
 }
 
 watchEffect(() => {
-    setups.value.push(
-        ...fetchedBookmarks.value.map((bookmark) => bookmark.setup)
-    )
+    if (data.value)
+        setups.value.push(...data.value.data.map((bookmark) => bookmark.setup))
 })
 </script>
 
@@ -34,7 +28,7 @@ watchEffect(() => {
     <div class="flex w-full flex-col gap-3 self-center">
         <SetupsList v-model:setups="setups" v-model:status="status" />
         <UButton
-            v-if="hasMore"
+            v-if="data?.pagination.hasNext"
             :loading="status === 'pending'"
             label="もっと見る"
             @click="loadMoreSetups()"

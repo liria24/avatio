@@ -134,6 +134,7 @@ export const userShops = authSchema.table(
     },
     (table) => [
         index('user_shops_user_id_index').on(table.userId),
+        index('user_shops_shop_id_index').on(table.shopId),
         foreignKey({
             name: 'user_shops_user_id_fkey',
             columns: [table.userId],
@@ -261,9 +262,10 @@ export const setups = pgTable(
         createdAt: timestamp('created_at').defaultNow().notNull(),
         updatedAt: timestamp('updated_at').defaultNow().notNull(),
         userId: text('user_id').notNull(),
-        visibility: boolean('visibility').default(true).notNull(),
         name: text().notNull(),
         description: text(),
+        hidAt: timestamp('hid_at'),
+        hidReason: text('hid_reason'),
     },
     (table) => [
         index('setups_id_index').on(table.id),
@@ -319,6 +321,7 @@ export const setupItemShapekeys = pgTable(
     },
     (table) => [
         index('setup_item_shapekeys_id_index').on(table.id),
+        index('setup_item_shapekeys_setup_item_id_index').on(table.setupItemId),
         foreignKey({
             name: 'setup_item_shapekeys_setup_item_id_fkey',
             columns: [table.setupItemId],

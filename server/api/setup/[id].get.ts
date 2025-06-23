@@ -1,4 +1,5 @@
 import database from '@@/database'
+import { user } from '@@/database/schema'
 import { z } from 'zod/v4'
 
 const params = z.object({
@@ -6,21 +7,39 @@ const params = z.object({
 })
 
 export default defineApi<Setup>(
-    async () => {
+    async (session) => {
         const event = useEvent()
         const config = useRuntimeConfig(event)
 
         const { id } = await validateParams(params)
 
         const data = await database.query.setups.findFirst({
-            where: (setups, { eq, and }) =>
-                and(eq(setups.id, id), eq(setups.visibility, true)),
+            where: (setups, { eq, and, exists, or, isNull }) =>
+                and(
+                    eq(setups.id, id),
+                    exists(
+                        database
+                            .select()
+                            .from(user)
+                            .where(
+                                and(
+                                    eq(user.id, setups.userId),
+                                    or(
+                                        eq(user.banned, false),
+                                        isNull(user.banned)
+                                    )
+                                )
+                            )
+                    )
+                ),
             columns: {
                 id: true,
                 createdAt: true,
                 updatedAt: true,
                 name: true,
                 description: true,
+                hidAt: true,
+                hidReason: true,
             },
             with: {
                 user: {
@@ -110,6 +129,21 @@ export default defineApi<Setup>(
                     },
                 },
                 coauthors: {
+                    where: (coauthors, { eq, or, and, exists, isNull }) =>
+                        exists(
+                            database
+                                .select()
+                                .from(user)
+                                .where(
+                                    and(
+                                        eq(user.id, coauthors.userId),
+                                        or(
+                                            eq(user.banned, false),
+                                            isNull(user.banned)
+                                        )
+                                    )
+                                )
+                        ),
                     columns: {
                         note: true,
                     },
@@ -161,6 +195,12 @@ export default defineApi<Setup>(
         })
 
         if (!data)
+            throw createError({
+                statusCode: 404,
+                statusMessage: 'Setup not found',
+            })
+
+        if (data.hidAt && session?.user.id !== data.user.id)
             throw createError({
                 statusCode: 404,
                 statusMessage: 'Setup not found',
@@ -247,6 +287,8 @@ export default defineApi<Setup>(
             id: data.id,
             createdAt: data.createdAt.toISOString(),
             updatedAt: data.updatedAt.toISOString(),
+            hidAt: data.hidAt?.toISOString() || null,
+            hidReason: data.hidReason || null,
             user: {
                 ...data.user,
                 createdAt: data.user.createdAt.toISOString(),

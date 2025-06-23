@@ -10,7 +10,11 @@ export default defineApi<UserWithSetups>(
         const { id } = await validateParams(params)
 
         const data = await database.query.user.findFirst({
-            where: (user, { eq }) => eq(user.id, id),
+            where: (user, { eq, or, and, isNull }) =>
+                and(
+                    eq(user.id, id),
+                    or(eq(user.banned, false), isNull(user.banned))
+                ),
             columns: {
                 id: true,
                 createdAt: true,
@@ -44,12 +48,15 @@ export default defineApi<UserWithSetups>(
                     },
                 },
                 setups: {
+                    where: (setup, { isNull }) => isNull(setup.hidAt),
                     columns: {
                         id: true,
                         createdAt: true,
                         updatedAt: true,
                         name: true,
                         description: true,
+                        hidAt: true,
+                        hidReason: true,
                     },
                     with: {
                         items: {
@@ -181,6 +188,8 @@ export default defineApi<UserWithSetups>(
                 id: setup.id,
                 createdAt: setup.createdAt.toISOString(),
                 updatedAt: setup.updatedAt?.toISOString(),
+                hidAt: setup.hidAt?.toISOString() || null,
+                hidReason: setup.hidReason,
                 user: {
                     ...data,
                     createdAt: data.createdAt.toISOString(),

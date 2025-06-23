@@ -252,6 +252,7 @@ export type SetupTool = z.infer<typeof setupToolsPublicSchema>
 export const setupsSelectSchema = createSelectSchema(setups, {
     createdAt: (schema) => schema.transform((val) => val.toISOString()),
     updatedAt: (schema) => schema.transform((val) => val.toISOString()),
+    hidAt: (schema) => schema.transform((val) => val?.toISOString()),
 })
 export const setupsInsertSchema = createInsertSchema(setups, {
     name: (schema) =>
@@ -290,7 +291,6 @@ export const setupsUpdateSchema = createUpdateSchema(setups, {
             .optional(),
     description: (schema) =>
         schema.max(512, '説明文は最大 512 文字です。').optional(),
-    visibility: (schema) => schema.optional(),
 })
 export const setupsPublicSchema = setupsSelectSchema
     .pick({
@@ -299,6 +299,8 @@ export const setupsPublicSchema = setupsSelectSchema
         updatedAt: true,
         name: true,
         description: true,
+        hidAt: true,
+        hidReason: true,
     })
     .extend({
         user: userPublicSchema,

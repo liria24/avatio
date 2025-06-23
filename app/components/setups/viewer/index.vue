@@ -202,6 +202,28 @@ onMounted(async () => {
                         />
                     </div>
                     <div class="flex items-center gap-0.5">
+                        <UModal
+                            v-if="session?.user.role === 'admin'"
+                            title="セットアップを非表示"
+                        >
+                            <UButton
+                                icon="lucide:eye-off"
+                                variant="ghost"
+                                size="sm"
+                                class="p-2"
+                            />
+
+                            <template #body>
+                                <UAlert
+                                    icon="lucide:eye-off"
+                                    title="このセットアップを非表示にしますか？"
+                                    description="これは Admin アクションです。セットアップは非表示になり、再度表示するまでユーザーには見えなくなります。"
+                                    color="warning"
+                                    variant="subtle"
+                                />
+                            </template>
+                        </UModal>
+
                         <UButton
                             v-if="session"
                             :icon="bookmarkButtonStyle.icon"
@@ -406,7 +428,7 @@ onMounted(async () => {
                 :title="props.name"
                 :description="props.description"
                 :tags="props.tags"
-                :co-authors="props.coauthors"
+                :coauthors="props.coauthors"
                 :user="props.user"
                 class="sticky top-3 pt-3"
             />

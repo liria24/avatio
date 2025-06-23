@@ -1,5 +1,4 @@
 <script setup lang="ts">
-// const session = await useGetSession()
 const route = useRoute()
 const toast = useToast()
 
@@ -9,8 +8,14 @@ const { data, status } = await useSetup(id)
 
 if (status.value === 'success' && !id)
     showError({
-        statusCode: 404,
+        statusCode: 400,
         message: 'IDが無効です',
+    })
+
+if (status.value === 'error' || (status.value === 'success' && !data.value))
+    showError({
+        statusCode: 404,
+        message: 'セットアップが見つかりません',
     })
 
 if (data.value) {

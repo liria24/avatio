@@ -7,6 +7,8 @@ interface Props {
     class?: string | string[]
 }
 const props = defineProps<Props>()
+
+console.log('setup info props', props)
 </script>
 
 <template>
@@ -85,24 +87,24 @@ const props = defineProps<Props>()
             <ul class="flex flex-col gap-2 pl-1">
                 <li
                     v-for="coAuthor in props.coauthors"
-                    :key="coAuthor.id"
+                    :key="coAuthor.user.id"
                     class="ring-muted flex flex-col gap-1.5 rounded-lg p-2 ring-1"
                 >
                     <NuxtLink
-                        :to="`/@${coAuthor.id}`"
+                        :to="`/@${coAuthor.user.id}`"
                         class="flex flex-row items-center gap-2"
                     >
                         <UAvatar
-                            :src="coAuthor.image || undefined"
-                            :alt="coAuthor.name"
+                            :src="coAuthor.user.image || undefined"
+                            :alt="coAuthor.user.name"
                             size="sm"
                         />
                         <p class="text-left text-sm">
-                            {{ coAuthor.name }}
+                            {{ coAuthor.user.name }}
                         </p>
                         <UserBadges
-                            v-if="coAuthor.badges?.length"
-                            :badges="coAuthor.badges"
+                            v-if="coAuthor.user.badges?.length"
+                            :badges="coAuthor.user.badges"
                             size="sm"
                         />
                     </NuxtLink>
