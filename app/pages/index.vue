@@ -33,7 +33,7 @@ useSchemaOrg([
 
 <template>
     <div class="flex w-full flex-col gap-6">
-        <!-- <BannerHeader class="flex sm:hidden" /> -->
+        <BannerNotification class="w-full" />
 
         <Hero v-if="!session" class="sm:mt-12 sm:mb-6" />
 

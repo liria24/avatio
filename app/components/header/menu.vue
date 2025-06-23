@@ -41,7 +41,7 @@ const menuItems = ref<DropdownMenuItem[][]>([
                 :to="$localePath('/setup/compose')"
                 icon="lucide:plus"
                 color="neutral"
-                class="md:rounded-full md:py-3 md:pr-6 md:pl-5"
+                class="md:mr-1 md:rounded-full md:py-2 md:pr-6 md:pl-5"
             >
                 <span class="hidden whitespace-nowrap md:inline">
                     セットアップを投稿

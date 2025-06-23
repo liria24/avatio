@@ -279,21 +279,18 @@ export default defineApi<PaginationResponse<Setup[]>>(
             images: setup.images,
             tags: setup.tags.map((tag) => tag.tag),
             coauthors: setup.coauthors.map((coauthor) => ({
-                id: coauthor.user.id,
-                createdAt: coauthor.user.createdAt.toISOString(),
-                name: coauthor.user.name,
-                image: coauthor.user.image,
-                bio: coauthor.user.bio,
-                links: coauthor.user.links,
-                badges: coauthor.user.badges.map((badge) => ({
-                    badge: badge.badge,
-                    createdAt: badge.createdAt.toISOString(),
-                })),
-                shops: coauthor.user.shops.map((shop) => ({
-                    id: shop.id,
-                    createdAt: shop.createdAt.toISOString(),
-                    shop: shop.shop,
-                })),
+                user: {
+                    ...coauthor.user,
+                    createdAt: coauthor.user.createdAt.toISOString(),
+                    shops: coauthor.user.shops.map((shop) => ({
+                        ...shop,
+                        createdAt: shop.createdAt.toISOString(),
+                    })),
+                    badges: coauthor.user.badges.map((badge) => ({
+                        ...badge,
+                        createdAt: badge.createdAt.toISOString(),
+                    })),
+                },
                 note: coauthor.note,
             })),
             tools: setup.tools,

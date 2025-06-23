@@ -29,7 +29,7 @@ const copy = (key: { name: string; value: number }) => {
     <div
         :class="
             cn(
-                'flex flex-col gap-2 overflow-clip rounded-lg p-2 ring-1 ring-zinc-300 dark:ring-zinc-700',
+                'ring-accented flex flex-col gap-2 overflow-clip rounded-lg p-2 ring-1',
                 props.class
             )
         "
@@ -187,7 +187,7 @@ const copy = (key: { name: string; value: number }) => {
 
         <div
             :data-noted="!!item.note?.length"
-            class="flex w-full flex-col gap-1.5 rounded-lg p-2 ring-1 ring-zinc-300 ring-inset empty:hidden data-[noted=false]:p-0 data-[noted=false]:ring-0 dark:ring-zinc-700"
+            class="ring-accented flex w-full flex-col gap-1.5 rounded-lg p-2 ring-1 ring-inset empty:hidden data-[noted=false]:p-0 data-[noted=false]:ring-0"
         >
             <div v-if="item.note?.length" class="flex items-start gap-2 px-1">
                 <Icon

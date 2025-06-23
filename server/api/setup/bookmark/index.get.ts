@@ -310,24 +310,21 @@ export default defineApi<PaginationResponse<Bookmark[]>>(
                 images: bookmark.setup.images,
                 tags: bookmark.setup.tags.map((tag) => tag.tag),
                 coauthors: bookmark.setup.coauthors.map((coauthor) => ({
-                    id: coauthor.user.id,
-                    createdAt: coauthor.user.createdAt.toISOString(),
-                    name: coauthor.user.name,
-                    image: coauthor.user.image,
-                    bio: coauthor.user.bio,
-                    links: coauthor.user.links,
-                    badges: coauthor.user.badges.map((badge) => ({
-                        badge: badge.badge,
-                        createdAt: badge.createdAt.toISOString(),
-                    })),
-                    shops: coauthor.user.shops.map((shop) => ({
-                        id: shop.id,
-                        createdAt: shop.createdAt.toISOString(),
-                        shop: shop.shop,
-                    })),
+                    user: {
+                        ...coauthor.user,
+                        createdAt: coauthor.user.createdAt.toISOString(),
+                        badges: coauthor.user.badges.map((badge) => ({
+                            ...badge,
+                            createdAt: badge.createdAt.toISOString(),
+                        })),
+                        shops: coauthor.user.shops.map((shop) => ({
+                            ...shop,
+                            createdAt: shop.createdAt.toISOString(),
+                            shop: shop.shop,
+                        })),
+                    },
                     note: coauthor.note,
                 })),
-                tools: bookmark.setup.tools,
             },
         }))
 

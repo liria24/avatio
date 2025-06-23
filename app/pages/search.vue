@@ -49,12 +49,7 @@ const { data: popularAvatars, refresh: fetchPopularAvatars } = await useFetch(
     }
 )
 
-const {
-    setups: fetchedSetups,
-    hasMore,
-    status,
-    fetchSetups,
-} = await useFetchSetups({
+const { data, status, refresh } = await useSetups({
     query,
     getCachedData: undefined,
     immediate: false,
@@ -85,9 +80,9 @@ const fetchItemsById = async (ids: string[]) => {
 }
 
 const loadMoreSetups = () => {
-    if (hasMore.value) {
+    if (data.value?.pagination.hasNext) {
         query.page += 1
-        fetchSetups()
+        refresh()
     }
 }
 
@@ -105,8 +100,8 @@ const search = async () => {
         await fetchItemsById(query.itemId)
     }
 
-    await fetchSetups()
-    setups.value = fetchedSetups.value || []
+    await refresh()
+    setups.value = data.value?.data || []
     isSearched.value = true
 }
 
@@ -291,7 +286,7 @@ await search()
 
                             <TagsInputRoot
                                 v-model="query.tag"
-                                class="flex w-full flex-wrap items-center gap-2 rounded-lg p-2 ring-1 ring-zinc-400 ring-inset focus-within:ring-2 focus-within:ring-zinc-700 hover:ring-2 dark:ring-zinc-700"
+                                class="ring-accented flex w-full flex-wrap items-center gap-2 rounded-lg p-2 ring-1 ring-inset focus-within:ring-2 hover:ring-2"
                             >
                                 <TagsInputItem
                                     v-for="item in query.tag"
@@ -388,7 +383,7 @@ await search()
         >
             <SetupsList v-model:setups="setups" v-model:status="status" />
             <UButton
-                v-if="hasMore"
+                v-if="data?.pagination.hasNext"
                 :loading="status === 'pending'"
                 label="もっと見る"
                 @click="loadMoreSetups"

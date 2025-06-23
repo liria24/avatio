@@ -5,7 +5,7 @@ const toast = useToast()
 
 const id = Number(route.params.id)
 
-const { setup, status } = await useFetchSetup(id)
+const { data, status } = await useSetup(id)
 
 if (status.value === 'success' && !id)
     showError({
@@ -13,31 +13,31 @@ if (status.value === 'success' && !id)
         message: 'IDが無効です',
     })
 
-if (setup.value) {
+if (data.value) {
     defineSeo({
-        title: `${setup.value.name} @${setup.value.user.name}`,
-        description: setup.value.description || undefined,
+        title: `${data.value.name} @${data.value.user.name}`,
+        description: data.value.description || undefined,
         image:
-            setup.value.images?.length && setup.value.images[0]
-                ? setup.value.images[0].url
+            data.value.images?.length && data.value.images[0]
+                ? data.value.images[0].url
                 : 'https://avatio.me/ogp.png',
     })
     useSchemaOrg([
         defineWebPage({
-            name: setup.value.name,
-            description: setup.value.description,
-            datePublished: setup.value.createdAt,
+            name: data.value.name,
+            description: data.value.description,
+            datePublished: data.value.createdAt,
             author: {
                 '@type': 'Person',
-                name: setup.value.user.name,
-                url: `/@${setup.value.user.id}`,
+                name: data.value.user.name,
+                url: `/@${data.value.user.id}`,
             },
-            primaryImageOfPage: setup.value.images?.[0]?.url,
+            primaryImageOfPage: data.value.images?.[0]?.url,
             breadcrumb: defineBreadcrumb({
                 itemListElement: [
                     { name: 'ホーム', item: '/' },
                     { name: 'セットアップ', item: '/setup' },
-                    { name: setup.value.name, item: `/setup/${id}` },
+                    { name: data.value.name, item: `/setup/${id}` },
                 ],
             }),
             inLanguage: 'ja-JP',
@@ -70,11 +70,11 @@ const deleteSetup = async () => {
 </script>
 
 <template>
-    <div v-if="setup" class="flex flex-col items-start gap-5">
+    <div v-if="data" class="flex flex-col items-start gap-5">
         <UBreadcrumb
             :items="[
-                { label: setup.user.name, to: `/@${setup.user.id}` },
-                { label: setup.name },
+                { label: data.user.name, to: `/@${data.user.id}` },
+                { label: data.name },
             ]"
             :ui="{
                 link: 'text-xs',
@@ -84,17 +84,17 @@ const deleteSetup = async () => {
 
         <SetupsViewer
             :setup-id="id"
-            :created-at="setup.createdAt"
-            :updated-at="setup.updatedAt"
-            :user="setup.user"
-            :name="setup.name"
-            :description="setup.description"
-            :images="setup.images"
-            :tags="setup.tags"
-            :coauthors="setup.coauthors"
-            :tools="setup.tools"
-            :items="setup.items"
-            :failed-items-count="setup.failedItemsCount"
+            :created-at="data.createdAt"
+            :updated-at="data.updatedAt"
+            :user="data.user"
+            :name="data.name"
+            :description="data.description"
+            :images="data.images"
+            :tags="data.tags"
+            :coauthors="data.coauthors"
+            :tools="data.tools"
+            :items="data.items"
+            :failed-items-count="data.failedItemsCount"
             @delete="deleteSetup"
         />
     </div>

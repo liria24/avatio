@@ -3,16 +3,16 @@ const route = useRoute()
 const session = await useGetSession()
 const id = route.params.id as string
 
-const { user, status } = useFetchUser(id)
+const { data, status } = useUser(id)
 
-if (status.value === 'success' && !user.value)
+if (status.value === 'success' && !data.value)
     showError({
         statusCode: 404,
         message: 'IDが無効です',
     })
 
 const links = computed(() =>
-    user.value?.links?.map((link) => {
+    data.value?.links?.map((link) => {
         const attributes = linkAttributes(link)
         return {
             label: attributes.label,
@@ -22,23 +22,23 @@ const links = computed(() =>
     })
 )
 
-if (user.value) {
+if (data.value) {
     defineSeo({
-        title: user.value.name,
-        description: user.value.bio || undefined,
-        image: user.value.image || undefined,
+        title: data.value.name,
+        description: data.value.bio || undefined,
+        image: data.value.image || undefined,
     })
     useSchemaOrg([
         defineWebPage({
-            name: user.value.name,
-            description: user.value.bio,
-            datePublished: user.value.createdAt,
+            name: data.value.name,
+            description: data.value.bio,
+            datePublished: data.value.createdAt,
         }),
         definePerson({
-            name: user.value.name,
-            description: user.value.bio,
-            image: user.value.image || undefined,
-            sameAs: user.value.links || undefined,
+            name: data.value.name,
+            description: data.value.bio,
+            image: data.value.image || undefined,
+            sameAs: data.value.links || undefined,
         }),
     ])
 }
@@ -46,21 +46,21 @@ if (user.value) {
 
 <template>
     <div
-        v-if="(status === 'success' && !user) || status === 'error'"
+        v-if="(status === 'success' && !data) || status === 'error'"
         class="flex w-full flex-col items-center"
     >
         <p class="mt-5 text-zinc-400">ユーザーデータの取得に失敗しました</p>
     </div>
 
-    <div v-else-if="user" class="flex w-full flex-col gap-6 px-2">
+    <div v-else-if="data" class="flex w-full flex-col gap-6 px-2">
         <div class="flex w-full flex-col items-start gap-3">
             <div
                 class="flex w-full flex-col items-start justify-between gap-3 sm:flex-row sm:items-center"
             >
                 <div class="flex items-center gap-6">
                     <UAvatar
-                        :src="user.image || undefined"
-                        :alt="user.name"
+                        :src="data.image || undefined"
+                        :alt="data.name"
                         class="size-14 sm:size-20"
                     />
                     <div class="flex flex-col gap-1">
@@ -68,17 +68,17 @@ if (user.value) {
                             class="flex flex-wrap items-center gap-x-3 gap-y-1"
                         >
                             <p class="text-2xl font-bold">
-                                {{ user.name }}
+                                {{ data.name }}
                             </p>
                             <UserBadges
-                                v-if="user.badges"
-                                :badges="user.badges"
+                                v-if="data.badges"
+                                :badges="data.badges"
                             />
                         </div>
                         <p class="text-dimmed text-sm">
                             アカウント作成日:
                             <NuxtTime
-                                :datetime="user.createdAt"
+                                :datetime="data.createdAt"
                                 class="text-muted font-[Geist]"
                             />
                         </p>
@@ -86,7 +86,7 @@ if (user.value) {
                 </div>
                 <div class="flex items-center gap-1 self-end sm:self-auto">
                     <UButton
-                        v-if="session?.user.id === user.id"
+                        v-if="session?.user.id === data.id"
                         :to="$localePath('/settings')"
                         label="プロフィールを編集"
                         icon="lucide:pen-line"
@@ -94,7 +94,7 @@ if (user.value) {
                         size="sm"
                         class="self-end"
                     />
-                    <ModalReportUser v-else-if="session" :user-id="user.id">
+                    <ModalReportUser v-else-if="session" :user-id="data.id">
                         <UButton
                             label="ユーザーを報告"
                             icon="lucide:flag"
@@ -131,20 +131,20 @@ if (user.value) {
                 </div>
 
                 <div
-                    v-if="user.bio?.length"
+                    v-if="data.bio?.length"
                     class="flex w-full flex-col gap-1 rounded-xl border border-zinc-400 px-4 py-3 dark:border-zinc-600"
                 >
                     <span class="mt-[-2px] text-sm text-zinc-500">bio</span>
                     <p
                         class="text-relaxed text-sm [overflow-wrap:anywhere] break-keep whitespace-break-spaces"
-                        v-html="useLineBreak(user.bio)"
+                        v-html="useLineBreak(data.bio)"
                     />
                 </div>
             </div>
         </div>
 
         <div
-            v-if="user.shops?.length"
+            v-if="data.shops?.length"
             class="mb-4 flex w-full flex-col gap-5 px-2"
         >
             <div class="flex items-center gap-2">
@@ -156,7 +156,7 @@ if (user.value) {
 
             <div class="flex flex-wrap items-center gap-2">
                 <UButton
-                    v-for="(shop, index) in user.shops"
+                    v-for="(shop, index) in data.shops"
                     :key="'shop-' + index"
                     :to="`https://${shop.shop.id}.booth.pm`"
                     target="_blank"
@@ -170,7 +170,7 @@ if (user.value) {
                         :height="32"
                         format="webp"
                         fit="cover"
-                        class="rounded-lg ring-1 ring-zinc-300 dark:ring-zinc-700"
+                        class="ring-accented rounded-lg ring-1"
                     />
                     <div class="flex flex-col items-start gap-1">
                         <span
@@ -198,8 +198,8 @@ if (user.value) {
 
             <div class="flex w-full flex-col gap-3 self-center">
                 <SetupsList
-                    v-if="user.setups"
-                    v-model:setups="user.setups"
+                    v-if="data.setups"
+                    v-model:setups="data.setups"
                     v-model:status="status"
                 />
             </div>

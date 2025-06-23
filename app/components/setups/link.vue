@@ -1,6 +1,4 @@
 <script lang="ts" setup>
-import { twMerge } from 'tailwind-merge'
-
 interface Props {
     noUser?: boolean
     setup: Setup
@@ -129,13 +127,13 @@ const gradientStyle = computed(() => {
 })
 
 const linkClasses = computed(() => {
-    return twMerge(
-        'group flex flex-col rounded-lg overflow-clip focus:outline-none',
+    return cn(
+        'group flex flex-col rounded-lg overflow-clip focus:outline-none hover:ring-2 focus:ring-2',
         adjustedColor.value
-            ? 'hover:ring-2 hover:ring-[var(--dominant-color)] hover:bg-[var(--dominant-color)]/20 focus:ring-2 focus:ring-[var(--dominant-color)] focus:bg-[var(--dominant-color)]/20'
-            : 'hover:ring-2 hover:ring-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:ring-2 focus:ring-zinc-400 focus:bg-zinc-100 dark:focus:bg-zinc-800',
+            ? 'hover:ring-[var(--dominant-color)] hover:bg-[var(--dominant-color)]/20 focus:ring-[var(--dominant-color)] focus:bg-[var(--dominant-color)]/20'
+            : 'hover:ring-accented hover:bg-elevated focus:ring-accented focus:bg-elevated',
         'hover:shadow-xl focus-visible:shadow-xl shadow-black/10 dark:shadow-white/10',
-        'transition duration-50 ease-in-out',
+        'transition duration-100 ease-in-out',
         props.class
     )
 })

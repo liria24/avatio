@@ -27,6 +27,9 @@ export const auth = betterAuth({
             clientSecret: import.meta.env.TWITTER_CLIENT_SECRET,
         },
     },
+    deleteUser: {
+        enabled: true,
+    },
     plugins: [admin()],
     cookieCache: {
         enabled: true,
