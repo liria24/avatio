@@ -200,7 +200,11 @@ export default defineApi<Setup>(
                 statusMessage: 'Setup not found',
             })
 
-        if (data.hidAt && session?.user.id !== data.user.id)
+        if (
+            data.hidAt &&
+            session?.user.id !== data.user.id &&
+            session?.user.role !== 'admin'
+        )
             throw createError({
                 statusCode: 404,
                 statusMessage: 'Setup not found',

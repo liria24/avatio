@@ -100,6 +100,8 @@ const deleteSetup = async () => {
             :tools="data.tools"
             :items="data.items"
             :failed-items-count="data.failedItemsCount"
+            :hid-at="data.hidAt"
+            :hid-reason="data.hidReason"
             @delete="deleteSetup"
         />
     </div>

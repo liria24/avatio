@@ -13,6 +13,8 @@ interface Props {
     images?: SetupImage[]
     items: SetupItem[]
     failedItemsCount?: number
+    hidAt?: string | null
+    hidReason?: string | null
 }
 const props = defineProps<Props>()
 
@@ -20,6 +22,44 @@ const emit = defineEmits(['delete'])
 
 const session = await useGetSession()
 const toast = useToast()
+
+const hideReason = ref('')
+const modalHide = ref(false)
+
+const hideSetup = async () => {
+    if (session.value?.user.role !== 'admin') {
+        toast.add({
+            title: '権限がありません',
+            description: 'Admin アカウントでログインしてください。',
+            color: 'error',
+        })
+        return
+    }
+
+    try {
+        await $fetch(`/api/admin/setup/${props.setupId}`, {
+            method: 'PATCH',
+            body: {
+                hide: true,
+                hideReason: hideReason.value.length
+                    ? hideReason.value
+                    : undefined,
+            },
+        })
+        toast.add({
+            title: 'セットアップが非表示になりました',
+            color: 'success',
+        })
+        hideReason.value = ''
+        modalHide.value = false
+    } catch (error) {
+        console.error('セットアップの非表示に失敗:', error)
+        toast.add({
+            title: 'セットアップの非表示に失敗しました',
+            color: 'error',
+        })
+    }
+}
 
 const shareX = useSocialShare({
     network: 'x',
@@ -183,6 +223,27 @@ onMounted(async () => {
 <template>
     <div class="relative flex w-full flex-col items-start gap-8 xl:flex-row">
         <div class="flex w-full flex-col items-start gap-4">
+            <UAlert
+                v-if="props.hidAt"
+                icon="lucide:eye-off"
+                title="このセットアップは現在非表示です"
+                :description="`理由: ${props.hidReason || '不明'}`"
+                variant="subtle"
+                :actions="[
+                    {
+                        label: '異議申し立て',
+                        variant: 'soft',
+                        onClick: () => {
+                            navigateTo('mailto:hello@liria.me', {
+                                external: true,
+                                open: { target: '_blank' },
+                            })
+                        },
+                    },
+                ]"
+                class="w-full"
+            />
+
             <div class="flex w-full flex-col items-start gap-1">
                 <h1
                     class="text-highlighted text-3xl font-bold wrap-anywhere break-keep"
@@ -204,6 +265,7 @@ onMounted(async () => {
                     <div class="flex items-center gap-0.5">
                         <UModal
                             v-if="session?.user.role === 'admin'"
+                            v-model:open="modalHide"
                             title="セットアップを非表示"
                         >
                             <UButton
@@ -214,12 +276,31 @@ onMounted(async () => {
                             />
 
                             <template #body>
-                                <UAlert
-                                    icon="lucide:eye-off"
-                                    title="このセットアップを非表示にしますか？"
-                                    description="これは Admin アクションです。セットアップは非表示になり、再度表示するまでユーザーには見えなくなります。"
-                                    color="warning"
-                                    variant="subtle"
+                                <div class="flex flex-col gap-2">
+                                    <UAlert
+                                        icon="lucide:eye-off"
+                                        title="これは Admin アクションです"
+                                        description="セットアップは非表示になり、再度表示するまでユーザーには見えなくなります。"
+                                        color="warning"
+                                        variant="subtle"
+                                    />
+                                    <UFormField label="理由" required>
+                                        <UTextarea
+                                            v-model="hideReason"
+                                            autoresize
+                                            class="w-full"
+                                        />
+                                    </UFormField>
+                                </div>
+                            </template>
+
+                            <template #footer>
+                                <UButton
+                                    label="非表示にする"
+                                    color="neutral"
+                                    size="lg"
+                                    block
+                                    @click="hideSetup"
                                 />
                             </template>
                         </UModal>
