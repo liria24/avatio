@@ -96,9 +96,7 @@ const search = async () => {
         return
     }
 
-    if (query.itemId.length) {
-        await fetchItemsById(query.itemId)
-    }
+    if (query.itemId.length) await fetchItemsById(query.itemId)
 
     await refresh()
     setups.value = data.value?.data || []
@@ -261,7 +259,7 @@ await search()
                                     />
 
                                     <template #content>
-                                        <ItemSearch
+                                        <CommandPaletteItemSearch
                                             @select="onSelectItemSearch"
                                         />
                                     </template>

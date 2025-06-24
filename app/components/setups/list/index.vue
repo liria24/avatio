@@ -9,7 +9,7 @@ interface Porps {
 const props = withDefaults(defineProps<Porps>(), {
     minColumns: 2,
     maxColumns: 4,
-    ssrColumns: 4,
+    ssrColumns: 2,
 })
 
 const setups = defineModel<Setup[]>('setups', {

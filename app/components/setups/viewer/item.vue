@@ -176,7 +176,7 @@ const copy = (key: { name: string; value: number }) => {
                     text="このアイテムを含むセットアップを検索"
                 >
                     <UButton
-                        :to="$localePath(`/search?item=${props.item.id}`)"
+                        :to="$localePath(`/search?itemId=${props.item.id}`)"
                         icon="lucide:search"
                         aria-label="このアイテムを含むセットアップを検索"
                         variant="ghost"

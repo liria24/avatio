@@ -415,7 +415,7 @@ onMounted(async () => {
                     :alt="props.name"
                     :width="props.images[0]?.width ?? 640"
                     :height="props.images[0]?.height ?? 320"
-                    class="h-full max-h-[720px] w-fit shrink-0 grow-0 cursor-zoom-in overflow-hidden rounded-lg object-contain"
+                    class="max-h-[720px] w-fit shrink-0 grow-0 cursor-zoom-in overflow-hidden rounded-lg object-contain"
                 />
 
                 <template #content>

@@ -210,40 +210,42 @@ const deleteUser = async () => {
                     </UFormField>
 
                     <UFormField name="links" label="リンク" class="w-full">
-                        <VueDraggable
-                            v-model="profileState.links as string[]"
-                            :animation="150"
-                            handle=".draggable"
-                            class="flex w-full flex-wrap items-center gap-2"
-                        >
-                            <div
-                                v-for="(i, index) in profileState.links"
-                                :key="'link-' + index"
-                                class="ring-accented flex items-center gap-2 rounded-md p-1 ring-1"
+                        <div class="flex w-full flex-wrap items-center gap-2">
+                            <VueDraggable
+                                v-model="profileState.links as string[]"
+                                :animation="150"
+                                handle=".draggable"
+                                class="flex flex-wrap items-center gap-2"
                             >
                                 <div
-                                    class="draggable hover:bg-elevated grid cursor-move rounded-md px-1 py-2 transition-colors"
+                                    v-for="(i, index) in profileState.links"
+                                    :key="'link-' + index"
+                                    class="ring-accented flex items-center gap-2 rounded-md p-1 ring-1"
                                 >
-                                    <Icon
-                                        name="lucide:grip-vertical"
-                                        size="18"
-                                        class="text-muted shrink-0"
+                                    <div
+                                        class="draggable hover:bg-elevated grid cursor-move rounded-md px-1 py-2 transition-colors"
+                                    >
+                                        <Icon
+                                            name="lucide:grip-vertical"
+                                            size="18"
+                                            class="text-muted shrink-0"
+                                        />
+                                    </div>
+                                    <UTooltip :text="i" :delay-duration="50">
+                                        <Icon
+                                            :name="linkAttributes(i).icon"
+                                            size="18"
+                                            class="text-toned shrink-0"
+                                        />
+                                    </UTooltip>
+                                    <UButton
+                                        icon="lucide:x"
+                                        variant="ghost"
+                                        size="sm"
+                                        @click="removeLink(index)"
                                     />
                                 </div>
-                                <UTooltip :text="i" :delay-duration="50">
-                                    <Icon
-                                        :name="linkAttributes(i).icon"
-                                        size="18"
-                                        class="text-toned shrink-0"
-                                    />
-                                </UTooltip>
-                                <UButton
-                                    icon="lucide:x"
-                                    variant="ghost"
-                                    size="sm"
-                                    @click="removeLink(index)"
-                                />
-                            </div>
+                            </VueDraggable>
 
                             <UPopover
                                 :content="{
@@ -275,7 +277,7 @@ const deleteUser = async () => {
                                     </div>
                                 </template>
                             </UPopover>
-                        </VueDraggable>
+                        </div>
                     </UFormField>
                 </div>
 
