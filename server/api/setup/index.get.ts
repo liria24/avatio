@@ -258,12 +258,6 @@ export default defineApi<PaginationResponse<Setup[]>>(
                         },
                     },
                 },
-                tools: {
-                    columns: {
-                        toolSlug: true,
-                        note: true,
-                    },
-                },
             },
         })
 
@@ -329,7 +323,6 @@ export default defineApi<PaginationResponse<Setup[]>>(
                 },
                 note: coauthor.note,
             })),
-            tools: setup.tools,
             failedItemsCount: setup.items.filter((item) => item.item.outdated)
                 .length,
         }))

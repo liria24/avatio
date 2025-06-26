@@ -23,6 +23,5 @@ export default defineApi(
     {
         errorMessage: 'Failed to post bookmark.',
         requireSession: true,
-        ratelimit: true,
     }
 )

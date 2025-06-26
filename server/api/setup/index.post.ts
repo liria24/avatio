@@ -6,44 +6,13 @@ import {
     setupItemShapekeys,
     setups,
     setupTags,
-    setupTools,
 } from '@@/database/schema'
 
 const body = setupsInsertSchema
-    .pick({
-        name: true,
-        description: true,
-    })
-    .extend({
-        items: setupItemsInsertSchema
-            .omit({ setupId: true })
-            .extend({
-                shapekeys: setupItemShapekeysInsertSchema
-                    .omit({ setupItemId: true })
-                    .array()
-                    .optional(),
-            })
-            .array()
-            .min(1),
-        images: setupImagesInsertSchema
-            .omit({ setupId: true })
-            .array()
-            .max(1)
-            .optional(),
-        tags: setupTagsInsertSchema.omit({ setupId: true }).array().optional(),
-        coauthors: setupCoauthorsInsertSchema
-            .omit({ setupId: true })
-            .array()
-            .optional(),
-        tools: setupToolsInsertSchema
-            .omit({ setupId: true })
-            .array()
-            .optional(),
-    })
 
 export default defineApi(
     async (session) => {
-        const { name, description, items, images, tags, coauthors, tools } =
+        const { name, description, items, images, tags, coauthors } =
             await validateBody(body, { sanitize: true })
 
         const resultSetups = await database
@@ -117,16 +86,6 @@ export default defineApi(
                     setupId,
                     userId: coauthor.userId,
                     note: coauthor.note,
-                }))
-            )
-        }
-
-        if (tools?.length) {
-            await database.insert(setupTools).values(
-                tools.map((tool) => ({
-                    setupId,
-                    toolSlug: tool.toolSlug,
-                    note: tool.note,
                 }))
             )
         }

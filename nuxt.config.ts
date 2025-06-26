@@ -44,14 +44,6 @@ export default defineNuxtConfig({
         adminKey: '',
         liria: { accessToken: '' },
         r2: { endpoint: '', accessKey: '', secretKey: '' },
-        upstash: {
-            kv: {
-                url: '',
-                restApiUrl: '',
-                restApiToken: '',
-                restApiReadOnlyToken: '',
-            },
-        },
         turnstile: { siteKey: '', secretKey: '' },
         public: {
             r2: { domain: '' },

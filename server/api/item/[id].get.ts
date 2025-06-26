@@ -4,6 +4,14 @@ import { consola } from 'consola'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod/v4'
 
+const params = z.object({
+    id: z.string(),
+})
+
+const query = z.object({
+    platform: platformSchema.optional(),
+})
+
 // 定数定義
 const CACHE_DURATION_MS = 24 * 60 * 60 * 1000 // 24時間
 const SPECIFIC_ITEM_CATEGORIES = {
@@ -20,14 +28,6 @@ const BOOTH_CATEGORY_MAP = {
 const PLATFORM_URLS = {
     booth: (id: string) => `https://booth.pm/ja/items/${id}.json`,
 } as const
-
-const params = z.object({
-    id: z.string(),
-})
-
-const query = z.object({
-    platform: platformSchema.optional(),
-})
 
 const fetchItem = async (
     id: string,
@@ -373,6 +373,5 @@ export default defineApi<Item>(
     },
     {
         errorMessage: 'Failed to get items.',
-        ratelimit: true,
     }
 )

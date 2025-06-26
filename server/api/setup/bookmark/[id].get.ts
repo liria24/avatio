@@ -193,12 +193,6 @@ export default defineApi<Bookmark>(
                                 },
                             },
                         },
-                        tools: {
-                            columns: {
-                                toolSlug: true,
-                                note: true,
-                            },
-                        },
                     },
                 },
             },
@@ -265,6 +259,5 @@ export default defineApi<Bookmark>(
     {
         errorMessage: 'Failed to get bookmark',
         requireSession: true,
-        ratelimit: true,
     }
 )

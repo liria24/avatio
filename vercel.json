@@ -4,7 +4,7 @@
     "trailingSlash": false,
     "crons": [
         {
-            "path": "/api/admin/report",
+            "path": "/api/admin/job/report",
             "schedule": "0 22 * * *"
         }
     ],

@@ -185,12 +185,6 @@ export default defineApi<Setup>(
                         },
                     },
                 },
-                tools: {
-                    columns: {
-                        toolSlug: true,
-                        note: true,
-                    },
-                },
             },
         })
 
@@ -330,6 +324,5 @@ export default defineApi<Setup>(
     },
     {
         errorMessage: 'Failed to get setups',
-        ratelimit: true,
     }
 )

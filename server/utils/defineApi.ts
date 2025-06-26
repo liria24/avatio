@@ -1,22 +1,8 @@
 import { auth, type Session } from '@@/better-auth'
-import { Ratelimit } from '@upstash/ratelimit'
-import { Redis } from '@upstash/redis'
 import { consola } from 'consola'
 import { z } from 'zod/v4'
 
 const config = useRuntimeConfig()
-
-const redis = new Redis({
-    url: config.upstash.kv.restApiUrl,
-    token: config.upstash.kv.restApiToken,
-})
-
-const ratelimit = new Ratelimit({
-    redis,
-    limiter: Ratelimit.slidingWindow(32, '1 m'),
-    analytics: true,
-    prefix: '@upstash/ratelimit',
-})
 
 const checkCronAuth = async (
     session: Session | null | undefined
@@ -33,33 +19,6 @@ const checkCronAuth = async (
             statusCode: 401,
             message: 'Unauthorized: Invalid CRON authentication',
         })
-}
-
-const checkRateLimit = async (
-    session: Session | null | undefined,
-    options: ApiOptions
-): Promise<void> => {
-    const { authorization } = getHeaders(useEvent())
-    const isAdminUser =
-        session?.user?.role === 'admin' ||
-        authorization === `Bearer ${config.adminKey}`
-
-    // adminユーザーまたはレート制限が無効な場合はスキップ
-    if (!options.ratelimit || isAdminUser) return
-
-    const identifier =
-        session?.user?.id || getRequestIP(useEvent()) || 'anonymous'
-
-    consola.info('Checking rate limit for user:', identifier)
-
-    const { success } = await ratelimit.limit(identifier)
-    if (!success) {
-        consola.warn('Rate limit exceeded for identifier:', identifier)
-        throw createError({
-            statusCode: 429,
-            message: 'Rate limit exceeded',
-        })
-    }
 }
 
 const handleError = (
@@ -91,7 +50,6 @@ type ApiOptions = {
     requireAdmin?: boolean
     requireSession?: boolean
     requireCron?: boolean
-    ratelimit?: boolean
 }
 
 type SessionType<Options extends ApiOptions> =
@@ -106,7 +64,6 @@ const defaultOptions: ApiOptions = {
     requireAdmin: false,
     requireSession: false,
     requireCron: false,
-    ratelimit: false,
 }
 
 export default <T, O extends ApiOptions = ApiOptions>(
@@ -119,9 +76,6 @@ export default <T, O extends ApiOptions = ApiOptions>(
             const session = await auth.api.getSession({
                 headers: useEvent().headers,
             })
-
-            // レート制限チェック
-            await checkRateLimit(session, options)
 
             // CRON認証チェック
             if (options.requireCron) await checkCronAuth(session)

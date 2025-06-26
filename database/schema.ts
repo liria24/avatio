@@ -238,23 +238,6 @@ export const items = pgTable(
     ]
 )
 
-export const tools = pgTable(
-    'tools',
-    {
-        slug: text().primaryKey(),
-        createdAt: timestamp('created_at').defaultNow().notNull(),
-        updatedAt: timestamp('updated_at').defaultNow().notNull(),
-        name: text().notNull(),
-        description: text(),
-        url: text().notNull(),
-        image: text(),
-    },
-    (table) => [
-        index('tools_id_index').on(table.slug),
-        index('tools_name_index').on(table.name),
-    ]
-)
-
 export const setups = pgTable(
     'setups',
     {
@@ -398,36 +381,6 @@ export const setupCoauthors = pgTable(
             name: 'setup_coauthors_user_id_fkey',
             columns: [table.userId],
             foreignColumns: [user.id],
-        })
-            .onDelete('cascade')
-            .onUpdate('cascade'),
-    ]
-)
-
-export const setupTools = pgTable(
-    'setup_tools',
-    {
-        id: integer().primaryKey().generatedAlwaysAsIdentity(),
-        setupId: integer('setup_id').notNull(),
-        toolSlug: text('tool_slug').notNull(),
-        version: text(),
-        note: text(),
-    },
-    (table) => [
-        index('setup_tools_id_index').on(table.id),
-        index('setup_tools_setup_id_index').on(table.setupId),
-        index('setup_tools_tool_slug_index').on(table.toolSlug),
-        foreignKey({
-            name: 'setup_tools_setup_id_fkey',
-            columns: [table.setupId],
-            foreignColumns: [setups.id],
-        })
-            .onDelete('cascade')
-            .onUpdate('cascade'),
-        foreignKey({
-            name: 'setup_tools_tool_slug_fkey',
-            columns: [table.toolSlug],
-            foreignColumns: [tools.slug],
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
@@ -629,10 +582,6 @@ export const itemsRelations = relations(items, ({ one, many }) => ({
     setupItems: many(setupItems),
 }))
 
-export const toolsRelations = relations(tools, ({ many }) => ({
-    setupTools: many(setupTools),
-}))
-
 export const setupsRelations = relations(setups, ({ one, many }) => ({
     user: one(user, {
         fields: [setups.userId],
@@ -642,7 +591,6 @@ export const setupsRelations = relations(setups, ({ one, many }) => ({
     tags: many(setupTags),
     images: many(setupImages),
     coauthors: many(setupCoauthors),
-    tools: many(setupTools),
     bookmarks: many(bookmarks),
     reports: many(setupReports),
 }))
@@ -691,17 +639,6 @@ export const setupCoauthorsRelations = relations(setupCoauthors, ({ one }) => ({
     user: one(user, {
         fields: [setupCoauthors.userId],
         references: [user.id],
-    }),
-}))
-
-export const setupToolsRelations = relations(setupTools, ({ one }) => ({
-    setup: one(setups, {
-        fields: [setupTools.setupId],
-        references: [setups.id],
-    }),
-    tool: one(tools, {
-        fields: [setupTools.toolSlug],
-        references: [tools.slug],
     }),
 }))
 

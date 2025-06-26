@@ -83,6 +83,7 @@ const menuItems = ref<DropdownMenuItem[][]>([
 
             <UButton
                 v-if="session?.user.role === 'admin'"
+                :to="$localePath('/admin')"
                 label="admin"
                 variant="subtle"
                 size="xs"

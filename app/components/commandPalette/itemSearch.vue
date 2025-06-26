@@ -1,14 +1,19 @@
 <script setup lang="ts">
 const emit = defineEmits<{
-    (e: 'select', id: string): void
+    select: [item: Item]
 }>()
 
 const open = defineModel<boolean>({
     default: false,
 })
+const props = defineProps<{
+    loading?: boolean
+}>()
 
 const searchTerm = ref('')
+const loadingRef = ref(false)
 
+const toast = useToast()
 const categoryAttributes = itemCategoryAttributes()
 
 const { data, status } = useFetch('/api/item', {
@@ -28,10 +33,7 @@ const { data, status } = useFetch('/api/item', {
                     shop: item.shop.name,
                     image: item.image,
                     slot: 'item' as const,
-                    onSelect: () => {
-                        open.value = false
-                        emit('select', item.id)
-                    },
+                    onSelect: () => onSelect(item.id),
                 })),
         }))
     },
@@ -52,7 +54,29 @@ const groups = computed(() => {
                             label: searchTerm.value,
                             slot: 'url',
                             onSelect: () => {
-                                open.value = false
+                                try {
+                                    const url = new URL(searchTerm.value)
+                                    if (url.hostname.endsWith('booth.pm')) {
+                                        // BOOTHのURLからIDを抽出する正規表現（言語コード対応）
+                                        const match = url.pathname.match(
+                                            /\/(?:[a-z]{2}\/)?items?\/(\d+)/
+                                        )
+                                        const id = match?.[1]
+                                        if (id) onSelect(id, 'booth')
+                                        else
+                                            throw new Error(
+                                                'Invalid BOOTH item URL format'
+                                            )
+                                    }
+                                } catch (error) {
+                                    console.error('Failed to parse URL:', error)
+                                    toast.add({
+                                        title: '無効なURL',
+                                        description:
+                                            '正しいアイテムのURLを入力してください。',
+                                        color: 'error',
+                                    })
+                                }
                             },
                         },
                     ],
@@ -66,13 +90,41 @@ const groups = computed(() => {
         return data.value
     }
 })
+
+const loadingComputed = computed(
+    () => props.loading || loadingRef.value || status.value === 'pending'
+)
+
+const onSelect = async (id: string, platform?: Platform) => {
+    loadingRef.value = true
+
+    try {
+        const response = await $fetch<Item>(`/api/item/${id}`, {
+            query: { platform },
+        })
+        emit('select', response)
+        open.value = false
+        searchTerm.value = ''
+    } catch (error) {
+        console.error('Failed to fetch item:', error)
+        toast.add({
+            title: 'アイテムの取得に失敗しました',
+            description:
+                'アイテムが存在しないか、非公開になっている可能性があります。',
+            color: 'error',
+        })
+        return
+    } finally {
+        loadingRef.value = false
+    }
+}
 </script>
 
 <template>
     <UCommandPalette
         v-model:open="open"
         v-model:search-term="searchTerm"
-        :loading="status === 'pending'"
+        :loading="loadingComputed"
         placeholder="アイテムを検索 / URLを入力"
         :groups="groups"
         :ui="{
@@ -82,11 +134,15 @@ const groups = computed(() => {
     >
         <template #item="{ item }">
             <NuxtImg :src="item.image" class="size-6 rounded-md object-cover" />
-            <div class="flex cursor-pointer items-center gap-2">
-                <span class="text-toned text-xs">
+            <div class="flex w-full cursor-pointer items-center gap-2">
+                <span
+                    class="text-toned line-clamp-1 grow text-left text-xs leading-none"
+                >
                     {{ item.label }}
                 </span>
-                <span class="text-muted text-xs">
+                <span
+                    class="text-muted line-clamp-1 text-xs leading-none break-all"
+                >
                     {{ item.shop }}
                 </span>
             </div>

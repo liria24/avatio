@@ -292,12 +292,6 @@ export default defineApi<PaginationResponse<Bookmark[]>>(
                                 },
                             },
                         },
-                        tools: {
-                            columns: {
-                                toolSlug: true,
-                                note: true,
-                            },
-                        },
                     },
                 },
             },
@@ -384,6 +378,5 @@ export default defineApi<PaginationResponse<Bookmark[]>>(
     {
         errorMessage: 'Failed to get bookmarks',
         requireSession: true,
-        ratelimit: true,
     }
 )

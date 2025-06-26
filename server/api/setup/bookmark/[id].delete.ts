@@ -31,6 +31,5 @@ export default defineApi(
     {
         errorMessage: 'Failed to delete bookmark',
         requireSession: true,
-        ratelimit: true,
     }
 )

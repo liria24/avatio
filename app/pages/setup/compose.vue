@@ -8,12 +8,20 @@ const categoryAttributes = itemCategoryAttributes()
 const publishing = ref(false)
 const popoverItemSearch = ref(false)
 
-const state = reactive({
+interface State {
+    name: string
+    description: string
+    images: SetupImage[]
+    tags: string[]
+    coauthors: SetupCoauthor[]
+    items: Record<string, SetupItem[]>
+}
+const state = reactive<State>({
     name: '',
     description: '',
-    tags: [] as string[],
-    tools: [],
-    coauthors: [] as User[],
+    images: [],
+    tags: [],
+    coauthors: [],
     items: {
         avatar: [],
         clothing: [],
@@ -23,7 +31,7 @@ const state = reactive({
         texture: [],
         tool: [],
         other: [],
-    } as Record<string, SetupItem[]>,
+    },
 })
 
 const totalItemsCount = computed(() => {
@@ -32,8 +40,38 @@ const totalItemsCount = computed(() => {
     }, 0)
 })
 
-const onSubmit = async () => {
-    console.log('Submitting setup:', state)
+const { open, reset, onChange } = useFileDialog({
+    accept: 'image/png, image/jpg, image/jpeg, image/webp, image/tiff',
+    multiple: false,
+    directory: false,
+})
+
+onChange(async (files) => {
+    if (!files?.length || !files[0]) return
+
+    const file = files[0]
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('path', 'setup')
+
+    const response = await $fetch('/api/image', {
+        method: 'POST',
+        body: formData,
+    })
+
+    if (response) {
+        state.images.push({
+            url: response.url,
+            width: response.width || 0,
+            height: response.height || 0,
+        })
+    }
+
+    reset()
+})
+
+const removeImage = (index: number) => {
+    if (index !== -1) state.images.splice(index, 1)
 }
 
 const addTag = (tag: string) => {
@@ -50,26 +88,41 @@ const removeTag = (tag: string) => {
     if (index !== -1) state.tags.splice(index, 1)
 }
 
-const addItem = async (id: string) => {
-    for (const category in state.items) {
-        if (state.items[category]?.some((item) => item.id === id)) {
+const addCoauthor = (user: User) => {
+    if (!state.coauthors.find((coauthor) => coauthor.user.id === user.id))
+        state.coauthors.push({
+            user,
+            note: '',
+        })
+    else
+        toast.add({
+            title: '共同作者を重複して追加することはできません',
+            color: 'warning',
+        })
+}
+
+const removeCoauthor = (id: string) => {
+    const index = state.coauthors.findIndex(
+        (coauthor) => coauthor.user.id === id
+    )
+    if (index !== -1) state.coauthors.splice(index, 1)
+}
+
+const addItem = async (item: Item) => {
+    for (const category in state.items)
+        if (state.items[category]?.some((i) => i.id === item.id)) {
             toast.add({
                 title: 'アイテムはすでに追加されています',
                 color: 'warning',
             })
             return
         }
-    }
-    try {
-        const response = await $fetch<Item>(`/api/item/${id}`)
-        state.items[response.category]?.push({
-            ...response,
-            note: '',
-            unsupported: false,
-        })
-    } catch (error) {
-        console.error('Error adding item:', error)
-    }
+
+    state.items[item.category]?.push({
+        ...item,
+        note: '',
+        unsupported: false,
+    })
     popoverItemSearch.value = false
 }
 
@@ -92,6 +145,10 @@ const changeItemCategory = (id: string, category: ItemCategory) => {
             return
         }
     }
+}
+
+const onSubmit = async () => {
+    console.log('Submitting setup:', state)
 }
 </script>
 
@@ -138,12 +195,32 @@ const changeItemCategory = (id: string, category: ItemCategory) => {
                 >
                     <div class="flex flex-col gap-4">
                         <UButton
+                            v-if="!state.images.length"
                             icon="lucide:image-plus"
                             label="画像を追加"
                             variant="soft"
                             block
-                            class="p-3"
+                            class="h-24 p-3"
+                            @click="open()"
                         />
+                        <div v-else class="grid grid-cols-3 gap-2">
+                            <div
+                                v-for="(image, index) in state.images"
+                                :key="'image-' + index"
+                                class="relative grid"
+                            >
+                                <NuxtImg
+                                    :src="image.url"
+                                    class="aspect-square rounded-lg object-cover"
+                                />
+                                <UButton
+                                    icon="lucide:x"
+                                    color="neutral"
+                                    class="absolute top-1 right-1 z-10 rounded-full"
+                                    @click="removeImage(index)"
+                                />
+                            </div>
+                        </div>
 
                         <UFormField name="name" label="タイトル" required>
                             <UInput
@@ -205,28 +282,90 @@ const changeItemCategory = (id: string, category: ItemCategory) => {
                             </div>
                         </UFormField>
 
-                        <UFormField name="tools" label="ツール">
-                            <UButton
-                                icon="lucide:plus"
-                                :label="
-                                    state.tools.length
-                                        ? undefined
-                                        : 'ツールを追加'
-                                "
-                                variant="soft"
-                            />
-                        </UFormField>
-
                         <UFormField name="coauthors" label="共同作者">
-                            <UButton
-                                icon="lucide:plus"
-                                :label="
-                                    state.coauthors.length
-                                        ? undefined
-                                        : '共同作者を追加'
-                                "
-                                variant="soft"
-                            />
+                            <div class="flex flex-col gap-2">
+                                <VueDraggable
+                                    v-model="state.coauthors"
+                                    :animation="150"
+                                    handle=".draggable"
+                                    drag-class="opacity-100"
+                                    ghost-class="opacity-0"
+                                    class="flex h-full w-full flex-col gap-2 empty:hidden"
+                                >
+                                    <div
+                                        v-for="(
+                                            coauthor, index
+                                        ) in state.coauthors"
+                                        :key="'coauthor-' + index"
+                                        class="ring-accented flex items-stretch gap-2 rounded-md p-2 ring-1"
+                                    >
+                                        <div
+                                            class="draggable hover:bg-elevated grid cursor-move rounded-md px-1 py-2 transition-colors"
+                                        >
+                                            <Icon
+                                                name="lucide:grip-vertical"
+                                                size="18"
+                                                class="text-muted shrink-0 self-center"
+                                            />
+                                        </div>
+
+                                        <div class="flex grow flex-col gap-2">
+                                            <div
+                                                class="flex items-center gap-2"
+                                            >
+                                                <UAvatar
+                                                    :src="
+                                                        coauthor.user.image ||
+                                                        undefined
+                                                    "
+                                                    :alt="coauthor.user.name"
+                                                    size="xs"
+                                                />
+                                                <span
+                                                    class="text-toned grow text-xs"
+                                                >
+                                                    {{ coauthor.user.name }}
+                                                </span>
+                                                <UButton
+                                                    icon="lucide:x"
+                                                    variant="ghost"
+                                                    size="xs"
+                                                    @click="
+                                                        removeCoauthor(
+                                                            coauthor.user.id
+                                                        )
+                                                    "
+                                                />
+                                            </div>
+                                            <UInput
+                                                v-model="coauthor.note"
+                                                placeholder="ノート"
+                                                size="sm"
+                                            />
+                                        </div>
+                                    </div>
+                                </VueDraggable>
+
+                                <UPopover
+                                    :content="{ side: 'right', align: 'start' }"
+                                >
+                                    <UButton
+                                        icon="lucide:plus"
+                                        :label="
+                                            state.coauthors.length
+                                                ? undefined
+                                                : '共同作者を追加'
+                                        "
+                                        variant="soft"
+                                    />
+
+                                    <template #content>
+                                        <CommandPaletteUserSearch
+                                            @select="addCoauthor"
+                                        />
+                                    </template>
+                                </UPopover>
+                            </div>
                         </UFormField>
                     </div>
                 </div>
@@ -263,6 +402,7 @@ const changeItemCategory = (id: string, category: ItemCategory) => {
                     <UPopover
                         v-model:open="popoverItemSearch"
                         :content="{ side: 'bottom', align: 'end' }"
+                        :ui="{ content: 'max-w-96' }"
                     >
                         <UButton
                             icon="lucide:plus"
@@ -323,7 +463,7 @@ const changeItemCategory = (id: string, category: ItemCategory) => {
                             handle=".draggable"
                             drag-class="opacity-100"
                             ghost-class="opacity-0"
-                            class="flex h-full w-full flex-col gap-2"
+                            class="flex h-full w-full flex-col gap-2 empty:hidden"
                         >
                             <div
                                 v-for="(item, index) in state.items[category]"
@@ -353,15 +493,20 @@ const changeItemCategory = (id: string, category: ItemCategory) => {
                                             <div
                                                 class="flex items-center gap-2"
                                             >
-                                                <Icon
+                                                <UTooltip
                                                     v-if="
                                                         item.platform ===
                                                         'booth'
                                                     "
-                                                    name="avatio:booth"
-                                                    size="16"
-                                                    class="text-muted shrink-0"
-                                                />
+                                                    text="BOOTH"
+                                                    :delay-duration="50"
+                                                >
+                                                    <Icon
+                                                        name="avatio:booth"
+                                                        size="16"
+                                                        class="text-muted shrink-0"
+                                                    />
+                                                </UTooltip>
                                                 <p class="text-toned text-sm">
                                                     {{ item.name }}
                                                 </p>

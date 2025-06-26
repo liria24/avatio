@@ -21,8 +21,9 @@ const existingTagsGroup = computed(() => ({
         id: `existing-${index}`,
         label: tag.tag,
         onSelect: () => {
-            open.value = false
             emit('select', tag.tag)
+            open.value = false
+            searchTerm.value = ''
         },
     })),
 }))
@@ -35,8 +36,9 @@ const newTagGroup = computed(() => ({
             id: 'new-tag-item',
             label: searchTerm.value,
             onSelect: () => {
-                open.value = false
                 emit('select', searchTerm.value)
+                open.value = false
+                searchTerm.value = ''
             },
         },
     ],

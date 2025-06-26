@@ -151,12 +151,6 @@ export default defineApi<UserWithSetups>(
                                 },
                             },
                         },
-                        tools: {
-                            columns: {
-                                toolSlug: true,
-                                note: true,
-                            },
-                        },
                     },
                 },
             },
@@ -238,7 +232,6 @@ export default defineApi<UserWithSetups>(
                     },
                     note: coauthor.note,
                 })),
-                tools: setup.tools,
             })),
         }
     },

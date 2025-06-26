@@ -11,9 +11,7 @@ import {
     setupReports,
     setups,
     setupTags,
-    setupTools,
     shops,
-    tools,
     user,
     userBadge,
     userBadges,
@@ -150,21 +148,6 @@ export const itemsPublicSchema = itemsSelectSchema
     })
 export type Item = z.infer<typeof itemsPublicSchema>
 
-export const toolsSelectSchema = createSelectSchema(tools, {
-    createdAt: (schema) => schema.transform((val) => val.toISOString()),
-    updatedAt: (schema) => schema.transform((val) => val.toISOString()),
-})
-export const toolsInsertSchema = createInsertSchema(tools)
-export const toolsUpdateSchema = createUpdateSchema(tools)
-export const toolsPublicSchema = toolsSelectSchema.pick({
-    slug: true,
-    name: true,
-    description: true,
-    image: true,
-    url: true,
-})
-export type Tool = z.infer<typeof toolsPublicSchema>
-
 export const setupItemShapekeysSelectSchema =
     createSelectSchema(setupItemShapekeys)
 export const setupItemShapekeysInsertSchema = createInsertSchema(
@@ -233,22 +216,6 @@ export const setupCoauthorsPublicSchema = setupCoauthorsSelectSchema
     })
 export type SetupCoauthor = z.infer<typeof setupCoauthorsPublicSchema>
 
-export const setupToolsSelectSchema = createSelectSchema(setupTools)
-export const setupToolsInsertSchema = createInsertSchema(setupTools, {
-    version: (schema) =>
-        schema.max(32, 'バージョンは最大 32 文字です。').optional(),
-    note: (schema) => schema.max(140, 'ノートは最大 140 文字です。').optional(),
-})
-export const setupToolsPublicSchema = setupToolsSelectSchema
-    .pick({
-        version: true,
-        note: true,
-    })
-    .extend({
-        tool: toolsPublicSchema,
-    })
-export type SetupTool = z.infer<typeof setupToolsPublicSchema>
-
 export const setupsSelectSchema = createSelectSchema(setups, {
     createdAt: (schema) => schema.transform((val) => val.toISOString()),
     updatedAt: (schema) => schema.transform((val) => val.toISOString()),
@@ -274,14 +241,7 @@ export const setupsInsertSchema = createInsertSchema(setups, {
         .array()
         .max(8, '共同作者は最大 8 人です。')
         .optional(),
-    tools: setupToolsInsertSchema
-        .array()
-        .max(8, 'ツールは最大 8 個です。')
-        .optional(),
-    items: setupItemsInsertSchema
-        .array()
-        .max(32, 'アイテムは最大 32 個です。')
-        .optional(),
+    items: setupItemsInsertSchema.array().max(32, 'アイテムは最大 32 個です。'),
 })
 export const setupsUpdateSchema = createUpdateSchema(setups, {
     name: (schema) =>
