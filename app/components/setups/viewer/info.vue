@@ -7,8 +7,6 @@ interface Props {
     class?: string | string[]
 }
 const props = defineProps<Props>()
-
-console.log('setup info props', props)
 </script>
 
 <template>
@@ -62,22 +60,6 @@ console.log('setup info props', props)
                 />
             </div>
         </div>
-
-        <!-- <div
-            v-if="props.unity?.length"
-            class="flex w-fit items-center gap-2 rounded-full px-3 py-2 ring-1 ring-zinc-300 dark:ring-zinc-700"
-        >
-            <Icon
-                name="simple-icons:unity"
-                :size="14"
-                class="shrink-0 text-zinc-800 dark:text-zinc-200"
-            />
-            <p
-                class="text-xs leading-none [overflow-wrap:anywhere] break-keep whitespace-pre-wrap text-zinc-700 dark:text-zinc-300"
-            >
-                {{ useLineBreak(props.unity) }}
-            </p>
-        </div> -->
 
         <div
             v-if="props.coauthors?.length"

@@ -133,7 +133,24 @@ const onSelect = async (id: string, platform?: Platform) => {
         class="max-h-80"
     >
         <template #item="{ item }">
-            <NuxtImg :src="item.image" class="size-6 rounded-md object-cover" />
+            <NuxtImg
+                v-slot="{ isLoaded, src, imgAttrs }"
+                :src="item.image"
+                :alt="item.label"
+                :width="24"
+                :height="24"
+                format="webp"
+                custom
+                class="aspect-square size-6 shrink-0 rounded-md"
+            >
+                <img
+                    v-if="isLoaded"
+                    v-bind="imgAttrs"
+                    :src="src"
+                    class="object-cover"
+                />
+                <USkeleton v-else class="size-full" />
+            </NuxtImg>
             <div class="flex w-full cursor-pointer items-center gap-2">
                 <span
                     class="text-toned line-clamp-1 grow text-left text-xs leading-none"

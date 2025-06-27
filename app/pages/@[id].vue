@@ -164,14 +164,23 @@ if (data.value) {
                     class="gap-2 p-3"
                 >
                     <NuxtImg
+                        v-slot="{ isLoaded, src, imgAttrs }"
                         :src="shop.shop.image || undefined"
                         :alt="shop.shop.name"
                         :width="32"
                         :height="32"
                         format="webp"
                         fit="cover"
-                        class="ring-accented rounded-lg ring-1"
-                    />
+                        class="aspect-square size-8 shrink-0 rounded-lg"
+                    >
+                        <img
+                            v-if="isLoaded"
+                            v-bind="imgAttrs"
+                            :src="src"
+                            class="ring-accented object-cover ring-1"
+                        />
+                        <USkeleton v-else class="size-full" />
+                    </NuxtImg>
                     <div class="flex flex-col items-start gap-1">
                         <span
                             class="text-sm leading-none font-semibold text-zinc-800 dark:text-zinc-300"

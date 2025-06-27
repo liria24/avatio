@@ -165,9 +165,14 @@ export type SetupItemShapekey = z.infer<typeof setupItemShapekeysPublicSchema>
 
 export const setupItemsSelectSchema = createSelectSchema(setupItems)
 export const setupItemsInsertSchema = createInsertSchema(setupItems, {
+    itemId: (schema) => schema.transform((val) => val.toString()),
     note: (schema) => schema.max(300, 'ノートは最大 300 文字です。').optional(),
 }).extend({
-    shapekeys: setupItemShapekeysInsertSchema.array().max(64).optional(),
+    shapekeys: setupItemShapekeysInsertSchema
+        .omit({ setupItemId: true })
+        .array()
+        .max(64)
+        .optional(),
 })
 export const setupItemsPublicSchema = z.intersection(
     itemsPublicSchema,
@@ -228,21 +233,29 @@ export const setupsInsertSchema = createInsertSchema(setups, {
             .max(64, 'セットアップ名は最大 64 文字です。'),
     description: (schema) =>
         schema.max(512, '説明文は最大 512 文字です。').optional(),
-}).extend({
-    tags: setupTagsInsertSchema
-        .array()
-        .max(8, 'タグは最大 8 個です。')
-        .optional(),
-    images: setupImagesInsertSchema
-        .array()
-        .max(1, '画像は最大 1 個です。')
-        .optional(),
-    coauthors: setupCoauthorsInsertSchema
-        .array()
-        .max(8, '共同作者は最大 8 人です。')
-        .optional(),
-    items: setupItemsInsertSchema.array().max(32, 'アイテムは最大 32 個です。'),
 })
+    .omit({ userId: true })
+    .extend({
+        tags: setupTagsInsertSchema
+            .omit({ setupId: true })
+            .array()
+            .max(8, 'タグは最大 8 個です。')
+            .optional(),
+        images: setupImagesInsertSchema
+            .omit({ setupId: true })
+            .array()
+            .max(1, '画像は最大 1 個です。')
+            .optional(),
+        coauthors: setupCoauthorsInsertSchema
+            .omit({ setupId: true })
+            .array()
+            .max(8, '共同作者は最大 8 人です。')
+            .optional(),
+        items: setupItemsInsertSchema
+            .omit({ setupId: true })
+            .array()
+            .max(32, 'アイテムは最大 32 個です。'),
+    })
 export const setupsUpdateSchema = createUpdateSchema(setups, {
     name: (schema) =>
         schema
@@ -251,7 +264,93 @@ export const setupsUpdateSchema = createUpdateSchema(setups, {
             .optional(),
     description: (schema) =>
         schema.max(512, '説明文は最大 512 文字です。').optional(),
+}).extend({
+    tags: setupTagsInsertSchema
+        .omit({ setupId: true })
+        .array()
+        .max(8, 'タグは最大 8 個です。')
+        .optional(),
+    images: setupImagesInsertSchema
+        .omit({ setupId: true })
+        .array()
+        .max(1, '画像は最大 1 個です。')
+        .optional(),
+    coauthors: setupCoauthorsInsertSchema
+        .omit({ setupId: true })
+        .array()
+        .max(8, '共同作者は最大 8 人です。')
+        .optional(),
+    items: setupItemsInsertSchema
+        .omit({ setupId: true })
+        .array()
+        .max(32, 'アイテムは最大 32 個です。'),
 })
+export const setupsClientFormSchema = createInsertSchema(setups, {
+    name: (schema) =>
+        schema
+            .min(1, 'セットアップ名は 1 文字以上必要です。')
+            .max(64, 'セットアップ名は最大 64 文字です。'),
+    description: (schema) =>
+        schema.max(512, '説明文は最大 512 文字です。').optional(),
+})
+    .pick({
+        name: true,
+        description: true,
+    })
+    .extend({
+        tags: z.string().array().max(8, 'タグは最大 8 個です。'),
+        images: setupImagesInsertSchema
+            .omit({
+                setupId: true,
+            })
+            .array()
+            .max(1, '画像は最大 1 個です。'),
+        coauthors: setupCoauthorsInsertSchema
+            .omit({
+                setupId: true,
+                userId: true,
+            })
+            .extend({
+                user: userPublicSchema,
+            })
+            .array()
+            .max(8, '共同作者は最大 8 人です。'),
+        items: z.record(
+            itemCategorySchema,
+            setupItemsPublicSchema
+                .transform((item) => ({
+                    ...item,
+                    id: item.id.toString(),
+                }))
+                .array()
+        ),
+    })
+    .refine(
+        (val) => {
+            const totalItems = Object.values(val.items).reduce(
+                (total, category) => total + category.length,
+                0
+            )
+            return totalItems > 0
+        },
+        {
+            message: 'アイテムは 1 個以上必要です。',
+            path: ['items'],
+        }
+    )
+    .refine(
+        (val) => {
+            const totalItems = Object.values(val.items).reduce(
+                (total, category) => total + category.length,
+                0
+            )
+            return totalItems <= 32
+        },
+        {
+            message: 'アイテムは最大 32 個です。',
+            path: ['items'],
+        }
+    )
 export const setupsPublicSchema = setupsSelectSchema
     .pick({
         id: true,

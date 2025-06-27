@@ -11,6 +11,8 @@ const props = withDefaults(defineProps<Props>(), {
 
 const toast = useToast()
 
+const nsfwMask = ref(props.item.nsfw)
+
 const url = `https://booth.pm/ja/items/${props.item.id}`
 const item = ref<SetupItem>({
     ...props.item,
@@ -29,7 +31,7 @@ const copy = (key: { name: string; value: number }) => {
     <div
         :class="
             cn(
-                'ring-accented flex flex-col gap-2 overflow-clip rounded-lg p-2 ring-1',
+                'ring-accented relative flex flex-col gap-2 overflow-clip rounded-lg p-2 ring-1',
                 props.class
             )
         "
@@ -41,37 +43,37 @@ const copy = (key: { name: string; value: number }) => {
                 class="flex shrink-0 items-center overflow-hidden rounded-lg object-cover select-none"
             >
                 <NuxtImg
-                    preload
+                    v-slot="{ isLoaded, src, imgAttrs }"
                     :src="item.image || undefined"
                     :alt="item.name"
-                    format="webp"
-                    fit="cover"
-                    quality="75"
-                    sizes="80px"
                     :width="80"
                     :height="80"
+                    format="webp"
                     :data-nsfw="item.nsfw"
-                    class="size-20 rounded-lg object-cover text-xs data-[nsfw=true]:blur-md"
-                />
+                    class="aspect-square size-20 shrink-0 rounded-lg text-xs"
+                >
+                    <img
+                        v-if="isLoaded"
+                        v-bind="imgAttrs"
+                        :src="src"
+                        class="object-cover data-[nsfw=true]:blur-md"
+                    />
+                    <USkeleton v-else class="size-full" />
+                </NuxtImg>
             </NuxtLink>
 
             <div class="flex w-full justify-between gap-1 self-stretch">
                 <div class="flex grow flex-col gap-2 self-center py-1.5">
-                    <div class="flex items-center gap-2">
-                        <UTooltip v-if="item.nsfw" text="NSFW">
-                            <Icon
-                                name="lucide:heart"
-                                :size="18"
-                                class="text-pink-400"
-                            />
-                        </UTooltip>
-                        <NuxtLink :to="url" target="_blank" class="w-fit gap-2">
-                            <p
-                                class="line-clamp-3 text-left text-sm/relaxed font-medium wrap-anywhere break-keep sm:text-base/relaxed"
-                                v-html="useLineBreak(item.name)"
-                            />
-                        </NuxtLink>
-                    </div>
+                    <NuxtLink
+                        :to="url"
+                        target="_blank"
+                        class="flex items-center gap-3"
+                    >
+                        <p
+                            class="line-clamp-3 text-left text-sm/relaxed font-semibold wrap-anywhere break-keep sm:text-base/relaxed"
+                            v-html="useLineBreak(item.name)"
+                        />
+                    </NuxtLink>
 
                     <div
                         class="flex flex-wrap items-center gap-x-3 gap-y-1.5 pl-0.5"
@@ -83,14 +85,24 @@ const copy = (key: { name: string; value: number }) => {
                                 class="flex w-fit items-center gap-1.5"
                             >
                                 <NuxtImg
+                                    v-slot="{ isLoaded, src, imgAttrs }"
                                     :src="item.shop.image ?? ''"
                                     :alt="item.shop.name"
                                     :width="20"
                                     :height="20"
                                     format="webp"
-                                    fit="cover"
-                                    class="size-5 rounded-md border border-zinc-300 dark:border-zinc-700"
-                                />
+                                >
+                                    <img
+                                        v-if="isLoaded"
+                                        v-bind="imgAttrs"
+                                        :src="src"
+                                        class="ring-accented aspect-square size-5 shrink-0 rounded-md object-cover ring-1"
+                                    />
+                                    <USkeleton
+                                        v-else
+                                        class="aspect-square size-5 shrink-0 rounded-md"
+                                    />
+                                </NuxtImg>
                                 <span
                                     class="text-muted text-xs font-semibold text-nowrap"
                                 >
@@ -109,14 +121,24 @@ const copy = (key: { name: string; value: number }) => {
                                     class="flex items-center gap-3 py-2 pr-3 pl-2"
                                 >
                                     <NuxtImg
+                                        v-slot="{ isLoaded, src, imgAttrs }"
                                         :src="item.shop.image || undefined"
                                         :alt="item.shop.name"
                                         :width="40"
                                         :height="40"
                                         format="webp"
-                                        fit="cover"
-                                        class="size-10 rounded-lg"
-                                    />
+                                    >
+                                        <img
+                                            v-if="isLoaded"
+                                            v-bind="imgAttrs"
+                                            :src="src"
+                                            class="aspect-square size-10 shrink-0 rounded-md object-cover"
+                                        />
+                                        <USkeleton
+                                            v-else
+                                            class="aspect-square size-10 shrink-0 rounded-md"
+                                        />
+                                    </NuxtImg>
                                     <div class="flex flex-col gap-1.5">
                                         <span
                                             class="text-toned text-sm leading-none font-semibold"
@@ -168,6 +190,14 @@ const copy = (key: { name: string; value: number }) => {
                                 {{ item.likes?.toLocaleString() || '?' }}
                             </p>
                         </NuxtLink>
+
+                        <UBadge
+                            v-if="item.nsfw"
+                            icon="lucide:ban"
+                            label="NSFW"
+                            variant="soft"
+                            class="text-xs font-semibold"
+                        />
                     </div>
                 </div>
 
@@ -276,6 +306,18 @@ const copy = (key: { name: string; value: number }) => {
                     </template>
                 </UPopover>
             </div>
+        </div>
+
+        <div
+            v-if="nsfwMask"
+            class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 p-3 backdrop-blur-xl"
+        >
+            <UButton
+                icon="lucide:eye"
+                label="NSFW コンテンツを表示"
+                variant="soft"
+                @click="nsfwMask = false"
+            />
         </div>
     </div>
 </template>

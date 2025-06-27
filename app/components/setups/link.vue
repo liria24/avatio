@@ -151,7 +151,6 @@ const linkClasses = computed(() => {
             <NuxtImg
                 :src="props.setup.images[0]?.url"
                 :alt="setup.name"
-                format="webp"
                 :width="props.setup.images[0]?.width ?? 640"
                 :height="props.setup.images[0]?.height ?? 360"
                 :placeholder="[
@@ -161,6 +160,7 @@ const linkClasses = computed(() => {
                     5,
                 ]"
                 loading="lazy"
+                format="webp"
                 fit="cover"
                 class="size-full max-h-[420px] rounded-lg object-cover"
                 @load="extractImageColor"
@@ -202,6 +202,7 @@ const linkClasses = computed(() => {
                 :delay-duration="0"
             >
                 <NuxtImg
+                    v-slot="{ isLoaded, src, imgAttrs }"
                     :src="firstAvatar.image || undefined"
                     :alt="firstAvatar.name"
                     :placeholder="[30, 30, 75, 5]"
@@ -210,8 +211,16 @@ const linkClasses = computed(() => {
                     :height="80"
                     loading="lazy"
                     fit="cover"
-                    class="my-1.5 ml-1.5 h-14 shrink-0 overflow-clip rounded-lg object-cover md:h-20"
-                />
+                    class="my-1.5 ml-1.5 aspect-square h-14 shrink-0 rounded-lg md:h-20"
+                >
+                    <img
+                        v-if="isLoaded"
+                        v-bind="imgAttrs"
+                        :src="src"
+                        class="object-cover"
+                    />
+                    <USkeleton v-else class="size-full" />
+                </NuxtImg>
             </UTooltip>
 
             <div
