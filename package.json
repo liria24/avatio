@@ -64,7 +64,7 @@
         "cheerio": "^1.1.0",
         "extract-colors": "^4.2.0",
         "image-size": "^2.0.2",
-        "marked": "^15.0.12",
+        "marked": "^16.0.0",
         "reka-ui": "^2.3.1",
         "tailwind-merge": "^3.3.1",
         "tailwind-variants": "^1.0.0",
