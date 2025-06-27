@@ -1,16 +1,14 @@
 <script lang="ts" setup>
-import { twMerge } from 'tailwind-merge'
-
 interface Props {
     noUser?: boolean
-    setup: SetupClient
-    class?: string
+    setup: Setup
+    class?: string | string[] | null
 }
 const props = defineProps<Props>()
 const emit = defineEmits(['click'])
 const colorMode = useColorMode()
 
-const date = new Date(props.setup.created_at)
+const date = new Date(props.setup.createdAt)
 const dateLocale = computed(() => {
     return date.toLocaleString('ja-JP', {
         year: 'numeric',
@@ -19,21 +17,13 @@ const dateLocale = computed(() => {
     })
 })
 
-const hasValidAvatar = computed(() => {
-    return (
-        !!props.setup.items.avatar?.length &&
-        !props.setup.items.avatar[0]?.outdated
-    )
-})
+const firstAvatar = computed(() =>
+    props.setup.items.find((item) => item.category === 'avatar')
+)
 
 const avatarName = computed(() => {
-    if (!hasValidAvatar.value) return '不明なベースアバター'
-    const avatar = props.setup.items.avatar?.[0]
-    return avatar ? avatarShortName(avatar.name) : '不明なベースアバター'
-})
-
-const hasSetupImages = computed(() => {
-    return !!props.setup.images?.length && !!props.setup.images[0]
+    if (!firstAvatar.value) return '不明なベースアバター'
+    return avatarShortName(firstAvatar.value.name)
 })
 
 const dominantColor = ref('')
@@ -137,13 +127,13 @@ const gradientStyle = computed(() => {
 })
 
 const linkClasses = computed(() => {
-    return twMerge(
-        'group flex flex-col rounded-lg overflow-clip focus:outline-none',
+    return cn(
+        'group flex flex-col rounded-lg overflow-clip focus:outline-none hover:ring-2 focus:ring-2',
         adjustedColor.value
-            ? 'hover:ring-2 hover:ring-[var(--dominant-color)] hover:bg-[var(--dominant-color)]/20 focus:ring-2 focus:ring-[var(--dominant-color)] focus:bg-[var(--dominant-color)]/20'
-            : 'hover:ring-2 hover:ring-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:ring-2 focus:ring-zinc-400 focus:bg-zinc-100 dark:focus:bg-zinc-800',
+            ? 'hover:ring-[var(--dominant-color)] hover:bg-[var(--dominant-color)]/20 focus:ring-[var(--dominant-color)] focus:bg-[var(--dominant-color)]/20'
+            : 'hover:ring-accented hover:bg-elevated focus:ring-accented focus:bg-elevated',
         'hover:shadow-xl focus-visible:shadow-xl shadow-black/10 dark:shadow-white/10',
-        'transition duration-50 ease-in-out',
+        'transition duration-100 ease-in-out',
         props.class
     )
 })
@@ -152,29 +142,25 @@ const linkClasses = computed(() => {
 <template>
     <NuxtLink
         tabindex="0"
-        :to="{ name: 'setup-id', params: { id: setup.id } }"
+        :to="$localePath(`/setup/${props.setup.id}`)"
         :class="linkClasses"
         :style="elementStyle"
         @click="emit('click')"
     >
-        <div v-if="hasSetupImages" class="relative w-full p-1.5">
+        <div v-if="props.setup.images?.length" class="relative w-full p-1.5">
             <NuxtImg
-                :src="
-                    getImage(setup.images[0]?.name, {
-                        prefix: 'setup',
-                    })
-                "
+                :src="props.setup.images[0]?.url"
                 :alt="setup.name"
-                format="webp"
-                :width="setup.images[0]?.width ?? 640"
-                :height="setup.images[0]?.height ?? 360"
+                :width="props.setup.images[0]?.width ?? 640"
+                :height="props.setup.images[0]?.height ?? 360"
                 :placeholder="[
-                    setup.images[0]?.width ?? 192,
-                    setup.images[0]?.height ?? 108,
+                    props.setup.images[0]?.width ?? 192,
+                    props.setup.images[0]?.height ?? 108,
                     75,
                     5,
                 ]"
                 loading="lazy"
+                format="webp"
                 fit="cover"
                 class="size-full max-h-[420px] rounded-lg object-cover"
                 @load="extractImageColor"
@@ -211,59 +197,88 @@ const linkClasses = computed(() => {
 
         <div class="flex w-full items-center">
             <UTooltip
-                v-if="!hasSetupImages && hasValidAvatar"
+                v-if="!props.setup.images?.length && firstAvatar"
                 :text="avatarName"
                 :delay-duration="0"
             >
                 <NuxtImg
-                    :src="setup.items.avatar?.[0]?.thumbnail"
-                    :alt="setup.name"
+                    v-slot="{ isLoaded, src, imgAttrs }"
+                    :src="firstAvatar.image || undefined"
+                    :alt="firstAvatar.name"
                     :placeholder="[30, 30, 75, 5]"
                     format="webp"
                     :width="80"
                     :height="80"
                     loading="lazy"
                     fit="cover"
-                    class="my-1.5 ml-1.5 h-14 shrink-0 overflow-clip rounded-lg object-cover md:h-20"
-                />
+                    class="my-1.5 ml-1.5 aspect-square h-14 shrink-0 rounded-lg md:h-20"
+                >
+                    <img
+                        v-if="isLoaded"
+                        v-bind="imgAttrs"
+                        :src="src"
+                        class="object-cover"
+                    />
+                    <USkeleton v-else class="size-full" />
+                </NuxtImg>
             </UTooltip>
 
             <div
-                v-else-if="!hasValidAvatar && !hasSetupImages"
-                class="my-1.5 ml-1.5 flex size-14 shrink-0 items-center justify-center rounded-lg bg-zinc-300 text-zinc-400 dark:bg-zinc-600"
+                v-else-if="!firstAvatar && !props.setup.images?.length"
+                class="text-muted my-1.5 ml-1.5 flex size-14 shrink-0 items-center justify-center rounded-lg bg-zinc-300"
             >
                 ?
             </div>
 
             <div
-                v-if="!hasSetupImages"
+                v-if="!props.setup.images?.length"
                 class="flex w-full flex-col items-start justify-center gap-2 pr-2 pl-3"
             >
                 <span
-                    class="md:text-md line-clamp-2 text-sm font-medium break-keep text-zinc-700 dark:text-zinc-200"
-                >
-                    {{ lineBreak(setup.name) }}
-                </span>
+                    class="md:text-md text-toned line-clamp-2 text-sm font-medium break-keep"
+                    v-html="useLineBreak(setup.name)"
+                />
 
                 <div class="flex items-center gap-2">
-                    <HovercardUser v-if="!noUser" :user="setup.author">
-                        <UiAvatar
-                            :url="
-                                getImage(setup.author.avatar, {
-                                    prefix: 'avatar',
-                                })
-                            "
-                            :alt="setup.author.name ?? ''"
+                    <UPopover v-if="!props.noUser" mode="hover">
+                        <UAvatar
+                            :src="props.setup.user.image || undefined"
+                            :alt="props.setup.user.name"
                             aria-hidden="true"
-                            :icon-size="12"
-                            class="size-5"
+                            size="2xs"
                         />
-                    </HovercardUser>
+
+                        <template #content>
+                            <NuxtLink
+                                :to="`/@${props.setup.user.id}`"
+                                class="flex items-center gap-3 py-2 pr-3 pl-2"
+                            >
+                                <UAvatar
+                                    :src="props.setup.user.image || undefined"
+                                    :alt="props.setup.user.name"
+                                    class="size-10"
+                                />
+                                <div class="flex flex-wrap gap-2">
+                                    <span
+                                        class="text-toned text-sm leading-none font-semibold"
+                                    >
+                                        {{ props.setup.user.name }}
+                                    </span>
+                                    <UserBadges
+                                        v-if="props.setup.user.badges?.length"
+                                        :badges="props.setup.user.badges"
+                                        size="xs"
+                                    />
+                                </div>
+                            </NuxtLink>
+                        </template>
+                    </UPopover>
+
                     <UTooltip :text="dateLocale" :delay-duration="0">
                         <NuxtTime
                             :datetime="date"
                             relative
-                            class="text-xs whitespace-nowrap text-zinc-600 dark:text-zinc-400"
+                            class="text-muted text-xs whitespace-nowrap"
                         />
                     </UTooltip>
                 </div>
@@ -277,22 +292,43 @@ const linkClasses = computed(() => {
                     <NuxtTime
                         :datetime="date"
                         relative
-                        class="text-xs whitespace-nowrap text-zinc-600 dark:text-zinc-400"
+                        class="text-muted text-xs whitespace-nowrap"
                     />
                 </UTooltip>
-                <HovercardUser v-if="!noUser" :user="setup.author">
-                    <UiAvatar
-                        :url="
-                            getImage(setup.author.avatar, {
-                                prefix: 'avatar',
-                            })
-                        "
-                        :alt="setup.author.name ?? ''"
+
+                <UPopover v-if="!props.noUser" mode="hover">
+                    <UAvatar
+                        :src="setup.user.image || undefined"
+                        :alt="setup.user.name"
                         aria-hidden="true"
-                        :icon-size="12"
-                        class="size-5"
+                        size="2xs"
                     />
-                </HovercardUser>
+
+                    <template #content>
+                        <NuxtLink
+                            :to="`/@${props.setup.user.id}`"
+                            class="flex items-center gap-3 py-2 pr-3 pl-2"
+                        >
+                            <UAvatar
+                                :src="props.setup.user.image || undefined"
+                                :alt="props.setup.user.name"
+                                class="size-10"
+                            />
+                            <div class="flex flex-wrap gap-2">
+                                <span
+                                    class="text-toned text-sm leading-none font-semibold"
+                                >
+                                    {{ props.setup.user.name }}
+                                </span>
+                                <UserBadges
+                                    v-if="props.setup.user.badges?.length"
+                                    :badges="props.setup.user.badges"
+                                    size="xs"
+                                />
+                            </div>
+                        </NuxtLink>
+                    </template>
+                </UPopover>
             </div>
         </div>
     </NuxtLink>

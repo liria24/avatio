@@ -1,13 +1,19 @@
 import type { z } from 'zod/v4'
 
 export const validateBody = async <T extends z.ZodTypeAny>(
-    schema: T
+    schema: T,
+    options?: { sanitize?: boolean }
 ): Promise<z.infer<T>> => {
-    const result = await readValidatedBody(useEvent(), (body) =>
-        schema.safeParse(body)
-    )
+    const result = await readValidatedBody(useEvent(), (body) => {
+        if (options?.sanitize) body = sanitizeObject(body)
 
-    if (!result.success) throw result.error
+        return schema.safeParse(body)
+    })
+
+    if (!result.success) {
+        console.error('Validation failed:', result.error)
+        throw result.error
+    }
 
     return result.data
 }

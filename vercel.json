@@ -1,11 +1,10 @@
 {
     "$schema": "https://openapi.vercel.sh/vercel.json",
-    "framework": "nuxtjs",
     "cleanUrls": true,
     "trailingSlash": false,
     "crons": [
         {
-            "path": "/api/admin/report",
+            "path": "/api/admin/job/report",
             "schedule": "0 22 * * *"
         }
     ],

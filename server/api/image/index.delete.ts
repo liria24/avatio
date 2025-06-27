@@ -1,17 +1,26 @@
+import { createStorage } from 'unstorage'
+import s3Driver from 'unstorage/drivers/s3'
 import { z } from 'zod/v4'
 
 const query = z.object({
-    name: z.string('Name must be a string').min(1, 'Name cannot be empty'),
-    prefix: z.string('Prefix must be a string').optional(),
+    path: z.string('Path must be a string').min(1, 'Path cannot be empty'),
 })
 
-export default defineEventHandler(async (): Promise<{ path: string }> => {
-    const storage = imageStorageClient()
+export default defineEventHandler(async () => {
+    const config = useRuntimeConfig()
 
-    await checkSupabaseUser()
+    const storage = createStorage({
+        driver: s3Driver({
+            accessKeyId: config.r2.accessKey,
+            secretAccessKey: config.r2.secretKey,
+            endpoint: config.r2.endpoint,
+            bucket: 'avatio',
+            region: 'auto',
+        }),
+    })
 
-    const { name, prefix } = await validateQuery(query)
-    const target = prefix ? `${prefix}:${name}` : name
+    const { path } = await validateQuery(query)
+    const target = path.split('/').join(':')
 
     console.log('Deleting image on storage:', target)
 
