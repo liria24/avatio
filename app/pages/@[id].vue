@@ -171,15 +171,17 @@ if (data.value) {
                         :height="32"
                         format="webp"
                         fit="cover"
-                        class="aspect-square size-8 shrink-0 rounded-lg"
                     >
                         <img
                             v-if="isLoaded"
                             v-bind="imgAttrs"
                             :src="src"
-                            class="ring-accented object-cover ring-1"
+                            class="ring-accented aspect-square size-8 shrink-0 rounded-lg object-cover ring-1"
                         />
-                        <USkeleton v-else class="size-full" />
+                        <USkeleton
+                            v-else
+                            class="aspect-square size-8 shrink-0 rounded-lg"
+                        />
                     </NuxtImg>
                     <div class="flex flex-col items-start gap-1">
                         <span

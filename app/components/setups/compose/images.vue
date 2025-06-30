@@ -88,15 +88,14 @@ const removeImage = (index: number) => {
                 :src="image.url"
                 :alt="`Setup image ${index + 1}`"
                 custom
-                class="aspect-square size-full rounded-lg"
             >
                 <img
                     v-if="isLoaded"
                     v-bind="imgAttrs"
                     :src="src"
-                    class="object-cover"
+                    class="aspect-square size-full rounded-lg object-cover"
                 />
-                <USkeleton v-else class="size-full" />
+                <USkeleton v-else class="aspect-square size-full rounded-lg" />
             </NuxtImg>
             <UButton
                 icon="lucide:x"

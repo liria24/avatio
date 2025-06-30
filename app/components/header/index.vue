@@ -110,7 +110,7 @@ const menuItems = ref<DropdownMenuItem[][]>([
                     :to="$localePath('/setup/compose')"
                     icon="lucide:plus"
                     color="neutral"
-                    variant="ghost"
+                    variant="soft"
                     class="hidden rounded-full py-2 pr-6 pl-5 md:flex"
                 >
                     <span class="hidden whitespace-nowrap md:inline">

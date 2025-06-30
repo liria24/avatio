@@ -50,15 +50,17 @@ const copy = (key: { name: string; value: number }) => {
                     :height="80"
                     format="webp"
                     :data-nsfw="item.nsfw"
-                    class="aspect-square size-20 shrink-0 rounded-lg text-xs"
                 >
                     <img
                         v-if="isLoaded"
                         v-bind="imgAttrs"
                         :src="src"
-                        class="object-cover data-[nsfw=true]:blur-md"
+                        class="aspect-square size-20 shrink-0 rounded-lg object-cover text-xs data-[nsfw=true]:blur-md"
                     />
-                    <USkeleton v-else class="size-full" />
+                    <USkeleton
+                        v-else
+                        class="aspect-square size-20 shrink-0 rounded-lg text-xs"
+                    />
                 </NuxtImg>
             </NuxtLink>
 

@@ -140,16 +140,19 @@ const onSelect = async (id: string, platform?: Platform) => {
                 :width="24"
                 :height="24"
                 format="webp"
+                loading="lazy"
                 custom
-                class="aspect-square size-6 shrink-0 rounded-md"
             >
                 <img
                     v-if="isLoaded"
                     v-bind="imgAttrs"
                     :src="src"
-                    class="object-cover"
+                    class="aspect-square size-6 shrink-0 rounded-md object-cover"
                 />
-                <USkeleton v-else class="size-full" />
+                <USkeleton
+                    v-else
+                    class="aspect-square size-6 shrink-0 rounded-md"
+                />
             </NuxtImg>
             <div class="flex w-full cursor-pointer items-center gap-2">
                 <span

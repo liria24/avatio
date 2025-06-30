@@ -211,15 +211,17 @@ const linkClasses = computed(() => {
                     :height="80"
                     loading="lazy"
                     fit="cover"
-                    class="my-1.5 ml-1.5 aspect-square h-14 shrink-0 rounded-lg md:h-20"
                 >
                     <img
                         v-if="isLoaded"
                         v-bind="imgAttrs"
                         :src="src"
-                        class="object-cover"
+                        class="my-1.5 ml-1.5 aspect-square h-14 shrink-0 rounded-lg object-cover md:h-20"
                     />
-                    <USkeleton v-else class="size-full" />
+                    <USkeleton
+                        v-else
+                        class="my-1.5 ml-1.5 aspect-square h-14 shrink-0 rounded-lg md:h-20"
+                    />
                 </NuxtImg>
             </UTooltip>
 

@@ -349,15 +349,17 @@ await search()
                         format="webp"
                         fit="cover"
                         loading="lazy"
-                        class="aspect-square shrink-0 rounded-lg object-cover"
                     >
                         <img
                             v-if="isLoaded"
                             v-bind="imgAttrs"
                             :src="src"
-                            class="object-cover"
+                            class="aspect-square shrink-0 rounded-lg object-cover"
                         />
-                        <USkeleton v-else class="size-full" />
+                        <USkeleton
+                            v-else
+                            class="aspect-square shrink-0 rounded-lg object-cover"
+                        />
                     </NuxtImg>
                 </button>
             </div>

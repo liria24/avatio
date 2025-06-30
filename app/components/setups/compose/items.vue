@@ -122,6 +122,57 @@ const changeItemCategory = (id: string, newCategory: ItemCategory) => {
 
     console.error('Item not found for category change:', id)
 }
+
+const addShapekey = (options: {
+    category: string
+    id: string
+    name: string
+    value: number
+}) => {
+    const { category, id, name, value } = options
+    const categoryKey = category as CategoryKey
+
+    if (!(categoryKey in items.value)) {
+        console.error('Invalid category for shapekey addition:', category)
+        return
+    }
+
+    const item = items.value[categoryKey].find((item) => item.id === id)
+    if (!item) {
+        console.error('Item not found for shapekey addition:', id)
+        return
+    }
+
+    if (!item.shapekeys) item.shapekeys = []
+
+    item.shapekeys.push({ name, value })
+
+    inputShapekeyName.value = ''
+    inputShapekeyValue.value = 0
+}
+
+const removeShapekey = (options: {
+    category: string
+    id: string
+    index: number
+}) => {
+    const { category, id, index } = options
+
+    const categoryKey = category as CategoryKey
+
+    if (!(categoryKey in items.value)) {
+        console.error('Invalid category for shapekey removal:', category)
+        return
+    }
+
+    const item = items.value[categoryKey].find((item) => item.id === id)
+    if (!item?.shapekeys || index < 0 || index >= item.shapekeys.length) {
+        console.error('Shapekey not found for removal:', id, index)
+        return
+    }
+
+    item.shapekeys.splice(index, 1)
+}
 </script>
 
 <template>
@@ -255,15 +306,17 @@ const changeItemCategory = (id: string, newCategory: ItemCategory) => {
                                         :height="72"
                                         format="webp"
                                         custom
-                                        class="aspect-square size-18 shrink-0 rounded-lg"
                                     >
                                         <img
                                             v-if="isLoaded"
                                             v-bind="imgAttrs"
                                             :src="src"
-                                            class="object-cover"
+                                            class="aspect-square size-18 shrink-0 rounded-lg object-cover"
                                         />
-                                        <USkeleton v-else class="size-full" />
+                                        <USkeleton
+                                            v-else
+                                            class="aspect-square size-18 shrink-0 rounded-lg"
+                                        />
                                     </NuxtImg>
 
                                     <div
@@ -313,16 +366,18 @@ const changeItemCategory = (id: string, newCategory: ItemCategory) => {
                                                                     index
                                                                 ) in item.shapekeys"
                                                                 :key="`shapekey-${index}`"
-                                                                class="flex items-center gap-2"
+                                                                class="flex w-full items-center gap-3"
                                                             >
                                                                 <span
-                                                                    class="text-toned text-xs"
+                                                                    class="text-muted grow text-right text-sm"
                                                                 >
                                                                     {{
                                                                         shapekey.name
                                                                     }}
                                                                 </span>
-                                                                <span>
+                                                                <span
+                                                                    class="text-toned text-sm font-semibold"
+                                                                >
                                                                     {{
                                                                         shapekey.value
                                                                     }}
@@ -330,7 +385,17 @@ const changeItemCategory = (id: string, newCategory: ItemCategory) => {
                                                                 <UButton
                                                                     icon="lucide:x"
                                                                     variant="ghost"
-                                                                    size="xs"
+                                                                    size="sm"
+                                                                    @click="
+                                                                        removeShapekey(
+                                                                            {
+                                                                                category:
+                                                                                    item.category,
+                                                                                id: item.id,
+                                                                                index,
+                                                                            }
+                                                                        )
+                                                                    "
                                                                 />
                                                             </div>
                                                         </template>
@@ -338,18 +403,37 @@ const changeItemCategory = (id: string, newCategory: ItemCategory) => {
                                                             class="flex items-center gap-1"
                                                         >
                                                             <UInput
+                                                                v-model="
+                                                                    inputShapekeyName
+                                                                "
                                                                 placeholder="シェイプキー名称"
                                                                 size="sm"
+                                                                class="max-w-48"
                                                             />
                                                             <UInputNumber
+                                                                v-model="
+                                                                    inputShapekeyValue
+                                                                "
                                                                 :step="0.001"
                                                                 orientation="vertical"
                                                                 size="sm"
+                                                                class="max-w-32"
                                                             />
                                                             <UButton
                                                                 icon="lucide:plus"
                                                                 variant="soft"
                                                                 size="sm"
+                                                                @click="
+                                                                    addShapekey(
+                                                                        {
+                                                                            category:
+                                                                                item.category,
+                                                                            id: item.id,
+                                                                            name: inputShapekeyName,
+                                                                            value: inputShapekeyValue,
+                                                                        }
+                                                                    )
+                                                                "
                                                             />
                                                         </div>
                                                     </div>
