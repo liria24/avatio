@@ -60,57 +60,57 @@ export default defineApi<Setup>(
                 .where(eq(setups.id, id))
 
         // アイテムの更新
-        if (items !== undefined) {
-            // 既存のアイテムとシェイプキーを削除
-            await database
-                .delete(setupItemShapekeys)
-                .where(
-                    inArray(
-                        setupItemShapekeys.setupItemId,
-                        database
-                            .select({ id: setupItems.id })
-                            .from(setupItems)
-                            .where(eq(setupItems.setupId, id))
-                    )
+        // 既存のアイテムとシェイプキーを削除
+        await database
+            .delete(setupItemShapekeys)
+            .where(
+                inArray(
+                    setupItemShapekeys.setupItemId,
+                    database
+                        .select({ id: setupItems.id })
+                        .from(setupItems)
+                        .where(eq(setupItems.setupId, id))
                 )
+            )
 
-            await database.delete(setupItems).where(eq(setupItems.setupId, id))
+        await database.delete(setupItems).where(eq(setupItems.setupId, id))
 
-            // 新しいアイテムを挿入
-            if (items.length) {
-                const insertedItems = await database
-                    .insert(setupItems)
-                    .values(
-                        items.map((item) => ({
-                            setupId: id,
-                            itemId: item.itemId,
-                            category: item.category,
-                            note: item.note,
-                        }))
+        // 新しいアイテムを挿入
+        if (items.length) {
+            const insertedItems = await database
+                .insert(setupItems)
+                .values(
+                    items.map((item) => ({
+                        setupId: id,
+                        itemId: item.itemId,
+                        category: item.category,
+                        note: item.note,
+                        unsupported:
+                            item.category === 'avatar'
+                                ? false
+                                : item.unsupported,
+                    }))
+                )
+                .returning({
+                    id: setupItems.id,
+                    itemId: setupItems.itemId,
+                })
+
+            // シェイプキーの挿入
+            if (items.some((item) => item.shapekeys?.length)) {
+                const shapekeys = items.flatMap((item, index) => {
+                    const setupItemId = insertedItems[index].id
+                    return (
+                        item.shapekeys?.map((shapekey) => ({
+                            setupItemId,
+                            name: shapekey.name,
+                            value: shapekey.value,
+                        })) || []
                     )
-                    .returning({
-                        id: setupItems.id,
-                        itemId: setupItems.itemId,
-                    })
+                })
 
-                // シェイプキーの挿入
-                if (items.some((item) => item.shapekeys?.length)) {
-                    const shapekeys = items.flatMap((item, index) => {
-                        const setupItemId = insertedItems[index].id
-                        return (
-                            item.shapekeys?.map((shapekey) => ({
-                                setupItemId,
-                                name: shapekey.name,
-                                value: shapekey.value,
-                            })) || []
-                        )
-                    })
-
-                    if (shapekeys.length > 0)
-                        await database
-                            .insert(setupItemShapekeys)
-                            .values(shapekeys)
-                }
+                if (shapekeys.length > 0)
+                    await database.insert(setupItemShapekeys).values(shapekeys)
             }
         }
 

@@ -21,6 +21,22 @@ const checkCronAuth = async (
         })
 }
 
+const checkAdminAuth = async (
+    session: Session | null | undefined
+): Promise<void> => {
+    const { authorization } = getHeaders(useEvent())
+
+    const isAdminUser =
+        session?.user?.role === 'admin' ||
+        authorization === `Bearer ${config.adminKey}`
+
+    if (!isAdminUser)
+        throw createError({
+            statusCode: 403,
+            message: 'Unauthorized: Admin privileges required',
+        })
+}
+
 const handleError = (
     error: unknown,
     errorMessage = 'Internal server error'
@@ -88,19 +104,7 @@ export default <T, O extends ApiOptions = ApiOptions>(
                 })
 
             // 管理者権限チェック
-            if (options.requireAdmin) {
-                if (!session)
-                    throw createError({
-                        statusCode: 401,
-                        message: 'Unauthorized: Session required',
-                    })
-
-                if (session.user?.role !== 'admin')
-                    throw createError({
-                        statusCode: 403,
-                        message: 'Unauthorized: Admin privileges required',
-                    })
-            }
+            if (options.requireAdmin) await checkAdminAuth(session)
 
             return await handler(session as SessionType<O>)
         } catch (error) {

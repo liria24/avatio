@@ -514,6 +514,63 @@ export const userReports = feedbackSchema.table(
     ]
 )
 
+export const adminSchema = pgSchema('admin')
+
+export const auditActionType = pgEnum('audit_action_type', [
+    'user_ban',
+    'user_unban',
+    'user_delete',
+    'user_role_change',
+    'user_shop_verify',
+    'user_shop_unverify',
+    'user_badge_grant',
+    'user_badge_revoke',
+    'setup_hide',
+    'setup_unhide',
+    'setup_delete',
+    'report_resolve',
+    'feedback_close',
+    'cleanup',
+])
+
+export const auditTargetType = pgEnum('audit_target_type', [
+    'user',
+    'setup',
+    'report',
+    'feedback',
+    'badge',
+    'system',
+])
+
+export const auditLogs = adminSchema.table(
+    'audit_logs',
+    {
+        id: bigint('id', { mode: 'number' })
+            .primaryKey()
+            .generatedAlwaysAsIdentity(),
+        createdAt: timestamp('created_at').defaultNow().notNull(),
+        userId: text('user_id'),
+        action: auditActionType().notNull(),
+        targetType: auditTargetType().notNull(),
+        targetId: text('target_id'),
+        details: text('details'),
+    },
+    (table) => [
+        index('audit_logs_created_at_index').on(table.createdAt),
+        index('audit_logs_user_id_index').on(table.userId),
+        index('audit_logs_action_index').on(table.action),
+        index('audit_logs_target_type_index').on(table.targetType),
+        index('audit_logs_target_id_index').on(table.targetId),
+        foreignKey({
+            name: 'audit_logs_user_id_fkey',
+            columns: [table.userId],
+            foreignColumns: [user.id],
+        })
+            .onDelete('set null')
+            .onUpdate('cascade'),
+    ]
+)
+
 export const userRelations = relations(user, ({ many }) => ({
     accounts: many(account),
     shops: many(userShops),

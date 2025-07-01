@@ -85,6 +85,7 @@ const onSubmit = async () => {
                     itemId: item.id,
                     category: item.category,
                     note: item.note || undefined,
+                    unsupported: item.unsupported || false,
                     shapekeys: item.shapekeys?.length
                         ? item.shapekeys
                         : undefined,
@@ -130,7 +131,7 @@ const onSubmit = async () => {
         })
 
         // 成功後、セットアップページにリダイレクト
-        navigateTo(`/setup/${response.id}`)
+        navigateTo(`/setup/${response.id}?cache=false`)
     } catch (error) {
         const isEditing = editingSetupId.value !== null
         console.error(

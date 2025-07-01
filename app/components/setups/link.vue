@@ -205,19 +205,13 @@ const linkClasses = computed(() => {
                     v-slot="{ isLoaded, src, imgAttrs }"
                     :src="firstAvatar.image || undefined"
                     :alt="firstAvatar.name"
-                    :placeholder="[30, 30, 75, 5]"
-                    format="webp"
                     :width="80"
                     :height="80"
+                    format="webp"
                     loading="lazy"
-                    fit="cover"
+                    class="m-1 aspect-square size-14 shrink-0 rounded-lg object-cover md:size-20"
                 >
-                    <img
-                        v-if="isLoaded"
-                        v-bind="imgAttrs"
-                        :src="src"
-                        class="my-1.5 ml-1.5 aspect-square h-14 shrink-0 rounded-lg object-cover md:h-20"
-                    />
+                    <img v-if="isLoaded" v-bind="imgAttrs" :src="src" />
                     <USkeleton
                         v-else
                         class="my-1.5 ml-1.5 aspect-square h-14 shrink-0 rounded-lg md:h-20"

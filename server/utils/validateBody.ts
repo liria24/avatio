@@ -1,6 +1,6 @@
 import type { z } from 'zod/v4'
 
-export const validateBody = async <T extends z.ZodTypeAny>(
+export default async <T extends z.ZodTypeAny>(
     schema: T,
     options?: { sanitize?: boolean }
 ): Promise<z.infer<T>> => {

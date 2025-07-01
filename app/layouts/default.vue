@@ -28,70 +28,65 @@ const footerExclude = ['/setup/compose']
 
                 <footer
                     v-if="!footerExclude.includes(route.path)"
-                    class="flex flex-col gap-10 self-stretch pb-8"
+                    class="flex flex-col gap-4 self-stretch pb-6"
                 >
                     <USeparator icon="avatio:avatio" />
 
                     <BannerOwnerWarning />
 
                     <div
-                        class="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 pb-0"
+                        class="flex w-full flex-wrap items-center justify-between gap-x-6 gap-y-2 pb-0"
                     >
+                        <div class="flex items-center gap-0.5">
+                            <UButton
+                                to="https://x.com/liria_24"
+                                target="_blank"
+                                icon="simple-icons:x"
+                                aria-label="X"
+                                variant="ghost"
+                                size="sm"
+                                class="p-2"
+                            />
+
+                            <UButton
+                                to="https://github.com/liria24/avatio"
+                                target="_blank"
+                                icon="simple-icons:github"
+                                aria-label="GitHub"
+                                variant="ghost"
+                                size="sm"
+                                class="p-2"
+                            />
+                        </div>
+
                         <div
                             class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2"
                         >
-                            <div class="flex items-center gap-0.5">
-                                <UButton
-                                    to="https://x.com/liria_24"
-                                    target="_blank"
-                                    icon="simple-icons:x"
-                                    aria-label="X"
-                                    variant="ghost"
-                                    size="sm"
-                                    class="p-2"
-                                />
+                            <UButton
+                                :to="$localePath('/release')"
+                                label="お知らせ"
+                                variant="link"
+                                size="sm"
+                                class="p-0"
+                            />
 
+                            <ModalFeedback v-if="session">
                                 <UButton
-                                    to="https://github.com/liria24/avatio"
-                                    target="_blank"
-                                    icon="simple-icons:github"
-                                    aria-label="GitHub"
-                                    variant="ghost"
-                                    size="sm"
-                                    class="p-2"
-                                />
-                            </div>
-
-                            <div class="flex items-center gap-4">
-                                <UButton
-                                    :to="$localePath('/release')"
-                                    label="お知らせ"
+                                    label="フィードバック"
                                     variant="link"
                                     size="sm"
                                     class="p-0"
                                 />
+                            </ModalFeedback>
+                            <ModalLogin v-else>
+                                <UButton
+                                    label="フィードバック"
+                                    variant="link"
+                                    size="sm"
+                                    class="p-0"
+                                />
+                            </ModalLogin>
 
-                                <ModalFeedback v-if="session">
-                                    <UButton
-                                        label="フィードバック"
-                                        variant="link"
-                                        size="sm"
-                                        class="p-0"
-                                    />
-                                </ModalFeedback>
-                                <ModalLogin v-else>
-                                    <UButton
-                                        label="フィードバック"
-                                        variant="link"
-                                        size="sm"
-                                        class="p-0"
-                                    />
-                                </ModalLogin>
-                            </div>
-                        </div>
-                        <div
-                            class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2"
-                        >
                             <UButton
                                 :to="$localePath('/faq')"
                                 label="FAQ"
@@ -116,8 +111,9 @@ const footerExclude = ['/setup/compose']
                                 class="p-0"
                             />
                         </div>
+
                         <div class="flex items-center gap-1">
-                            <p class="text-dimmed text-sm">Copyright © 2025</p>
+                            <p class="text-dimmed text-sm">© 2025</p>
                             <UButton
                                 to="https://liria.me"
                                 target="_blank"

@@ -1,4 +1,13 @@
 <script setup lang="ts">
+const nuxtApp = useNuxtApp()
+
+interface Props {
+    cache?: boolean
+}
+const props = withDefaults(defineProps<Props>(), {
+    cache: true,
+})
+
 const setupsPerPage: number = 50
 const page = ref(1)
 
@@ -7,6 +16,9 @@ const { data, status, refresh } = await useSetups({
         page: page.value,
         perPage: setupsPerPage,
     })),
+    getCachedData: props.cache
+        ? (key: string) => nuxtApp.payload.data[key] || nuxtApp.static.data[key]
+        : undefined,
 })
 
 const setups = ref<Setup[]>([])

@@ -20,6 +20,7 @@ export default defineNuxtConfig({
         '@nuxt/image',
         '@nuxt/ui',
         '@nuxtjs/i18n',
+        '@nuxtjs/mdc',
         '@nuxtjs/robots',
         '@nuxtjs/sitemap',
         '@stefanobartoletti/nuxt-social-share',
@@ -146,10 +147,19 @@ export default defineNuxtConfig({
 
     image: {
         domains: [
+            (() => {
+                try {
+                    const url = new URL(
+                        import.meta.env.NUXT_PUBLIC_R2_DOMAIN || ''
+                    )
+                    return url.hostname
+                } catch (error) {
+                    console.error('Error parsing R2 domain:', error)
+                    return ''
+                }
+            })(),
             'booth.pximg.net', // booth
             's2.booth.pm', // booth
-            import.meta.env.NUXT_PUBLIC_R2_DOMAIN?.replace('https://', '') ||
-                '', // R2
         ],
     },
 

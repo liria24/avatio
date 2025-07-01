@@ -1,9 +1,16 @@
 <script setup lang="ts">
+const nuxtApp = useNuxtApp()
 const route = useRoute()
 
 const id = Number(route.params.id)
+const cache =
+    route.query.cache === undefined ? true : Boolean(route.query.cache)
 
-const { data, status } = await useSetup(id)
+const { data, status } = await useSetup(id, {
+    getCachedData: cache
+        ? (key: string) => nuxtApp.payload.data[key] || nuxtApp.static.data[key]
+        : undefined,
+})
 
 if (status.value === 'success' && !id)
     throw showError({
@@ -131,18 +138,46 @@ if (data.value) {
                                 class="text-muted"
                             />
                             <NuxtTime
-                                v-if="data.createdAt?.length"
                                 :datetime="data.createdAt"
+                                locale="ja-JP"
+                                year="numeric"
+                                month="2-digit"
+                                day="2-digit"
+                                hour="2-digit"
+                                minute="2-digit"
                                 class="text-muted font-[Geist] text-sm leading-none text-nowrap"
                             />
+                            <UTooltip
+                                v-if="data.updatedAt !== data.createdAt"
+                                :delay-duration="50"
+                            >
+                                <Icon
+                                    name="lucide:pen-line"
+                                    size="16"
+                                    class="text-dimmed"
+                                />
+
+                                <template #content>
+                                    <NuxtTime
+                                        :datetime="data.updatedAt"
+                                        locale="ja-JP"
+                                        year="numeric"
+                                        month="2-digit"
+                                        day="2-digit"
+                                        hour="2-digit"
+                                        minute="2-digit"
+                                        class="text-muted font-[Geist] text-xs leading-none text-nowrap"
+                                    />
+                                    <span
+                                        class="text-muted text-xs leading-none text-nowrap"
+                                    >
+                                        に編集
+                                    </span>
+                                </template>
+                            </UTooltip>
                         </div>
 
-                        <SetupsViewerButtons
-                            :id="data.id"
-                            :name="data.name"
-                            :images="data.images"
-                            :user="data.user"
-                        />
+                        <SetupsViewerButtons :setup="data" />
                     </div>
                 </div>
 

@@ -73,6 +73,7 @@ const addItem = async (item: Item) => {
 
     items.value[itemCategory].push({
         ...item,
+        id: item.id.toString(),
         note: '',
         unsupported: false,
     })
@@ -247,7 +248,7 @@ const removeShapekey = (options: {
 
         <div
             v-else
-            class="absolute inset-0 mt-16 flex flex-col gap-6 overflow-y-auto p-1"
+            class="absolute inset-0 mt-10 flex flex-col gap-6 overflow-y-auto p-1"
         >
             <div
                 v-for="category in itemCategories"
@@ -439,7 +440,11 @@ const removeShapekey = (options: {
                                                     </div>
                                                 </template>
                                             </UPopover>
+
                                             <UCheckbox
+                                                v-if="
+                                                    item.category !== 'avatar'
+                                                "
                                                 v-model="item.unsupported"
                                                 label="ベースアバターに非対応"
                                                 size="sm"

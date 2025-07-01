@@ -36,6 +36,8 @@ export default defineApi(
                     itemId: item.itemId,
                     category: item.category,
                     note: item.note,
+                    unsupported:
+                        item.category === 'avatar' ? false : item.unsupported,
                 }))
             )
             .returning({

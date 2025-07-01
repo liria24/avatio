@@ -15,6 +15,7 @@ export default defineApi(
             where: (setups, { eq }) => eq(setups.id, id),
             columns: {
                 userId: true,
+                name: true,
             },
         })
 
@@ -25,6 +26,14 @@ export default defineApi(
             })
 
         await database.delete(setups).where(eq(setups.id, Number(id)))
+
+        await createAuditLog({
+            userId: session.user.id,
+            action: 'setup_delete',
+            targetType: 'setup',
+            targetId: id.toString(),
+            details: `Title: ${data.name}`,
+        })
 
         return null
     },

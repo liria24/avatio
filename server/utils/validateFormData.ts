@@ -1,6 +1,6 @@
 import type { z } from 'zod/v4'
 
-export const validateFormData = async <T extends z.ZodTypeAny>(
+export default async <T extends z.ZodTypeAny>(
     schema: T,
     transformer?: (formData: FormData) => Record<string, unknown>
 ): Promise<z.infer<T>> => {

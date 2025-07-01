@@ -1,4 +1,7 @@
 import {
+    auditActionType,
+    auditLogs,
+    auditTargetType,
     bookmarks,
     feedbacks,
     itemCategory,
@@ -311,7 +314,9 @@ export const setupsClientFormSchema = createInsertSchema(setups, {
                 userId: true,
             })
             .extend({
-                user: userPublicSchema,
+                user: userPublicSchema.extend({
+                    createdAt: z.string(),
+                }),
             })
             .array()
             .max(8, '共同作者は最大 8 人です。'),
@@ -450,6 +455,28 @@ export const userReportsPublicSchema = userReportsSelectSchema
         reportee: userPublicSchema,
     })
 export type UserReport = z.infer<typeof userReportsPublicSchema>
+
+export const auditActionTypeSchema = z.enum(auditActionType.enumValues)
+export type AuditActionType = z.infer<typeof auditActionTypeSchema>
+
+export const auditTargetTypeSchema = z.enum(auditTargetType.enumValues)
+export type AuditTargetType = z.infer<typeof auditTargetTypeSchema>
+
+export const auditLogsSelectSchema = createSelectSchema(auditLogs, {
+    createdAt: (schema) => schema.transform((val) => val.toISOString()),
+})
+export const auditLogsInsertSchema = createInsertSchema(auditLogs)
+export const auditLogsPublicSchema = auditLogsSelectSchema
+    .pick({
+        createdAt: true,
+        action: true,
+        targetType: true,
+        targetId: true,
+        details: true,
+    })
+    .extend({
+        user: userPublicSchema,
+    })
 
 export interface PaginationResponse<T> {
     data: T

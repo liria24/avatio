@@ -7,6 +7,6 @@ export default defineConfig({
     dbCredentials: {
         url: process?.env?.NUXT_NEON_DATABASE_URL || '',
     },
-    schemaFilter: ['public', 'auth', 'bookmark', 'feedback'],
+    schemaFilter: ['public', 'auth', 'bookmark', 'feedback', 'admin'],
     tablesFilter: ['*'],
 })

@@ -2,10 +2,7 @@
 import type { DropdownMenuItem } from '@nuxt/ui'
 
 interface Props {
-    id: number
-    name: string
-    images?: SetupImage[]
-    user: User
+    setup: Setup
 }
 const props = defineProps<Props>()
 
@@ -26,7 +23,7 @@ const hideSetup = async () => {
     }
 
     try {
-        await $fetch(`/api/admin/setup/${props.id}`, {
+        await $fetch(`/api/admin/setup/${props.setup.id}`, {
             method: 'PATCH',
             body: {
                 hide: true,
@@ -50,20 +47,49 @@ const hideSetup = async () => {
     }
 }
 
+const unhideSetup = async () => {
+    if (session.value?.user.role !== 'admin') {
+        toast.add({
+            title: '権限がありません',
+            description: 'Admin アカウントでログインしてください。',
+            color: 'error',
+        })
+        return
+    }
+
+    try {
+        await $fetch(`/api/admin/setup/${props.setup.id}`, {
+            method: 'PATCH',
+            body: { hide: false },
+        })
+        toast.add({
+            title: 'セットアップが再表示されました',
+            color: 'success',
+        })
+        modalHide.value = false
+    } catch (error) {
+        console.error('セットアップの再表示に失敗:', error)
+        toast.add({
+            title: 'セットアップの再表示に失敗しました',
+            color: 'error',
+        })
+    }
+}
+
 const shareX = useSocialShare({
     network: 'x',
-    title: `${props.name} @${props.user.name} | Avatio`,
-    image: props.images?.[0]?.url || undefined,
+    title: `${props.setup.name} @${props.setup.user.name} | Avatio`,
+    image: props.setup.images?.[0]?.url || undefined,
 })
 const shareBluesky = useSocialShare({
     network: 'bluesky',
-    title: `${props.name} @${props.user.name} | Avatio`,
-    image: props.images?.[0]?.url || undefined,
+    title: `${props.setup.name} @${props.setup.user.name} | Avatio`,
+    image: props.setup.images?.[0]?.url || undefined,
 })
 const shareLine = useSocialShare({
     network: 'line',
-    title: `${props.name} @${props.user.name} | Avatio`,
-    image: props.images?.[0]?.url || undefined,
+    title: `${props.setup.name} @${props.setup.user.name} | Avatio`,
+    image: props.setup.images?.[0]?.url || undefined,
 })
 
 const socialShareItems = ref<DropdownMenuItem[]>([
@@ -134,11 +160,11 @@ const bookmarkButtonStyle = computed<{
 const applyBookmark = useDebounceFn(async (isBookmarked: boolean) => {
     try {
         if (isBookmarked)
-            await $fetch(`/api/setup/bookmark/${props.id}`, {
+            await $fetch(`/api/setup/bookmark/${props.setup.id}`, {
                 method: 'POST',
             })
         else
-            await $fetch(`/api/setup/bookmark/${props.id}`, {
+            await $fetch(`/api/setup/bookmark/${props.setup.id}`, {
                 method: 'DELETE',
             })
 
@@ -165,7 +191,7 @@ const toggleBookmark = () => {
 
 const deleteSetup = async () => {
     try {
-        await $fetch(`/api/setup/${props.id}`, {
+        await $fetch(`/api/setup/${props.setup.id}`, {
             method: 'DELETE',
         })
         toast.add({
@@ -173,7 +199,7 @@ const deleteSetup = async () => {
             description: 'セットアップが正常に削除されました。',
             color: 'success',
         })
-        navigateTo('/setup')
+        navigateTo('/?cache=false')
     } catch (error) {
         toast.add({
             title: 'セットアップの削除に失敗しました',
@@ -192,7 +218,7 @@ onMounted(async () => {
             const response = await $fetch<PaginationResponse<Bookmark[]>>(
                 '/api/setup/bookmark',
                 {
-                    query: { setupId: props.id, limit: 1 },
+                    query: { setupId: props.setup.id, limit: 1 },
                 }
             )
             if (response.data?.length) bookmark.value = true
@@ -206,47 +232,81 @@ onMounted(async () => {
 
 <template>
     <div class="flex items-center gap-0.5">
-        <UModal
-            v-if="session?.user.role === 'admin'"
-            v-model:open="modalHide"
-            title="セットアップを非表示"
-        >
-            <UButton
-                icon="lucide:eye-off"
-                variant="ghost"
-                size="sm"
-                class="p-2"
-            />
+        <template v-if="session?.user.role === 'admin'">
+            <UModal
+                v-if="props.setup.hidAt"
+                v-model:open="modalHide"
+                title="セットアップを再表示"
+            >
+                <UButton
+                    icon="lucide:eye"
+                    variant="ghost"
+                    size="sm"
+                    class="p-2"
+                />
 
-            <template #body>
-                <div class="flex flex-col gap-2">
+                <template #body>
                     <UAlert
-                        icon="lucide:eye-off"
+                        icon="lucide:eye"
                         title="これは Admin アクションです"
-                        description="セットアップは非表示になり、再度表示するまでユーザーには見えなくなります。"
-                        color="warning"
+                        description="セットアップは再表示され、ユーザーに見えるようになります。"
+                        color="info"
                         variant="subtle"
                     />
-                    <UFormField label="理由" required>
-                        <UTextarea
-                            v-model="hideReason"
-                            autoresize
-                            class="w-full"
-                        />
-                    </UFormField>
-                </div>
-            </template>
-
-            <template #footer>
+                </template>
+                <template #footer>
+                    <UButton
+                        label="再表示する"
+                        color="neutral"
+                        size="lg"
+                        block
+                        @click="unhideSetup"
+                    />
+                </template>
+            </UModal>
+            <UModal
+                v-else
+                v-model:open="modalHide"
+                title="セットアップを非表示"
+            >
                 <UButton
-                    label="非表示にする"
-                    color="neutral"
-                    size="lg"
-                    block
-                    @click="hideSetup"
+                    icon="lucide:eye-off"
+                    variant="ghost"
+                    size="sm"
+                    class="p-2"
                 />
-            </template>
-        </UModal>
+
+                <template #body>
+                    <div class="flex flex-col gap-2">
+                        <UAlert
+                            icon="lucide:eye-off"
+                            title="これは Admin アクションです"
+                            description="セットアップは非表示になり、再度表示するまでユーザーには見えなくなります。"
+                            color="warning"
+                            variant="subtle"
+                        />
+                        <UFormField label="理由" required>
+                            <UTextarea
+                                v-model="hideReason"
+                                autoresize
+                                class="w-full"
+                            />
+                        </UFormField>
+                    </div>
+                </template>
+
+                <template #footer>
+                    <UButton
+                        :disabled="!hideReason.length"
+                        label="非表示にする"
+                        color="neutral"
+                        size="lg"
+                        block
+                        @click="hideSetup"
+                    />
+                </template>
+            </UModal>
+        </template>
 
         <UButton
             v-if="session"
@@ -269,9 +329,9 @@ onMounted(async () => {
             />
         </ModalLogin>
 
-        <template v-if="session?.user.id === props.user.id">
+        <template v-if="session?.user.id === props.setup.user.id">
             <UButton
-                :to="`/setup/compose?edit=${props.id}`"
+                :to="`/setup/compose?edit=${props.setup.id}`"
                 aria-label="編集"
                 icon="lucide:pen"
                 variant="ghost"
@@ -311,7 +371,7 @@ onMounted(async () => {
         </template>
 
         <template v-else>
-            <ModalReportSetup v-if="session" :setup-id="props.id">
+            <ModalReportSetup v-if="session" :setup-id="props.setup.id">
                 <UButton
                     icon="lucide:flag"
                     aria-label="報告"

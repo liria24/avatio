@@ -54,7 +54,7 @@ const copy = (key: { name: string; value: number }) => {
                     <img
                         v-if="isLoaded"
                         v-bind="imgAttrs"
-                        :src="src"
+                        :src
                         class="aspect-square size-20 shrink-0 rounded-lg object-cover text-xs data-[nsfw=true]:blur-md"
                     />
                     <USkeleton
@@ -88,17 +88,18 @@ const copy = (key: { name: string; value: number }) => {
                             >
                                 <NuxtImg
                                     v-slot="{ isLoaded, src, imgAttrs }"
-                                    :src="item.shop.image ?? ''"
+                                    :src="item.shop.image || undefined"
                                     :alt="item.shop.name"
                                     :width="20"
                                     :height="20"
                                     format="webp"
+                                    loading="lazy"
+                                    class="ring-accented aspect-square size-5 shrink-0 rounded-sm object-cover ring-1"
                                 >
                                     <img
                                         v-if="isLoaded"
                                         v-bind="imgAttrs"
-                                        :src="src"
-                                        class="ring-accented aspect-square size-5 shrink-0 rounded-md object-cover ring-1"
+                                        :src
                                     />
                                     <USkeleton
                                         v-else
@@ -119,7 +120,9 @@ const copy = (key: { name: string; value: number }) => {
                             </NuxtLink>
 
                             <template #content>
-                                <div
+                                <NuxtLink
+                                    :to="`https://${item.shop.id}.booth.pm/`"
+                                    target="_blank"
                                     class="flex items-center gap-3 py-2 pr-3 pl-2"
                                 >
                                     <NuxtImg
@@ -129,12 +132,12 @@ const copy = (key: { name: string; value: number }) => {
                                         :width="40"
                                         :height="40"
                                         format="webp"
+                                        class="aspect-square size-10 shrink-0 rounded-md object-cover"
                                     >
                                         <img
                                             v-if="isLoaded"
                                             v-bind="imgAttrs"
                                             :src="src"
-                                            class="aspect-square size-10 shrink-0 rounded-md object-cover"
                                         />
                                         <USkeleton
                                             v-else
@@ -147,15 +150,13 @@ const copy = (key: { name: string; value: number }) => {
                                         >
                                             {{ item.shop.name }}
                                         </span>
-                                        <NuxtLink
-                                            :to="`https://${item.shop.id}.booth.pm/`"
-                                            target="_blank"
+                                        <span
                                             class="text-muted text-xs leading-none font-semibold"
                                         >
                                             {{ item.shop.id }}.booth.pm
-                                        </NuxtLink>
+                                        </span>
                                     </div>
-                                </div>
+                                </NuxtLink>
                             </template>
                         </UPopover>
 

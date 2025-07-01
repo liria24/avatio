@@ -3,6 +3,9 @@ const session = await useGetSession()
 const route = useRoute()
 const router = useRouter()
 
+const cache =
+    route.query.cache === undefined ? true : Boolean(route.query.cache)
+
 type Tab = 'latest' | 'me' | 'bookmarks'
 
 const tab = ref<Tab>((route.query.tab as Tab) || 'latest')
@@ -42,29 +45,39 @@ useSchemaOrg([
             <div class="flex flex-wrap items-center gap-1">
                 <UButton
                     label="最新"
-                    :variant="tab === 'latest' ? 'solid' : 'ghost'"
+                    :active="tab === 'latest'"
+                    variant="ghost"
+                    active-variant="solid"
                     color="neutral"
                     class="px-4 py-2"
                     @click="changeTab('latest')"
                 />
                 <UButton
                     label="自分の投稿"
-                    :variant="tab === 'me' ? 'solid' : 'ghost'"
+                    :active="tab === 'me'"
+                    variant="ghost"
+                    active-variant="solid"
                     color="neutral"
                     class="px-4 py-2"
                     @click="changeTab('me')"
                 />
                 <UButton
                     label="ブックマーク"
-                    :variant="tab === 'bookmarks' ? 'solid' : 'ghost'"
+                    :active="tab === 'bookmarks'"
+                    variant="ghost"
+                    active-variant="solid"
                     color="neutral"
                     class="px-4 py-2"
                     @click="changeTab('bookmarks')"
                 />
             </div>
-            <SetupsListLatest v-if="tab === 'latest'" />
-            <SetupsListUser v-if="tab === 'me'" :user-id="session?.user.id" />
-            <SetupsListBookmarks v-if="tab === 'bookmarks'" />
+            <SetupsListLatest v-if="tab === 'latest'" :cache />
+            <SetupsListUser
+                v-if="tab === 'me'"
+                :user-id="session?.user.id"
+                :cache
+            />
+            <SetupsListBookmarks v-if="tab === 'bookmarks'" :cache />
         </div>
 
         <SetupsListLatest v-else />
