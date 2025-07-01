@@ -32,7 +32,7 @@ export default defineApi(
             action: 'setup_delete',
             targetType: 'setup',
             targetId: id.toString(),
-            details: `Title: ${data.name}`,
+            details: data.name,
         })
 
         return null

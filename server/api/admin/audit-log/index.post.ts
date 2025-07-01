@@ -4,14 +4,14 @@ import { auditLogs } from '@@/database/schema'
 const body = auditLogsInsertSchema
 
 export default defineApi(
-    async (session) => {
-        const { action, targetType, targetId, details } =
+    async () => {
+        const { userId, action, targetType, targetId, details } =
             await validateBody(body)
 
         const data = await database
             .insert(auditLogs)
             .values({
-                userId: session.user.id,
+                userId,
                 action,
                 targetType,
                 targetId,
