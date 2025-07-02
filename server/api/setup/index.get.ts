@@ -1,6 +1,6 @@
 import database from '@@/database'
 import { setupItems, setups, setupTags, user } from '@@/database/schema'
-import { isNull, type SQL } from 'drizzle-orm'
+import { and, eq, exists, ilike, inArray, isNull, or } from 'drizzle-orm'
 import { z } from 'zod/v4'
 
 const query = z.object({
@@ -22,16 +22,81 @@ export default defineApi<PaginationResponse<Setup[]>>(
         const offset = (page - 1) * limit
 
         const data = await database.query.setups.findMany({
-            extras: (table) => ({
-                count: database.$count(setups, isNull(table.hidAt)).as('count'),
-            }),
+            extras: (table) => {
+                const conditions = [
+                    isNull(table.hidAt),
+                    exists(
+                        database
+                            .select()
+                            .from(user)
+                            .where(
+                                and(
+                                    eq(user.id, table.userId),
+                                    or(
+                                        eq(user.banned, false),
+                                        isNull(user.banned)
+                                    )
+                                )
+                            )
+                    ),
+                ]
+
+                if (q) conditions.push(ilike(table.name, `%${q}%`))
+                if (userId) conditions.push(eq(table.userId, userId))
+
+                if (itemId) {
+                    conditions.push(
+                        exists(
+                            database
+                                .select()
+                                .from(setupItems)
+                                .where(
+                                    and(
+                                        eq(setupItems.setupId, table.id),
+                                        inArray(
+                                            setupItems.itemId,
+                                            Array.isArray(itemId)
+                                                ? itemId
+                                                : [itemId]
+                                        )
+                                    )
+                                )
+                        )
+                    )
+                }
+
+                if (tag) {
+                    conditions.push(
+                        exists(
+                            database
+                                .select()
+                                .from(setupTags)
+                                .where(
+                                    and(
+                                        eq(setupTags.setupId, table.id),
+                                        inArray(
+                                            setupTags.tag,
+                                            Array.isArray(tag) ? tag : [tag]
+                                        )
+                                    )
+                                )
+                        )
+                    )
+                }
+
+                return {
+                    count: database
+                        .$count(setups, and(...conditions))
+                        .as('count'),
+                }
+            },
             limit,
             offset,
             where: (
                 setups,
                 { eq, or, and, ilike, exists, inArray, isNull }
             ) => {
-                const conditions: SQL[] = [
+                const conditions = [
                     isNull(setups.hidAt),
                     exists(
                         database
@@ -50,10 +115,9 @@ export default defineApi<PaginationResponse<Setup[]>>(
                 ]
 
                 if (q) conditions.push(ilike(setups.name, `%${q}%`))
-
                 if (userId) conditions.push(eq(setups.userId, userId))
 
-                if (itemId)
+                if (itemId) {
                     conditions.push(
                         exists(
                             database
@@ -72,8 +136,9 @@ export default defineApi<PaginationResponse<Setup[]>>(
                                 )
                         )
                     )
+                }
 
-                if (tag)
+                if (tag) {
                     conditions.push(
                         exists(
                             database
@@ -90,6 +155,7 @@ export default defineApi<PaginationResponse<Setup[]>>(
                                 )
                         )
                     )
+                }
 
                 return and(...conditions)
             },
@@ -262,51 +328,34 @@ export default defineApi<PaginationResponse<Setup[]>>(
         })
 
         const result = data.map((setup) => ({
-            id: setup.id,
+            ...setup,
             createdAt: setup.createdAt.toISOString(),
             updatedAt: setup.updatedAt.toISOString(),
             hidAt: setup.hidAt?.toISOString() || null,
-            hidReason: setup.hidReason,
             user: {
-                id: setup.user.id,
+                ...setup.user,
                 createdAt: setup.user.createdAt.toISOString(),
-                name: setup.user.name,
-                image: setup.user.image,
-                bio: setup.user.bio,
-                links: setup.user.links,
                 badges: setup.user.badges.map((badge) => ({
-                    badge: badge.badge,
+                    ...badge,
                     createdAt: badge.createdAt.toISOString(),
                 })),
                 shops: setup.user.shops.map((shop) => ({
-                    id: shop.id,
+                    ...shop,
                     createdAt: shop.createdAt.toISOString(),
-                    shop: shop.shop,
                 })),
             },
-            name: setup.name,
-            description: setup.description,
             items: setup.items
                 .filter((item) => !item.item.outdated)
                 .map((item) => ({
-                    id: item.item.id,
+                    ...item.item,
                     updatedAt: item.item.updatedAt.toISOString(),
-                    platform: item.item.platform,
-                    category: item.item.category,
-                    name: item.item.name,
-                    image: item.item.image,
-                    price: item.item.price,
-                    likes: item.item.likes,
-                    nsfw: item.item.nsfw,
-                    shop: item.item.shop,
+                    note: item.note,
                     unsupported: item.unsupported,
                     shapekeys: item.shapekeys.map((shapekey) => ({
                         name: shapekey.name,
                         value: shapekey.value,
                     })),
-                    note: item.note,
                 })),
-            images: setup.images,
             tags: setup.tags.map((tag) => tag.tag),
             coauthors: setup.coauthors.map((coauthor) => ({
                 user: {

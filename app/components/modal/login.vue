@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 const route = useRoute()
 const localePath = useLocalePath()
+const { $login } = useNuxtApp()
 
 const open = ref(false)
 const originalPath = ref(route.path)
@@ -10,7 +11,7 @@ const signingIn = ref(false)
 
 const handleLogin = (provider: 'twitter') => {
     signingIn.value = true
-    login(provider)
+    $login(provider)
 }
 
 // ブラウザの戻るボタンでモーダルを閉じる

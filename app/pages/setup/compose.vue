@@ -213,7 +213,9 @@ const onSubmit = async () => {
                                 class="w-full"
                             />
                         </UFormField>
+                    </div>
 
+                    <div class="flex flex-col gap-4">
                         <SetupsComposeTags v-model="state.tags" />
 
                         <SetupsComposeCoauthors v-model="state.coauthors" />

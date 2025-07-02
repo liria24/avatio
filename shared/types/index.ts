@@ -3,6 +3,7 @@ import {
     auditLogs,
     auditTargetType,
     bookmarks,
+    changelogs,
     feedbacks,
     itemCategory,
     items,
@@ -468,6 +469,7 @@ export const auditLogsSelectSchema = createSelectSchema(auditLogs, {
 export const auditLogsInsertSchema = createInsertSchema(auditLogs)
 export const auditLogsPublicSchema = auditLogsSelectSchema
     .pick({
+        id: true,
         createdAt: true,
         action: true,
         targetType: true,
@@ -475,8 +477,32 @@ export const auditLogsPublicSchema = auditLogsSelectSchema
         details: true,
     })
     .extend({
-        user: userPublicSchema,
+        user: userPublicSchema.nullable(),
     })
+export type AuditLog = z.infer<typeof auditLogsPublicSchema>
+
+export const changelogAuthorsSelectSchema = createSelectSchema(changelogs)
+export const changelogAuthorsInsertSchema = createInsertSchema(changelogs)
+
+export const changelogsSelectSchema = createSelectSchema(changelogs, {
+    createdAt: (schema) => schema.transform((val) => val.toISOString()),
+    updatedAt: (schema) => schema.transform((val) => val.toISOString()),
+})
+export const changelogsInsertSchema = createInsertSchema(changelogs)
+export const changelogsUpdateSchema = createUpdateSchema(changelogs)
+export const changelogsPublicSchema = changelogsSelectSchema
+    .pick({
+        slug: true,
+        createdAt: true,
+        updatedAt: true,
+        title: true,
+        markdown: true,
+        html: true,
+    })
+    .extend({
+        authors: userPublicSchema.array().optional(),
+    })
+export type Changelog = z.infer<typeof changelogsPublicSchema>
 
 export interface PaginationResponse<T> {
     data: T

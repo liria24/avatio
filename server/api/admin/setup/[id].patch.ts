@@ -16,7 +16,7 @@ export default defineApi(
         const { id } = await validateParams(params)
         const { hide, hideReason } = await validateBody(body)
 
-        if (hide !== undefined) {
+        if (hide !== undefined)
             await database
                 .update(setups)
                 .set({
@@ -24,7 +24,6 @@ export default defineApi(
                     hidReason: hide ? hideReason || null : null,
                 })
                 .where(eq(setups.id, id))
-        }
 
         return null
     },

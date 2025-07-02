@@ -192,6 +192,46 @@ export const userBadges = authSchema.table(
     ]
 )
 
+export const changelogs = pgTable(
+    'changelogs',
+    {
+        slug: text().primaryKey(),
+        createdAt: timestamp('created_at').defaultNow().notNull(),
+        updatedAt: timestamp('updated_at').defaultNow().notNull(),
+        title: text().notNull(),
+        markdown: text().notNull(),
+        html: text().notNull(),
+    },
+    (table) => [index('changelogs_slug_index').on(table.slug)]
+)
+
+export const changelogAuthors = pgTable(
+    'changelog_authors',
+    {
+        id: integer().primaryKey().generatedAlwaysAsIdentity(),
+        changelogSlug: text('changelog_slug').notNull(),
+        userId: text('user_id').notNull(),
+    },
+    (table) => [
+        index('changelog_authors_changelog_slug_index').on(table.changelogSlug),
+        index('changelog_authors_user_id_index').on(table.userId),
+        foreignKey({
+            name: 'changelog_authors_changelog_slug_fkey',
+            columns: [table.changelogSlug],
+            foreignColumns: [changelogs.slug],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+        foreignKey({
+            name: 'changelog_authors_user_id_fkey',
+            columns: [table.userId],
+            foreignColumns: [user.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+    ]
+)
+
 export const shops = pgTable(
     'shops',
     {
@@ -574,7 +614,7 @@ export const auditLogs = adminSchema.table(
 export const userRelations = relations(user, ({ many }) => ({
     accounts: many(account),
     shops: many(userShops),
-    shopVerification: many(userShopVerification),
+    shopVerifications: many(userShopVerification),
     badges: many(userBadges),
     setups: many(setups),
     bookmarks: many(bookmarks),
@@ -582,6 +622,8 @@ export const userRelations = relations(user, ({ many }) => ({
     setupReports: many(setupReports),
     feedbacks: many(feedbacks),
     userReports: many(userReports),
+    auditLogs: many(auditLogs),
+    changelogs: many(changelogAuthors),
 }))
 
 export const accountRelations = relations(account, ({ one }) => ({
@@ -597,6 +639,24 @@ export const verificationRelations = relations(verification, ({ one }) => ({
         references: [user.email],
     }),
 }))
+
+export const changelogsRelations = relations(changelogs, ({ many }) => ({
+    authors: many(changelogAuthors),
+}))
+
+export const changelogAuthorsRelations = relations(
+    changelogAuthors,
+    ({ one }) => ({
+        changelog: one(changelogs, {
+            fields: [changelogAuthors.changelogSlug],
+            references: [changelogs.slug],
+        }),
+        user: one(user, {
+            fields: [changelogAuthors.userId],
+            references: [user.id],
+        }),
+    })
+)
 
 export const userShopsRelations = relations(userShops, ({ one }) => ({
     user: one(user, {
@@ -735,6 +795,13 @@ export const userReportsRelations = relations(userReports, ({ one }) => ({
     }),
     reportee: one(user, {
         fields: [userReports.reporteeId],
+        references: [user.id],
+    }),
+}))
+
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+    user: one(user, {
+        fields: [auditLogs.userId],
         references: [user.id],
     }),
 }))

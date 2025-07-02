@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
 
+const emit = defineEmits(['openFeedbackModal'])
+
+const { $logout } = useNuxtApp()
 const route = useRoute()
 const colorMode = useColorMode()
 const session = await useGetSession()
@@ -64,11 +67,12 @@ const menuItems = ref<DropdownMenuItem[][]>([
         {
             label: 'フィードバック',
             icon: 'lucide:message-square',
+            onSelect: () => emit('openFeedbackModal'),
         },
         {
             label: 'ログアウト',
             icon: 'lucide:log-out',
-            onSelect: logout,
+            onSelect: $logout,
         },
     ],
 ])

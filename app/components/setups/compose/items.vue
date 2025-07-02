@@ -220,7 +220,7 @@ const removeShapekey = (options: {
 
         <div
             v-if="!totalItemsCount"
-            class="flex h-full flex-col items-center justify-center gap-6"
+            class="flex h-full flex-col items-center justify-center gap-6 pb-8"
         >
             <p class="text-muted text-sm">アイテムが登録されていません</p>
 

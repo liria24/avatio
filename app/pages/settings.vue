@@ -2,6 +2,7 @@
 import type { z } from 'zod/v4'
 import { VueDraggable } from 'vue-draggable-plus'
 
+const { $authClient } = useNuxtApp()
 const session = await useGetSession()
 const toast = useToast()
 
@@ -139,7 +140,7 @@ const profileOnSubmit = async () => {
 }
 
 const deleteUser = async () => {
-    await authClient.deleteUser({ callbackURL: '/' })
+    await $authClient.deleteUser({ callbackURL: '/' })
 }
 </script>
 

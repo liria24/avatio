@@ -30,7 +30,7 @@ defineSeo({
                     size="lg"
                     variant="subtle"
                     color="neutral"
-                    @click="login('twitter')"
+                    @click="$login('twitter')"
                 />
             </div>
 
