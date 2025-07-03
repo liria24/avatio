@@ -159,6 +159,7 @@ const menuItems = ref<DropdownMenuItem[][]>([
                     <UAvatar
                         :src="session.user.image || undefined"
                         :alt="session.user.name"
+                        icon="lucide:user-round"
                         class="ring-accented size-8 cursor-pointer ring-0 transition-all select-none hover:ring-4"
                     />
                 </UDropdownMenu>

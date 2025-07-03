@@ -20,6 +20,7 @@ const props = defineProps<Props>()
                     <UAvatar
                         :src="props.user.image || undefined"
                         :alt="props.user.name"
+                        icon="lucide:user-round"
                     />
                     <div
                         class="flex flex-wrap items-center gap-x-1 gap-y-0.5 pl-1"
@@ -79,6 +80,7 @@ const props = defineProps<Props>()
                         <UAvatar
                             :src="coAuthor.user.image || undefined"
                             :alt="coAuthor.user.name"
+                            icon="lucide:user-round"
                             size="sm"
                         />
                         <p class="text-left text-sm">

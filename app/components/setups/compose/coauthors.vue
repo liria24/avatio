@@ -69,6 +69,7 @@ const removeCoauthor = (id: string) => {
                             <UAvatar
                                 :src="coauthor.user.image || undefined"
                                 :alt="coauthor.user.name || 'User'"
+                                icon="lucide:user-round"
                                 size="xs"
                             />
                             <span class="text-toned grow text-xs">

@@ -154,6 +154,7 @@ const { data } = useFetch<PaginationResponse<AuditLog[]>>(
                             <UAvatar
                                 :src="log.user.image || undefined"
                                 :alt="log.user.name"
+                                icon="lucide:user-round"
                                 size="2xs"
                             />
                             <span class="text-xs font-medium">

@@ -73,9 +73,53 @@ const { data: repo } = useFetch<{ repo: GithubRepo }>(
                                 <template #content>
                                     <div
                                         v-if="repo"
-                                        class="flex items-center gap-2"
+                                        class="flex items-center gap-3 p-2"
                                     >
-                                        {{ repo.repo }}
+                                        <NuxtImg
+                                            src="https://avatars.githubusercontent.com/u/172270941?v=4"
+                                            alt="Liria"
+                                            loading="lazy"
+                                            format="webp"
+                                            class="size-12 rounded-lg"
+                                        />
+
+                                        <div
+                                            class="flex flex-col gap-2 font-[Geist]"
+                                        >
+                                            <span
+                                                class="text-sm leading-none font-semibold text-nowrap"
+                                            >
+                                                {{ repo.repo.repo }}
+                                            </span>
+                                            <div
+                                                class="flex items-center gap-1"
+                                            >
+                                                <Icon
+                                                    name="lucide:star"
+                                                    size="14"
+                                                    class="text-muted"
+                                                />
+                                                <span
+                                                    class="text-muted text-xs leading-none text-nowrap"
+                                                >
+                                                    {{ repo.repo.stars }}
+                                                </span>
+
+                                                <Icon
+                                                    name="lucide:git-pull-request-arrow"
+                                                    size="14"
+                                                    class="text-muted ml-2"
+                                                />
+                                                <NuxtTime
+                                                    :datetime="
+                                                        repo.repo.updatedAt
+                                                    "
+                                                    date-style="short"
+                                                    time-style="short"
+                                                    class="text-muted text-xs leading-none text-nowrap"
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
                                 </template>
                             </UPopover>

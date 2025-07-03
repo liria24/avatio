@@ -240,6 +240,7 @@ const linkClasses = computed(() => {
                         <UAvatar
                             :src="props.setup.user.image || undefined"
                             :alt="props.setup.user.name"
+                            icon="lucide:user-round"
                             aria-hidden="true"
                             size="2xs"
                         />
@@ -252,6 +253,7 @@ const linkClasses = computed(() => {
                                 <UAvatar
                                     :src="props.setup.user.image || undefined"
                                     :alt="props.setup.user.name"
+                                    icon="lucide:user-round"
                                     class="size-10"
                                 />
                                 <div class="flex flex-wrap gap-2">
@@ -296,6 +298,7 @@ const linkClasses = computed(() => {
                     <UAvatar
                         :src="setup.user.image || undefined"
                         :alt="setup.user.name"
+                        icon="lucide:user-round"
                         aria-hidden="true"
                         size="2xs"
                     />
@@ -308,6 +311,7 @@ const linkClasses = computed(() => {
                             <UAvatar
                                 :src="props.setup.user.image || undefined"
                                 :alt="props.setup.user.name"
+                                icon="lucide:user-round"
                                 class="size-10"
                             />
                             <div class="flex flex-wrap gap-2">

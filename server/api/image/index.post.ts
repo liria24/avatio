@@ -4,31 +4,16 @@ import { createStorage } from 'unstorage'
 import s3Driver from 'unstorage/drivers/s3'
 import { z } from 'zod/v4'
 
-// 許可される画像タイプ
-const ALLOWED_MIME_TYPES = [
-    'image/jpeg',
-    'image/jpg',
-    'image/png',
-    'image/webp',
-    'image/tiff',
-] as const
-
-type AllowedMimeType = (typeof ALLOWED_MIME_TYPES)[number]
-
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // ファイルサイズ制限（10MB）
 const MAX_DIMENSION = 1920 // 最大長辺（px）
 const TARGET_MAX_FILE_SIZE = 2 * 1024 * 1024 // 圧縮後の目標最大ファイルサイズ（2MB）
 
 const formData = z.object({
-    file: z
-        .instanceof(File, { message: 'File is required' })
-        .refine((file) => file.size <= MAX_FILE_SIZE, {
-            message: `File size must be less than ${MAX_FILE_SIZE / 1024 / 1024}MB`,
-        })
-        .refine(
-            (file) => ALLOWED_MIME_TYPES.includes(file.type as AllowedMimeType),
-            { message: 'File must be a valid image format' }
-        ),
+    blob: z
+        .instanceof(Blob, { message: 'Blob is required' })
+        .refine((blob) => blob.size <= MAX_FILE_SIZE, {
+            message: `Blob size must be less than ${MAX_FILE_SIZE / 1024 / 1024}MB`,
+        }),
     path: z
         .string()
         .min(1, { message: 'Path is required' })
@@ -124,7 +109,7 @@ const compressImage = async (buffer: Buffer) => {
 
 export default defineApi(
     async () => {
-        const { file, path } = await validateFormData(formData)
+        const { blob, path } = await validateFormData(formData)
 
         const config = useRuntimeConfig()
 
@@ -140,7 +125,7 @@ export default defineApi(
 
         consola.start('Processing and uploading image to Blob Storage...')
 
-        const processedBuffer = Buffer.from(await file.arrayBuffer())
+        const processedBuffer = Buffer.from(await blob.arrayBuffer())
 
         // 画像を圧縮
         const {

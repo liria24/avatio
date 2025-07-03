@@ -58,11 +58,39 @@ if (data.value) {
                 class="flex w-full flex-col items-start justify-between gap-3 sm:flex-row sm:items-center"
             >
                 <div class="flex items-center gap-6">
-                    <UAvatar
-                        :src="data.image || undefined"
+                    <NuxtImg
+                        v-if="data.image"
+                        v-slot="{ isLoaded, src, imgAttrs }"
+                        :src="data.image"
                         :alt="data.name"
-                        class="size-14 sm:size-20"
-                    />
+                        :width="80"
+                        :height="80"
+                        format="webp"
+                        custom
+                    >
+                        <img
+                            v-if="isLoaded"
+                            v-bind="imgAttrs"
+                            :src="src"
+                            class="aspect-square size-14 shrink-0 rounded-full object-cover sm:size-20"
+                        />
+                        <USkeleton
+                            v-else
+                            class="aspect-square size-14 shrink-0 rounded-full sm:size-20"
+                        />
+                    </NuxtImg>
+
+                    <div
+                        v-else
+                        class="bg-muted flex size-14 shrink-0 items-center justify-center rounded-full md:size-20"
+                    >
+                        <Icon
+                            name="lucide:user-round"
+                            size="32"
+                            class="text-muted"
+                        />
+                    </div>
+
                     <div class="flex flex-col gap-1">
                         <div
                             class="flex flex-wrap items-center gap-x-3 gap-y-1"

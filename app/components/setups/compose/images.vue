@@ -26,7 +26,7 @@ onChange(async (files) => {
         if (!file) return
 
         const formData = new FormData()
-        formData.append('file', file)
+        formData.append('blob', new Blob([file]))
         formData.append('path', 'setup')
 
         imageUploading.value = true
