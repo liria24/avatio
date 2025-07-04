@@ -2,7 +2,7 @@
 // 実際に利用する可能性のあるキーのみ
 export interface Booth {
     url: string
-    id: number
+    id: string
     is_adult: boolean
     is_buyee_possible: boolean
     is_end_of_sale: boolean

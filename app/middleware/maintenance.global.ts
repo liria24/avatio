@@ -6,6 +6,9 @@ export default defineNuxtRouteMiddleware(async (_to, _from) => {
     )
 
     if (isMaintenance)
-        if (_to.path !== '/on-maintenance') return navigateTo('/on-maintenance')
-        else if (_to.path === '/on-maintenance') return navigateTo('/')
+        showError({
+            statusCode: 503,
+            message: 'メンテナンス中',
+        })
 })
+//

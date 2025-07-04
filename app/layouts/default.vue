@@ -1,8 +1,14 @@
 <script lang="ts" setup>
+const session = await useGetSession()
 const route = useRoute()
-const paddingExclude = ['/', '/release', '/setup/compose']
 const footerExclude = ['/setup/compose']
-const modal_feedback = ref(false)
+
+const modalFeedback = ref(false)
+const modalLogin = ref(false)
+
+const { data: repo } = useFetch<{ repo: GithubRepo }>(
+    'https://ungh.cc/repos/liria24/avatio'
+)
 </script>
 
 <template>
@@ -14,107 +20,184 @@ const modal_feedback = ref(false)
         </Head>
         <Body>
             <UContainer
-                class="flex min-h-[100dvh] flex-col items-center gap-6 pt-6 md:gap-8"
+                class="flex min-h-dvh flex-col items-center gap-6 pt-6 md:gap-8"
             >
-                <Header />
+                <ModalFeedback v-model:open="modalFeedback" />
+                <ModalLogin v-model:open="modalLogin" />
+
+                <Header @open-feedback-modal="modalFeedback = true" />
+
                 <div
                     class="hidden w-full items-center justify-center rounded-xl bg-red-100 p-4 text-sm text-red-800 ring-2 ring-red-500 noscript:flex"
                 >
                     この Web サイトは JavaScript を使用しています。<br />
                     JavaScript が無効の場合、正しく表示されません。
                 </div>
-                <main
-                    :class="[
-                        'grid w-full grow',
-                        paddingExclude.includes(route.path)
-                            ? 'px-4'
-                            : 'md:px-20 lg:px-32',
-                    ]"
-                >
+                <main class="grid w-full grow">
                     <slot />
                 </main>
 
                 <footer
                     v-if="!footerExclude.includes(route.path)"
-                    class="flex flex-col gap-10 self-stretch"
+                    class="flex flex-col gap-4 self-stretch pb-6"
                 >
                     <USeparator icon="avatio:avatio" />
 
                     <BannerOwnerWarning />
 
                     <div
-                        class="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 pb-10"
+                        class="flex w-full flex-wrap items-center justify-between gap-x-6 gap-y-2 pb-0"
                     >
-                        <div
-                            class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-zinc-700 dark:text-white"
-                        >
-                            <div class="flex items-center gap-2">
-                                <Button
-                                    to="https://x.com/liria_24"
-                                    new-tab
-                                    icon="simple-icons:x"
-                                    aria-label="X"
-                                    variant="flat"
-                                    class="p-2"
-                                />
+                        <div class="flex items-center gap-0.5">
+                            <UButton
+                                to="https://x.com/liria_24"
+                                target="_blank"
+                                icon="simple-icons:x"
+                                aria-label="X"
+                                variant="ghost"
+                                size="sm"
+                                class="p-2"
+                            />
 
-                                <Button
+                            <UPopover mode="hover" :open-delay="100">
+                                <UButton
                                     to="https://github.com/liria24/avatio"
-                                    new-tab
+                                    target="_blank"
                                     icon="simple-icons:github"
                                     aria-label="GitHub"
-                                    variant="flat"
+                                    variant="ghost"
+                                    size="sm"
                                     class="p-2"
                                 />
-                            </div>
 
-                            <div class="flex items-center gap-4">
-                                <Button
-                                    to="/release"
-                                    label="お知らせ"
-                                    variant="link"
-                                />
+                                <template #content>
+                                    <div
+                                        v-if="repo"
+                                        class="flex items-center gap-3 p-2"
+                                    >
+                                        <NuxtImg
+                                            v-slot="{ src, imgAttrs, isLoaded }"
+                                            src="https://avatars.githubusercontent.com/u/172270941?v=4"
+                                            alt="Liria"
+                                            loading="lazy"
+                                            :width="48"
+                                            :height="48"
+                                            format="webp"
+                                            custom
+                                        >
+                                            <img
+                                                v-if="isLoaded"
+                                                v-bind="imgAttrs"
+                                                :src="src"
+                                                class="aspect-square size-12 rounded-lg object-cover"
+                                            />
+                                            <USkeleton
+                                                v-else
+                                                class="aspect-square size-12 rounded-lg"
+                                            />
+                                        </NuxtImg>
 
-                                <Button
-                                    label="フィードバック"
-                                    variant="link"
-                                    @click="modal_feedback = true"
-                                />
-                            </div>
+                                        <div
+                                            class="flex flex-col gap-2 font-[Geist]"
+                                        >
+                                            <span
+                                                class="text-sm leading-none font-semibold text-nowrap"
+                                            >
+                                                {{ repo.repo.repo }}
+                                            </span>
+                                            <div
+                                                class="flex items-center gap-1"
+                                            >
+                                                <Icon
+                                                    name="lucide:star"
+                                                    size="14"
+                                                    class="text-muted"
+                                                />
+                                                <span
+                                                    class="text-muted text-xs leading-none text-nowrap"
+                                                >
+                                                    {{ repo.repo.stars }}
+                                                </span>
+
+                                                <Icon
+                                                    name="lucide:git-pull-request-arrow"
+                                                    size="14"
+                                                    class="text-muted ml-2"
+                                                />
+                                                <NuxtTime
+                                                    :datetime="
+                                                        repo.repo.updatedAt
+                                                    "
+                                                    date-style="short"
+                                                    time-style="short"
+                                                    class="text-muted text-xs leading-none text-nowrap"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </UPopover>
+
+                            <UButton
+                                :to="$localePath('/changelogs')"
+                                label="変更履歴"
+                                variant="link"
+                                size="sm"
+                            />
+
+                            <UButton
+                                :to="$localePath('/faq')"
+                                label="FAQ"
+                                variant="link"
+                                size="sm"
+                            />
+
+                            <UButton
+                                label="フィードバック"
+                                variant="link"
+                                size="sm"
+                                @click="
+                                    () => {
+                                        if (session) modalFeedback = true
+                                        else modalLogin = true
+                                    }
+                                "
+                            />
                         </div>
+
                         <div
                             class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2"
                         >
-                            <Button to="/faq" label="FAQ" variant="link" />
+                            <div class="flex items-center gap-0.5">
+                                <UButton
+                                    :to="$localePath('/terms')"
+                                    label="利用規約"
+                                    variant="link"
+                                    size="sm"
+                                />
 
-                            <Button
-                                to="/terms"
-                                label="利用規約"
-                                variant="link"
-                            />
+                                <UButton
+                                    :to="$localePath('/privacy-policy')"
+                                    label="プライバシーポリシー"
+                                    variant="link"
+                                    size="sm"
+                                />
+                            </div>
 
-                            <Button
-                                to="/privacy-policy"
-                                label="プライバシーポリシー"
-                                variant="link"
-                            />
-                        </div>
-                        <div class="flex items-center gap-1">
-                            <p class="text-sm text-zinc-500">
-                                Copyright © 2025
-                            </p>
-                            <Button
-                                to="https://liria.me"
-                                new-tab
-                                label="Liria"
-                                icon="avatio:liria"
-                                variant="link"
-                                class="gap-1 font-[Montserrat] text-sm font-semibold"
-                            />
+                            <div class="flex items-center gap-1">
+                                <p class="text-dimmed text-sm">© 2025</p>
+                                <UButton
+                                    to="https://liria.me"
+                                    target="_blank"
+                                    label="Liria"
+                                    icon="avatio:liria"
+                                    variant="link"
+                                    size="sm"
+                                    class="gap-1 p-0 pl-0.5 font-[Montserrat] text-sm font-semibold"
+                                />
+                            </div>
                         </div>
                     </div>
-
-                    <ModalFeedback v-model="modal_feedback" />
                 </footer>
             </UContainer>
         </Body>
