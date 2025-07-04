@@ -16,7 +16,7 @@ export default defineApi(
             }),
         })
 
-        const unusedImages = await event.$fetch('/api/image/unused')
+        const unusedImages = await event.$fetch('/api/images/unused')
         const allImages = [
             ...unusedImages.setupImages,
             ...unusedImages.userImages,

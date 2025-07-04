@@ -1,5 +1,5 @@
 import database from '@@/database'
-import { setups } from '@@/database/schema'
+import { bookmarks } from '@@/database/schema'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod/v4'
 
@@ -11,11 +11,10 @@ export default defineApi(
     async (session) => {
         const { id } = await validateParams(params)
 
-        const data = await database.query.setups.findFirst({
-            where: (setups, { eq }) => eq(setups.id, id),
+        const data = await database.query.bookmarks.findFirst({
+            where: (bookmarks, { eq }) => eq(bookmarks.id, id),
             columns: {
                 userId: true,
-                name: true,
             },
         })
 
@@ -25,20 +24,13 @@ export default defineApi(
                 statusMessage: 'Forbidden',
             })
 
-        await database.delete(setups).where(eq(setups.id, Number(id)))
-
-        await createAuditLog({
-            userId: session.user.id,
-            action: 'setup_delete',
-            targetType: 'setup',
-            targetId: id.toString(),
-            details: data.name,
-        })
+        await database.delete(bookmarks).where(eq(bookmarks.id, Number(id)))
 
         return null
     },
     {
-        errorMessage: 'Failed to delete setup',
+        errorMessage: 'Failed to delete bookmark',
         requireSession: true,
+        rejectBannedUser: true,
     }
 )

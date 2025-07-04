@@ -30,7 +30,7 @@ onChange(async (files) => {
         formData.append('path', 'setup')
 
         imageUploading.value = true
-        const response = await $fetch('/api/image', {
+        const response = await $fetch('/api/images', {
             method: 'POST',
             body: formData,
         })

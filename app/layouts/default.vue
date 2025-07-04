@@ -76,12 +76,26 @@ const { data: repo } = useFetch<{ repo: GithubRepo }>(
                                         class="flex items-center gap-3 p-2"
                                     >
                                         <NuxtImg
+                                            v-slot="{ src, imgAttrs, isLoaded }"
                                             src="https://avatars.githubusercontent.com/u/172270941?v=4"
                                             alt="Liria"
                                             loading="lazy"
+                                            :width="48"
+                                            :height="48"
                                             format="webp"
-                                            class="size-12 rounded-lg"
-                                        />
+                                            custom
+                                        >
+                                            <img
+                                                v-if="isLoaded"
+                                                v-bind="imgAttrs"
+                                                :src="src"
+                                                class="aspect-square size-12 rounded-lg object-cover"
+                                            />
+                                            <USkeleton
+                                                v-else
+                                                class="aspect-square size-12 rounded-lg"
+                                            />
+                                        </NuxtImg>
 
                                         <div
                                             class="flex flex-col gap-2 font-[Geist]"

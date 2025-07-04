@@ -35,7 +35,7 @@ const Submit = async () => {
     try {
         await schema.parseAsync(state)
 
-        await $fetch('/api/report/setup', {
+        await $fetch('/api/reports/setup', {
             method: 'POST',
             body: {
                 setupId: props.setupId,

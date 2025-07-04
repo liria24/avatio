@@ -95,16 +95,7 @@ const menuItems = ref<DropdownMenuItem[][]>([
             />
         </div>
 
-        <UButton
-            v-if="!['/login', '/setup/compose'].includes(route.path)"
-            :to="$localePath('/search')"
-            icon="lucide:search"
-            label="セットアップを検索"
-            variant="ghost"
-            class="text-dimmed"
-        />
-
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1">
             <div class="flex items-center gap-1">
                 <UButton
                     v-if="
@@ -115,12 +106,24 @@ const menuItems = ref<DropdownMenuItem[][]>([
                     icon="lucide:plus"
                     color="neutral"
                     variant="soft"
-                    class="hidden rounded-full py-2 pr-6 pl-5 md:flex"
+                    class="mr-1 hidden rounded-full py-2 pr-6 pl-5 md:flex"
                 >
                     <span class="hidden whitespace-nowrap md:inline">
                         セットアップを投稿
                     </span>
                 </UButton>
+
+                <UTooltip
+                    v-if="!['/login', '/setup/compose'].includes(route.path)"
+                    text="セットアップを検索"
+                    :delay-duration="50"
+                >
+                    <UButton
+                        :to="$localePath('/search')"
+                        icon="lucide:search"
+                        variant="ghost"
+                    />
+                </UTooltip>
 
                 <ClientOnly v-if="!session">
                     <UDropdownMenu
@@ -131,7 +134,7 @@ const menuItems = ref<DropdownMenuItem[][]>([
                             sideOffset: 8,
                         }"
                     >
-                        <UTooltip text="テーマ" :delay-duration="0">
+                        <UTooltip text="テーマ" :delay-duration="50">
                             <UButton
                                 :icon="
                                     colorMode.value === 'dark'
@@ -155,14 +158,24 @@ const menuItems = ref<DropdownMenuItem[][]>([
             </div>
 
             <template v-if="route.path !== '/login'">
-                <UDropdownMenu v-if="session" :items="menuItems">
-                    <UAvatar
-                        :src="session.user.image || undefined"
-                        :alt="session.user.name"
-                        icon="lucide:user-round"
-                        class="ring-accented size-8 cursor-pointer ring-0 transition-all select-none hover:ring-4"
-                    />
-                </UDropdownMenu>
+                <div v-if="session" class="flex items-center gap-2">
+                    <PopoverNotifications v-slot="{ unread }">
+                        <UTooltip text="通知" :delay-duration="50">
+                            <UChip :show="unread" color="neutral" inset>
+                                <UButton icon="lucide:bell" variant="ghost" />
+                            </UChip>
+                        </UTooltip>
+                    </PopoverNotifications>
+
+                    <UDropdownMenu :items="menuItems">
+                        <UAvatar
+                            :src="session.user.image || undefined"
+                            :alt="session.user.name"
+                            icon="lucide:user-round"
+                            class="ring-accented size-8 cursor-pointer ring-0 transition-all select-none hover:ring-4"
+                        />
+                    </UDropdownMenu>
+                </div>
 
                 <ModalLogin v-else-if="!session && route.path !== '/login'">
                     <UButton label="ログイン" variant="solid" size="lg" />

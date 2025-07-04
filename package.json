@@ -14,7 +14,7 @@
     },
     "dependencies": {
         "@neondatabase/serverless": "^1.0.1",
-        "@nuxt/eslint": "1.5.0",
+        "@nuxt/eslint": "1.5.2",
         "@nuxt/fonts": "0.11.4",
         "@nuxt/image": "1.10.0",
         "@nuxt/ui": "3.2.0",
@@ -51,7 +51,7 @@
         "vue-advanced-cropper": "^2.8.9",
         "vue-draggable-plus": "^0.6.0",
         "vue-router": "^4.5.1",
-        "zod": "^3.25.69"
+        "zod": "^3.25.71"
     },
     "devDependencies": {
         "@iconify-json/lucide": "^1.2.54",
@@ -72,7 +72,7 @@
     "engines": {
         "node": "22.x"
     },
-    "packageManager": "bun@1.2.17",
+    "packageManager": "bun@1.2.18",
     "prettier": {
         "trailingComma": "es5",
         "tabWidth": 4,

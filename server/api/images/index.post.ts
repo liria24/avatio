@@ -152,5 +152,6 @@ export default defineApi(
     {
         errorMessage: 'Failed to upload image',
         requireSession: true,
+        rejectBannedUser: true,
     }
 )

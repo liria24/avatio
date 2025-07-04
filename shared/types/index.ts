@@ -7,6 +7,8 @@ import {
     feedbacks,
     itemCategory,
     items,
+    notifications,
+    notificationType,
     platform,
     setupCoauthors,
     setupImages,
@@ -503,6 +505,25 @@ export const changelogsPublicSchema = changelogsSelectSchema
         authors: userPublicSchema.array().optional(),
     })
 export type Changelog = z.infer<typeof changelogsPublicSchema>
+
+export const notificationTypeSchema = z.enum(notificationType.enumValues)
+
+export const notificationsSelectSchema = createSelectSchema(notifications, {
+    createdAt: (schema) => schema.transform((val) => val.toISOString()),
+})
+export const notificationsInsertSchema = createInsertSchema(notifications)
+export const notificationsPublicSchema = notificationsSelectSchema.pick({
+    id: true,
+    createdAt: true,
+    type: true,
+    readAt: true,
+    title: true,
+    message: true,
+    data: true,
+    actionUrl: true,
+    actionLabel: true,
+})
+export type Notification = z.infer<typeof notificationsPublicSchema>
 
 export interface PaginationResponse<T> {
     data: T

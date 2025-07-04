@@ -35,7 +35,7 @@ const popoverItemSearch = ref(false)
 const collapsibleSearchOptions = ref(shouldShowDetails.value)
 
 const { data: popularAvatars, refresh: fetchPopularAvatars } = await useFetch(
-    '/api/item/popular-avatars',
+    '/api/items/popular-avatars',
     {
         key: 'popular-avatars',
         getCachedData: (key: string) =>
@@ -60,7 +60,7 @@ const fetchItemsById = async (ids: string[]) => {
     const newIds = ids.filter((id) => !existingIds.has(id))
 
     const items = await Promise.allSettled(
-        newIds.map((id) => $fetch<Item>(`/api/item/${id}`))
+        newIds.map((id) => $fetch<Item>(`/api/items/${id}`))
     )
 
     items.forEach((result, index) => {

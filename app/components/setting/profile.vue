@@ -78,7 +78,7 @@ const checkNewIdAvailability = useDebounceFn(async (id: string) => {
 
     try {
         console.log('Checking profile ID availability:', id)
-        const response = await $fetch('/api/user/id-availability', {
+        const response = await $fetch('/api/users/id-availability', {
             query: { id },
         })
         ui.newIdCheckState = response.available ? 'available' : 'unavailable'
@@ -135,7 +135,7 @@ const removeLink = (index: number) => {
 // API呼び出しを共通化
 const updateUserData = async (updateData: Partial<profileSchema>) => {
     await $fetch(session.value!.user.id, {
-        baseURL: '/api/user/',
+        baseURL: '/api/users/',
         method: 'PUT',
         body: updateData,
     })
@@ -233,7 +233,7 @@ const updateImage = async () => {
         formData.append('blob', ui.croppingImage)
         formData.append('path', 'avatar')
 
-        const response = await $fetch('/api/image', {
+        const response = await $fetch('/api/images', {
             method: 'POST',
             body: formData,
         })
@@ -562,6 +562,8 @@ const cancelCropImage = () => {
                         type="submit"
                         label="保存"
                         color="neutral"
+                        block
+                        class="w-full max-w-32"
                     />
                 </div>
             </template>

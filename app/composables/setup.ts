@@ -24,6 +24,6 @@ export const useSetup = async (
     return useFetch<Setup>(id.toString(), {
         ...defaultOptions,
         ...options,
-        baseURL: '/api/setup/',
+        baseURL: '/api/setups/',
     })
 }

@@ -21,7 +21,7 @@ const Submit = async () => {
 
         submitting.value = true
 
-        await $fetch('/api/feedback', {
+        await $fetch('/api/feedbacks', {
             method: 'POST',
             body: {
                 comment: state.comment,

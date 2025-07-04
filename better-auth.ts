@@ -14,6 +14,11 @@ export const auth = betterAuth({
                 type: 'string[]',
                 required: false,
             },
+            isInitialized: {
+                type: 'boolean',
+                defaultValue: false,
+                required: true,
+            },
         },
     },
     baseURL: import.meta.env.NUXT_BETTER_AUTH_URL,

@@ -92,12 +92,13 @@ export default defineApi(
             )
         }
 
-        const data = await useEvent().$fetch(`/api/setup/${setupId}`)
+        const data = await useEvent().$fetch(`/api/setups/${setupId}`)
 
         return data
     },
     {
         errorMessage: 'Failed to post setup.',
         requireSession: true,
+        rejectBannedUser: true,
     }
 )

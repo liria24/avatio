@@ -55,7 +55,7 @@ export default defineApi<Item[]>(
             .map(async (item) => {
                 try {
                     const response = await useEvent().$fetch<Item>(
-                        `/api/item/${item.id}`
+                        `/api/items/${item.id}`
                     )
                     console.log(`Updated item ${item.id} from external API`)
                     return { ...item, ...response }

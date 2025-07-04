@@ -24,5 +24,6 @@ export default defineApi(
     {
         errorMessage: 'Failed to report user.',
         requireSession: true,
+        rejectBannedUser: true,
     }
 )

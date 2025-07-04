@@ -18,6 +18,7 @@ export default defineApi(
             image,
             bio,
             links,
+            isInitialized,
         } = await validateBody(body, { sanitize: true })
 
         const data = await database.query.user.findFirst({
@@ -47,6 +48,7 @@ export default defineApi(
                 image,
                 bio,
                 links,
+                isInitialized,
             })
             .where(eq(user.id, id))
 

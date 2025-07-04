@@ -160,12 +160,13 @@ export default defineApi<Setup>(
                 )
         }
 
-        const data = await useEvent().$fetch(`/api/setup/${id}`)
+        const data = await useEvent().$fetch(`/api/setups/${id}`)
 
         return data
     },
     {
         errorMessage: 'Failed to update setup.',
         requireSession: true,
+        rejectBannedUser: true,
     }
 )

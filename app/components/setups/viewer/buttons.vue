@@ -160,11 +160,11 @@ const bookmarkButtonStyle = computed<{
 const applyBookmark = useDebounceFn(async (isBookmarked: boolean) => {
     try {
         if (isBookmarked)
-            await $fetch(`/api/setup/bookmark/${props.setup.id}`, {
+            await $fetch(`/api/setups/bookmark/${props.setup.id}`, {
                 method: 'POST',
             })
         else
-            await $fetch(`/api/setup/bookmark/${props.setup.id}`, {
+            await $fetch(`/api/setups/bookmark/${props.setup.id}`, {
                 method: 'DELETE',
             })
 
@@ -191,7 +191,7 @@ const toggleBookmark = () => {
 
 const deleteSetup = async () => {
     try {
-        await $fetch(`/api/setup/${props.setup.id}`, {
+        await $fetch(`/api/setups/${props.setup.id}`, {
             method: 'DELETE',
         })
         toast.add({
@@ -216,7 +216,7 @@ onMounted(async () => {
     if (session.value) {
         try {
             const response = await $fetch<PaginationResponse<Bookmark[]>>(
-                '/api/setup/bookmark',
+                '/api/setups/bookmark',
                 {
                     query: { setupId: props.setup.id, limit: 1 },
                 }

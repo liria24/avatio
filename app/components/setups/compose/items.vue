@@ -38,7 +38,7 @@ const getItemsByCategory = (category: CategoryKey) => items.value[category]
 const ownedAvatars = ref<Item[]>([])
 
 try {
-    const avatarsData = await $fetch<Item[]>('/api/item/owned-avatars', {
+    const avatarsData = await $fetch<Item[]>('/api/items/owned-avatars', {
         query: { limit: 10 },
     })
     ownedAvatars.value = avatarsData || []

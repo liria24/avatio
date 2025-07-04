@@ -107,6 +107,7 @@ const migrateFromSupabase = async () => {
                 image: user.image,
                 bio: user.bio,
                 links: user.links,
+                isInitialized: true,
                 createdAt: new Date(user.createdAt),
                 updatedAt: new Date(user.updatedAt),
             }))

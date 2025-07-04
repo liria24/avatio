@@ -19,5 +19,6 @@ export default defineApi(
     {
         errorMessage: 'Failed to post feedback.',
         requireSession: true,
+        rejectBannedUser: true,
     }
 )

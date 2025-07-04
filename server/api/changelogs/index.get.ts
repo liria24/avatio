@@ -1,8 +1,7 @@
 import database from '@@/database'
-import { auditLogs } from '@@/database/schema'
+import { auditLogs, changelogAuthors } from '@@/database/schema'
 import { and, eq, exists, ilike } from 'drizzle-orm'
 import { z } from 'zod/v4'
-import { changelogAuthors } from '../../../database/schema'
 
 const query = z.object({
     q: z.string().optional(),

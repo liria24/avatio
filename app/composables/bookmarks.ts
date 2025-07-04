@@ -20,7 +20,7 @@ export const useBookmarks = async (
         }),
     }
 
-    return useFetch<PaginationResponse<Bookmark[]>>('/api/setup/bookmark', {
+    return useFetch<PaginationResponse<Bookmark[]>>('/api/setups/bookmark', {
         ...defaultOptions,
         ...options,
     })

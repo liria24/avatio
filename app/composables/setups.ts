@@ -29,7 +29,7 @@ export const useSetups = (
         }),
     }
 
-    return useFetch<PaginationResponse<Setup[]>>('/api/setup', {
+    return useFetch<PaginationResponse<Setup[]>>('/api/setups', {
         ...(defaultOptions as unknown as UseFetchOptions<
             PaginationResponse<Setup[]>
         >),

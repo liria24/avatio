@@ -11,6 +11,7 @@ import {
     real,
     text,
     timestamp,
+    uuid,
 } from 'drizzle-orm/pg-core'
 
 export const userBadge = pgEnum('user_badge', [
@@ -54,6 +55,7 @@ export const user = authSchema.table(
         banExpires: timestamp('ban_expires'),
         bio: text('bio'),
         links: text('links').array(),
+        isInitialized: boolean('is_initialized').notNull().default(false),
     },
     (table) => [index('user_email_index').on(table.email)]
 )
@@ -427,9 +429,9 @@ export const setupCoauthors = pgTable(
     ]
 )
 
-export const bookmarkSchema = pgSchema('bookmark')
+export const personalSchema = pgSchema('personal')
 
-export const bookmarks = bookmarkSchema.table(
+export const bookmarks = personalSchema.table(
     'bookmarks',
     {
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -452,6 +454,41 @@ export const bookmarks = bookmarkSchema.table(
             name: 'bookmarks_setup_id_fkey',
             columns: [table.setupId],
             foreignColumns: [setups.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+    ]
+)
+
+export const notificationType = pgEnum('notification_type', [
+    'system_announcement',
+    'user_badge_granted',
+    'setup_coauthor_added',
+    'user_banned',
+    'user_unbanned',
+])
+
+export const notifications = personalSchema.table(
+    'notifications',
+    {
+        id: uuid().primaryKey().defaultRandom(),
+        createdAt: timestamp('created_at').defaultNow().notNull(),
+        userId: text('user_id').notNull(),
+        type: notificationType().notNull(),
+        readAt: timestamp('read_at'),
+        title: text().notNull(),
+        message: text(),
+        data: text(),
+        actionUrl: text('action_url'),
+        actionLabel: text('action_label'),
+    },
+    (table) => [
+        index('notifications_user_id_index').on(table.userId),
+        index('notifications_type_index').on(table.type),
+        foreignKey({
+            name: 'notifications_user_id_fkey',
+            columns: [table.userId],
+            foreignColumns: [user.id],
         })
             .onDelete('cascade')
             .onUpdate('cascade'),

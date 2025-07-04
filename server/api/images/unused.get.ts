@@ -27,10 +27,7 @@ export default defineApi(
         })
 
         // XMLパースを最適化
-        const parseStorageObjects = (
-            xmlText: string,
-            prefix: string
-        ): ImageInfo[] => {
+        const parseStorageObjects = (xmlText: string): ImageInfo[] => {
             const contents =
                 xmlText.match(/<Contents>[\s\S]*?<\/Contents>/g) || []
 
@@ -71,7 +68,7 @@ export default defineApi(
                 }
 
                 const xmlText = await response.text()
-                return parseStorageObjects(xmlText, prefix)
+                return parseStorageObjects(xmlText)
             } catch (error) {
                 console.error(
                     `Failed to get storage objects for prefix ${prefix}:`,

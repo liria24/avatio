@@ -1,4 +1,5 @@
-import { auth, type Session } from '@@/better-auth'
+import type { Session } from '@@/better-auth'
+import { auth } from '@@/better-auth'
 import { consola } from 'consola'
 import { z } from 'zod/v4'
 
@@ -37,6 +38,16 @@ const checkAdminAuth = async (
         })
 }
 
+const checkBannedUser = async (
+    session: Session | null | undefined
+): Promise<void> => {
+    if (session?.user?.banned)
+        throw createError({
+            statusCode: 403,
+            message: 'Forbidden: User account is banned',
+        })
+}
+
 const handleError = (
     error: unknown,
     errorMessage = 'Internal server error'
@@ -66,6 +77,7 @@ type ApiOptions = {
     requireAdmin?: boolean
     requireSession?: boolean
     requireCron?: boolean
+    rejectBannedUser?: boolean
 }
 
 type SessionType<Options extends ApiOptions> =
@@ -80,6 +92,7 @@ const defaultOptions: ApiOptions = {
     requireAdmin: false,
     requireSession: false,
     requireCron: false,
+    rejectBannedUser: false,
 }
 
 export default <T, O extends ApiOptions = ApiOptions>(
@@ -105,6 +118,9 @@ export default <T, O extends ApiOptions = ApiOptions>(
 
             // 管理者権限チェック
             if (options.requireAdmin) await checkAdminAuth(session)
+
+            // banされたユーザーのチェック
+            if (options.rejectBannedUser) await checkBannedUser(session)
 
             return await handler(session as SessionType<O>)
         } catch (error) {

@@ -32,5 +32,6 @@ export default defineApi(
     {
         errorMessage: 'Failed to report setup.',
         requireSession: true,
+        rejectBannedUser: true,
     }
 )

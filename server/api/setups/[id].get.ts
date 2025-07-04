@@ -237,7 +237,7 @@ export default defineApi<Setup>(
         const expiredItemsPromises = expiredItems.map(async (item) => {
             try {
                 const response = await $fetch<Item>(
-                    `/api/item/${item.item.id}`,
+                    `/api/items/${item.item.id}`,
                     {
                         headers: {
                             authorization: `Bearer ${config.adminKey}`,

@@ -16,7 +16,7 @@ const loadingRef = ref(false)
 const toast = useToast()
 const categoryAttributes = itemCategoryAttributes()
 
-const { data, status } = useFetch('/api/item', {
+const { data, status } = useFetch('/api/items', {
     query: {
         limit: 500,
     },
@@ -99,7 +99,7 @@ const onSelect = async (id: string, platform?: Platform) => {
     loadingRef.value = true
 
     try {
-        const response = await $fetch<Item>(`/api/item/${id}`, {
+        const response = await $fetch<Item>(`/api/items/${id}`, {
             query: { platform },
         })
         emit('select', response)

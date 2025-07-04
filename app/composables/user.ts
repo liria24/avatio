@@ -22,6 +22,6 @@ export const useUser = (
     return useFetch<UserWithSetups>(id, {
         ...defaultOptions,
         ...options,
-        baseURL: '/api/user/',
+        baseURL: '/api/users/',
     })
 }

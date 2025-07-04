@@ -11,7 +11,7 @@ const toast = useToast()
 
 const searchTerm = ref('')
 
-const { data: users, status } = useFetch('/api/user', {
+const { data: users, status } = useFetch('/api/users', {
     key: 'user-search',
     default: () => [],
 })
@@ -58,7 +58,7 @@ const groups = computed(() => {
 
 const onSelect = async (id: string) => {
     try {
-        const user = await $fetch<UserWithSetups>(`/api/user/${id}`)
+        const user = await $fetch<UserWithSetups>(`/api/users/${id}`)
         emit('select', {
             id: user.id,
             createdAt: user.createdAt,

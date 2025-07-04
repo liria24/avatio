@@ -33,7 +33,7 @@ if (edit) {
     const setupId = Array.isArray(edit) ? edit[0] : edit
     if (setupId) {
         // 編集モードの場合、セットアップのデータを取得して状態に設定
-        const setup = await $fetch<Setup>(`/api/setup/${setupId}`)
+        const setup = await $fetch<Setup>(`/api/setups/${setupId}`)
         if (setup) {
             state.name = setup.name
             state.description = setup.description || ''
@@ -107,8 +107,8 @@ const onSubmit = async () => {
         // 編集モードか新規作成かで分岐
         const isEditing = editingSetupId.value !== null
         const url = isEditing
-            ? `/api/setup/${editingSetupId.value}`
-            : '/api/setup'
+            ? `/api/setups/${editingSetupId.value}`
+            : '/api/setups'
         const method = isEditing ? 'PUT' : 'POST'
 
         const response = await $fetch<Setup>(url, {

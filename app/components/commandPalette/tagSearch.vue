@@ -9,7 +9,7 @@ const open = defineModel<boolean>({
 
 const searchTerm = ref('')
 
-const { data: tags, status } = useFetch('/api/setup/tag', {
+const { data: tags, status } = useFetch('/api/setups/tag', {
     key: 'tag-search',
     default: () => [],
 })
