@@ -30,14 +30,23 @@ export default defineApi(
                 body: { userId },
             })
 
-        if (body.role !== undefined && body.role !== null)
+        if (body.role !== undefined && body.role !== null) {
             await auth.api.setRole({
                 headers,
                 body: { userId, role: body.role },
             })
+            await createNotification({
+                userId,
+                title: 'あなたのアカウントの権限が変更されました',
+                type: 'user_role_changed',
+                message: `あなたのアカウントの権限が ${Array.isArray(body.role) ? body.role.join(', ') : body.role} に変更されました`,
+                actionUrl: `/@${userId}`,
+                actionLabel: 'アカウントを確認する',
+            })
+        }
 
         if (body.ban !== undefined && body.ban !== null)
-            if (body.ban)
+            if (body.ban) {
                 await auth.api.banUser({
                     headers,
                     body: {
@@ -46,13 +55,32 @@ export default defineApi(
                         banExpiresIn: body.banExpiresIn,
                     },
                 })
-            else
+                await createNotification({
+                    userId,
+                    title: 'あなたのアカウントは BAN されました',
+                    type: 'user_banned',
+                    message: body.banReason || undefined,
+                    data: JSON.stringify({
+                        banExpiresIn: body.banExpiresIn,
+                    }),
+                    actionUrl: `/@${userId}`,
+                    actionLabel: 'アカウントを確認する',
+                })
+            } else {
                 await auth.api.unbanUser({
                     headers,
                     body: {
                         userId,
                     },
                 })
+                await createNotification({
+                    userId,
+                    title: 'あなたのアカウントは BAN 解除されました',
+                    type: 'user_unbanned',
+                    actionUrl: `/@${userId}`,
+                    actionLabel: 'アカウントを確認する',
+                })
+            }
 
         return
     },

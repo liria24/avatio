@@ -9,6 +9,14 @@ const modalLogin = ref(false)
 const { data: repo } = useFetch<{ repo: GithubRepo }>(
     'https://ungh.cc/repos/liria24/avatio'
 )
+
+const notificationsStore = useNotificationsStore()
+await callOnce(notificationsStore.fetch)
+const notifications = computed(() =>
+    notificationsStore.notifications.filter((notification) => {
+        return !notification.readAt && notification.banner
+    })
+)
 </script>
 
 <template>
@@ -33,6 +41,19 @@ const { data: repo } = useFetch<{ repo: GithubRepo }>(
                     この Web サイトは JavaScript を使用しています。<br />
                     JavaScript が無効の場合、正しく表示されません。
                 </div>
+
+                <div
+                    v-if="notifications.length"
+                    class="flex w-full flex-col gap-2"
+                >
+                    <BannerNotification
+                        v-for="notification in notifications"
+                        :key="notification.id"
+                        :data="notification"
+                        class="w-full"
+                    />
+                </div>
+
                 <main class="grid w-full grow">
                     <slot />
                 </main>

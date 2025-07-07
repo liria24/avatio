@@ -161,7 +161,7 @@ const menuItems = ref<DropdownMenuItem[][]>([
                 <div v-if="session" class="flex items-center gap-2">
                     <PopoverNotifications v-slot="{ unread }">
                         <UTooltip text="通知" :delay-duration="50">
-                            <UChip :show="unread" color="neutral" inset>
+                            <UChip :show="!!unread" color="neutral" inset>
                                 <UButton icon="lucide:bell" variant="ghost" />
                             </UChip>
                         </UTooltip>

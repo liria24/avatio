@@ -36,8 +36,6 @@ useSchemaOrg([
 
 <template>
     <div class="flex w-full flex-col gap-6">
-        <BannerNotifications class="w-full" />
-
         <Hero v-if="!session" class="sm:mt-12 sm:mb-6" />
 
         <div v-if="session" class="flex w-full flex-col items-start gap-5">

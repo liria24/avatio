@@ -227,6 +227,8 @@ if (data.value) {
             </div>
         </div>
 
+        <USeparator />
+
         <div class="flex w-full flex-col gap-5 px-2">
             <div class="flex items-center gap-2">
                 <Icon name="lucide:shirt" size="22" class="text-muted" />

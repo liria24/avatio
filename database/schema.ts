@@ -464,6 +464,7 @@ export const notificationType = pgEnum('notification_type', [
     'system_announcement',
     'user_badge_granted',
     'setup_coauthor_added',
+    'user_role_changed',
     'user_banned',
     'user_unbanned',
 ])
@@ -481,6 +482,7 @@ export const notifications = personalSchema.table(
         data: text(),
         actionUrl: text('action_url'),
         actionLabel: text('action_label'),
+        banner: boolean('banner').default(false).notNull(),
     },
     (table) => [
         index('notifications_user_id_index').on(table.userId),

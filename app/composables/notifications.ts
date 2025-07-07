@@ -1,7 +1,10 @@
 import type { Notification } from '@@/shared/types'
 import type { UseFetchOptions } from 'nuxt/app'
 
-type Options = UseFetchOptions<{ data: Notification[]; total: number }>
+type Options = UseFetchOptions<{
+    data: Notification[]
+    unread: number
+}>
 
 export const useNotifications = (options?: Options) => {
     const nuxtApp = useNuxtApp()
@@ -12,7 +15,8 @@ export const useNotifications = (options?: Options) => {
         ),
         default: () => ({
             data: [],
-            total: 0,
+            unread: 0,
+            read: 0,
         }),
         dedupe: 'defer',
         lazy: true,

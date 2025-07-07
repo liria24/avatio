@@ -510,6 +510,7 @@ export const notificationTypeSchema = z.enum(notificationType.enumValues)
 
 export const notificationsSelectSchema = createSelectSchema(notifications, {
     createdAt: (schema) => schema.transform((val) => val.toISOString()),
+    readAt: (schema) => schema.transform((val) => val?.toISOString()),
 })
 export const notificationsInsertSchema = createInsertSchema(notifications)
 export const notificationsPublicSchema = notificationsSelectSchema.pick({
@@ -522,6 +523,7 @@ export const notificationsPublicSchema = notificationsSelectSchema.pick({
     data: true,
     actionUrl: true,
     actionLabel: true,
+    banner: true,
 })
 export type Notification = z.infer<typeof notificationsPublicSchema>
 

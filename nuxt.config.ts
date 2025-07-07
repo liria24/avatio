@@ -23,6 +23,7 @@ export default defineNuxtConfig({
         '@nuxtjs/mdc',
         '@nuxtjs/robots',
         '@nuxtjs/sitemap',
+        '@pinia/nuxt',
         '@stefanobartoletti/nuxt-social-share',
         '@vueuse/nuxt',
         'nuxt-link-checker',
@@ -52,6 +53,7 @@ export default defineNuxtConfig({
     },
 
     routeRules: {
+        '/faq': { prerender: import.meta.dev ? false : true },
         '/terms': { prerender: import.meta.dev ? false : true },
         '/privacy-policy': { prerender: import.meta.dev ? false : true },
         '/api/__sitemap__/urls': { isr: 60 * 60 * 6 },

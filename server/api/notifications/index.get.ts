@@ -1,65 +1,85 @@
 import database from '@@/database'
 import { notifications } from '@@/database/schema'
-import { and, eq, isNotNull, isNull } from 'drizzle-orm'
+import type { Notification } from '@@/shared/types'
+import { and, eq, isNull } from 'drizzle-orm'
 import { z } from 'zod/v4'
 
+interface ApiResponse {
+    data: Notification[]
+    unread: number
+}
+
 const query = z.object({
-    read: z.union([z.boolean(), z.stringbool()]).optional().default(true),
-    unread: z.union([z.boolean(), z.stringbool()]).optional().default(true),
+    status: z
+        .union([
+            z.enum(['read', 'unread']),
+            z.array(z.enum(['read', 'unread'])),
+        ])
+        .transform((value) => (Array.isArray(value) ? value : [value]))
+        .optional()
+        .default(['unread', 'read']),
 })
 
-export default defineApi(
+export default defineApi<ApiResponse>(
     async (session) => {
-        const { read, unread } = await validateQuery(query)
+        const { status } = await validateQuery(query)
+        const userId = session!.user.id
 
-        const data = await database.query.notifications.findMany({
-            extras: () => {
-                const conditions = [eq(notifications.userId, session.user.id)]
+        const [unreadCount, data] = await Promise.all([
+            database.$count(
+                notifications,
+                and(
+                    eq(notifications.userId, userId),
+                    isNull(notifications.readAt)
+                )
+            ),
+            database.query.notifications.findMany({
+                orderBy: (notifications, { desc }) =>
+                    desc(notifications.createdAt),
+                where: (table, { eq, and, isNotNull, isNull }) => {
+                    const conditions = [eq(table.userId, userId)]
 
-                if (read && !unread)
-                    conditions.push(isNotNull(notifications.readAt))
-                else if (!read && unread)
-                    conditions.push(isNull(notifications.readAt))
-                else if (!read && !unread)
-                    conditions.push(isNull(notifications.id))
+                    const hasRead = status.includes('read')
+                    const hasUnread = status.includes('unread')
 
-                return {
-                    count: database
-                        .$count(notifications, and(...conditions))
-                        .as('count'),
-                }
-            },
-            orderBy: (notifications, { desc }) => desc(notifications.createdAt),
-            where: (table, { eq, and, isNotNull, isNull }) => {
-                const conditions = [eq(table.userId, session.user.id)]
+                    if (hasRead && !hasUnread)
+                        conditions.push(isNotNull(table.readAt))
+                    else if (!hasRead && hasUnread)
+                        conditions.push(isNull(table.readAt))
+                    else if (!hasRead && !hasUnread)
+                        conditions.push(isNull(table.id))
 
-                if (read && !unread) conditions.push(isNotNull(table.readAt))
-                else if (!read && unread) conditions.push(isNull(table.readAt))
-                else if (!read && !unread) conditions.push(isNull(table.id))
-
-                return and(...conditions)
-            },
-            columns: {
-                id: true,
-                createdAt: true,
-                type: true,
-                readAt: true,
-                title: true,
-                message: true,
-                data: true,
-                actionUrl: true,
-                actionLabel: true,
-            },
-        })
+                    return and(...conditions)
+                },
+                columns: {
+                    id: true,
+                    createdAt: true,
+                    type: true,
+                    readAt: true,
+                    title: true,
+                    message: true,
+                    data: true,
+                    actionUrl: true,
+                    actionLabel: true,
+                    banner: true,
+                },
+            }),
+        ])
 
         return {
             data: data.map((notification) => ({
-                ...notification,
+                id: notification.id,
                 createdAt: notification.createdAt.toISOString(),
+                type: notification.type,
                 readAt: notification.readAt?.toISOString() || null,
+                title: notification.title,
+                message: notification.message,
                 data: notification.data ? JSON.parse(notification.data) : null,
+                actionUrl: notification.actionUrl,
+                actionLabel: notification.actionLabel,
+                banner: notification.banner,
             })),
-            total: data[0]?.count || 0,
+            unread: Number(unreadCount),
         }
     },
     {

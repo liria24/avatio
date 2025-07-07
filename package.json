@@ -22,6 +22,7 @@
         "@nuxtjs/mdc": "0.17.0",
         "@nuxtjs/robots": "5.3.0",
         "@nuxtjs/sitemap": "7.4.3",
+        "@pinia/nuxt": "0.11.1",
         "@stefanobartoletti/nuxt-social-share": "1.2.3",
         "@supabase/supabase-js": "^2.50.3",
         "@tailwindcss/vite": "^4.1.11",
@@ -29,7 +30,7 @@
         "@typescript-eslint/parser": "^8.35.1",
         "@vercel/analytics": "^1.5.0",
         "@vercel/edge-config": "^1.4.0",
-        "@yeger/vue-masonry-wall": "^5.0.20",
+        "@yeger/vue-masonry-wall": "^5.0.21",
         "aws4fetch": "^1.0.20",
         "better-auth": "^1.2.12",
         "budoux": "^0.7.0",
@@ -43,6 +44,7 @@
         "nuxt-link-checker": "4.3.1",
         "nuxt-schema-org": "5.0.6",
         "nuxt-seo-utils": "7.0.12",
+        "pinia": "^3.0.3",
         "sanitize-html": "^2.17.0",
         "tailwind-merge": "^3.3.1",
         "tailwindcss": "^4.1.11",
@@ -51,10 +53,10 @@
         "vue-advanced-cropper": "^2.8.9",
         "vue-draggable-plus": "^0.6.0",
         "vue-router": "^4.5.1",
-        "zod": "^3.25.71"
+        "zod": "^3.25.74"
     },
     "devDependencies": {
-        "@iconify-json/lucide": "^1.2.54",
+        "@iconify-json/lucide": "^1.2.55",
         "@iconify-json/mingcute": "^1.2.3",
         "@iconify-json/simple-icons": "^1.2.41",
         "@iconify-json/svg-spinners": "^1.2.2",
@@ -68,6 +70,9 @@
         "prettier": "^3.6.2",
         "prettier-plugin-organize-imports": "^4.1.0",
         "prettier-plugin-tailwindcss": "^0.6.13"
+    },
+    "overrides": {
+        "vue": "latest"
     },
     "engines": {
         "node": "22.x"
