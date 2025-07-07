@@ -265,7 +265,7 @@ if (data.value) {
                                     variant: 'soft',
                                     onClick: () => {
                                         navigateTo(
-                                            'https://github.com/liria24/avatio/issues/new/choose',
+                                            'https://github.com/liria24/avatio/issues/new?template=%F0%9F%9A%A7-bug-report.md',
                                             {
                                                 external: true,
                                                 open: { target: '_blank' },

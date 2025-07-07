@@ -504,20 +504,14 @@ export const feedbacks = feedbackSchema.table(
     {
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
         createdAt: timestamp('created_at').defaultNow().notNull(),
-        userId: text('user_id').notNull(),
+        fingerprint: text('fingerprint').notNull(),
         comment: text().notNull(),
+        contextPath: text('context_path'),
         isClosed: boolean('is_closed').default(false).notNull(),
     },
     (table) => [
         index('feedbacks_id_index').on(table.id),
-        index('feedbacks_user_id_index').on(table.userId),
-        foreignKey({
-            name: 'feedbacks_user_id_fkey',
-            columns: [table.userId],
-            foreignColumns: [user.id],
-        })
-            .onDelete('cascade')
-            .onUpdate('cascade'),
+        index('feedbacks_fingerprint_index').on(table.fingerprint),
     ]
 )
 
@@ -659,7 +653,6 @@ export const userRelations = relations(user, ({ many }) => ({
     bookmarks: many(bookmarks),
     setupCoauthors: many(setupCoauthors),
     setupReports: many(setupReports),
-    feedbacks: many(feedbacks),
     userReports: many(userReports),
     auditLogs: many(auditLogs),
     changelogs: many(changelogAuthors),
@@ -806,13 +799,6 @@ export const bookmarksRelations = relations(bookmarks, ({ one }) => ({
     setup: one(setups, {
         fields: [bookmarks.setupId],
         references: [setups.id],
-    }),
-}))
-
-export const feedbacksRelations = relations(feedbacks, ({ one }) => ({
-    user: one(user, {
-        fields: [feedbacks.userId],
-        references: [user.id],
     }),
 }))
 

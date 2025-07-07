@@ -53,7 +53,6 @@ const Submit = async () => {
             color: 'success',
         })
 
-        submitting.value = false
         open.value = false
         state.reportReason = []
         state.comment = ''
@@ -66,6 +65,8 @@ const Submit = async () => {
                     : '不明なエラーが発生しました',
             color: 'error',
         })
+    } finally {
+        submitting.value = false
     }
 }
 </script>

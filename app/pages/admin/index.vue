@@ -117,53 +117,76 @@ const { data } = useFetch<PaginationResponse<AuditLog[]>>(
 <template>
     <div class="flex w-full flex-col gap-6">
         <h1 class="font-[Geist] text-3xl text-nowrap">Admin Console</h1>
-        <div v-if="data" class="flex flex-col gap-4">
-            <UAlert
-                v-for="log in data.data"
-                :key="`log-${log.id}`"
-                :icon="auditLogAttributes[log.action].icon"
-                :color="auditLogAttributes[log.action].color"
-                variant="subtle"
-                :ui="{
-                    wrapper: 'gap-2',
-                }"
-            >
-                <template #title>
-                    <div class="flex w-full items-center justify-between gap-2">
-                        <span class="font-medium">
-                            {{ auditLogAttributes[log.action].label }}
-                        </span>
 
-                        <NuxtTime
-                            :datetime="log.createdAt"
-                            relative
-                            class="text-muted text-xs"
-                        />
-                    </div>
-                </template>
+        <UCard>
+            <template #header>
+                <div class="flex items-center justify-between gap-3">
+                    <h2 class="text-xl font-semibold text-nowrap">変更履歴</h2>
+                    <UButton
+                        to="/admin/changelogs/compose"
+                        icon="lucide:plus"
+                        label="追加"
+                        color="neutral"
+                    />
+                </div>
+            </template>
+        </UCard>
 
-                <template #description>
-                    <div class="flex flex-col gap-3">
-                        <p class="text-toned">{{ log.details }}</p>
+        <UCard>
+            <template #header>
+                <h2 class="text-xl font-semibold text-nowrap">監査ログ</h2>
+            </template>
 
-                        <NuxtLink
-                            v-if="log.user"
-                            :to="`/@${log.user.id}`"
-                            class="text-muted flex items-center gap-2"
+            <div v-if="data" class="flex flex-col gap-4">
+                <UAlert
+                    v-for="log in data.data"
+                    :key="`log-${log.id}`"
+                    :icon="auditLogAttributes[log.action].icon"
+                    :color="auditLogAttributes[log.action].color"
+                    variant="subtle"
+                    :ui="{
+                        wrapper: 'gap-2',
+                    }"
+                >
+                    <template #title>
+                        <div
+                            class="flex w-full items-center justify-between gap-2"
                         >
-                            <UAvatar
-                                :src="log.user.image || undefined"
-                                :alt="log.user.name"
-                                icon="lucide:user-round"
-                                size="2xs"
-                            />
-                            <span class="text-xs font-medium">
-                                {{ log.user.name }}
+                            <span class="font-medium">
+                                {{ auditLogAttributes[log.action].label }}
                             </span>
-                        </NuxtLink>
-                    </div>
-                </template>
-            </UAlert>
-        </div>
+
+                            <NuxtTime
+                                :datetime="log.createdAt"
+                                relative
+                                class="text-muted text-xs"
+                            />
+                        </div>
+                    </template>
+
+                    <template #description>
+                        <div class="flex flex-col gap-3">
+                            <p class="text-toned">{{ log.details }}</p>
+
+                            <NuxtLink
+                                v-if="log.user"
+                                :to="`/@${log.user.id}`"
+                                class="text-muted flex items-center gap-2"
+                            >
+                                <UAvatar
+                                    :src="log.user.image || undefined"
+                                    :alt="log.user.name"
+                                    icon="lucide:user-round"
+                                    size="2xs"
+                                />
+                                <span class="text-xs font-medium">
+                                    {{ log.user.name }}
+                                </span>
+                            </NuxtLink>
+                        </div>
+                    </template>
+                </UAlert>
+            </div>
+        </UCard>
     </div>
 </template>

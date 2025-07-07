@@ -4,6 +4,7 @@ import { z } from 'zod/v4'
 const open = defineModel<boolean>('open', { default: false })
 
 const toast = useToast()
+const route = useRoute()
 
 const submitting = ref(false)
 
@@ -25,6 +26,7 @@ const Submit = async () => {
             method: 'POST',
             body: {
                 comment: state.comment,
+                contextPath: route.fullPath,
             },
         })
         toast.add({
@@ -33,7 +35,6 @@ const Submit = async () => {
             color: 'success',
         })
 
-        submitting.value = false
         open.value = false
         state.comment = ''
     } catch (error) {
@@ -45,6 +46,8 @@ const Submit = async () => {
                     : '不明なエラーが発生しました',
             color: 'error',
         })
+    } finally {
+        submitting.value = false
     }
 }
 </script>
@@ -83,23 +86,29 @@ const Submit = async () => {
                     </template>
                 </UFormField>
 
-                <USeparator />
-
-                <div class="flex w-full items-center justify-end gap-1.5">
-                    <UButton
-                        :disabled="submitting"
-                        label="キャンセル"
-                        variant="ghost"
-                        @click="open = false"
-                    />
-                    <UButton
-                        :loading="submitting"
-                        label="報告"
-                        color="neutral"
-                        @click="Submit()"
-                    />
-                </div>
+                <UAlert
+                    icon="lucide:info"
+                    title="フィードバックは匿名で送信されます"
+                    variant="subtle"
+                />
             </UForm>
+        </template>
+
+        <template #footer>
+            <div class="flex w-full items-center justify-end gap-1.5">
+                <UButton
+                    :disabled="submitting"
+                    label="キャンセル"
+                    variant="ghost"
+                    @click="open = false"
+                />
+                <UButton
+                    :loading="submitting"
+                    label="報告"
+                    color="neutral"
+                    @click="Submit()"
+                />
+            </div>
         </template>
     </UModal>
 </template>
