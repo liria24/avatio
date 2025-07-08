@@ -2,6 +2,11 @@
 import { z } from 'zod/v4'
 import { VueDraggable } from 'vue-draggable-plus'
 
+interface Props {
+    changeUserId?: boolean
+}
+const props = defineProps<Props>()
+
 const session = await useGetSession()
 const toast = useToast()
 
@@ -19,7 +24,7 @@ const ui = reactive({
     imageUploading: false,
     profileUpdating: false,
     idUpdating: false,
-    modalChangeUserId: false,
+    modalChangeUserId: props.changeUserId || false,
     modalCropImage: false,
     newIdCheckState: 'idle' as
         | 'idle'

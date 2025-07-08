@@ -229,6 +229,7 @@ export default defineApi<PaginationResponse<Setup[]>>(
                                 platform: true,
                                 category: true,
                                 name: true,
+                                niceName: true,
                                 image: true,
                                 price: true,
                                 likes: true,

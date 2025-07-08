@@ -96,6 +96,7 @@ export default defineApi<Bookmark>(
                                         platform: true,
                                         category: true,
                                         name: true,
+                                        niceName: true,
                                         image: true,
                                         price: true,
                                         likes: true,

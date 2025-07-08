@@ -25,6 +25,7 @@ watchEffect(() => {
 
 defineSeo({
     title: 'ブックマーク',
+    description: 'あなたがブックマークしたセットアップを確認できます。',
 })
 </script>
 

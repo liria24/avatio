@@ -118,6 +118,15 @@ watch(open, (isOpen) => {
                                 class="text-muted p-1 text-xs leading-none text-nowrap"
                             />
                         </div>
+
+                        <div v-if="notification.message?.length">
+                            <p
+                                :data-unread="!notification.readAt"
+                                class="text-dimmed data-[unread=true]:text-muted grow px-1 text-left text-xs wrap-anywhere break-keep"
+                                v-html="useLineBreak(notification.message)"
+                            />
+                        </div>
+
                         <div
                             class="flex w-full items-center justify-end-safe gap-2 empty:hidden"
                         >

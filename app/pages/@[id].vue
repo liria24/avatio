@@ -189,7 +189,7 @@ if (data.value) {
                     :to="`https://${shop.shop.id}.booth.pm`"
                     target="_blank"
                     variant="soft"
-                    class="gap-2 p-3"
+                    class="gap-3 p-3"
                 >
                     <NuxtImg
                         v-slot="{ isLoaded, src, imgAttrs }"
@@ -199,13 +199,9 @@ if (data.value) {
                         :height="32"
                         format="webp"
                         fit="cover"
+                        class="aspect-square size-8 shrink-0 rounded-lg object-cover"
                     >
-                        <img
-                            v-if="isLoaded"
-                            v-bind="imgAttrs"
-                            :src="src"
-                            class="ring-accented aspect-square size-8 shrink-0 rounded-lg object-cover ring-1"
-                        />
+                        <img v-if="isLoaded" v-bind="imgAttrs" :src="src" />
                         <USkeleton
                             v-else
                             class="aspect-square size-8 shrink-0 rounded-lg"

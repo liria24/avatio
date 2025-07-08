@@ -133,7 +133,7 @@ const { data: repo } = useFetch<{ repo: GithubRepo }>(
 
                     <UButton
                         :to="$localePath('/privacy-policy')"
-                        label="プライバシーポリシー"
+                        label="プライバシー"
                         variant="link"
                         size="sm"
                     />

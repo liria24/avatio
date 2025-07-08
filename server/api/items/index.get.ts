@@ -1,6 +1,7 @@
 import database from '@@/database'
 import { items, setupItems, setups } from '@@/database/schema'
-import { eq, type SQL } from 'drizzle-orm'
+import type { SQL } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { z } from 'zod/v4'
 
 const query = z.object({
@@ -79,6 +80,7 @@ export default defineApi<PaginationResponse<Item[]>>(
                 platform: true,
                 category: true,
                 name: true,
+                niceName: true,
                 image: true,
                 price: true,
                 likes: true,
@@ -97,18 +99,19 @@ export default defineApi<PaginationResponse<Item[]>>(
             },
         })
 
-        const result = data.map((setup) => ({
-            id: setup.id,
-            createdAt: setup.createdAt.toISOString(),
-            updatedAt: setup.updatedAt.toISOString(),
-            platform: setup.platform,
-            category: setup.category,
-            name: setup.name,
-            image: setup.image,
-            price: setup.price,
-            likes: setup.likes,
-            nsfw: setup.nsfw,
-            shop: setup.shop,
+        const result = data.map((item) => ({
+            id: item.id,
+            createdAt: item.createdAt.toISOString(),
+            updatedAt: item.updatedAt.toISOString(),
+            platform: item.platform,
+            category: item.category,
+            name: item.name,
+            niceName: item.niceName,
+            image: item.image,
+            price: item.price,
+            likes: item.likes,
+            nsfw: item.nsfw,
+            shop: item.shop,
         }))
 
         return {

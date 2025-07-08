@@ -166,7 +166,12 @@ watch(
     }
 )
 
-await search()
+await callOnce(search)
+
+defineSeo({
+    title: 'セットアップ検索',
+    description: '条件を指定してセットアップを検索できます。',
+})
 </script>
 
 <template>

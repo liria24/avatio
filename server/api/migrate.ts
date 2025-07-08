@@ -2,6 +2,7 @@ import database from '@@/database'
 import {
     account,
     items,
+    notifications,
     setupCoauthors,
     setupImages,
     setupItems,
@@ -10,6 +11,8 @@ import {
     setupTags,
     shops,
     user,
+    userBadges,
+    userShops,
 } from '@@/database/schema'
 import { createClient } from '@supabase/supabase-js'
 
@@ -127,6 +130,34 @@ const migrateFromSupabase = async () => {
             }))
         )
         .onConflictDoNothing()
+    await database.insert(userBadges).values(
+        usersMerged.flatMap((user) =>
+            user.badges.map((badge) => ({
+                userId: user.id,
+                badge: badge.name as UserBadge,
+                createdAt: new Date(badge.created_at),
+            }))
+        )
+    )
+    await database.insert(userShops).values(
+        usersMerged.flatMap((user) =>
+            user.shops.map((shop) => ({
+                userId: user.id,
+                shopId: shop.shop_id,
+                createdAt: new Date(shop.created_at),
+            }))
+        )
+    )
+    await database.insert(notifications).values(
+        usersMerged.map((user) => ({
+            type: 'system_announcement' as const,
+            userId: user.id,
+            title: 'ユーザー ID を変更できるようになりました！',
+            actionUrl: '/settings?changeUserId=true',
+            actionLabel: '変更する',
+            banner: true,
+        }))
+    )
 
     const shopsSupabase = (
         await supabase

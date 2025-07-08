@@ -46,7 +46,7 @@ export default defineNuxtConfig({
         adminKey: '',
         liria: { accessToken: '' },
         r2: { endpoint: '', accessKey: '', secretKey: '' },
-        turnstile: { siteKey: '', secretKey: '' },
+        ai: { gateway: { apiKey: '' } },
         public: {
             r2: { domain: '' },
         },

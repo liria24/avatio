@@ -1,6 +1,10 @@
 <script lang="ts" setup>
 const { $authClient } = useNuxtApp()
 const session = await useGetSession()
+const route = useRoute()
+
+const query = route.query
+const changeUserId = query.changeUserId
 
 if (!session.value) navigateTo('/login')
 
@@ -9,13 +13,19 @@ const modalDeleteUser = ref(false)
 const deleteUser = async () => {
     await $authClient.deleteUser({ callbackURL: '/' })
 }
+
+defineSeo({
+    title: 'ユーザー設定',
+    description:
+        'ユーザープロフィールの編集や、アカウントに関する操作を行うことができます。',
+})
 </script>
 
 <template>
     <div class="flex flex-col gap-6">
         <h1 class="text-lg font-medium text-nowrap">ユーザー設定</h1>
 
-        <SettingProfile />
+        <SettingProfile :change-user-id="!!changeUserId" />
 
         <UCard variant="soft">
             <template #header>

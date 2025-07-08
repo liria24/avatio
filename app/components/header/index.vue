@@ -82,7 +82,7 @@ const menuItems = ref<DropdownMenuItem[][]>([
     <header class="flex w-full items-center justify-between gap-6">
         <div class="flex items-center gap-3">
             <NuxtLinkLocale to="/">
-                <LogoAvatio class="w-24 sm:w-32" aria-label="Avatio" />
+                <LogoAvatio class="w-24 sm:w-28" aria-label="Avatio" />
             </NuxtLinkLocale>
 
             <UButton

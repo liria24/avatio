@@ -22,6 +22,7 @@ export default defineApi<Item[]>(
                 platform: items.platform,
                 category: items.category,
                 name: items.name,
+                niceName: items.niceName,
                 image: items.image,
                 price: items.price,
                 likes: items.likes,

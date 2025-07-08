@@ -49,6 +49,7 @@ export default defineApi<UserWithSetups>(
                 },
                 setups: {
                     where: (setup, { isNull }) => isNull(setup.hidAt),
+                    orderBy: (setup, { desc }) => desc(setup.createdAt),
                     columns: {
                         id: true,
                         createdAt: true,
@@ -72,6 +73,7 @@ export default defineApi<UserWithSetups>(
                                         platform: true,
                                         category: true,
                                         name: true,
+                                        niceName: true,
                                         image: true,
                                         price: true,
                                         likes: true,
@@ -199,15 +201,7 @@ export default defineApi<UserWithSetups>(
                 name: setup.name,
                 description: setup.description,
                 items: setup.items?.map((item) => ({
-                    id: item.item.id,
-                    category: item.item.category,
-                    platform: item.item.platform,
-                    name: item.item.name,
-                    image: item.item.image,
-                    price: item.item.price,
-                    likes: item.item.likes,
-                    nsfw: item.item.nsfw,
-                    shop: item.item.shop,
+                    ...item.item,
                     unsupported: item.unsupported,
                     note: item.note,
                     shapekeys: item.shapekeys?.map((shapekey) => ({

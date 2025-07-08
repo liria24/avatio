@@ -1,6 +1,5 @@
 <script lang="ts" setup>
 interface Props {
-    noUser?: boolean
     setup: Setup
     class?: string | string[] | null
 }
@@ -23,6 +22,7 @@ const firstAvatar = computed(() =>
 
 const avatarName = computed(() => {
     if (!firstAvatar.value) return '不明なベースアバター'
+    if (firstAvatar.value.niceName?.length) return firstAvatar.value.niceName
     return avatarShortName(firstAvatar.value.name)
 })
 
@@ -227,7 +227,55 @@ const linkClasses = computed(() => {
             </div>
 
             <div
-                v-if="!props.setup.images?.length"
+                v-if="props.setup.images?.length"
+                class="flex w-full items-center justify-end gap-2 px-2 pb-2"
+            >
+                <UTooltip :text="dateLocale" :delay-duration="0">
+                    <NuxtTime
+                        :datetime="date"
+                        relative
+                        class="text-muted text-xs whitespace-nowrap"
+                    />
+                </UTooltip>
+
+                <UPopover mode="hover">
+                    <UAvatar
+                        :src="setup.user.image || undefined"
+                        :alt="setup.user.name"
+                        icon="lucide:user-round"
+                        aria-hidden="true"
+                        size="2xs"
+                    />
+
+                    <template #content>
+                        <NuxtLink
+                            :to="`/@${props.setup.user.id}`"
+                            class="flex items-center gap-3 py-2 pr-3 pl-2"
+                        >
+                            <UAvatar
+                                :src="props.setup.user.image || undefined"
+                                :alt="props.setup.user.name"
+                                icon="lucide:user-round"
+                                class="size-10"
+                            />
+                            <div class="flex flex-wrap gap-2">
+                                <span
+                                    class="text-toned text-sm leading-none font-semibold"
+                                >
+                                    {{ props.setup.user.name }}
+                                </span>
+                                <UserBadges
+                                    v-if="props.setup.user.badges?.length"
+                                    :badges="props.setup.user.badges"
+                                    size="xs"
+                                />
+                            </div>
+                        </NuxtLink>
+                    </template>
+                </UPopover>
+            </div>
+            <div
+                v-else
                 class="flex w-full flex-col items-start justify-center gap-2 pr-2 pl-3"
             >
                 <span
@@ -236,7 +284,7 @@ const linkClasses = computed(() => {
                 />
 
                 <div class="flex items-center gap-2">
-                    <UPopover v-if="!props.noUser" mode="hover">
+                    <UPopover mode="hover">
                         <UAvatar
                             :src="props.setup.user.image || undefined"
                             :alt="props.setup.user.name"
@@ -280,55 +328,6 @@ const linkClasses = computed(() => {
                         />
                     </UTooltip>
                 </div>
-            </div>
-
-            <div
-                v-else
-                class="flex w-full items-center justify-end gap-2 px-2 pb-2"
-            >
-                <UTooltip :text="dateLocale" :delay-duration="0">
-                    <NuxtTime
-                        :datetime="date"
-                        relative
-                        class="text-muted text-xs whitespace-nowrap"
-                    />
-                </UTooltip>
-
-                <UPopover v-if="!props.noUser" mode="hover">
-                    <UAvatar
-                        :src="setup.user.image || undefined"
-                        :alt="setup.user.name"
-                        icon="lucide:user-round"
-                        aria-hidden="true"
-                        size="2xs"
-                    />
-
-                    <template #content>
-                        <NuxtLink
-                            :to="`/@${props.setup.user.id}`"
-                            class="flex items-center gap-3 py-2 pr-3 pl-2"
-                        >
-                            <UAvatar
-                                :src="props.setup.user.image || undefined"
-                                :alt="props.setup.user.name"
-                                icon="lucide:user-round"
-                                class="size-10"
-                            />
-                            <div class="flex flex-wrap gap-2">
-                                <span
-                                    class="text-toned text-sm leading-none font-semibold"
-                                >
-                                    {{ props.setup.user.name }}
-                                </span>
-                                <UserBadges
-                                    v-if="props.setup.user.badges?.length"
-                                    :badges="props.setup.user.badges"
-                                    size="xs"
-                                />
-                            </div>
-                        </NuxtLink>
-                    </template>
-                </UPopover>
             </div>
         </div>
     </NuxtLink>

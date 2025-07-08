@@ -29,16 +29,20 @@ const items = computed<TimelineItem[]>(() =>
         title: item.title,
         description: item.html,
         slug: item.slug,
+        authors: item.authors,
+        icon: 'lucide:check',
     }))
 )
+
+defineSeo({
+    title: '変更履歴',
+    description: 'Avatio の変更履歴を確認できます。',
+})
 </script>
 
 <template>
-    <div class="flex w-full grid-cols-2 flex-col gap-6 pt-8 lg:grid">
-        <div class="flex flex-col gap-4">
-            <h1 class="text-3xl font-bold">変更履歴</h1>
-            <p class="text-muted"></p>
-        </div>
+    <div class="flex w-full flex-col gap-12 pt-8">
+        <h1 class="text-5xl font-bold">変更履歴</h1>
 
         <UTimeline
             :items="items"
@@ -47,11 +51,11 @@ const items = computed<TimelineItem[]>(() =>
             :ui="{
                 item: 'gap-8',
                 container: 'pt-2',
-                wrapper: 'space-y-4',
+                wrapper: 'space-y-4 pb-28',
                 description: 'pl-0.5',
                 date: 'float-end',
             }"
-            class="w-full max-w-2xl self-center lg:self-auto"
+            class="w-full self-center"
         >
             <template #title="{ item }">
                 <NuxtLink
@@ -63,10 +67,29 @@ const items = computed<TimelineItem[]>(() =>
             </template>
 
             <template #description="{ item }">
-                <div
-                    class="prose prose-zinc dark:prose-invert prose-sm"
-                    v-html="item.description"
-                />
+                <div class="flex flex-col gap-4">
+                    <UAvatarGroup>
+                        <ULink
+                            v-for="author in item.authors"
+                            :key="author.id"
+                            :to="`/@${author.id}`"
+                            raw
+                        >
+                            <UTooltip :text="author.name" :delay-duration="100">
+                                <UAvatar
+                                    :src="author.image"
+                                    :alt="author.name"
+                                    size="xs"
+                                />
+                            </UTooltip>
+                        </ULink>
+                    </UAvatarGroup>
+
+                    <div
+                        class="prose prose-zinc dark:prose-invert prose-sm prose-img:rounded-xl prose-img:max-w-xl w-full max-w-full"
+                        v-html="item.description"
+                    />
+                </div>
             </template>
 
             <template #date="{ item }">

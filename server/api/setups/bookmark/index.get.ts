@@ -1,6 +1,7 @@
 import database from '@@/database'
 import { bookmarks, setupTags, setups, user } from '@@/database/schema'
-import { eq, type SQL } from 'drizzle-orm'
+import type { SQL } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { z } from 'zod/v4'
 
 const query = z.object({
@@ -195,6 +196,7 @@ export default defineApi<PaginationResponse<Bookmark[]>>(
                                         platform: true,
                                         category: true,
                                         name: true,
+                                        niceName: true,
                                         image: true,
                                         price: true,
                                         likes: true,
@@ -306,41 +308,28 @@ export default defineApi<PaginationResponse<Bookmark[]>>(
                 hidAt: bookmark.setup.hidAt?.toISOString() || null,
                 hidReason: bookmark.setup.hidReason,
                 user: {
-                    id: bookmark.setup.user.id,
+                    ...bookmark.setup.user,
                     createdAt: bookmark.setup.user.createdAt.toISOString(),
-                    name: bookmark.setup.user.name,
-                    image: bookmark.setup.user.image,
-                    bio: bookmark.setup.user.bio,
-                    links: bookmark.setup.user.links,
                     badges: bookmark.setup.user.badges.map((badge) => ({
-                        badge: badge.badge,
+                        ...badge,
                         createdAt: badge.createdAt.toISOString(),
                     })),
                     shops: bookmark.setup.user.shops.map((shop) => ({
-                        id: shop.id,
+                        ...shop,
                         createdAt: shop.createdAt.toISOString(),
-                        shop: shop.shop,
                     })),
                 },
                 name: bookmark.setup.name,
                 description: bookmark.setup.description,
                 items: bookmark.setup.items.map((item) => ({
-                    id: item.item.id,
+                    ...item.item,
                     updatedAt: item.item.updatedAt.toISOString(),
-                    platform: item.item.platform,
-                    category: item.item.category,
-                    name: item.item.name,
-                    image: item.item.image,
-                    price: item.item.price,
-                    likes: item.item.likes,
-                    nsfw: item.item.nsfw,
-                    shop: item.item.shop,
                     unsupported: item.unsupported,
+                    note: item.note,
                     shapekeys: item.shapekeys.map((shapekey) => ({
                         name: shapekey.name,
                         value: shapekey.value,
                     })),
-                    note: item.note,
                 })),
                 images: bookmark.setup.images,
                 tags: bookmark.setup.tags.map((tag) => tag.tag),

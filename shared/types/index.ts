@@ -143,6 +143,7 @@ export const itemsPublicSchema = itemsSelectSchema
         platform: true,
         category: true,
         name: true,
+        niceName: true,
         image: true,
         price: true,
         likes: true,

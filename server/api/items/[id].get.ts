@@ -4,6 +4,8 @@ import { consola } from 'consola'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod/v4'
 
+const config = useRuntimeConfig()
+
 const params = z.object({
     id: z.string(),
 })
@@ -86,6 +88,7 @@ const getCachedItem = async (id: string) => {
                     id: true,
                     updatedAt: true,
                     name: true,
+                    niceName: true,
                     image: true,
                     category: true,
                     price: true,
@@ -305,6 +308,7 @@ const processBoothItem = (
         platform: 'booth',
         category,
         name: boothData.name,
+        niceName: null,
         image: imageUrl,
         price,
         likes: Number(boothData.wish_lists_count) || 0,
@@ -317,6 +321,17 @@ const processBoothItem = (
             verified: Boolean(boothData.shop.verified),
         },
     }
+}
+
+const defineNiceName = async (name: string) => {
+    const result = await useEvent().$fetch('/api/items/extract-item-name', {
+        headers: { authorization: `Bearer ${config.adminKey}` },
+        query: { item: name },
+    })
+    await database
+        .update(items)
+        .set({ niceName: result })
+        .where(eq(items.name, name))
 }
 
 export default defineApi<Item>(
@@ -343,6 +358,13 @@ export default defineApi<Item>(
                     statusMessage: 'Item not found or processing failed',
                 })
             }
+
+            defineNiceName(result.name).catch((error) => {
+                consola.error(
+                    `Failed to define nice name for item ${id}:`,
+                    error
+                )
+            })
 
             consola.log(`Item ${id} processed successfully`)
             return result

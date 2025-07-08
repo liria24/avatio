@@ -25,23 +25,35 @@ const onRead = async (id: string) => {
 <template>
     <div
         v-if="visible"
-        class="ring-accented flex items-center gap-3 rounded-lg p-1.5 ring-1"
+        class="ring-accented flex items-center gap-3 rounded-lg p-2 ring-1"
     >
-        <NuxtLink
+        <div
             v-if="props.data.actionUrl && !props.data.actionLabel"
-            :to="$localePath(props.data.actionUrl)"
-            class="grow pl-2"
+            class="flex grow flex-col gap-1 pl-2"
         >
+            <NuxtLink :to="$localePath(props.data.actionUrl)">
+                <p
+                    class="text-toned text-xs wrap-anywhere break-keep"
+                    v-html="useLineBreak(props.data.title)"
+                />
+            </NuxtLink>
+            <p
+                v-if="props.data.message?.length"
+                class="text-muted text-xs wrap-anywhere break-keep"
+                v-html="useLineBreak(props.data.message)"
+            />
+        </div>
+        <div v-else class="flex grow flex-col gap-1 pl-2">
             <p
                 class="text-toned text-xs wrap-anywhere break-keep"
                 v-html="useLineBreak(props.data.title)"
             />
-        </NuxtLink>
-        <p
-            v-else
-            class="text-toned grow pl-2 text-xs wrap-anywhere break-keep"
-            v-html="useLineBreak(props.data.title)"
-        />
+            <p
+                v-if="props.data.message?.length"
+                class="text-muted text-xs wrap-anywhere break-keep"
+                v-html="useLineBreak(props.data.message)"
+            />
+        </div>
 
         <UButton
             v-if="props.data.actionUrl && props.data.actionLabel"
@@ -57,7 +69,6 @@ const onRead = async (id: string) => {
             icon="lucide:x"
             variant="ghost"
             size="sm"
-            class="place-self-end"
             @click="onRead(props.data.id)"
         />
     </div>

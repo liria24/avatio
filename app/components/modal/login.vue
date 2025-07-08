@@ -116,7 +116,7 @@ onUnmounted(() => {
                 <UButton
                     :to="localePath('/privacy-policy')"
                     target="_blank"
-                    label="プライバシーポリシー"
+                    label="プライバシー"
                     variant="link"
                     size="sm"
                     color="neutral"

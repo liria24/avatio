@@ -149,6 +149,13 @@ const onSubmit = async () => {
         publishing.value = false
     }
 }
+
+defineSeo({
+    title: editingSetupId.value ? 'セットアップを編集' : 'セットアップを投稿',
+    description: editingSetupId.value
+        ? 'セットアップの編集を行います。'
+        : '新しいセットアップを投稿します。',
+})
 </script>
 
 <template>

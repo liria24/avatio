@@ -9,8 +9,8 @@ definePageMeta({
     }),
 })
 defineSeo({
-    title: 'Login',
-    description: 'Login to your account.',
+    title: 'ログイン',
+    description: 'ユーザーアカウントにログインします。',
 })
 </script>
 

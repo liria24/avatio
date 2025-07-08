@@ -261,6 +261,7 @@ export const items = pgTable(
         outdated: boolean().default(false).notNull(),
         shopId: text('shop_id').notNull(),
         name: text().notNull(),
+        niceName: text('nice_name'),
         category: itemCategory().notNull(),
         image: text(),
         price: text().notNull(),
