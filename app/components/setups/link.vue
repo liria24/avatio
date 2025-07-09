@@ -209,6 +209,7 @@ const linkClasses = computed(() => {
                     :height="80"
                     format="webp"
                     loading="lazy"
+                    custom
                     class="m-1 aspect-square size-14 shrink-0 rounded-lg object-cover md:size-20"
                 >
                     <img v-if="isLoaded" v-bind="imgAttrs" :src="src" />

@@ -31,7 +31,7 @@ const copy = (key: { name: string; value: number }) => {
     <div
         :class="
             cn(
-                'ring-accented relative flex flex-col gap-2 overflow-clip rounded-lg p-2 ring-1',
+                'ring-accented relative flex flex-col gap-2 overflow-clip rounded-xl p-2 ring-1',
                 props.class
             )
         "
@@ -50,13 +50,10 @@ const copy = (key: { name: string; value: number }) => {
                     :height="80"
                     format="webp"
                     :data-nsfw="item.nsfw"
+                    custom
+                    class="aspect-square size-20 shrink-0 rounded-lg object-cover text-xs data-[nsfw=true]:blur-md"
                 >
-                    <img
-                        v-if="isLoaded"
-                        v-bind="imgAttrs"
-                        :src
-                        class="aspect-square size-20 shrink-0 rounded-lg object-cover text-xs data-[nsfw=true]:blur-md"
-                    />
+                    <img v-if="isLoaded" v-bind="imgAttrs" :src />
                     <USkeleton
                         v-else
                         class="aspect-square size-20 shrink-0 rounded-lg text-xs"
@@ -94,6 +91,7 @@ const copy = (key: { name: string; value: number }) => {
                                     :height="20"
                                     format="webp"
                                     loading="lazy"
+                                    custom
                                     class="ring-accented aspect-square size-5 shrink-0 rounded-sm object-cover ring-1"
                                 >
                                     <img
@@ -132,6 +130,7 @@ const copy = (key: { name: string; value: number }) => {
                                         :width="40"
                                         :height="40"
                                         format="webp"
+                                        custom
                                         class="aspect-square size-10 shrink-0 rounded-md object-cover"
                                     >
                                         <img

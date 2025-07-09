@@ -354,13 +354,10 @@ defineSeo({
                         format="webp"
                         fit="cover"
                         loading="lazy"
+                        custom
+                        class="aspect-square shrink-0 rounded-lg object-cover"
                     >
-                        <img
-                            v-if="isLoaded"
-                            v-bind="imgAttrs"
-                            :src="src"
-                            class="aspect-square shrink-0 rounded-lg object-cover"
-                        />
+                        <img v-if="isLoaded" v-bind="imgAttrs" :src="src" />
                         <USkeleton
                             v-else
                             class="aspect-square shrink-0 rounded-lg object-cover"

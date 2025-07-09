@@ -50,12 +50,12 @@ const { data: repo } = useFetch<{ repo: GithubRepo }>(
                                 :height="48"
                                 format="webp"
                                 custom
+                                class="aspect-square size-12 rounded-lg object-cover"
                             >
                                 <img
                                     v-if="isLoaded"
                                     v-bind="imgAttrs"
                                     :src="src"
-                                    class="aspect-square size-12 rounded-lg object-cover"
                                 />
                                 <USkeleton
                                     v-else

@@ -67,13 +67,9 @@ if (data.value) {
                         :height="80"
                         format="webp"
                         custom
+                        class="aspect-square size-14 shrink-0 rounded-full object-cover sm:size-20"
                     >
-                        <img
-                            v-if="isLoaded"
-                            v-bind="imgAttrs"
-                            :src="src"
-                            class="aspect-square size-14 shrink-0 rounded-full object-cover sm:size-20"
-                        />
+                        <img v-if="isLoaded" v-bind="imgAttrs" :src="src" />
                         <USkeleton
                             v-else
                             class="aspect-square size-14 shrink-0 rounded-full sm:size-20"
@@ -199,6 +195,7 @@ if (data.value) {
                         :height="32"
                         format="webp"
                         fit="cover"
+                        custom
                         class="aspect-square size-8 shrink-0 rounded-lg object-cover"
                     >
                         <img v-if="isLoaded" v-bind="imgAttrs" :src="src" />

@@ -5,54 +5,49 @@ import { z } from 'zod/v4'
 
 const config = useRuntimeConfig()
 
-const checkCronAuth = async (
-    session: Session | null | undefined
-): Promise<void> => {
+/**
+ * 認証権限をチェックする汎用関数
+ */
+const checkAuth = (
+    session: Session | null | undefined,
+    options: {
+        requireAdmin?: boolean
+        requireCron?: boolean
+    }
+): void => {
     const { authorization } = getHeaders(useEvent())
 
-    const isCronValid = authorization === `Bearer ${process.env.CRON_SECRET}`
-    const isAdminUser =
+    // 権限チェック
+    const isAdmin =
         session?.user?.role === 'admin' ||
         authorization === `Bearer ${config.adminKey}`
+    const isCronValid = authorization === `Bearer ${process.env.CRON_SECRET}`
 
-    if (!isCronValid && !isAdminUser)
+    // CRON認証が必要で、CRONとしても管理者としても認証されていない場合
+    if (options.requireCron && !isCronValid && !isAdmin) {
         throw createError({
             statusCode: 401,
             message: 'Unauthorized: Invalid CRON authentication',
         })
-}
+    }
 
-const checkAdminAuth = async (
-    session: Session | null | undefined
-): Promise<void> => {
-    const { authorization } = getHeaders(useEvent())
-
-    const isAdminUser =
-        session?.user?.role === 'admin' ||
-        authorization === `Bearer ${config.adminKey}`
-
-    if (!isAdminUser)
+    // 管理者権限が必要で、管理者として認証されていない場合
+    if (options.requireAdmin && !isAdmin) {
         throw createError({
             statusCode: 403,
             message: 'Unauthorized: Admin privileges required',
         })
+    }
 }
 
-const checkBannedUser = async (
-    session: Session | null | undefined
-): Promise<void> => {
-    if (session?.user?.banned)
-        throw createError({
-            statusCode: 403,
-            message: 'Forbidden: User account is banned',
-        })
-}
-
+/**
+ * エラーハンドリング関数
+ */
 const handleError = (
     error: unknown,
     errorMessage = 'Internal server error'
 ): never => {
-    // 既にHTTPErrorの場合はそのまま投げる
+    // HTTPエラーの場合はそのまま投げる
     if (error && typeof error === 'object' && 'statusCode' in error) throw error
 
     // バリデーションエラー
@@ -80,6 +75,11 @@ type ApiOptions = {
     rejectBannedUser?: boolean
 }
 
+type ApiContext<Options extends ApiOptions> = {
+    session: SessionType<Options>
+    // 他のコンテキスト情報も追加可能
+}
+
 type SessionType<Options extends ApiOptions> =
     Options['requireAdmin'] extends true
         ? Session
@@ -95,35 +95,58 @@ const defaultOptions: ApiOptions = {
     rejectBannedUser: false,
 }
 
-export default <T, O extends ApiOptions = ApiOptions>(
-    handler: (session: SessionType<O>) => Promise<T>,
-    options: O = defaultOptions as O
-) =>
-    defineEventHandler(async (): Promise<T> => {
+type MergeOptions<O extends ApiOptions> = O extends undefined
+    ? typeof defaultOptions
+    : O & typeof defaultOptions
+
+export default function defineApi<T, O extends ApiOptions = object>(
+    handler: (context: ApiContext<MergeOptions<O>>) => Promise<T>,
+    options?: O
+) {
+    // optionsが未指定の場合はdefaultOptionsを使う
+    const mergedOptions = { ...defaultOptions, ...options } as MergeOptions<O>
+    return defineEventHandler(async (): Promise<T> => {
         try {
-            // セッション取得処理
+            const event = useEvent()
+            const { authorization } = getHeaders(event)
             const session = await auth.api.getSession({
-                headers: useEvent().headers,
+                headers: event.headers,
             })
 
-            // CRON認証チェック
-            if (options.requireCron) await checkCronAuth(session)
-
-            // セッション必須チェック
-            if (options.requireSession && !session)
+            // requireSessionまたはrequireAdminが必要な場合の認証判定
+            if (mergedOptions.requireAdmin) {
+                // adminKeyによる認証を許可
+                const isAdminKey = authorization === `Bearer ${config.adminKey}`
+                if (!session && !isAdminKey)
+                    throw createError({
+                        statusCode: 401,
+                        message: 'Unauthorized: Session or adminKey required',
+                    })
+            } else if (mergedOptions.requireSession && !session)
                 throw createError({
                     statusCode: 401,
                     message: 'Unauthorized: Session required',
                 })
 
-            // 管理者権限チェック
-            if (options.requireAdmin) await checkAdminAuth(session)
+            checkAuth(session, {
+                requireAdmin: mergedOptions.requireAdmin,
+                requireCron: mergedOptions.requireCron,
+            })
 
-            // banされたユーザーのチェック
-            if (options.rejectBannedUser) await checkBannedUser(session)
+            if (mergedOptions.rejectBannedUser && session?.user?.banned)
+                throw createError({
+                    statusCode: 403,
+                    message: 'Forbidden: User account is banned',
+                })
 
-            return await handler(session as SessionType<O>)
+            return await handler({
+                session: (mergedOptions.requireSession ||
+                mergedOptions.requireAdmin
+                    ? session!
+                    : session) as SessionType<MergeOptions<O>>,
+            })
         } catch (error) {
-            return handleError(error, options.errorMessage)
+            return handleError(error, mergedOptions.errorMessage)
         }
     })
+}

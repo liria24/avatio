@@ -309,13 +309,9 @@ const cancelCropImage = () => {
                         :height="192"
                         format="webp"
                         custom
+                        class="aspect-square size-48 shrink-0 rounded-full object-cover"
                     >
-                        <img
-                            v-if="isLoaded"
-                            v-bind="imgAttrs"
-                            :src="src"
-                            class="aspect-square size-48 shrink-0 rounded-full object-cover"
-                        />
+                        <img v-if="isLoaded" v-bind="imgAttrs" :src="src" />
                         <USkeleton
                             v-else
                             class="aspect-square size-48 shrink-0 rounded-full"

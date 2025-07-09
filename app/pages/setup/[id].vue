@@ -188,12 +188,26 @@ if (data.value) {
                     }"
                 >
                     <NuxtImg
+                        v-slot="{ src, imgAttrs, isLoaded }"
                         :src="data.images[0].url"
                         :alt="data.name"
                         :width="data.images[0].width"
                         :height="data.images[0].height"
+                        format="webp"
+                        custom
                         class="max-h-[720px] w-fit shrink-0 grow-0 cursor-zoom-in overflow-hidden rounded-lg object-contain"
-                    />
+                    >
+                        <img v-if="isLoaded" v-bind="imgAttrs" :src="src" />
+                        <USkeleton
+                            v-else
+                            :style="{
+                                aspectRatio:
+                                    data.images[0].width /
+                                    data.images[0].height,
+                            }"
+                            class="max-h-[720px] w-full shrink-0 grow-0 rounded-lg"
+                        />
+                    </NuxtImg>
 
                     <template #content>
                         <NuxtImg
@@ -204,16 +218,7 @@ if (data.value) {
                     </template>
                 </UModal>
 
-                <SetupsViewerInfo
-                    :setup-id="data.id"
-                    :created-at="data.createdAt"
-                    :title="data.name"
-                    :description="data.description"
-                    :tags="data.tags"
-                    :co-authors="data.coauthors"
-                    :user="data.user"
-                    class="mt-3 w-full xl:hidden"
-                />
+                <SetupsViewerInfo :setup="data" class="mt-3 w-full xl:hidden" />
 
                 <div class="mt-3 flex w-full flex-col gap-7">
                     <div
@@ -280,16 +285,7 @@ if (data.value) {
             </div>
 
             <div class="hidden h-full w-full flex-col xl:flex xl:w-[440px]">
-                <SetupsViewerInfo
-                    :setup-id="data.id"
-                    :created-at="data.createdAt"
-                    :title="data.name"
-                    :description="data.description"
-                    :tags="data.tags"
-                    :coauthors="data.coauthors"
-                    :user="data.user"
-                    class="sticky top-3 pt-3"
-                />
+                <SetupsViewerInfo :setup="data" class="sticky top-3 pt-3" />
             </div>
         </div>
     </div>

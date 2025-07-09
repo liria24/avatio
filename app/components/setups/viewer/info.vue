@@ -1,9 +1,6 @@
 <script lang="ts" setup>
 interface Props {
-    description?: string | null
-    user: User
-    tags?: string[]
-    coauthors?: SetupCoauthor[]
+    setup: Setup
     class?: string | string[]
 }
 const props = defineProps<Props>()
@@ -11,47 +8,45 @@ const props = defineProps<Props>()
 
 <template>
     <div :class="['flex h-fit flex-col gap-5 empty:hidden', props.class]">
-        <div class="flex w-full flex-wrap justify-between gap-5">
-            <div class="flex items-center gap-7 xl:flex-col xl:items-start">
-                <NuxtLink
-                    :to="`/@${props.user.id}`"
-                    class="flex items-center gap-1"
-                >
-                    <UAvatar
-                        :src="props.user.image || undefined"
-                        :alt="props.user.name"
-                        icon="lucide:user-round"
-                    />
-                    <div
-                        class="flex flex-wrap items-center gap-x-1 gap-y-0.5 pl-1"
-                    >
-                        <p class="text-left text-sm font-semibold">
-                            {{ props.user.name }}
-                        </p>
-                        <UserBadges
-                            :badges="props.user.badges"
-                            size="sm"
-                            class="ml-1"
-                        />
-                    </div>
-                </NuxtLink>
+        <NuxtLink
+            :to="`/@${props.setup.user.id}`"
+            :aria-label="props.setup.user.name"
+            class="flex items-center gap-1"
+        >
+            <UAvatar
+                :src="props.setup.user.image || undefined"
+                :alt="props.setup.user.name"
+                icon="lucide:user-round"
+            />
+            <div class="flex flex-wrap items-center gap-x-1 gap-y-0.5 pl-1">
+                <p class="text-left text-sm font-semibold">
+                    {{ props.setup.user.name }}
+                </p>
+                <UserBadges
+                    :badges="props.setup.user.badges"
+                    size="sm"
+                    class="ml-1"
+                />
             </div>
-        </div>
+        </NuxtLink>
 
         <div
-            v-if="props.description?.length"
+            v-if="props.setup.description?.length"
             class="flex flex-col gap-2 self-stretch"
         >
             <p
                 class="pl-1 text-sm/relaxed wrap-anywhere break-keep whitespace-pre-wrap"
-                v-html="useLineBreak(props.description)"
+                v-html="useLineBreak(props.setup.description)"
             />
         </div>
 
-        <div v-if="props.tags?.length" class="flex flex-col gap-3 self-stretch">
+        <div
+            v-if="props.setup.tags?.length"
+            class="flex flex-col gap-3 self-stretch"
+        >
             <div class="flex flex-row flex-wrap items-center gap-1.5">
                 <UButton
-                    v-for="(tag, index) in props.tags"
+                    v-for="(tag, index) in props.setup.tags"
                     :key="'tag-' + index"
                     :label="tag"
                     variant="outline"
@@ -63,13 +58,13 @@ const props = defineProps<Props>()
         </div>
 
         <div
-            v-if="props.coauthors?.length"
+            v-if="props.setup.coauthors?.length"
             class="flex flex-col gap-3 self-stretch"
         >
             <h2 class="text-toned text-sm leading-none">共同作者</h2>
             <ul class="flex flex-col gap-2 pl-1">
                 <li
-                    v-for="coAuthor in props.coauthors"
+                    v-for="coAuthor in props.setup.coauthors"
                     :key="coAuthor.user.id"
                     class="ring-muted flex flex-col gap-1.5 rounded-lg p-2 ring-1"
                 >

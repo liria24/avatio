@@ -307,12 +307,12 @@ const removeShapekey = (options: {
                                         :height="72"
                                         format="webp"
                                         custom
+                                        class="aspect-square size-18 shrink-0 rounded-lg object-cover"
                                     >
                                         <img
                                             v-if="isLoaded"
                                             v-bind="imgAttrs"
                                             :src="src"
-                                            class="aspect-square size-18 shrink-0 rounded-lg object-cover"
                                         />
                                         <USkeleton
                                             v-else

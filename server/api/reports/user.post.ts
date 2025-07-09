@@ -4,7 +4,7 @@ import { userReports } from '@@/database/schema'
 const body = userReportsInsertSchema
 
 export default defineApi(
-    async (session) => {
+    async ({ session }) => {
         const { reporteeId, spam, hate, infringe, badImage, other, comment } =
             await validateBody(body, { sanitize: true })
 

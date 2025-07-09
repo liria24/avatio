@@ -12,7 +12,7 @@ const body = setupReportsInsertSchema.pick({
 })
 
 export default defineApi(
-    async (session) => {
+    async ({ session }) => {
         const { setupId, spam, hate, infringe, badImage, other, comment } =
             await validateBody(body, { sanitize: true })
 

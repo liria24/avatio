@@ -7,7 +7,7 @@ const params = z.object({
 })
 
 export default defineApi(
-    async (session) => {
+    async ({ session }) => {
         const { id } = await validateParams(params)
 
         await database

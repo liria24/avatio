@@ -8,7 +8,7 @@ const params = z.object({
 })
 
 export default defineApi(
-    async (session) => {
+    async ({ session }) => {
         const { id } = await validateParams(params)
 
         const data = await database.query.setups.findFirst({

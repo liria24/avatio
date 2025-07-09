@@ -178,7 +178,12 @@ const menuItems = ref<DropdownMenuItem[][]>([
                 </div>
 
                 <ModalLogin v-else-if="!session && route.path !== '/login'">
-                    <UButton label="ログイン" variant="solid" size="lg" />
+                    <UButton
+                        label="ログイン"
+                        variant="solid"
+                        size="lg"
+                        class="rounded-lg"
+                    />
                 </ModalLogin>
             </template>
         </div>

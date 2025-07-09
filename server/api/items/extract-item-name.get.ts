@@ -15,7 +15,7 @@ const gateway = createGateway({
 const system = `
 EC サイトで販売されているデジタル商品の商品タイトルから、アイテム名称のみを抽出してください。
 
-- アイテム名称に多数の言語表記が存在する場合、「Item / アイテム」のようにしてください。
+- 固有名詞のみを抽出してください。カテゴリー表記などは不要です。
 - 大文字小文字やひらがなカタカナは確実に維持してください。
 - 出力は結果のみとしてください。
 `
@@ -25,7 +25,7 @@ export default defineApi(
         const { item } = await validateQuery(query)
 
         const result = await generateText({
-            model: gateway('openai/gpt-4.1-mini'),
+            model: gateway('google/gemini-2.5-flash'),
             system,
             prompt: item,
         })

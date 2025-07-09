@@ -1,11 +1,12 @@
 <script lang="ts" setup>
+const session = await useGetSession()
 const route = useRoute()
 const footerExclude = ['/setup/compose']
 
 const modalFeedback = ref(false)
 
 const notificationsStore = useNotificationsStore()
-await callOnce(notificationsStore.fetch)
+if (session.value) await callOnce(notificationsStore.fetch)
 const notifications = computed(() =>
     notificationsStore.notifications.filter((notification) => {
         return !notification.readAt && notification.banner

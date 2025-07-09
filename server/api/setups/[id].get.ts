@@ -7,7 +7,7 @@ const params = z.object({
 })
 
 export default defineApi<Setup>(
-    async (session) => {
+    async ({ session }) => {
         const event = useEvent()
         const config = useRuntimeConfig(event)
 
@@ -306,6 +306,7 @@ export default defineApi<Setup>(
             images: data.images,
             tags: data.tags.map((tag) => tag.tag),
             coauthors: data.coauthors.map((coauthor) => ({
+                ...coauthor,
                 user: {
                     ...coauthor.user,
                     createdAt: coauthor.user.createdAt.toISOString(),
@@ -318,7 +319,6 @@ export default defineApi<Setup>(
                         createdAt: shop.createdAt.toISOString(),
                     })),
                 },
-                note: coauthor.note,
             })),
             failedItemsCount,
         }

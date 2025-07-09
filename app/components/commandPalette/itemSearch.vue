@@ -142,13 +142,9 @@ const onSelect = async (id: string, platform?: Platform) => {
                 format="webp"
                 loading="lazy"
                 custom
+                class="aspect-square size-6 shrink-0 rounded-md object-cover"
             >
-                <img
-                    v-if="isLoaded"
-                    v-bind="imgAttrs"
-                    :src="src"
-                    class="aspect-square size-6 shrink-0 rounded-md object-cover"
-                />
+                <img v-if="isLoaded" v-bind="imgAttrs" :src="src" />
                 <USkeleton
                     v-else
                     class="aspect-square size-6 shrink-0 rounded-md"

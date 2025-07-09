@@ -10,7 +10,7 @@ const params = z.object({
 const body = userUpdateSchema
 
 export default defineApi(
-    async (session) => {
+    async ({ session }) => {
         const { id } = await validateParams(params)
         const {
             id: newId,

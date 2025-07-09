@@ -11,7 +11,7 @@ import {
 const body = setupsInsertSchema
 
 export default defineApi(
-    async (session) => {
+    async ({ session }) => {
         const { name, description, items, images, tags, coauthors } =
             await validateBody(body, { sanitize: true })
 

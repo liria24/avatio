@@ -8,7 +8,7 @@ const body = z.object({
 })
 
 export default defineApi(
-    async (session) => {
+    async ({ session }) => {
         const { id } = await validateBody(body)
 
         const data = await database.query.notifications.findFirst({
