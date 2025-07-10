@@ -105,11 +105,11 @@ watch(
 )
 
 const gradientColor = computed(() => {
-    if (!adjustedColor.value) return 'rgba(0,0,0,0.6)'
+    if (!adjustedColor.value) return 'rgba(0,0,0,0.8)'
 
     const { r, g, b } = hexToRgb(adjustedColor.value)
     const darkeningFactor = 0.2
-    return `rgba(${Math.round(r * darkeningFactor)}, ${Math.round(g * darkeningFactor)}, ${Math.round(b * darkeningFactor)}, 0.5)`
+    return `rgba(${Math.round(r * darkeningFactor)}, ${Math.round(g * darkeningFactor)}, ${Math.round(b * darkeningFactor)}, 0.8)`
 })
 
 const elementStyle = computed(() => {
@@ -122,8 +122,8 @@ const elementStyle = computed(() => {
 
 const gradientStyle = computed(() => {
     if (!adjustedColor.value)
-        return 'background-image: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 60%)'
-    return `background-image: linear-gradient(to top, var(--gradient-color) 0%, transparent 60%)`
+        return 'background-image: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 80%)'
+    return `background-image: linear-gradient(to top, var(--gradient-color) 0%, transparent 80%)`
 })
 
 const linkClasses = computed(() => {
@@ -167,7 +167,7 @@ const linkClasses = computed(() => {
             />
             <div
                 :class="[
-                    'absolute inset-1.5 rounded-lg p-2',
+                    'group absolute inset-1.5 rounded-lg p-2',
                     'flex flex-col items-start justify-end gap-1',
                     'opacity-0 group-hover:opacity-100',
                     'transition duration-100 ease-in-out',
@@ -175,19 +175,21 @@ const linkClasses = computed(() => {
                 :style="gradientStyle"
             >
                 <span
-                    class="md:text-md line-clamp-2 text-sm font-medium break-all text-white"
+                    class="md:text-md line-clamp-2 translate-y-[1rem] text-sm font-medium break-all text-white opacity-0 duration-200 group-hover:translate-y-0 group-hover:opacity-100"
                 >
                     {{ setup.name }}
                 </span>
 
-                <div class="flex items-center gap-1">
+                <div
+                    class="flex translate-y-[1rem] items-center gap-1 opacity-0 duration-200 group-hover:translate-y-0 group-hover:opacity-100"
+                >
                     <Icon
                         name="lucide:person-standing"
                         size="15"
                         class="shrink-0 text-zinc-300"
                     />
                     <span
-                        class="line-clamp-1 text-xs leading-none break-all text-zinc-300"
+                        class="line-clamp-1 overflow-visible text-xs leading-none break-all text-zinc-300"
                     >
                         {{ avatarName }}
                     </span>

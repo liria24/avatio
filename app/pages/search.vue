@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 const route = useRoute()
 const router = useRouter()
-const nuxtApp = useNuxtApp()
 
 interface Query {
     q: string
@@ -34,21 +33,11 @@ const searchStatus = ref<'idle' | 'pending' | 'success'>('idle')
 const popoverItemSearch = ref(false)
 const collapsibleSearchOptions = ref(shouldShowDetails.value)
 
-const { data: popularAvatars, refresh: fetchPopularAvatars } = await useFetch(
-    '/api/items/popular-avatars',
-    {
-        key: 'popular-avatars',
-        getCachedData: (key: string) =>
-            nuxtApp.payload.data[key] || nuxtApp.static.data[key],
-        default: () => [],
-        immediate: false,
-    }
-)
-
 const { data, status, refresh } = await useSetups({
     query,
     immediate: false,
     watch: false,
+    getCachedData: undefined,
 })
 
 const setups = ref<Setup[]>([])
@@ -94,7 +83,6 @@ const search = async () => {
         query.q.length || query.itemId.length || query.tag.length
 
     if (!hasSearchParams) {
-        await fetchPopularAvatars()
         searchStatus.value = 'idle'
         return
     }
@@ -109,10 +97,11 @@ const search = async () => {
 const updateQuery = (updates: Partial<Pick<Query, 'itemId' | 'tag'>>) => {
     const newQuery = { ...route.query }
 
+    // 安全なオブジェクト更新方法に変更
     Object.entries(updates).forEach(([key, value]) => {
         if (Array.isArray(value) && value.length) newQuery[key] = value
         else {
-            const { [key]: removed, ...rest } = newQuery
+            const { [key]: _, ...rest } = newQuery
             Object.assign(newQuery, rest)
         }
     })
@@ -120,12 +109,7 @@ const updateQuery = (updates: Partial<Pick<Query, 'itemId' | 'tag'>>) => {
     router.push({ query: newQuery })
 }
 
-const onSelectPopularAvatar = (id: string) => {
-    if (!query.itemId.includes(id))
-        updateQuery({ itemId: [...query.itemId, id] })
-}
-
-const onSelectItemSearch = (item: Item) => {
+const onSelectItemSearch = (item: Partial<Item> & Pick<Item, 'id'>) => {
     if (!query.itemId.includes(item.id))
         updateQuery({ itemId: [...query.itemId, item.id] })
 
@@ -166,7 +150,7 @@ watch(
     }
 )
 
-await callOnce(search)
+await search()
 
 defineSeo({
     title: 'セットアップ検索',
@@ -237,9 +221,9 @@ defineSeo({
                                 >
                                     <NuxtImg
                                         :src="item.image || undefined"
+                                        :alt="item.name"
                                         :height="100"
                                         class="h-9 rounded-lg"
-                                        :alt="item.name"
                                     />
                                     <p class="line-clamp-2 text-xs">
                                         {{ item.name }}
@@ -248,7 +232,7 @@ defineSeo({
                                         icon="lucide:x"
                                         variant="ghost"
                                         size="sm"
-                                        :aria-label="`Remove ${item.name}`"
+                                        :aria-label="`${item.name} を削除`"
                                         @click="removeQueryItem(item.id)"
                                     />
                                 </div>
@@ -261,9 +245,9 @@ defineSeo({
                                                 : 'アイテムを選択'
                                         "
                                         icon="lucide:plus"
+                                        aria-label="Add item"
                                         variant="ghost"
                                         class="p-4"
-                                        aria-label="Add item"
                                     />
 
                                     <template #content>
@@ -315,57 +299,10 @@ defineSeo({
         <USeparator />
 
         <!-- 人気アバター表示 -->
-        <div v-if="searchStatus === 'idle'" class="flex flex-col gap-6">
-            <div class="flex items-center gap-2">
-                <Icon
-                    name="lucide:person-standing"
-                    size="22"
-                    class="text-muted"
-                />
-                <h2 class="text-xl leading-none font-semibold text-nowrap">
-                    人気のアバターから検索
-                </h2>
-            </div>
-
-            <div class="flex flex-wrap items-center justify-center gap-5">
-                <button
-                    v-for="(avatar, index) in popularAvatars"
-                    :key="`avatar-${index}`"
-                    :aria-label="`Search for ${avatar.name}`"
-                    class="group relative size-32 cursor-pointer overflow-hidden rounded-lg"
-                    @click="onSelectPopularAvatar(avatar.id)"
-                >
-                    <div
-                        class="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100"
-                    >
-                        <span
-                            class="p-1 text-center text-sm font-semibold text-white"
-                        >
-                            {{ avatarShortName(avatar.name) }}
-                        </span>
-                    </div>
-
-                    <NuxtImg
-                        v-slot="{ src, isLoaded, imgAttrs }"
-                        :src="avatar.image || undefined"
-                        :alt="avatar.name"
-                        :width="256"
-                        :height="256"
-                        format="webp"
-                        fit="cover"
-                        loading="lazy"
-                        custom
-                        class="aspect-square shrink-0 rounded-lg object-cover"
-                    >
-                        <img v-if="isLoaded" v-bind="imgAttrs" :src="src" />
-                        <USkeleton
-                            v-else
-                            class="aspect-square shrink-0 rounded-lg object-cover"
-                        />
-                    </NuxtImg>
-                </button>
-            </div>
-        </div>
+        <SetupsSearchPopularAvatars
+            v-if="searchStatus === 'idle'"
+            @select="onSelectItemSearch({ id: $event })"
+        />
 
         <!-- 検索結果表示 -->
         <div

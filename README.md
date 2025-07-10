@@ -13,7 +13,6 @@ VRSNSユーザー向けのアバターセットアップ共有サービス。<br
 [![Tailwind badge][badge-tailwind]][tailwind]
 [![Better Auth badge][badge-better-auth]][better-auth]
 [![Neon badge][badge-neon]][neon]
-[![Upstash badge][badge-upstash]][upstash]
 [![Drizzle ORM badge][badge-drizzle]][drizzle]
 
 </div>
@@ -72,7 +71,6 @@ Copyright © 2025 **[Liria][liria]**
 [liria]: https://liria.me
 [vercel]: https://vercel.com
 [cloudflare]: https://cloudflare.com
-[supabase]: https://supabase.com
 [nuxt]: https://nuxt.com
 [tailwind]: https://tailwindcss.com
 [badge-vercel]: https://svgl-badge.vercel.app/api/Hosting/Vercel?theme=dark
@@ -84,9 +82,7 @@ Copyright © 2025 **[Liria][liria]**
 [contributors-image]: https://contrib.rocks/image?repo=liria24/avatio&anon=1
 [better-auth]: https://better-auth.com
 [neon]: https://neon.tech
-[upstash]: https://upstash.com
 [drizzle]: https://orm.drizzle.team
 [badge-better-auth]: https://svgl-badge.vercel.app/api/Authentication/Better%20Auth?theme=dark
 [badge-neon]: https://svgl-badge.vercel.app/api/Database/Neon?theme=dark
-[badge-upstash]: https://svgl-badge.vercel.app/api/Database/Upstash?theme=dark
 [badge-drizzle]: https://svgl-badge.vercel.app/api/Database/Drizzle%20ORM?theme=dark
