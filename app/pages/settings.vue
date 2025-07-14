@@ -27,6 +27,8 @@ defineSeo({
 
         <SettingProfile :change-user-id="!!changeUserId" />
 
+        <SettingShop />
+
         <UCard variant="soft">
             <template #header>
                 <h2 class="text-lg leading-none font-semibold text-nowrap">

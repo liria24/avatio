@@ -157,7 +157,7 @@ export const userShops = authSchema.table(
 export const userShopVerification = authSchema.table(
     'user_shop_verification',
     {
-        id: text().primaryKey(),
+        id: uuid().primaryKey().defaultRandom(),
         code: text().notNull(),
         createdAt: timestamp('created_at').defaultNow().notNull(),
         userId: text('user_id').notNull(),

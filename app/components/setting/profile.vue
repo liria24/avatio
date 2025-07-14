@@ -10,8 +10,6 @@ const props = defineProps<Props>()
 const session = await useGetSession()
 const toast = useToast()
 
-if (!session.value) navigateTo('/login')
-
 const { data } = await useUser(session.value!.user.id, {
     getCachedData: undefined,
 })
