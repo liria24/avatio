@@ -1,12 +1,26 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
 
-const emit = defineEmits(['openFeedbackModal'])
+const emit = defineEmits<{
+    (e: 'openFeedbackModal' | 'openLoginModal'): void
+}>()
 
-const { $logout } = useNuxtApp()
+const { $authClient, $session, $multiSession, $revoke } = useNuxtApp()
+const session = await $session()
+const sessions = await $multiSession()
 const route = useRoute()
+const toast = useToast()
 const colorMode = useColorMode()
-const session = await useGetSession()
+
+const switchAccount = async (sessionToken: string) => {
+    await $authClient.multiSession.setActive({ sessionToken })
+    toast.add({
+        title: 'アカウントを切り替えました',
+        description: 'ページを更新しています...',
+        progress: false,
+    })
+    navigateTo(route.path, { external: true })
+}
 
 const themeMenu = [
     {
@@ -53,6 +67,11 @@ const menuItems = ref<DropdownMenuItem[][]>([
     ],
     [
         {
+            label: 'フィードバック',
+            icon: 'lucide:message-square',
+            onSelect: () => emit('openFeedbackModal'),
+        },
+        {
             label: 'テーマ',
             icon: 'lucide:moon',
             children: themeMenu,
@@ -65,14 +84,28 @@ const menuItems = ref<DropdownMenuItem[][]>([
     ],
     [
         {
-            label: 'フィードバック',
-            icon: 'lucide:message-square',
-            onSelect: () => emit('openFeedbackModal'),
+            label: 'アカウント切替',
+            icon: 'lucide:users-round',
+            children: [
+                ...sessions.map((session) => ({
+                    label: session.user.name,
+                    avatar: {
+                        src: session.user.image || undefined,
+                        alt: session.user.name,
+                    },
+                    onSelect: () => switchAccount(session.session.token),
+                })),
+                {
+                    label: '新しいアカウント',
+                    icon: 'lucide:user-round-plus',
+                    onSelect: () => emit('openLoginModal'),
+                },
+            ],
         },
         {
             label: 'ログアウト',
             icon: 'lucide:log-out',
-            onSelect: $logout,
+            onSelect: $revoke,
         },
     ],
 ])
@@ -177,14 +210,14 @@ const menuItems = ref<DropdownMenuItem[][]>([
                     </UDropdownMenu>
                 </div>
 
-                <ModalLogin v-else-if="!session && route.path !== '/login'">
-                    <UButton
-                        label="ログイン"
-                        variant="solid"
-                        size="lg"
-                        class="rounded-lg"
-                    />
-                </ModalLogin>
+                <UButton
+                    v-else-if="!session && route.path !== '/login'"
+                    label="ログイン"
+                    variant="solid"
+                    size="lg"
+                    class="rounded-lg"
+                    @click="emit('openLoginModal')"
+                />
             </template>
         </div>
     </header>

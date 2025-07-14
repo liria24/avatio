@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import { VueDraggable } from 'vue-draggable-plus'
 
+const nuxtApp = useNuxtApp()
+
 const items = defineModel<Record<ItemCategory, SetupItem[]>>({
     default: () => ({
         avatar: [],
@@ -40,6 +42,10 @@ const ownedAvatars = ref<Item[]>([])
 try {
     const avatarsData = await $fetch<Item[]>('/api/items/owned-avatars', {
         query: { limit: 10 },
+        headers: (() => {
+            if (import.meta.server && nuxtApp.ssrContext?.event.headers)
+                return nuxtApp.ssrContext.event.headers
+        })(),
     })
     ownedAvatars.value = avatarsData || []
 } catch (error) {
@@ -240,7 +246,10 @@ const removeShapekey = (options: {
                         class="aspect-square size-6 shrink-0 rounded-md object-cover"
                     />
                     <span class="text-toned text-xs">
-                        {{ avatarShortName(ownedAvatar.name) }}
+                        {{
+                            ownedAvatar.niceName ||
+                            avatarShortName(ownedAvatar.name)
+                        }}
                     </span>
                 </UButton>
             </div>

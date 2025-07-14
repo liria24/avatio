@@ -4,7 +4,8 @@ const signingIn = ref(false)
 definePageMeta({
     middleware: defineNuxtRouteMiddleware(async () => {
         const localePath = useLocalePath()
-        const session = await useGetSession()
+        const { $session } = useNuxtApp()
+        const session = await $session()
         if (session.value) return navigateTo(localePath('/'))
     }),
 })

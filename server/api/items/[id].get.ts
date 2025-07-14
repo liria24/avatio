@@ -281,11 +281,10 @@ export default defineApi<
             platform = cachedData?.platform || platform
         }
 
-        if (!platform) {
+        if (!platform)
             throw new Error(
                 `Platform is required for item ${id} when no cached data exists`
             )
-        }
 
         consola.log(`Fetching item data from ${platform}: ${id}`)
 

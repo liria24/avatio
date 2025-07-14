@@ -3,7 +3,9 @@ import { twMerge } from 'tailwind-merge'
 
 const props = defineProps<{ class?: string | string[] }>()
 
-const session = await useGetSession()
+const { $session } = useNuxtApp()
+
+const session = await $session()
 </script>
 
 <template>

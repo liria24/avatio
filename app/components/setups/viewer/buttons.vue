@@ -6,7 +6,8 @@ interface Props {
 }
 const props = defineProps<Props>()
 
-const session = await useGetSession()
+const { $session } = useNuxtApp()
+const session = await $session()
 const toast = useToast()
 
 const hideReason = ref('')

@@ -96,6 +96,7 @@ const removeCoauthor = (id: string) => {
                     icon="lucide:plus"
                     :label="coauthors.length ? undefined : '共同作者を追加'"
                     variant="soft"
+                    block
                 />
 
                 <template #content>

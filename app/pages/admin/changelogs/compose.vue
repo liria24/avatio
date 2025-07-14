@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { VueDraggable } from 'vue-draggable-plus'
 
-const session = await useGetSession()
+const { $session } = useNuxtApp()
+const session = await $session()
 const toast = useToast()
 
 const me = await $fetch<UserWithSetups>(`/api/users/${session.value?.user.id}`)

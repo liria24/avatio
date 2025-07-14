@@ -1,6 +1,7 @@
 <script lang="ts" setup>
+const { $session } = useNuxtApp()
 const route = useRoute()
-const session = await useGetSession()
+const session = await $session()
 const id = route.params.id as string
 
 const { data, status } = useUser(id)

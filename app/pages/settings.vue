@@ -1,6 +1,8 @@
 <script lang="ts" setup>
-const { $authClient } = useNuxtApp()
-const session = await useGetSession()
+const { $authClient, $logout } = useNuxtApp()
+const { $session } = useNuxtApp()
+const session = await $session()
+const sessions = await useGetMultiSessions()
 const route = useRoute()
 
 const query = route.query
@@ -28,6 +30,53 @@ defineSeo({
         <SettingProfile :change-user-id="!!changeUserId" />
 
         <SettingShop />
+
+        <UCard>
+            <template #header>
+                <h2 class="text-lg leading-none font-semibold text-nowrap">
+                    アカウント
+                </h2>
+            </template>
+
+            <div class="flex w-full flex-col gap-6">
+                <div class="flex w-full items-center justify-between gap-2">
+                    <div class="flex flex-col gap-1">
+                        <h3 class="text-sm font-semibold">
+                            このブラウザ以外からログアウト
+                        </h3>
+                        <p class="text-muted text-xs">
+                            現在使用しているブラウザ以外のすべてのデバイスからログアウトします。
+                        </p>
+                    </div>
+                    <UButton
+                        label="すべてのデバイスからログアウト"
+                        color="neutral"
+                        variant="subtle"
+                        @click="$logout"
+                    />
+                </div>
+
+                <div
+                    v-if="sessions.length > 1"
+                    class="flex w-full items-center justify-between gap-2"
+                >
+                    <div class="flex flex-col gap-1">
+                        <h3 class="text-sm font-semibold">
+                            すべてのアカウントからログアウト
+                        </h3>
+                        <p class="text-muted text-xs">
+                            同時にログインしているすべてのアカウントからログアウトします。
+                        </p>
+                    </div>
+                    <UButton
+                        label="すべてログアウト"
+                        color="neutral"
+                        variant="subtle"
+                        @click="$logout"
+                    />
+                </div>
+            </div>
+        </UCard>
 
         <UCard variant="soft">
             <template #header>

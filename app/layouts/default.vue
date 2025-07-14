@@ -1,8 +1,10 @@
 <script lang="ts" setup>
-const session = await useGetSession()
+const { $session } = useNuxtApp()
+const session = await $session()
 const route = useRoute()
 const footerExclude = ['/setup/compose']
 
+const modalLogin = ref(false)
 const modalFeedback = ref(false)
 
 const notificationsStore = useNotificationsStore()
@@ -25,9 +27,13 @@ const notifications = computed(() =>
             <UContainer
                 class="flex min-h-dvh flex-col items-center gap-6 pt-6 md:gap-8"
             >
+                <ModalLogin v-model:open="modalLogin" />
                 <ModalFeedback v-model:open="modalFeedback" />
 
-                <Header @open-feedback-modal="modalFeedback = true" />
+                <Header
+                    @open-login-modal="modalLogin = true"
+                    @open-feedback-modal="modalFeedback = true"
+                />
 
                 <div
                     class="hidden w-full items-center justify-center rounded-xl bg-red-100 p-4 text-sm text-red-800 ring-2 ring-red-500 noscript:flex"

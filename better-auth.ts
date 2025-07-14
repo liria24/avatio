@@ -1,6 +1,6 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import { admin } from 'better-auth/plugins'
+import { admin, multiSession } from 'better-auth/plugins'
 import database from './database'
 
 export const auth = betterAuth({
@@ -35,7 +35,7 @@ export const auth = betterAuth({
     deleteUser: {
         enabled: true,
     },
-    plugins: [admin()],
+    plugins: [admin(), multiSession()],
     cookieCache: {
         enabled: true,
         maxAge: 3 * 60,

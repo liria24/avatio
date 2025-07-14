@@ -1,21 +1,74 @@
 <script lang="ts" setup>
-const session = await useGetSession()
+const { $session } = useNuxtApp()
+const session = await $session()
 const toast = useToast()
 
-const { data } = await useUser(session.value!.user.id)
+const { data, refresh } = await useUser(session.value!.user.id)
 
+const itemUrl = ref('')
 const verifyCode = ref<string | null>(null)
 const verifying = ref(false)
 const unverifying = ref(false)
 const modalVerify = ref(false)
 const modalUnverify = ref(false)
 
+const verifiable = computed(() => {
+    const result = extractItemId(itemUrl.value)
+    if (result) return true
+    else return false
+})
+
 const shopUrl = (shopId: string, platform: Platform) => {
     if (platform === 'booth') return `https://${shopId}.booth.pm`
     return undefined
 }
 
-const unverify = async (shopId: string) => {}
+const copyCode = () => {
+    if (verifyCode.value) {
+        navigator.clipboard.writeText(verifyCode.value.toString())
+        toast.add({ title: `認証コードをコピーしました` })
+    }
+}
+
+const verify = async () => {
+    if (!verifiable.value) return
+
+    verifying.value = true
+
+    try {
+        await $fetch('/api/shop-verification', {
+            method: 'POST',
+            body: { url: itemUrl.value },
+        })
+        refresh()
+        toast.add({ title: 'ショップを認証しました', color: 'success' })
+        modalVerify.value = false
+    } catch (error) {
+        console.error(error)
+        toast.add({ title: 'ショップの認証に失敗しました', color: 'error' })
+    } finally {
+        verifying.value = false
+    }
+}
+
+const unverify = async (shopId: string) => {
+    unverifying.value = true
+
+    try {
+        await $fetch('/api/shop-verification', {
+            method: 'DELETE',
+            body: { shopId },
+        })
+        refresh()
+        toast.add({ title: 'ショップの認証を解除しました', color: 'success' })
+        modalUnverify.value = false
+    } catch (error) {
+        console.error(error)
+        toast.add({ title: 'ショップの認証解除に失敗しました', color: 'error' })
+    } finally {
+        unverifying.value = false
+    }
+}
 
 watch(modalVerify, async (value) => {
     if (value) {
@@ -28,43 +81,73 @@ watch(modalVerify, async (value) => {
 </script>
 
 <template>
-    <UModal v-model:open="modalVerify" title="新規認証">
+    <UModal
+        v-model:open="modalVerify"
+        :dismissible="false"
+        title="新規ショップ認証"
+    >
         <template #body>
-            <div class="flex flex-col gap-4">
+            <div class="flex flex-col gap-6">
                 <UFormField
-                    label="1. 認証するショップで販売している商品 URL を入力してください"
+                    label="1. 認証するショップで販売しているアイテムを 1 つ選定してください"
+                >
+                    <UAlert
+                        description="認証に使用できるアイテムは、Avatio に登録できるアイテムのみです。非公開アイテムや、非対応プラットフォームのアイテムは使用できません。"
+                        variant="outline"
+                        :ui="{ description: 'text-xs' }"
+                    />
+                </UFormField>
+
+                <UFormField
+                    label="2. 選定したアイテムの URL を入力してください"
+                    :error="
+                        itemUrl.length && !verifiable
+                            ? 'この URL は認証可能なアイテムではありません'
+                            : undefined
+                    "
                 >
                     <UInput
-                        placeholder="https://example.booth.pm"
+                        v-model="itemUrl"
+                        placeholder="https://booth.pm/ja/items/1234567"
                         class="w-full"
                     />
                 </UFormField>
 
                 <UFormField
-                    label="2. 商品説明文に以下のコードを追記してください"
+                    label="3. 選定したアイテムの説明文に以下のコードを追記してください"
                 >
-                    <UButton
-                        icon="lucide:copy"
-                        :label="verifyCode || 'コードを生成中...'"
-                        variant="link"
-                    />
+                    <div class="flex flex-col gap-2 pt-2">
+                        <UButton
+                            trailing-icon="lucide:copy"
+                            :label="verifyCode || 'コードを生成中...'"
+                            variant="outline"
+                            color="neutral"
+                            block
+                            :ui="{ base: 'gap-2', trailingIcon: 'size-4' }"
+                            @click="copyCode"
+                        />
+                        <UAlert
+                            icon="lucide:info"
+                            title="認証が完了した後、追記したコードは削除してください"
+                            variant="subtle"
+                            :ui="{
+                                icon: 'size-4',
+                                title: 'text-xs font-semibold',
+                            }"
+                        />
+                    </div>
                 </UFormField>
-            </div>
-        </template>
 
-        <template #footer>
-            <div class="flex w-full items-center justify-end gap-2">
+                <USeparator />
+
                 <UButton
-                    :disabled="verifying"
-                    label="キャンセル"
-                    variant="ghost"
-                    @click="modalVerify = false"
-                />
-                <UButton
+                    :disabled="!verifiable"
                     :loading="verifying"
-                    :disabled="!verifyCode"
-                    label="認証"
+                    label="ショップを認証"
                     color="neutral"
+                    size="lg"
+                    block
+                    @click="verify"
                 />
             </div>
         </template>
@@ -88,6 +171,13 @@ watch(modalVerify, async (value) => {
         </template>
 
         <div class="flex flex-col gap-2">
+            <p
+                v-if="!data?.shops?.length"
+                class="text-muted self-center py-2 text-sm leading-none"
+            >
+                認証済みのショップはありません
+            </p>
+
             <div
                 v-for="shop in data?.shops"
                 :key="shop.shop.id"

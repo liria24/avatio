@@ -55,36 +55,45 @@ export default defineApi<
         .orderBy(desc(items.createdAt))
         .limit(limit)
 
-    // 古いアイテムを並列で更新
-    const updatePromises = data
-        .filter((item) => item.updatedAt < oneDayAgo)
-        .map(async (item) => {
-            try {
-                const response = await useEvent().$fetch<Item>(
-                    `/api/items/${item.id}`
-                )
-                console.log(`Updated item ${item.id} from external API`)
-                return { ...item, ...response }
-            } catch (error) {
-                console.error(`Failed to update item ${item.id}:`, error)
-                return item // エラーの場合は元のデータを返す
-            }
-        })
+    // 1日以上古いアイテムのみフィルタリング
+    const outdatedItems = data.filter((item) => item.updatedAt < oneDayAgo)
 
-    // 並列実行の完了を待つ
-    const updatedItems = await Promise.all(updatePromises)
-
-    // 更新されたアイテムを元のデータに反映
-    const updatedItemsMap = new Map(updatedItems.map((item) => [item.id, item]))
-
-    const result = data.map((item) => {
-        const updatedItem = updatedItemsMap.get(item.id) || item
-        return {
-            ...updatedItem,
-            createdAt: updatedItem.createdAt.toISOString(),
-            updatedAt: updatedItem.updatedAt.toISOString(),
+    // 古いアイテムを並列で更新（エラーハンドリング改善）
+    const updatePromises = outdatedItems.map(async (item) => {
+        try {
+            // $fetchの使用を修正
+            const response = await $fetch<Item>(`/api/items/${item.id}`)
+            console.log(`Updated item ${item.id} from external API`)
+            return { ...item, ...response }
+        } catch (error) {
+            console.error(`Failed to update item ${item.id}:`, error)
+            return item // エラーの場合は元のデータを返す
         }
     })
+
+    // 並列実行がある場合のみ待機
+    const updatedItems =
+        updatePromises.length > 0
+            ? await Promise.allSettled(updatePromises)
+            : []
+
+    // Promise.allSettledの結果を処理
+    const updatedItemsMap = new Map<string, Item>()
+    updatedItems.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+            const item = result.value
+            updatedItemsMap.set(item.id, item)
+        } else {
+            // rejected の場合は元のアイテムを使用
+            const originalItem = outdatedItems[index]
+            if (originalItem) {
+                updatedItemsMap.set(originalItem.id, originalItem)
+            }
+        }
+    })
+
+    // 結果をマッピング
+    const result = data.map((item) => updatedItemsMap.get(item.id) || item)
 
     return result
 })

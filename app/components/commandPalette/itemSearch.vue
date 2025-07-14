@@ -54,29 +54,15 @@ const groups = computed(() => {
                             label: searchTerm.value,
                             slot: 'url',
                             onSelect: () => {
-                                try {
-                                    const url = new URL(searchTerm.value)
-                                    if (url.hostname.endsWith('booth.pm')) {
-                                        // BOOTHのURLからIDを抽出する正規表現（言語コード対応）
-                                        const match = url.pathname.match(
-                                            /\/(?:[a-z]{2}\/)?items?\/(\d+)/
-                                        )
-                                        const id = match?.[1]
-                                        if (id) onSelect(id, 'booth')
-                                        else
-                                            throw new Error(
-                                                'Invalid BOOTH item URL format'
-                                            )
-                                    }
-                                } catch (error) {
-                                    console.error('Failed to parse URL:', error)
+                                const result = extractItemId(searchTerm.value)
+                                if (result) onSelect(result.id, result.platform)
+                                else
                                     toast.add({
                                         title: '無効なURL',
                                         description:
                                             '正しいアイテムのURLを入力してください。',
                                         color: 'error',
                                     })
-                                }
                             },
                         },
                     ],

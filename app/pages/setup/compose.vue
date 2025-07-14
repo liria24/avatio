@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type { z } from 'zod/v4'
+import { h, resolveComponent } from 'vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -63,14 +64,28 @@ const onSubmit = async () => {
 
     try {
         publishing.value = true
-        console.log('Submitting setup:', state)
 
         const validationResult = setupsClientFormSchema.safeParse(state)
         if (!validationResult.success) {
-            console.error('Validation failed:', validationResult.error)
+            console.error('Validation failed:', validationResult.error.issues)
             toast.add({
                 title: 'セットアップの投稿に失敗しました',
-                description: validationResult.error.message,
+                // description: validationResult.error.issues
+                //     .map((issue) => issue.message)
+                //     .join('\n'),
+                description: h(
+                    resolveComponent('div'),
+                    {
+                        class: 'flex flex-col gap-1',
+                    },
+                    validationResult.error.issues.map((issue) =>
+                        h(
+                            resolveComponent('div'),
+                            { class: 'text-xs' },
+                            issue.message
+                        )
+                    )
+                ),
                 color: 'error',
             })
             return
@@ -101,8 +116,6 @@ const onSubmit = async () => {
                   }))
                 : undefined,
         }
-
-        console.log('Transformed submit data:', body)
 
         // 編集モードか新規作成かで分岐
         const isEditing = editingSetupId.value !== null

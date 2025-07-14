@@ -1,5 +1,6 @@
 <script setup lang="ts">
-const session = await useGetSession()
+const { $session } = useNuxtApp()
+const session = await $session()
 const route = useRoute()
 const router = useRouter()
 

@@ -7,7 +7,8 @@ interface Props {
 }
 const props = defineProps<Props>()
 
-const session = await useGetSession()
+const { $session } = useNuxtApp()
+const session = await $session()
 const toast = useToast()
 
 const { data } = await useUser(session.value!.user.id, {
@@ -191,7 +192,7 @@ const updateId = async (newId: string) => {
         toast.add({
             title: 'ユーザーIDが変更されました',
             description: 'ページを更新しています...',
-            color: 'success',
+            progress: false,
         })
         await navigateTo('/settings', { external: true })
     } catch (error) {

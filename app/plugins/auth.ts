@@ -1,24 +1,70 @@
-import { adminClient } from 'better-auth/client/plugins'
+import { adminClient, multiSessionClient } from 'better-auth/client/plugins'
 import { createAuthClient } from 'better-auth/vue'
 
 export default defineNuxtPlugin(() => {
     const client = createAuthClient({
         baseURL: import.meta.env.NUX_PUBLIC_SITE_URL,
-        plugins: [adminClient()],
+        plugins: [adminClient(), multiSessionClient()],
     })
 
     return {
         provide: {
             authClient: client,
-            login: async (provider: 'github' | 'twitter') =>
+
+            session: async () => {
+                const { data: session } = await client.useSession(
+                    (url, options) =>
+                        useFetch(url, { ...options, dedupe: 'defer' })
+                )
+                return session
+            },
+
+            sessions: async () => {
+                const sessions = await client.listSessions()
+                return sessions
+            },
+
+            multiSession: async () => {
+                const { data: sessions } =
+                    await client.multiSession.listDeviceSessions()
+                return sessions || []
+            },
+
+            login: async (provider: 'twitter') =>
                 await client.signIn.social({ provider }),
+
             logout: async () => {
                 const localePath = useLocalePath()
+                const toast = useToast()
+
                 const result = await client.signOut()
                 if (result.data?.success) {
-                    const session = await useGetSession()
-                    session.value = null
-                    navigateTo(localePath('/'))
+                    toast.add({
+                        title: 'ログアウトしました',
+                        description: 'ページを更新しています...',
+                        progress: false,
+                    })
+                    navigateTo(localePath('/'), { external: true })
+                }
+            },
+
+            revoke: async () => {
+                const localePath = useLocalePath()
+                const toast = useToast()
+                const session = await client.getSession()
+
+                if (!session.data?.session) return
+
+                const result = await client.multiSession.revoke({
+                    sessionToken: session.data?.session.token,
+                })
+                if (!result.error) {
+                    toast.add({
+                        title: 'ログアウトしました',
+                        description: 'ページを更新しています...',
+                        progress: false,
+                    })
+                    navigateTo(localePath('/'), { external: true })
                 }
             },
         },
