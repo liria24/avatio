@@ -1,6 +1,6 @@
-import { sanitizeObject } from '#imports'
 import database from '@@/database'
 import { items, shops } from '@@/database/schema'
+import sanitizeObject from '@@/server/utils/sanitizeObject'
 import { getAll } from '@vercel/edge-config'
 import { consola } from 'consola'
 import { eq } from 'drizzle-orm'
