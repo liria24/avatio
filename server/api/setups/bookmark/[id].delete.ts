@@ -1,6 +1,6 @@
 import database from '@@/database'
 import { bookmarks } from '@@/database/schema'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { z } from 'zod/v4'
 
 const params = z.object({
@@ -11,20 +11,14 @@ export default defineApi(
     async ({ session }) => {
         const { id } = await validateParams(params)
 
-        const data = await database.query.bookmarks.findFirst({
-            where: (bookmarks, { eq }) => eq(bookmarks.id, id),
-            columns: {
-                userId: true,
-            },
-        })
-
-        if (!data || data.userId !== session.user.id)
-            throw createError({
-                statusCode: 403,
-                statusMessage: 'Forbidden',
-            })
-
-        await database.delete(bookmarks).where(eq(bookmarks.id, Number(id)))
+        await database
+            .delete(bookmarks)
+            .where(
+                and(
+                    eq(bookmarks.setupId, id),
+                    eq(bookmarks.userId, session.user.id)
+                )
+            )
 
         return null
     },
