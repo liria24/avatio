@@ -27,7 +27,7 @@ const items = computed<TimelineItem[]>(() =>
     data.value.data.map((item) => ({
         date: item.createdAt,
         title: item.title,
-        description: item.html,
+        description: item.markdown,
         slug: item.slug,
         authors: item.authors,
         icon: 'lucide:check',
@@ -58,12 +58,13 @@ defineSeo({
             class="w-full self-center"
         >
             <template #title="{ item }">
-                <NuxtLink
+                <!-- <NuxtLink
                     :to="`/changelogs/${item.slug}`"
                     class="underline-offset-4 hover:underline"
                 >
                     <h2 class="text-2xl font-bold">{{ item.title }}</h2>
-                </NuxtLink>
+                </NuxtLink> -->
+                <h2 class="text-2xl font-bold">{{ item.title }}</h2>
             </template>
 
             <template #description="{ item }">
@@ -85,9 +86,15 @@ defineSeo({
                         </ULink>
                     </UAvatarGroup>
 
-                    <div
+                    <!-- <div
                         class="prose prose-zinc dark:prose-invert prose-sm prose-img:rounded-xl prose-img:max-w-xl w-full max-w-full"
                         v-html="item.description"
+                    /> -->
+                    <Markdown
+                        v-if="item.description"
+                        :content="item.description"
+                        size="sm"
+                        class="prose-img:rounded-xl prose-img:max-w-xl prose-h1:text-2xl w-full max-w-full"
                     />
                 </div>
             </template>
