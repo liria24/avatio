@@ -12,7 +12,7 @@ const getBaseSize = () => {
     if (props.size === 'xs') return 14
     if (props.size === 'sm') return 16
     if (props.size === 'lg') return 26
-    return 22
+    return 20
 }
 
 const getIconSize = (multiplier: number) =>
