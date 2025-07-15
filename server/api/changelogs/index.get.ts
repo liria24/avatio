@@ -54,14 +54,14 @@ export default defineApi<
         },
         limit,
         offset,
-        orderBy: (auditLogs, { asc, desc }) => {
+        orderBy: (table, { asc, desc }) => {
             const sortFn = sort === 'desc' ? desc : asc
-            return sortFn(auditLogs.createdAt)
+            return sortFn(table.createdAt)
         },
-        where: (auditLogs, { and, eq, ilike }) => {
+        where: (table, { and, eq, ilike }) => {
             const conditions = []
 
-            if (q) conditions.push(ilike(auditLogs.title, `%${q}%`))
+            if (q) conditions.push(ilike(table.title, `%${q}%`))
 
             if (userId)
                 conditions.push(
@@ -73,7 +73,7 @@ export default defineApi<
                                 and(
                                     eq(
                                         changelogAuthors.changelogSlug,
-                                        auditLogs.slug
+                                        table.slug
                                     ),
                                     eq(changelogAuthors.userId, userId)
                                 )
