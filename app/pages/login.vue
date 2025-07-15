@@ -1,5 +1,12 @@
 <script setup lang="ts">
+const { $login } = useNuxtApp()
+
 const signingIn = ref(false)
+
+const handleLogin = (provider: 'twitter') => {
+    signingIn.value = true
+    $login(provider)
+}
 
 definePageMeta({
     middleware: defineNuxtRouteMiddleware(async () => {
@@ -31,7 +38,7 @@ defineSeo({
                     size="lg"
                     variant="subtle"
                     color="neutral"
-                    @click="$login('twitter')"
+                    @click="handleLogin('twitter')"
                 />
             </div>
 

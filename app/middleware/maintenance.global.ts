@@ -9,7 +9,6 @@ export default defineNuxtRouteMiddleware(async (to, _from) => {
             `/api/edge-config/${import.meta.dev ? 'isMaintenanceDev' : 'isMaintenance'}`
         ),
     ])
-    console.log('isMaintenance', isMaintenance)
 
     if (isMaintenance && session.value?.user.role !== 'admin') {
         if (to.path !== '/on-maintenance') return navigateTo('/on-maintenance')
