@@ -21,7 +21,7 @@ const changeMaintenanceSwitch = async () => {
         try {
             await $fetch('/api/edge-config', {
                 method: 'PUT',
-                body: { isMaintenanceDev: false },
+                body: { isMaintenance: false },
             })
             maintenanceMode.value = false
         } catch (error) {
@@ -38,7 +38,7 @@ const enableMaintenanceMode = async () => {
     try {
         await $fetch('/api/edge-config', {
             method: 'PUT',
-            body: { isMaintenanceDev: true },
+            body: { isMaintenance: true },
         })
         maintenanceMode.value = true
     } catch (error) {
