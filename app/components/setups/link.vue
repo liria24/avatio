@@ -8,23 +8,19 @@ const emit = defineEmits(['click'])
 const colorMode = useColorMode()
 
 const date = new Date(props.setup.createdAt)
-const dateLocale = computed(() => {
-    return date.toLocaleString('ja-JP', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-    })
+const dateLocale = date.toLocaleString('ja-JP', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
 })
 
-const firstAvatar = computed(() =>
-    props.setup.items.find((item) => item.category === 'avatar')
-)
+const firstAvatar = props.setup.items.find((item) => item.category === 'avatar')
 
-const avatarName = computed(() => {
-    if (!firstAvatar.value) return '不明なベースアバター'
-    if (firstAvatar.value.niceName?.length) return firstAvatar.value.niceName
-    return avatarShortName(firstAvatar.value.name)
-})
+const avatarName = (() => {
+    if (!firstAvatar) return '不明なベースアバター'
+    if (firstAvatar.niceName?.length) return firstAvatar.niceName
+    return avatarShortName(firstAvatar.name)
+})()
 
 const dominantColor = ref('')
 const adjustedColor = ref('')
@@ -84,7 +80,7 @@ const extractImageColor = async (event: Event) => {
             adjustedColor.value = adjustColorForTheme(extractedColor, isDark)
         }
     } catch (error) {
-        console.error('色の抽出に失敗しました:', error)
+        console.error('Failed to extract color from image:', error)
         dominantColor.value = ''
         adjustedColor.value = ''
     }
@@ -127,16 +123,20 @@ const gradientStyle = computed(() => {
 })
 
 const linkClasses = computed(() => {
-    return cn(
-        'group flex flex-col rounded-lg overflow-clip focus:outline-none hover:ring-2 focus:ring-2',
-        adjustedColor.value
-            ? 'hover:ring-[var(--dominant-color)] hover:bg-[var(--dominant-color)]/20 focus:ring-[var(--dominant-color)] focus:bg-[var(--dominant-color)]/20'
-            : 'hover:ring-accented hover:bg-elevated focus:ring-accented focus:bg-elevated',
-        'hover:shadow-xl focus-visible:shadow-xl shadow-black/10 dark:shadow-white/10',
-        'transition duration-100 ease-in-out',
-        props.class
-    )
+    const baseClasses =
+        'group flex flex-col rounded-lg overflow-clip focus:outline-none hover:ring-2 focus:ring-2 hover:shadow-xl focus-visible:shadow-xl shadow-black/10 dark:shadow-white/10 transition duration-100 ease-in-out'
+
+    const colorClasses = adjustedColor.value
+        ? 'hover:ring-[var(--dominant-color)] hover:bg-[var(--dominant-color)]/20 focus:ring-[var(--dominant-color)] focus:bg-[var(--dominant-color)]/20'
+        : 'hover:ring-accented hover:bg-elevated focus:ring-accented focus:bg-elevated'
+
+    return cn(baseClasses, colorClasses, props.class)
 })
+
+const setupNameHtml = useLineBreak(props.setup.name)
+
+const hasImages = !!props.setup.images?.length
+const firstImage = props.setup.images?.[0]
 </script>
 
 <template>
@@ -147,15 +147,15 @@ const linkClasses = computed(() => {
         :style="elementStyle"
         @click="emit('click')"
     >
-        <div v-if="props.setup.images?.length" class="relative w-full p-1.5">
+        <div v-if="hasImages" class="relative w-full p-1.5">
             <NuxtImg
-                :src="props.setup.images[0]?.url"
+                :src="firstImage?.url"
                 :alt="setup.name"
-                :width="props.setup.images[0]?.width ?? 640"
-                :height="props.setup.images[0]?.height ?? 360"
+                :width="firstImage?.width ?? 640"
+                :height="firstImage?.height ?? 360"
                 :placeholder="[
-                    props.setup.images[0]?.width ?? 192,
-                    props.setup.images[0]?.height ?? 108,
+                    firstImage?.width ?? 192,
+                    firstImage?.height ?? 108,
                     75,
                     5,
                 ]"
@@ -198,39 +198,40 @@ const linkClasses = computed(() => {
         </div>
 
         <div class="flex w-full items-center">
-            <UTooltip
-                v-if="!props.setup.images?.length && firstAvatar"
-                :text="avatarName"
-                :delay-duration="0"
+            <NuxtImg
+                v-if="!hasImages && firstAvatar"
+                v-slot="{ isLoaded, src, imgAttrs }"
+                :src="firstAvatar.image || undefined"
+                :alt="firstAvatar.name"
+                :width="80"
+                :height="80"
+                format="webp"
+                loading="lazy"
+                custom
+                class="m-1 aspect-square size-14 shrink-0 rounded-lg object-cover md:size-20"
             >
-                <NuxtImg
-                    v-slot="{ isLoaded, src, imgAttrs }"
-                    :src="firstAvatar.image || undefined"
-                    :alt="firstAvatar.name"
-                    :width="80"
-                    :height="80"
-                    format="webp"
-                    loading="lazy"
-                    custom
-                    class="m-1 aspect-square size-14 shrink-0 rounded-lg object-cover md:size-20"
+                <UTooltip
+                    v-if="isLoaded"
+                    :text="avatarName"
+                    :delay-duration="100"
                 >
-                    <img v-if="isLoaded" v-bind="imgAttrs" :src="src" />
-                    <USkeleton
-                        v-else
-                        class="my-1.5 ml-1.5 aspect-square h-14 shrink-0 rounded-lg md:h-20"
-                    />
-                </NuxtImg>
-            </UTooltip>
+                    <img v-bind="imgAttrs" :src="src" />
+                </UTooltip>
 
+                <USkeleton
+                    v-else
+                    class="my-1.5 ml-1.5 aspect-square h-14 shrink-0 rounded-lg md:h-20"
+                />
+            </NuxtImg>
             <div
-                v-else-if="!firstAvatar && !props.setup.images?.length"
+                v-else-if="!firstAvatar && !hasImages"
                 class="text-muted my-1.5 ml-1.5 flex size-14 shrink-0 items-center justify-center rounded-lg bg-zinc-300"
             >
                 ?
             </div>
 
             <div
-                v-if="props.setup.images?.length"
+                v-if="hasImages"
                 class="flex w-full items-center justify-end gap-2 px-2 pb-2"
             >
                 <UTooltip :text="dateLocale" :delay-duration="0">
@@ -283,7 +284,7 @@ const linkClasses = computed(() => {
             >
                 <span
                     class="md:text-md text-toned line-clamp-2 text-sm font-medium break-keep"
-                    v-html="useLineBreak(setup.name)"
+                    v-html="setupNameHtml"
                 />
 
                 <div class="flex items-center gap-2">
