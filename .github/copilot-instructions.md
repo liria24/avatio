@@ -1,19 +1,19 @@
 ## 技術スタック
 
-このプロジェクトは主に以下の技術スタックで構築されています。
-
-- Nuxt 3
+- Nuxt 3 (compatibilityVersion: 4)
+- NuxtUI v3 (TailwindCSS v4)
 - TypeScript
-- Supabase
-- TailwindCSS v4
 - Zod
+- Neon postgres
+- Drizzle ORM
+- Cloudflare R2
+- Better Auth
 - bun (パッケージマネージャ)
 - Vercel
 
 ## 注意事項
 
+- アイコンを使用する際は、<Icon name="lucide:<icon-name>" size="16">を使用してください
 - Nuxt 3 ではオートインポートが行われるため、明示的な import は必要ありません。
-- 関数を作成する場合、できる限りアロー関数で記述してください。
-- createErrorなどでエラーを発生させる際は、console.errorも出力するようにしてください。
-- エラーメッセージを記述する際は、常に英語で記述してください。
+- console.logやconsole.errorの内容は英語になるようにしてください。
 - 潜在的なバグがある場合は適宜修正を行って提案してください。

@@ -1,20 +1,17 @@
 <script setup lang="ts">
+import * as locales from '@nuxt/ui/locale'
 import { Analytics } from '@vercel/analytics/nuxt'
 
-const isDev = import.meta.dev
+const { locale } = useI18n()
 </script>
 
 <template>
-    <UApp>
+    <UApp :locale="locales[locale]">
         <NuxtRouteAnnouncer />
         <NuxtLoadingIndicator />
         <NuxtLayout>
             <Analytics />
             <NuxtPage />
         </NuxtLayout>
-        <UiIsMaintenance
-            v-if="isDev"
-            class="fixed right-0 bottom-0 m-2 opacity-40 empty:hidden"
-        />
     </UApp>
 </template>

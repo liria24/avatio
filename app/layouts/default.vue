@@ -1,8 +1,19 @@
 <script lang="ts" setup>
+const { $session } = useNuxtApp()
+const session = await $session()
 const route = useRoute()
-const paddingExclude = ['/', '/release', '/setup/compose']
 const footerExclude = ['/setup/compose']
-const modal_feedback = ref(false)
+
+const modalLogin = ref(false)
+const modalFeedback = ref(false)
+
+const notificationsStore = useNotificationsStore()
+if (session.value) await callOnce(notificationsStore.fetch)
+const notifications = computed(() =>
+    notificationsStore.notifications.filter((notification) => {
+        return !notification.readAt && notification.banner
+    })
+)
 </script>
 
 <template>
@@ -14,108 +25,43 @@ const modal_feedback = ref(false)
         </Head>
         <Body>
             <UContainer
-                class="flex min-h-[100dvh] flex-col items-center gap-6 pt-6 md:gap-8"
+                class="flex min-h-dvh flex-col items-center gap-6 pt-6 md:gap-8"
             >
-                <Header />
+                <ModalLogin v-model:open="modalLogin" />
+                <ModalFeedback v-model:open="modalFeedback" />
+
+                <Header
+                    @open-login-modal="modalLogin = true"
+                    @open-feedback-modal="modalFeedback = true"
+                />
+
                 <div
                     class="hidden w-full items-center justify-center rounded-xl bg-red-100 p-4 text-sm text-red-800 ring-2 ring-red-500 noscript:flex"
                 >
                     この Web サイトは JavaScript を使用しています。<br />
                     JavaScript が無効の場合、正しく表示されません。
                 </div>
-                <main
-                    :class="[
-                        'grid w-full grow',
-                        paddingExclude.includes(route.path)
-                            ? 'px-4'
-                            : 'md:px-20 lg:px-32',
-                    ]"
+
+                <div
+                    v-if="notifications.length"
+                    class="flex w-full flex-col gap-2"
                 >
+                    <BannerNotification
+                        v-for="notification in notifications"
+                        :key="notification.id"
+                        :data="notification"
+                        class="w-full"
+                    />
+                </div>
+
+                <main class="grid w-full grow">
                     <slot />
                 </main>
 
-                <footer
+                <Footer
                     v-if="!footerExclude.includes(route.path)"
-                    class="flex flex-col gap-10 self-stretch"
-                >
-                    <USeparator icon="avatio:avatio" />
-
-                    <BannerOwnerWarning />
-
-                    <div
-                        class="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 pb-10"
-                    >
-                        <div
-                            class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-zinc-700 dark:text-white"
-                        >
-                            <div class="flex items-center gap-2">
-                                <Button
-                                    to="https://x.com/liria_24"
-                                    new-tab
-                                    icon="simple-icons:x"
-                                    aria-label="X"
-                                    variant="flat"
-                                    class="p-2"
-                                />
-
-                                <Button
-                                    to="https://github.com/liria24/avatio"
-                                    new-tab
-                                    icon="simple-icons:github"
-                                    aria-label="GitHub"
-                                    variant="flat"
-                                    class="p-2"
-                                />
-                            </div>
-
-                            <div class="flex items-center gap-4">
-                                <Button
-                                    to="/release"
-                                    label="お知らせ"
-                                    variant="link"
-                                />
-
-                                <Button
-                                    label="フィードバック"
-                                    variant="link"
-                                    @click="modal_feedback = true"
-                                />
-                            </div>
-                        </div>
-                        <div
-                            class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2"
-                        >
-                            <Button to="/faq" label="FAQ" variant="link" />
-
-                            <Button
-                                to="/terms"
-                                label="利用規約"
-                                variant="link"
-                            />
-
-                            <Button
-                                to="/privacy-policy"
-                                label="プライバシーポリシー"
-                                variant="link"
-                            />
-                        </div>
-                        <div class="flex items-center gap-1">
-                            <p class="text-sm text-zinc-500">
-                                Copyright © 2025
-                            </p>
-                            <Button
-                                to="https://liria.me"
-                                new-tab
-                                label="Liria"
-                                icon="avatio:liria"
-                                variant="link"
-                                class="gap-1 font-[Montserrat] text-sm font-semibold"
-                            />
-                        </div>
-                    </div>
-
-                    <ModalFeedback v-model="modal_feedback" />
-                </footer>
+                    @open-feedback-modal="modalFeedback = true"
+                />
             </UContainer>
         </Body>
     </Html>

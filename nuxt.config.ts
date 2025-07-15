@@ -1,63 +1,76 @@
 import tailwindcss from '@tailwindcss/vite'
 import { defineOrganization } from 'nuxt-schema-org/schema'
-import topLevelAwait from 'vite-plugin-top-level-await'
-import wasm from 'vite-plugin-wasm'
+
+const baseUrl = import.meta.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+const title = 'Avatio'
+const description = 'あなたのアバター改変を共有しよう'
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-    future: { compatibilityVersion: 4 },
+    // future: {
+    //     compatibilityVersion: 4,
+    // },
 
     compatibilityDate: '2024-11-01',
 
     devtools: { enabled: true, timeline: { enabled: true } },
 
     modules: [
-        '@vueuse/nuxt',
+        '@nuxt/eslint',
         '@nuxt/image',
         '@nuxt/ui',
-        '@nuxtjs/supabase',
-        '@nuxt/eslint',
-        '@nuxtjs/turnstile',
+        '@nuxtjs/i18n',
+        '@nuxtjs/mdc',
         '@nuxtjs/robots',
         '@nuxtjs/sitemap',
+        '@pinia/nuxt',
+        '@stefanobartoletti/nuxt-social-share',
+        '@vueuse/nuxt',
         'nuxt-link-checker',
         'nuxt-schema-org',
         'nuxt-seo-utils',
-        'reka-ui/nuxt',
     ],
 
-    routeRules: {
-        '/setup/compose': { ssr: false },
-        '/faq': { isr: 600 },
-        '/terms': { isr: 600 },
-        '/privacy-policy': { isr: 600 },
-    },
+    plugins: [{ src: '~/plugins/axe.client.ts', mode: 'client' }],
 
     css: ['~/assets/css/main.css'],
 
     vite: {
-        plugins: [tailwindcss(), wasm(), topLevelAwait()],
+        plugins: [tailwindcss()],
+        optimizeDeps: {
+            include: import.meta.dev ? ['axe-core'] : [],
+        },
     },
 
     runtimeConfig: {
-        public: { r2: { domain: '' } },
         adminKey: '',
-        turnstile: { siteKey: '', secretKey: '' },
-        r2: { endpoint: '', accessKey: '', secretKey: '' },
+        vercel: { token: '', edgeConfig: { endpoint: '' } },
         liria: { accessToken: '' },
+        r2: { endpoint: '', accessKey: '', secretKey: '' },
+        ai: { gateway: { apiKey: '' } },
+        public: {
+            r2: { domain: '' },
+        },
+    },
+
+    routeRules: {
+        '/faq': { prerender: import.meta.dev ? false : true },
+        '/terms': { prerender: import.meta.dev ? false : true },
+        '/privacy-policy': { prerender: import.meta.dev ? false : true },
+        '/api/__sitemap__/urls': { isr: 60 * 60 * 6 },
     },
 
     site: {
-        url: 'https://avatio.me',
-        name: 'Avatio',
-        description: 'あなたのアバター改変を共有しよう',
+        url: baseUrl,
+        name: title,
+        description,
         trailingSlash: false,
     },
 
     app: {
         head: {
             htmlAttrs: { lang: 'ja', prefix: 'og: https://ogp.me/ns#' },
-            title: 'Avatio',
+            title,
             meta: [
                 { charset: 'utf-8' },
                 {
@@ -65,19 +78,13 @@ export default defineNuxtConfig({
                     content: 'width=device-width, initial-scale=1',
                 },
                 { name: 'icon', content: '/favicon.svg' },
-                { property: 'og:site_name', content: 'Avatio' },
+                { property: 'og:site_name', content: title },
                 { property: 'og:type', content: 'website' },
                 { property: 'og:url', content: 'https://avatio.me' },
-                { property: 'og:title', content: 'Avatio' },
+                { property: 'og:title', content: title },
                 { property: 'og:image', content: 'https://avatio.me/ogp.png' },
-                {
-                    name: 'description',
-                    content: 'あなたのアバター改変を共有しよう',
-                },
-                {
-                    property: 'og:description',
-                    content: 'あなたのアバター改変を共有しよう',
-                },
+                { name: 'description', content: description },
+                { property: 'og:description', content: description },
                 { name: 'twitter:site', content: '@liria_24' },
                 { name: 'twitter:card', content: 'summary_large_image' },
             ],
@@ -91,6 +98,34 @@ export default defineNuxtConfig({
         ],
         defaults: {
             weights: [100, 200, 300, 300, 400, 500, 600, 700, 800, 900],
+        },
+    },
+
+    i18n: {
+        baseUrl,
+        defaultLocale: 'en',
+        locales: [
+            {
+                code: 'en',
+                language: 'en-US',
+                name: 'English (US)',
+                file: 'en.json',
+                icon: 'twemoji:flag-united-states',
+            },
+            {
+                code: 'ja',
+                language: 'ja-JP',
+                name: '日本語',
+                file: 'ja.json',
+                icon: 'twemoji:flag-japan',
+            },
+        ],
+        bundle: {
+            optimizeTranslationDirective: false,
+        },
+        detectBrowserLanguage: {
+            useCookie: true,
+            cookieKey: 'i18n_redirected',
         },
     },
 
@@ -115,16 +150,36 @@ export default defineNuxtConfig({
 
     image: {
         domains: [
+            (() => {
+                try {
+                    const url = new URL(
+                        import.meta.env.NUXT_PUBLIC_R2_DOMAIN || ''
+                    )
+                    return url.hostname
+                } catch (error) {
+                    console.error('Error parsing R2 domain:', error)
+                    return ''
+                }
+            })(),
             'booth.pximg.net', // booth
             's2.booth.pm', // booth
-            import.meta.env.NUXT_PUBLIC_R2_DOMAIN.replace('https://', ''), // R2
         ],
+    },
+
+    socialShare: {
+        baseUrl,
     },
 
     robots: {
         allow: ['Twitterbot', 'facebookexternalhit'],
         blockNonSeoBots: true,
         blockAiBots: true,
+    },
+
+    sitemap: {
+        sitemaps: true,
+        exclude: ['/confirm'],
+        sources: ['/api/__sitemap__/urls'],
     },
 
     schemaOrg: {
@@ -141,41 +196,6 @@ export default defineNuxtConfig({
         }),
     },
 
-    sitemap: {
-        sitemaps: true,
-        exclude: [
-            '/confirm',
-            '/login',
-            '/search',
-            '/setup/compose',
-            '/settings',
-            '/bookmarks',
-        ],
-        sources: ['/api/__sitemap__/urls'],
-    },
-
-    supabase: {
-        url: import.meta.env.SUPABASE_URL,
-        key: import.meta.env.SUPABASE_ANON_KEY,
-        serviceKey: import.meta.env.SUPABASE_SERVICE_ROLE_KEY,
-        redirect: true,
-        redirectOptions: {
-            login: '/login',
-            callback: '/',
-            include: ['/setup/compose', '/settings', '/bookmarks'],
-            exclude: [],
-            cookieRedirect: false,
-        },
-        clientOptions: {
-            auth: {
-                flowType: 'pkce',
-            },
-        },
-        types: '@/shared/types/database.ts',
-    },
-
-    turnstile: { siteKey: import.meta.env.NUXT_TURNSTILE_SITE_KEY },
-
     nitro: {
         preset: 'vercel',
         experimental: {
@@ -185,7 +205,6 @@ export default defineNuxtConfig({
     },
 
     experimental: {
-        typedPages: true,
         scanPageMeta: true,
         payloadExtraction: true,
     },

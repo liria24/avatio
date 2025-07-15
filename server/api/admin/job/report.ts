@@ -1,0 +1,197 @@
+import database from '@@/database'
+
+export default defineApi(
+    async () => {
+        const config = useRuntimeConfig()
+
+        const now = new Date()
+        const yesterday = new Date()
+        yesterday.setDate(yesterday.getDate() - 1)
+
+        // データ取得を並列実行
+        const [feedbacksData, setupReportsData, userReportsData] =
+            await Promise.all([
+                database.query.feedbacks
+                    .findMany({
+                        where: (feedback, { eq, and, lt, gt }) =>
+                            and(
+                                eq(feedback.isClosed, false),
+                                lt(feedback.createdAt, now),
+                                gt(feedback.createdAt, yesterday)
+                            ),
+                        orderBy: (feedback, { desc }) =>
+                            desc(feedback.createdAt),
+                        columns: {
+                            createdAt: true,
+                            comment: true,
+                        },
+                        with: {
+                            user: {
+                                columns: {
+                                    id: true,
+                                    name: true,
+                                    image: true,
+                                },
+                            },
+                        },
+                    })
+                    .catch((error) => {
+                        console.error('Failed to fetch feedback data:', error)
+                        return null
+                    }),
+                database.query.setupReports
+                    .findMany({
+                        where: (report, { eq, and, lt, gt }) =>
+                            and(
+                                eq(report.isResolved, false),
+                                lt(report.createdAt, now),
+                                gt(report.createdAt, yesterday)
+                            ),
+                        orderBy: (report, { desc }) => desc(report.createdAt),
+                    })
+                    .catch((error) => {
+                        console.error(
+                            'Failed to fetch setup report data:',
+                            error
+                        )
+                        return null
+                    }),
+                database.query.userReports
+                    .findMany({
+                        where: (report, { eq, and, lt, gt }) =>
+                            and(
+                                eq(report.isResolved, false),
+                                lt(report.createdAt, now),
+                                gt(report.createdAt, yesterday)
+                            ),
+                        orderBy: (report, { desc }) => desc(report.createdAt),
+                    })
+                    .catch((error) => {
+                        console.error(
+                            'Failed to fetch user report data:',
+                            error
+                        )
+                        return null
+                    }),
+            ])
+
+        const response = {
+            feedback: {
+                data: feedbacksData,
+                error: feedbacksData === null,
+            },
+            report: {
+                setup: {
+                    data: setupReportsData,
+                    error: setupReportsData === null,
+                },
+                user: {
+                    data: userReportsData,
+                    error: userReportsData === null,
+                },
+            },
+        }
+
+        const contents: { name: string; value: string }[] = []
+        const embedsFeedback = []
+
+        // エラーハンドリングとログ出力
+        if (response.feedback.error)
+            contents.push({
+                name: 'Feedback',
+                value: 'Failed to fetch feedback data',
+            })
+        else if (response.feedback.data?.length) {
+            contents.push({
+                name: 'Feedback',
+                value: `Submitted feedback: **${response.feedback.data.length}**`,
+            })
+            for (const feedback of response.feedback.data) {
+                embedsFeedback.push({
+                    description: feedback.comment,
+                    timestamp: feedback.createdAt.toISOString(),
+                    color: 0xeeeeee,
+                    author: {
+                        name: feedback.user.name,
+                        url: `https://avatio.me/@${feedback.user.id}`,
+                        icon_url:
+                            feedback.user.image ||
+                            `https://avatar.vercel.sh/${feedback.user.id}?size=64`,
+                    },
+                })
+            }
+        }
+
+        if (response.report.setup.error)
+            contents.push({
+                name: 'Setup Reports',
+                value: 'Failed to fetch setup report data',
+            })
+        else if (response.report.setup.data?.length)
+            contents.push({
+                name: 'Setup Reports',
+                value: `Submitted setup reports: **${response.report.setup.data.length}**`,
+            })
+
+        if (response.report.user.error)
+            contents.push({
+                name: 'User Reports',
+                value: 'Failed to fetch user report data',
+            })
+        else if (response.report.user.data?.length)
+            contents.push({
+                name: 'User Reports',
+                value: `Submitted user reports: **${response.report.user.data.length}**`,
+            })
+
+        // Discordメッセージ送信
+        if (contents.length > 0) {
+            const embed = {
+                title: 'Avatio Report',
+                color: 0xeeeeee,
+                timestamp: now.toISOString(),
+                fields: contents.map((content) => ({
+                    name: content.name,
+                    value: content.value,
+                    inline: false,
+                })),
+                author: {
+                    name: 'Avatio',
+                    url: 'https://avatio.me',
+                    icon_url: 'https://avatio.me/icon_outlined.png',
+                },
+                footer: {
+                    text: `Period: ${yesterday.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })} → ${now.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}`,
+                },
+            }
+
+            try {
+                await $fetch('https://www.liria.me/api/discord/message', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        embeds: [embed, ...embedsFeedback],
+                    }),
+                    headers: {
+                        authorization: `Bearer ${config.liria.accessToken}`,
+                    },
+                })
+            } catch (error) {
+                console.error('Failed to send Discord message:', error)
+                throw createError({
+                    statusCode: 500,
+                    statusMessage: 'Failed to send Discord message',
+                })
+            }
+        }
+
+        return {
+            success: true,
+            data: response,
+            messagesSent: contents.length > 0,
+        }
+    },
+    {
+        errorMessage: 'Failed to generate report.',
+        requireCron: true,
+    }
+)

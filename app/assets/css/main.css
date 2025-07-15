@@ -1,10 +1,13 @@
-@import '@nuxt/ui';
 @import 'tailwindcss';
-@plugin '@tailwindcss/typography';
-@plugin 'tailwindcss-animate';
+@import '@nuxt/ui';
+@plugin "@tailwindcss/typography";
 
 @theme {
     --font-sans: 'Noto Sans JP', 'Geist', sans-serif;
+}
+
+:root {
+    --ui-container: 64rem;
 }
 
 html {

@@ -2,9 +2,6 @@
     // https://nuxt.com/docs/guide/concepts/typescript
     "extends": "./.nuxt/tsconfig.json",
     "compilerOptions": {
-        "paths": {
-            "@/*": ["./*"]
-        },
         "lib": ["ESNext", "DOM"],
         "target": "ESNext",
         "module": "ESNext",

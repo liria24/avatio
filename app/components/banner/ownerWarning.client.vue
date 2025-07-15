@@ -19,22 +19,25 @@ const onClick = () => {
 </script>
 
 <template>
-    <div v-if="visible" class="flex items-center justify-between gap-2 px-2">
-        <p class="text-xs break-keep text-zinc-700 dark:text-zinc-300">
-            {{
-                lineBreak(
-                    'あなたがアバター・アイテムの制作者であり、Avatioに掲載されることを拒否したい場合は、お手数ですが'
+    <div v-if="visible" class="flex items-center gap-3 px-2">
+        <p
+            class="text-toned text-xs wrap-anywhere break-keep"
+            v-html="
+                useLineBreak(
+                    'あなたがアバター・アイテムの制作者であり、Avatioに掲載されることを拒否したい場合は、お手数ですがこちらよりご連絡をお願いします。'
                 )
-            }}
-            <NuxtLink
-                to="https://github.com/liria24/avatio/issues/new/choose"
-                target="_blank"
-                class="font-medium text-zinc-500 hover:underline dark:text-zinc-400"
-            >
-                こちら
-            </NuxtLink>
-            {{ lineBreak('よりご連絡をお願いします。') }}
-        </p>
+            "
+        />
+
+        <UButton
+            to="https://github.com/liria24/avatio/issues/new/choose"
+            target="_blank"
+            label="GitHub"
+            icon="simple-icons:github"
+            variant="link"
+            size="xs"
+            class="p-0"
+        />
 
         <UButton
             icon="lucide:x"
