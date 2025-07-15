@@ -1,6 +1,6 @@
 import sanitizeHtml from 'sanitize-html'
 
-export default <T>(obj: T): T => {
+const sanitizeObject = <T>(obj: T): T => {
     if (typeof obj === 'string')
         return sanitizeHtml(obj, {
             allowedTags: [
@@ -42,3 +42,5 @@ export default <T>(obj: T): T => {
 
     return obj
 }
+
+export default sanitizeObject
