@@ -15,6 +15,8 @@ import {
     userShops,
 } from '@@/database/schema'
 import { createClient } from '@supabase/supabase-js'
+import { createStorage } from 'unstorage'
+import s3Driver from 'unstorage/drivers/s3'
 
 type User = {
     id: string
@@ -48,6 +50,47 @@ type User = {
     is_anonymous: boolean
 }
 
+const generateJpgFilename = (randomLength: number = 6) => {
+    const timestamp = Date.now().toString(36) // 36進数でタイムスタンプを短縮
+    const random = Math.random()
+        .toString(36)
+        .substring(2, 2 + randomLength)
+
+    return `${timestamp}${random}.jpg`
+}
+
+const uploadImageToR2 = async (imageUrl: string) => {
+    try {
+        const config = useRuntimeConfig()
+
+        const storage = createStorage({
+            driver: s3Driver({
+                accessKeyId: config.r2.accessKey,
+                secretAccessKey: config.r2.secretKey,
+                endpoint: config.r2.endpoint,
+                bucket: 'avatio',
+                region: 'auto',
+            }),
+        })
+
+        const response = await $fetch<Blob>(imageUrl)
+
+        const imageBuffer = await response.arrayBuffer()
+
+        const jpgFilename = generateJpgFilename()
+
+        // パスの正規化
+        const fullPath = `avatar:${jpgFilename}`
+
+        await storage.setItemRaw(fullPath, imageBuffer)
+
+        return `https://images.avatio.me/avatar/${jpgFilename}`
+    } catch (error) {
+        console.error('Failed to upload image to R2:', error)
+        return null
+    }
+}
+
 const migrateFromSupabase = async () => {
     const supabase = createClient(
         process.env.SUPABASE_URL || '',
@@ -70,35 +113,47 @@ const migrateFromSupabase = async () => {
             )
     ).data
 
-    const usersMerged = usersAuth
-        .filter((user) => user.app_metadata.provider === 'twitter')
-        .map((user) => {
-            const userPublic = usersPublic?.find((u) => u.id === user.id)
+    const usersMerged = await Promise.all(
+        usersAuth
+            .filter((user) => user.app_metadata.provider === 'twitter')
+            .map(async (user) => {
+                const userPublic = usersPublic?.find((u) => u.id === user.id)
 
-            return {
-                id: user.id,
-                email: user.email || '',
-                name: userPublic?.name || null,
-                image: userPublic?.avatar
-                    ? `${process.env.NUXT_PUBLIC_R2_DOMAIN}/avatar/${userPublic.avatar}`
-                    : user.user_metadata.avatar_url || null,
-                bio: userPublic?.bio || null,
-                links: userPublic?.links || null,
-                official: userPublic?.official || false,
-                createdAt: new Date(user.created_at).toISOString(),
-                updatedAt: new Date(user.updated_at).toISOString(),
-                badges: (userPublic?.user_badges || []) as {
-                    name: string
-                    created_at: string
-                }[],
-                shops: (userPublic?.user_shops || []) as {
-                    created_at: string
-                    shop_id: string
-                }[],
-                providerId: user.app_metadata.provider,
-                accountId: user.user_metadata.sub,
-            }
-        })
+                // 既存のアバターがある場合はそれを優先、なければmetadataから取得してR2にアップロード
+                let imageUrl = null
+                if (userPublic?.avatar) {
+                    imageUrl = `https://images.avatio.me/avatar/${userPublic.avatar}`
+                } else if (user.user_metadata.avatar_url) {
+                    // 画像をR2にアップロード
+                    const uploadedUrl = await uploadImageToR2(
+                        user.user_metadata.avatar_url
+                    )
+                    imageUrl = uploadedUrl
+                }
+
+                return {
+                    id: user.id,
+                    email: user.email || '',
+                    name: userPublic?.name || null,
+                    image: imageUrl,
+                    bio: userPublic?.bio || null,
+                    links: userPublic?.links || null,
+                    official: userPublic?.official || false,
+                    createdAt: new Date(user.created_at).toISOString(),
+                    updatedAt: new Date(user.updated_at).toISOString(),
+                    badges: (userPublic?.user_badges || []) as {
+                        name: string
+                        created_at: string
+                    }[],
+                    shops: (userPublic?.user_shops || []) as {
+                        created_at: string
+                        shop_id: string
+                    }[],
+                    providerId: user.app_metadata.provider,
+                    accountId: user.user_metadata.sub,
+                }
+            })
+    )
 
     const resultUsers = await database
         .insert(user)
@@ -277,7 +332,7 @@ const migrateFromSupabase = async () => {
                     .values(
                         setup.setup_images.map((image) => ({
                             setupId: resSetup[0].id,
-                            url: `${process.env.NUXT_PUBLIC_R2_DOMAIN}/setup/${image.name}`,
+                            url: `https://images.avatio.me/setup/${image.name}`,
                             width: image.width,
                             height: image.height,
                         }))

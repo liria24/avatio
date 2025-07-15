@@ -137,14 +137,11 @@ const menuItems = ref<DropdownMenuItem[][]>([
                     "
                     :to="$localePath('/setup/compose')"
                     icon="lucide:plus"
+                    label="セットアップを投稿"
                     color="neutral"
                     variant="soft"
-                    class="mr-1 hidden rounded-full py-2 pr-6 pl-5 md:flex"
-                >
-                    <span class="hidden whitespace-nowrap md:inline">
-                        セットアップを投稿
-                    </span>
-                </UButton>
+                    class="mr-1 hidden rounded-full py-2 pr-6 pl-5 sm:flex"
+                />
 
                 <UTooltip
                     v-if="!['/login', '/setup/compose'].includes(route.path)"

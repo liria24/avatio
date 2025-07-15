@@ -1,3 +1,4 @@
+import { sanitizeObject } from '#imports'
 import database from '@@/database'
 import { items, shops } from '@@/database/schema'
 import { getAll } from '@vercel/edge-config'

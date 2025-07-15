@@ -58,10 +58,7 @@ const onCropChange = async (data: {
                 data.canvas!.toBlob(resolve, 'image/png')
             })
 
-            if (blob) {
-                model.value = new Blob([blob], { type: 'image/png' })
-                console.log('Cropped image updated:', blob.size, 'bytes')
-            }
+            if (blob) model.value = new Blob([blob], { type: 'image/png' })
         } catch (error) {
             console.error('Failed to generate blob from canvas:', error)
         }

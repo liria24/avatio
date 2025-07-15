@@ -97,12 +97,8 @@ const removeItem = (category: string, id: string) => {
     const categoryItems = items.value[categoryKey]
     const index = categoryItems.findIndex((item) => item.id === id)
 
-    if (index !== -1) {
-        categoryItems.splice(index, 1)
-        console.log('Item removed successfully')
-    } else {
-        console.error('Item not found for removal:', id)
-    }
+    if (index !== -1) categoryItems.splice(index, 1)
+    else console.error('Item not found for removal:', id)
 }
 
 const changeItemCategory = (id: string, newCategory: ItemCategory) => {
@@ -121,7 +117,6 @@ const changeItemCategory = (id: string, newCategory: ItemCategory) => {
             if (item) {
                 item.category = newCategory
                 items.value[newCategoryKey].push(item)
-                console.log('Item category changed successfully')
                 return
             }
         }

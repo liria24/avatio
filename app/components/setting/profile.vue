@@ -81,7 +81,6 @@ const checkNewIdAvailability = useDebounceFn(async (id: string) => {
     ui.newIdCheckState = 'checking'
 
     try {
-        console.log('Checking profile ID availability:', id)
         const response = await $fetch('/api/users/id-availability', {
             query: { id },
         })
@@ -297,8 +296,10 @@ const cancelCropImage = () => {
                 </h2>
             </template>
 
-            <div class="flex w-full items-start gap-8">
-                <div class="flex shrink-0 flex-col gap-4">
+            <div class="flex w-full flex-col items-start gap-8 md:flex-row">
+                <div
+                    class="flex w-full shrink-0 items-center gap-4 md:w-fit md:flex-col md:items-stretch"
+                >
                     <NuxtImg
                         v-if="state.image"
                         v-slot="{ isLoaded, src, imgAttrs }"
@@ -308,12 +309,12 @@ const cancelCropImage = () => {
                         :height="192"
                         format="webp"
                         custom
-                        class="aspect-square size-48 shrink-0 rounded-full object-cover"
+                        class="aspect-square size-24 shrink-0 rounded-full object-cover md:size-48"
                     >
                         <img v-if="isLoaded" v-bind="imgAttrs" :src="src" />
                         <USkeleton
                             v-else
-                            class="aspect-square size-48 shrink-0 rounded-full"
+                            class="aspect-square size-24 shrink-0 rounded-full md:size-48"
                         />
                     </NuxtImg>
                     <div
@@ -523,6 +524,7 @@ const cancelCropImage = () => {
                                 }"
                             >
                                 <UButton
+                                    v-if="state.links.length < 8"
                                     icon="lucide:plus"
                                     variant="ghost"
                                     class="p-3"

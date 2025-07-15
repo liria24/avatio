@@ -124,8 +124,6 @@ const removeQueryItem = (id: string) => {
 watch(
     () => route.query,
     async (newQuery) => {
-        console.log('Route query changed:', newQuery)
-
         const newItemIds = normalizeArray(newQuery.itemId)
         const newTags = normalizeArray(newQuery.tag)
 

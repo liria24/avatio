@@ -1,8 +1,8 @@
 <script lang="ts" setup>
-const { $authClient, $logout } = useNuxtApp()
+const { $authClient, $logout, $multiSession } = useNuxtApp()
 const { $session } = useNuxtApp()
 const session = await $session()
-const sessions = await useGetMultiSessions()
+const sessions = await $multiSession()
 const route = useRoute()
 
 const query = route.query

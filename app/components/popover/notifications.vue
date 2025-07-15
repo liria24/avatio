@@ -57,7 +57,7 @@ watch(open, (isOpen) => {
         <slot :unread="notificationsStore?.unread || 0" />
 
         <template #content>
-            <div class="flex w-md max-w-md flex-col gap-4 p-4">
+            <div class="flex w-xs max-w-md flex-col gap-4 p-4 sm:w-sm md:w-md">
                 <div class="flex items-center justify-between gap-2">
                     <span class="text-lg leading-none font-bold text-nowrap">
                         通知

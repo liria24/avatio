@@ -17,7 +17,7 @@ const notifications = computed(() =>
 </script>
 
 <template>
-    <Html lang="ja">
+    <Html>
         <Head>
             <Title>Avatio</Title>
             <Link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -57,6 +57,19 @@ const notifications = computed(() =>
                 <main class="grid w-full grow">
                     <slot />
                 </main>
+
+                <UButton
+                    v-if="
+                        session &&
+                        !['/login', '/setup/compose'].includes(route.path)
+                    "
+                    :to="$localePath('/setup/compose')"
+                    icon="lucide:plus"
+                    aria-label="セットアップを投稿"
+                    color="neutral"
+                    variant="solid"
+                    class="fixed right-4 bottom-4 rounded-full p-4 shadow-lg sm:hidden"
+                />
 
                 <Footer
                     v-if="!footerExclude.includes(route.path)"

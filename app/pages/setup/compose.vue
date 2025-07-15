@@ -253,7 +253,9 @@ defineSeo({
             icon="lucide:upload"
             aria-label="セットアップを投稿"
             :loading="publishing"
-            class="fixed right-3 bottom-3 rounded-full p-4 whitespace-nowrap hover:bg-zinc-700 hover:text-zinc-200 lg:hidden dark:bg-zinc-300 dark:text-zinc-900 hover:dark:text-zinc-100"
+            variant="solid"
+            color="neutral"
+            class="fixed right-4 bottom-4 rounded-full p-4 lg:hidden"
         />
     </UForm>
 </template>

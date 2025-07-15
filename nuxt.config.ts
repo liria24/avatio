@@ -7,10 +7,6 @@ const description = 'あなたのアバター改変を共有しよう'
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-    // future: {
-    //     compatibilityVersion: 4,
-    // },
-
     compatibilityDate: '2024-11-01',
 
     devtools: { enabled: true, timeline: { enabled: true } },
@@ -103,15 +99,15 @@ export default defineNuxtConfig({
 
     i18n: {
         baseUrl,
-        defaultLocale: 'en',
+        defaultLocale: 'ja',
         locales: [
-            {
-                code: 'en',
-                language: 'en-US',
-                name: 'English (US)',
-                file: 'en.json',
-                icon: 'twemoji:flag-united-states',
-            },
+            // {
+            //     code: 'en',
+            //     language: 'en-US',
+            //     name: 'English (US)',
+            //     file: 'en.json',
+            //     icon: 'twemoji:flag-united-states',
+            // },
             {
                 code: 'ja',
                 language: 'ja-JP',

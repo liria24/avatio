@@ -10,7 +10,6 @@ const { data: popularAvatars } = await useFetch('/api/items/popular-avatars', {
     getCachedData: (key: string) =>
         nuxtApp.payload.data[key] || nuxtApp.static.data[key],
     default: () => [],
-    immediate: false,
 })
 </script>
 
@@ -37,7 +36,7 @@ const { data: popularAvatars } = await useFetch('/api/items/popular-avatars', {
                     <span
                         class="p-1 text-center text-sm font-semibold text-white"
                     >
-                        {{ avatarShortName(avatar.name) }}
+                        {{ avatar.niceName || avatarShortName(avatar.name) }}
                     </span>
                 </div>
 
