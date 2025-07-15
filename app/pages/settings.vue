@@ -1,226 +1,132 @@
 <script lang="ts" setup>
-import { z } from 'zod/v4'
+const { $authClient, $logout, $multiSession } = useNuxtApp()
+const { $session } = useNuxtApp()
+const session = await $session()
+const sessions = await $multiSession()
+const route = useRoute()
 
-const user = useSupabaseUser()
-const toast = useToast()
+const query = route.query
+const changeUserId = query.changeUserId
 
-if (!user.value) showError('ログインしてください')
+if (!session.value) navigateTo('/login')
 
-const userSettingsSchema = z.object({
-    name: z
-        .string()
-        .min(1, 'ユーザー名を入力してください')
-        .max(124, 'ユーザー名は124文字以内で入力してください')
-        .refine(
-            (name) => !/^\s+$/.test(name),
-            '空白のみのユーザー名は使用できません'
-        ),
-    bio: z.string().max(140, 'bioは140文字以内で入力してください'),
-    links: z
-        .array(z.url('有効なURLを入力してください'))
-        .max(8, 'リンクは8個まで追加できます'),
+const modalDeleteUser = ref(false)
+
+const deleteUser = async () => {
+    await $authClient.deleteUser({ callbackURL: '/' })
+}
+
+defineSeo({
+    title: 'ユーザー設定',
+    description:
+        'ユーザープロフィールの編集や、アカウントに関する操作を行うことができます。',
 })
-
-const currentUserData = ref<User | null>(null)
-const name = ref<string>('')
-const avatar = ref<Blob | null>(null)
-const currentAvatar = ref<string | null>(null)
-const bio = ref<string>('')
-const links = ref<string[]>([])
-const saving = ref(false)
-
-// ユーザーデータの取得
-const fetchUserData = async () => {
-    try {
-        currentUserData.value = await $fetch(`/api/user/${user.value?.id}`)
-        name.value = currentUserData.value?.name ?? ''
-        currentAvatar.value = currentUserData.value?.avatar ?? null
-        bio.value = currentUserData.value?.bio ?? ''
-        links.value = currentUserData.value?.links ?? []
-    } catch (error) {
-        console.error('Error fetching user data:', error)
-    }
-}
-
-// ユーザーデータ更新の共通処理
-const updateUserData = async (deleteAvatarFlag = false) => {
-    saving.value = true
-
-    try {
-        const response = await $fetch('/api/user', {
-            method: 'PATCH',
-            body: {
-                deleteAvatar: deleteAvatarFlag,
-                name: name.value,
-                bio: bio.value,
-                links: links.value,
-                newAvatar:
-                    avatar.value && !deleteAvatarFlag
-                        ? await blobToBase64(avatar.value)
-                        : null,
-            },
-        })
-
-        userProfile.value.name = response.name
-        userProfile.value.avatar = response.avatar
-        currentAvatar.value = response.avatar
-
-        return response
-    } catch (error) {
-        console.error('Error updating user data:', error)
-        throw error
-    } finally {
-        saving.value = false
-    }
-}
-
-const save = async () => {
-    const validationResult = userSettingsSchema.safeParse({
-        name: name.value,
-        bio: bio.value,
-        links: links.value,
-    })
-
-    if (!validationResult.success) {
-        const formattedErrors = validationResult.error.format()
-        const firstError =
-            formattedErrors.name?._errors[0] ||
-            formattedErrors.bio?._errors[0] ||
-            formattedErrors.links?._errors[0]
-
-        if (firstError) {
-            toast.add(firstError)
-            return
-        }
-    }
-
-    try {
-        await updateUserData(false)
-        avatar.value = null
-        toast.add('ユーザー情報を保存しました')
-    } catch {
-        toast.add('ユーザー情報の保存に失敗しました')
-    }
-}
-
-const deleteAvatar = async () => {
-    if (!currentAvatar.value) return
-
-    try {
-        await updateUserData(true)
-        toast.add('アバターを削除しました')
-    } catch {
-        toast.add('ユーザー情報の保存に失敗しました')
-    }
-}
-
-await fetchUserData()
-
-defineSeo({ title: 'ユーザー設定' })
 </script>
 
 <template>
-    <div v-if="!currentUserData" class="flex w-full flex-col items-center">
-        <p class="mt-5 text-zinc-400">ユーザーデータの取得に失敗しました</p>
-    </div>
+    <div class="flex flex-col gap-6">
+        <h1 class="text-lg font-medium text-nowrap">ユーザー設定</h1>
 
-    <div v-else class="flex w-full flex-col gap-4 px-2">
-        <div class="flex items-center justify-between">
-            <UiTitle
-                label="プロフィール"
-                icon="lucide:user-round"
-                size="lg"
-                is="h1"
-            />
-        </div>
+        <SettingProfile :change-user-id="!!changeUserId" />
 
-        <div
-            class="flex w-full flex-col gap-6 rounded-xl p-5 ring-1 ring-zinc-300 dark:ring-zinc-600"
-        >
-            <div class="flex grow items-center gap-8">
-                <UserSettingAvatar
-                    v-model:avatar="avatar"
-                    v-model:current-avatar="currentAvatar"
-                    @delete-avatar="deleteAvatar"
-                />
+        <SettingShop />
 
-                <div class="flex grow flex-col gap-2">
-                    <div class="flex grow items-center justify-between">
-                        <UiTitle
-                            label="ユーザー名"
-                            icon="lucide:pencil"
-                            is="h2"
-                        />
-                        <p
-                            v-if="name?.length > 124"
-                            class="text-sm font-medium whitespace-nowrap text-red-400 dark:text-red-400"
-                        >
-                            {{ name?.length || 0 }} / 124
+        <UCard>
+            <template #header>
+                <h2 class="text-lg leading-none font-semibold text-nowrap">
+                    アカウント
+                </h2>
+            </template>
+
+            <div class="flex w-full flex-col gap-6">
+                <div class="flex w-full items-center justify-between gap-2">
+                    <div class="flex flex-col gap-1">
+                        <h3 class="text-sm font-semibold">
+                            このブラウザ以外からログアウト
+                        </h3>
+                        <p class="text-muted text-xs">
+                            現在使用しているブラウザ以外のすべてのデバイスからログアウトします。
                         </p>
                     </div>
+                    <UButton
+                        label="すべてのデバイスからログアウト"
+                        color="neutral"
+                        variant="subtle"
+                        @click="$logout"
+                    />
+                </div>
 
-                    <UserSettingName v-model="name" class="w-full" />
+                <div
+                    v-if="sessions.length > 1"
+                    class="flex w-full items-center justify-between gap-2"
+                >
+                    <div class="flex flex-col gap-1">
+                        <h3 class="text-sm font-semibold">
+                            すべてのアカウントからログアウト
+                        </h3>
+                        <p class="text-muted text-xs">
+                            同時にログインしているすべてのアカウントからログアウトします。
+                        </p>
+                    </div>
+                    <UButton
+                        label="すべてログアウト"
+                        color="neutral"
+                        variant="subtle"
+                        @click="$logout"
+                    />
                 </div>
             </div>
+        </UCard>
 
-            <div class="flex grow flex-col gap-2">
-                <div class="flex grow items-center justify-between">
-                    <UiTitle label="bio" icon="lucide:text" is="h2" />
-                    <p
-                        :data-exceeded="bio?.length > 140"
-                        class="text-sm font-medium whitespace-nowrap text-zinc-700 data-[exceeded=true]:text-red-400 dark:text-zinc-400 dark:data-[exceeded=true]:text-red-400"
-                    >
-                        {{ bio?.length || 0 }} / 140
+        <UCard variant="soft">
+            <template #header>
+                <h2 class="text-lg leading-none font-semibold text-nowrap">
+                    DANGER ZONE
+                </h2>
+            </template>
+
+            <div class="flex w-full items-center justify-between gap-2">
+                <div class="flex flex-col gap-1">
+                    <h3 class="text-sm font-semibold">アカウント削除</h3>
+                    <p class="text-muted text-xs">
+                        アカウントおよびアカウントに紐づくデータをすべて削除します。<br />
+                        削除したアカウントは復元できません。
                     </p>
                 </div>
+                <UModal v-model:open="modalDeleteUser" title="アカウント削除">
+                    <UButton
+                        label="アカウント削除"
+                        color="error"
+                        variant="subtle"
+                    />
 
-                <UserSettingBio v-model="bio" />
+                    <template #body>
+                        <UAlert
+                            icon="lucide:trash"
+                            title="本当にアカウントを削除しますか？"
+                            description="削除したアカウントは復元できません。"
+                            color="error"
+                            variant="subtle"
+                        />
+                    </template>
+
+                    <template #footer>
+                        <div class="flex w-full items-center justify-end gap-2">
+                            <UButton
+                                label="キャンセル"
+                                variant="ghost"
+                                @click="modalDeleteUser = false"
+                            />
+                            <UButton
+                                label="削除"
+                                color="error"
+                                variant="solid"
+                                @click="deleteUser"
+                            />
+                        </div>
+                    </template>
+                </UModal>
             </div>
-
-            <div class="flex grow flex-col gap-2">
-                <div class="flex grow items-center justify-between">
-                    <UiTitle label="リンク" icon="lucide:link" is="h2" />
-                    <p
-                        :data-exceeded="links?.length > 8"
-                        class="text-sm font-medium whitespace-nowrap text-zinc-700 data-[exceeded=true]:text-red-400 dark:text-zinc-400 dark:data-[exceeded=true]:text-red-400"
-                    >
-                        {{ links?.length || 0 }} / 8
-                    </p>
-                </div>
-
-                <UserSettingLinks v-model="links" />
-            </div>
-
-            <UiDivider />
-
-            <Button :disabled="saving" @click="save">
-                <Icon
-                    :name="saving ? 'svg-spinners:ring-resize' : 'lucide:save'"
-                    size="18"
-                    class="text-zinc-600 dark:text-zinc-300"
-                />
-                <span class="hidden md:inline">
-                    {{ saving ? '保存中' : '保存' }}
-                </span>
-            </Button>
-        </div>
-
-        <UiTitle
-            label="ショップ"
-            icon="lucide:store"
-            size="lg"
-            is="h1"
-            class="mt-5"
-        />
-        <UserSettingShopVerify />
-
-        <UiTitle
-            label="アカウント"
-            icon="lucide:bolt"
-            size="lg"
-            is="h1"
-            class="mt-5"
-        />
-        <UserSettingAccount />
+        </UCard>
     </div>
 </template>

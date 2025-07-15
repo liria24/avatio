@@ -1,64 +1,114 @@
 <script lang="ts" setup>
-const vis = defineModel<boolean>({ default: false })
-const client = useSupabaseClient()
+import { z } from 'zod/v4'
 
-const feedback = ref<string>('')
+const open = defineModel<boolean>('open', { default: false })
+
+const toast = useToast()
+const route = useRoute()
+
+const submitting = ref(false)
+
+const schema = z.object({
+    comment: z.string(),
+})
+type Schema = z.infer<typeof schema>
+const state = reactive<Schema>({
+    comment: '',
+})
 
 const Submit = async () => {
-    if (!feedback.value.length)
-        return useToast().add('フィードバックを入力してください')
+    try {
+        await schema.parseAsync(state)
 
-    const { error } = await client
-        .from('feedback')
-        .insert({ contents: feedback.value })
+        submitting.value = true
 
-    if (error) return useToast().add('フィードバックの送信に失敗')
+        await $fetch('/api/feedbacks', {
+            method: 'POST',
+            body: {
+                comment: state.comment,
+                contextPath: route.fullPath,
+            },
+        })
+        toast.add({
+            title: 'フィードバックが送信されました',
+            description: 'ご協力ありがとうございます。',
+            color: 'success',
+        })
 
-    useToast().add('フィードバックを送信しました')
-    vis.value = false
+        open.value = false
+        state.comment = ''
+    } catch (error) {
+        toast.add({
+            title: 'フィードバックの送信に失敗しました',
+            description:
+                error instanceof z.ZodError
+                    ? error.issues.map((e) => e.message).join(', ')
+                    : '不明なエラーが発生しました',
+            color: 'error',
+        })
+    } finally {
+        submitting.value = false
+    }
 }
 </script>
 
 <template>
-    <Modal v-model="vis">
-        <template #header>
-            <div class="flex items-center justify-between gap-2">
-                <DialogTitle>
-                    <UiTitle label="フィードバック" icon="lucide:lightbulb" />
-                </DialogTitle>
+    <UModal v-model:open="open" title="フィードバック">
+        <slot />
 
-                <HovercardFeedback>
-                    <Icon
-                        name="lucide:info"
-                        class="size-4 shrink-0 text-zinc-400 dark:text-zinc-300"
+        <template #body>
+            <UForm
+                :state
+                :schema
+                class="flex w-full flex-col items-center gap-4 overflow-y-auto"
+                @submit="Submit"
+            >
+                <UFormField name="comment" label="コメント" class="w-full">
+                    <UTextarea
+                        v-model="state.comment"
+                        autoresize
+                        placeholder="フィードバックを入力"
+                        class="w-full"
                     />
-                </HovercardFeedback>
-            </div>
-        </template>
 
-        <div class="flex flex-col gap-5">
-            <div class="relative">
-                <UiTextarea
-                    v-model="feedback"
-                    autoresize
-                    placeholder="なにかアイデアがあればお送りください！"
+                    <template #hint>
+                        <UTooltip
+                            text="Markdownをサポートしています"
+                            :content="{ side: 'top' }"
+                            :delay-duration="50"
+                        >
+                            <Icon
+                                name="simple-icons:markdown"
+                                size="20"
+                                class="text-dimmed -my-1 mr-0.5"
+                            />
+                        </UTooltip>
+                    </template>
+                </UFormField>
+
+                <UAlert
+                    icon="lucide:info"
+                    title="フィードバックは匿名で送信されます"
+                    variant="subtle"
                 />
-                <Icon
-                    name="simple-icons:markdown"
-                    class="absolute right-2 bottom-1 size-6 shrink-0 bg-zinc-500 select-none"
-                />
-            </div>
-        </div>
+            </UForm>
+        </template>
 
         <template #footer>
-            <div class="flex items-center justify-between gap-1.5">
-                <Button
+            <div class="flex w-full items-center justify-end gap-1.5">
+                <UButton
+                    :disabled="submitting"
                     label="キャンセル"
-                    variant="flat"
-                    @click="vis = false"
+                    variant="ghost"
+                    @click="open = false"
                 />
-                <Button label="送信" @click="Submit" />
+                <UButton
+                    :loading="submitting"
+                    label="報告"
+                    color="neutral"
+                    @click="Submit()"
+                />
             </div>
         </template>
-    </Modal>
+    </UModal>
 </template>

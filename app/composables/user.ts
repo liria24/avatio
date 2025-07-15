@@ -1,63 +1,27 @@
-interface UserProfile {
-    id: string | null
-    name: string | null
-    avatar: string | null
-    badges: Badge[]
-}
+import type { UseFetchOptions } from 'nuxt/app'
 
-export const userProfile = ref<UserProfile>({
-    id: null,
-    name: null,
-    avatar: null,
-    badges: [],
-})
-
-export const useSignOut = async () => {
-    const supabase = useSupabaseClient()
-    await supabase.auth.signOut()
-    navigateTo('/')
-}
-
-export const useLogin = async (
-    email: string,
-    password: string,
-    token: string
+export const useUser = (
+    id: string,
+    options?: UseFetchOptions<UserWithSetups>
 ) => {
-    const supabase = useSupabaseClient()
-    const { error } = await supabase.auth.signInWithPassword({
-        email: email,
-        password: password,
-        options: { captchaToken: token },
-    })
-    if (error) throw error
-}
+    const nuxtApp = useNuxtApp()
 
-export const useSignUp = async (
-    email: string,
-    password: string,
-    token: string
-) => {
-    const supabase = useSupabaseClient()
-
-    const { error } = await supabase.auth.signUp({
-        email: email,
-        password: password,
-        options: { captchaToken: token },
-    })
-    if (error) throw error
-
-    useToast().add('サインアップしました。')
-}
-
-export const useLoginWithTwitter = async () => {
-    const supabase = useSupabaseClient()
-
-    const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'twitter',
-    })
-
-    if (error) {
-        navigateTo('/login')
-        useToast().add('ログインに失敗しました。')
+    const defaultOptions: UseFetchOptions<UserWithSetups> = {
+        key: computed(() => `user-${unref(id)}`),
+        getCachedData: (key: string) =>
+            nuxtApp.payload.data[key] || nuxtApp.static.data[key],
+        dedupe: 'defer',
+        lazy: false,
+        immediate: true,
+        headers: computed(() => {
+            if (import.meta.server && nuxtApp.ssrContext?.event.headers)
+                return nuxtApp.ssrContext.event.headers
+        }),
     }
+
+    return useFetch<UserWithSetups>(id, {
+        ...defaultOptions,
+        ...options,
+        baseURL: '/api/users/',
+    })
 }

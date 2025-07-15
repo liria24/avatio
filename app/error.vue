@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import type { NuxtError } from 'nuxt/app'
+import type { NuxtError } from '#app'
+import * as locales from '@nuxt/ui/locale'
 
-const isDev = import.meta.dev
+const { locale } = useI18n()
 
 const props = defineProps({
     error: {
@@ -15,37 +16,30 @@ const props = defineProps({
 </script>
 
 <template>
-    <Html>
-        <Body
-            class="bg-zinc-50 text-black transition duration-50 ease-in-out dark:bg-zinc-900 dark:text-white"
-        >
-            <NuxtRouteAnnouncer />
-            <NuxtLoadingIndicator />
-            <NuxtLayout>
-                <div class="flex flex-col items-center gap-4">
-                    <h1
-                        class="flex font-['Montserrat'] text-9xl font-extrabold text-zinc-500 dark:text-zinc-400"
-                    >
-                        {{ props.error.statusCode }}
-                    </h1>
-                    <p
-                        class="text-xl font-bold text-zinc-500 dark:text-zinc-400"
-                    >
-                        {{ props.error.message }}
-                    </p>
-                    <Button
-                        to="/"
-                        label="ホーム"
-                        icon="lucide:arrow-left"
-                        variant="flat"
-                    />
-                </div>
-            </NuxtLayout>
-            <UiToaster />
-            <UiIsMaintenance
-                v-if="isDev"
-                class="fixed right-0 bottom-0 m-2 opacity-40 empty:hidden"
-            />
-        </Body>
-    </Html>
+    <UApp :locale="locales[locale]">
+        <NuxtRouteAnnouncer />
+        <NuxtLoadingIndicator />
+        <NuxtLayout>
+            <div
+                class="mt-24 flex w-full flex-col items-center justify-center gap-4"
+            >
+                <h1
+                    class="font-[Geist] text-9xl leading-none font-extralight text-nowrap"
+                >
+                    {{ props.error.statusCode }}
+                </h1>
+                <h2 class="text-muted text-lg">
+                    {{ props.error.message }}
+                </h2>
+                <UButton
+                    :to="$localePath('/')"
+                    label="ホームに戻る"
+                    icon="lucide:arrow-left"
+                    variant="soft"
+                    size="lg"
+                    class="mt-4"
+                />
+            </div>
+        </NuxtLayout>
+    </UApp>
 </template>

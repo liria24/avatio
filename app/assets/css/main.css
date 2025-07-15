@@ -1,10 +1,13 @@
 @import 'tailwindcss';
-@plugin '@tailwindcss/typography';
-@plugin 'tailwindcss-animate';
-@custom-variant dark (&:where(.dark-mode, .dark-mode *));
+@import '@nuxt/ui';
+@plugin "@tailwindcss/typography";
 
 @theme {
-    --font-sans: 'Murecho', 'Geist', sans-serif;
+    --font-sans: 'Noto Sans JP', 'Geist', sans-serif;
+}
+
+:root {
+    --ui-container: 64rem;
 }
 
 html {
