@@ -1,4 +1,4 @@
-export default defineNuxtRouteMiddleware(async (_to, _from) => {
+export default defineNuxtRouteMiddleware(async (to, _from) => {
     if (import.meta.server) return
 
     const { $session } = useNuxtApp()
@@ -9,11 +9,11 @@ export default defineNuxtRouteMiddleware(async (_to, _from) => {
             `/api/edge-config/${import.meta.dev ? 'isMaintenanceDev' : 'isMaintenance'}`
         ),
     ])
+    console.log('isMaintenance', isMaintenance)
 
-    if (isMaintenance && session.value?.user.role !== 'admin')
-        showError({
-            statusCode: 503,
-            message: 'メンテナンス中',
-        })
+    if (isMaintenance && session.value?.user.role !== 'admin') {
+        if (to.path !== '/on-maintenance') return navigateTo('/on-maintenance')
+    } else {
+        if (to.path === '/on-maintenance') return navigateTo('/')
+    }
 })
-//
