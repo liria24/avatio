@@ -4,6 +4,7 @@ import { admin, multiSession } from 'better-auth/plugins'
 import database from './database'
 
 export const auth = betterAuth({
+    appName: 'Avatio',
     user: {
         additionalFields: {
             bio: {
@@ -23,6 +24,11 @@ export const auth = betterAuth({
     },
     baseURL: import.meta.env.NUXT_BETTER_AUTH_URL,
     secret: import.meta.env.NUXT_BETTER_AUTH_SECRET,
+    trustedOrigins: [
+        'http://localhost:3000',
+        'https://dev.avatio.me',
+        'https://avatio.me',
+    ],
     database: drizzleAdapter(database, {
         provider: 'pg',
     }),
@@ -40,12 +46,11 @@ export const auth = betterAuth({
         enabled: true,
         maxAge: 3 * 60,
     },
-    session: {
-        expiresIn: 60 * 60 * 24 * 30, // 30 days
-        updateAge: 60 * 60 * 24, // 1 day
-    },
     rateLimit: {
         storage: 'database',
+    },
+    onAPIError: {
+        throw: true,
     },
 })
 
