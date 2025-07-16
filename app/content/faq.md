@@ -50,10 +50,6 @@ Avatio の運営・開発に貢献するなど、一定の条件を満たすこ�
 ストア・ショップを開設し、Avatio で認証する
 ::
 
-::alert{icon="fluent-color:lightbulb-24" title="アイデアマン" variant="outline"}
-的確で素晴らしいフィードバックを送る
-::
-
 ::alert{icon="fluent-color:shield-24" title="パトロール" variant="outline"}
 セットアップまたはユーザーに行った報告が５件以上受理される（マッチポンプは BAN 対象です）
 ::
