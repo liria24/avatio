@@ -11,6 +11,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const setupsPerPage: number = 50
 const page = ref(1)
+const initialLoad = ref(true)
 
 const { data, status, refresh } = await useSetups({
     query: computed(() => ({
@@ -22,28 +23,29 @@ const { data, status, refresh } = await useSetups({
         ? (key: string) => nuxtApp.payload.data[key] || nuxtApp.static.data[key]
         : undefined,
 })
+initialLoad.value = false
 
-const setups = ref<Setup[]>([])
+const setups = ref<Setup[]>(data.value?.data || [])
 
-const loadMoreSetups = () => {
+const loadMoreSetups = async () => {
     if (data.value?.pagination.hasNext) {
         page.value += 1
-        refresh()
+        await refresh()
+        setups.value = [...setups.value, ...(data.value?.data || [])]
     }
 }
-
-watchEffect(() => {
-    if (data.value) setups.value.push(...data.value.data)
-})
 </script>
 
 <template>
     <div class="flex w-full flex-col gap-3 self-center">
-        <SetupsList v-model:setups="setups" v-model:status="status" />
+        <SetupsList v-model:setups="setups" v-model:loading="initialLoad" />
         <UButton
             v-if="data?.pagination.hasNext"
             :loading="status === 'pending'"
             label="もっと見る"
+            variant="soft"
+            size="lg"
+            class="w-fit self-center"
             @click="loadMoreSetups()"
         />
     </div>

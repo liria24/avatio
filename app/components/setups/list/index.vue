@@ -1,6 +1,4 @@
 <script lang="ts" setup>
-import type { AsyncDataRequestStatus } from '#app'
-
 interface Porps {
     minColumns?: number
     maxColumns?: number
@@ -15,14 +13,14 @@ const props = withDefaults(defineProps<Porps>(), {
 const setups = defineModel<Setup[]>('setups', {
     default: [],
 })
-const status = defineModel<AsyncDataRequestStatus>('status', {
-    default: 'idle',
+const loading = defineModel<boolean>('loading', {
+    default: true,
 })
 </script>
 
 <template>
     <Icon
-        v-if="status !== 'success'"
+        v-if="loading"
         name="svg-spinners:ring-resize"
         size="24"
         class="mt-4 self-center bg-zinc-500"
