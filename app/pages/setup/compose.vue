@@ -70,9 +70,6 @@ const onSubmit = async () => {
             console.error('Validation failed:', validationResult.error.issues)
             toast.add({
                 title: 'セットアップの投稿に失敗しました',
-                // description: validationResult.error.issues
-                //     .map((issue) => issue.message)
-                //     .join('\n'),
                 description: h(
                     resolveComponent('div'),
                     {
@@ -128,13 +125,6 @@ const onSubmit = async () => {
             method,
             body,
         })
-
-        console.log(
-            isEditing
-                ? 'Setup updated successfully:'
-                : 'Setup created successfully:',
-            response
-        )
 
         toast.add({
             title: isEditing
