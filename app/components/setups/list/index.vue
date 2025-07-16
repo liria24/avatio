@@ -15,14 +15,14 @@ const props = withDefaults(defineProps<Porps>(), {
 const setups = defineModel<Setup[]>('setups', {
     default: [],
 })
-const status = defineModel<AsyncDataRequestStatus>('status', {
-    default: 'idle',
+const status = defineModel<boolean>('loading', {
+    default: false,
 })
 </script>
 
 <template>
     <Icon
-        v-if="status !== 'success'"
+        v-if="loading"
         name="svg-spinners:ring-resize"
         size="24"
         class="mt-4 self-center bg-zinc-500"

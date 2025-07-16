@@ -1,9 +1,6 @@
 import type { UseFetchOptions } from 'nuxt/app'
 
-export const useSetup = async (
-    id: number,
-    options?: UseFetchOptions<Setup>
-) => {
+export const useSetup = (id: number, options?: UseFetchOptions<Setup>) => {
     const nuxtApp = useNuxtApp()
 
     const defaultOptions: UseFetchOptions<Setup> = {

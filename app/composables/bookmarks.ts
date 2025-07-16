@@ -1,6 +1,6 @@
 import type { UseFetchOptions } from 'nuxt/app'
 
-export const useBookmarks = async (
+export const useBookmarks = (
     options?: UseFetchOptions<PaginationResponse<Bookmark[]>>
 ) => {
     const nuxtApp = useNuxtApp()
