@@ -174,6 +174,7 @@ export default defineNuxtConfig({
             })(),
             'booth.pximg.net', // booth
             's2.booth.pm', // booth
+            'avatars.githubusercontent.com', // GitHub User Avatars
         ],
     },
 
