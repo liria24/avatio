@@ -402,16 +402,14 @@ export const feedbacksInsertSchema = createInsertSchema(feedbacks, {
             .min(1, 'コメントは 1 文字以上必要です。')
             .max(1000, 'コメントは最大 1000 文字です。'),
 })
-export const feedbacksPublicSchema = feedbacksSelectSchema
-    .pick({
-        id: true,
-        createdAt: true,
-        comment: true,
-        isClosed: true,
-    })
-    .extend({
-        user: userPublicSchema,
-    })
+export const feedbacksPublicSchema = feedbacksSelectSchema.pick({
+    id: true,
+    createdAt: true,
+    fingerprint: true,
+    contextPath: true,
+    comment: true,
+    isClosed: true,
+})
 export type Feedback = z.infer<typeof feedbacksPublicSchema>
 
 export const setupReportsSelectSchema = createSelectSchema(setupReports, {

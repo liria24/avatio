@@ -79,6 +79,7 @@ export default defineApi<Setup>(
                 },
                 items: {
                     columns: {
+                        category: true,
                         unsupported: true,
                         note: true,
                     },
@@ -228,6 +229,7 @@ export default defineApi<Setup>(
             }
             items.push({
                 ...item.item,
+                category: item.category || item.item.category,
                 unsupported: item.unsupported,
                 note: item.note,
                 shapekeys: item.shapekeys,
@@ -255,6 +257,7 @@ export default defineApi<Setup>(
                         unsupported: item.unsupported,
                         note: item.note,
                         shapekeys: item.shapekeys,
+                        category: item.category || response.category,
                     },
                 }
             } catch (error) {

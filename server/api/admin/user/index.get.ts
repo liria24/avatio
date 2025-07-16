@@ -8,8 +8,8 @@ const querySchema = z.object({
         .string()
         .refine((val) => !isNaN(Number(val)))
         .optional(),
-    sortBy: z.enum(['createdAt', 'name']).optional(),
-    sortDirection: z.enum(['asc', 'desc']).optional(),
+    sortBy: z.enum(['createdAt', 'name']).optional().default('createdAt'),
+    sortDirection: z.enum(['asc', 'desc']).optional().default('desc'),
     searchField: z.enum(['name', 'email']).optional(),
     searchOperator: z.enum(['contains', 'starts_with', 'ends_with']).optional(),
     searchValue: z.string().optional(),

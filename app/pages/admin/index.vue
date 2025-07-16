@@ -4,7 +4,9 @@
     <div class="flex w-full flex-col gap-6">
         <h1 class="font-[Geist] text-3xl text-nowrap">Admin Console</h1>
 
-        <AdminManage />
+        <AdminUsers />
+
+        <AdminFeedbacks />
 
         <UCard>
             <template #header>
@@ -21,5 +23,7 @@
         </UCard>
 
         <AdminAuditLog />
+
+        <AdminManage />
     </div>
 </template>
