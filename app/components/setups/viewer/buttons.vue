@@ -77,76 +77,6 @@ const unhideSetup = async () => {
     }
 }
 
-const shareX = useSocialShare({
-    network: 'x',
-    title: `${props.setup.name} | Avatio`,
-    image: props.setup.images?.[0]?.url || undefined,
-})
-const shareBluesky = useSocialShare({
-    network: 'bluesky',
-    title: `${props.setup.name} | Avatio`,
-    image: props.setup.images?.[0]?.url || undefined,
-})
-const shareLine = useSocialShare({
-    network: 'line',
-    title: `${props.setup.name} | Avatio`,
-    image: props.setup.images?.[0]?.url || undefined,
-})
-
-const socialShareItems = ref<DropdownMenuItem[]>([
-    [
-        {
-            label: 'リンクをコピー',
-            icon: 'lucide:link',
-            onSelect: () => {
-                navigator.clipboard
-                    .writeText(window.location.href)
-                    .then(() => {
-                        toast.add({ title: 'リンクがコピーされました' })
-                    })
-                    .catch(() => {
-                        toast.add({
-                            title: 'リンクのコピーに失敗しました',
-                            color: 'error',
-                        })
-                    })
-            },
-        },
-    ],
-    [
-        {
-            label: 'X',
-            icon: 'simple-icons:x',
-            onSelect: () => {
-                navigateTo(shareX.value.shareUrl, {
-                    external: true,
-                    open: { target: '_blank' },
-                })
-            },
-        },
-        {
-            label: 'Bluesky',
-            icon: 'simple-icons:bluesky',
-            onSelect: () => {
-                navigateTo(shareBluesky.value.shareUrl, {
-                    external: true,
-                    open: { target: '_blank' },
-                })
-            },
-        },
-        {
-            label: 'LINE',
-            icon: 'simple-icons:line',
-            onSelect: () => {
-                navigateTo(shareLine.value.shareUrl, {
-                    external: true,
-                    open: { target: '_blank' },
-                })
-            },
-        },
-    ],
-])
-
 const bookmark = ref(false)
 const bookmarkButtonStyle = computed<{
     icon: string
@@ -392,17 +322,7 @@ onMounted(async () => {
             </ModalLogin>
         </template>
 
-        <UDropdownMenu
-            :items="socialShareItems"
-            :content="{
-                align: 'center',
-                side: 'bottom',
-                sideOffset: 8,
-            }"
-            :ui="{
-                content: 'w-40',
-            }"
-        >
+        <DropdownMenuShareSetup :setup="props.setup">
             <UButton
                 icon="lucide:share-2"
                 aria-label="シェア"
@@ -410,6 +330,6 @@ onMounted(async () => {
                 size="sm"
                 class="p-2"
             />
-        </UDropdownMenu>
+        </DropdownMenuShareSetup>
     </div>
 </template>

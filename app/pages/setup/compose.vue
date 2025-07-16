@@ -8,6 +8,8 @@ const toast = useToast()
 
 const editingSetupId = ref<number | null>(null)
 const publishing = ref(false)
+const publishedSetupId = ref<number | null>(null)
+const modalPublishComplete = ref(false)
 
 type Schema = z.infer<typeof setupsClientFormSchema>
 const state = reactive<Schema>({
@@ -126,15 +128,8 @@ const onSubmit = async () => {
             body,
         })
 
-        toast.add({
-            title: isEditing
-                ? 'セットアップが正常に更新されました'
-                : 'セットアップが正常に投稿されました',
-            color: 'success',
-        })
-
-        // 成功後、セットアップページにリダイレクト
-        navigateTo(`/setup/${response.id}?cache=false`)
+        publishedSetupId.value = response.id
+        modalPublishComplete.value = true
     } catch (error) {
         const isEditing = editingSetupId.value !== null
         console.error(
@@ -153,6 +148,27 @@ const onSubmit = async () => {
     }
 }
 
+const resetForm = () => {
+    modalPublishComplete.value = false
+    state.name = ''
+    state.description = ''
+    state.images = []
+    state.tags = []
+    state.coauthors = []
+    state.items = {
+        avatar: [],
+        clothing: [],
+        accessory: [],
+        hair: [],
+        shader: [],
+        texture: [],
+        tool: [],
+        other: [],
+    }
+    editingSetupId.value = null
+    publishedSetupId.value = null
+}
+
 defineSeo({
     title: editingSetupId.value ? 'セットアップを編集' : 'セットアップを投稿',
     description: editingSetupId.value
@@ -162,6 +178,13 @@ defineSeo({
 </script>
 
 <template>
+    <ModalPublishSetupComplete
+        v-if="publishedSetupId"
+        v-model:open="modalPublishComplete"
+        :setup-id="publishedSetupId"
+        @continue="resetForm"
+    />
+
     <UForm
         :state
         class="relative size-full pb-5 lg:pl-[23rem]"

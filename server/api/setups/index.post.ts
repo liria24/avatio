@@ -57,12 +57,11 @@ export default defineApi(
                 )
             })
 
-            if (shapekeys.length > 0) {
+            if (shapekeys.length > 0)
                 await database.insert(setupItemShapekeys).values(shapekeys)
-            }
         }
 
-        if (images?.length) {
+        if (images?.length)
             await database.insert(setupImages).values(
                 images.map((image) => ({
                     setupId,
@@ -71,18 +70,16 @@ export default defineApi(
                     height: image.height,
                 }))
             )
-        }
 
-        if (tags?.length) {
+        if (tags?.length)
             await database.insert(setupTags).values(
                 tags.map((tag) => ({
                     setupId,
                     tag: tag.tag,
                 }))
             )
-        }
 
-        if (coauthors?.length) {
+        if (coauthors?.length)
             await database.insert(setupCoauthors).values(
                 coauthors.map((coauthor) => ({
                     setupId,
@@ -90,7 +87,6 @@ export default defineApi(
                     note: coauthor.note,
                 }))
             )
-        }
 
         const data = await useEvent().$fetch(`/api/setups/${setupId}`)
 

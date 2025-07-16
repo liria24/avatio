@@ -153,11 +153,20 @@ if (data.value) {
                                 v-if="data.updatedAt !== data.createdAt"
                                 :delay-duration="50"
                             >
-                                <Icon
-                                    name="lucide:pen-line"
-                                    size="16"
-                                    class="text-dimmed"
-                                />
+                                <div
+                                    class="text-dimmed flex items-center gap-1.5"
+                                >
+                                    <Icon name="lucide:pen-line" size="16" />
+                                    <span
+                                        class="text-xs leading-none text-nowrap"
+                                    >
+                                        <NuxtTime
+                                            :datetime="data.updatedAt"
+                                            relative
+                                        />
+                                        に更新
+                                    </span>
+                                </div>
 
                                 <template #content>
                                     <NuxtTime
