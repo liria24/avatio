@@ -79,17 +79,17 @@ const unhideSetup = async () => {
 
 const shareX = useSocialShare({
     network: 'x',
-    title: `${props.setup.name} @${props.setup.user.name} | Avatio`,
+    title: `${props.setup.name} | Avatio`,
     image: props.setup.images?.[0]?.url || undefined,
 })
 const shareBluesky = useSocialShare({
     network: 'bluesky',
-    title: `${props.setup.name} @${props.setup.user.name} | Avatio`,
+    title: `${props.setup.name} | Avatio`,
     image: props.setup.images?.[0]?.url || undefined,
 })
 const shareLine = useSocialShare({
     network: 'line',
-    title: `${props.setup.name} @${props.setup.user.name} | Avatio`,
+    title: `${props.setup.name} | Avatio`,
     image: props.setup.images?.[0]?.url || undefined,
 })
 

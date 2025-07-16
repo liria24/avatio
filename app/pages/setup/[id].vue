@@ -4,7 +4,9 @@ const route = useRoute()
 
 const id = Number(route.params.id)
 const cache =
-    route.query.cache === undefined ? true : Boolean(route.query.cache)
+    route.query.cache === undefined
+        ? true
+        : route.query.cache === 'true' || route.query.cache === '1'
 
 const { data, status } = await useSetup(id, {
     getCachedData: cache
