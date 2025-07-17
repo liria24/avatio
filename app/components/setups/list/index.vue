@@ -43,7 +43,7 @@ const loading = defineModel<boolean>('loading', {
         :ssr-columns="props.ssrColumns"
     >
         <template #default="{ item }">
-            <SetupsLink
+            <LazySetupsLink
                 :aria-label="item.name"
                 :image-size="{ width: 16, height: 9 }"
                 :setup="item"
