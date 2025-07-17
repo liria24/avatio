@@ -89,6 +89,7 @@ export default defineApi<
                             url: true,
                             width: true,
                             height: true,
+                            themeColors: true,
                         },
                     },
                     tags: {

@@ -1,10 +1,5 @@
 <script lang="ts" setup>
-interface Image {
-    url: string
-    width: number
-    height: number
-}
-const images = defineModel<Image[]>({
+const images = defineModel<string[]>({
     default: () => [],
 })
 
@@ -35,12 +30,7 @@ onChange(async (files) => {
             body: formData,
         })
 
-        if (response?.url)
-            images.value.push({
-                url: response.url,
-                width: response.width || 0,
-                height: response.height || 0,
-            })
+        if (response?.url) images.value.push(response.url)
     } catch (error) {
         console.error('Failed to upload image:', error)
         toast.add({
@@ -85,7 +75,7 @@ const removeImage = (index: number) => {
         >
             <NuxtImg
                 v-slot="{ isLoaded, src, imgAttrs }"
-                :src="image.url"
+                :src="image"
                 :alt="`Setup image ${index + 1}`"
                 custom
                 class="aspect-square size-full rounded-lg object-cover"

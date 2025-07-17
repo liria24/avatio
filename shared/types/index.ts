@@ -209,11 +209,16 @@ export const setupTagsPublicSchema = setupTagsSelectSchema.pick({
 
 export const setupImagesSelectSchema = createSelectSchema(setupImages)
 export const setupImagesInsertSchema = createInsertSchema(setupImages)
-export const setupImagesPublicSchema = setupImagesSelectSchema.pick({
-    url: true,
-    width: true,
-    height: true,
-})
+export const setupImagesPublicSchema = setupImagesSelectSchema
+    .pick({
+        url: true,
+        width: true,
+        height: true,
+        themeColors: true,
+    })
+    .partial({
+        themeColors: true,
+    })
 export type SetupImage = z.infer<typeof setupImagesPublicSchema>
 
 export const setupCoauthorsSelectSchema = createSelectSchema(setupCoauthors)
@@ -249,11 +254,7 @@ export const setupsInsertSchema = createInsertSchema(setups, {
             .array()
             .max(8, 'タグは最大 8 個です。')
             .optional(),
-        images: setupImagesInsertSchema
-            .omit({ setupId: true })
-            .array()
-            .max(1, '画像は最大 1 個です。')
-            .optional(),
+        images: z.url().array().max(1, '画像は最大 1 個です。').optional(),
         coauthors: setupCoauthorsInsertSchema
             .omit({ setupId: true })
             .array()
@@ -278,11 +279,7 @@ export const setupsUpdateSchema = createUpdateSchema(setups, {
         .array()
         .max(8, 'タグは最大 8 個です。')
         .optional(),
-    images: setupImagesInsertSchema
-        .omit({ setupId: true })
-        .array()
-        .max(1, '画像は最大 1 個です。')
-        .optional(),
+    images: z.url().array().max(1, '画像は最大 1 個です。').optional(),
     coauthors: setupCoauthorsInsertSchema
         .omit({ setupId: true })
         .array()
@@ -307,12 +304,7 @@ export const setupsClientFormSchema = createInsertSchema(setups, {
     })
     .extend({
         tags: z.string().array().max(8, 'タグは最大 8 個です。'),
-        images: setupImagesInsertSchema
-            .omit({
-                setupId: true,
-            })
-            .array()
-            .max(1, '画像は最大 1 個です。'),
+        images: z.url().array().max(1, '画像は最大 1 個です。'),
         coauthors: setupCoauthorsInsertSchema
             .omit({
                 setupId: true,
