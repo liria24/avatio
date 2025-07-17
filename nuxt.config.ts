@@ -210,6 +210,7 @@ export default defineNuxtConfig({
 
     nitro: {
         preset: 'vercel',
+        compressPublicAssets: true,
         experimental: {
             asyncContext: true,
             openAPI: true,
