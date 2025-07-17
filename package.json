@@ -76,7 +76,8 @@
         "prettier-plugin-tailwindcss": "^0.6.14"
     },
     "overrides": {
-        "vue": "latest"
+        "vue": "latest",
+        "vite": "npm:rolldown-vite@latest"
     },
     "engines": {
         "node": "22.x"
