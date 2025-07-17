@@ -5,14 +5,6 @@ interface Props {
 }
 const props = defineProps<Props>()
 const emit = defineEmits(['click'])
-const colorMode = useColorMode()
-
-const date = new Date(props.setup.createdAt)
-const dateLocale = date.toLocaleString('ja-JP', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-})
 
 const firstAvatar = props.setup.items.find((item) => item.category === 'avatar')
 
@@ -21,117 +13,6 @@ const avatarName = (() => {
     if (firstAvatar.niceName?.length) return firstAvatar.niceName
     return avatarShortName(firstAvatar.name)
 })()
-
-const dominantColor = ref('')
-const adjustedColor = ref('')
-
-const adjustColorForTheme = (hex: string, isDark: boolean) => {
-    if (!hex) return ''
-
-    const luminance = getLuminance(hex)
-    const { r, g, b } = hexToRgb(hex)
-
-    // ダークモード
-    if (isDark) {
-        // 明るさの下限と上限を設定
-        const targetLuminance = Math.max(0.4, Math.min(0.65, luminance))
-        const factor = targetLuminance / (luminance || 0.1)
-
-        return rgbToHex(
-            Math.min(255, Math.max(30, r * factor)),
-            Math.min(255, Math.max(30, g * factor)),
-            Math.min(255, Math.max(30, b * factor))
-        )
-    }
-    // ライトモード
-    else {
-        // 暗さの下限と上限を設定
-        const targetLuminance = Math.max(0.25, Math.min(0.6, luminance))
-        const factor = targetLuminance / (luminance || 0.1)
-
-        return rgbToHex(
-            Math.min(220, Math.max(20, r * factor)),
-            Math.min(220, Math.max(20, g * factor)),
-            Math.min(220, Math.max(20, b * factor))
-        )
-    }
-}
-
-const extractImageColor = async (event: Event) => {
-    const target = event.target as HTMLImageElement
-    if (!target || !(target instanceof HTMLImageElement)) return
-
-    try {
-        const { extractColors } = await import('extract-colors')
-
-        // 画像から色を抽出
-        const colors = await extractColors(target, {
-            pixels: 1000,
-            distance: 0.2,
-            saturationDistance: 0.2,
-            lightnessDistance: 0.5,
-        })
-
-        if (colors?.length > 0 && colors[0]) {
-            const extractedColor = colors[0].hex || ''
-            dominantColor.value = extractedColor
-
-            const isDark = colorMode.value === 'dark'
-            adjustedColor.value = adjustColorForTheme(extractedColor, isDark)
-        }
-    } catch (error) {
-        console.error('Failed to extract color from image:', error)
-        dominantColor.value = ''
-        adjustedColor.value = ''
-    }
-}
-
-// テーマ変更時に色を再調整するウォッチャー
-watch(
-    () => colorMode.value,
-    (newMode) => {
-        if (dominantColor.value) {
-            const isDark = newMode === 'dark'
-            adjustedColor.value = adjustColorForTheme(
-                dominantColor.value,
-                isDark
-            )
-        }
-    }
-)
-
-const gradientColor = computed(() => {
-    if (!adjustedColor.value) return 'rgba(0,0,0,0.8)'
-
-    const { r, g, b } = hexToRgb(adjustedColor.value)
-    const darkeningFactor = 0.2
-    return `rgba(${Math.round(r * darkeningFactor)}, ${Math.round(g * darkeningFactor)}, ${Math.round(b * darkeningFactor)}, 0.8)`
-})
-
-const elementStyle = computed(() => {
-    if (!adjustedColor.value) return {}
-    return {
-        '--dominant-color': adjustedColor.value,
-        '--gradient-color': gradientColor.value,
-    }
-})
-
-const gradientStyle = computed(() => {
-    if (!adjustedColor.value)
-        return 'background-image: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 80%)'
-    return `background-image: linear-gradient(to top, var(--gradient-color) 0%, transparent 80%)`
-})
-
-const linkClasses = computed(() => {
-    const baseClasses =
-        'group flex flex-col rounded-lg overflow-clip focus:outline-none hover:ring-2 focus:ring-2 hover:shadow-xl focus-visible:shadow-xl shadow-black/10 dark:shadow-white/10 transition duration-100 ease-in-out'
-
-    const colorClasses = adjustedColor.value
-        ? 'hover:ring-[var(--dominant-color)] hover:bg-[var(--dominant-color)]/20 focus:ring-[var(--dominant-color)] focus:bg-[var(--dominant-color)]/20'
-        : 'hover:ring-accented hover:bg-elevated focus:ring-accented focus:bg-elevated'
-
-    return cn(baseClasses, colorClasses, props.class)
-})
 
 const setupNameHtml = useLineBreak(props.setup.name)
 
@@ -143,27 +24,23 @@ const firstImage = props.setup.images?.[0]
     <NuxtLink
         tabindex="0"
         :to="$localePath(`/setup/${props.setup.id}`)"
-        :class="linkClasses"
-        :style="elementStyle"
+        :class="
+            cn(
+                'group hover:ring-accented hover:bg-elevated focus:ring-accented focus:bg-elevated flex flex-col overflow-clip rounded-lg shadow-black/10 transition duration-100 ease-in-out hover:shadow-xl hover:ring-2 focus:ring-2 focus:outline-none focus-visible:shadow-xl dark:shadow-white/10',
+                props.class
+            )
+        "
         @click="emit('click')"
     >
         <div v-if="hasImages" class="relative w-full p-1.5">
             <NuxtImg
                 :src="firstImage?.url"
                 :alt="setup.name"
-                :width="firstImage?.width ?? 640"
-                :height="firstImage?.height ?? 360"
-                :placeholder="[
-                    firstImage?.width ?? 192,
-                    firstImage?.height ?? 108,
-                    75,
-                    5,
-                ]"
+                :width="360"
                 loading="lazy"
                 format="webp"
                 fit="cover"
                 class="size-full max-h-[420px] rounded-lg object-cover"
-                @load="extractImageColor"
             />
             <div
                 :class="[
@@ -171,8 +48,8 @@ const firstImage = props.setup.images?.[0]
                     'flex flex-col items-start justify-end gap-1',
                     'opacity-0 group-hover:opacity-100',
                     'transition duration-100 ease-in-out',
+                    'bg-gradient-to-t from-black/80 to-transparent',
                 ]"
-                :style="gradientStyle"
             >
                 <span
                     class="md:text-md line-clamp-2 translate-y-[1rem] text-sm font-medium break-all text-white opacity-0 duration-200 group-hover:translate-y-0 group-hover:opacity-100"
@@ -234,12 +111,20 @@ const firstImage = props.setup.images?.[0]
                 v-if="hasImages"
                 class="flex w-full items-center justify-end gap-2 px-2 pb-2"
             >
-                <UTooltip :text="dateLocale" :delay-duration="0">
+                <UTooltip :delay-duration="0">
                     <NuxtTime
-                        :datetime="date"
+                        :datetime="props.setup.createdAt"
                         relative
                         class="text-muted text-xs whitespace-nowrap"
                     />
+
+                    <template #content>
+                        <NuxtTime
+                            :datetime="props.setup.createdAt"
+                            date-style="medium"
+                            time-style="short"
+                        />
+                    </template>
                 </UTooltip>
 
                 <UPopover mode="hover">
@@ -324,12 +209,20 @@ const firstImage = props.setup.images?.[0]
                         </template>
                     </UPopover>
 
-                    <UTooltip :text="dateLocale" :delay-duration="0">
+                    <UTooltip :delay-duration="0">
                         <NuxtTime
-                            :datetime="date"
+                            :datetime="props.setup.createdAt"
                             relative
                             class="text-muted text-xs whitespace-nowrap"
                         />
+
+                        <template #content>
+                            <NuxtTime
+                                :datetime="props.setup.createdAt"
+                                date-style="medium"
+                                time-style="short"
+                            />
+                        </template>
                     </UTooltip>
                 </div>
             </div>
