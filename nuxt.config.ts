@@ -4,6 +4,15 @@ import { defineOrganization } from 'nuxt-schema-org/schema'
 const baseUrl = import.meta.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 const title = 'Avatio'
 const description = 'あなたのアバター改変を共有しよう'
+const r2Domain = (() => {
+    try {
+        const url = new URL(import.meta.env.NUXT_PUBLIC_R2_DOMAIN || '')
+        return url.hostname
+    } catch (error) {
+        console.error('Error parsing R2 domain:', error)
+        return ''
+    }
+})()
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -161,21 +170,17 @@ export default defineNuxtConfig({
 
     image: {
         domains: [
-            (() => {
-                try {
-                    const url = new URL(
-                        import.meta.env.NUXT_PUBLIC_R2_DOMAIN || ''
-                    )
-                    return url.hostname
-                } catch (error) {
-                    console.error('Error parsing R2 domain:', error)
-                    return ''
-                }
-            })(),
+            r2Domain, // R2
             'booth.pximg.net', // booth
             's2.booth.pm', // booth
             'avatars.githubusercontent.com', // GitHub User Avatars
         ],
+        alias: {
+            avatio: `https://${r2Domain}`,
+            booth: 'https://booth.pximg.net',
+            boothS2: 'https://s2.booth.pm',
+            githubAvatar: 'https://avatars.githubusercontent.com',
+        },
     },
 
     socialShare: {
