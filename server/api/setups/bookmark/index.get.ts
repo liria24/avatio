@@ -160,30 +160,10 @@ export default defineApi<
                                     createdAt: true,
                                 },
                             },
-                            shops: {
-                                columns: {
-                                    id: true,
-                                    createdAt: true,
-                                },
-                                with: {
-                                    shop: {
-                                        columns: {
-                                            id: true,
-                                            platform: true,
-                                            name: true,
-                                            image: true,
-                                            verified: true,
-                                        },
-                                    },
-                                },
-                            },
                         },
                     },
                     items: {
-                        columns: {
-                            unsupported: true,
-                            note: true,
-                        },
+                        where: (table, { eq }) => eq(table.category, 'avatar'),
                         with: {
                             item: {
                                 columns: {
@@ -198,23 +178,6 @@ export default defineApi<
                                     likes: true,
                                     nsfw: true,
                                 },
-                                with: {
-                                    shop: {
-                                        columns: {
-                                            id: true,
-                                            platform: true,
-                                            name: true,
-                                            image: true,
-                                            verified: true,
-                                        },
-                                    },
-                                },
-                            },
-                            shapekeys: {
-                                columns: {
-                                    name: true,
-                                    value: true,
-                                },
                             },
                         },
                     },
@@ -223,6 +186,7 @@ export default defineApi<
                             url: true,
                             width: true,
                             height: true,
+                            themeColors: true,
                         },
                     },
                     tags: {
@@ -266,23 +230,6 @@ export default defineApi<
                                             createdAt: true,
                                         },
                                     },
-                                    shops: {
-                                        columns: {
-                                            id: true,
-                                            createdAt: true,
-                                        },
-                                        with: {
-                                            shop: {
-                                                columns: {
-                                                    id: true,
-                                                    platform: true,
-                                                    name: true,
-                                                    image: true,
-                                                    verified: true,
-                                                },
-                                            },
-                                        },
-                                    },
                                 },
                             },
                         },
@@ -307,22 +254,12 @@ export default defineApi<
                     ...badge,
                     createdAt: badge.createdAt.toISOString(),
                 })),
-                shops: bookmark.setup.user.shops.map((shop) => ({
-                    ...shop,
-                    createdAt: shop.createdAt.toISOString(),
-                })),
             },
             name: bookmark.setup.name,
             description: bookmark.setup.description,
             items: bookmark.setup.items.map((item) => ({
                 ...item.item,
                 updatedAt: item.item.updatedAt.toISOString(),
-                unsupported: item.unsupported,
-                note: item.note,
-                shapekeys: item.shapekeys.map((shapekey) => ({
-                    name: shapekey.name,
-                    value: shapekey.value,
-                })),
             })),
             images: bookmark.setup.images,
             tags: bookmark.setup.tags.map((tag) => tag.tag),
@@ -333,11 +270,6 @@ export default defineApi<
                     badges: coauthor.user.badges.map((badge) => ({
                         ...badge,
                         createdAt: badge.createdAt.toISOString(),
-                    })),
-                    shops: coauthor.user.shops.map((shop) => ({
-                        ...shop,
-                        createdAt: shop.createdAt.toISOString(),
-                        shop: shop.shop,
                     })),
                 },
                 note: coauthor.note,

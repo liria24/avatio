@@ -387,6 +387,7 @@ export const setupImages = pgTable(
         url: text().notNull(),
         width: integer().notNull(),
         height: integer().notNull(),
+        themeColors: text('theme_colors').array(),
     },
     (table) => [
         index('setup_images_id_index').on(table.id),

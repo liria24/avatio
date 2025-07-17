@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import type { DropdownMenuItem } from '@nuxt/ui'
-
 interface Props {
     setup: Setup
 }

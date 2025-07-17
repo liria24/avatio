@@ -1,6 +1,4 @@
 <script lang="ts" setup>
-import type { AsyncDataRequestStatus } from '#app'
-
 interface Porps {
     minColumns?: number
     maxColumns?: number
@@ -15,7 +13,7 @@ const props = withDefaults(defineProps<Porps>(), {
 const setups = defineModel<Setup[]>('setups', {
     default: [],
 })
-const status = defineModel<boolean>('loading', {
+const loading = defineModel<boolean>('loading', {
     default: false,
 })
 </script>
@@ -45,7 +43,7 @@ const status = defineModel<boolean>('loading', {
         :ssr-columns="props.ssrColumns"
     >
         <template #default="{ item }">
-            <SetupsLink
+            <LazySetupsLink
                 :aria-label="item.name"
                 :image-size="{ width: 16, height: 9 }"
                 :setup="item"

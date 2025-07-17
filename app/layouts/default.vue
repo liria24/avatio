@@ -27,8 +27,8 @@ const notifications = computed(() =>
             <UContainer
                 class="flex min-h-dvh flex-col items-center gap-6 pt-6 md:gap-8"
             >
-                <ModalLogin v-model:open="modalLogin" />
-                <ModalFeedback v-model:open="modalFeedback" />
+                <LazyModalLogin v-model:open="modalLogin" />
+                <LazyModalFeedback v-model:open="modalFeedback" />
 
                 <Header
                     @open-login-modal="modalLogin = true"

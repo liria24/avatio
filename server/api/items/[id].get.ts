@@ -151,11 +151,13 @@ const processBoothItem = (
             image: boothData.shop.thumbnail_url || '',
             verified: Boolean(boothData.shop.verified),
         },
-    }
+    } satisfies Item
 }
 
 // データベース更新
-const updateDatabase = async (item: Item): Promise<void> => {
+const updateDatabase = async (
+    item: Item & { shop: NonNullable<Item['shop']> }
+): Promise<void> => {
     try {
         // ショップ情報更新
         await database
@@ -323,7 +325,10 @@ export default defineApi<
             throw new Error(`Failed to process item ${id}`)
         }
 
-        await updateDatabase(processedItem)
+        // processedItemは確実にshop情報を持っているため、型アサーションで安全にキャスト
+        await updateDatabase(
+            processedItem as Item & { shop: NonNullable<Item['shop']> }
+        )
 
         if (processedItem.category === 'avatar')
             defineNiceName(
