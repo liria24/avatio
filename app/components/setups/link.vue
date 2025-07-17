@@ -139,7 +139,7 @@ const placeholderSize = (() => {
             </NuxtImg>
             <div
                 v-else-if="!firstAvatar && !hasImages"
-                class="text-muted my-1.5 ml-1.5 flex size-14 shrink-0 items-center justify-center rounded-lg bg-zinc-300"
+                class="text-muted bg-accented my-1.5 ml-1.5 flex size-14 shrink-0 items-center justify-center rounded-lg"
             >
                 ?
             </div>
