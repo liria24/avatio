@@ -150,7 +150,7 @@ export const itemsPublicSchema = itemsSelectSchema
         nsfw: true,
     })
     .extend({
-        shop: shopsPublicSchema,
+        shop: shopsPublicSchema.optional(),
         outdated: z.boolean().optional(),
     })
 export type Item = z.infer<typeof itemsPublicSchema>
@@ -184,6 +184,7 @@ export const setupItemsInsertSchema = createInsertSchema(setupItems, {
 export const setupItemsPublicSchema = z.intersection(
     itemsPublicSchema,
     setupItemsSelectSchema
+        .partial()
         .pick({
             unsupported: true,
             note: true,
