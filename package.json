@@ -78,7 +78,8 @@
         "typescript": "^5.8.3"
     },
     "overrides": {
-        "vue": "latest"
+        "vue": "latest",
+        "vite": "npm:rolldown-vite@latest"
     },
     "engines": {
         "node": "22.x"
