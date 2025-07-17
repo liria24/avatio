@@ -77,7 +77,7 @@ const copy = (key: { name: string; value: number }) => {
                     <div
                         class="flex flex-wrap items-center gap-x-3 gap-y-1.5 pl-0.5"
                     >
-                        <UPopover mode="hover">
+                        <UPopover v-if="item.shop" mode="hover">
                             <NuxtLink
                                 :to="`https://${item.shop.id}.booth.pm/`"
                                 target="_blank"

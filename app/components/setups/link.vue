@@ -18,6 +18,35 @@ const setupNameHtml = useLineBreak(props.setup.name)
 
 const hasImages = !!props.setup.images?.length
 const firstImage = props.setup.images?.[0]
+
+// 画像サイズの計算（幅360px以下に制限、アスペクト比維持）
+const imageSize = (() => {
+    if (!firstImage) return { width: 0, height: 0 }
+
+    const maxWidth = 360
+    const originalWidth = firstImage.width
+    const originalHeight = firstImage.height
+
+    if (originalWidth <= maxWidth) {
+        return { width: originalWidth, height: originalHeight }
+    }
+
+    const aspectRatio = originalHeight / originalWidth
+    const adjustedWidth = maxWidth
+    const adjustedHeight = Math.round(maxWidth * aspectRatio)
+
+    return { width: adjustedWidth, height: adjustedHeight }
+})()
+
+// placeholderサイズ（imageSizeの10分の1程度、整数値）
+const placeholderSize = (() => {
+    if (!firstImage) return { width: 0, height: 0 }
+
+    const placeholderWidth = Math.round(imageSize.width / 10)
+    const placeholderHeight = Math.round(imageSize.height / 10)
+
+    return { width: placeholderWidth, height: placeholderHeight }
+})()
 </script>
 
 <template>
@@ -34,9 +63,17 @@ const firstImage = props.setup.images?.[0]
     >
         <div v-if="hasImages" class="relative w-full p-1.5">
             <NuxtImg
-                :src="firstImage?.url"
+                v-if="firstImage"
+                :src="firstImage.url"
                 :alt="setup.name"
-                :width="360"
+                :width="imageSize.width"
+                :height="imageSize.height"
+                :placeholder="[
+                    placeholderSize.width,
+                    placeholderSize.height,
+                    50,
+                    5,
+                ]"
                 loading="lazy"
                 format="webp"
                 fit="cover"

@@ -190,30 +190,10 @@ export default defineApi<
                             createdAt: true,
                         },
                     },
-                    shops: {
-                        columns: {
-                            id: true,
-                            createdAt: true,
-                        },
-                        with: {
-                            shop: {
-                                columns: {
-                                    id: true,
-                                    platform: true,
-                                    name: true,
-                                    image: true,
-                                    verified: true,
-                                },
-                            },
-                        },
-                    },
                 },
             },
             items: {
-                columns: {
-                    unsupported: true,
-                    note: true,
-                },
+                where: (table, { eq }) => eq(table.category, 'avatar'),
                 with: {
                     item: {
                         columns: {
@@ -228,23 +208,6 @@ export default defineApi<
                             likes: true,
                             nsfw: true,
                             outdated: true,
-                        },
-                        with: {
-                            shop: {
-                                columns: {
-                                    id: true,
-                                    platform: true,
-                                    name: true,
-                                    image: true,
-                                    verified: true,
-                                },
-                            },
-                        },
-                    },
-                    shapekeys: {
-                        columns: {
-                            name: true,
-                            value: true,
                         },
                     },
                 },
@@ -297,23 +260,6 @@ export default defineApi<
                                     createdAt: true,
                                 },
                             },
-                            shops: {
-                                columns: {
-                                    id: true,
-                                    createdAt: true,
-                                },
-                                with: {
-                                    shop: {
-                                        columns: {
-                                            id: true,
-                                            platform: true,
-                                            name: true,
-                                            image: true,
-                                            verified: true,
-                                        },
-                                    },
-                                },
-                            },
                         },
                     },
                 },
@@ -333,32 +279,18 @@ export default defineApi<
                 ...badge,
                 createdAt: badge.createdAt.toISOString(),
             })),
-            shops: setup.user.shops.map((shop) => ({
-                ...shop,
-                createdAt: shop.createdAt.toISOString(),
-            })),
         },
         items: setup.items
             .filter((item) => !item.item.outdated)
             .map((item) => ({
                 ...item.item,
                 updatedAt: item.item.updatedAt.toISOString(),
-                note: item.note,
-                unsupported: item.unsupported,
-                shapekeys: item.shapekeys.map((shapekey) => ({
-                    name: shapekey.name,
-                    value: shapekey.value,
-                })),
             })),
         tags: setup.tags.map((tag) => tag.tag),
         coauthors: setup.coauthors.map((coauthor) => ({
             user: {
                 ...coauthor.user,
                 createdAt: coauthor.user.createdAt.toISOString(),
-                shops: coauthor.user.shops.map((shop) => ({
-                    ...shop,
-                    createdAt: shop.createdAt.toISOString(),
-                })),
                 badges: coauthor.user.badges.map((badge) => ({
                     ...badge,
                     createdAt: badge.createdAt.toISOString(),
