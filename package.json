@@ -23,7 +23,7 @@
         "@nuxtjs/mdc": "0.17.1",
         "@nuxtjs/robots": "5.4.0",
         "@nuxtjs/sitemap": "7.4.3",
-        "@pinia/nuxt": "0.11.1",
+        "@pinia/nuxt": "0.11.2",
         "@stefanobartoletti/nuxt-social-share": "1.2.3",
         "@tailwindcss/vite": "^4.1.11",
         "@vercel/analytics": "^1.5.0",
