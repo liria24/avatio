@@ -5,15 +5,10 @@ const images = defineModel<string[]>({
 
 const toast = useToast()
 
+const dropZoneRef = ref<HTMLDivElement>()
 const imageUploading = ref(false)
 
-const { open, reset, onChange } = useFileDialog({
-    accept: 'image/png, image/jpg, image/jpeg, image/webp, image/tiff',
-    multiple: false,
-    directory: false,
-})
-
-onChange(async (files) => {
+const processImages = async (files: FileList | File[] | null) => {
     if (!files?.length) return
 
     try {
@@ -41,7 +36,27 @@ onChange(async (files) => {
         imageUploading.value = false
         reset()
     }
+}
+
+const { isOverDropZone } = useDropZone(dropZoneRef, {
+    onDrop: processImages,
+    dataTypes: [
+        'image/jpg',
+        'image/jpeg',
+        'image/png',
+        'image/webp',
+        'image/tiff',
+    ],
+    multiple: false,
+    preventDefaultForUnhandled: true,
 })
+
+const { open, reset, onChange } = useFileDialog({
+    accept: 'image/png, image/jpg, image/jpeg, image/webp, image/tiff',
+    multiple: false,
+    directory: false,
+})
+onChange(processImages)
 
 const removeImage = (index: number) => {
     if (index >= 0 && index < images.value.length) images.value.splice(index, 1)
@@ -49,15 +64,19 @@ const removeImage = (index: number) => {
 </script>
 
 <template>
-    <UButton
-        v-if="!images.length && !imageUploading"
-        icon="lucide:image-plus"
-        label="画像を追加"
-        variant="soft"
-        block
-        class="h-24 p-3"
-        @click="open()"
-    />
+    <div v-if="!images.length && !imageUploading" ref="dropZoneRef">
+        <UButton
+            :icon="isOverDropZone ? 'lucide:import' : 'lucide:image-plus'"
+            :label="isOverDropZone ? 'ドロップして追加' : '画像を追加'"
+            variant="soft"
+            block
+            active-color="neutral"
+            active-variant="subtle"
+            :active="isOverDropZone"
+            class="h-24 p-3"
+            @click="open()"
+        />
+    </div>
 
     <div
         v-else-if="imageUploading"
