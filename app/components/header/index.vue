@@ -150,6 +150,7 @@ const menuItems = ref<DropdownMenuItem[][]>([
                 >
                     <UButton
                         :to="$localePath('/search')"
+                        aria-label="セットアップを検索"
                         icon="lucide:search"
                         variant="ghost"
                     />

@@ -40,6 +40,7 @@ const onClick = () => {
         />
 
         <UButton
+            aria-label="閉じる"
             icon="lucide:x"
             variant="ghost"
             size="sm"
