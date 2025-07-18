@@ -1,21 +1,10 @@
 <script lang="ts" setup>
-import type { AsyncDataRequestStatus } from '#app'
-
-interface Porps {
-    minColumns?: number
-    maxColumns?: number
-    ssrColumns?: number
-}
-const props = withDefaults(defineProps<Porps>(), {
-    minColumns: 2,
-    maxColumns: 4,
-    ssrColumns: 2,
-})
+const { isMobile } = useDevice()
 
 const setups = defineModel<Setup[]>('setups', {
     default: [],
 })
-const status = defineModel<boolean>('loading', {
+const loading = defineModel<boolean>('loading', {
     default: false,
 })
 </script>
@@ -40,12 +29,12 @@ const status = defineModel<boolean>('loading', {
         :items="setups"
         :column-width="240"
         :gap="6"
-        :min-columns="props.minColumns"
-        :max-columns="props.maxColumns"
-        :ssr-columns="props.ssrColumns"
+        :min-columns="2"
+        :max-columns="4"
+        :ssr-columns="isMobile ? 2 : 3"
     >
         <template #default="{ item }">
-            <SetupsLink
+            <LazySetupsLink
                 :aria-label="item.name"
                 :image-size="{ width: 16, height: 9 }"
                 :setup="item"

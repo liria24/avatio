@@ -75,7 +75,6 @@ Copyright © 2025 **[Liria][liria]**
 [tailwind]: https://tailwindcss.com
 [badge-vercel]: https://svgl-badge.vercel.app/api/Hosting/Vercel?theme=dark
 [badge-cloudflare]: https://svgl-badge.vercel.app/api/Software/Cloudflare?theme=dark
-[badge-supabase]: https://svgl-badge.vercel.app/api/Database/Supabase?theme=dark
 [badge-nuxt]: https://svgl-badge.vercel.app/api/Framework/Nuxt?theme=dark
 [badge-tailwind]: https://svgl-badge.vercel.app/api/Framework/Tailwind%20CSS?theme=dark
 [contributors]: https://github.com/liria24/avatio/graphs/contributors

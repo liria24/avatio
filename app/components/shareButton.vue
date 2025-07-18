@@ -2,36 +2,41 @@
 import type { DropdownMenuItem } from '@nuxt/ui'
 
 interface Props {
-    setup: Setup
+    title: string
+    description?: string | null
+    image?: string | null
 }
 const props = defineProps<Props>()
 
 const toast = useToast()
+const location = useBrowserLocation()
+const { copy, copied } = useClipboard({ source: location.value.href })
+const { isMobile } = useDevice()
+const { share, isSupported: shareSupported } = useShare()
 
 const shareX = useSocialShare({
     network: 'x',
-    title: encodeURIComponent(`${props.setup.name} | Avatio`),
-    image: props.setup.images?.[0]?.url || undefined,
+    title: encodeURIComponent(props.title),
+    image: props.image || undefined,
 })
 const shareBluesky = useSocialShare({
     network: 'bluesky',
-    title: encodeURIComponent(`${props.setup.name} | Avatio`),
-    image: props.setup.images?.[0]?.url || undefined,
+    title: encodeURIComponent(props.title),
+    image: props.image || undefined,
 })
 const shareLine = useSocialShare({
     network: 'line',
-    title: encodeURIComponent(`${props.setup.name} | Avatio`),
-    image: props.setup.images?.[0]?.url || undefined,
+    title: encodeURIComponent(props.title),
+    image: props.image || undefined,
 })
 
 const socialShareItems = ref<DropdownMenuItem[]>([
     [
         {
-            label: 'リンクをコピー',
-            icon: 'lucide:link',
+            label: copied.value ? 'コピーしました' : 'リンクをコピー',
+            icon: copied.value ? 'lucide:check' : 'lucide:link',
             onSelect: () => {
-                navigator.clipboard
-                    .writeText(window.location.href)
+                copy(location.value.href)
                     .then(() => {
                         toast.add({ title: 'リンクがコピーされました' })
                     })
@@ -80,7 +85,24 @@ const socialShareItems = ref<DropdownMenuItem[]>([
 </script>
 
 <template>
+    <UButton
+        v-if="isMobile && shareSupported"
+        icon="lucide:share-2"
+        aria-label="シェア"
+        variant="ghost"
+        size="sm"
+        class="p-2"
+        @click="
+            share({
+                title: props.title,
+                text: props.description || undefined,
+                url: location.href,
+            })
+        "
+    />
+
     <UDropdownMenu
+        v-else
         :items="socialShareItems"
         :content="{
             align: 'center',
@@ -91,6 +113,12 @@ const socialShareItems = ref<DropdownMenuItem[]>([
             content: 'w-40',
         }"
     >
-        <slot />
+        <UButton
+            icon="lucide:share-2"
+            aria-label="シェア"
+            variant="ghost"
+            size="sm"
+            class="p-2"
+        />
     </UDropdownMenu>
 </template>

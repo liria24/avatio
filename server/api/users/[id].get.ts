@@ -1,4 +1,5 @@
 import database from '@@/database'
+import { user } from '@@/database/schema'
 import { z } from 'zod/v4'
 
 const params = z.object({
@@ -65,10 +66,7 @@ export default defineApi<
                 },
                 with: {
                     items: {
-                        columns: {
-                            unsupported: true,
-                            note: true,
-                        },
+                        where: (table, { eq }) => eq(table.category, 'avatar'),
                         with: {
                             item: {
                                 columns: {
@@ -83,23 +81,6 @@ export default defineApi<
                                     likes: true,
                                     nsfw: true,
                                 },
-                                with: {
-                                    shop: {
-                                        columns: {
-                                            id: true,
-                                            platform: true,
-                                            name: true,
-                                            image: true,
-                                            verified: true,
-                                        },
-                                    },
-                                },
-                            },
-                            shapekeys: {
-                                columns: {
-                                    name: true,
-                                    value: true,
-                                },
                             },
                         },
                     },
@@ -108,6 +89,7 @@ export default defineApi<
                             url: true,
                             width: true,
                             height: true,
+                            themeColors: true,
                         },
                     },
                     tags: {
@@ -116,6 +98,21 @@ export default defineApi<
                         },
                     },
                     coauthors: {
+                        where: (coauthors, { eq, or, and, exists, isNull }) =>
+                            exists(
+                                database
+                                    .select()
+                                    .from(user)
+                                    .where(
+                                        and(
+                                            eq(user.id, coauthors.userId),
+                                            or(
+                                                eq(user.banned, false),
+                                                isNull(user.banned)
+                                            )
+                                        )
+                                    )
+                            ),
                         columns: {
                             note: true,
                         },
@@ -134,23 +131,6 @@ export default defineApi<
                                         columns: {
                                             badge: true,
                                             createdAt: true,
-                                        },
-                                    },
-                                    shops: {
-                                        columns: {
-                                            id: true,
-                                            createdAt: true,
-                                        },
-                                        with: {
-                                            shop: {
-                                                columns: {
-                                                    id: true,
-                                                    platform: true,
-                                                    name: true,
-                                                    image: true,
-                                                    verified: true,
-                                                },
-                                            },
                                         },
                                     },
                                 },
@@ -204,14 +184,8 @@ export default defineApi<
             },
             name: setup.name,
             description: setup.description,
-            items: setup.items?.map((item) => ({
+            items: setup.items.map((item) => ({
                 ...item.item,
-                unsupported: item.unsupported,
-                note: item.note,
-                shapekeys: item.shapekeys?.map((shapekey) => ({
-                    name: shapekey.name,
-                    value: shapekey.value,
-                })),
             })),
             images: setup.images,
             tags: setup.tags.map((tag) => tag.tag),
@@ -222,10 +196,6 @@ export default defineApi<
                     badges: coauthor.user.badges.map((badge) => ({
                         ...badge,
                         createdAt: badge.createdAt.toISOString(),
-                    })),
-                    shops: coauthor.user.shops.map((shop) => ({
-                        ...shop,
-                        createdAt: shop.createdAt.toISOString(),
                     })),
                 },
                 note: coauthor.note,

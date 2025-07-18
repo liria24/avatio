@@ -107,7 +107,7 @@ export default defineApi<
                 )
             })
 
-            if (shapekeys.length > 0)
+            if (shapekeys.length)
                 await database.insert(setupItemShapekeys).values(shapekeys)
         }
     }
@@ -116,22 +116,30 @@ export default defineApi<
     if (images !== undefined) {
         await database.delete(setupImages).where(eq(setupImages.setupId, id))
 
-        if (images.length > 0)
-            await database.insert(setupImages).values(
-                images.map((image) => ({
-                    setupId: id,
-                    url: image.url,
-                    width: image.width,
-                    height: image.height,
-                }))
+        if (images.length) {
+            const imageData = await Promise.all(
+                images.map(async (image) => {
+                    const { colors, width, height } =
+                        await extractImageColors(image)
+                    return {
+                        setupId: id,
+                        url: image,
+                        width,
+                        height,
+                        themeColors: colors.length ? colors : null,
+                    }
+                })
             )
+
+            await database.insert(setupImages).values(imageData)
+        }
     }
 
     // タグの更新
     if (tags !== undefined) {
         await database.delete(setupTags).where(eq(setupTags.setupId, id))
 
-        if (tags.length > 0)
+        if (tags.length)
             await database.insert(setupTags).values(
                 tags.map((tag) => ({
                     setupId: id,

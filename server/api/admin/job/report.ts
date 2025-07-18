@@ -22,17 +22,11 @@ export default defineApi(
                         orderBy: (feedback, { desc }) =>
                             desc(feedback.createdAt),
                         columns: {
+                            id: true,
                             createdAt: true,
+                            fingerprint: true,
+                            contextPath: true,
                             comment: true,
-                        },
-                        with: {
-                            user: {
-                                columns: {
-                                    id: true,
-                                    name: true,
-                                    image: true,
-                                },
-                            },
                         },
                     })
                     .catch((error) => {
@@ -112,11 +106,7 @@ export default defineApi(
                     timestamp: feedback.createdAt.toISOString(),
                     color: 0xeeeeee,
                     author: {
-                        name: feedback.user.name,
-                        url: `https://avatio.me/@${feedback.user.id}`,
-                        icon_url:
-                            feedback.user.image ||
-                            `https://avatar.vercel.sh/${feedback.user.id}?size=64`,
+                        name: feedback.fingerprint,
                     },
                 })
             }

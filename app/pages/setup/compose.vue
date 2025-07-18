@@ -40,7 +40,7 @@ if (edit) {
         if (setup) {
             state.name = setup.name
             state.description = setup.description || ''
-            state.images = setup.images || []
+            state.images = setup.images?.map((image) => image.url) || []
             state.tags = setup.tags || []
             state.coauthors = setup.coauthors || []
             for (const item of setup.items)
@@ -178,18 +178,18 @@ defineSeo({
 </script>
 
 <template>
-    <ModalPublishSetupComplete
-        v-if="publishedSetupId"
-        v-model:open="modalPublishComplete"
-        :setup-id="publishedSetupId"
-        @continue="resetForm"
-    />
-
     <UForm
         :state
         class="relative size-full pb-5 lg:pl-[23rem]"
         @submit="onSubmit"
     >
+        <ModalPublishSetupComplete
+            v-if="publishedSetupId"
+            v-model:open="modalPublishComplete"
+            :setup-id="publishedSetupId"
+            @continue="resetForm"
+        />
+
         <div
             :class="
                 cn(

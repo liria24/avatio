@@ -7,121 +7,129 @@ const props = defineProps<Props>()
 const emit = defineEmits(['click'])
 const colorMode = useColorMode()
 
-const date = new Date(props.setup.createdAt)
-const dateLocale = date.toLocaleString('ja-JP', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
+// アバター情報の取得
+const firstAvatar = computed(() =>
+    props.setup.items.find((item) => item.category === 'avatar')
+)
+
+const avatarName = computed(() => {
+    const avatar = firstAvatar.value
+    if (!avatar) return '不明なベースアバター'
+    return avatar.niceName || avatarShortName(avatar.name)
 })
 
-const firstAvatar = props.setup.items.find((item) => item.category === 'avatar')
+const setupNameHtml = computed(() => useLineBreak(props.setup.name))
 
-const avatarName = (() => {
-    if (!firstAvatar) return '不明なベースアバター'
-    if (firstAvatar.niceName?.length) return firstAvatar.niceName
-    return avatarShortName(firstAvatar.name)
-})()
+// 画像関連の処理
+const firstImage = computed(() => props.setup.images?.[0])
+const hasImages = computed(() => !!props.setup.images?.length)
 
+// 画像サイズの計算（幅360px以下に制限、アスペクト比維持）
+const imageSize = computed(() => {
+    const image = firstImage.value
+    if (!image) return { width: 0, height: 0 }
+
+    const maxWidth = 360
+    const { width: originalWidth, height: originalHeight } = image
+
+    if (originalWidth <= maxWidth)
+        return { width: originalWidth, height: originalHeight }
+
+    const aspectRatio = originalHeight / originalWidth
+    return {
+        width: maxWidth,
+        height: Math.round(maxWidth * aspectRatio),
+    }
+})
+
+// placeholderサイズ（imageSizeの10分の1程度、整数値）
+const placeholderSize = computed(() => {
+    const size = imageSize.value
+    return {
+        width: Math.round(size.width / 10),
+        height: Math.round(size.height / 10),
+    }
+})
+
+// テーマカラー関連
 const dominantColor = ref('')
 const adjustedColor = ref('')
 
-const adjustColorForTheme = (hex: string, isDark: boolean) => {
+// カラー調整のヘルパー関数
+const adjustColorForTheme = (hex: string, isDark: boolean): string => {
     if (!hex) return ''
 
     const luminance = getLuminance(hex)
     const { r, g, b } = hexToRgb(hex)
 
-    // ダークモード
-    if (isDark) {
-        // 明るさの下限と上限を設定
-        const targetLuminance = Math.max(0.4, Math.min(0.65, luminance))
-        const factor = targetLuminance / (luminance || 0.1)
+    const targetLuminance = isDark
+        ? Math.max(0.4, Math.min(0.65, luminance))
+        : Math.max(0.25, Math.min(0.6, luminance))
 
-        return rgbToHex(
-            Math.min(255, Math.max(30, r * factor)),
-            Math.min(255, Math.max(30, g * factor)),
-            Math.min(255, Math.max(30, b * factor))
-        )
-    }
-    // ライトモード
-    else {
-        // 暗さの下限と上限を設定
-        const targetLuminance = Math.max(0.25, Math.min(0.6, luminance))
-        const factor = targetLuminance / (luminance || 0.1)
+    const factor = targetLuminance / (luminance || 0.1)
 
-        return rgbToHex(
-            Math.min(220, Math.max(20, r * factor)),
-            Math.min(220, Math.max(20, g * factor)),
-            Math.min(220, Math.max(20, b * factor))
-        )
-    }
+    const clamp = (value: number, min: number, max: number) =>
+        Math.min(max, Math.max(min, value * factor))
+
+    return isDark
+        ? rgbToHex(clamp(r, 30, 255), clamp(g, 30, 255), clamp(b, 30, 255))
+        : rgbToHex(clamp(r, 20, 220), clamp(g, 20, 220), clamp(b, 20, 220))
 }
 
-const extractImageColor = async (event: Event) => {
-    const target = event.target as HTMLImageElement
-    if (!target || !(target instanceof HTMLImageElement)) return
+// テーマカラーの初期化
+const initializeThemeColor = () => {
+    const themeColors = firstImage.value?.themeColors
 
-    try {
-        const { extractColors } = await import('extract-colors')
-
-        // 画像から色を抽出
-        const colors = await extractColors(target, {
-            pixels: 1000,
-            distance: 0.2,
-            saturationDistance: 0.2,
-            lightnessDistance: 0.5,
-        })
-
-        if (colors?.length > 0 && colors[0]) {
-            const extractedColor = colors[0].hex || ''
-            dominantColor.value = extractedColor
-
-            const isDark = colorMode.value === 'dark'
-            adjustedColor.value = adjustColorForTheme(extractedColor, isDark)
-        }
-    } catch (error) {
-        console.error('Failed to extract color from image:', error)
+    if (!themeColors?.length) {
         dominantColor.value = ''
         adjustedColor.value = ''
+        return
     }
+
+    const themeColor = themeColors[0]
+    if (!themeColor) {
+        dominantColor.value = ''
+        adjustedColor.value = ''
+        return
+    }
+
+    dominantColor.value = themeColor
+    adjustedColor.value = adjustColorForTheme(
+        themeColor,
+        colorMode.value === 'dark'
+    )
 }
 
-// テーマ変更時に色を再調整するウォッチャー
-watch(
-    () => colorMode.value,
-    (newMode) => {
-        if (dominantColor.value) {
-            const isDark = newMode === 'dark'
-            adjustedColor.value = adjustColorForTheme(
-                dominantColor.value,
-                isDark
-            )
-        }
-    }
-)
-
+// グラデーション色の計算
 const gradientColor = computed(() => {
     if (!adjustedColor.value) return 'rgba(0,0,0,0.8)'
 
     const { r, g, b } = hexToRgb(adjustedColor.value)
     const darkeningFactor = 0.2
+
     return `rgba(${Math.round(r * darkeningFactor)}, ${Math.round(g * darkeningFactor)}, ${Math.round(b * darkeningFactor)}, 0.8)`
 })
 
-const elementStyle = computed(() => {
-    if (!adjustedColor.value) return {}
-    return {
-        '--dominant-color': adjustedColor.value,
-        '--gradient-color': gradientColor.value,
-    }
-})
+// CSS 変数のスタイル
+const elementStyle = computed(() =>
+    adjustedColor.value
+        ? {
+              '--dominant-color': adjustedColor.value,
+              '--gradient-color': gradientColor.value,
+          }
+        : {}
+)
 
+// グラデーションスタイル
 const gradientStyle = computed(() => {
-    if (!adjustedColor.value)
-        return 'background-image: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 80%)'
-    return `background-image: linear-gradient(to top, var(--gradient-color) 0%, transparent 80%)`
+    const gradient = adjustedColor.value
+        ? 'var(--gradient-color)'
+        : 'rgba(0,0,0,0.8)'
+
+    return `background-image: linear-gradient(to top, ${gradient} 0%, transparent 80%)`
 })
 
+// リンクのクラス
 const linkClasses = computed(() => {
     const baseClasses =
         'group flex flex-col rounded-lg overflow-clip focus:outline-none hover:ring-2 focus:ring-2 hover:shadow-xl focus-visible:shadow-xl shadow-black/10 dark:shadow-white/10 transition duration-100 ease-in-out'
@@ -133,37 +141,45 @@ const linkClasses = computed(() => {
     return cn(baseClasses, colorClasses, props.class)
 })
 
-const setupNameHtml = useLineBreak(props.setup.name)
+// ライフサイクル
+onMounted(initializeThemeColor)
 
-const hasImages = !!props.setup.images?.length
-const firstImage = props.setup.images?.[0]
+// テーマ変更の監視
+watch(colorMode, (newMode) => {
+    if (dominantColor.value)
+        adjustedColor.value = adjustColorForTheme(
+            dominantColor.value,
+            newMode.preference === 'dark' ||
+                (newMode.preference === 'system' && newMode.value === 'dark')
+        )
+})
 </script>
 
 <template>
     <NuxtLink
         tabindex="0"
-        :to="$localePath(`/setup/${props.setup.id}`)"
+        :to="$localePath(`/setup/${setup.id}`)"
         :class="linkClasses"
         :style="elementStyle"
         @click="emit('click')"
     >
+        <!-- 画像がある場合のレイアウト -->
         <div v-if="hasImages" class="relative w-full p-1.5">
             <NuxtImg
-                :src="firstImage?.url"
+                :src="firstImage!.url"
                 :alt="setup.name"
-                :width="firstImage?.width ?? 640"
-                :height="firstImage?.height ?? 360"
+                :width="imageSize.width"
+                :height="imageSize.height"
                 :placeholder="[
-                    firstImage?.width ?? 192,
-                    firstImage?.height ?? 108,
-                    75,
+                    placeholderSize.width,
+                    placeholderSize.height,
+                    50,
                     5,
                 ]"
                 loading="lazy"
                 format="webp"
                 fit="cover"
                 class="size-full max-h-[420px] rounded-lg object-cover"
-                @load="extractImageColor"
             />
             <div
                 :class="[
@@ -197,7 +213,9 @@ const firstImage = props.setup.images?.[0]
             </div>
         </div>
 
+        <!-- フッター部分（共通） -->
         <div class="flex w-full items-center">
+            <!-- 画像がない場合のアバター表示 -->
             <NuxtImg
                 v-if="!hasImages && firstAvatar"
                 v-slot="{ isLoaded, src, imgAttrs }"
@@ -223,23 +241,34 @@ const firstImage = props.setup.images?.[0]
                     class="my-1.5 ml-1.5 aspect-square h-14 shrink-0 rounded-lg md:h-20"
                 />
             </NuxtImg>
+
+            <!-- アバターがない場合のプレースホルダー -->
             <div
                 v-else-if="!firstAvatar && !hasImages"
-                class="text-muted my-1.5 ml-1.5 flex size-14 shrink-0 items-center justify-center rounded-lg bg-zinc-300"
+                class="text-muted bg-accented my-1.5 ml-1.5 flex size-14 shrink-0 items-center justify-center rounded-lg"
             >
                 ?
             </div>
 
+            <!-- 画像がある場合のメタ情報 -->
             <div
                 v-if="hasImages"
                 class="flex w-full items-center justify-end gap-2 px-2 pb-2"
             >
-                <UTooltip :text="dateLocale" :delay-duration="0">
+                <UTooltip :delay-duration="0">
                     <NuxtTime
-                        :datetime="date"
+                        :datetime="setup.createdAt"
                         relative
                         class="text-muted text-xs whitespace-nowrap"
                     />
+
+                    <template #content>
+                        <NuxtTime
+                            :datetime="setup.createdAt"
+                            date-style="medium"
+                            time-style="short"
+                        />
+                    </template>
                 </UTooltip>
 
                 <UPopover mode="hover">
@@ -253,12 +282,12 @@ const firstImage = props.setup.images?.[0]
 
                     <template #content>
                         <NuxtLink
-                            :to="`/@${props.setup.user.id}`"
+                            :to="`/@${setup.user.id}`"
                             class="flex items-center gap-3 py-2 pr-3 pl-2"
                         >
                             <UAvatar
-                                :src="props.setup.user.image || undefined"
-                                :alt="props.setup.user.name"
+                                :src="setup.user.image || undefined"
+                                :alt="setup.user.name"
                                 icon="lucide:user-round"
                                 class="size-10"
                             />
@@ -266,11 +295,11 @@ const firstImage = props.setup.images?.[0]
                                 <span
                                     class="text-toned text-sm leading-none font-semibold"
                                 >
-                                    {{ props.setup.user.name }}
+                                    {{ setup.user.name }}
                                 </span>
                                 <UserBadges
-                                    v-if="props.setup.user.badges?.length"
-                                    :badges="props.setup.user.badges"
+                                    v-if="setup.user.badges?.length"
+                                    :badges="setup.user.badges"
                                     size="xs"
                                 />
                             </div>
@@ -278,6 +307,8 @@ const firstImage = props.setup.images?.[0]
                     </template>
                 </UPopover>
             </div>
+
+            <!-- 画像がない場合のメタ情報 -->
             <div
                 v-else
                 class="flex w-full flex-col items-start justify-center gap-2 pr-2 pl-3"
@@ -324,12 +355,20 @@ const firstImage = props.setup.images?.[0]
                         </template>
                     </UPopover>
 
-                    <UTooltip :text="dateLocale" :delay-duration="0">
+                    <UTooltip :delay-duration="0">
                         <NuxtTime
-                            :datetime="date"
+                            :datetime="props.setup.createdAt"
                             relative
                             class="text-muted text-xs whitespace-nowrap"
                         />
+
+                        <template #content>
+                            <NuxtTime
+                                :datetime="props.setup.createdAt"
+                                date-style="medium"
+                                time-style="short"
+                            />
+                        </template>
                     </UTooltip>
                 </div>
             </div>

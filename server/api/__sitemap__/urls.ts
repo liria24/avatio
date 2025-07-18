@@ -13,7 +13,7 @@ export default defineSitemapEventHandler(async () => {
     ]
 
     const setups = await database.query.setups.findMany({
-        where: (setups, { eq }) => eq(setups.visibility, true),
+        where: (setups, { isNull }) => isNull(setups.hidAt),
         columns: {
             id: true,
             updatedAt: true,

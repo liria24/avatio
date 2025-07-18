@@ -12,6 +12,8 @@ const unverifying = ref(false)
 const modalVerify = ref(false)
 const modalUnverify = ref(false)
 
+const { copy, copied } = useClipboard({ source: verifyCode.value || '' })
+
 const verifiable = computed(() => {
     const result = extractItemId(itemUrl.value)
     if (result) return true
@@ -21,13 +23,6 @@ const verifiable = computed(() => {
 const shopUrl = (shopId: string, platform: Platform) => {
     if (platform === 'booth') return `https://${shopId}.booth.pm`
     return undefined
-}
-
-const copyCode = () => {
-    if (verifyCode.value) {
-        navigator.clipboard.writeText(verifyCode.value.toString())
-        toast.add({ title: `認証コードをコピーしました` })
-    }
 }
 
 const verify = async () => {
@@ -118,13 +113,15 @@ watch(modalVerify, async (value) => {
                 >
                     <div class="flex flex-col gap-2 pt-2">
                         <UButton
-                            trailing-icon="lucide:copy"
+                            :trailing-icon="
+                                copied ? 'lucide:check' : 'lucide:copy'
+                            "
                             :label="verifyCode || 'コードを生成中...'"
                             variant="outline"
                             color="neutral"
                             block
                             :ui="{ base: 'gap-2', trailingIcon: 'size-4' }"
-                            @click="copyCode"
+                            @click="copy(verifyCode || '')"
                         />
                         <UAlert
                             icon="lucide:info"

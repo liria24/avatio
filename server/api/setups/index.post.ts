@@ -61,15 +61,23 @@ export default defineApi(
                 await database.insert(setupItemShapekeys).values(shapekeys)
         }
 
-        if (images?.length)
-            await database.insert(setupImages).values(
-                images.map((image) => ({
-                    setupId,
-                    url: image.url,
-                    width: image.width,
-                    height: image.height,
-                }))
+        if (images?.length) {
+            const imageData = await Promise.all(
+                images.map(async (image) => {
+                    const { colors, width, height } =
+                        await extractImageColors(image)
+                    return {
+                        setupId,
+                        url: image,
+                        width,
+                        height,
+                        themeColors: colors.length ? colors : null,
+                    }
+                })
             )
+
+            await database.insert(setupImages).values(imageData)
+        }
 
         if (tags?.length)
             await database.insert(setupTags).values(
