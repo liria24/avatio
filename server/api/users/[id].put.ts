@@ -44,6 +44,7 @@ export default defineApi(
             .update(user)
             .set({
                 id: newId,
+                updatedAt: new Date(),
                 name,
                 image,
                 bio,
