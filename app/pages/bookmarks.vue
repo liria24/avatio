@@ -1,4 +1,8 @@
 <script lang="ts" setup>
+definePageMeta({
+    middleware: 'session',
+})
+
 const setupsPerPage: number = 50
 const page = ref(1)
 
