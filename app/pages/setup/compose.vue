@@ -169,6 +169,24 @@ const resetForm = () => {
     publishedSetupId.value = null
 }
 
+onBeforeRouteLeave((to, from, next) => {
+    const hasChanges =
+        state.name ||
+        state.description ||
+        state.images.length ||
+        state.tags.length ||
+        state.coauthors.length ||
+        Object.values(state.items).some((items) => items.length)
+
+    if (hasChanges && !publishedSetupId.value) {
+        const answer = window.confirm(
+            '入力された内容が破棄されます。よろしいですか？'
+        )
+        return next(answer)
+    }
+    return next(true)
+})
+
 defineSeo({
     title: editingSetupId.value ? 'セットアップを編集' : 'セットアップを投稿',
     description: editingSetupId.value
