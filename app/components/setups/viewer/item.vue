@@ -10,6 +10,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const toast = useToast()
+const { copy } = useClipboard()
 
 const nsfwMask = ref(props.item.nsfw)
 
@@ -20,11 +21,6 @@ const item = ref<SetupItem>({
     unsupported: props.item.unsupported,
     shapekeys: props.item.shapekeys,
 })
-
-const copy = (key: { name: string; value: number }) => {
-    navigator.clipboard.writeText(key.value.toString())
-    toast.add({ title: `${key.name} の値をコピーしました` })
-}
 </script>
 
 <template>
@@ -300,7 +296,15 @@ const copy = (key: { name: string; value: number }) => {
                                         "
                                         variant="soft"
                                         size="sm"
-                                        @click="copy(key)"
+                                        @click="
+                                            copy(key.value.toString()).then(
+                                                () => {
+                                                    toast.add({
+                                                        title: `${key.name} の値をコピーしました`,
+                                                    })
+                                                }
+                                            )
+                                        "
                                     />
                                 </div>
                             </div>

@@ -13,14 +13,10 @@ const emit = defineEmits<{
 }>()
 
 const link = `https://avatio.me/setup/${props.setupId}`
-const copied = ref(false)
 
 const { data } = await useSetup(props.setupId)
 
-const copyUrl = () => {
-    navigator.clipboard.writeText(link)
-    copied.value = true
-}
+const { copy, copied, isSupported } = useClipboard({ source: link })
 
 onMounted(() => {
     confetti({
@@ -65,10 +61,11 @@ onMounted(() => {
                         {{ link }}
                     </NuxtLink>
                     <UButton
+                        v-if="isSupported"
                         :icon="copied ? 'lucide:check' : 'lucide:copy'"
                         variant="ghost"
                         size="sm"
-                        @click="copyUrl"
+                        @click="copy(link)"
                     />
                     <DropdownMenuShareSetup :setup="data">
                         <UButton

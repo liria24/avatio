@@ -320,14 +320,10 @@ onMounted(async () => {
             </ModalLogin>
         </template>
 
-        <DropdownMenuShareSetup :setup="props.setup">
-            <UButton
-                icon="lucide:share-2"
-                aria-label="シェア"
-                variant="ghost"
-                size="sm"
-                class="p-2"
-            />
-        </DropdownMenuShareSetup>
+        <ShareButton
+            :title="props.setup.name"
+            :description="props.setup.description"
+            :image="props.setup.images?.[0]?.url"
+        />
     </div>
 </template>
