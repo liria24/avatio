@@ -7,5 +7,5 @@ export default defineNuxtRouteMiddleware(async () => {
     )
 
     if (session.value?.user?.role !== 'admin')
-        return navigateTo(localePath('/'))
+        return navigateTo(localePath('/login'))
 })

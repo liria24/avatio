@@ -2,6 +2,10 @@
 import type { z } from 'zod/v4'
 import { h, resolveComponent } from 'vue'
 
+definePageMeta({
+    middleware: 'session',
+})
+
 const router = useRouter()
 const route = useRoute()
 const toast = useToast()

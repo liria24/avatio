@@ -1,14 +1,14 @@
 <script lang="ts" setup>
+definePageMeta({
+    middleware: 'session',
+})
+
 const { $authClient, $logout, $multiSession } = useNuxtApp()
-const { $session } = useNuxtApp()
-const session = await $session()
 const sessions = await $multiSession()
 const route = useRoute()
 
 const query = route.query
 const changeUserId = query.changeUserId
-
-if (!session.value) navigateTo('/login')
 
 const modalDeleteUser = ref(false)
 

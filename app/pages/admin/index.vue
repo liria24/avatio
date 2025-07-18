@@ -1,4 +1,8 @@
-<script lang="ts" setup></script>
+<script lang="ts" setup>
+definePageMeta({
+    middleware: 'admin',
+})
+</script>
 
 <template>
     <div class="flex w-full flex-col gap-6">

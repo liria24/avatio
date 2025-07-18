@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { VueDraggable } from 'vue-draggable-plus'
 
+definePageMeta({
+    middleware: 'admin',
+})
+
 const { $session } = useNuxtApp()
 const session = await $session()
 const toast = useToast()
