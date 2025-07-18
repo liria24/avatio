@@ -5,7 +5,9 @@ const route = useRoute()
 const router = useRouter()
 
 const cache =
-    route.query.cache === undefined ? true : Boolean(route.query.cache)
+    route.query.cache === undefined
+        ? true
+        : route.query.cache === 'true' || route.query.cache === '1'
 
 type Tab = 'latest' | 'me' | 'bookmarks'
 
