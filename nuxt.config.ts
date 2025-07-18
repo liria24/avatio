@@ -24,6 +24,7 @@ export default defineNuxtConfig({
         '@nuxt/eslint',
         '@nuxt/image',
         '@nuxt/ui',
+        '@nuxtjs/device',
         '@nuxtjs/i18n',
         '@nuxtjs/mdc',
         '@nuxtjs/robots',
@@ -128,9 +129,6 @@ export default defineNuxtConfig({
                 icon: 'twemoji:flag-japan',
             },
         ],
-        bundle: {
-            optimizeTranslationDirective: false,
-        },
         detectBrowserLanguage: {
             useCookie: true,
             cookieKey: 'i18n_redirected',
