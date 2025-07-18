@@ -7,9 +7,6 @@ import {
     setups,
     setupTags,
 } from '@@/database/schema'
-import { extractColors } from 'extract-colors'
-import getPixels from 'get-pixels'
-import sharp from 'sharp'
 
 const body = setupsInsertSchema
 
@@ -64,57 +61,23 @@ export default defineApi(
                 await database.insert(setupItemShapekeys).values(shapekeys)
         }
 
-        if (images?.length)
-            for (const image of images) {
-                const blob = await $fetch<Blob>(image)
-                const buffer = Buffer.from(await blob.arrayBuffer())
-                const metadata = await sharp(buffer).metadata()
-                const { width = 0, height = 0 } = metadata
-
-                let colors: string[] = []
-
-                colors = await new Promise((resolve, reject) => {
-                    getPixels(image, async (err, pixels) => {
-                        if (err) {
-                            console.error('Error getting pixels:', err)
-                            reject(err)
-                            return
-                        }
-
-                        try {
-                            const data = [...pixels.data]
-                            const [width, height] = pixels.shape
-
-                            const extractedColors = await extractColors(
-                                { data, width, height },
-                                {
-                                    pixels: 64000,
-                                    distance: 0.22,
-                                    saturationDistance: 0.2,
-                                    lightnessDistance: 0.2,
-                                    hueDistance: 0.8,
-                                }
-                            )
-                            resolve(
-                                extractedColors
-                                    .sort((a, b) => b.area - a.area)
-                                    .map((color) => color.hex)
-                            )
-                        } catch (error) {
-                            console.error('Error extracting colors:', error)
-                            reject(error)
-                        }
-                    })
+        if (images?.length) {
+            const imageData = await Promise.all(
+                images.map(async (image) => {
+                    const { colors, width, height } =
+                        await extractImageColors(image)
+                    return {
+                        setupId,
+                        url: image,
+                        width,
+                        height,
+                        themeColors: colors.length ? colors : null,
+                    }
                 })
+            )
 
-                await database.insert(setupImages).values({
-                    setupId,
-                    url: image,
-                    width,
-                    height,
-                    themeColors: colors.length ? colors : null,
-                })
-            }
+            await database.insert(setupImages).values(imageData)
+        }
 
         if (tags?.length)
             await database.insert(setupTags).values(

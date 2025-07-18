@@ -8,9 +8,6 @@ import {
     setupTags,
 } from '@@/database/schema'
 import { eq, inArray } from 'drizzle-orm'
-import { extractColors } from 'extract-colors'
-import getPixels from 'get-pixels'
-import sharp from 'sharp'
 import { z } from 'zod/v4'
 
 const params = z.object({
@@ -119,57 +116,23 @@ export default defineApi<
     if (images !== undefined) {
         await database.delete(setupImages).where(eq(setupImages.setupId, id))
 
-        if (images.length)
-            for (const image of images) {
-                const blob = await $fetch<Blob>(image)
-                const buffer = Buffer.from(await blob.arrayBuffer())
-                const metadata = await sharp(buffer).metadata()
-                const { width = 0, height = 0 } = metadata
-
-                let colors: string[] = []
-
-                colors = await new Promise((resolve, reject) => {
-                    getPixels(image, async (err, pixels) => {
-                        if (err) {
-                            console.error('Error getting pixels:', err)
-                            reject(err)
-                            return
-                        }
-
-                        try {
-                            const data = [...pixels.data]
-                            const [width, height] = pixels.shape
-
-                            const extractedColors = await extractColors(
-                                { data, width, height },
-                                {
-                                    pixels: 64000,
-                                    distance: 0.22,
-                                    saturationDistance: 0.2,
-                                    lightnessDistance: 0.2,
-                                    hueDistance: 0.8,
-                                }
-                            )
-                            resolve(
-                                extractedColors
-                                    .sort((a, b) => b.area - a.area)
-                                    .map((color) => color.hex)
-                            )
-                        } catch (error) {
-                            console.error('Error extracting colors:', error)
-                            reject(error)
-                        }
-                    })
+        if (images.length) {
+            const imageData = await Promise.all(
+                images.map(async (image) => {
+                    const { colors, width, height } =
+                        await extractImageColors(image)
+                    return {
+                        setupId: id,
+                        url: image,
+                        width,
+                        height,
+                        themeColors: colors.length ? colors : null,
+                    }
                 })
+            )
 
-                await database.insert(setupImages).values({
-                    setupId: id,
-                    url: image,
-                    width,
-                    height,
-                    themeColors: colors.length ? colors : null,
-                })
-            }
+            await database.insert(setupImages).values(imageData)
+        }
     }
 
     // タグの更新
