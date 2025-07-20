@@ -8,7 +8,7 @@ import { createAuthClient } from 'better-auth/vue'
 
 export default defineNuxtPlugin(() => {
     const client = createAuthClient({
-        baseURL: import.meta.env.NUX_PUBLIC_SITE_URL,
+        baseURL: import.meta.env.NUXT_BETTER_AUTH_URL as string,
         plugins: [
             adminClient(),
             multiSessionClient(),

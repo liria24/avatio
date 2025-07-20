@@ -22,8 +22,8 @@ export const auth = betterAuth({
             },
         },
     },
-    baseURL: import.meta.env.NUXT_BETTER_AUTH_URL,
-    secret: import.meta.env.NUXT_BETTER_AUTH_SECRET,
+    baseURL: import.meta.env.NUXT_BETTER_AUTH_URL as string,
+    secret: import.meta.env.NUXT_BETTER_AUTH_SECRET as string,
     trustedOrigins: [
         'http://localhost:3000',
         'https://dev.avatio.me',
@@ -34,8 +34,8 @@ export const auth = betterAuth({
     }),
     socialProviders: {
         twitter: {
-            clientId: import.meta.env.TWITTER_CLIENT_ID,
-            clientSecret: import.meta.env.TWITTER_CLIENT_SECRET,
+            clientId: import.meta.env.TWITTER_CLIENT_ID as string,
+            clientSecret: import.meta.env.TWITTER_CLIENT_SECRET as string,
         },
     },
     deleteUser: {

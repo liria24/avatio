@@ -51,14 +51,14 @@ export default defineNuxtConfig({
     runtimeConfig: {
         adminKey: '',
         ai: { gateway: { apiKey: '' } },
-        betterAuth: { url: '', secret: '' },
+        betterAuth: { url: baseUrl, secret: '' },
         liria: { accessToken: '' },
         neon: { databaseUrl: '' },
         r2: { endpoint: '', accessKey: '', secretKey: '' },
         vercel: { token: '', edgeConfig: { endpoint: '' } },
         public: {
-            siteUrl: '',
-            r2: { domain: '' },
+            siteUrl: baseUrl,
+            r2: { domain: r2Domain },
         },
     },
 
