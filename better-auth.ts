@@ -1,6 +1,6 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import { admin, multiSession } from 'better-auth/plugins'
+import { admin, customSession, multiSession } from 'better-auth/plugins'
 import database from './database'
 
 export const auth = betterAuth({
@@ -22,8 +22,8 @@ export const auth = betterAuth({
             },
         },
     },
-    baseURL: import.meta.env.NUXT_BETTER_AUTH_URL,
-    secret: import.meta.env.NUXT_BETTER_AUTH_SECRET,
+    baseURL: import.meta.env.NUXT_BETTER_AUTH_URL as string,
+    secret: import.meta.env.NUXT_BETTER_AUTH_SECRET as string,
     trustedOrigins: [
         'http://localhost:3000',
         'https://dev.avatio.me',
@@ -34,14 +34,32 @@ export const auth = betterAuth({
     }),
     socialProviders: {
         twitter: {
-            clientId: import.meta.env.TWITTER_CLIENT_ID,
-            clientSecret: import.meta.env.TWITTER_CLIENT_SECRET,
+            clientId: import.meta.env.TWITTER_CLIENT_ID as string,
+            clientSecret: import.meta.env.TWITTER_CLIENT_SECRET as string,
         },
     },
     deleteUser: {
         enabled: true,
     },
-    plugins: [admin(), multiSession()],
+    plugins: [
+        admin(),
+        multiSession(),
+        customSession(async ({ user, session }) => {
+            const data = await database.query.user.findFirst({
+                where: (users, { eq }) => eq(users.id, user.id),
+                columns: {
+                    isInitialized: true,
+                },
+            })
+            return {
+                user: {
+                    ...user,
+                    isInitialized: data?.isInitialized ?? false,
+                },
+                session,
+            }
+        }),
+    ],
     cookieCache: {
         enabled: true,
         maxAge: 3 * 60,

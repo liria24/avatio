@@ -303,7 +303,11 @@ export default defineApi<
                 consola.warn(
                     `Item ${id} not found on ${platform}, marked as outdated`
                 )
-                return { ...cachedData, outdated: true }
+                // outdatedなアイテムは返さずにエラーをスローする
+                throw createError({
+                    statusCode: 404,
+                    statusMessage: 'Item not found or no longer available',
+                })
             }
             throw new Error(
                 `Item ${id} not found on ${platform} and no cached data available`
@@ -320,7 +324,12 @@ export default defineApi<
             if (cachedData) {
                 await markItemAsOutdated(id)
                 consola.warn(`Item ${id} processing failed, marked as outdated`)
-                return { ...cachedData, outdated: true }
+                // outdatedなアイテムは返さずにエラーをスローする
+                throw createError({
+                    statusCode: 404,
+                    statusMessage:
+                        'Item processing failed or category not allowed',
+                })
             }
             throw new Error(`Failed to process item ${id}`)
         }

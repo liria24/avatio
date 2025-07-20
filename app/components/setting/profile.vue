@@ -25,12 +25,7 @@ const ui = reactive({
     idUpdating: false,
     modalChangeUserId: props.changeUserId || false,
     modalCropImage: false,
-    newIdCheckState: 'idle' as
-        | 'idle'
-        | 'checking'
-        | 'available'
-        | 'unavailable'
-        | 'error',
+    newIdAvailability: false,
 })
 
 const _schema = userUpdateSchema
@@ -51,56 +46,6 @@ const state = reactive<profileSchema>({
     bio: data.value?.bio || '',
     links: data.value?.links || [],
 })
-
-const newIdCheckStatusMessages = {
-    idle: { icon: '', message: '' },
-    checking: { icon: 'svg-spinners:ring-resize', message: '確認中...' },
-    available: { icon: 'lucide:check', message: '使用可能' },
-    unavailable: {
-        icon: 'lucide:x',
-        message: 'このユーザーIDはすでに使用されています。',
-    },
-    error: {
-        icon: 'lucide:alert-triangle',
-        message: 'ユーザーIDの確認中にエラーが発生しました。',
-    },
-} as const
-
-const checkNewIdAvailability = useDebounceFn(async (id: string) => {
-    if (!id?.length || id === session.value!.user.id) {
-        ui.newIdCheckState = 'idle'
-        return
-    }
-
-    const validateResult = userUpdateSchema.shape.id.safeParse(id)
-    if (!validateResult.success) {
-        ui.newIdCheckState = 'idle'
-        return
-    }
-
-    ui.newIdCheckState = 'checking'
-
-    try {
-        const response = await $fetch('/api/users/id-availability', {
-            query: { id },
-        })
-        ui.newIdCheckState = response.available ? 'available' : 'unavailable'
-    } catch (error) {
-        console.error('Error checking profile ID availability:', error)
-        ui.newIdCheckState = 'error'
-    }
-}, 500)
-
-watch(
-    () => ui.newId,
-    (id) => {
-        if (id && id.length > 2) {
-            checkNewIdAvailability(id)
-        } else {
-            ui.newIdCheckState = 'idle'
-        }
-    }
-)
 
 const addLink = () => {
     const trimmedLink = ui.newLink.trim()
@@ -391,43 +336,12 @@ const cancelCropImage = () => {
                                             color="neutral"
                                             variant="subtle"
                                         />
-                                        <UFormField label="新しいユーザーID">
-                                            <UInput
-                                                v-model="ui.newId"
-                                                placeholder="新しいユーザーIDを入力"
-                                                class="w-full"
-                                            />
-                                            <template #hint>
-                                                <div
-                                                    v-if="
-                                                        ui.newIdCheckState !==
-                                                        'idle'
-                                                    "
-                                                    class="flex items-center gap-1"
-                                                >
-                                                    <Icon
-                                                        :name="
-                                                            newIdCheckStatusMessages[
-                                                                ui
-                                                                    .newIdCheckState
-                                                            ].icon
-                                                        "
-                                                        size="16"
-                                                        class="text-toned"
-                                                    />
-                                                    <span
-                                                        class="text-toned text-xs"
-                                                    >
-                                                        {{
-                                                            newIdCheckStatusMessages[
-                                                                ui
-                                                                    .newIdCheckState
-                                                            ].message
-                                                        }}
-                                                    </span>
-                                                </div>
-                                            </template>
-                                        </UFormField>
+                                        <InputUserId
+                                            v-model="ui.newId"
+                                            v-model:available="
+                                                ui.newIdAvailability
+                                            "
+                                        />
                                     </div>
                                 </template>
 
@@ -448,10 +362,7 @@ const cancelCropImage = () => {
                                             label="変更を保存"
                                             color="neutral"
                                             variant="solid"
-                                            :disabled="
-                                                ui.newIdCheckState !==
-                                                'available'
-                                            "
+                                            :disabled="!ui.newIdAvailability"
                                             @click="updateId(ui.newId)"
                                         />
                                     </div>
@@ -557,9 +468,6 @@ const cancelCropImage = () => {
             <template #footer>
                 <div class="flex w-full justify-end">
                     <UButton
-                        :disabled="
-                            !['available', 'idle'].includes(ui.newIdCheckState)
-                        "
                         :loading="ui.profileUpdating"
                         type="submit"
                         label="保存"

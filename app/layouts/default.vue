@@ -6,13 +6,16 @@ const footerExclude = ['/setup/compose']
 
 const modalLogin = ref(false)
 const modalFeedback = ref(false)
+const modalInitialize = ref(
+    (() => (session.value ? !session.value.user.isInitialized : false))()
+)
 
 const notificationsStore = useNotificationsStore()
 if (session.value) await callOnce(notificationsStore.fetch)
 const notifications = computed(() =>
-    notificationsStore.notifications.filter((notification) => {
-        return !notification.readAt && notification.banner
-    })
+    notificationsStore.notifications.filter(
+        (notification) => !notification.readAt && notification.banner
+    )
 )
 </script>
 
@@ -29,6 +32,11 @@ const notifications = computed(() =>
             >
                 <LazyModalLogin v-model:open="modalLogin" />
                 <LazyModalFeedback v-model:open="modalFeedback" />
+
+                <ModalProfileInitialize
+                    v-if="!session?.user.isInitialized"
+                    v-model:open="modalInitialize"
+                />
 
                 <Header
                     @open-login-modal="modalLogin = true"
