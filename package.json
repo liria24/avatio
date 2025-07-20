@@ -13,7 +13,7 @@
         "changelogen": "bunx changelogen --hideAuthorEmail"
     },
     "dependencies": {
-        "@ai-sdk/gateway": "1.0.0-beta.9",
+        "@ai-sdk/gateway": "1.0.0-beta.10",
         "@neondatabase/serverless": "^1.0.1",
         "@nuxt/fonts": "0.11.4",
         "@nuxt/image": "1.10.0",
@@ -29,7 +29,7 @@
         "@vercel/analytics": "^1.5.0",
         "@vercel/edge-config": "^1.4.0",
         "@yeger/vue-masonry-wall": "^5.0.21",
-        "ai": "5.0.0-beta.23",
+        "ai": "5.0.0-beta.24",
         "aws4fetch": "^1.0.20",
         "better-auth": "1.2.12",
         "budoux": "^0.7.0",
