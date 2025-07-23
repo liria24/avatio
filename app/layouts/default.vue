@@ -1,14 +1,36 @@
 <script lang="ts" setup>
-const { $session } = useNuxtApp()
-const session = await $session()
+const nuxtApp = useNuxtApp()
+const session = await nuxtApp.$session()
 const route = useRoute()
 const footerExclude = ['/setup/compose']
 
+const isInitialized = await (async () => {
+    if (session.value) {
+        try {
+            const { result } = await $fetch<{ result: boolean }>(
+                '/api/users/is-initialized',
+                {
+                    headers: (() => {
+                        if (
+                            import.meta.server &&
+                            nuxtApp.ssrContext?.event.headers
+                        )
+                            return nuxtApp.ssrContext.event.headers
+                    })(),
+                }
+            )
+            return result
+        } catch (error) {
+            console.error('Error checking initialization:', error)
+            return true
+        }
+    }
+    return true
+})()
+
 const modalLogin = ref(false)
 const modalFeedback = ref(false)
-const modalInitialize = ref(
-    (() => (session.value ? !session.value.user.isInitialized : false))()
-)
+const modalInitialize = ref(!isInitialized)
 
 const notificationsStore = useNotificationsStore()
 if (session.value) await callOnce(notificationsStore.fetch)
@@ -34,7 +56,7 @@ const notifications = computed(() =>
                 <LazyModalFeedback v-model:open="modalFeedback" />
 
                 <ModalProfileInitialize
-                    v-if="!session?.user.isInitialized"
+                    v-if="!isInitialized"
                     v-model:open="modalInitialize"
                 />
 

@@ -67,9 +67,12 @@ export default defineApi(
             })
 
         // アイテムの詳細情報を取得
-        const itemData = await $fetch<Item>(`/api/items/${itemId.id}`, {
-            query: { platform: itemId.platform },
-        })
+        const itemData = await $fetch<Required<Item>>(
+            `/api/items/${itemId.id}`,
+            {
+                query: { platform: itemId.platform },
+            }
+        )
 
         // ユーザーショップの登録
         await database.insert(userShops).values({

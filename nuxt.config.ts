@@ -114,13 +114,13 @@ export default defineNuxtConfig({
         baseUrl,
         defaultLocale: 'ja',
         locales: [
-            // {
-            //     code: 'en',
-            //     language: 'en-US',
-            //     name: 'English (US)',
-            //     file: 'en.json',
-            //     icon: 'twemoji:flag-united-states',
-            // },
+            {
+                code: 'en',
+                language: 'en-US',
+                name: 'English (US)',
+                file: 'en.json',
+                icon: 'twemoji:flag-united-states',
+            },
             {
                 code: 'ja',
                 language: 'ja-JP',
@@ -130,6 +130,7 @@ export default defineNuxtConfig({
             },
         ],
         detectBrowserLanguage: {
+            redirectOn: 'root',
             useCookie: true,
             cookieKey: 'i18n_redirected',
         },

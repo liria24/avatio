@@ -19,26 +19,26 @@ const body = z
         }
     )
 
-export default defineApi<
-    Feedback,
+export default defineApi<Feedback>(
+    async () => {
+        const { id } = await validateParams(params)
+        const { isClosed } = await validateBody(body)
+
+        const data = await database
+            .update(feedbacks)
+            .set({
+                isClosed,
+            })
+            .where(eq(feedbacks.id, id))
+            .returning()
+
+        return {
+            ...data[0],
+            createdAt: data[0].createdAt.toISOString(),
+        }
+    },
     {
-        errorMessage: 'Failed to update feedbacks.'
-        requireAdmin: true
+        errorMessage: 'Failed to update feedbacks.',
+        requireAdmin: true,
     }
->(async () => {
-    const { id } = await validateParams(params)
-    const { isClosed } = await validateBody(body)
-
-    const data = await database
-        .update(feedbacks)
-        .set({
-            isClosed,
-        })
-        .where(eq(feedbacks.id, id))
-        .returning()
-
-    return {
-        ...data[0],
-        createdAt: data[0].createdAt.toISOString(),
-    }
-})
+)

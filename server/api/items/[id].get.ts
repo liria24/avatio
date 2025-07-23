@@ -250,114 +250,116 @@ const defineNiceName = async (
     }
 }
 
-export default defineApi<
-    Item,
-    {
-        errorMessage: 'Failed to get items.'
-    }
->(async () => {
-    const { id } = await validateParams(params)
-    let { platform } = await validateQuery(query)
+export default defineApi<Item>(
+    async () => {
+        const { id } = await validateParams(params)
+        let { platform } = await validateQuery(query)
 
-    const { forceUpdateItem, allowedBoothCategoryId } =
-        await getAll<EdgeConfig>()
+        const { forceUpdateItem, allowedBoothCategoryId } =
+            await getAll<EdgeConfig>()
 
-    consola.log(`Processing item: ${id}`)
-    consola.log(`Platform: ${platform || 'auto-detect from cache'}`)
-    consola.log(`Force update enabled: ${forceUpdateItem}`)
+        consola.log(`Processing item: ${id}`)
+        consola.log(`Platform: ${platform || 'auto-detect from cache'}`)
+        consola.log(`Force update enabled: ${forceUpdateItem}`)
 
-    try {
-        let cachedData: Awaited<ReturnType<typeof getCachedItem>> = null
+        try {
+            let cachedData: Awaited<ReturnType<typeof getCachedItem>> = null
 
-        // キャッシュチェック
-        if (!forceUpdateItem) {
-            cachedData = await getCachedItem(id)
+            // キャッシュチェック
+            if (!forceUpdateItem) {
+                cachedData = await getCachedItem(id)
 
-            if (
-                cachedData &&
-                !cachedData.outdated &&
-                isCacheValid(cachedData.updatedAt)
-            )
-                return cachedData
-
-            platform = cachedData?.platform || platform
-        }
-
-        if (!platform)
-            throw new Error(
-                `Platform is required for item ${id} when no cached data exists`
-            )
-
-        consola.log(`Fetching item data from ${platform}: ${id}`)
-
-        // 現在はBoothのみサポート
-        if (platform !== 'booth')
-            throw new Error(`Unsupported platform: ${platform}`)
-
-        const itemData = await fetchBoothItem(id)
-        const sanitizedData = sanitizeObject(itemData)
-
-        if (!sanitizedData) {
-            if (cachedData) {
-                await markItemAsOutdated(id)
-                consola.warn(
-                    `Item ${id} not found on ${platform}, marked as outdated`
+                if (
+                    cachedData &&
+                    !cachedData.outdated &&
+                    isCacheValid(cachedData.updatedAt)
                 )
-                // outdatedなアイテムは返さずにエラーをスローする
-                throw createError({
-                    statusCode: 404,
-                    statusMessage: 'Item not found or no longer available',
-                })
+                    return cachedData
+
+                platform = cachedData?.platform || platform
             }
-            throw new Error(
-                `Item ${id} not found on ${platform} and no cached data available`
-            )
-        }
 
-        const processedItem = processBoothItem(
-            sanitizedData,
-            id,
-            allowedBoothCategoryId
-        )
-
-        if (!processedItem) {
-            if (cachedData) {
-                await markItemAsOutdated(id)
-                consola.warn(`Item ${id} processing failed, marked as outdated`)
-                // outdatedなアイテムは返さずにエラーをスローする
-                throw createError({
-                    statusCode: 404,
-                    statusMessage:
-                        'Item processing failed or category not allowed',
-                })
-            }
-            throw new Error(`Failed to process item ${id}`)
-        }
-
-        // processedItemは確実にshop情報を持っているため、型アサーションで安全にキャスト
-        await updateDatabase(
-            processedItem as Item & { shop: NonNullable<Item['shop']> }
-        )
-
-        if (processedItem.category === 'avatar')
-            defineNiceName(
-                processedItem.id,
-                processedItem.name,
-                forceUpdateItem
-            ).catch((error) => {
-                consola.error(
-                    `Failed to define nice name for item ${id}:`,
-                    error
+            if (!platform)
+                throw new Error(
+                    `Platform is required for item ${id} when no cached data exists`
                 )
+
+            consola.log(`Fetching item data from ${platform}: ${id}`)
+
+            // 現在はBoothのみサポート
+            if (platform !== 'booth')
+                throw new Error(`Unsupported platform: ${platform}`)
+
+            const itemData = await fetchBoothItem(id)
+            const sanitizedData = sanitizeObject(itemData)
+
+            if (!sanitizedData) {
+                if (cachedData) {
+                    await markItemAsOutdated(id)
+                    consola.warn(
+                        `Item ${id} not found on ${platform}, marked as outdated`
+                    )
+                    // outdatedなアイテムは返さずにエラーをスローする
+                    throw createError({
+                        statusCode: 404,
+                        statusMessage: 'Item not found or no longer available',
+                    })
+                }
+                throw new Error(
+                    `Item ${id} not found on ${platform} and no cached data available`
+                )
+            }
+
+            const processedItem = processBoothItem(
+                sanitizedData,
+                id,
+                allowedBoothCategoryId
+            )
+
+            if (!processedItem) {
+                if (cachedData) {
+                    await markItemAsOutdated(id)
+                    consola.warn(
+                        `Item ${id} processing failed, marked as outdated`
+                    )
+                    // outdatedなアイテムは返さずにエラーをスローする
+                    throw createError({
+                        statusCode: 404,
+                        statusMessage:
+                            'Item processing failed or category not allowed',
+                    })
+                }
+                throw new Error(`Failed to process item ${id}`)
+            }
+
+            // processedItemは確実にshop情報を持っているため、型アサーションで安全にキャスト
+            await updateDatabase(
+                processedItem as Item & { shop: NonNullable<Item['shop']> }
+            )
+
+            if (processedItem.category === 'avatar')
+                defineNiceName(
+                    processedItem.id,
+                    processedItem.name,
+                    forceUpdateItem
+                ).catch((error) => {
+                    consola.error(
+                        `Failed to define nice name for item ${id}:`,
+                        error
+                    )
+                })
+
+            consola.log(`Item ${id} processed successfully`)
+            return processedItem
+        } catch (error) {
+            consola.error(`Error processing item ${id}:`, error)
+            throw createError({
+                statusCode: 404,
+                statusMessage: 'Item not found or processing failed',
             })
-
-        consola.log(`Item ${id} processed successfully`)
-        return processedItem
-    } catch (error) {
-        consola.error(`Error processing item ${id}:`, error)
-        throw createError({
-            statusCode: 404,
-            statusMessage: 'Item not found or processing failed',
-        })
+        }
+    },
+    {
+        errorMessage: 'Failed to get items.',
     }
-})
+)

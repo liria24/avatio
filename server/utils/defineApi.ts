@@ -5,40 +5,38 @@ import { z } from 'zod/v4'
 
 const config = useRuntimeConfig()
 
-/**
- * 認証権限をチェックする汎用関数
- */
-const checkAuth = (
-    session: Session | null | undefined,
-    options: {
-        requireAdmin?: boolean
-        requireCron?: boolean
-    }
-): void => {
-    const { authorization } = getHeaders(useEvent())
-
-    // 権限チェック
-    const isAdmin =
-        session?.user?.role === 'admin' ||
-        authorization === `Bearer ${config.adminKey}`
-    const isCronValid = authorization === `Bearer ${process.env.CRON_SECRET}`
-
-    // CRON認証が必要で、CRONとしても管理者としても認証されていない場合
-    if (options.requireCron && !isCronValid && !isAdmin) {
-        throw createError({
-            statusCode: 401,
-            message: 'Unauthorized: Invalid CRON authentication',
-        })
-    }
-
-    // 管理者権限が必要で、管理者として認証されていない場合
-    if (options.requireAdmin && !isAdmin) {
-        throw createError({
-            statusCode: 403,
-            message: 'Unauthorized: Admin privileges required',
-        })
-    }
+type ApiOptions = {
+    errorMessage?: string
+    requireAdmin?: boolean
+    requireSession?: boolean
+    requireCron?: boolean
+    rejectBannedUser?: boolean
 }
+
+type IsSessionRequired<O extends ApiOptions> = O['requireAdmin'] extends true
+    ? true
+    : O['requireSession'] extends true
+      ? true
+      : false
+
+type SessionType<O extends ApiOptions> =
+    IsSessionRequired<O> extends true ? Session : Session | null | undefined
+
+type ApiContext<O extends ApiOptions> = {
+    session: SessionType<O>
+}
+
+const defaultOptions: ApiOptions = {
+    errorMessage: 'Internal server error',
+    requireAdmin: false,
+    requireSession: false,
+    requireCron: false,
+    rejectBannedUser: false,
+}
+
+type MergeOptions<O extends ApiOptions | undefined> = O extends undefined
+    ? typeof defaultOptions
+    : O & typeof defaultOptions
 
 /**
  * エラーハンドリング関数
@@ -67,44 +65,54 @@ const handleError = (
     })
 }
 
-type ApiOptions = {
-    errorMessage?: string
-    requireAdmin?: boolean
-    requireSession?: boolean
-    requireCron?: boolean
-    rejectBannedUser?: boolean
+/**
+ * 認証とアクセス制御の包括的チェック
+ */
+const validateAccess = async (
+    session: Session | null | undefined,
+    authorization: string | undefined,
+    options: ApiOptions
+): Promise<void> => {
+    // 認証状態の確認
+    const isAdminKey = authorization === `Bearer ${config.adminKey}`
+    const isCronValid = authorization === `Bearer ${process.env.CRON_SECRET}`
+    const isAdmin = session?.user?.role === 'admin' || isAdminKey
+
+    // CRON認証チェック
+    if (options.requireCron && !isCronValid && !isAdmin)
+        throw createError({
+            statusCode: 401,
+            message: 'Unauthorized: Invalid CRON authentication',
+        })
+
+    // 管理者権限チェック
+    if (options.requireAdmin && !isAdmin)
+        throw createError({
+            statusCode: 403,
+            message: 'Unauthorized: Admin privileges required',
+        })
+
+    // セッション必須チェック（管理者の場合はadminKeyでも可）
+    if (options.requireSession && !session)
+        throw createError({
+            statusCode: 401,
+            message: 'Unauthorized: Session required',
+        })
+
+    // 禁止ユーザーチェック
+    if (options.rejectBannedUser && session?.user?.banned)
+        throw createError({
+            statusCode: 403,
+            message: 'Forbidden: User account is banned',
+        })
 }
 
-type ApiContext<Options extends ApiOptions> = {
-    session: SessionType<Options>
-    // 他のコンテキスト情報も追加可能
-}
-
-type SessionType<Options extends ApiOptions> =
-    Options['requireAdmin'] extends true
-        ? Session
-        : Options['requireSession'] extends true
-          ? Session
-          : Session | null | undefined
-
-const defaultOptions: ApiOptions = {
-    errorMessage: 'Internal server error',
-    requireAdmin: false,
-    requireSession: false,
-    requireCron: false,
-    rejectBannedUser: false,
-}
-
-type MergeOptions<O extends ApiOptions> = O extends undefined
-    ? typeof defaultOptions
-    : O & typeof defaultOptions
-
-export default function defineApi<T, O extends ApiOptions = object>(
-    handler: (context: ApiContext<MergeOptions<O>>) => Promise<T>,
-    options?: O
-) {
-    // optionsが未指定の場合はdefaultOptionsを使う
+export default function defineApi<
+    T,
+    O extends ApiOptions = Record<string, unknown>,
+>(handler: (context: ApiContext<MergeOptions<O>>) => Promise<T>, options?: O) {
     const mergedOptions = { ...defaultOptions, ...options } as MergeOptions<O>
+
     return defineEventHandler(async (): Promise<T> => {
         try {
             const event = useEvent()
@@ -113,37 +121,10 @@ export default function defineApi<T, O extends ApiOptions = object>(
                 headers: event.headers,
             })
 
-            // requireSessionまたはrequireAdminが必要な場合の認証判定
-            if (mergedOptions.requireAdmin) {
-                // adminKeyによる認証を許可
-                const isAdminKey = authorization === `Bearer ${config.adminKey}`
-                if (!session && !isAdminKey)
-                    throw createError({
-                        statusCode: 401,
-                        message: 'Unauthorized: Session or adminKey required',
-                    })
-            } else if (mergedOptions.requireSession && !session)
-                throw createError({
-                    statusCode: 401,
-                    message: 'Unauthorized: Session required',
-                })
-
-            checkAuth(session, {
-                requireAdmin: mergedOptions.requireAdmin,
-                requireCron: mergedOptions.requireCron,
-            })
-
-            if (mergedOptions.rejectBannedUser && session?.user?.banned)
-                throw createError({
-                    statusCode: 403,
-                    message: 'Forbidden: User account is banned',
-                })
+            await validateAccess(session, authorization, mergedOptions)
 
             return await handler({
-                session: (mergedOptions.requireSession ||
-                mergedOptions.requireAdmin
-                    ? session!
-                    : session) as SessionType<MergeOptions<O>>,
+                session: session as SessionType<MergeOptions<O>>,
             })
         } catch (error) {
             return handleError(error, mergedOptions.errorMessage)
