@@ -4,7 +4,7 @@ const session = await nuxtApp.$session()
 const route = useRoute()
 const footerExclude = ['/setup/compose']
 
-const isInitialized = (async () => {
+const isInitialized = await (async () => {
     if (session.value) {
         try {
             const { result } = await $fetch<{ result: boolean }>(
