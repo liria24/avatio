@@ -15,7 +15,7 @@ const domainIconMappings: IconMapping[] = [
     },
     {
         label: 'Liria',
-        pattern: /^(.*\.)?liria\.work$/,
+        pattern: /^(.*\.)?liria\.me$/,
         icon: 'avatio:liria',
     },
 
