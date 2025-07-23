@@ -19,7 +19,7 @@
         "@nuxt/image": "1.10.0",
         "@nuxt/ui": "3.2.0",
         "@nuxtjs/device": "3.2.4",
-        "@nuxtjs/i18n": "^10.0.1",
+        "@nuxtjs/i18n": "^10.0.2",
         "@nuxtjs/mdc": "0.17.2",
         "@nuxtjs/robots": "5.4.0",
         "@nuxtjs/sitemap": "7.4.3",
