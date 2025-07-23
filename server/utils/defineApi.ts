@@ -13,15 +13,17 @@ type ApiOptions = {
     rejectBannedUser?: boolean
 }
 
-type SessionType<Options extends ApiOptions> =
-    Options['requireAdmin'] extends true
-        ? Session
-        : Options['requireSession'] extends true
-          ? Session
-          : Session | null | undefined
+type IsSessionRequired<O extends ApiOptions> = O['requireAdmin'] extends true
+    ? true
+    : O['requireSession'] extends true
+      ? true
+      : false
 
-type ApiContext<Options extends ApiOptions> = {
-    session: SessionType<Options>
+type SessionType<O extends ApiOptions> =
+    IsSessionRequired<O> extends true ? Session : Session | null | undefined
+
+type ApiContext<O extends ApiOptions> = {
+    session: SessionType<O>
 }
 
 const defaultOptions: ApiOptions = {
@@ -32,7 +34,7 @@ const defaultOptions: ApiOptions = {
     rejectBannedUser: false,
 }
 
-type MergeOptions<O extends ApiOptions> = O extends undefined
+type MergeOptions<O extends ApiOptions | undefined> = O extends undefined
     ? typeof defaultOptions
     : O & typeof defaultOptions
 
@@ -69,7 +71,7 @@ const handleError = (
 const validateAccess = async (
     session: Session | null | undefined,
     authorization: string | undefined,
-    options: MergeOptions<ApiOptions>
+    options: ApiOptions
 ): Promise<void> => {
     // 認証状態の確認
     const isAdminKey = authorization === `Bearer ${config.adminKey}`
@@ -105,10 +107,10 @@ const validateAccess = async (
         })
 }
 
-export default function defineApi<T, O extends ApiOptions = object>(
-    handler: (context: ApiContext<MergeOptions<O>>) => Promise<T>,
-    options?: O
-) {
+export default function defineApi<
+    T,
+    O extends ApiOptions = Record<string, unknown>,
+>(handler: (context: ApiContext<MergeOptions<O>>) => Promise<T>, options?: O) {
     const mergedOptions = { ...defaultOptions, ...options } as MergeOptions<O>
 
     return defineEventHandler(async (): Promise<T> => {
@@ -122,10 +124,7 @@ export default function defineApi<T, O extends ApiOptions = object>(
             await validateAccess(session, authorization, mergedOptions)
 
             return await handler({
-                session: (mergedOptions.requireSession ||
-                mergedOptions.requireAdmin
-                    ? session!
-                    : session) as SessionType<MergeOptions<O>>,
+                session: session as SessionType<MergeOptions<O>>,
             })
         } catch (error) {
             return handleError(error, mergedOptions.errorMessage)
