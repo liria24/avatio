@@ -38,11 +38,12 @@ onMounted(() => {
         drawDots(context, canvas.value.width, canvas.value.height, -1000, -1000)
     }
 
-    window.addEventListener('resize', resizeCanvas)
+    if (import.meta.client) window.addEventListener('resize', resizeCanvas)
     resizeCanvas()
 
-    onUnmounted(() => {
-        window.removeEventListener('resize', resizeCanvas)
+    onBeforeUnmount(() => {
+        if (import.meta.client)
+            window.removeEventListener('resize', resizeCanvas)
     })
 
     watch(

@@ -36,7 +36,8 @@ watch(open, (value) => {
         originalPath.value = route.path
         isInternalUpdate.value = true
         currentPath.value = localePath('/login')
-        window.history.pushState(null, '', localePath('/login'))
+        if (import.meta.client)
+            window.history.pushState(null, '', localePath('/login'))
         nextTick(() => {
             isInternalUpdate.value = false
         })
@@ -45,7 +46,8 @@ watch(open, (value) => {
             // モーダルを閉じる時：元のパスに戻る
             isInternalUpdate.value = true
             currentPath.value = originalPath.value
-            window.history.pushState(null, '', originalPath.value)
+            if (import.meta.client)
+                window.history.pushState(null, '', originalPath.value)
             nextTick(() => {
                 isInternalUpdate.value = false
             })
@@ -77,9 +79,10 @@ onMounted(() => {
     window.addEventListener('popstate', handlePopState)
 })
 
-onUnmounted(() => {
+onBeforeUnmount(() => {
     // イベントリスナーを削除
-    window.removeEventListener('popstate', handlePopState)
+    if (import.meta.client)
+        window.removeEventListener('popstate', handlePopState)
 })
 </script>
 
