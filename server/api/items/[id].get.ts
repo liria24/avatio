@@ -3,7 +3,7 @@ import { items, shops } from '@@/database/schema'
 import { getAll } from '@vercel/edge-config'
 import { consola } from 'consola'
 import { eq } from 'drizzle-orm'
-import { z } from 'zod/v4'
+import { z } from 'zod'
 
 const config = useRuntimeConfig()
 

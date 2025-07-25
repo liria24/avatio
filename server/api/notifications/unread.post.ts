@@ -1,7 +1,7 @@
 import database from '@@/database'
 import { notifications } from '@@/database/schema'
 import { eq } from 'drizzle-orm'
-import { z } from 'zod/v4'
+import { z } from 'zod'
 
 const body = z.object({
     id: z.uuid(),

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { z } from 'zod/v4'
+import { z } from 'zod'
 import { VueDraggable } from 'vue-draggable-plus'
 
 interface Props {

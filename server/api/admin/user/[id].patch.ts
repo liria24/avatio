@@ -1,5 +1,5 @@
 import { auth } from '@@/better-auth'
-import { z } from 'zod/v4'
+import { z } from 'zod'
 
 const params = z.object({
     id: z.string(),

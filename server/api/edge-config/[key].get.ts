@@ -1,5 +1,5 @@
 import { get } from '@vercel/edge-config'
-import { z } from 'zod/v4'
+import { z } from 'zod'
 
 const params = z.object({
     key: z.string('Key must be a string').min(1, 'Key cannot be empty'),

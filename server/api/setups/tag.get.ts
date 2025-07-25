@@ -1,7 +1,7 @@
 import database from '@@/database'
 import { setupTags } from '@@/database/schema'
 import { asc, count, desc, ilike } from 'drizzle-orm'
-import { z } from 'zod/v4'
+import { z } from 'zod'
 
 const query = z.object({
     q: z.string().optional(),

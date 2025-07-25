@@ -2,7 +2,7 @@ import { consola } from 'consola'
 import sharp from 'sharp'
 import { createStorage } from 'unstorage'
 import s3Driver from 'unstorage/drivers/s3'
-import { z } from 'zod/v4'
+import { z } from 'zod'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // ファイルサイズ制限（10MB）
 const MAX_DIMENSION = 1920 // 最大長辺（px）

@@ -1,7 +1,7 @@
 import database from '@@/database'
 import { userBadges, userShops, userShopVerification } from '@@/database/schema'
 import { eq } from 'drizzle-orm'
-import { z } from 'zod/v4'
+import { z } from 'zod'
 
 const body = z.object({
     url: z.url({ error: 'URL must be in valid format' }),

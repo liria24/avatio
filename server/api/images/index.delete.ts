@@ -1,6 +1,6 @@
 import { createStorage } from 'unstorage'
 import s3Driver from 'unstorage/drivers/s3'
-import { z } from 'zod/v4'
+import { z } from 'zod'
 
 const query = z.object({
     path: z.string('Path must be a string').min(1, 'Path cannot be empty'),

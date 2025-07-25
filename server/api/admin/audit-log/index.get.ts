@@ -1,7 +1,7 @@
 import database from '@@/database'
 import { auditLogs } from '@@/database/schema'
 import { and, eq, ilike } from 'drizzle-orm'
-import { z } from 'zod/v4'
+import { z } from 'zod'
 
 const query = z.object({
     q: z.string().optional(),

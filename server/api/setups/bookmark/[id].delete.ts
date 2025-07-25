@@ -1,7 +1,7 @@
 import database from '@@/database'
 import { bookmarks } from '@@/database/schema'
 import { and, eq } from 'drizzle-orm'
-import { z } from 'zod/v4'
+import { z } from 'zod'
 
 const params = z.object({
     id: z.union([z.string().transform((val) => Number(val)), z.number()]),

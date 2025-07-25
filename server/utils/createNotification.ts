@@ -1,5 +1,5 @@
 import { consola } from 'consola'
-import type { z } from 'zod/v4'
+import type { z } from 'zod'
 
 type Body = z.infer<typeof notificationsInsertSchema>
 

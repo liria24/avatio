@@ -1,4 +1,4 @@
-import type { z } from 'zod/v4'
+import type { z } from 'zod'
 
 export default async <T extends z.ZodTypeAny>(
     schema: T,

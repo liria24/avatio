@@ -1,7 +1,7 @@
 import database from '@@/database'
 import { changelogAuthors, changelogs } from '@@/database/schema'
 import { marked } from 'marked'
-import { z } from 'zod/v4'
+import { z } from 'zod'
 
 const body = changelogsInsertSchema
     .pick({

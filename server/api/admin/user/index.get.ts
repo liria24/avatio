@@ -1,6 +1,6 @@
 import { auth } from '@@/better-auth'
 import type { UserWithRole } from 'better-auth/plugins'
-import { z } from 'zod/v4'
+import { z } from 'zod'
 
 const querySchema = z.object({
     limit: z.coerce.number().min(1).optional(),
