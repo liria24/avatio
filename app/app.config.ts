@@ -61,6 +61,11 @@ export default defineAppConfig({
                 item: 'cursor-pointer',
             },
         },
+        fileUpload: {
+            slots: {
+                base: 'cursor-pointer',
+            },
+        },
         input: {
             compoundVariants: [
                 {
@@ -131,6 +136,9 @@ export default defineAppConfig({
             },
         },
         select: {
+            slots: {
+                base: 'cursor-pointer',
+            },
             compoundVariants: [
                 {
                     loading: true,
@@ -169,6 +177,10 @@ export default defineAppConfig({
             ],
         },
         switch: {
+            slots: {
+                base: 'cursor-pointer',
+                label: 'cursor-pointer',
+            },
             variants: {
                 loading: {
                     true: {
