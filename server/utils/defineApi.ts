@@ -1,7 +1,7 @@
 import type { Session } from '@@/better-auth'
 import { auth } from '@@/better-auth'
 import { consola } from 'consola'
-import { z } from 'zod/v4'
+import { z } from 'zod'
 
 const config = useRuntimeConfig()
 

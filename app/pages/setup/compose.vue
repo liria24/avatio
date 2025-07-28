@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { z } from 'zod/v4'
+import type { z } from 'zod'
 import { h, resolveComponent } from 'vue'
 
 definePageMeta({

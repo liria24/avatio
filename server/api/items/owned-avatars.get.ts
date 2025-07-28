@@ -1,7 +1,7 @@
 import database from '@@/database'
 import { items, setupItems, setups, shops } from '@@/database/schema'
 import { and, desc, eq } from 'drizzle-orm'
-import { z } from 'zod/v4'
+import { z } from 'zod'
 
 const query = z.object({
     limit: z.coerce.number().min(1).max(1000).optional().default(24),

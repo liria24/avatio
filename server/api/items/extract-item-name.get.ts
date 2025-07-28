@@ -1,6 +1,6 @@
 import { createGateway } from '@ai-sdk/gateway'
 import { generateText } from 'ai'
-import { z } from 'zod/v4'
+import { z } from 'zod'
 
 const query = z.object({
     item: z.string().min(1, 'Item name must be at least 1 character long.'),

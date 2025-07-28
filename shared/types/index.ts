@@ -29,7 +29,7 @@ import {
     createSelectSchema,
     createUpdateSchema,
 } from 'drizzle-zod'
-import { z } from 'zod/v4'
+import { z } from 'zod'
 
 export const userBadgeSchema = z.enum(userBadge.enumValues)
 export type UserBadge = z.infer<typeof userBadgeSchema>

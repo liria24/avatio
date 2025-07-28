@@ -2,7 +2,7 @@ import database from '@@/database'
 import { notifications } from '@@/database/schema'
 import type { Notification } from '@@/shared/types'
 import { and, eq, isNull } from 'drizzle-orm'
-import { z } from 'zod/v4'
+import { z } from 'zod'
 
 const query = z.object({
     status: z

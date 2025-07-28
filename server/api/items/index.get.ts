@@ -2,7 +2,7 @@ import database from '@@/database'
 import { items, setupItems, setups } from '@@/database/schema'
 import type { SQL } from 'drizzle-orm'
 import { eq } from 'drizzle-orm'
-import { z } from 'zod/v4'
+import { z } from 'zod'
 
 const query = z.object({
     q: z.string().optional(),

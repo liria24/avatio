@@ -1,7 +1,7 @@
 import database from '@@/database'
 import { userBadges, userShops } from '@@/database/schema'
 import { and, eq } from 'drizzle-orm'
-import { z } from 'zod/v4'
+import { z } from 'zod'
 
 const body = z.object({
     shopId: z.string().min(1, 'Shop ID is required'),
