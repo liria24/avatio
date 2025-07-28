@@ -214,6 +214,16 @@ export default defineNuxtConfig({
 
     nitro: {
         preset: 'vercel',
+        storage: {
+            r2: {
+                driver: 's3',
+                accessKeyId: import.meta.env.NUXT_R2_ACCESS_KEY,
+                secretAccessKey: import.meta.env.NUXT_R2_SECRET_KEY,
+                endpoint: import.meta.env.NUXT_R2_ENDPOINT,
+                bucket: 'avatio',
+                region: 'auto',
+            },
+        },
         compressPublicAssets: true,
         experimental: {
             asyncContext: true,
