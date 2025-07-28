@@ -308,7 +308,7 @@ const cancelCropImage = () => {
                     </UButtonGroup>
                 </div>
 
-                <div class="flex flex-col gap-4">
+                <div class="flex w-full flex-col gap-4">
                     <UFormField label="ID" class="w-full">
                         <div class="flex items-center gap-1.5">
                             <span
