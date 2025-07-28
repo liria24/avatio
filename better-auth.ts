@@ -71,7 +71,7 @@ export const auth = betterAuth({
 
                 return {
                     email: profile.data.email,
-                    name: profile.data.username,
+                    name: profile.data.name,
                     image,
                     bio: profile.data.description,
                 }
