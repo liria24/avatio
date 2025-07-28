@@ -1,6 +1,6 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import { admin, multiSession } from 'better-auth/plugins'
+import { admin, customSession, multiSession } from 'better-auth/plugins'
 import { nanoid } from 'nanoid'
 import database from './database'
 
@@ -83,7 +83,30 @@ export const auth = betterAuth({
         enabled: true,
     },
 
-    plugins: [admin(), multiSession()],
+    plugins: [
+        admin(),
+        multiSession(),
+        customSession(
+            async ({ user, session }) => {
+                const data = await database.query.user.findFirst({
+                    where: (users, { eq }) => eq(users.id, user.id),
+                    columns: {
+                        isInitialized: true,
+                    },
+                })
+                return {
+                    user: {
+                        ...user,
+                        isInitialized: data?.isInitialized ?? false,
+                    },
+                    session,
+                }
+            },
+            {
+                plugins: [admin(), multiSession()],
+            }
+        ),
+    ],
 
     cookieCache: {
         enabled: true,
