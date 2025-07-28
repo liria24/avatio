@@ -1,7 +1,6 @@
 import { consola } from 'consola'
+import { nanoid } from 'nanoid'
 import sharp from 'sharp'
-import { createStorage } from 'unstorage'
-import s3Driver from 'unstorage/drivers/s3'
 import { z } from 'zod'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // ファイルサイズ制限（10MB）
@@ -24,15 +23,6 @@ const formData = z.object({
             message: 'Path traversal is not allowed',
         }),
 })
-
-const generateJpgFilename = (randomLength: number = 6) => {
-    const timestamp = Date.now().toString(36) // 36進数でタイムスタンプを短縮
-    const random = Math.random()
-        .toString(36)
-        .substring(2, 2 + randomLength)
-
-    return `${timestamp}${random}.jpg`
-}
 
 const compressImage = async (buffer: Buffer) => {
     consola.start('Compressing image...')
@@ -113,16 +103,6 @@ export default defineApi(
 
         const config = useRuntimeConfig()
 
-        const storage = createStorage({
-            driver: s3Driver({
-                accessKeyId: config.r2.accessKey,
-                secretAccessKey: config.r2.secretKey,
-                endpoint: config.r2.endpoint,
-                bucket: 'avatio',
-                region: 'auto',
-            }),
-        })
-
         consola.start('Processing and uploading image to Blob Storage...')
 
         const processedBuffer = Buffer.from(await blob.arrayBuffer())
@@ -134,13 +114,13 @@ export default defineApi(
             height,
         } = await compressImage(processedBuffer)
 
-        const jpgFilename = generateJpgFilename()
+        const jpgFilename = `${nanoid(16)}.jpg`
 
         // パスの正規化
         const normalizedPath = path.replace(/\/+/g, '/').replace(/^\/|\/$/g, '')
         const fullPath = `${normalizedPath.split('/').join(':')}:${jpgFilename}`
 
-        await storage.setItemRaw(fullPath, compressedImage)
+        await useStorage('r2').setItemRaw(fullPath, compressedImage)
 
         consola.success('Image processed and uploaded successfully')
         return {

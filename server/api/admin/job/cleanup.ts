@@ -1,20 +1,7 @@
-import { createStorage } from 'unstorage'
-import s3Driver from 'unstorage/drivers/s3'
-
 export default defineApi(
     async () => {
         const config = useRuntimeConfig()
         const event = useEvent()
-
-        const storage = createStorage({
-            driver: s3Driver({
-                accessKeyId: config.r2.accessKey,
-                secretAccessKey: config.r2.secretKey,
-                endpoint: config.r2.endpoint,
-                bucket: 'avatio',
-                region: 'auto',
-            }),
-        })
 
         const unusedImages = await event.$fetch('/api/images/unused')
         const allImages = [
@@ -26,7 +13,7 @@ export default defineApi(
         const deleteResults = await Promise.allSettled(
             allImages.map(async (image) => {
                 console.log('Deleting image from storage:', image.key)
-                await storage.del(image.key)
+                await useStorage('r2').del(image.key)
                 return image.key
             })
         )
