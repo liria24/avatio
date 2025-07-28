@@ -535,5 +535,4 @@ export interface EdgeConfig {
     allowedBoothCategoryId: number[]
     forceUpdateItem: boolean
     isMaintenance: boolean
-    isMaintenanceDev: boolean
 }
