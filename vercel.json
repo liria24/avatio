@@ -2,6 +2,25 @@
     "$schema": "https://openapi.vercel.sh/vercel.json",
     "cleanUrls": true,
     "trailingSlash": false,
+    "headers": [
+        {
+            "source": "/_vercel/image/(.*)",
+            "headers": [
+                {
+                    "key": "Cache-Control",
+                    "value": "public, s-maxage=2678400, stale-while-revalidate=86400"
+                },
+                {
+                    "key": "CDN-Cache-Control",
+                    "value": "public, s-maxage=2678400"
+                },
+                {
+                    "key": "Vercel-CDN-Cache-Control",
+                    "value": "public, s-maxage=2678400"
+                }
+            ]
+        }
+    ],
     "crons": [
         {
             "path": "/api/admin/job/report",
