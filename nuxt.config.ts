@@ -63,6 +63,7 @@ export default defineNuxtConfig({
     },
 
     routeRules: {
+        '/on-maintenance': { prerender: true },
         '/faq': { prerender: import.meta.dev ? false : true },
         '/terms': { prerender: import.meta.dev ? false : true },
         '/privacy-policy': { prerender: import.meta.dev ? false : true },
