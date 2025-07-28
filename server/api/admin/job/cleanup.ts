@@ -44,69 +44,72 @@ export default defineApi(
             }
         )
 
-        // Send Discord notification
         const message = 'Cleanup completed.'
 
-        try {
-            await $fetch('https://www.liria.me/api/discord/message', {
-                method: 'POST',
-                body: {
-                    embeds: [
-                        {
-                            title: 'Avatio Data Cleanup',
-                            description: message,
-                            color: 0xeeeeee,
-                            timestamp: new Date().toISOString(),
-                            fields: [
-                                {
-                                    name: 'Total Processed',
-                                    value: allImages.length.toString(),
-                                    inline: true,
+        // 処理対象の画像がある場合のみDiscord通知を送信
+        if (allImages.length > 0) {
+            try {
+                await $fetch('https://www.liria.me/api/discord/message', {
+                    method: 'POST',
+                    body: {
+                        embeds: [
+                            {
+                                title: 'Avatio Data Cleanup',
+                                description: message,
+                                color: 0xeeeeee,
+                                timestamp: new Date().toISOString(),
+                                fields: [
+                                    {
+                                        name: 'Total Processed',
+                                        value: allImages.length.toString(),
+                                        inline: true,
+                                    },
+                                    {
+                                        name: 'Successfully Deleted',
+                                        value: successful.length.toString(),
+                                        inline: true,
+                                    },
+                                    {
+                                        name: 'Failed',
+                                        value: failed.length.toString(),
+                                        inline: true,
+                                    },
+                                    ...(failed.length
+                                        ? [
+                                              {
+                                                  name: 'Failed Images',
+                                                  value: failed
+                                                      .map(
+                                                          (f) =>
+                                                              `${f.key}: ${f.error}`
+                                                      )
+                                                      .join('\n')
+                                                      .slice(0, 1024),
+                                                  inline: false,
+                                              },
+                                          ]
+                                        : []),
+                                ],
+                                author: {
+                                    name: 'Avatio',
+                                    url: 'https://avatio.me',
+                                    icon_url:
+                                        'https://avatio.me/icon_outlined.png',
                                 },
-                                {
-                                    name: 'Successfully Deleted',
-                                    value: successful.length.toString(),
-                                    inline: true,
-                                },
-                                {
-                                    name: 'Failed',
-                                    value: failed.length.toString(),
-                                    inline: true,
-                                },
-                                ...(failed.length
-                                    ? [
-                                          {
-                                              name: 'Failed Images',
-                                              value: failed
-                                                  .map(
-                                                      (f) =>
-                                                          `${f.key}: ${f.error}`
-                                                  )
-                                                  .join('\n')
-                                                  .slice(0, 1024),
-                                              inline: false,
-                                          },
-                                      ]
-                                    : []),
-                            ],
-                            author: {
-                                name: 'Avatio',
-                                url: 'https://avatio.me',
-                                icon_url: 'https://avatio.me/icon_outlined.png',
                             },
-                        },
-                    ],
-                },
-                headers: {
-                    authorization: `Bearer ${config.liria.accessToken}`,
-                },
-            })
-        } catch (error) {
-            console.error('Failed to send Discord notification:', error)
-            throw createError({
-                statusCode: 500,
-                statusMessage: 'Failed to send Discord notification',
-            })
+                        ],
+                    },
+                    headers: {
+                        authorization: `Bearer ${config.liria.accessToken}`,
+                    },
+                })
+            } catch (error) {
+                console.error('Failed to send Discord notification:', error)
+                throw createError({
+                    statusCode: 500,
+                    statusMessage: 'Failed to send Discord notification',
+                })
+            }
         }
 
         return {
