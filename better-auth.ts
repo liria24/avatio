@@ -4,6 +4,9 @@ import { admin, multiSession } from 'better-auth/plugins'
 import { nanoid } from 'nanoid'
 import database from './database'
 
+const JPG_FILENAME_LENGTH = 16
+const USER_ID_LENGTH = 10
+
 export const auth = betterAuth({
     appName: 'Avatio',
 
@@ -56,7 +59,7 @@ export const auth = betterAuth({
                                   )
                                 : profile.data.profile_image_url
                         )
-                        const imageId = nanoid(16)
+                        const imageId = nanoid(JPG_FILENAME_LENGTH)
                         await useStorage('r2').setItemRaw(
                             `avatar:${imageId}.jpg`,
                             Buffer.from(await fetched.arrayBuffer())
@@ -93,7 +96,7 @@ export const auth = betterAuth({
 
     advanced: {
         database: {
-            generateId: () => nanoid(10),
+            generateId: () => nanoid(USER_ID_LENGTH),
         },
     },
 })

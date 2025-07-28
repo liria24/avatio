@@ -6,6 +6,7 @@ import { z } from 'zod'
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // ファイルサイズ制限（10MB）
 const MAX_DIMENSION = 1920 // 最大長辺（px）
 const TARGET_MAX_FILE_SIZE = 2 * 1024 * 1024 // 圧縮後の目標最大ファイルサイズ（2MB）
+const JPG_FILENAME_LENGTH = 16 // JPEGファイル名の長さ
 
 const formData = z.object({
     blob: z
@@ -114,7 +115,7 @@ export default defineApi(
             height,
         } = await compressImage(processedBuffer)
 
-        const jpgFilename = `${nanoid(16)}.jpg`
+        const jpgFilename = `${nanoid(JPG_FILENAME_LENGTH)}.jpg`
 
         // パスの正規化
         const normalizedPath = path.replace(/\/+/g, '/').replace(/^\/|\/$/g, '')
