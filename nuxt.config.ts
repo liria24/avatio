@@ -225,6 +225,13 @@ export default defineNuxtConfig({
                 region: 'auto',
             },
         },
+        vercel: {
+            config: {
+                images: {
+                    minimumCacheTTL: 2678400, // 31 days
+                },
+            },
+        },
         compressPublicAssets: true,
         experimental: {
             asyncContext: true,
