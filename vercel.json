@@ -2,25 +2,10 @@
     "$schema": "https://openapi.vercel.sh/vercel.json",
     "cleanUrls": true,
     "trailingSlash": false,
-    "headers": [
-        {
-            "source": "/_nuxt/image",
-            "headers": [
-                {
-                    "key": "Cache-Control",
-                    "value": "public, max-age=2678400, must-revalidate"
-                },
-                {
-                    "key": "CDN-Cache-Control",
-                    "value": "public, max-age=2678400"
-                },
-                {
-                    "key": "Vercel-CDN-Cache-Control",
-                    "value": "public, max-age=2678400"
-                }
-            ]
-        }
-    ],
+    "images": {
+        "sizes": [320, 640, 768, 828, 1024, 1280, 1536],
+        "minimumCacheTTL": 2678400
+    },
     "crons": [
         {
             "path": "/api/admin/job/report",
