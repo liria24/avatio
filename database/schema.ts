@@ -115,17 +115,6 @@ export const verification = authSchema.table(
     (table) => [index('verification_identifier_index').on(table.identifier)]
 )
 
-export const rateLimit = authSchema.table(
-    'rate_limit',
-    {
-        id: text('id').primaryKey(),
-        key: text('key'),
-        count: integer('count'),
-        lastRequest: bigint('last_request', { mode: 'number' }),
-    },
-    (table) => [index('rate_limit_key_index').on(table.key)]
-)
-
 export const userShops = authSchema.table(
     'user_shops',
     {
