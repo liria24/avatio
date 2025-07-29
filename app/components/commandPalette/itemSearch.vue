@@ -30,7 +30,7 @@ const { data, status } = useFetch('/api/items', {
                 .map((item: Item) => ({
                     id: item.id,
                     label: item.name,
-                    shop: item.shop.name,
+                    shop: item.shop?.name,
                     image: item.image,
                     slot: 'item' as const,
                     onSelect: () => onSelect(item.id),
