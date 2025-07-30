@@ -2,10 +2,6 @@
     "$schema": "https://openapi.vercel.sh/vercel.json",
     "cleanUrls": true,
     "trailingSlash": false,
-    "images": {
-        "sizes": [320, 640, 768, 828, 1024, 1280, 1536],
-        "minimumCacheTTL": 2678400
-    },
     "crons": [
         {
             "path": "/api/admin/job/report",
