@@ -148,7 +148,7 @@ const { data: repo } = useFetch<{ repo: GithubRepo }>(
                     />
                 </div>
 
-                <div class="flex items-center gap-1">
+                <div class="flex items-center gap-1.5 font-[Geist]">
                     <p class="text-dimmed text-sm leading-none text-nowrap">
                         © 2025
                     </p>
@@ -156,10 +156,11 @@ const { data: repo } = useFetch<{ repo: GithubRepo }>(
                         to="https://liria.me"
                         target="_blank"
                         label="Liria"
-                        icon="avatio:liria"
+                        trailing-icon="avatio:liria"
                         variant="link"
                         size="sm"
-                        class="gap-1 p-0 pl-0.5 font-[Montserrat] text-sm font-semibold"
+                        :ui="{ trailingIcon: 'size-3.5' }"
+                        class="text-dimmed gap-1 p-0 text-sm font-bold"
                     />
                 </div>
             </div>

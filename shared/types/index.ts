@@ -535,4 +535,5 @@ export interface EdgeConfig {
     allowedBoothCategoryId: number[]
     forceUpdateItem: boolean
     isMaintenance: boolean
+    specificItemCategories: Record<Platform, Record<string, ItemCategory>>
 }
