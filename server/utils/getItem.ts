@@ -167,7 +167,7 @@ export default async (id: string, options?: Options): Promise<Item | null> => {
 
     if (!platform) return null
 
-    if (platform !== 'booth') {
+    if (platform === 'booth') {
         const BOOTH_CATEGORY_MAP: Record<number, ItemCategory> = {
             208: 'avatar',
             209: 'clothing',
@@ -181,9 +181,11 @@ export default async (id: string, options?: Options): Promise<Item | null> => {
             return null
         }
 
-        const category = Object.keys(specificItemCategories).includes(item.id)
-            ? specificItemCategories['booth'][item.id]
-            : BOOTH_CATEGORY_MAP[item.category.id] || 'other'
+        const category =
+            Object.hasOwn(specificItemCategories, 'booth') &&
+            Object.hasOwn(specificItemCategories['booth'], item.id)
+                ? specificItemCategories['booth'][item.id]
+                : BOOTH_CATEGORY_MAP[item.category.id] || 'other'
 
         const price = item.variations.some((v) => v.status === 'free_download')
             ? 'FREE'
