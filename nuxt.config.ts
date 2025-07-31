@@ -48,6 +48,140 @@ export default defineNuxtConfig({
         },
     },
 
+    routeRules: {
+        '/': {
+            headers: {
+                'Cache-Control': `max-age=${0}`,
+                'CDN-Cache-Control': `max-age=${30}`,
+            },
+        },
+        '/api/items': {
+            headers: {
+                'Cache-Control': `max-age=${10}`,
+                'CDN-Cache-Control': `max-age=${60}`,
+            },
+        },
+        '/api/items/*': {
+            headers: {
+                'Cache-Control': `max-age=${60 * 60}`,
+                'CDN-Cache-Control': `max-age=${60 * 60 * 24}`,
+            },
+        },
+        '/api/items/extract-item-name': {
+            headers: undefined,
+        },
+        '/api/items/owned-avatars': {
+            headers: {
+                'Cache-Control': `max-age=${60 * 10}`,
+            },
+        },
+        '/api/items/popular-avatars': {
+            headers: {
+                'Cache-Control': `max-age=${60 * 60}`,
+                'CDN-Cache-Control': `max-age=${60 * 60 * 24}`,
+            },
+        },
+        '/api/setups': {
+            headers: {
+                'Cache-Control': `max-age=${60}`,
+                'CDN-Cache-Control': `max-age=${60 * 30}`,
+            },
+        },
+        '/api/setups/*': {
+            headers: {
+                'Cache-Control': `max-age=${60}`,
+                'CDN-Cache-Control': `max-age=${60 * 60}`,
+            },
+        },
+        '/api/setups/tag': {
+            headers: {
+                'Cache-Control': `max-age=${60}`,
+                'CDN-Cache-Control': `max-age=${60 * 60}`,
+            },
+        },
+        '/api/users': {
+            headers: {
+                'Cache-Control': `max-age=${10}`,
+                'CDN-Cache-Control': `max-age=${60}`,
+            },
+        },
+        '/api/users/*': {
+            headers: {
+                'Cache-Control': `max-age=${60}`,
+                'CDN-Cache-Control': `max-age=${60 * 60}`,
+            },
+        },
+        '/api/users/id-availability': {
+            headers: undefined,
+        },
+        '/api/users/is-initialized': {
+            headers: undefined,
+        },
+        '/api/changelogs': {
+            headers: {
+                'Cache-Control': `max-age=${60 * 60}`,
+                'CDN-Cache-Control': `max-age=${60 * 60 * 24}`,
+            },
+        },
+        '/api/__sitemap__/urls': {
+            headers: {
+                'Cache-Control': `max-age=${60}`,
+                'CDN-Cache-Control': `max-age=${60 * 60}`,
+            },
+        },
+        '/faq': {
+            prerender: true,
+        },
+        '/terms': {
+            prerender: true,
+        },
+        '/privacy-policy': {
+            prerender: true,
+        },
+        '/on-maintenance': {
+            prerender: true,
+        },
+        '/setup/edit': {
+            redirect: '/setup/compose',
+        },
+    },
+
+    nitro: {
+        preset: 'vercel',
+        compressPublicAssets: true,
+        storage: {
+            r2: {
+                driver: 's3',
+                accessKeyId: import.meta.env.NUXT_R2_ACCESS_KEY,
+                secretAccessKey: import.meta.env.NUXT_R2_SECRET_KEY,
+                endpoint: import.meta.env.NUXT_R2_ENDPOINT,
+                bucket: 'avatio',
+                region: 'auto',
+            },
+        },
+        vercel: {
+            config: {
+                images: {
+                    minimumCacheTTL: 2678400, // 31 days
+                },
+                crons: [
+                    {
+                        path: '/api/admin/job/report',
+                        schedule: '0 22 * * *',
+                    },
+                    {
+                        path: '/api/admin/job/cleanup',
+                        schedule: '0 22 * * *',
+                    },
+                ],
+            },
+        },
+        experimental: {
+            asyncContext: true,
+            openAPI: true,
+        },
+    },
+
     runtimeConfig: {
         adminKey: '',
         ai: { gateway: { apiKey: '' } },
@@ -60,14 +194,6 @@ export default defineNuxtConfig({
             siteUrl: baseUrl,
             r2: { domain: r2Domain },
         },
-    },
-
-    routeRules: {
-        '/on-maintenance': { prerender: true },
-        '/faq': { prerender: import.meta.dev ? false : true },
-        '/terms': { prerender: import.meta.dev ? false : true },
-        '/privacy-policy': { prerender: import.meta.dev ? false : true },
-        '/api/__sitemap__/urls': { isr: 60 * 60 * 6 },
     },
 
     site: {
@@ -211,32 +337,6 @@ export default defineNuxtConfig({
             email: 'hello@liria.me',
             sameAs: ['https://x.com/liria_24', 'https://github.com/liria24'],
         }),
-    },
-
-    nitro: {
-        preset: 'vercel',
-        storage: {
-            r2: {
-                driver: 's3',
-                accessKeyId: import.meta.env.NUXT_R2_ACCESS_KEY,
-                secretAccessKey: import.meta.env.NUXT_R2_SECRET_KEY,
-                endpoint: import.meta.env.NUXT_R2_ENDPOINT,
-                bucket: 'avatio',
-                region: 'auto',
-            },
-        },
-        vercel: {
-            config: {
-                images: {
-                    minimumCacheTTL: 2678400, // 31 days
-                },
-            },
-        },
-        compressPublicAssets: true,
-        experimental: {
-            asyncContext: true,
-            openAPI: true,
-        },
     },
 
     experimental: {

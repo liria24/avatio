@@ -1,22 +1,5 @@
 {
     "$schema": "https://openapi.vercel.sh/vercel.json",
     "cleanUrls": true,
-    "trailingSlash": false,
-    "crons": [
-        {
-            "path": "/api/admin/job/report",
-            "schedule": "0 22 * * *"
-        },
-        {
-            "path": "/api/admin/job/cleanup",
-            "schedule": "0 22 * * *"
-        }
-    ],
-    "redirects": [
-        {
-            "source": "/edit",
-            "destination": "/compose",
-            "permanent": true
-        }
-    ]
+    "trailingSlash": false
 }
