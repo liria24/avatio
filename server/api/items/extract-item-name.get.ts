@@ -1,15 +1,8 @@
-import { createGateway } from '@ai-sdk/gateway'
 import { generateText } from 'ai'
 import { z } from 'zod'
 
 const query = z.object({
     item: z.string().min(1, 'Item name must be at least 1 character long.'),
-})
-
-const config = useRuntimeConfig()
-
-const gateway = createGateway({
-    apiKey: config.ai.gateway.apiKey,
 })
 
 const system = `
@@ -25,7 +18,7 @@ export default defineApi(
         const { item } = await validateQuery(query)
 
         const result = await generateText({
-            model: gateway('google/gemini-2.5-flash'),
+            model: 'google/gemini-2.5-flash',
             system,
             prompt: item,
         })

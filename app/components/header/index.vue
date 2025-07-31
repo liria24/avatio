@@ -211,9 +211,8 @@ const menuItems = ref<DropdownMenuItem[][]>([
                 <UButton
                     v-else-if="!session && route.path !== '/login'"
                     label="ログイン"
-                    variant="solid"
-                    size="lg"
-                    class="rounded-lg"
+                    variant="outline"
+                    class="rounded-lg px-4 py-2 text-xs"
                     @click="emit('openLoginModal')"
                 />
             </template>

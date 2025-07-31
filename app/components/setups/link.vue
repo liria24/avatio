@@ -176,9 +176,9 @@ watch(colorMode, (newMode) => {
                     50,
                     5,
                 ]"
-                loading="lazy"
                 format="webp"
                 fit="cover"
+                preload
                 class="size-full max-h-[420px] rounded-lg object-cover"
             />
             <div
