@@ -49,12 +49,6 @@ export default defineNuxtConfig({
     },
 
     routeRules: {
-        '/': {
-            headers: {
-                'Cache-Control': `max-age=${0}`,
-                'CDN-Cache-Control': `max-age=${30}`,
-            },
-        },
         '/api/items': {
             headers: {
                 'Cache-Control': `max-age=${10}`,
@@ -127,6 +121,27 @@ export default defineNuxtConfig({
             headers: {
                 'Cache-Control': `max-age=${60}`,
                 'CDN-Cache-Control': `max-age=${60 * 60}`,
+            },
+        },
+        '/': {
+            headers: {
+                'Cache-Control': `max-age=${0}`,
+                'CDN-Cache-Control': `max-age=${30}`,
+            },
+        },
+        '/setups/*': {
+            headers: {
+                'Cache-Control': `max-age=${60}`,
+                'CDN-Cache-Control': `max-age=${60 * 60}`,
+            },
+        },
+        '/setups/compose': {
+            headers: undefined,
+        },
+        '/changelogs': {
+            headers: {
+                'Cache-Control': `max-age=${60 * 60}`,
+                'CDN-Cache-Control': `max-age=${60 * 60 * 24}`,
             },
         },
         '/faq': {
