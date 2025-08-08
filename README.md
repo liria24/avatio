@@ -60,6 +60,9 @@ Avatioはオープンソースプロジェクトです。
 
 Copyright © 2025 **[Liria][liria]**
 
+BOOTH は ピクシブ株式会社の登録商標です。<br>
+Avatio は、ピクシブ株式会社 および BOOTH とは関係ありません。
+
 </div>
 
 <!-- links -->
