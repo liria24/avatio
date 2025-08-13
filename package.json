@@ -54,6 +54,7 @@
         "zod": "^4.0.17"
     },
     "devDependencies": {
+        "@iconify-json/fluent-color": "^1.2.18",
         "@iconify-json/lucide": "^1.2.62",
         "@iconify-json/mingcute": "^1.2.5",
         "@iconify-json/simple-icons": "^1.2.47",
