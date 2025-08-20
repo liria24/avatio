@@ -75,7 +75,7 @@ const validateAccess = async (
 ): Promise<void> => {
     // 認証状態の確認
     const isAdminKey = authorization === `Bearer ${config.adminKey}`
-    const isCronValid = authorization === `Bearer ${process.env.CRON_SECRET}`
+    const isCronValid = authorization === `Bearer ${config.cronSecret}`
     const isAdmin = session?.user?.role === 'admin' || isAdminKey
 
     // CRON認証チェック

@@ -199,6 +199,7 @@ export default defineNuxtConfig({
 
     runtimeConfig: {
         adminKey: '',
+        cronSecret: '',
         ai: { gateway: { apiKey: '' } },
         betterAuth: { url: baseUrl, secret: '' },
         liria: { accessToken: '' },

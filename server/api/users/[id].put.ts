@@ -40,6 +40,31 @@ export default defineApi(
                 statusMessage: 'Forbidden',
             })
 
+        // Critical fix: Check if new ID is different and available before updating
+        if (newId && newId !== id) {
+            const existingUser = await database.query.user.findFirst({
+                where: (users, { eq }) => eq(users.id, newId),
+                columns: {
+                    id: true,
+                },
+            })
+
+            if (existingUser)
+                throw createError({
+                    statusCode: 409,
+                    statusMessage: 'User ID already exists',
+                })
+
+            // Log the ID change for security audit
+            await createAuditLog({
+                userId: session.user.id,
+                action: 'update',
+                targetType: 'user',
+                targetId: id,
+                details: `User ID changed from "${id}" to "${newId}"`,
+            })
+        }
+
         await database
             .update(user)
             .set({
