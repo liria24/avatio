@@ -137,9 +137,7 @@ const onSelect = async (id: string, platform?: Platform) => {
                 />
             </NuxtImg>
             <div class="flex w-full cursor-pointer items-center gap-2">
-                <span
-                    class="text-toned line-clamp-1 grow text-left text-xs leading-none"
-                >
+                <span class="text-toned line-clamp-1 grow text-left text-xs">
                     {{ item.label }}
                 </span>
                 <span
