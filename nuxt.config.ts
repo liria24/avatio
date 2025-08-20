@@ -1,4 +1,3 @@
-import tailwindcss from '@tailwindcss/vite'
 import { defineOrganization } from 'nuxt-schema-org/schema'
 
 const baseUrl = import.meta.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000'
@@ -42,7 +41,6 @@ export default defineNuxtConfig({
     css: ['~/assets/css/main.css'],
 
     vite: {
-        plugins: [tailwindcss()],
         optimizeDeps: {
             include: import.meta.dev ? ['axe-core'] : [],
         },
