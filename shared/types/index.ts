@@ -11,6 +11,7 @@ import {
     notificationType,
     platform,
     setupCoauthors,
+    setupDrafts,
     setupImages,
     setupItems,
     setupItemShapekeys,
@@ -372,6 +373,34 @@ export const setupsPublicSchema = setupsSelectSchema
         failedItemsCount: z.number().min(0).optional(),
     })
 export type Setup = z.infer<typeof setupsPublicSchema>
+
+export const setupDraftContentSchema = setupsInsertSchema
+    .pick({
+        name: true,
+        description: true,
+        tags: true,
+        images: true,
+        coauthors: true,
+        items: true,
+    })
+    .partial()
+export const setupDraftsSelectSchema = createSelectSchema(setupDrafts, {
+    createdAt: (schema) => schema.transform((val) => val.toISOString()),
+    updatedAt: (schema) => schema.transform((val) => val.toISOString()),
+    content: () => setupDraftContentSchema,
+})
+export const setupDraftsInsertSchema = createInsertSchema(setupDrafts, {
+    content: () => setupDraftContentSchema,
+})
+export const setupDraftsPublicSchema = setupDraftsSelectSchema.pick({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    setupId: true,
+    content: true,
+})
+export type SetupDraftContent = z.infer<typeof setupDraftContentSchema>
+export type SetupDraft = z.infer<typeof setupDraftsPublicSchema>
 
 export const bookmarksSelectSchema = createSelectSchema(bookmarks, {
     createdAt: (schema) => schema.transform((val) => val.toISOString()),
