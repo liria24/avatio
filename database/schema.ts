@@ -5,6 +5,7 @@ import {
     foreignKey,
     index,
     integer,
+    jsonb,
     pgEnum,
     pgSchema,
     pgTable,
@@ -421,6 +422,37 @@ export const setupCoauthors = pgTable(
 )
 
 export const personalSchema = pgSchema('personal')
+
+export const setupDrafts = personalSchema.table(
+    'setup_drafts',
+    {
+        id: uuid().primaryKey().defaultRandom(),
+        createdAt: timestamp('created_at').defaultNow().notNull(),
+        updatedAt: timestamp('updated_at').defaultNow().notNull(),
+        userId: text('user_id').notNull(),
+        setupId: integer('setup_id'),
+        content: jsonb().notNull(),
+    },
+    (table) => [
+        index('setup_drafts_id_index').on(table.id),
+        index('setup_drafts_setup_id_index').on(table.setupId),
+        index('setup_drafts_user_id_index').on(table.userId),
+        foreignKey({
+            name: 'setup_drafts_setup_id_fkey',
+            columns: [table.setupId],
+            foreignColumns: [setups.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+        foreignKey({
+            name: 'setup_drafts_user_id_fkey',
+            columns: [table.userId],
+            foreignColumns: [user.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+    ]
+)
 
 export const bookmarks = personalSchema.table(
     'bookmarks',
