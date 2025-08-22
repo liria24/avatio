@@ -1,5 +1,6 @@
 import database from '@@/database'
 import { userBadges, userShops, userShopVerification } from '@@/database/schema'
+import extractItemId from '@@/shared/utils/extractItemId'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 
@@ -9,6 +10,21 @@ const body = z.object({
 
 export default defineApi(
     async ({ session }) => {
+        // Rate limiting: Check if user has made a verification request recently
+        const recentVerification = await database.query.userShopVerification.findFirst({
+            where: (verification, { eq, and, gt }) =>
+                and(
+                    eq(verification.userId, session.user.id),
+                    gt(verification.createdAt, new Date(Date.now() - 5 * 60 * 1000)) // 5 minutes cooldown
+                ),
+        })
+
+        if (recentVerification)
+            throw createError({
+                statusCode: 429,
+                message: 'Please wait 5 minutes before trying again',
+            })
+
         // リクエストボディの検証
         const { url } = await validateBody(body)
 

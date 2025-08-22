@@ -28,6 +28,10 @@ const sanitizeObject = <T>(obj: T): T => {
             },
             allowedSchemes: ['http', 'https', 'mailto'],
             disallowedTagsMode: 'discard',
+            // Security enhancement: prevent script execution
+            allowedIframeHostnames: [],
+            allowedScriptHosts: [],
+            nonTextTags: ['style', 'script', 'textarea', 'option', 'noscript'],
         }) as T
 
     if (Array.isArray(obj)) return obj.map((item) => sanitizeObject(item)) as T

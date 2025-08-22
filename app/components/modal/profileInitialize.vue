@@ -39,13 +39,22 @@ const updateId = async (newId: string) => {
     }
 }
 
-const close = () => {
-    $fetch(session.value!.user.id, {
-        baseURL: '/api/users/',
-        method: 'PUT',
-        body: { isInitialized: true },
-    })
-    open.value = false
+const close = async () => {
+    try {
+        await $fetch(session.value!.user.id, {
+            baseURL: '/api/users/',
+            method: 'PUT',
+            body: { isInitialized: true },
+        })
+        open.value = false
+    } catch (error) {
+        console.error('Error setting initialization status:', error)
+        toast.add({
+            title: '初期化状態の設定に失敗しました',
+            description: 'もう一度お試しください。',
+            color: 'error',
+        })
+    }
 }
 </script>
 

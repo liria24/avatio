@@ -20,7 +20,8 @@ export default (url: string): ExtractResult | null => {
 
         // 対応するプラットフォームを検索
         for (const handler of platformHandlers) {
-            if (parsedUrl.hostname.endsWith(handler.domain)) {
+            // Security fix: Use exact hostname match to prevent subdomain bypass
+            if (parsedUrl.hostname === handler.domain || parsedUrl.hostname === `www.${handler.domain}`) {
                 const id = handler.extractId(parsedUrl)
                 if (id) return { id, platform: handler.platform }
 
