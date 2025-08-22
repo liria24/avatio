@@ -40,6 +40,18 @@ export default defineApi(
                 statusMessage: 'Forbidden',
             })
 
+        if (newId && data.id !== newId) {
+            const existingUser = await database.query.user.findFirst({
+                where: (users, { eq }) => eq(users.id, newId),
+            })
+
+            if (existingUser)
+                throw createError({
+                    statusCode: 409,
+                    statusMessage: 'User with this ID already exists',
+                })
+        }
+
         await database
             .update(user)
             .set({
