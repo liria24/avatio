@@ -355,8 +355,8 @@ export default defineNuxtConfig({
     },
 
     experimental: {
-        scanPageMeta: true,
-        payloadExtraction: true,
+        crossOriginPrefetch: true,
+        sharedPrerenderData: true,
     },
 })
 
