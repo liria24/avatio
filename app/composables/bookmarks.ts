@@ -20,7 +20,7 @@ export const useBookmarks = (
         }),
     }
 
-    return useFetch<PaginationResponse<Bookmark[]>>('/api/setups/bookmark', {
+    return useFetch<PaginationResponse<Bookmark[]>>('/api/setups/bookmarks', {
         ...defaultOptions,
         ...options,
     })
