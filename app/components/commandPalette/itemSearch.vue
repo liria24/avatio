@@ -19,7 +19,7 @@ const categoryAttributes = itemCategoryAttributes()
 
 const { data, status } = useFetch('/api/items', {
     query: {
-        limit: 500,
+        limit: 1000,
     },
     key: 'item-search',
     transform: (data) => {

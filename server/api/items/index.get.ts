@@ -1,5 +1,5 @@
 import database from '@@/database'
-import { items, setupItems, setups } from '@@/database/schema'
+import { items } from '@@/database/schema'
 import type { SQL } from 'drizzle-orm'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
@@ -8,22 +8,17 @@ const query = z.object({
     q: z.string().optional(),
     orderBy: z.enum(['createdAt', 'name']).optional().default('createdAt'),
     sort: z.enum(['asc', 'desc']).optional().default('desc'),
-    itemId: z
-        .union([z.string(), z.array(z.string())])
-        .transform((val) => (Array.isArray(val) ? val : [val]))
-        .optional(),
     category: z
         .union([itemCategorySchema, itemCategorySchema.array()])
         .transform((val) => (Array.isArray(val) ? val : [val]))
         .optional(),
     page: z.coerce.number().min(1).optional().default(1),
-    limit: z.coerce.number().min(1).max(1000).optional().default(24),
+    limit: z.coerce.number().min(1).max(1000).optional().default(64),
 })
 
 export default defineApi<PaginationResponse<Item[]>>(
     async () => {
-        const { q, orderBy, sort, itemId, page, limit } =
-            await validateQuery(query)
+        const { q, orderBy, sort, page, limit } = await validateQuery(query)
 
         const offset = (page - 1) * limit
 
@@ -35,30 +30,10 @@ export default defineApi<PaginationResponse<Item[]>>(
             }),
             limit,
             offset,
-            where: (items, { eq, and, ilike, exists, inArray }) => {
+            where: (items, { eq, and, ilike }) => {
                 const conditions: SQL[] = [eq(items.outdated, false)]
 
                 if (q) conditions.push(ilike(items.name, `%${q}%`))
-
-                if (itemId)
-                    conditions.push(
-                        exists(
-                            database
-                                .select()
-                                .from(setupItems)
-                                .where(
-                                    and(
-                                        eq(setupItems.setupId, setups.id),
-                                        inArray(
-                                            setupItems.itemId,
-                                            Array.isArray(itemId)
-                                                ? itemId
-                                                : [itemId]
-                                        )
-                                    )
-                                )
-                        )
-                    )
 
                 return and(...conditions)
             },
