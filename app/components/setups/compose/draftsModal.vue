@@ -80,6 +80,14 @@ watch(deleteMode, (value) => {
                     </span>
                 </div>
 
+                <UAlert
+                    v-if="drafts.length >= 32"
+                    title="保存できる下書きの上限に達しています"
+                    description="新しい下書きを保存するには、既存の下書きを削除してください"
+                    variant="subtle"
+                    color="neutral"
+                />
+
                 <UCheckboxGroup
                     v-if="deleteMode"
                     v-model="selectedDrafts"
