@@ -43,7 +43,7 @@ const updateRouteQuery = () => {
     if (query.tag.length) queryParams.tag = query.tag
 
     // 現在のルートを維持しながらクエリパラメータのみを更新
-    router.push({
+    router.replace({
         path: route.path,
         query: queryParams,
     })

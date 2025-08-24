@@ -89,11 +89,11 @@ const bookmarkButtonStyle = computed<{
 const applyBookmark = useDebounceFn(async (isBookmarked: boolean) => {
     try {
         if (isBookmarked)
-            await $fetch(`/api/setups/bookmark/${props.setup.id}`, {
+            await $fetch(`/api/setups/bookmarks/${props.setup.id}`, {
                 method: 'POST',
             })
         else
-            await $fetch(`/api/setups/bookmark/${props.setup.id}`, {
+            await $fetch(`/api/setups/bookmarks/${props.setup.id}`, {
                 method: 'DELETE',
             })
 
@@ -145,7 +145,7 @@ onMounted(async () => {
     if (session.value) {
         try {
             const response = await $fetch<PaginationResponse<Bookmark[]>>(
-                '/api/setups/bookmark',
+                '/api/setups/bookmarks',
                 {
                     query: { setupId: props.setup.id, limit: 1 },
                 }

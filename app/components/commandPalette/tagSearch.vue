@@ -7,11 +7,15 @@ const open = defineModel<boolean>({
     default: false,
 })
 
+const nuxtApp = useNuxtApp()
+
 const searchTerm = ref('')
 
 const { data: tags, status } = useFetch('/api/setups/tag', {
     key: 'tag-search',
     default: () => [],
+    getCachedData: (key: string) =>
+        nuxtApp.payload.data[key] || nuxtApp.static.data[key],
 })
 
 const existingTagsGroup = computed(() => ({

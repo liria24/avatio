@@ -15,7 +15,7 @@ const tab = ref<Tab>((route.query.tab as Tab) || 'latest')
 
 const changeTab = (newTab: Tab) => {
     tab.value = newTab
-    router.push({ query: { tab: newTab !== 'latest' ? newTab : undefined } })
+    router.replace({ query: { tab: newTab !== 'latest' ? newTab : undefined } })
 }
 
 defineSeo({

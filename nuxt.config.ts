@@ -171,6 +171,10 @@ export default defineNuxtConfig({
                 bucket: 'avatio',
                 region: 'auto',
             },
+            vercelRuntimeCache: {
+                driver: 'vercel-runtime-cache',
+                base: 'avatio',
+            },
         },
         vercel: {
             config: {
@@ -353,8 +357,8 @@ export default defineNuxtConfig({
     },
 
     experimental: {
-        scanPageMeta: true,
-        payloadExtraction: true,
+        crossOriginPrefetch: true,
+        sharedPrerenderData: true,
     },
 })
 

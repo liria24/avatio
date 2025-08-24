@@ -7,6 +7,7 @@ const open = defineModel<boolean>({
     default: false,
 })
 
+const nuxtApp = useNuxtApp()
 const toast = useToast()
 
 const searchTerm = ref('')
@@ -14,6 +15,8 @@ const searchTerm = ref('')
 const { data: users, status } = useFetch('/api/users', {
     key: 'user-search',
     default: () => [],
+    getCachedData: (key: string) =>
+        nuxtApp.payload.data[key] || nuxtApp.static.data[key],
 })
 
 const existingUsersGroup = computed(() => ({
