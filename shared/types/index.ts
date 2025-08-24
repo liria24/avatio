@@ -379,7 +379,7 @@ export const setupDraftContentSchema = setupsInsertSchema
         name: true,
         description: true,
         tags: true,
-        images: true,
+        // images: true,
         coauthors: true,
         items: true,
     })
