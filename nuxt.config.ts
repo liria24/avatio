@@ -49,8 +49,8 @@ export default defineNuxtConfig({
     routeRules: {
         '/api/items': {
             headers: {
-                'Cache-Control': `max-age=${10}`,
-                'CDN-Cache-Control': `max-age=${60}`,
+                'Cache-Control': `max-age=${60}`,
+                'CDN-Cache-Control': `max-age=${60 * 5}`,
             },
         },
         '/api/items/*': {
@@ -60,7 +60,10 @@ export default defineNuxtConfig({
             },
         },
         '/api/items/extract-item-name': {
-            headers: undefined,
+            headers: {
+                'Cache-Control': `max-age=${0}`,
+                'CDN-Cache-Control': `max-age=${0}`,
+            },
         },
         '/api/items/owned-avatars': {
             headers: {
@@ -91,10 +94,16 @@ export default defineNuxtConfig({
                 'CDN-Cache-Control': `max-age=${60 * 60}`,
             },
         },
+        '/api/setups/drafts': {
+            headers: {
+                'Cache-Control': `max-age=${0}`,
+                'CDN-Cache-Control': `max-age=${0}`,
+            },
+        },
         '/api/users': {
             headers: {
-                'Cache-Control': `max-age=${10}`,
-                'CDN-Cache-Control': `max-age=${60}`,
+                'Cache-Control': `max-age=${60}`,
+                'CDN-Cache-Control': `max-age=${60 * 30}`,
             },
         },
         '/api/users/*': {
@@ -104,10 +113,16 @@ export default defineNuxtConfig({
             },
         },
         '/api/users/id-availability': {
-            headers: undefined,
+            headers: {
+                'Cache-Control': `max-age=${0}`,
+                'CDN-Cache-Control': `max-age=${0}`,
+            },
         },
         '/api/users/is-initialized': {
-            headers: undefined,
+            headers: {
+                'Cache-Control': `max-age=${0}`,
+                'CDN-Cache-Control': `max-age=${0}`,
+            },
         },
         '/api/changelogs': {
             headers: {
@@ -134,7 +149,10 @@ export default defineNuxtConfig({
             },
         },
         '/setups/compose': {
-            headers: undefined,
+            headers: {
+                'Cache-Control': `max-age=${0}`,
+                'CDN-Cache-Control': `max-age=${0}`,
+            },
         },
         '/changelogs': {
             headers: {
