@@ -1,5 +1,6 @@
 import database from '@@/database'
-import { setupDrafts } from '@@/database/schema'
+import { setupDraftImages, setupDrafts } from '@@/database/schema'
+import { waitUntil } from '@vercel/functions'
 import { count, eq } from 'drizzle-orm'
 
 const body = setupDraftsInsertSchema.pick({
@@ -7,6 +8,17 @@ const body = setupDraftsInsertSchema.pick({
     setupId: true,
     content: true,
 })
+
+const refreshDraftImages = async (draftId: string, imageUrls: string[]) => {
+    await database
+        .delete(setupDraftImages)
+        .where(eq(setupDraftImages.setupDraftId, draftId))
+    const images = imageUrls.map((url) => ({
+        setupDraftId: draftId,
+        url,
+    }))
+    if (images.length) await database.insert(setupDraftImages).values(images)
+}
 
 export default defineApi(
     async ({ session }) => {
@@ -46,6 +58,8 @@ export default defineApi(
             .returning({
                 id: setupDrafts.id,
             })
+
+        waitUntil(refreshDraftImages(result[0].id, content.images || []))
 
         return { draftId: result[0].id }
     },

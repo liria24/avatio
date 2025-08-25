@@ -454,6 +454,27 @@ export const setupDrafts = personalSchema.table(
     ]
 )
 
+export const setupDraftImages = personalSchema.table(
+    'setup_draft_images',
+    {
+        id: uuid().primaryKey().defaultRandom(),
+        setupDraftId: uuid('setup_draft_id').notNull(),
+        url: text().notNull(),
+    },
+    (table) => [
+        index('setup_draft_images_id_index').on(table.id),
+        index('setup_draft_images_setup_draft_id_index').on(table.setupDraftId),
+        index('setup_draft_images_url_index').on(table.url),
+        foreignKey({
+            name: 'setup_draft_images_setup_draft_id_fkey',
+            columns: [table.setupDraftId],
+            foreignColumns: [setupDrafts.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+    ]
+)
+
 export const bookmarks = personalSchema.table(
     'bookmarks',
     {

@@ -76,8 +76,7 @@ const applyDraftData = async (content: SetupDraftContent) => {
 
     state.name = content.name || ''
     state.description = content.description || ''
-    // state.images = content.images || []
-    state.images = []
+    state.images = content.images || []
     state.tags = content.tags ? content.tags.map((tag) => tag.tag) : []
     state.coauthors = content.coauthors
         ? await Promise.all(
@@ -354,7 +353,7 @@ const saveDraftDebounce = useDebounceFn(async () => {
     const content = {
         name: state.name.length ? state.name : undefined,
         description: state.description?.length ? state.description : undefined,
-        // images: state.images.length ? state.images : undefined,
+        images: state.images.length ? state.images : undefined,
         tags: state.tags.length
             ? state.tags.map((tag) => ({ tag }))
             : undefined,
