@@ -344,6 +344,12 @@ export default defineNuxtConfig({
         },
     },
 
+    mdc: {
+        remarkPlugins: {
+            'remark-breaks': {},
+        },
+    },
+
     socialShare: {
         baseUrl,
     },

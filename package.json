@@ -51,6 +51,7 @@
         "nuxt-schema-org": "5.0.6",
         "nuxt-seo-utils": "7.0.14",
         "pinia": "^3.0.3",
+        "remark-breaks": "^4.0.0",
         "sanitize-html": "^2.17.0",
         "vue-advanced-cropper": "^2.8.9",
         "vue-draggable-plus": "^0.6.0",
