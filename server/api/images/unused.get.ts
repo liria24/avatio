@@ -80,12 +80,15 @@ export default defineApi(
 
         // 並列実行で高速化
         const [
-            [setupImagesFromDB, userImagesFromDB],
+            [setupImagesFromDB, setupDraftImagesFromDB, userImagesFromDB],
             [allSetupImages, allUserImages],
         ] = await Promise.all([
             // DB クエリを並列実行
             Promise.all([
                 database.query.setupImages.findMany({
+                    columns: { url: true },
+                }),
+                database.query.setupDraftImages.findMany({
                     columns: { url: true },
                 }),
                 database.query.user.findMany({
@@ -100,7 +103,10 @@ export default defineApi(
         ])
 
         // Set を使って高速な検索を実現
-        const usedSetupUrls = new Set(setupImagesFromDB.map((img) => img.url))
+        const usedSetupUrls = new Set([
+            ...setupImagesFromDB.map((img) => img.url),
+            ...setupDraftImagesFromDB.map((img) => img.url),
+        ])
         const usedUserUrls = new Set(
             userImagesFromDB
                 .map((user) => user.image)

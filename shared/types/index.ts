@@ -11,6 +11,7 @@ import {
     notificationType,
     platform,
     setupCoauthors,
+    setupDraftImages,
     setupDrafts,
     setupImages,
     setupItems,
@@ -379,7 +380,7 @@ export const setupDraftContentSchema = setupsInsertSchema
         name: true,
         description: true,
         tags: true,
-        // images: true,
+        images: true,
         coauthors: true,
         items: true,
     })
@@ -401,6 +402,10 @@ export const setupDraftsPublicSchema = setupDraftsSelectSchema.pick({
 })
 export type SetupDraftContent = z.infer<typeof setupDraftContentSchema>
 export type SetupDraft = z.infer<typeof setupDraftsPublicSchema>
+
+export const setupDraftImagesSelectSchema = createSelectSchema(setupDraftImages)
+export const setupDraftImagesInsertSchema = createInsertSchema(setupDraftImages)
+export type SetupDraftImage = z.infer<typeof setupDraftImagesSelectSchema>
 
 export const bookmarksSelectSchema = createSelectSchema(bookmarks, {
     createdAt: (schema) => schema.transform((val) => val.toISOString()),

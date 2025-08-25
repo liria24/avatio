@@ -86,40 +86,29 @@ const removeImage = (index: number) => {
         <p class="text-muted text-sm">画像をアップロード中...</p>
     </div>
 
-    <div v-else class="flex w-full flex-col gap-2">
-        <div class="grid grid-cols-3 gap-2">
-            <div
-                v-for="(image, index) in images"
-                :key="`image-${index}`"
-                class="relative grid"
-            >
-                <NuxtImg
-                    v-slot="{ isLoaded, src, imgAttrs }"
-                    :src="image"
-                    :alt="`Setup image ${index + 1}`"
-                    custom
-                    class="aspect-square size-full rounded-lg object-cover"
-                >
-                    <img v-if="isLoaded" v-bind="imgAttrs" :src="src" />
-                    <USkeleton
-                        v-else
-                        class="aspect-square size-full rounded-lg"
-                    />
-                </NuxtImg>
-                <UButton
-                    icon="lucide:x"
-                    color="neutral"
-                    size="xs"
-                    class="absolute top-1 right-1 z-10 rounded-full"
-                    @click="removeImage(index)"
-                />
-            </div>
-        </div>
-
-        <span
-            class="text-muted ring-muted rounded-lg px-3 pt-1.5 pb-2 text-xs ring-1"
+    <div v-else class="grid grid-cols-3 gap-2">
+        <div
+            v-for="(image, index) in images"
+            :key="`image-${index}`"
+            class="relative grid"
         >
-            現在、画像は下書きに保存されません
-        </span>
+            <NuxtImg
+                v-slot="{ isLoaded, src, imgAttrs }"
+                :src="image"
+                :alt="`Setup image ${index + 1}`"
+                custom
+                class="aspect-square size-full rounded-lg object-cover"
+            >
+                <img v-if="isLoaded" v-bind="imgAttrs" :src="src" />
+                <USkeleton v-else class="aspect-square size-full rounded-lg" />
+            </NuxtImg>
+            <UButton
+                icon="lucide:x"
+                color="neutral"
+                size="xs"
+                class="absolute top-1 right-1 z-10 rounded-full"
+                @click="removeImage(index)"
+            />
+        </div>
     </div>
 </template>
