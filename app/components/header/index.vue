@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
-
-const emit = defineEmits<{
-    (e: 'openFeedbackModal' | 'openLoginModal'): void
-}>()
+import { LazyModalFeedback, LazyModalLogin } from '#components'
 
 const { $authClient, $session, $multiSession, $revoke } = useNuxtApp()
 const session = await $session()
@@ -11,6 +8,10 @@ const sessions = await $multiSession()
 const route = useRoute()
 const toast = useToast()
 const colorMode = useColorMode()
+const overlay = useOverlay()
+
+const modalLogin = overlay.create(LazyModalLogin)
+const modalFeedback = overlay.create(LazyModalFeedback)
 
 const switchAccount = async (sessionToken: string) => {
     await $authClient.multiSession.setActive({ sessionToken })
@@ -69,7 +70,7 @@ const menuItems = ref<DropdownMenuItem[][]>([
         {
             label: 'フィードバック',
             icon: 'lucide:message-square',
-            onSelect: () => emit('openFeedbackModal'),
+            onSelect: () => modalFeedback.open(),
         },
         {
             label: 'テーマ',
@@ -98,7 +99,7 @@ const menuItems = ref<DropdownMenuItem[][]>([
                 {
                     label: '新しいアカウント',
                     icon: 'lucide:user-round-plus',
-                    onSelect: () => emit('openLoginModal'),
+                    onSelect: () => modalLogin.open(),
                 },
             ],
         },
@@ -213,7 +214,7 @@ const menuItems = ref<DropdownMenuItem[][]>([
                     label="ログイン"
                     variant="outline"
                     class="rounded-lg px-4 py-2 text-xs"
-                    @click="emit('openLoginModal')"
+                    @click="modalLogin.open()"
                 />
             </template>
         </div>

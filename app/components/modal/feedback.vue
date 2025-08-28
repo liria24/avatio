@@ -1,12 +1,10 @@
 <script lang="ts" setup>
 import { z } from 'zod'
 
-const open = defineModel<boolean>('open', { default: false })
+const emit = defineEmits(['close'])
 
 const toast = useToast()
 const route = useRoute()
-
-const submitting = ref(false)
 
 const schema = z.object({
     comment: z.string(),
@@ -19,8 +17,6 @@ const state = reactive<Schema>({
 const Submit = async () => {
     try {
         await schema.parseAsync(state)
-
-        submitting.value = true
 
         await $fetch('/api/feedbacks', {
             method: 'POST',
@@ -35,7 +31,7 @@ const Submit = async () => {
             color: 'success',
         })
 
-        open.value = false
+        emit('close')
         state.comment = ''
     } catch (error) {
         toast.add({
@@ -46,14 +42,12 @@ const Submit = async () => {
                     : '不明なエラーが発生しました',
             color: 'error',
         })
-    } finally {
-        submitting.value = false
     }
 }
 </script>
 
 <template>
-    <UModal v-model:open="open" title="フィードバック">
+    <UModal title="フィードバック">
         <slot />
 
         <template #body>
@@ -95,16 +89,10 @@ const Submit = async () => {
         </template>
 
         <template #footer>
-            <div class="flex w-full items-center justify-end gap-1.5">
+            <div class="flex w-full justify-end">
                 <UButton
-                    :disabled="submitting"
-                    label="キャンセル"
-                    variant="ghost"
-                    @click="open = false"
-                />
-                <UButton
-                    :loading="submitting"
-                    label="報告"
+                    loading-auto
+                    label="送信"
                     color="neutral"
                     @click="Submit()"
                 />

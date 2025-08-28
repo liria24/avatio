@@ -1,12 +1,32 @@
 <script setup lang="ts">
+import {
+    LazyModalLogin,
+    LazyModalReportSetup,
+    LazyModalSetupDelete,
+    LazyModalSetupHide,
+    LazyModalSetupUnhide,
+    LazyModalImage,
+} from '#components'
+
+const { $session } = useNuxtApp()
+const session = await $session()
 const nuxtApp = useNuxtApp()
 const route = useRoute()
+const toast = useToast()
+const overlay = useOverlay()
 
 const id = Number(route.params.id)
 const cache =
     route.query.cache === undefined
         ? true
         : route.query.cache === 'true' || route.query.cache === '1'
+
+const modalImage = overlay.create(LazyModalImage)
+const modalLogin = overlay.create(LazyModalLogin)
+const modalReport = overlay.create(LazyModalReportSetup)
+const modalDelete = overlay.create(LazyModalSetupDelete)
+const modalHide = overlay.create(LazyModalSetupHide)
+const modalUnhide = overlay.create(LazyModalSetupUnhide)
 
 const { data, status } = await useSetup(id, {
     getCachedData: cache
@@ -25,6 +45,50 @@ if (status.value === 'error' || (status.value === 'success' && !data.value))
         statusCode: 404,
         message: 'セットアップが見つかりません',
     })
+
+const {
+    data: bookmark,
+    status: bookmarkStatus,
+    refresh: bookmarkRefresh,
+} = await useFetch('/api/setups/bookmarks', {
+    query: { setupId: data.value?.id, limit: 1 },
+    transform: (data) => data.data.length > 0,
+    dedupe: 'defer',
+    default: () => false,
+    headers:
+        import.meta.server && nuxtApp.ssrContext?.event.headers
+            ? nuxtApp.ssrContext.event.headers
+            : undefined,
+})
+
+const toggleBookmark = async () => {
+    try {
+        if (!bookmark.value)
+            await $fetch(`/api/setups/bookmarks/${data.value?.id}`, {
+                method: 'POST',
+            })
+        else
+            await $fetch(`/api/setups/bookmarks/${data.value?.id}`, {
+                method: 'DELETE',
+            })
+
+        await bookmarkRefresh()
+
+        toast.add({
+            title: bookmark.value
+                ? 'ブックマークしました'
+                : 'ブックマークを解除しました',
+            color: bookmark.value ? 'success' : 'info',
+        })
+    } catch (error) {
+        console.error('ブックマークの変更に失敗:', error)
+        toast.add({
+            title: 'ブックマークの変更に失敗しました',
+            color: 'error',
+        })
+        return
+    }
+}
 
 const categoryAttributes = itemCategoryAttributes()
 
@@ -188,46 +252,130 @@ if (data.value) {
                             </UTooltip>
                         </div>
 
-                        <SetupsViewerButtons :setup="data" />
+                        <div class="flex items-center gap-0.5">
+                            <UButton
+                                v-if="session?.user.role === 'admin'"
+                                :icon="
+                                    data.hidAt ? 'lucide:eye' : 'lucide:eye-off'
+                                "
+                                variant="ghost"
+                                size="sm"
+                                class="p-2"
+                                @click="
+                                    data.hidAt
+                                        ? modalUnhide.open({
+                                              setupId: data.id,
+                                          })
+                                        : modalHide.open({
+                                              setupId: data.id,
+                                          })
+                                "
+                            />
+
+                            <UButton
+                                loading-auto
+                                :loading="bookmarkStatus === 'pending'"
+                                :icon="
+                                    bookmark
+                                        ? 'lucide:bookmark-check'
+                                        : 'lucide:bookmark'
+                                "
+                                :aria-label="
+                                    bookmark
+                                        ? 'ブックマークから削除'
+                                        : 'ブックマーク'
+                                "
+                                :color="bookmark ? 'secondary' : 'primary'"
+                                variant="ghost"
+                                size="sm"
+                                class="p-2"
+                                @click="
+                                    session
+                                        ? toggleBookmark()
+                                        : modalLogin.open()
+                                "
+                            />
+
+                            <template v-if="session?.user.id === data.user.id">
+                                <UButton
+                                    :to="`/setup/compose?edit=${data.id}`"
+                                    aria-label="編集"
+                                    icon="lucide:pen"
+                                    variant="ghost"
+                                    size="sm"
+                                    class="p-2"
+                                />
+
+                                <UButton
+                                    aria-label="削除"
+                                    icon="lucide:trash"
+                                    variant="ghost"
+                                    size="sm"
+                                    class="p-2"
+                                    @click="
+                                        modalDelete.open({
+                                            setupId: data.id,
+                                        })
+                                    "
+                                />
+                            </template>
+
+                            <UButton
+                                v-else
+                                icon="lucide:flag"
+                                aria-label="報告"
+                                variant="ghost"
+                                size="sm"
+                                class="p-2"
+                                @click="
+                                    session
+                                        ? modalReport.open({
+                                              setupId: data.id,
+                                          })
+                                        : modalLogin.open()
+                                "
+                            />
+
+                            <ShareButton
+                                :title="data.name"
+                                :description="data.description"
+                                :image="data.images?.[0]?.url"
+                            />
+                        </div>
                     </div>
                 </div>
 
-                <UModal
+                <NuxtImg
                     v-if="data.images?.length && data.images[0]"
-                    :ui="{
-                        content: 'bg-transparent ring-0 max-w-xl rounded-none',
-                    }"
+                    v-slot="{ src, imgAttrs, isLoaded }"
+                    :src="data.images[0].url"
+                    :alt="data.name"
+                    :width="data.images[0].width"
+                    :height="data.images[0].height"
+                    format="webp"
+                    custom
+                    class="max-h-[720px] w-fit shrink-0 grow-0 cursor-zoom-in overflow-hidden rounded-lg object-contain"
                 >
-                    <NuxtImg
-                        v-slot="{ src, imgAttrs, isLoaded }"
-                        :src="data.images[0].url"
-                        :alt="data.name"
-                        :width="data.images[0].width"
-                        :height="data.images[0].height"
-                        format="webp"
-                        custom
-                        class="max-h-[720px] w-fit shrink-0 grow-0 cursor-zoom-in overflow-hidden rounded-lg object-contain"
-                    >
-                        <img v-if="isLoaded" v-bind="imgAttrs" :src="src" />
-                        <USkeleton
-                            v-else
-                            :style="{
-                                aspectRatio:
-                                    data.images[0].width /
-                                    data.images[0].height,
-                            }"
-                            class="max-h-[720px] w-full shrink-0 grow-0 rounded-lg"
-                        />
-                    </NuxtImg>
-
-                    <template #content>
-                        <NuxtImg
-                            :src="data.images[0].url"
-                            :alt="data.name"
-                            class="h-full object-contain"
-                        />
-                    </template>
-                </UModal>
+                    <img
+                        v-if="isLoaded"
+                        v-bind="imgAttrs"
+                        :src="src"
+                        @click="
+                            modalImage.open({
+                                src: data.images[0].url,
+                                alt: data.name,
+                            })
+                        "
+                    />
+                    <USkeleton
+                        v-else
+                        :style="{
+                            aspectRatio:
+                                data.images[0].width / data.images[0].height,
+                        }"
+                        class="max-h-[720px] w-full shrink-0 grow-0 rounded-lg"
+                    />
+                </NuxtImg>
 
                 <SetupsViewerInfo :setup="data" class="mt-3 w-full xl:hidden" />
 

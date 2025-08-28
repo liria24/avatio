@@ -1,8 +1,14 @@
 <script lang="ts" setup>
+import { LazyModalLogin, LazyModalReportUser } from '#components'
+
 const { $session } = useNuxtApp()
 const route = useRoute()
+const overlay = useOverlay()
 const session = await $session()
+
 const id = route.params.id as string
+const modalLogin = overlay.create(LazyModalLogin)
+const modalReport = overlay.create(LazyModalReportUser)
 
 const { data, status } = useUser(id)
 
@@ -119,24 +125,19 @@ if (data.value) {
                         size="sm"
                         class="self-end"
                     />
-                    <ModalReportUser v-else-if="session" :user-id="data.id">
-                        <UButton
-                            label="ユーザーを報告"
-                            icon="lucide:flag"
-                            variant="ghost"
-                            size="sm"
-                            class="self-end"
-                        />
-                    </ModalReportUser>
-                    <ModalLogin v-else>
-                        <UButton
-                            label="ユーザーを報告"
-                            icon="lucide:flag"
-                            variant="ghost"
-                            size="sm"
-                            class="self-end"
-                        />
-                    </ModalLogin>
+
+                    <UButton
+                        label="ユーザーを報告"
+                        icon="lucide:flag"
+                        variant="ghost"
+                        size="sm"
+                        class="self-end"
+                        @click="
+                            session
+                                ? modalReport.open({ userId: data.id })
+                                : modalLogin.open()
+                        "
+                    />
                 </div>
             </div>
 

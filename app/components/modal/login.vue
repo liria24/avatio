@@ -1,11 +1,10 @@
 <script lang="ts" setup>
+const emit = defineEmits(['close'])
+
 const route = useRoute()
 const localePath = useLocalePath()
 const { $login } = useNuxtApp()
 
-const open = ref(false)
-const originalPath = ref(route.path)
-const currentPath = ref(route.path)
 const isInternalUpdate = ref(false)
 const signingIn = ref(false)
 
@@ -16,63 +15,14 @@ const handleLogin = (provider: 'twitter') => {
 
 // ブラウザの戻るボタンでモーダルを閉じる
 const handlePopState = () => {
-    if (open.value && route.path === localePath('/login')) {
+    if (route.path === localePath('/login')) {
         isInternalUpdate.value = true
-        open.value = false
+        emit('close')
         nextTick(() => {
             isInternalUpdate.value = false
         })
     }
 }
-
-// モーダルの開閉に応じてパスを変更
-watch(open, (value) => {
-    signingIn.value = false
-
-    if (isInternalUpdate.value) return
-
-    if (value) {
-        // モーダルを開く時：元のパスを保存してログインページに移動
-        originalPath.value = route.path
-        isInternalUpdate.value = true
-        currentPath.value = localePath('/login')
-        if (import.meta.client)
-            window.history.pushState(null, '', localePath('/login'))
-        nextTick(() => {
-            isInternalUpdate.value = false
-        })
-    } else {
-        if (currentPath.value === localePath('/login')) {
-            // モーダルを閉じる時：元のパスに戻る
-            isInternalUpdate.value = true
-            currentPath.value = originalPath.value
-            if (import.meta.client)
-                window.history.pushState(null, '', originalPath.value)
-            nextTick(() => {
-                isInternalUpdate.value = false
-            })
-        }
-    }
-})
-
-// パスの変更を監視してモーダルの状態を同期
-watch(currentPath, (newPath) => {
-    if (isInternalUpdate.value) return
-
-    if (newPath === localePath('/login') && !open.value) {
-        isInternalUpdate.value = true
-        open.value = true
-        nextTick(() => {
-            isInternalUpdate.value = false
-        })
-    } else if (newPath !== localePath('/login') && open.value) {
-        isInternalUpdate.value = true
-        open.value = false
-        nextTick(() => {
-            isInternalUpdate.value = false
-        })
-    }
-})
 
 onMounted(() => {
     // ブラウザの戻るボタンのイベントリスナーを追加
@@ -87,7 +37,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <UModal v-model:open="open" title="ログイン">
+    <UModal title="ログイン">
         <slot />
 
         <template #body>
