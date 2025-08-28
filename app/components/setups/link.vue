@@ -30,12 +30,11 @@ const imageSize = computed(() => {
     if (!image) return { width: 0, height: 0 }
 
     const maxWidth = 360
-    const { width: originalWidth, height: originalHeight } = image
+    const { width, height } = image
 
-    if (originalWidth <= maxWidth)
-        return { width: originalWidth, height: originalHeight }
+    if (width <= maxWidth) return { width, height }
 
-    const aspectRatio = originalHeight / originalWidth
+    const aspectRatio = height / width
     return {
         width: maxWidth,
         height: Math.round(maxWidth * aspectRatio),
@@ -44,11 +43,8 @@ const imageSize = computed(() => {
 
 // placeholderサイズ（imageSizeの10分の1程度、整数値）
 const placeholderSize = computed(() => {
-    const size = imageSize.value
-    return {
-        width: Math.round(size.width / 10),
-        height: Math.round(size.height / 10),
-    }
+    const { width, height } = imageSize.value
+    return { width: Math.round(width / 10), height: Math.round(height / 10) }
 })
 
 // テーマカラー関連
@@ -283,26 +279,23 @@ watch(colorMode, (newMode) => {
                     <template #content>
                         <NuxtLink
                             :to="`/@${setup.user.id}`"
-                            class="flex items-center gap-3 py-2 pr-3 pl-2"
+                            class="flex py-2 pr-3 pl-2"
                         >
-                            <UAvatar
-                                :src="setup.user.image || undefined"
-                                :alt="setup.user.name"
-                                icon="lucide:user-round"
-                                class="size-10"
-                            />
-                            <div class="flex flex-wrap gap-2">
-                                <span
-                                    class="text-toned text-sm leading-none font-semibold"
-                                >
-                                    {{ setup.user.name }}
-                                </span>
-                                <UserBadges
-                                    v-if="setup.user.badges?.length"
-                                    :badges="setup.user.badges"
-                                    size="xs"
-                                />
-                            </div>
+                            <UUser
+                                :name="setup.user.name"
+                                :avatar="{
+                                    src: setup.user.image || undefined,
+                                    icon: 'lucide:user-round',
+                                }"
+                            >
+                                <template #description>
+                                    <UserBadges
+                                        v-if="setup.user.badges?.length"
+                                        :badges="setup.user.badges"
+                                        size="xs"
+                                    />
+                                </template>
+                            </UUser>
                         </NuxtLink>
                     </template>
                 </UPopover>
@@ -321,8 +314,8 @@ watch(colorMode, (newMode) => {
                 <div class="flex items-center gap-2">
                     <UPopover mode="hover">
                         <UAvatar
-                            :src="props.setup.user.image || undefined"
-                            :alt="props.setup.user.name"
+                            :src="setup.user.image || undefined"
+                            :alt="setup.user.name"
                             icon="lucide:user-round"
                             aria-hidden="true"
                             size="2xs"
@@ -330,41 +323,38 @@ watch(colorMode, (newMode) => {
 
                         <template #content>
                             <NuxtLink
-                                :to="`/@${props.setup.user.id}`"
-                                class="flex items-center gap-3 py-2 pr-3 pl-2"
+                                :to="`/@${setup.user.id}`"
+                                class="flex py-2 pr-3 pl-2"
                             >
-                                <UAvatar
-                                    :src="props.setup.user.image || undefined"
-                                    :alt="props.setup.user.name"
-                                    icon="lucide:user-round"
-                                    class="size-10"
-                                />
-                                <div class="flex flex-wrap gap-2">
-                                    <span
-                                        class="text-toned text-sm leading-none font-semibold"
-                                    >
-                                        {{ props.setup.user.name }}
-                                    </span>
-                                    <UserBadges
-                                        v-if="props.setup.user.badges?.length"
-                                        :badges="props.setup.user.badges"
-                                        size="xs"
-                                    />
-                                </div>
+                                <UUser
+                                    :name="setup.user.name"
+                                    :avatar="{
+                                        src: setup.user.image || undefined,
+                                        icon: 'lucide:user-round',
+                                    }"
+                                >
+                                    <template #description>
+                                        <UserBadges
+                                            v-if="setup.user.badges?.length"
+                                            :badges="setup.user.badges"
+                                            size="xs"
+                                        />
+                                    </template>
+                                </UUser>
                             </NuxtLink>
                         </template>
                     </UPopover>
 
                     <UTooltip :delay-duration="0">
                         <NuxtTime
-                            :datetime="props.setup.createdAt"
+                            :datetime="setup.createdAt"
                             relative
                             class="text-muted text-xs whitespace-nowrap"
                         />
 
                         <template #content>
                             <NuxtTime
-                                :datetime="props.setup.createdAt"
+                                :datetime="setup.createdAt"
                                 date-style="medium"
                                 time-style="short"
                             />

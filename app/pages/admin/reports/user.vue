@@ -6,9 +6,9 @@ definePageMeta({
 </script>
 
 <template>
-    <UDashboardPanel id="changelogs">
+    <UDashboardPanel id="reports-user">
         <template #header>
-            <UDashboardNavbar title="Changelogs" />
+            <UDashboardNavbar title="Reports | User" />
         </template>
 
         <template #body> </template>

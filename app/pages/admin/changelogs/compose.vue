@@ -3,6 +3,7 @@ import { VueDraggable } from 'vue-draggable-plus'
 
 definePageMeta({
     middleware: 'admin',
+    layout: 'dashboard',
 })
 
 const { $session } = useNuxtApp()

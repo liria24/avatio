@@ -50,20 +50,24 @@ const themeMenu = [
 const menuItems = ref<DropdownMenuItem[][]>([
     [
         {
-            label: 'プロフィール',
-            icon: 'lucide:user-round',
-            onSelect: () => {
-                if (session.value) navigateTo(`/@${session.value.user.id}`)
-                else navigateTo('/login')
+            to: `/@${session.value?.user.id}`,
+            label: session.value?.user.name,
+            avatar: {
+                src: session.value?.user.image || undefined,
+                icon: 'lucide:user-round',
             },
         },
+    ],
+    [
         {
             label: 'ブックマーク',
             icon: 'lucide:bookmark',
-            onSelect: () => {
-                if (session.value) navigateTo(`/bookmarks`)
-                else navigateTo('/login')
-            },
+            to: `/bookmarks`,
+        },
+        {
+            label: '設定',
+            icon: 'lucide:bolt',
+            to: '/settings',
         },
     ],
     [
@@ -77,11 +81,6 @@ const menuItems = ref<DropdownMenuItem[][]>([
             icon: 'lucide:moon',
             children: themeMenu,
         },
-        {
-            label: '設定',
-            icon: 'lucide:bolt',
-            onSelect: () => navigateTo('/settings'),
-        },
     ],
     [
         {
@@ -93,6 +92,7 @@ const menuItems = ref<DropdownMenuItem[][]>([
                     avatar: {
                         src: session.user.image || undefined,
                         alt: session.user.name,
+                        icon: 'lucide:user-round',
                     },
                     onSelect: () => switchAccount(session.session.token),
                 })),
@@ -200,12 +200,16 @@ const menuItems = ref<DropdownMenuItem[][]>([
                     </PopoverNotifications>
 
                     <UDropdownMenu :items="menuItems">
-                        <UAvatar
-                            :src="session.user.image || undefined"
-                            :alt="session.user.name"
-                            icon="lucide:user-round"
-                            class="ring-accented size-8 cursor-pointer ring-0 transition-all select-none hover:ring-4"
-                        />
+                        <button
+                            type="button"
+                            class="ring-accented size-8 cursor-pointer rounded-full ring-0 transition-all select-none hover:ring-4"
+                        >
+                            <UAvatar
+                                :src="session.user.image || undefined"
+                                :alt="session.user.name"
+                                icon="lucide:user-round"
+                            />
+                        </button>
                     </UDropdownMenu>
                 </div>
 

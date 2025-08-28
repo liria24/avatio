@@ -154,21 +154,19 @@ if (data.value) {
 </script>
 
 <template>
-    <div v-if="data" class="flex flex-col items-start gap-5">
+    <UPage
+        v-if="data"
+        :ui="{ center: 'lg:col-span-7', right: 'lg:col-span-3' }"
+    >
         <UBreadcrumb
             :items="[
                 { label: data.user.name, to: `/@${data.user.id}` },
                 { label: data.name },
             ]"
-            :ui="{
-                link: 'text-xs',
-                separatorIcon: 'size-4',
-            }"
+            :ui="{ link: 'text-xs', separatorIcon: 'size-4' }"
         />
 
-        <div
-            class="relative flex w-full flex-col items-start gap-8 xl:flex-row"
-        >
+        <UPageBody>
             <div class="flex w-full flex-col items-start gap-4">
                 <UAlert
                     v-if="data.hidAt"
@@ -377,7 +375,7 @@ if (data.value) {
                     />
                 </NuxtImg>
 
-                <SetupsViewerInfo :setup="data" class="mt-3 w-full xl:hidden" />
+                <SetupsViewerInfo :setup="data" class="mt-3 w-full lg:hidden" />
 
                 <div class="mt-3 flex w-full flex-col gap-7">
                     <div
@@ -442,10 +440,12 @@ if (data.value) {
                     </template>
                 </div>
             </div>
+        </UPageBody>
 
-            <div class="hidden h-full w-full flex-col xl:flex xl:w-[440px]">
+        <template #right>
+            <UPageAside>
                 <SetupsViewerInfo :setup="data" class="sticky top-3 pt-3" />
-            </div>
-        </div>
-    </div>
+            </UPageAside>
+        </template>
+    </UPage>
 </template>
