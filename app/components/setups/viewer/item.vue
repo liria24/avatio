@@ -37,6 +37,12 @@ const shopPath = computed(() => {
     const path = url.pathname === '/' ? '' : url.pathname
     return url.host + path
 })
+
+const providerIcons = {
+    booth: 'avatio:booth',
+    github: 'simple-icons:github',
+}
+const providerIcon = computed(() => providerIcons[props.item.platform])
 </script>
 
 <template>
@@ -59,12 +65,11 @@ const shopPath = computed(() => {
                     v-slot="{ isLoaded, src, imgAttrs }"
                     :src="item.image || undefined"
                     :alt="item.name"
-                    :width="80"
-                    :height="80"
+                    :width="88"
+                    :height="88"
                     format="webp"
-                    :data-nsfw="item.nsfw"
                     custom
-                    class="aspect-square size-20 shrink-0 rounded-lg object-cover text-xs data-[nsfw=true]:blur-md"
+                    class="aspect-square size-22 shrink-0 rounded-lg object-cover text-xs"
                 >
                     <img v-if="isLoaded" v-bind="imgAttrs" :src />
                     <USkeleton
@@ -74,17 +79,11 @@ const shopPath = computed(() => {
                 </NuxtImg>
             </NuxtLink>
 
-            <div class="ml-2 flex grow flex-col gap-2 self-center py-1.5">
+            <div class="ml-2 flex grow flex-col gap-1 self-center py-1.5">
                 <div class="flex items-center gap-2">
                     <Icon
-                        v-if="props.item.platform === 'booth'"
-                        name="avatio:booth"
-                        size="16"
-                        class="text-muted shrink-0"
-                    />
-                    <Icon
-                        v-else-if="props.item.platform === 'github'"
-                        name="simple-icons:github"
+                        v-if="!item.niceName"
+                        :name="providerIcon"
                         size="16"
                         class="text-muted shrink-0"
                     />
@@ -94,15 +93,29 @@ const shopPath = computed(() => {
                         target="_blank"
                         class="flex items-center gap-3"
                     >
-                        <p
-                            class="line-clamp-3 text-left text-sm/relaxed font-semibold wrap-anywhere break-keep sm:text-base/relaxed"
-                            v-html="useLineBreak(item.name)"
-                        />
+                        <span
+                            class="text-left text-sm/relaxed font-semibold sm:text-base/relaxed"
+                        >
+                            {{ item.niceName || item.name }}
+                        </span>
                     </NuxtLink>
                 </div>
 
+                <UButton
+                    v-if="item.niceName"
+                    :icon="providerIcon"
+                    :label="item.name"
+                    variant="link"
+                    size="xs"
+                    :ui="{
+                        leadingIcon: 'size-3',
+                        label: 'break-all line-clamp-1 whitespace-normal text-[10px]',
+                    }"
+                    class="p-0"
+                />
+
                 <div
-                    class="flex flex-wrap items-center gap-x-3 gap-y-1.5 pl-0.5"
+                    class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 pl-0.5"
                 >
                     <UPopover v-if="item.shop" mode="hover">
                         <NuxtLink

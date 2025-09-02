@@ -59,6 +59,7 @@ const {
         import.meta.server && nuxtApp.ssrContext?.event.headers
             ? nuxtApp.ssrContext.event.headers
             : undefined,
+    immediate: !!session.value,
 })
 
 const toggleBookmark = async () => {

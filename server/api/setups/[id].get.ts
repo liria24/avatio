@@ -236,6 +236,7 @@ export default defineApi<Setup>(
                 if (!data) continue
                 items.push({
                     ...data,
+                    niceName: item.item.niceName,
                     category: item.category || data.category,
                     unsupported: item.unsupported,
                     note: item.note,
