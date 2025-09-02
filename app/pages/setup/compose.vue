@@ -119,7 +119,7 @@ const applyDraftData = async (content: SetupDraftContent) => {
         const fetches = content.items.map(async (draftItem) => {
             try {
                 const itemData = await $fetch<Item>(
-                    `/api/items/${draftItem.itemId}`
+                    `/api/items/${transformItemId(draftItem.itemId).encode()}`
                 )
 
                 return {

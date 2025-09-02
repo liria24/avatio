@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import { parseURL } from 'ufo'
+
 interface Props {
     item: SetupItem
     actions?: boolean
@@ -14,12 +16,26 @@ const { copy } = useClipboard()
 
 const nsfwMask = ref(props.item.nsfw)
 
-const url = `https://booth.pm/ja/items/${props.item.id}`
-const item = ref<SetupItem>({
-    ...props.item,
-    note: props.item.note || '',
-    unsupported: props.item.unsupported,
-    shapekeys: props.item.shapekeys,
+const url = computed(() => {
+    if (props.item.platform === 'booth')
+        return `https://booth.pm/ja/items/${props.item.id}`
+    else if (props.item.platform === 'github')
+        return `https://github.com/${props.item.id}`
+    else return undefined
+})
+
+const shopUrl = computed(() => {
+    if (props.item.shop?.platform === 'booth')
+        return `https://${props.item.shop.id}.booth.pm/`
+    else if (props.item.shop?.platform === 'github')
+        return `https://github.com/${props.item.shop.id}`
+    return undefined
+})
+
+const shopPath = computed(() => {
+    const url = parseURL(shopUrl.value)
+    const path = url.pathname === '/' ? '' : url.pathname
+    return url.host + path
 })
 </script>
 
@@ -32,8 +48,9 @@ const item = ref<SetupItem>({
             )
         "
     >
-        <div class="flex items-stretch gap-3">
+        <div class="flex items-stretch gap-1">
             <NuxtLink
+                v-if="item.image"
                 :to="url"
                 target="_blank"
                 class="flex shrink-0 items-center overflow-hidden rounded-lg object-cover select-none"
@@ -57,8 +74,21 @@ const item = ref<SetupItem>({
                 </NuxtImg>
             </NuxtLink>
 
-            <div class="flex w-full justify-between gap-1 self-stretch">
-                <div class="flex grow flex-col gap-2 self-center py-1.5">
+            <div class="ml-2 flex grow flex-col gap-2 self-center py-1.5">
+                <div class="flex items-center gap-2">
+                    <Icon
+                        v-if="props.item.platform === 'booth'"
+                        name="avatio:booth"
+                        size="16"
+                        class="text-muted shrink-0"
+                    />
+                    <Icon
+                        v-else-if="props.item.platform === 'github'"
+                        name="simple-icons:github"
+                        size="16"
+                        class="text-muted shrink-0"
+                    />
+
                     <NuxtLink
                         :to="url"
                         target="_blank"
@@ -69,148 +99,201 @@ const item = ref<SetupItem>({
                             v-html="useLineBreak(item.name)"
                         />
                     </NuxtLink>
+                </div>
 
-                    <div
-                        class="flex flex-wrap items-center gap-x-3 gap-y-1.5 pl-0.5"
-                    >
-                        <UPopover v-if="item.shop" mode="hover">
+                <div
+                    class="flex flex-wrap items-center gap-x-3 gap-y-1.5 pl-0.5"
+                >
+                    <UPopover v-if="item.shop" mode="hover">
+                        <NuxtLink
+                            :to="shopUrl"
+                            target="_blank"
+                            class="flex w-fit items-center gap-1.5"
+                        >
+                            <NuxtImg
+                                v-slot="{ isLoaded, src, imgAttrs }"
+                                :src="item.shop.image || undefined"
+                                :alt="item.shop.name"
+                                :width="20"
+                                :height="20"
+                                format="webp"
+                                loading="lazy"
+                                custom
+                                class="ring-accented aspect-square size-5 shrink-0 rounded-sm object-cover ring-1"
+                            >
+                                <img v-if="isLoaded" v-bind="imgAttrs" :src />
+                                <USkeleton
+                                    v-else
+                                    class="aspect-square size-5 shrink-0 rounded-md"
+                                />
+                            </NuxtImg>
+                            <span
+                                class="text-muted text-xs font-semibold text-nowrap"
+                            >
+                                {{ item.shop.name }}
+                            </span>
+                            <Icon
+                                v-if="item.shop.verified"
+                                name="lucide:check"
+                                :size="16"
+                                class="text-muted size-3 shrink-0"
+                            />
+                        </NuxtLink>
+
+                        <template #content>
                             <NuxtLink
-                                :to="`https://${item.shop.id}.booth.pm/`"
+                                :to="shopUrl"
                                 target="_blank"
-                                class="flex w-fit items-center gap-1.5"
+                                class="flex items-center gap-3 py-2 pr-3 pl-2"
                             >
                                 <NuxtImg
                                     v-slot="{ isLoaded, src, imgAttrs }"
                                     :src="item.shop.image || undefined"
                                     :alt="item.shop.name"
-                                    :width="20"
-                                    :height="20"
+                                    :width="40"
+                                    :height="40"
                                     format="webp"
-                                    loading="lazy"
                                     custom
-                                    class="ring-accented aspect-square size-5 shrink-0 rounded-sm object-cover ring-1"
+                                    class="aspect-square size-10 shrink-0 rounded-md object-cover"
                                 >
                                     <img
                                         v-if="isLoaded"
                                         v-bind="imgAttrs"
-                                        :src
+                                        :src="src"
                                     />
                                     <USkeleton
                                         v-else
-                                        class="aspect-square size-5 shrink-0 rounded-md"
+                                        class="aspect-square size-10 shrink-0 rounded-md"
                                     />
                                 </NuxtImg>
-                                <span
-                                    class="text-muted text-xs font-semibold text-nowrap"
-                                >
-                                    {{ item.shop.name }}
-                                </span>
-                                <Icon
-                                    v-if="item.shop.verified"
-                                    name="lucide:check"
-                                    :size="16"
-                                    class="text-muted size-3 shrink-0"
-                                />
-                            </NuxtLink>
-
-                            <template #content>
-                                <NuxtLink
-                                    :to="`https://${item.shop.id}.booth.pm/`"
-                                    target="_blank"
-                                    class="flex items-center gap-3 py-2 pr-3 pl-2"
-                                >
-                                    <NuxtImg
-                                        v-slot="{ isLoaded, src, imgAttrs }"
-                                        :src="item.shop.image || undefined"
-                                        :alt="item.shop.name"
-                                        :width="40"
-                                        :height="40"
-                                        format="webp"
-                                        custom
-                                        class="aspect-square size-10 shrink-0 rounded-md object-cover"
+                                <div class="flex flex-col gap-1.5">
+                                    <span
+                                        class="text-toned text-sm leading-none font-semibold"
                                     >
-                                        <img
-                                            v-if="isLoaded"
-                                            v-bind="imgAttrs"
-                                            :src="src"
-                                        />
-                                        <USkeleton
-                                            v-else
-                                            class="aspect-square size-10 shrink-0 rounded-md"
-                                        />
-                                    </NuxtImg>
-                                    <div class="flex flex-col gap-1.5">
-                                        <span
-                                            class="text-toned text-sm leading-none font-semibold"
-                                        >
-                                            {{ item.shop.name }}
-                                        </span>
-                                        <span
-                                            class="text-muted text-xs leading-none font-semibold"
-                                        >
-                                            {{ item.shop.id }}.booth.pm
-                                        </span>
-                                    </div>
-                                </NuxtLink>
-                            </template>
-                        </UPopover>
+                                        {{ item.shop.name }}
+                                    </span>
+                                    <span
+                                        class="text-muted text-xs leading-none font-semibold"
+                                    >
+                                        {{ shopPath }}
+                                    </span>
+                                </div>
+                            </NuxtLink>
+                        </template>
+                    </UPopover>
 
-                        <NuxtLink
-                            :to="url"
-                            target="_blank"
-                            class="flex w-fit items-center gap-1.5"
-                        >
-                            <Icon
-                                name="mingcute:currency-cny-fill"
-                                :size="18"
-                                class="text-muted shrink-0"
-                            />
-                            <span
-                                class="text-muted pt-px font-[Geist] text-xs leading-0 font-semibold text-nowrap"
-                            >
-                                {{ item.price }}
-                            </span>
-                        </NuxtLink>
-
-                        <NuxtLink
-                            :to="url"
-                            target="_blank"
-                            class="flex w-fit items-center gap-1.5"
-                        >
-                            <Icon
-                                name="mingcute:heart-fill"
-                                :size="18"
-                                class="text-muted shrink-0"
-                            />
-                            <p
-                                class="text-muted pt-px font-[Geist] text-xs leading-none font-semibold text-nowrap"
-                            >
-                                {{ item.likes?.toLocaleString() || '?' }}
-                            </p>
-                        </NuxtLink>
-
-                        <UBadge
-                            v-if="item.nsfw"
-                            icon="lucide:ban"
-                            label="NSFW"
-                            variant="soft"
-                            class="text-xs font-semibold"
+                    <div
+                        v-if="item.price"
+                        class="flex w-fit items-center gap-1.5"
+                    >
+                        <Icon
+                            name="mingcute:currency-cny-fill"
+                            :size="18"
+                            class="text-muted shrink-0"
                         />
+                        <span
+                            class="text-muted pt-px font-[Geist] text-xs leading-0 font-semibold text-nowrap"
+                        >
+                            {{ item.price }}
+                        </span>
                     </div>
-                </div>
 
-                <UTooltip
-                    v-if="props.actions"
-                    text="このアイテムを含むセットアップを検索"
-                >
-                    <UButton
-                        :to="$localePath(`/search?itemId=${props.item.id}`)"
-                        icon="lucide:search"
-                        aria-label="このアイテムを含むセットアップを検索"
-                        variant="ghost"
+                    <div
+                        v-if="item.likes !== null"
+                        class="flex w-fit items-center gap-1.5"
+                    >
+                        <Icon
+                            v-if="item.platform === 'github'"
+                            name="mingcute:star-fill"
+                            :size="18"
+                            class="text-muted shrink-0"
+                        />
+                        <Icon
+                            v-else
+                            name="mingcute:heart-fill"
+                            :size="18"
+                            class="text-muted shrink-0"
+                        />
+                        <span
+                            class="text-muted pt-px font-[Geist] text-xs leading-none font-semibold text-nowrap"
+                        >
+                            {{ item.likes.toLocaleString() }}
+                        </span>
+                    </div>
+
+                    <div
+                        v-if="item.forks !== null && item.forks !== undefined"
+                        class="flex w-fit items-center gap-1.5"
+                    >
+                        <Icon
+                            name="lucide:git-fork"
+                            :size="17"
+                            class="text-muted shrink-0"
+                        />
+                        <span
+                            class="text-muted pt-px font-[Geist] text-xs leading-none font-semibold text-nowrap"
+                        >
+                            {{ item.forks.toLocaleString() }}
+                        </span>
+                    </div>
+
+                    <div
+                        v-if="item.version"
+                        class="flex w-fit items-center gap-1.5"
+                    >
+                        <Icon
+                            name="lucide:tag"
+                            :size="16"
+                            class="text-muted shrink-0"
+                        />
+                        <span
+                            class="text-muted pt-px font-[Geist] text-xs leading-none font-semibold text-nowrap"
+                        >
+                            {{ item.version }}
+                        </span>
+                    </div>
+
+                    <UAvatarGroup
+                        v-if="item.contributors?.length"
+                        :max="3"
+                        size="2xs"
+                        class=""
+                    >
+                        <UTooltip
+                            v-for="contributor in item.contributors"
+                            :key="encodeURIComponent(contributor.name)"
+                            :text="contributor.name"
+                            :delay-duration="100"
+                        >
+                            <UAvatar
+                                :src="`https://github.com/${contributor.name}.png`"
+                                :alt="contributor.name"
+                                icon="lucide:user-round"
+                            />
+                        </UTooltip>
+                    </UAvatarGroup>
+
+                    <UBadge
+                        v-if="item.nsfw"
+                        icon="lucide:ban"
+                        label="NSFW"
+                        variant="soft"
+                        class="text-xs font-semibold"
                     />
-                </UTooltip>
+                </div>
             </div>
+
+            <UTooltip
+                v-if="props.actions"
+                text="このアイテムを含むセットアップを検索"
+            >
+                <UButton
+                    :to="$localePath(`/search?itemId=${props.item.id}`)"
+                    icon="lucide:search"
+                    aria-label="このアイテムを含むセットアップを検索"
+                    variant="ghost"
+                />
+            </UTooltip>
         </div>
 
         <div

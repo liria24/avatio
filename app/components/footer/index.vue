@@ -5,7 +5,7 @@ const overlay = useOverlay()
 
 const modalFeedback = overlay.create(LazyModalFeedback)
 
-const { data: repo } = useFetch<{ repo: GithubRepo }>(
+const { data: repo } = useFetch<GithubRepo>(
     'https://ungh.cc/repos/liria24/avatio'
 )
 </script>

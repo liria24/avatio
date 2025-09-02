@@ -12,21 +12,29 @@ const query = z.object({
 export default defineApi<Item>(
     async () => {
         const { id } = await validateParams(params)
-        const { platform } = await validateQuery(query)
+        let { platform } = await validateQuery(query)
 
         consola.log(
             `Processing item: ${id}, Platform: ${platform || 'auto-detect'}`
         )
 
-        const item = await getItem(id, { platform })
+        if (!platform) {
+            const item = await getItemFromDatabase(transformItemId(id).decode())
+            platform = item?.platform
+        }
 
-        if (!item)
+        try {
+            if (platform === 'booth')
+                return await $fetch<Item>(`/api/items/booth/${id}`)
+            else if (platform === 'github')
+                return await $fetch<Item>(`/api/items/github/${id}`)
+            else throw new Error()
+        } catch {
             throw createError({
                 statusCode: 404,
                 statusMessage: 'Item not found',
             })
-
-        return item
+        }
     },
     {
         errorMessage: 'Failed to get items.',

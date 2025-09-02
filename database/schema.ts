@@ -25,7 +25,7 @@ export const userBadge = pgEnum('user_badge', [
     'idea_man',
 ])
 
-export const platform = pgEnum('platform', ['booth'])
+export const platform = pgEnum('platform', ['booth', 'github'])
 
 export const itemCategory = pgEnum('item_category', [
     'avatar',
@@ -249,12 +249,12 @@ export const items = pgTable(
         updatedAt: timestamp('updated_at').defaultNow().notNull(),
         platform: platform().notNull(),
         outdated: boolean().default(false).notNull(),
-        shopId: text('shop_id').notNull(),
+        shopId: text('shop_id'),
         name: text().notNull(),
         niceName: text('nice_name'),
         category: itemCategory().notNull(),
         image: text(),
-        price: text().notNull(),
+        price: text(),
         likes: integer(),
         nsfw: boolean().default(false).notNull(),
     },

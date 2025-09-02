@@ -189,7 +189,7 @@ export default defineNuxtConfig({
                 bucket: 'avatio',
                 region: 'auto',
             },
-            vercelRuntimeCache: {
+            cache: {
                 driver: 'vercel-runtime-cache',
                 base: 'avatio',
             },

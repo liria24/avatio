@@ -19,8 +19,6 @@ const items = defineModel<Record<ItemCategory, SetupItem[]>>({
 const toast = useToast()
 const categoryAttributes = itemCategoryAttributes()
 
-const inputShapekeyName = ref('')
-const inputShapekeyValue = ref(0)
 const popoverItemSearch = ref(false)
 
 type ItemsState = typeof items.value
@@ -42,10 +40,10 @@ const ownedAvatars = ref<Item[]>([])
 try {
     const avatarsData = await $fetch<Item[]>('/api/items/owned-avatars', {
         query: { limit: 10 },
-        headers: (() => {
-            if (import.meta.server && nuxtApp.ssrContext?.event.headers)
-                return nuxtApp.ssrContext.event.headers
-        })(),
+        headers:
+            import.meta.server && nuxtApp.ssrContext?.event.headers
+                ? nuxtApp.ssrContext.event.headers
+                : undefined,
     })
     ownedAvatars.value = avatarsData || []
 } catch (error) {
@@ -148,9 +146,6 @@ const addShapekey = (options: {
     if (!item.shapekeys) item.shapekeys = []
 
     item.shapekeys.push({ name, value })
-
-    inputShapekeyName.value = ''
-    inputShapekeyValue.value = 0
 }
 
 const removeShapekey = (options: {
@@ -286,230 +281,20 @@ const removeShapekey = (options: {
                         ghost-class="opacity-0"
                         class="flex h-full w-full flex-col gap-2"
                     >
-                        <div
+                        <SetupsComposeItem
                             v-for="item in items[category]"
                             :key="`item-${item.id}`"
-                            class="ring-accented flex items-start gap-2 rounded-md p-2 ring-1"
-                        >
-                            <div
-                                class="draggable hover:bg-elevated grid h-full cursor-move rounded-md px-1 py-2 transition-colors"
-                            >
-                                <Icon
-                                    name="lucide:grip-vertical"
-                                    size="18"
-                                    class="text-muted shrink-0 self-center"
-                                />
-                            </div>
-
-                            <div class="flex grow flex-col gap-2">
-                                <div class="flex items-start gap-1">
-                                    <NuxtImg
-                                        v-slot="{ isLoaded, src, imgAttrs }"
-                                        :src="item.image || undefined"
-                                        :alt="item.name"
-                                        :width="72"
-                                        :height="72"
-                                        format="webp"
-                                        custom
-                                        class="aspect-square size-18 shrink-0 rounded-lg object-cover"
-                                    >
-                                        <img
-                                            v-if="isLoaded"
-                                            v-bind="imgAttrs"
-                                            :src="src"
-                                        />
-                                        <USkeleton
-                                            v-else
-                                            class="aspect-square size-18 shrink-0 rounded-lg"
-                                        />
-                                    </NuxtImg>
-
-                                    <div
-                                        class="flex grow flex-col gap-2 self-center pl-2"
-                                    >
-                                        <div class="flex items-center gap-2">
-                                            <UTooltip
-                                                v-if="item.platform === 'booth'"
-                                                text="BOOTH"
-                                                :delay-duration="50"
-                                            >
-                                                <Icon
-                                                    name="avatio:booth"
-                                                    size="16"
-                                                    class="text-muted shrink-0"
-                                                />
-                                            </UTooltip>
-                                            <p class="text-toned text-sm">
-                                                {{ item.name }}
-                                            </p>
-                                        </div>
-                                        <div class="flex items-center gap-2">
-                                            <UPopover>
-                                                <UButton
-                                                    :label="`シェイプキー: ${item.shapekeys?.length || 0}`"
-                                                    variant="subtle"
-                                                    size="sm"
-                                                />
-
-                                                <template #content>
-                                                    <div
-                                                        class="flex flex-col items-center gap-2 p-2"
-                                                    >
-                                                        <p
-                                                            v-if="
-                                                                !item.shapekeys
-                                                                    ?.length
-                                                            "
-                                                            class="text-muted p-3 text-sm"
-                                                        >
-                                                            シェイプキーがありません
-                                                        </p>
-                                                        <template v-else>
-                                                            <div
-                                                                v-for="(
-                                                                    shapekey,
-                                                                    index
-                                                                ) in item.shapekeys"
-                                                                :key="`shapekey-${index}`"
-                                                                class="flex w-full items-center gap-3"
-                                                            >
-                                                                <span
-                                                                    class="text-muted grow text-right text-sm"
-                                                                >
-                                                                    {{
-                                                                        shapekey.name
-                                                                    }}
-                                                                </span>
-                                                                <span
-                                                                    class="text-toned text-sm font-semibold"
-                                                                >
-                                                                    {{
-                                                                        shapekey.value
-                                                                    }}
-                                                                </span>
-                                                                <UButton
-                                                                    icon="lucide:x"
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                    @click="
-                                                                        removeShapekey(
-                                                                            {
-                                                                                category:
-                                                                                    item.category,
-                                                                                id: item.id,
-                                                                                index,
-                                                                            }
-                                                                        )
-                                                                    "
-                                                                />
-                                                            </div>
-                                                        </template>
-                                                        <div
-                                                            class="flex items-center gap-1"
-                                                        >
-                                                            <UInput
-                                                                v-model="
-                                                                    inputShapekeyName
-                                                                "
-                                                                placeholder="シェイプキー名称"
-                                                                size="sm"
-                                                                class="max-w-48"
-                                                            />
-                                                            <UInputNumber
-                                                                v-model="
-                                                                    inputShapekeyValue
-                                                                "
-                                                                :step="0.001"
-                                                                orientation="vertical"
-                                                                size="sm"
-                                                                class="max-w-32"
-                                                            />
-                                                            <UButton
-                                                                icon="lucide:plus"
-                                                                variant="soft"
-                                                                size="sm"
-                                                                @click="
-                                                                    addShapekey(
-                                                                        {
-                                                                            category:
-                                                                                item.category,
-                                                                            id: item.id,
-                                                                            name: inputShapekeyName,
-                                                                            value: inputShapekeyValue,
-                                                                        }
-                                                                    )
-                                                                "
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                </template>
-                                            </UPopover>
-
-                                            <UCheckbox
-                                                v-if="
-                                                    item.category !== 'avatar'
-                                                "
-                                                v-model="item.unsupported"
-                                                label="ベースアバターに非対応"
-                                                size="sm"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <UDropdownMenu
-                                        :items="
-                                            Object.entries(
-                                                categoryAttributes
-                                            ).map(([key, value]) => ({
-                                                label: value.label,
-                                                icon: value.icon,
-                                                value: key,
-                                                onSelect: () =>
-                                                    changeItemCategory(
-                                                        item.id,
-                                                        key as ItemCategory
-                                                    ),
-                                            }))
-                                        "
-                                        :content="{
-                                            align: 'center',
-                                            side: 'bottom',
-                                            sideOffset: 8,
-                                        }"
-                                        :ui="{ content: 'w-40' }"
-                                    >
-                                        <UButton
-                                            :icon="
-                                                categoryAttributes[
-                                                    item.category
-                                                ]?.icon || 'lucide:box'
-                                            "
-                                            variant="ghost"
-                                            size="sm"
-                                        />
-                                    </UDropdownMenu>
-
-                                    <UButton
-                                        icon="lucide:x"
-                                        variant="ghost"
-                                        size="sm"
-                                        @click="
-                                            removeItem(item.category, item.id)
-                                        "
-                                    />
-                                </div>
-
-                                <UTextarea
-                                    v-model="item.note"
-                                    placeholder="ノートの追加"
-                                    autoresize
-                                    size="sm"
-                                    :rows="1"
-                                    variant="soft"
-                                    class="w-full"
-                                />
-                            </div>
-                        </div>
+                            v-model:unsupported="item.unsupported"
+                            v-model:shapekeys="item.shapekeys"
+                            v-model:note="item.note"
+                            :item="item"
+                            @change-category="
+                                changeItemCategory(item.id, $event)
+                            "
+                            @remove-item="removeItem(item.category, item.id)"
+                            @shapekey-add="addShapekey($event)"
+                            @shapekey-remove="removeShapekey($event)"
+                        />
                     </VueDraggable>
                 </template>
             </div>

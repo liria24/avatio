@@ -1,6 +1,6 @@
 import { consola } from 'consola'
 
-const fetchBoothItem = async (id: string): Promise<Booth | null> => {
+export default async (id: string): Promise<Booth | null> => {
     try {
         return await $fetch(`https://booth.pm/ja/items/${id}.json`, {
             headers: {
@@ -12,10 +12,4 @@ const fetchBoothItem = async (id: string): Promise<Booth | null> => {
         consola.error(`Failed to fetch booth item ${id}:`, error)
         return null
     }
-}
-
-export default async (id: string, platform: Platform) => {
-    if (platform === 'booth') return await fetchBoothItem(id)
-
-    return null
 }
