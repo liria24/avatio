@@ -17,7 +17,7 @@ const markItemAsOutdated = async (id: string): Promise<void> => {
     try {
         await database
             .update(items)
-            .set({ outdated: true })
+            .set({ outdated: true, updatedAt: new Date() })
             .where(eq(items.id, id))
     } catch (error) {
         consola.error(`Failed to mark item ${id} as outdated:`, error)
