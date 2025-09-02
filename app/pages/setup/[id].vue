@@ -189,65 +189,93 @@ if (data.value) {
                     class="w-full"
                 />
 
-                <div class="flex w-full flex-col items-start gap-1">
+                <div class="flex w-full flex-col items-start gap-3">
                     <h1
                         class="text-highlighted text-3xl font-bold wrap-anywhere break-keep"
                         v-html="useLineBreak(data.name)"
                     />
+
                     <div class="flex w-full items-center justify-between gap-3">
-                        <div class="ml-0.5 flex items-center gap-1.5">
-                            <Icon
-                                name="lucide:calendar"
-                                size="16"
-                                class="text-muted"
-                            />
-                            <NuxtTime
-                                :datetime="data.createdAt"
-                                locale="ja-JP"
-                                year="numeric"
-                                month="2-digit"
-                                day="2-digit"
-                                hour="2-digit"
-                                minute="2-digit"
-                                class="text-muted font-[Geist] text-sm leading-none text-nowrap"
-                            />
-                            <UTooltip
-                                v-if="data.updatedAt !== data.createdAt"
-                                :delay-duration="50"
-                            >
-                                <div
-                                    class="text-dimmed flex items-center gap-1.5"
+                        <div
+                            class="flex flex-wrap items-center gap-x-4 gap-y-2"
+                        >
+                            <NuxtLink :to="`/@${data.user.id}`">
+                                <UUser
+                                    :name="data.user.name"
+                                    :avatar="{
+                                        src: data.user.image || undefined,
+                                        icon: 'lucide:user-round',
+                                    }"
+                                    size="sm"
+                                    :ui="{ name: 'text-sm' }"
                                 >
-                                    <Icon name="lucide:pen-line" size="16" />
-                                    <span
-                                        class="text-xs leading-none text-nowrap"
+                                    <template #description>
+                                        <UserBadges
+                                            v-if="data.user.badges?.length"
+                                            :badges="data.user.badges"
+                                            size="xs"
+                                        />
+                                    </template>
+                                </UUser>
+                            </NuxtLink>
+
+                            <div class="ml-0.5 flex items-center gap-1.5">
+                                <Icon
+                                    name="lucide:calendar"
+                                    size="16"
+                                    class="text-muted"
+                                />
+                                <NuxtTime
+                                    :datetime="data.createdAt"
+                                    locale="ja-JP"
+                                    year="numeric"
+                                    month="2-digit"
+                                    day="2-digit"
+                                    hour="2-digit"
+                                    minute="2-digit"
+                                    class="text-muted font-[Geist] text-sm leading-none text-nowrap"
+                                />
+                                <UTooltip
+                                    v-if="data.updatedAt !== data.createdAt"
+                                    :delay-duration="50"
+                                >
+                                    <div
+                                        class="text-dimmed flex items-center gap-1.5"
                                     >
+                                        <Icon
+                                            name="lucide:pen-line"
+                                            size="16"
+                                        />
+                                        <span
+                                            class="text-xs leading-none text-nowrap"
+                                        >
+                                            <NuxtTime
+                                                :datetime="data.updatedAt"
+                                                relative
+                                            />
+                                            に更新
+                                        </span>
+                                    </div>
+
+                                    <template #content>
                                         <NuxtTime
                                             :datetime="data.updatedAt"
-                                            relative
+                                            locale="ja-JP"
+                                            year="numeric"
+                                            month="2-digit"
+                                            day="2-digit"
+                                            hour="2-digit"
+                                            minute="2-digit"
+                                            class="text-muted font-[Geist] text-xs leading-none text-nowrap"
                                         />
-                                        に更新
-                                    </span>
-                                </div>
-
-                                <template #content>
-                                    <NuxtTime
-                                        :datetime="data.updatedAt"
-                                        locale="ja-JP"
-                                        year="numeric"
-                                        month="2-digit"
-                                        day="2-digit"
-                                        hour="2-digit"
-                                        minute="2-digit"
-                                        class="text-muted font-[Geist] text-xs leading-none text-nowrap"
-                                    />
-                                    <span
-                                        class="text-muted text-xs leading-none text-nowrap"
-                                    >
-                                        に編集
-                                    </span>
-                                </template>
-                            </UTooltip>
+                                        <span
+                                            class="text-muted text-xs leading-none text-nowrap"
+                                        >
+                                            に編集
+                                        </span>
+                                    </template>
+                                </UTooltip>
+                            </div>
                         </div>
 
                         <div class="flex items-center gap-0.5">
@@ -424,16 +452,9 @@ if (data.value) {
                             :actions="[
                                 {
                                     label: '不具合を報告',
+                                    to: 'https://github.com/liria24/avatio/issues/new?template=%F0%9F%9A%A7-bug-report.md',
+                                    target: '_blank',
                                     variant: 'soft',
-                                    onClick: () => {
-                                        navigateTo(
-                                            'https://github.com/liria24/avatio/issues/new?template=%F0%9F%9A%A7-bug-report.md',
-                                            {
-                                                external: true,
-                                                open: { target: '_blank' },
-                                            }
-                                        )
-                                    },
                                 },
                             ]"
                         />

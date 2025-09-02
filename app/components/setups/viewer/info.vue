@@ -8,24 +8,6 @@ const props = defineProps<Props>()
 
 <template>
     <div :class="['flex h-fit flex-col gap-5 empty:hidden', props.class]">
-        <NuxtLink :to="`/@${setup.user.id}`">
-            <UUser
-                :name="setup.user.name"
-                :avatar="{
-                    src: setup.user.image || undefined,
-                    icon: 'lucide:user-round',
-                }"
-            >
-                <template #description>
-                    <UserBadges
-                        v-if="setup.user.badges?.length"
-                        :badges="setup.user.badges"
-                        size="xs"
-                    />
-                </template>
-            </UUser>
-        </NuxtLink>
-
         <div
             v-if="props.setup.description?.length"
             class="flex flex-col gap-2 self-stretch"
