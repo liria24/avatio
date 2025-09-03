@@ -33,7 +33,6 @@ const platformHandlers = [
         domain: 'github.com',
         platform: 'github' as Platform,
         extractId: (url: URL): string | null => {
-            console.log(url)
             if (url.hostname !== 'github.com') return null
             const match = url.pathname.match(/^\/([^/]+\/[^/]+)\/?$/)
             if (!match?.[1]) return null

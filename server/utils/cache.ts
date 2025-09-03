@@ -11,6 +11,5 @@ export const purgeSetupCache = async (id: number) => {
 }
 
 export const purgeUserCache = async (id: string) => {
-    console.log(await useStorage('cache').keys(`nitro:functions`))
     await useStorage('cache').del(`nitro:functions:user:${id}.json`)
 }
