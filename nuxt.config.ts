@@ -100,12 +100,6 @@ export default defineNuxtConfig({
                 'CDN-Cache-Control': `max-age=${60 * 60}`,
             },
         },
-        '/changelogs': {
-            headers: {
-                'Cache-Control': `max-age=${60 * 60}`,
-                'CDN-Cache-Control': `max-age=${60 * 60 * 24}`,
-            },
-        },
         '/faq': {
             prerender: true,
         },
