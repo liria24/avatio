@@ -5,8 +5,6 @@ export const useUser = (id: string, options?: UseFetchOptions<User>) => {
 
     const defaultOptions: UseFetchOptions<User> = {
         key: computed(() => `user-${unref(id)}`),
-        getCachedData: (key: string) =>
-            nuxtApp.payload.data[key] || nuxtApp.static.data[key],
         dedupe: 'defer',
         lazy: false,
         immediate: true,

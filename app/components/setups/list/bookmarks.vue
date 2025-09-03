@@ -1,13 +1,4 @@
 <script setup lang="ts">
-const nuxtApp = useNuxtApp()
-
-interface Props {
-    cache?: boolean
-}
-const props = withDefaults(defineProps<Props>(), {
-    cache: true,
-})
-
 const setupsPerPage: number = 50
 const page = ref(1)
 const loading = ref(true)
@@ -17,9 +8,6 @@ const { data, status, refresh } = useBookmarks({
         page: page.value,
         perPage: setupsPerPage,
     })),
-    getCachedData: props.cache
-        ? (key: string) => nuxtApp.payload.data[key] || nuxtApp.static.data[key]
-        : undefined,
     immediate: false,
 })
 

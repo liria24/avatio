@@ -11,9 +11,7 @@ const { $session } = useNuxtApp()
 const session = await $session()
 const toast = useToast()
 
-const { data } = await useUser(session.value!.user.id, {
-    getCachedData: undefined,
-})
+const { data } = await useUser(session.value!.user.id)
 
 // リアクティブな状態を統合
 const ui = reactive({

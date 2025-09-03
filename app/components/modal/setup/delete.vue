@@ -19,7 +19,7 @@ const deleteSetup = async () => {
             description: 'セットアップが正常に削除されました。',
             color: 'success',
         })
-        navigateTo('/?cache=false')
+        navigateTo('/')
     } catch (error) {
         toast.add({
             title: 'セットアップの削除に失敗しました',

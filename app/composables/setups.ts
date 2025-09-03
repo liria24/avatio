@@ -7,8 +7,6 @@ export const useSetups = (
 
     const defaultOptions = {
         key: computed(() => `setups-${JSON.stringify(unref(options?.query))}`),
-        getCachedData: (key: string) =>
-            nuxtApp.payload.data[key] || nuxtApp.static.data[key],
         default: () => ({
             data: [],
             pagination: {
