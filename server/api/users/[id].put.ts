@@ -67,6 +67,8 @@ export default defineApi(
 
         consola.success(`User ${id} updated successfully`)
 
+        await purgeUserCache(id)
+
         return null
     },
     {

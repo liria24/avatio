@@ -27,6 +27,11 @@ export default defineApi(
 
         await database.delete(setups).where(eq(setups.id, Number(id)))
 
+        const keys = await useStorage('cache').keys(
+            `nitro:functions:setup:${id}`
+        )
+        await Promise.all(keys.map((key) => useStorage('cache').del(key)))
+
         await createAuditLog({
             userId: session.user.id,
             action: 'setup_delete',

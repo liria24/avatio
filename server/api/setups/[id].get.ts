@@ -1,3 +1,4 @@
+import type { Session } from '@@/better-auth'
 import database from '@@/database'
 import { user } from '@@/database/schema'
 import { z } from 'zod'
@@ -6,12 +7,8 @@ const params = z.object({
     id: z.union([z.string().transform((val) => Number(val)), z.number()]),
 })
 
-export default defineApi<Setup>(
-    async ({ session }) => {
-        const { forceUpdateItem } = await getEdgeConfig()
-
-        const { id } = await validateParams(params)
-
+const getSetup = defineCachedFunction(
+    async (id: number, session: Session | undefined) => {
         const data = await database.query.setups.findFirst({
             where: (setups, { eq, and, exists, or, isNull }) =>
                 and(
@@ -208,6 +205,8 @@ export default defineApi<Setup>(
         const items: SetupItem[] = []
         let failedItemsCount = 0
 
+        const { forceUpdateItem } = await getEdgeConfig()
+
         const expiredFilter = (date: string | Date) => {
             if (forceUpdateItem) return true
             return (
@@ -336,6 +335,21 @@ export default defineApi<Setup>(
             })),
             failedItemsCount,
         }
+    },
+    {
+        maxAge: 60 * 60, // 1 hour
+        name: 'setup',
+        getKey: (id: number, session: Session | undefined) =>
+            `${id}${session ? `:${session.user.id}` : ''}`,
+        swr: false,
+    }
+)
+
+export default defineApi<Setup>(
+    async ({ session }) => {
+        const { id } = await validateParams(params)
+
+        return await getSetup(id, session || undefined)
     },
     {
         errorMessage: 'Failed to get setups',

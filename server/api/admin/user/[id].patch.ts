@@ -82,6 +82,8 @@ export default defineApi(
                 })
             }
 
+        purgeUserCache(userId)
+
         return
     },
     {

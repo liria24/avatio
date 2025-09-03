@@ -25,6 +25,8 @@ export default defineApi(
                 })
                 .where(eq(setups.id, id))
 
+        purgeSetupCache(id)
+
         return null
     },
     {
