@@ -1,12 +1,9 @@
 import type { UseFetchOptions } from 'nuxt/app'
 
-export const useUser = (
-    id: string,
-    options?: UseFetchOptions<UserWithSetups>
-) => {
+export const useUser = (id: string, options?: UseFetchOptions<User>) => {
     const nuxtApp = useNuxtApp()
 
-    const defaultOptions: UseFetchOptions<UserWithSetups> = {
+    const defaultOptions: UseFetchOptions<User> = {
         key: computed(() => `user-${unref(id)}`),
         getCachedData: (key: string) =>
             nuxtApp.payload.data[key] || nuxtApp.static.data[key],
@@ -19,7 +16,7 @@ export const useUser = (
         }),
     }
 
-    return useFetch<UserWithSetups>(id, {
+    return useFetch<User>(id, {
         ...defaultOptions,
         ...options,
         baseURL: '/api/users/',

@@ -1,13 +1,11 @@
 <script lang="ts" setup>
 import { z } from 'zod'
 
-const open = defineModel<boolean>('open', { default: false })
-
 const props = defineProps<{ userId: string }>()
 
-const toast = useToast()
+const emit = defineEmits(['close'])
 
-const submitting = ref(false)
+const toast = useToast()
 
 const schema = z
     .object({
@@ -53,9 +51,9 @@ const Submit = async () => {
             color: 'success',
         })
 
-        open.value = false
         state.reportReason = []
         state.comment = ''
+        emit('close')
     } catch (error) {
         toast.add({
             title: '報告の送信に失敗しました',
@@ -65,14 +63,12 @@ const Submit = async () => {
                     : '不明なエラーが発生しました',
             color: 'error',
         })
-    } finally {
-        submitting.value = false
     }
 }
 </script>
 
 <template>
-    <UModal v-model:open="open" title="ユーザーの報告">
+    <UModal title="ユーザーの報告">
         <slot />
 
         <template #body>
@@ -149,24 +145,19 @@ const Submit = async () => {
                         </UTooltip>
                     </template>
                 </UFormField>
-
-                <USeparator />
-
-                <div class="flex w-full items-center justify-end gap-1.5">
-                    <UButton
-                        :disabled="submitting"
-                        label="キャンセル"
-                        variant="ghost"
-                        @click="open = false"
-                    />
-                    <UButton
-                        :loading="submitting"
-                        label="報告"
-                        color="neutral"
-                        @click="Submit()"
-                    />
-                </div>
             </UForm>
+        </template>
+
+        <template #footer>
+            <div class="flex w-full justify-end">
+                <UButton
+                    loading-auto
+                    label="報告"
+                    color="neutral"
+                    size="lg"
+                    @click="Submit()"
+                />
+            </div>
         </template>
     </UModal>
 </template>

@@ -150,12 +150,19 @@ export const itemsPublicSchema = itemsSelectSchema
         price: true,
         likes: true,
         nsfw: true,
+        outdated: true,
     })
     .extend({
-        shop: shopsPublicSchema.optional(),
-        outdated: z.boolean().optional(),
+        shop: shopsPublicSchema.nullable().optional(),
     })
-export type Item = z.infer<typeof itemsPublicSchema>
+export type Item = z.infer<typeof itemsPublicSchema> & {
+    forks?: number
+    version?: string
+    contributors?: {
+        name: string
+        contributions: number
+    }[]
+}
 
 export const setupItemShapekeysSelectSchema =
     createSelectSchema(setupItemShapekeys)
@@ -196,7 +203,14 @@ export const setupItemsPublicSchema = z.intersection(
             shapekeys: setupItemShapekeysPublicSchema.array().optional(),
         })
 )
-export type SetupItem = z.infer<typeof setupItemsPublicSchema>
+export type SetupItem = z.infer<typeof setupItemsPublicSchema> & {
+    forks?: number
+    version?: string
+    contributors?: {
+        name: string
+        avatar?: string
+    }[]
+}
 
 export const setupTagsSelectSchema = createSelectSchema(setupTags)
 export const setupTagsInsertSchema = createInsertSchema(setupTags, {

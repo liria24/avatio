@@ -140,7 +140,7 @@ watch(deleteMode, (value) => {
                     <template #description><span /></template>
                 </UCheckboxGroup>
 
-                <UButtonGroup v-else-if="drafts.length" orientation="vertical">
+                <UFieldGroup v-else-if="drafts.length" orientation="vertical">
                     <UButton
                         v-for="draft in drafts"
                         :key="draft.id"
@@ -196,7 +196,7 @@ watch(deleteMode, (value) => {
                             </div>
                         </div>
                     </UButton>
-                </UButtonGroup>
+                </UFieldGroup>
 
                 <p v-else class="text-muted py-8 text-center text-sm">
                     下書きがありません

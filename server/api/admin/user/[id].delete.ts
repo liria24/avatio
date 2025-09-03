@@ -12,6 +12,8 @@ export default defineApi(
 
         const result = await auth.api.removeUser({ headers, body: { userId } })
 
+        purgeUserCache(userId)
+
         return result
     },
     {

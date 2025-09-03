@@ -1,3 +1,4 @@
+import type { Session } from '@@/better-auth'
 import database from '@@/database'
 import { user } from '@@/database/schema'
 import { z } from 'zod'
@@ -6,13 +7,8 @@ const params = z.object({
     id: z.union([z.string().transform((val) => Number(val)), z.number()]),
 })
 
-export default defineApi<Setup>(
-    async ({ session }) => {
-        const event = useEvent()
-        const config = useRuntimeConfig(event)
-
-        const { id } = await validateParams(params)
-
+const getSetup = defineCachedFunction(
+    async (id: number, session: Session | undefined) => {
         const data = await database.query.setups.findFirst({
             where: (setups, { eq, and, exists, or, isNull }) =>
                 and(
@@ -209,17 +205,23 @@ export default defineApi<Setup>(
         const items: SetupItem[] = []
         let failedItemsCount = 0
 
-        const expiredItems = data.items.filter((item) => {
-            const timeDifference =
-                new Date().getTime() - new Date(item.item.updatedAt).getTime()
-            return timeDifference >= 24 * 60 * 60 * 1000
-        })
+        const { forceUpdateItem } = await getEdgeConfig()
 
-        const validItems = data.items.filter((item) => {
-            const timeDifference =
-                new Date().getTime() - new Date(item.item.updatedAt).getTime()
-            return timeDifference < 24 * 60 * 60 * 1000
-        })
+        const expiredFilter = (date: string | Date) => {
+            if (forceUpdateItem) return true
+            return (
+                new Date().getTime() - new Date(date).getTime() >=
+                24 * 60 * 60 * 1000
+            )
+        }
+
+        const expiredItems = data.items.filter((item) =>
+            expiredFilter(item.item.updatedAt)
+        )
+
+        const validItems = data.items.filter(
+            (item) => !expiredFilter(item.item.updatedAt)
+        )
 
         // 有効なアイテムを処理（outdatedなものは除外）
         for (const item of validItems) {
@@ -227,6 +229,21 @@ export default defineApi<Setup>(
                 failedItemsCount++
                 continue
             }
+
+            if (item.item.platform === 'github') {
+                const data = await getGithubItem(item.item.id)
+                if (!data) continue
+                items.push({
+                    ...data,
+                    niceName: item.item.niceName,
+                    category: item.category || data.category,
+                    unsupported: item.unsupported,
+                    note: item.note,
+                    shapekeys: item.shapekeys,
+                })
+                continue
+            }
+
             items.push({
                 ...item.item,
                 category: item.category || item.item.category,
@@ -240,15 +257,8 @@ export default defineApi<Setup>(
         const expiredItemsPromises = expiredItems.map(async (item) => {
             try {
                 const response = await $fetch<Item>(
-                    `/api/items/${item.item.id}`,
-                    {
-                        headers: {
-                            authorization: `Bearer ${config.adminKey}`,
-                        },
-                        query: {
-                            platform: item.item.platform,
-                        },
-                    }
+                    `/api/items/${transformItemId(item.item.id).encode()}`,
+                    { query: { platform: item.item.platform } }
                 )
                 return {
                     success: true,
@@ -325,6 +335,21 @@ export default defineApi<Setup>(
             })),
             failedItemsCount,
         }
+    },
+    {
+        maxAge: 60 * 60, // 1 hour
+        name: 'setup',
+        getKey: (id: number, session: Session | undefined) =>
+            `${id}${session ? `:${session.user.id}` : ''}`,
+        swr: false,
+    }
+)
+
+export default defineApi<Setup>(
+    async ({ session }) => {
+        const { id } = await validateParams(params)
+
+        return await getSetup(id, session || undefined)
     },
     {
         errorMessage: 'Failed to get setups',

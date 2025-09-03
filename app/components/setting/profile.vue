@@ -273,7 +273,7 @@ const cancelCropImage = () => {
                         />
                     </div>
 
-                    <UButtonGroup class="w-full">
+                    <UFieldGroup class="w-full">
                         <UButton
                             icon="lucide:folder"
                             label="画像を選択"
@@ -305,7 +305,7 @@ const cancelCropImage = () => {
                                 :disabled="ui.imageUploading"
                             />
                         </UDropdownMenu>
-                    </UButtonGroup>
+                    </UFieldGroup>
                 </div>
 
                 <div class="flex w-full flex-col gap-4">

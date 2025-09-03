@@ -1,11 +1,14 @@
 <script lang="ts" setup>
 import { twMerge } from 'tailwind-merge'
+import { LazyModalLogin } from '#components'
 
 const props = defineProps<{ class?: string | string[] }>()
 
 const { $session } = useNuxtApp()
-
 const session = await $session()
+const overlay = useOverlay()
+
+const modalLogin = overlay.create(LazyModalLogin)
 </script>
 
 <template>
@@ -28,12 +31,12 @@ const session = await $session()
         </p>
         <UButton
             v-if="!session"
-            :to="$localePath('/login')"
             label="ログイン"
             variant="outline"
             size="lg"
             color="neutral"
             class="rounded-full px-5 hover:bg-zinc-700 hover:text-zinc-200 hover:dark:bg-zinc-300 hover:dark:text-zinc-800"
+            @click="modalLogin.open()"
         />
     </div>
 </template>

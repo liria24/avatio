@@ -1,33 +1,99 @@
 <script lang="ts" setup>
+import { LazyModalAdminModalFlags } from '#components'
+
 definePageMeta({
     middleware: 'admin',
+    layout: 'dashboard',
 })
+
+const nuxtApp = useNuxtApp()
+const overlay = useOverlay()
+
+const modalFlags = overlay.create(LazyModalAdminModalFlags)
+
+const { data } = await useFetch('/api/admin/stats', {
+    dedupe: 'defer',
+    default: () => ({
+        users: 0,
+        setups: 0,
+        items: 0,
+        feedbacks: 0,
+    }),
+    headers:
+        import.meta.server && nuxtApp.ssrContext?.event.headers
+            ? nuxtApp.ssrContext.event.headers
+            : undefined,
+})
+
+const stats = ref([
+    {
+        title: 'Total Users',
+        value: data.value.users,
+        icon: 'lucide:users-round',
+        to: '/admin/users',
+    },
+    {
+        title: 'Active Setups',
+        value: data.value.setups,
+        icon: 'lucide:sparkles',
+        to: '/admin/setups',
+    },
+    {
+        title: 'Total Items',
+        value: data.value.items,
+        icon: 'lucide:package',
+        to: '/admin/items',
+    },
+    {
+        title: 'Feedbacks',
+        value: data.value.feedbacks,
+        icon: 'lucide:message-square',
+        to: '/admin/feedbacks',
+    },
+])
 </script>
 
 <template>
-    <div class="flex w-full flex-col gap-6">
-        <h1 class="font-[Geist] text-3xl text-nowrap">Admin Console</h1>
-
-        <AdminUsers />
-
-        <AdminFeedbacks />
-
-        <UCard>
-            <template #header>
-                <div class="flex items-center justify-between gap-3">
-                    <h2 class="text-xl font-semibold text-nowrap">変更履歴</h2>
+    <UDashboardPanel id="index">
+        <template #header>
+            <UDashboardNavbar title="Admin Console">
+                <template #right>
                     <UButton
-                        to="/admin/changelogs/compose"
-                        icon="lucide:plus"
-                        label="追加"
+                        icon="lucide:flag"
+                        label="Flags"
+                        variant="subtle"
                         color="neutral"
+                        @click="modalFlags.open()"
                     />
-                </div>
-            </template>
-        </UCard>
+                </template>
+            </UDashboardNavbar>
+        </template>
 
-        <AdminAuditLog />
-
-        <AdminManage />
-    </div>
+        <template #body>
+            <UPageGrid class="gap-4 sm:gap-6 lg:grid-cols-4 lg:gap-px">
+                <UPageCard
+                    v-for="(stat, index) in stats"
+                    :key="index"
+                    :icon="stat.icon"
+                    :title="stat.title"
+                    :to="stat.to"
+                    variant="subtle"
+                    :ui="{
+                        container: 'gap-y-1.5',
+                        wrapper: 'items-start',
+                        leading:
+                            'p-2.5 rounded-full bg-primary/10 ring ring-inset ring-primary/25 flex-col',
+                        title: 'font-normal text-muted text-xs uppercase',
+                    }"
+                    class="first:rounded-l-lg last:rounded-r-lg hover:z-1 lg:rounded-none"
+                >
+                    <div class="flex items-center gap-2">
+                        <span class="text-highlighted text-2xl font-semibold">
+                            {{ stat.value }}
+                        </span>
+                    </div>
+                </UPageCard>
+            </UPageGrid>
+        </template>
+    </UDashboardPanel>
 </template>

@@ -32,6 +32,7 @@ export default defineApi<Item[]>(
                     verified: shops.verified,
                     platform: shops.platform,
                 },
+                outdated: items.outdated,
             })
             .from(setupItems)
             .innerJoin(items, eq(setupItems.itemId, items.id))
@@ -54,6 +55,7 @@ export default defineApi<Item[]>(
             likes: item.likes,
             nsfw: item.nsfw,
             shop: item.shop,
+            outdated: item.outdated,
         }))
 
         return result

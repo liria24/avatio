@@ -1,3 +1,19 @@
+export const transformItemId = (itemId: string) => {
+    const encode = () =>
+        itemId
+            .split('/')
+            .map((part) => encodeURIComponent(part))
+            .join('+')
+
+    const decode = () =>
+        itemId
+            .split('+')
+            .map((part) => decodeURIComponent(part))
+            .join('/')
+
+    return { encode, decode }
+}
+
 interface ExtractResult {
     id: string
     platform: Platform
@@ -13,7 +29,18 @@ const platformHandlers = [
             return match?.[1] || null
         },
     },
+    {
+        domain: 'github.com',
+        platform: 'github' as Platform,
+        extractId: (url: URL): string | null => {
+            if (url.hostname !== 'github.com') return null
+            const match = url.pathname.match(/^\/([^/]+\/[^/]+)\/?$/)
+            if (!match?.[1]) return null
+            return transformItemId(match[1]).encode()
+        },
+    },
 ]
+
 export default (url: string): ExtractResult | null => {
     try {
         const parsedUrl = new URL(url)

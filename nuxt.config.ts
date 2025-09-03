@@ -82,46 +82,16 @@ export default defineNuxtConfig({
                 'CDN-Cache-Control': `max-age=${60 * 30}`,
             },
         },
-        '/api/setups/*': {
-            headers: {
-                'Cache-Control': `max-age=${60}`,
-                'CDN-Cache-Control': `max-age=${60 * 60}`,
-            },
-        },
         '/api/setups/tag': {
             headers: {
                 'Cache-Control': `max-age=${60}`,
                 'CDN-Cache-Control': `max-age=${60 * 60}`,
             },
         },
-        '/api/setups/drafts': {
-            headers: {
-                'Cache-Control': `max-age=${0}`,
-                'CDN-Cache-Control': `max-age=${0}`,
-            },
-        },
         '/api/users': {
             headers: {
                 'Cache-Control': `max-age=${60}`,
                 'CDN-Cache-Control': `max-age=${60 * 30}`,
-            },
-        },
-        '/api/users/*': {
-            headers: {
-                'Cache-Control': `max-age=${60}`,
-                'CDN-Cache-Control': `max-age=${60 * 60}`,
-            },
-        },
-        '/api/users/id-availability': {
-            headers: {
-                'Cache-Control': `max-age=${0}`,
-                'CDN-Cache-Control': `max-age=${0}`,
-            },
-        },
-        '/api/users/is-initialized': {
-            headers: {
-                'Cache-Control': `max-age=${0}`,
-                'CDN-Cache-Control': `max-age=${0}`,
             },
         },
         '/api/changelogs': {
@@ -140,18 +110,6 @@ export default defineNuxtConfig({
             headers: {
                 'Cache-Control': `max-age=${0}`,
                 'CDN-Cache-Control': `max-age=${30}`,
-            },
-        },
-        '/setups/*': {
-            headers: {
-                'Cache-Control': `max-age=${60}`,
-                'CDN-Cache-Control': `max-age=${60 * 60}`,
-            },
-        },
-        '/setups/compose': {
-            headers: {
-                'Cache-Control': `max-age=${0}`,
-                'CDN-Cache-Control': `max-age=${0}`,
             },
         },
         '/changelogs': {
@@ -189,9 +147,15 @@ export default defineNuxtConfig({
                 bucket: 'avatio',
                 region: 'auto',
             },
-            vercelRuntimeCache: {
-                driver: 'vercel-runtime-cache',
-                base: 'avatio',
+            cache: {
+                driver: 'upstash',
+                url: import.meta.env.NUXT_UPSTASH_KV_REST_API_URL,
+                token: import.meta.env.NUXT_UPSTASH_KV_REST_API_TOKEN,
+            },
+        },
+        devStorage: {
+            cache: {
+                driver: 'null',
             },
         },
         vercel: {

@@ -34,6 +34,7 @@ export default defineApi<Item[]>(
                     verified: shops.verified,
                     platform: shops.platform,
                 },
+                outdated: items.outdated,
             })
             .from(items)
             .innerJoin(shops, eq(items.shopId, shops.id))

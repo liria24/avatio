@@ -1,19 +1,25 @@
 <script lang="ts" setup>
+import { LazyModalLogin, LazyModalReportUser } from '#components'
+
 const { $session } = useNuxtApp()
 const route = useRoute()
+const overlay = useOverlay()
 const session = await $session()
+
 const id = route.params.id as string
+const modalLogin = overlay.create(LazyModalLogin)
+const modalReport = overlay.create(LazyModalReportUser)
 
-const { data, status } = useUser(id)
+const { data: user, status: userStatus } = await useUser(id)
 
-if (status.value === 'success' && !data.value)
+if (userStatus.value === 'success' && !user.value)
     showError({
         statusCode: 404,
         message: 'IDが無効です',
     })
 
 const links = computed(() =>
-    data.value?.links?.map((link) => {
+    user.value?.links?.map((link) => {
         const attributes = linkAttributes(link)
         return {
             label: attributes.label,
@@ -23,23 +29,23 @@ const links = computed(() =>
     })
 )
 
-if (data.value) {
+if (user.value) {
     defineSeo({
-        title: data.value.name,
-        description: data.value.bio || undefined,
-        image: data.value.image || undefined,
+        title: user.value.name,
+        description: user.value.bio || undefined,
+        image: user.value.image || undefined,
     })
     useSchemaOrg([
         defineWebPage({
-            name: data.value.name,
-            description: data.value.bio,
-            datePublished: data.value.createdAt,
+            name: user.value.name,
+            description: user.value.bio,
+            datePublished: user.value.createdAt,
         }),
         definePerson({
-            name: data.value.name,
-            description: data.value.bio,
-            image: data.value.image || undefined,
-            sameAs: data.value.links || undefined,
+            name: user.value.name,
+            description: user.value.bio,
+            image: user.value.image || undefined,
+            sameAs: user.value.links || undefined,
         }),
     ])
 }
@@ -47,23 +53,23 @@ if (data.value) {
 
 <template>
     <div
-        v-if="(status === 'success' && !data) || status === 'error'"
+        v-if="(userStatus === 'success' && !user) || userStatus === 'error'"
         class="flex w-full flex-col items-center"
     >
         <p class="mt-5 text-zinc-400">ユーザーデータの取得に失敗しました</p>
     </div>
 
-    <div v-else-if="data" class="flex w-full flex-col gap-6 px-2">
+    <div v-else-if="user" class="flex w-full flex-col gap-6 px-2">
         <div class="flex w-full flex-col items-start gap-3">
             <div
                 class="flex w-full flex-col items-start justify-between gap-3 sm:flex-row sm:items-center"
             >
                 <div class="flex items-center gap-6">
                     <NuxtImg
-                        v-if="data.image"
+                        v-if="user.image"
                         v-slot="{ isLoaded, src, imgAttrs }"
-                        :src="data.image"
-                        :alt="data.name"
+                        :src="user.image"
+                        :alt="user.name"
                         :width="80"
                         :height="80"
                         format="webp"
@@ -93,17 +99,17 @@ if (data.value) {
                             class="flex flex-wrap items-center gap-x-3 gap-y-1"
                         >
                             <p class="text-2xl font-bold">
-                                {{ data.name }}
+                                {{ user.name }}
                             </p>
                             <UserBadges
-                                v-if="data.badges"
-                                :badges="data.badges"
+                                v-if="user.badges"
+                                :badges="user.badges"
                             />
                         </div>
                         <p class="text-dimmed text-sm">
                             アカウント作成日:
                             <NuxtTime
-                                :datetime="data.createdAt"
+                                :datetime="user.createdAt"
                                 class="text-muted font-[Geist]"
                             />
                         </p>
@@ -111,7 +117,7 @@ if (data.value) {
                 </div>
                 <div class="flex items-center gap-1 self-end sm:self-auto">
                     <UButton
-                        v-if="session?.user.id === data.id"
+                        v-if="session?.user.id === user.id"
                         :to="$localePath('/settings')"
                         label="プロフィールを編集"
                         icon="lucide:pen-line"
@@ -119,24 +125,19 @@ if (data.value) {
                         size="sm"
                         class="self-end"
                     />
-                    <ModalReportUser v-else-if="session" :user-id="data.id">
-                        <UButton
-                            label="ユーザーを報告"
-                            icon="lucide:flag"
-                            variant="ghost"
-                            size="sm"
-                            class="self-end"
-                        />
-                    </ModalReportUser>
-                    <ModalLogin v-else>
-                        <UButton
-                            label="ユーザーを報告"
-                            icon="lucide:flag"
-                            variant="ghost"
-                            size="sm"
-                            class="self-end"
-                        />
-                    </ModalLogin>
+
+                    <UButton
+                        label="ユーザーを報告"
+                        icon="lucide:flag"
+                        variant="ghost"
+                        size="sm"
+                        class="self-end"
+                        @click="
+                            session
+                                ? modalReport.open({ userId: user.id })
+                                : modalLogin.open()
+                        "
+                    />
                 </div>
             </div>
 
@@ -156,7 +157,7 @@ if (data.value) {
                 </div>
 
                 <div
-                    v-if="data.bio?.length"
+                    v-if="user.bio?.length"
                     class="flex w-full flex-col gap-1 rounded-xl border border-zinc-400 px-4 py-3 dark:border-zinc-600"
                 >
                     <span class="text-dimmed text-xs leading-none text-nowrap">
@@ -164,14 +165,14 @@ if (data.value) {
                     </span>
                     <p
                         class="text-relaxed text-sm [overflow-wrap:anywhere] break-keep whitespace-break-spaces"
-                        v-html="useLineBreak(data.bio)"
+                        v-html="useLineBreak(user.bio)"
                     />
                 </div>
             </div>
         </div>
 
         <div
-            v-if="data.shops?.length"
+            v-if="user.shops?.length"
             class="mb-4 flex w-full flex-col gap-5 px-2"
         >
             <div class="flex items-center gap-2">
@@ -183,7 +184,7 @@ if (data.value) {
 
             <div class="flex flex-wrap items-center gap-2">
                 <UButton
-                    v-for="(shop, index) in data.shops"
+                    v-for="(shop, index) in user.shops"
                     :key="'shop-' + index"
                     :to="`https://${shop.shop.id}.booth.pm`"
                     target="_blank"
@@ -233,13 +234,7 @@ if (data.value) {
                 </h2>
             </div>
 
-            <div class="flex w-full flex-col gap-3 self-center">
-                <SetupsList
-                    v-if="data.setups"
-                    v-model:setups="data.setups"
-                    v-model:status="status"
-                />
-            </div>
+            <SetupsListUser :user-id="user.id" />
         </div>
     </div>
 </template>

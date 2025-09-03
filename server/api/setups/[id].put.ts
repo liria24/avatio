@@ -168,6 +168,8 @@ export default defineApi<Setup>(
                 )
         }
 
+        await purgeSetupCache(id)
+
         const data = await useEvent().$fetch(`/api/setups/${id}`)
 
         return data

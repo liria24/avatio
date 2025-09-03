@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
-
-const emit = defineEmits<{
-    (e: 'openFeedbackModal' | 'openLoginModal'): void
-}>()
+import { LazyModalFeedback, LazyModalLogin } from '#components'
 
 const { $authClient, $session, $multiSession, $revoke } = useNuxtApp()
 const session = await $session()
@@ -11,6 +8,10 @@ const sessions = await $multiSession()
 const route = useRoute()
 const toast = useToast()
 const colorMode = useColorMode()
+const overlay = useOverlay()
+
+const modalLogin = overlay.create(LazyModalLogin)
+const modalFeedback = overlay.create(LazyModalFeedback)
 
 const switchAccount = async (sessionToken: string) => {
     await $authClient.multiSession.setActive({ sessionToken })
@@ -49,37 +50,36 @@ const themeMenu = [
 const menuItems = ref<DropdownMenuItem[][]>([
     [
         {
-            label: 'プロフィール',
-            icon: 'lucide:user-round',
-            onSelect: () => {
-                if (session.value) navigateTo(`/@${session.value.user.id}`)
-                else navigateTo('/login')
+            to: `/@${session.value?.user.id}`,
+            label: session.value?.user.name,
+            avatar: {
+                src: session.value?.user.image || undefined,
+                icon: 'lucide:user-round',
             },
         },
+    ],
+    [
         {
             label: 'ブックマーク',
             icon: 'lucide:bookmark',
-            onSelect: () => {
-                if (session.value) navigateTo(`/bookmarks`)
-                else navigateTo('/login')
-            },
+            to: `/bookmarks`,
+        },
+        {
+            label: '設定',
+            icon: 'lucide:bolt',
+            to: '/settings',
         },
     ],
     [
         {
             label: 'フィードバック',
             icon: 'lucide:message-square',
-            onSelect: () => emit('openFeedbackModal'),
+            onSelect: () => modalFeedback.open(),
         },
         {
             label: 'テーマ',
             icon: 'lucide:moon',
             children: themeMenu,
-        },
-        {
-            label: '設定',
-            icon: 'lucide:bolt',
-            onSelect: () => navigateTo('/settings'),
         },
     ],
     [
@@ -92,13 +92,14 @@ const menuItems = ref<DropdownMenuItem[][]>([
                     avatar: {
                         src: session.user.image || undefined,
                         alt: session.user.name,
+                        icon: 'lucide:user-round',
                     },
                     onSelect: () => switchAccount(session.session.token),
                 })),
                 {
                     label: '新しいアカウント',
                     icon: 'lucide:user-round-plus',
-                    onSelect: () => emit('openLoginModal'),
+                    onSelect: () => modalLogin.open(),
                 },
             ],
         },
@@ -199,12 +200,16 @@ const menuItems = ref<DropdownMenuItem[][]>([
                     </PopoverNotifications>
 
                     <UDropdownMenu :items="menuItems">
-                        <UAvatar
-                            :src="session.user.image || undefined"
-                            :alt="session.user.name"
-                            icon="lucide:user-round"
-                            class="ring-accented size-8 cursor-pointer ring-0 transition-all select-none hover:ring-4"
-                        />
+                        <button
+                            type="button"
+                            class="ring-accented size-8 cursor-pointer rounded-full ring-0 transition-all select-none hover:ring-4"
+                        >
+                            <UAvatar
+                                :src="session.user.image || undefined"
+                                :alt="session.user.name"
+                                icon="lucide:user-round"
+                            />
+                        </button>
                     </UDropdownMenu>
                 </div>
 
@@ -213,7 +218,7 @@ const menuItems = ref<DropdownMenuItem[][]>([
                     label="ログイン"
                     variant="outline"
                     class="rounded-lg px-4 py-2 text-xs"
-                    @click="emit('openLoginModal')"
+                    @click="modalLogin.open()"
                 />
             </template>
         </div>

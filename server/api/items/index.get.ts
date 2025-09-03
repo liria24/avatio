@@ -60,6 +60,7 @@ export default defineApi<PaginationResponse<Item[]>>(
                 price: true,
                 likes: true,
                 nsfw: true,
+                outdated: true,
             },
             with: {
                 shop: {
@@ -87,6 +88,7 @@ export default defineApi<PaginationResponse<Item[]>>(
             likes: item.likes,
             nsfw: item.nsfw,
             shop: item.shop,
+            outdated: item.outdated,
         }))
 
         return {

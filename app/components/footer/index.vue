@@ -1,9 +1,11 @@
 <script lang="ts" setup>
-const emit = defineEmits<{
-    (e: 'open-feedback-modal'): void
-}>()
+import { LazyModalFeedback } from '#components'
 
-const { data: repo } = useFetch<{ repo: GithubRepo }>(
+const overlay = useOverlay()
+
+const modalFeedback = overlay.create(LazyModalFeedback)
+
+const { data: repo } = useFetch<GithubRepo>(
     'https://ungh.cc/repos/liria24/avatio'
 )
 </script>
@@ -124,7 +126,7 @@ const { data: repo } = useFetch<{ repo: GithubRepo }>(
                         label="フィードバック"
                         variant="link"
                         size="sm"
-                        @click="emit('open-feedback-modal')"
+                        @click="modalFeedback.open()"
                     />
                 </div>
             </div>

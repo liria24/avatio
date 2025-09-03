@@ -8,28 +8,6 @@ const props = defineProps<Props>()
 
 <template>
     <div :class="['flex h-fit flex-col gap-5 empty:hidden', props.class]">
-        <NuxtLink
-            :to="`/@${props.setup.user.id}`"
-            :aria-label="props.setup.user.name"
-            class="flex items-center gap-1"
-        >
-            <UAvatar
-                :src="props.setup.user.image || undefined"
-                :alt="props.setup.user.name"
-                icon="lucide:user-round"
-            />
-            <div class="flex flex-wrap items-center gap-x-1 gap-y-0.5 pl-1">
-                <p class="text-left text-sm font-semibold">
-                    {{ props.setup.user.name }}
-                </p>
-                <UserBadges
-                    :badges="props.setup.user.badges"
-                    size="sm"
-                    class="ml-1"
-                />
-            </div>
-        </NuxtLink>
-
         <div
             v-if="props.setup.description?.length"
             class="flex flex-col gap-2 self-stretch"
