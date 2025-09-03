@@ -661,7 +661,7 @@ await enterEditModeAndRestoreDraft({
             </div>
 
             <div
-                class="absolute bottom-0 flex w-full items-center justify-end gap-2 p-3 backdrop-blur-lg"
+                class="static bottom-0 flex w-full items-center justify-end gap-2 p-3 lg:absolute lg:backdrop-blur-lg"
             >
                 <UBadge
                     v-if="draftStatus !== 'new'"
