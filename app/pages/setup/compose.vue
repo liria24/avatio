@@ -333,11 +333,11 @@ const resetForm = () => {
 }
 
 const saveDraftDebounce = useDebounceFn(async () => {
-    if (skipDraftSave.value) {
+    if (skipDraftSave.value)
         // 復元直後は保存しない
-        draftStatus.value = 'restored'
-        return
-    }
+        return (draftStatus.value = 'restored')
+
+    if (publishing.value) return
 
     draftStatus.value = 'saving'
 
@@ -375,15 +375,16 @@ const saveDraftDebounce = useDebounceFn(async () => {
                 content,
             },
         })
-        referencedDraft.value = response.draftId
+        referencedDraft.value = response?.draftId || null
         router.replace({
             query: {
                 ...route.query,
-                draftId: response.draftId,
+                draftId: response?.draftId,
             },
         })
 
-        draftStatus.value = 'saved'
+        if (referencedDraft.value) draftStatus.value = 'saved'
+        else draftStatus.value = 'new'
     } catch (error) {
         console.error('Error saving draft:', error)
         draftStatus.value = 'error'
@@ -409,8 +410,6 @@ const enterEditModeAndRestoreDraft = async (args: {
         await loadDraft(args.draftId)
     } else if (args.edit) {
         try {
-            draftStatus.value = 'restoring'
-
             const { drafts } = await $fetch(`/api/setups/drafts`, {
                 query: { setupId: args.edit },
                 headers:
@@ -420,6 +419,8 @@ const enterEditModeAndRestoreDraft = async (args: {
             })
 
             if (drafts.length && drafts[0]) {
+                draftStatus.value = 'restoring'
+
                 await applyDraftData(drafts[0].content)
 
                 editingSetupId.value = args.edit

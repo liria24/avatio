@@ -39,6 +39,13 @@ export default defineApi(
                     'You have reached the maximum number of setup drafts allowed.',
             })
 
+        if (!id && !Object.keys(content).length) return null
+
+        if (id && !Object.keys(content).length) {
+            await database.delete(setupDrafts).where(eq(setupDrafts.id, id))
+            return null
+        }
+
         const result = await database
             .insert(setupDrafts)
             .values({
