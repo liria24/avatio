@@ -66,7 +66,8 @@ export default defineApi<Item>(
                         id: item.id,
                         platform: item.platform,
                         name: item.name,
-                        category: item.category,
+                        niceName: cachedItem?.niceName || item.niceName,
+                        category: cachedItem?.category || item.category,
                     })
                     .onConflictDoUpdate({
                         target: items.id,

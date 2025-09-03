@@ -87,8 +87,21 @@ export const getGithubUser = defineCachedFunction(
     }
 )
 
+type GithubItem = Omit<
+    Item,
+    'outdated' | 'image' | 'niceName' | 'price' | 'nsfw'
+> & {
+    platform: 'github'
+    category: 'other'
+    outdated: false
+    image: null
+    niceName: null
+    price: null
+    nsfw: false
+}
+
 export const getGithubItem = defineCachedFunction(
-    async (repo: string): Promise<Item | null> => {
+    async (repo: string): Promise<GithubItem | null> => {
         if (!validateRepo(repo)) return null
 
         const [repoData, contributors, latestRelease] = await Promise.all([
