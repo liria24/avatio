@@ -60,7 +60,6 @@ const { data, status, refresh } = await useSetups({
     query,
     immediate: false,
     watch: false,
-    getCachedData: undefined,
 })
 
 const setups = ref<Setup[]>([])

@@ -16,10 +16,6 @@ const toast = useToast()
 const overlay = useOverlay()
 
 const id = Number(route.params.id)
-const cache =
-    route.query.cache === undefined
-        ? true
-        : route.query.cache === 'true' || route.query.cache === '1'
 
 const modalImage = overlay.create(LazyModalImage)
 const modalLogin = overlay.create(LazyModalLogin)
@@ -28,11 +24,7 @@ const modalDelete = overlay.create(LazyModalSetupDelete)
 const modalHide = overlay.create(LazyModalSetupHide)
 const modalUnhide = overlay.create(LazyModalSetupUnhide)
 
-const { data, status } = await useSetup(id, {
-    getCachedData: cache
-        ? (key: string) => nuxtApp.payload.data[key] || nuxtApp.static.data[key]
-        : undefined,
-})
+const { data, status } = await useSetup(id)
 
 if (status.value === 'success' && !id)
     throw showError({

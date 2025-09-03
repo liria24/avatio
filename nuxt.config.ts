@@ -329,6 +329,7 @@ export default defineNuxtConfig({
     experimental: {
         crossOriginPrefetch: true,
         sharedPrerenderData: true,
+        granularCachedData: true,
     },
 })
 

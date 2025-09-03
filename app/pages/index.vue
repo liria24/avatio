@@ -4,11 +4,6 @@ const session = await $session()
 const route = useRoute()
 const router = useRouter()
 
-const cache =
-    route.query.cache === undefined
-        ? true
-        : route.query.cache === 'true' || route.query.cache === '1'
-
 type Tab = 'latest' | 'me' | 'bookmarks'
 
 const tab = ref<Tab>((route.query.tab as Tab) || 'latest')
@@ -72,13 +67,9 @@ useSchemaOrg([
                     @click="changeTab('bookmarks')"
                 />
             </div>
-            <SetupsListLatest v-if="tab === 'latest'" :cache />
-            <SetupsListUser
-                v-if="tab === 'me'"
-                :user-id="session?.user.id"
-                :cache
-            />
-            <SetupsListBookmarks v-if="tab === 'bookmarks'" :cache />
+            <SetupsListLatest v-if="tab === 'latest'" />
+            <SetupsListUser v-if="tab === 'me'" :user-id="session?.user.id" />
+            <SetupsListBookmarks v-if="tab === 'bookmarks'" />
         </div>
 
         <SetupsListLatest v-else />

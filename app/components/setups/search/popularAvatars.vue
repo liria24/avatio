@@ -1,14 +1,10 @@
 <script lang="ts" setup>
-const nuxtApp = useNuxtApp()
-
 const emit = defineEmits<{
     (e: 'select', id: string): void
 }>()
 
 const { data: popularAvatars } = await useFetch('/api/items/popular-avatars', {
     key: 'popular-avatars',
-    getCachedData: (key: string) =>
-        nuxtApp.payload.data[key] || nuxtApp.static.data[key],
     default: () => [],
 })
 </script>

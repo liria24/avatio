@@ -4,12 +4,7 @@ interface Props {
 }
 const props = defineProps<Props>()
 
-const nuxtApp = useNuxtApp()
-
-const { data: setup, status } = await useFetch(`/api/setups/${props.setupId}`, {
-    getCachedData: (key: string) =>
-        nuxtApp.payload.data[key] || nuxtApp.static.data[key],
-})
+const { data: setup, status } = await useFetch(`/api/setups/${props.setupId}`)
 </script>
 
 <template>
