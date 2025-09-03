@@ -545,7 +545,7 @@ await enterEditModeAndRestoreDraft({
         <div
             :class="
                 cn(
-                    'ring-accented relative top-0 bottom-4 left-0 flex flex-col overflow-y-auto rounded-lg',
+                    'ring-accented static top-0 bottom-4 left-0 flex flex-col overflow-y-auto rounded-lg',
                     'lg:absolute lg:w-[22rem] lg:ring-2'
                 )
             "
@@ -661,7 +661,7 @@ await enterEditModeAndRestoreDraft({
             </div>
 
             <div
-                class="static bottom-0 flex w-full items-center justify-end gap-2 p-3 lg:absolute lg:backdrop-blur-lg"
+                class="static flex w-full items-center justify-end gap-2 p-3 lg:sticky lg:bottom-0 lg:backdrop-blur-lg"
             >
                 <UBadge
                     v-if="draftStatus !== 'new'"
