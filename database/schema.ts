@@ -724,12 +724,15 @@ export const auditLogs = adminSchema.table(
 
 export const userRelations = relations(user, ({ many }) => ({
     accounts: many(account),
+    sessions: many(session),
     shops: many(userShops),
     shopVerifications: many(userShopVerification),
     badges: many(userBadges),
+    setupCoauthors: many(setupCoauthors),
     setups: many(setups),
     bookmarks: many(bookmarks),
-    setupCoauthors: many(setupCoauthors),
+    notifications: many(notifications),
+    itemReports: many(itemReports),
     setupReports: many(setupReports),
     userReports: many(userReports),
     auditLogs: many(auditLogs),
@@ -869,6 +872,17 @@ export const setupCoauthorsRelations = relations(setupCoauthors, ({ one }) => ({
     }),
 }))
 
+export const setupDraftsRelations = relations(setupDrafts, ({ one }) => ({
+    user: one(user, {
+        fields: [setupDrafts.userId],
+        references: [user.id],
+    }),
+    setup: one(setups, {
+        fields: [setupDrafts.setupId],
+        references: [setups.id],
+    }),
+}))
+
 export const bookmarksRelations = relations(bookmarks, ({ one }) => ({
     user: one(user, {
         fields: [bookmarks.userId],
@@ -877,6 +891,24 @@ export const bookmarksRelations = relations(bookmarks, ({ one }) => ({
     setup: one(setups, {
         fields: [bookmarks.setupId],
         references: [setups.id],
+    }),
+}))
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+    user: one(user, {
+        fields: [notifications.userId],
+        references: [user.id],
+    }),
+}))
+
+export const itemReportsRelations = relations(itemReports, ({ one }) => ({
+    reporter: one(user, {
+        fields: [itemReports.reporterId],
+        references: [user.id],
+    }),
+    item: one(items, {
+        fields: [itemReports.itemId],
+        references: [items.id],
     }),
 }))
 

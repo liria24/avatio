@@ -461,8 +461,11 @@ export const itemReportsInsertSchema = createInsertSchema(itemReports, {
     comment: (schema) =>
         schema.max(1000, 'コメントは最大 1000 文字です。').optional(),
 }).refine((data) => data.nameError || data.irrelevant || data.other)
+export const itemReportsUpdateSchema = createUpdateSchema(itemReports)
 export const itemReportsPublicSchema = itemReportsSelectSchema
     .pick({
+        id: true,
+        createdAt: true,
         nameError: true,
         irrelevant: true,
         other: true,
@@ -473,6 +476,7 @@ export const itemReportsPublicSchema = itemReportsSelectSchema
         reporter: userPublicSchema,
         item: itemsPublicSchema,
     })
+export type ItemReport = z.infer<typeof itemReportsPublicSchema>
 
 export const setupReportsSelectSchema = createSelectSchema(setupReports, {
     createdAt: (schema) => schema.transform((val) => val.toISOString()),
@@ -484,8 +488,11 @@ export const setupReportsInsertSchema = createInsertSchema(setupReports, {
     (data) =>
         data.spam || data.hate || data.infringe || data.badImage || data.other
 )
+export const setupReportsUpdateSchema = createUpdateSchema(setupReports)
 export const setupReportsPublicSchema = setupReportsSelectSchema
     .pick({
+        id: true,
+        createdAt: true,
         spam: true,
         hate: true,
         infringe: true,
@@ -504,8 +511,11 @@ export const userReportsSelectSchema = createSelectSchema(userReports, {
     createdAt: (schema) => schema.transform((val) => val.toISOString()),
 })
 export const userReportsInsertSchema = createInsertSchema(userReports)
+export const userReportsUpdateSchema = createUpdateSchema(userReports)
 export const userReportsPublicSchema = userReportsSelectSchema
     .pick({
+        id: true,
+        createdAt: true,
         spam: true,
         hate: true,
         infringe: true,
