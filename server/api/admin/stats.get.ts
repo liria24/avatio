@@ -59,15 +59,15 @@ const getStats = defineCachedFunction(
             database
                 .select({ count: count() })
                 .from(itemReports)
-                .where(eq(feedbacks.isClosed, false)),
+                .where(eq(itemReports.isResolved, false)),
             database
                 .select({ count: count() })
                 .from(setupReports)
-                .where(eq(feedbacks.isClosed, false)),
+                .where(eq(setupReports.isResolved, false)),
             database
                 .select({ count: count() })
                 .from(userReports)
-                .where(eq(feedbacks.isClosed, false)),
+                .where(eq(userReports.isResolved, false)),
         ])
 
         return {
