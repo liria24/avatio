@@ -559,6 +559,40 @@ export const feedbacks = feedbackSchema.table(
     ]
 )
 
+export const itemReports = feedbackSchema.table(
+    'item_reports',
+    {
+        id: integer().primaryKey().generatedAlwaysAsIdentity(),
+        createdAt: timestamp('created_at').defaultNow().notNull(),
+        reporterId: text('reporter_id').notNull(),
+        itemId: text('item_id').notNull(),
+        nameError: boolean('name_error').default(false).notNull(),
+        irrelevant: boolean().default(false).notNull(),
+        other: boolean().default(false).notNull(),
+        comment: text(),
+        isResolved: boolean('is_resolved').default(false).notNull(),
+    },
+    (table) => [
+        index('item_reports_id_index').on(table.id),
+        index('item_reports_item_id_index').on(table.itemId),
+        index('item_reports_reporter_id_index').on(table.reporterId),
+        foreignKey({
+            name: 'item_reports_reporter_id_fkey',
+            columns: [table.reporterId],
+            foreignColumns: [user.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+        foreignKey({
+            name: 'item_reports_item_id_fkey',
+            columns: [table.itemId],
+            foreignColumns: [items.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+    ]
+)
+
 export const setupReports = feedbackSchema.table(
     'setup_reports',
     {

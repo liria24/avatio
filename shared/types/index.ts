@@ -6,6 +6,7 @@ import {
     changelogs,
     feedbacks,
     itemCategory,
+    itemReports,
     items,
     notifications,
     notificationType,
@@ -452,6 +453,26 @@ export const feedbacksPublicSchema = feedbacksSelectSchema.pick({
     isClosed: true,
 })
 export type Feedback = z.infer<typeof feedbacksPublicSchema>
+
+export const itemReportsSelectSchema = createSelectSchema(itemReports, {
+    createdAt: (schema) => schema.transform((val) => val.toISOString()),
+})
+export const itemReportsInsertSchema = createInsertSchema(itemReports, {
+    comment: (schema) =>
+        schema.max(1000, 'コメントは最大 1000 文字です。').optional(),
+}).refine((data) => data.nameError || data.irrelevant || data.other)
+export const itemReportsPublicSchema = itemReportsSelectSchema
+    .pick({
+        nameError: true,
+        irrelevant: true,
+        other: true,
+        comment: true,
+        isResolved: true,
+    })
+    .extend({
+        reporter: userPublicSchema,
+        item: itemsPublicSchema,
+    })
 
 export const setupReportsSelectSchema = createSelectSchema(setupReports, {
     createdAt: (schema) => schema.transform((val) => val.toISOString()),

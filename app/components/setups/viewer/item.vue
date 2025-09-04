@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { parseURL } from 'ufo'
+import { LazyModalReportItem } from '#components'
 
 interface Props {
     item: SetupItem
@@ -11,10 +12,14 @@ const props = withDefaults(defineProps<Props>(), {
     class: null,
 })
 
+const overlay = useOverlay()
 const toast = useToast()
 const { copy } = useClipboard()
 
 const nsfwMask = ref(props.item.nsfw)
+const modalReport = overlay.create(LazyModalReportItem, {
+    props: { itemId: props.item.id },
+})
 
 const url = computed(() => {
     if (props.item.platform === 'booth')
@@ -296,17 +301,40 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                 </div>
             </div>
 
-            <UTooltip
-                v-if="props.actions"
-                text="このアイテムを含むセットアップを検索"
-            >
-                <UButton
-                    :to="$localePath(`/search?itemId=${props.item.id}`)"
-                    icon="lucide:search"
-                    aria-label="このアイテムを含むセットアップを検索"
-                    variant="ghost"
-                />
-            </UTooltip>
+            <div class="flex flex-col gap-1">
+                <UTooltip
+                    v-if="props.actions"
+                    text="アイテムからセットアップを検索"
+                    :delay-duration="50"
+                    :content="{ side: 'top' }"
+                >
+                    <UButton
+                        :to="$localePath(`/search?itemId=${props.item.id}`)"
+                        icon="lucide:search"
+                        aria-label="アイテムからセットアップを検索"
+                        variant="ghost"
+                        :ui="{ leadingIcon: 'size-4.5' }"
+                        class="grow"
+                    />
+                </UTooltip>
+
+                <UTooltip
+                    v-if="props.actions"
+                    text="アイテムを報告"
+                    :delay-duration="50"
+                >
+                    <UButton
+                        icon="lucide:flag"
+                        aria-label="アイテムを報告"
+                        variant="ghost"
+                        :ui="{
+                            base: 'justify-center',
+                            leadingIcon: 'size-4 text-dimmed',
+                        }"
+                        @click="modalReport.open()"
+                    />
+                </UTooltip>
+            </div>
         </div>
 
         <div
