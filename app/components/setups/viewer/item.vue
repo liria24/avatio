@@ -21,24 +21,10 @@ const modalReport = overlay.create(LazyModalReportItem, {
     props: { itemId: props.item.id },
 })
 
-const url = computed(() => {
-    if (props.item.platform === 'booth')
-        return `https://booth.pm/ja/items/${props.item.id}`
-    else if (props.item.platform === 'github')
-        return `https://github.com/${props.item.id}`
-    else return undefined
-})
-
-const shopUrl = computed(() => {
-    if (props.item.shop?.platform === 'booth')
-        return `https://${props.item.shop.id}.booth.pm/`
-    else if (props.item.shop?.platform === 'github')
-        return `https://github.com/${props.item.shop.id}`
-    return undefined
-})
-
 const shopPath = computed(() => {
-    const url = parseURL(shopUrl.value)
+    const url = parseURL(
+        computeShopUrl(props.item.shop?.id, props.item.shop?.platform)
+    )
     const path = url.pathname === '/' ? '' : url.pathname
     return url.host + path
 })
@@ -62,7 +48,7 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
         <div class="flex items-stretch gap-1">
             <NuxtLink
                 v-if="item.image"
-                :to="url"
+                :to="computeItemUrl(item.id, item.platform)"
                 target="_blank"
                 class="flex shrink-0 items-center overflow-hidden rounded-lg object-cover select-none"
             >
@@ -94,7 +80,7 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                     />
 
                     <NuxtLink
-                        :to="url"
+                        :to="computeItemUrl(item.id, item.platform)"
                         target="_blank"
                         class="flex items-center gap-3"
                     >
@@ -124,7 +110,9 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                 >
                     <UPopover v-if="item.shop" mode="hover">
                         <NuxtLink
-                            :to="shopUrl"
+                            :to="
+                                computeShopUrl(item.shop.id, item.shop.platform)
+                            "
                             target="_blank"
                             class="flex w-fit items-center gap-1.5"
                         >
@@ -160,7 +148,12 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
 
                         <template #content>
                             <NuxtLink
-                                :to="shopUrl"
+                                :to="
+                                    computeShopUrl(
+                                        item.shop.id,
+                                        item.shop.platform
+                                    )
+                                "
                                 target="_blank"
                                 class="flex items-center gap-3 py-2 pr-3 pl-2"
                             >
