@@ -13,14 +13,6 @@ const props = withDefaults(defineProps<Props>(), {
 <template>
     <MDC
         :value="useLineBreak(props.content)"
-        :class="
-            cn(
-                'prose prose-sm prose-zinc dark:prose-invert',
-                props.size === 'md' &&
-                    'prose-h1:text-5xl prose-h2:text-2xl prose-h3:text-lg prose-p:first:my-0',
-                'w-full max-w-full wrap-anywhere break-keep',
-                props.class
-            )
-        "
+        :class="cn('w-full max-w-full wrap-anywhere break-keep', props.class)"
     />
 </template>
