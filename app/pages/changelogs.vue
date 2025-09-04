@@ -1,8 +1,4 @@
 <script setup lang="ts">
-import type { TimelineItem } from '@nuxt/ui'
-
-const nuxtApp = useNuxtApp()
-
 const { data } = await useFetch<PaginationResponse<Changelog[]>>(
     '/api/changelogs',
     {
@@ -18,21 +14,19 @@ const { data } = await useFetch<PaginationResponse<Changelog[]>>(
             },
         }),
         dedupe: 'defer',
-        getCachedData: (key: string) =>
+        getCachedData: (key, nuxtApp) =>
             nuxtApp.payload.data[key] || nuxtApp.static.data[key],
     }
 )
 
-const items = computed<TimelineItem[]>(() =>
-    data.value.data.map((item) => ({
-        date: item.createdAt,
+const versions = computed(() => {
+    return data.value.data.map((item) => ({
         title: item.title,
-        description: item.markdown,
-        slug: item.slug,
-        authors: item.authors,
-        icon: 'lucide:check',
+        description: '',
+        date: item.createdAt,
+        content: item.markdown,
     }))
-)
+})
 
 defineSeo({
     title: '変更履歴',
@@ -44,68 +38,21 @@ defineSeo({
     <div class="flex w-full flex-col gap-12 pt-8">
         <h1 class="text-5xl font-bold">変更履歴</h1>
 
-        <UTimeline
-            :items="items"
-            color="neutral"
-            size="2xs"
-            :ui="{
-                item: 'gap-8',
-                container: 'pt-2',
-                wrapper: 'space-y-4 pb-28',
-                description: 'pl-0.5',
-                date: 'float-end',
-            }"
-            class="w-full self-center"
-        >
-            <template #title="{ item }">
-                <!-- <NuxtLink
-                    :to="`/changelogs/${item.slug}`"
-                    class="underline-offset-4 hover:underline"
-                >
-                    <h2 class="text-2xl font-bold">{{ item.title }}</h2>
-                </NuxtLink> -->
-                <h2 class="text-2xl font-bold">{{ item.title }}</h2>
-            </template>
-
-            <template #description="{ item }">
-                <div class="flex flex-col gap-4">
-                    <UAvatarGroup>
-                        <ULink
-                            v-for="author in item.authors"
-                            :key="author.id"
-                            :to="`/@${author.id}`"
-                            raw
-                        >
-                            <UTooltip :text="author.name" :delay-duration="100">
-                                <UAvatar
-                                    :src="author.image"
-                                    :alt="author.name"
-                                    size="xs"
-                                />
-                            </UTooltip>
-                        </ULink>
-                    </UAvatarGroup>
-
-                    <!-- <div
-                        class="prose prose-zinc dark:prose-invert prose-sm prose-img:rounded-xl prose-img:max-w-xl w-full max-w-full"
-                        v-html="item.description"
-                    /> -->
-                    <Markdown
-                        v-if="item.description"
-                        :content="item.description"
-                        size="sm"
-                        class="prose-img:rounded-xl prose-img:max-w-xl prose-h1:text-2xl w-full max-w-full"
+        <UChangelogVersions>
+            <UChangelogVersion
+                v-for="(version, index) in versions"
+                :key="index"
+                v-bind="version"
+                :ui="{ container: 'ml-40 mr-0 max-w-full', title: 'text-3xl' }"
+            >
+                <template #description>
+                    <MDC
+                        v-if="version.content"
+                        :value="useLineBreak(version.content)"
+                        class="w-full max-w-full wrap-anywhere break-keep"
                     />
-                </div>
-            </template>
-
-            <template #date="{ item }">
-                <NuxtTime
-                    v-if="item.date"
-                    :datetime="item.date"
-                    class="text-muted text-sm"
-                />
-            </template>
-        </UTimeline>
+                </template>
+            </UChangelogVersion>
+        </UChangelogVersions>
     </div>
 </template>
