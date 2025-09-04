@@ -14,8 +14,10 @@ const { data } = await useFetch<PaginationResponse<Changelog[]>>(
             },
         }),
         dedupe: 'defer',
-        getCachedData: (key, nuxtApp) =>
-            nuxtApp.payload.data[key] || nuxtApp.static.data[key],
+        getCachedData: (key, nuxtApp, ctx) =>
+            ctx.cause === 'refresh:manual'
+                ? undefined
+                : nuxtApp.payload.data[key] || nuxtApp.static.data[key],
     }
 )
 

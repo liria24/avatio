@@ -12,8 +12,10 @@ const searchTerm = ref('')
 const { data: tags, status } = useFetch('/api/setups/tag', {
     key: 'tag-search',
     default: () => [],
-    getCachedData: (key, nuxtApp) =>
-        nuxtApp.payload.data[key] || nuxtApp.static.data[key],
+    getCachedData: (key, nuxtApp, ctx) =>
+        ctx.cause === 'refresh:manual'
+            ? undefined
+            : nuxtApp.payload.data[key] || nuxtApp.static.data[key],
 })
 
 const existingTagsGroup = computed(() => ({
