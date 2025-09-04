@@ -1,5 +1,5 @@
 import database from '@@/database'
-import { auditLogs, changelogAuthors } from '@@/database/schema'
+import { changelogAuthors } from '@@/database/schema'
 import { and, eq, exists, ilike } from 'drizzle-orm'
 import { z } from 'zod'
 
@@ -43,7 +43,7 @@ export default defineApi<PaginationResponse<Changelog[]>>(
 
                 return {
                     count: database
-                        .$count(auditLogs, and(...conditions))
+                        .$count(changelogAuthors, and(...conditions))
                         .as('count'),
                 }
             },
