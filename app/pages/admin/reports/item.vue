@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { LazyModalAdminChangeItemNiceName } from '#components'
+
 definePageMeta({
     middleware: 'admin',
     layout: 'dashboard',
@@ -6,8 +8,12 @@ definePageMeta({
 
 const nuxtApp = useNuxtApp()
 const toast = useToast()
+const overlay = useOverlay()
+const categoryAttributes = itemCategoryAttributes()
 
-const { data, status, refresh } = await useFetch('/api/reports/user', {
+const modalChangeItemNiceName = overlay.create(LazyModalAdminChangeItemNiceName)
+
+const { data, status, refresh } = await useFetch('/api/reports/item', {
     dedupe: 'defer',
     headers:
         import.meta.server && nuxtApp.ssrContext?.event.headers
@@ -33,7 +39,7 @@ const { data, status, refresh } = await useFetch('/api/reports/user', {
 const resolve = async (id: number, resolve?: boolean) => {
     try {
         const isResolved = resolve ?? true
-        await $fetch(`/api/reports/user/${id}`, {
+        await $fetch(`/api/reports/item/${id}`, {
             method: 'PATCH',
             body: { isResolved },
         })
@@ -54,9 +60,9 @@ const resolve = async (id: number, resolve?: boolean) => {
 </script>
 
 <template>
-    <UDashboardPanel id="reports-user">
+    <UDashboardPanel id="reports-item">
         <template #header>
-            <UDashboardNavbar title="Reports | User">
+            <UDashboardNavbar title="Reports | Item">
                 <template #right>
                     <USelect
                         :items="[
@@ -136,6 +142,19 @@ const resolve = async (id: number, resolve?: boolean) => {
                                 />
 
                                 <UButton
+                                    label="Change Nice Name"
+                                    variant="outline"
+                                    color="neutral"
+                                    size="sm"
+                                    @click="
+                                        modalChangeItemNiceName.open({
+                                            itemId: report.item.id,
+                                            current: report.item.niceName || '',
+                                        })
+                                    "
+                                />
+
+                                <UButton
                                     v-if="report.isResolved"
                                     loading-auto
                                     icon="lucide:x"
@@ -162,52 +181,79 @@ const resolve = async (id: number, resolve?: boolean) => {
                         class="grid w-full grid-cols-1 items-start gap-4 sm:grid-cols-2"
                     >
                         <UPageCard
-                            :to="`/@${report.reportee.id}`"
+                            :to="
+                                computeItemUrl(
+                                    report.item.id,
+                                    report.item.platform
+                                )
+                            "
                             target="_blank"
                             :ui="{ container: 'p-2 sm:p-2' }"
                         >
-                            <UUser
-                                :name="report.reportee.name"
-                                :description="`@${report.reportee.id}`"
-                                :avatar="{
-                                    src: report.reportee.image,
-                                    alt: report.reportee.name,
-                                    icon: 'lucide:user-round',
-                                }"
-                            />
+                            <div class="flex items-center gap-1">
+                                <NuxtImg
+                                    v-if="report.item.image"
+                                    :src="report.item.image"
+                                    class="aspect-square size-16 shrink-0 rounded-lg object-cover"
+                                />
+
+                                <div class="flex flex-col gap-1 px-2">
+                                    <p
+                                        class="text-sm leading-tight font-medium"
+                                    >
+                                        {{
+                                            report.item.niceName ||
+                                            report.item.name
+                                        }}
+                                    </p>
+
+                                    <p
+                                        class="text-dimmed line-clamp-1 text-[10px] leading-tight break-all"
+                                    >
+                                        {{ report.item.name }}
+                                    </p>
+
+                                    <div class="flex items-center gap-1">
+                                        <UBadge
+                                            :label="report.item.platform"
+                                            variant="outline"
+                                            size="sm"
+                                            class="rounded-full px-2.5"
+                                        />
+                                        <UBadge
+                                            :label="
+                                                categoryAttributes[
+                                                    report.item.category
+                                                ].label
+                                            "
+                                            variant="outline"
+                                            size="sm"
+                                            class="rounded-full px-2.5"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
                         </UPageCard>
 
                         <div class="flex w-full flex-col gap-2">
                             <div class="flex flex-wrap items-center gap-1">
                                 <UBadge
-                                    v-if="report.spam"
-                                    label="スパム"
+                                    v-if="report.nameError"
+                                    label="アイテム名称の誤り"
                                     variant="outline"
                                     class="rounded-full px-2"
                                 />
                                 <UBadge
-                                    v-if="report.hate"
-                                    label="悪意のあるユーザー"
-                                    variant="outline"
-                                    class="rounded-full px-2"
-                                />
-                                <UBadge
-                                    v-if="report.infringe"
-                                    label="権利侵害"
-                                    variant="outline"
-                                    class="rounded-full px-2"
-                                />
-                                <UBadge
-                                    v-if="report.badImage"
-                                    label="不適切な画像"
+                                    v-if="report.irrelevant"
+                                    label="無関係なアイテム"
                                     variant="outline"
                                     class="rounded-full px-2"
                                 />
                                 <UBadge
                                     v-if="report.other"
                                     label="その他"
-                                    variant="outline"
-                                    class="rounded-full px-2"
+                                    variant="outline px-2"
+                                    class="rounded-full"
                                 />
                             </div>
 

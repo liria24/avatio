@@ -7,12 +7,16 @@ definePageMeta({
 const nuxtApp = useNuxtApp()
 const toast = useToast()
 
-const { data, refresh } = await useFetch('/api/feedbacks', {
+const { data, status, refresh } = await useFetch('/api/feedbacks', {
     dedupe: 'defer',
     headers:
         import.meta.server && nuxtApp.ssrContext?.event.headers
             ? nuxtApp.ssrContext.event.headers
             : undefined,
+    getCachedData: (key, nuxtApp, ctx) =>
+        ctx.cause !== 'initial'
+            ? undefined
+            : nuxtApp.payload.data[key] || nuxtApp.static.data[key],
 })
 
 const closeFeedback = async (feedbackId: number) => {
@@ -65,7 +69,40 @@ const openFeedback = async (feedbackId: number) => {
 <template>
     <UDashboardPanel id="feedbacks">
         <template #header>
-            <UDashboardNavbar title="Feedbacks" />
+            <UDashboardNavbar title="Feedbacks">
+                <template #right>
+                    <USelect
+                        :items="[
+                            {
+                                label: 'All',
+                                icon: 'lucide:filter',
+                                value: 'all',
+                            },
+                            {
+                                label: 'Open',
+                                icon: 'lucide:circle-dot',
+                                value: 'open',
+                            },
+                            {
+                                label: 'Closed',
+                                icon: 'lucide:circle-slash',
+                                value: 'closed',
+                            },
+                        ]"
+                        default-value="all"
+                        disabled
+                        class="min-w-32"
+                    />
+
+                    <UButton
+                        :loading="status === 'pending'"
+                        icon="lucide:refresh-cw"
+                        variant="soft"
+                        color="neutral"
+                        @click="refresh()"
+                    />
+                </template>
+            </UDashboardNavbar>
         </template>
 
         <template #body>

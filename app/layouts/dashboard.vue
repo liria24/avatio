@@ -8,17 +8,25 @@ const nuxtApp = useNuxtApp()
 const title = 'Avatio'
 
 const { data } = await useFetch('/api/admin/stats', {
+    key: 'admin-stats',
     dedupe: 'defer',
     default: () => ({
         users: 0,
         setups: 0,
         items: 0,
         feedbacks: 0,
+        itemReports: 0,
+        setupReports: 0,
+        userReports: 0,
     }),
     headers:
         import.meta.server && nuxtApp.ssrContext?.event.headers
             ? nuxtApp.ssrContext.event.headers
             : undefined,
+    getCachedData: (key, nuxtApp, ctx) =>
+        ctx.cause !== 'initial'
+            ? undefined
+            : nuxtApp.payload.data[key] || nuxtApp.static.data[key],
 })
 
 const links = [
@@ -59,14 +67,22 @@ const links = [
             type: 'trigger',
             children: [
                 {
+                    label: 'Item',
+                    icon: 'lucide:package',
+                    to: '/admin/reports/item',
+                    badge: data.value.itemReports,
+                },
+                {
                     label: 'Setup',
                     icon: 'lucide:sparkles',
                     to: '/admin/reports/setup',
+                    badge: data.value.setupReports,
                 },
                 {
                     label: 'User',
                     icon: 'lucide:user-round',
                     to: '/admin/reports/user',
+                    badge: data.value.userReports,
                 },
             ],
         },

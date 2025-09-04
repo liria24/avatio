@@ -12,6 +12,7 @@ const overlay = useOverlay()
 const modalFlags = overlay.create(LazyModalAdminModalFlags)
 
 const { data } = await useFetch('/api/admin/stats', {
+    key: 'admin-stats',
     dedupe: 'defer',
     default: () => ({
         users: 0,
@@ -23,6 +24,10 @@ const { data } = await useFetch('/api/admin/stats', {
         import.meta.server && nuxtApp.ssrContext?.event.headers
             ? nuxtApp.ssrContext.event.headers
             : undefined,
+    getCachedData: (key, nuxtApp, ctx) =>
+        ctx.cause !== 'initial'
+            ? undefined
+            : nuxtApp.payload.data[key] || nuxtApp.static.data[key],
 })
 
 const stats = ref([

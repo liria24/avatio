@@ -12,12 +12,16 @@ const nuxtApp = useNuxtApp()
 
 const modalBan = overlay.create(LazyModalAdminBanUser)
 
-const { data, refresh } = await useFetch('/api/admin/user', {
+const { data, status, refresh } = await useFetch('/api/admin/user', {
     dedupe: 'defer',
     headers:
         import.meta.server && nuxtApp.ssrContext?.event.headers
             ? nuxtApp.ssrContext.event.headers
             : undefined,
+    getCachedData: (key, nuxtApp, ctx) =>
+        ctx.cause !== 'initial'
+            ? undefined
+            : nuxtApp.payload.data[key] || nuxtApp.static.data[key],
 })
 
 const unbanUser = async (userId: string) => {
@@ -47,7 +51,40 @@ const unbanUser = async (userId: string) => {
 <template>
     <UDashboardPanel id="users">
         <template #header>
-            <UDashboardNavbar title="Users" />
+            <UDashboardNavbar title="Users">
+                <template #right>
+                    <USelect
+                        :items="[
+                            {
+                                label: 'All',
+                                icon: 'lucide:filter',
+                                value: 'all',
+                            },
+                            {
+                                label: 'Admin',
+                                icon: 'lucide:shield-check',
+                                value: 'admin',
+                            },
+                            {
+                                label: 'Banned',
+                                icon: 'lucide:ban',
+                                value: 'banned',
+                            },
+                        ]"
+                        default-value="all"
+                        disabled
+                        class="min-w-32"
+                    />
+
+                    <UButton
+                        :loading="status === 'pending'"
+                        icon="lucide:refresh-cw"
+                        variant="soft"
+                        color="neutral"
+                        @click="refresh()"
+                    />
+                </template>
+            </UDashboardNavbar>
         </template>
 
         <template #body>
