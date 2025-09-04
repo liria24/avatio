@@ -25,14 +25,6 @@ const categoryAttributes = itemCategoryAttributes()
 
 const inputShapekeyName = ref('')
 const inputShapekeyValue = ref(0)
-
-const url = computed(() => {
-    if (props.item.platform === 'booth')
-        return `https://booth.pm/ja/items/${props.item.id}`
-    else if (props.item.platform === 'github')
-        return `https://github.com/${props.item.id}`
-    else return undefined
-})
 </script>
 
 <template>
@@ -49,7 +41,11 @@ const url = computed(() => {
 
         <div class="flex grow flex-col gap-2">
             <div class="flex items-start gap-1">
-                <NuxtLink v-if="props.item.image" :to="url" target="_blank">
+                <NuxtLink
+                    v-if="props.item.image"
+                    :to="computeItemUrl(props.item.id, props.item.platform)"
+                    target="_blank"
+                >
                     <NuxtImg
                         v-slot="{ isLoaded, src, imgAttrs }"
                         :src="props.item.image || undefined"
@@ -95,7 +91,12 @@ const url = computed(() => {
                         </UTooltip>
 
                         <NuxtLink
-                            :to="url"
+                            :to="
+                                computeItemUrl(
+                                    props.item.id,
+                                    props.item.platform
+                                )
+                            "
                             target="_blank"
                             class="text-toned py-1 text-sm"
                         >

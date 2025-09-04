@@ -93,7 +93,7 @@ const auditLogAttributes: Record<
     },
 }
 
-const { data } = await useFetch('/api/admin/audit-log', {
+const { data, status, refresh } = await useFetch('/api/admin/audit-log', {
     dedupe: 'defer',
     headers:
         import.meta.server && nuxtApp.ssrContext?.event.headers
@@ -110,13 +110,27 @@ const { data } = await useFetch('/api/admin/audit-log', {
             hasNext: false,
         },
     }),
+    getCachedData: (key, nuxtApp, ctx) =>
+        ctx.cause !== 'initial'
+            ? undefined
+            : nuxtApp.payload.data[key] || nuxtApp.static.data[key],
 })
 </script>
 
 <template>
     <UDashboardPanel id="audit-logs">
         <template #header>
-            <UDashboardNavbar title="Audit Logs" />
+            <UDashboardNavbar title="Audit Logs">
+                <template #right>
+                    <UButton
+                        :loading="status === 'pending'"
+                        icon="lucide:refresh-cw"
+                        variant="soft"
+                        color="neutral"
+                        @click="refresh()"
+                    />
+                </template>
+            </UDashboardNavbar>
         </template>
 
         <template #body>

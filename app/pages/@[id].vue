@@ -7,10 +7,13 @@ const overlay = useOverlay()
 const session = await $session()
 
 const id = route.params.id as string
-const modalLogin = overlay.create(LazyModalLogin)
-const modalReport = overlay.create(LazyModalReportUser)
 
 const { data: user, status: userStatus } = await useUser(id)
+
+const modalLogin = overlay.create(LazyModalLogin)
+const modalReport = overlay.create(LazyModalReportUser, {
+    props: { userId: user.value?.id || '' },
+})
 
 if (userStatus.value === 'success' && !user.value)
     showError({
@@ -133,9 +136,7 @@ if (user.value) {
                         size="sm"
                         class="self-end"
                         @click="
-                            session
-                                ? modalReport.open({ userId: user.id })
-                                : modalLogin.open()
+                            session ? modalReport.open() : modalLogin.open()
                         "
                     />
                 </div>

@@ -1,7 +1,15 @@
 import database from '@@/database'
 import { userReports } from '@@/database/schema'
 
-const body = userReportsInsertSchema
+const body = userReportsInsertSchema.pick({
+    reporteeId: true,
+    spam: true,
+    hate: true,
+    infringe: true,
+    badImage: true,
+    other: true,
+    comment: true,
+})
 
 export default defineApi(
     async ({ session }) => {

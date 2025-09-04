@@ -13,7 +13,6 @@ const props = defineProps<{
 const searchTerm = ref('')
 const loadingRef = ref(false)
 
-const nuxtApp = useNuxtApp()
 const toast = useToast()
 const categoryAttributes = itemCategoryAttributes()
 
@@ -38,8 +37,10 @@ const { data, status } = useFetch('/api/items', {
                 })),
         }))
     },
-    getCachedData: (key: string) =>
-        nuxtApp.payload.data[key] || nuxtApp.static.data[key],
+    getCachedData: (key, nuxtApp, ctx) =>
+        ctx.cause === 'refresh:manual'
+            ? undefined
+            : nuxtApp.payload.data[key] || nuxtApp.static.data[key],
 })
 
 const groups = computed(() => {

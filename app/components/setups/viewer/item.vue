@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { parseURL } from 'ufo'
+import { LazyModalReportItem } from '#components'
 
 interface Props {
     item: SetupItem
@@ -11,29 +12,19 @@ const props = withDefaults(defineProps<Props>(), {
     class: null,
 })
 
+const overlay = useOverlay()
 const toast = useToast()
 const { copy } = useClipboard()
 
 const nsfwMask = ref(props.item.nsfw)
-
-const url = computed(() => {
-    if (props.item.platform === 'booth')
-        return `https://booth.pm/ja/items/${props.item.id}`
-    else if (props.item.platform === 'github')
-        return `https://github.com/${props.item.id}`
-    else return undefined
-})
-
-const shopUrl = computed(() => {
-    if (props.item.shop?.platform === 'booth')
-        return `https://${props.item.shop.id}.booth.pm/`
-    else if (props.item.shop?.platform === 'github')
-        return `https://github.com/${props.item.shop.id}`
-    return undefined
+const modalReport = overlay.create(LazyModalReportItem, {
+    props: { itemId: props.item.id },
 })
 
 const shopPath = computed(() => {
-    const url = parseURL(shopUrl.value)
+    const url = parseURL(
+        computeShopUrl(props.item.shop?.id, props.item.shop?.platform)
+    )
     const path = url.pathname === '/' ? '' : url.pathname
     return url.host + path
 })
@@ -57,7 +48,7 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
         <div class="flex items-stretch gap-1">
             <NuxtLink
                 v-if="item.image"
-                :to="url"
+                :to="computeItemUrl(item.id, item.platform)"
                 target="_blank"
                 class="flex shrink-0 items-center overflow-hidden rounded-lg object-cover select-none"
             >
@@ -89,7 +80,7 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                     />
 
                     <NuxtLink
-                        :to="url"
+                        :to="computeItemUrl(item.id, item.platform)"
                         target="_blank"
                         class="flex items-center gap-3"
                     >
@@ -119,7 +110,9 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                 >
                     <UPopover v-if="item.shop" mode="hover">
                         <NuxtLink
-                            :to="shopUrl"
+                            :to="
+                                computeShopUrl(item.shop.id, item.shop.platform)
+                            "
                             target="_blank"
                             class="flex w-fit items-center gap-1.5"
                         >
@@ -155,7 +148,12 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
 
                         <template #content>
                             <NuxtLink
-                                :to="shopUrl"
+                                :to="
+                                    computeShopUrl(
+                                        item.shop.id,
+                                        item.shop.platform
+                                    )
+                                "
                                 target="_blank"
                                 class="flex items-center gap-3 py-2 pr-3 pl-2"
                             >
@@ -296,17 +294,40 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                 </div>
             </div>
 
-            <UTooltip
-                v-if="props.actions"
-                text="このアイテムを含むセットアップを検索"
-            >
-                <UButton
-                    :to="$localePath(`/search?itemId=${props.item.id}`)"
-                    icon="lucide:search"
-                    aria-label="このアイテムを含むセットアップを検索"
-                    variant="ghost"
-                />
-            </UTooltip>
+            <div class="flex flex-col gap-1">
+                <UTooltip
+                    v-if="props.actions"
+                    text="アイテムからセットアップを検索"
+                    :delay-duration="50"
+                    :content="{ side: 'top' }"
+                >
+                    <UButton
+                        :to="$localePath(`/search?itemId=${props.item.id}`)"
+                        icon="lucide:search"
+                        aria-label="アイテムからセットアップを検索"
+                        variant="ghost"
+                        :ui="{ leadingIcon: 'size-4.5' }"
+                        class="grow"
+                    />
+                </UTooltip>
+
+                <UTooltip
+                    v-if="props.actions"
+                    text="アイテムを報告"
+                    :delay-duration="50"
+                >
+                    <UButton
+                        icon="lucide:flag"
+                        aria-label="アイテムを報告"
+                        variant="ghost"
+                        :ui="{
+                            base: 'justify-center',
+                            leadingIcon: 'size-4 text-dimmed',
+                        }"
+                        @click="modalReport.open()"
+                    />
+                </UTooltip>
+            </div>
         </div>
 
         <div

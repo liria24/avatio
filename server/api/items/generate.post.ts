@@ -60,7 +60,10 @@ export default defineApi(
             }),
         })
 
-        return result.object
+        return {
+            ...result.object,
+            niceName: result.object.niceName.replace('　', ' ').trim(),
+        }
     },
     {
         errorMessage: 'Failed to extract item information.',
