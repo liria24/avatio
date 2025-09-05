@@ -54,8 +54,39 @@ const { data, status, refresh } = await useFetch('/api/changelogs', {
         </template>
 
         <template #body>
-            <div v-for="changelog in data.data" :key="changelog.slug">
-                {{ changelog }}
+            <div class="flex flex-col gap-4">
+                <UCard v-for="changelog in data.data" :key="changelog.slug">
+                    <template #header>
+                        <div class="flex items-center justify-between gap-3">
+                            <span class="font-medium">
+                                {{ changelog.title }}
+                            </span>
+
+                            <NuxtTime
+                                :datetime="changelog.createdAt"
+                                relative
+                                class="text-muted text-sm"
+                            />
+                        </div>
+                    </template>
+
+                    <UCollapsible class="flex flex-col gap-2">
+                        <UButton
+                            label="Markdown"
+                            color="neutral"
+                            variant="soft"
+                            trailing-icon="i-lucide-chevron-down"
+                            block
+                        />
+
+                        <template #content>
+                            <MDC
+                                :value="changelog.markdown"
+                                class="w-full max-w-full"
+                            />
+                        </template>
+                    </UCollapsible>
+                </UCard>
             </div>
         </template>
     </UDashboardPanel>

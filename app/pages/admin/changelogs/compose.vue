@@ -73,96 +73,112 @@ const resetForm = () => {
 </script>
 
 <template>
-    <UForm :state class="flex max-w-lg flex-col gap-4" @submit="onSubmit">
-        <UButton
-            icon="lucide:rotate-ccw"
-            label="Reset"
-            variant="soft"
-            @click="resetForm"
-        />
+    <UDashboardPanel id="changelogs-compose">
+        <template #header>
+            <UDashboardNavbar title="Changelogs | Compose" />
+        </template>
 
-        <UFormField name="slug" label="Slug" required>
-            <UInput
-                v-model="state.slug"
-                placeholder="Enter slug"
-                class="w-full"
-            />
-        </UFormField>
-        <UFormField name="title" label="Title" required>
-            <UInput
-                v-model="state.title"
-                placeholder="Enter title"
-                class="w-full"
-            />
-        </UFormField>
-        <UFormField name="markdown" label="Markdown" required>
-            <UTextarea
-                v-model="state.markdown"
-                autoresize
-                :rows="10"
-                class="w-full"
-            />
-        </UFormField>
+        <template #body>
+            <UForm :state class="flex flex-col gap-4" @submit="onSubmit">
+                <UButton
+                    icon="lucide:rotate-ccw"
+                    label="Reset"
+                    variant="soft"
+                    @click="resetForm"
+                />
 
-        <UFormField name="authors" label="Authors">
-            <div class="flex flex-col gap-2">
-                <VueDraggable
-                    v-model="authors"
-                    :animation="150"
-                    handle=".draggable"
-                    drag-class="opacity-100"
-                    ghost-class="opacity-0"
-                    class="flex h-full w-full flex-col gap-2 empty:hidden"
-                >
-                    <div
-                        v-for="author in authors"
-                        :key="`author-${author.id}`"
-                        class="ring-accented flex items-stretch gap-2 rounded-md p-2 ring-1"
-                    >
-                        <div
-                            class="draggable hover:bg-elevated grid cursor-move rounded-md px-1 py-2 transition-colors"
-                        >
-                            <Icon
-                                name="lucide:grip-vertical"
-                                size="18"
-                                class="text-muted shrink-0 self-center"
-                            />
-                        </div>
-
-                        <div class="flex grow items-center gap-2">
-                            <UAvatar
-                                :src="author.image || undefined"
-                                :alt="author.name || 'User'"
-                                icon="lucide:user-round"
-                                size="xs"
-                            />
-                            <span class="text-toned grow text-xs">
-                                {{ author.name }}
-                            </span>
-                            <UButton
-                                icon="lucide:x"
-                                variant="ghost"
-                                size="xs"
-                                @click="removeAuthor(author.id)"
-                            />
-                        </div>
-                    </div>
-                </VueDraggable>
-
-                <UPopover :content="{ side: 'right', align: 'start' }">
-                    <UButton
-                        icon="lucide:plus"
-                        :label="authors.length ? undefined : 'Add Author'"
-                        variant="soft"
+                <UFormField name="slug" label="Slug" required>
+                    <UInput
+                        v-model="state.slug"
+                        placeholder="Enter slug"
+                        class="w-full"
                     />
+                </UFormField>
+                <UFormField name="title" label="Title" required>
+                    <UInput
+                        v-model="state.title"
+                        placeholder="Enter title"
+                        class="w-full"
+                    />
+                </UFormField>
+                <UFormField name="markdown" label="Markdown" required>
+                    <UTextarea
+                        v-model="state.markdown"
+                        autoresize
+                        :rows="10"
+                        class="w-full"
+                    />
+                </UFormField>
 
-                    <template #content>
-                        <CommandPaletteUserSearch @select="addAuthor" />
-                    </template>
-                </UPopover>
-            </div>
-        </UFormField>
+                <UFormField name="authors" label="Authors">
+                    <div class="flex flex-col gap-2">
+                        <VueDraggable
+                            v-model="authors"
+                            :animation="150"
+                            handle=".draggable"
+                            drag-class="opacity-100"
+                            ghost-class="opacity-0"
+                            class="flex h-full w-full flex-col gap-2 empty:hidden"
+                        >
+                            <div
+                                v-for="author in authors"
+                                :key="`author-${author.id}`"
+                                class="ring-accented flex items-stretch gap-2 rounded-md p-2 ring-1"
+                            >
+                                <div
+                                    class="draggable hover:bg-elevated grid cursor-move rounded-md px-1 py-2 transition-colors"
+                                >
+                                    <Icon
+                                        name="lucide:grip-vertical"
+                                        size="18"
+                                        class="text-muted shrink-0 self-center"
+                                    />
+                                </div>
 
-        <UButton type="submit" label="Submit" color="neutral" size="lg" block />
-    </UForm>
+                                <div class="flex grow items-center gap-2">
+                                    <UAvatar
+                                        :src="author.image || undefined"
+                                        :alt="author.name || 'User'"
+                                        icon="lucide:user-round"
+                                        size="xs"
+                                    />
+                                    <span class="text-toned grow text-xs">
+                                        {{ author.name }}
+                                    </span>
+                                    <UButton
+                                        icon="lucide:x"
+                                        variant="ghost"
+                                        size="xs"
+                                        @click="removeAuthor(author.id)"
+                                    />
+                                </div>
+                            </div>
+                        </VueDraggable>
+
+                        <UPopover :content="{ side: 'right', align: 'start' }">
+                            <UButton
+                                icon="lucide:plus"
+                                :label="
+                                    authors.length ? undefined : 'Add Author'
+                                "
+                                variant="soft"
+                            />
+
+                            <template #content>
+                                <CommandPaletteUserSearch @select="addAuthor" />
+                            </template>
+                        </UPopover>
+                    </div>
+                </UFormField>
+
+                <UButton
+                    type="submit"
+                    label="Submit"
+                    color="neutral"
+                    size="lg"
+                    block
+                />
+            </UForm>
+        </template>
+    </UDashboardPanel>
 </template>
