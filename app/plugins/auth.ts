@@ -44,7 +44,7 @@ export default defineNuxtPlugin(() => {
             refreshSession: async () => {
                 const { data: session } = await client.useSession(
                     (url, options) =>
-                        useFetch(url, { ...options, dedupe: false })
+                        useFetch(url, { ...options, dedupe: 'defer' })
                 )
 
                 // グローバルステートを更新
@@ -58,9 +58,14 @@ export default defineNuxtPlugin(() => {
             },
 
             multiSession: async () => {
-                const { data: sessions } =
-                    await client.multiSession.listDeviceSessions()
-                return sessions || []
+                try {
+                    const { data: sessions } =
+                        await client.multiSession.listDeviceSessions()
+                    return sessions || []
+                } catch (error) {
+                    console.error('Error fetching multi-session:', error)
+                    return []
+                }
             },
 
             login: async (provider: 'twitter') =>

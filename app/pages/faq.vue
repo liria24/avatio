@@ -8,5 +8,5 @@ defineSeo({
 </script>
 
 <template>
-    <Markdown :content="FaqContent" />
+    <MDC :value="FaqContent" class="w-full max-w-full" />
 </template>
