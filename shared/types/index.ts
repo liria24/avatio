@@ -182,7 +182,8 @@ export type SetupItemShapekey = z.infer<typeof setupItemShapekeysPublicSchema>
 
 export const setupItemsSelectSchema = createSelectSchema(setupItems)
 export const setupItemsInsertSchema = createInsertSchema(setupItems, {
-    itemId: (schema) => schema.transform((val) => val.toString()),
+    itemId: () =>
+        z.union([z.string(), z.number()]).transform((val) => val.toString()),
     note: (schema) => schema.max(300, 'ノートは最大 300 文字です。').optional(),
 }).extend({
     shapekeys: setupItemShapekeysInsertSchema
