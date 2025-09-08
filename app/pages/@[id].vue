@@ -32,6 +32,11 @@ const links = computed(() =>
     })
 )
 
+onBeforeRouteLeave(() => {
+    modalLogin.close()
+    modalReport.close()
+})
+
 if (user.value) {
     defineSeo({
         title: user.value.name,
