@@ -110,6 +110,11 @@ const menuItems = ref<DropdownMenuItem[][]>([
         },
     ],
 ])
+
+onBeforeRouteUpdate(() => {
+    modalLogin.close()
+    modalFeedback.close()
+})
 </script>
 
 <template>

@@ -9,6 +9,10 @@ const session = await $session()
 const overlay = useOverlay()
 
 const modalLogin = overlay.create(LazyModalLogin)
+
+onBeforeRouteUpdate(() => {
+    modalLogin.close()
+})
 </script>
 
 <template>
