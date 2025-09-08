@@ -13,6 +13,7 @@ const { data: setup, status } = await useFetch(`/api/setups/${props.setupId}`)
         target="_blank"
         :disabled="status === 'pending'"
         variant="outline"
+        :prefetch="false"
         class="rounded-full"
     >
         <div v-if="status === 'pending'" class="flex">

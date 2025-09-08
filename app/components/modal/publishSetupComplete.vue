@@ -96,6 +96,7 @@ onMounted(() => {
                     color="neutral"
                     size="lg"
                     block
+                    :prefetch="false"
                 />
             </div>
         </template>

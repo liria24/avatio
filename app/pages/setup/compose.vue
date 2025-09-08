@@ -216,29 +216,6 @@ const onSubmit = async () => {
     try {
         publishing.value = true
 
-        const validationResult = setupsClientFormSchema.safeParse(state)
-        if (!validationResult.success) {
-            console.error('Validation failed:', validationResult.error.issues)
-            toast.add({
-                title: 'セットアップの投稿に失敗しました',
-                description: h(
-                    resolveComponent('div'),
-                    {
-                        class: 'flex flex-col gap-1',
-                    },
-                    validationResult.error.issues.map((issue) =>
-                        h(
-                            resolveComponent('div'),
-                            { class: 'text-xs' },
-                            issue.message
-                        )
-                    )
-                ),
-                color: 'error',
-            })
-            return
-        }
-
         const body = {
             name: state.name,
             description: state.description,
@@ -263,6 +240,17 @@ const onSubmit = async () => {
                       note: coauthor.note || undefined,
                   }))
                 : undefined,
+        }
+
+        const validationResult = setupsInsertSchema.safeParse(body)
+        if (!validationResult.success) {
+            console.error('Validation failed:', validationResult.error.issues)
+            toast.add({
+                title: 'セットアップの投稿に失敗しました',
+                description: 'ページを更新してもう一度お試しください。',
+                color: 'error',
+            })
+            return
         }
 
         // 編集モードか新規作成かで分岐
@@ -328,6 +316,7 @@ const resetForm = () => {
         query: {},
     })
 
+    draftStatus.value = 'new'
     editingSetupId.value = null
     publishedSetupId.value = null
 }
