@@ -15,6 +15,8 @@ VRSNSユーザー向けのアバターセットアップ共有サービス。<br
 [![Neon badge][badge-neon]][neon]
 [![Drizzle ORM badge][badge-drizzle]][drizzle]
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/liria24/avatio)
+
 </div>
 
 ## ✨ Features

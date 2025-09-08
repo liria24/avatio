@@ -34,6 +34,10 @@ const providerIcons = {
     github: 'simple-icons:github',
 }
 const providerIcon = computed(() => providerIcons[props.item.platform])
+
+onBeforeRouteLeave(() => {
+    modalReport.close()
+})
 </script>
 
 <template>

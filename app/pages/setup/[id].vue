@@ -113,6 +113,15 @@ const categorizedItems = computed(() => {
     return orderedCategories
 })
 
+onBeforeRouteLeave(() => {
+    modalImage.close()
+    modalLogin.close()
+    modalReport.close()
+    modalDelete.close()
+    modalHide.close()
+    modalUnhide.close()
+})
+
 if (data.value) {
     defineSeo({
         title: `${data.value.name} @${data.value.user.name}`,
@@ -212,22 +221,25 @@ if (data.value) {
                                 </UUser>
                             </NuxtLink>
 
-                            <div class="ml-0.5 flex items-center gap-1.5">
-                                <Icon
-                                    name="lucide:calendar"
-                                    size="16"
-                                    class="text-muted"
-                                />
-                                <NuxtTime
-                                    :datetime="data.createdAt"
-                                    locale="ja-JP"
-                                    year="numeric"
-                                    month="2-digit"
-                                    day="2-digit"
-                                    hour="2-digit"
-                                    minute="2-digit"
-                                    class="text-muted font-[Geist] text-sm leading-none text-nowrap"
-                                />
+                            <div
+                                class="ml-0.5 flex flex-wrap items-center gap-1.5"
+                            >
+                                <div
+                                    class="text-muted flex items-center gap-1.5"
+                                >
+                                    <Icon name="lucide:calendar" size="16" />
+                                    <NuxtTime
+                                        :datetime="data.createdAt"
+                                        locale="ja-JP"
+                                        year="numeric"
+                                        month="2-digit"
+                                        day="2-digit"
+                                        hour="2-digit"
+                                        minute="2-digit"
+                                        class="font-[Geist] text-sm leading-none text-nowrap"
+                                    />
+                                </div>
+
                                 <UTooltip
                                     v-if="data.updatedAt !== data.createdAt"
                                     :delay-duration="50"
