@@ -13,7 +13,7 @@ const input = ref(props.current)
 
 const changeItemNiceName = async () => {
     try {
-        await $fetch(`/api/items/${props.itemId}`, {
+        await $fetch(`/api/items/${transformItemId(props.itemId).encode()}`, {
             method: 'PUT',
             body: { niceName: input.value },
         })

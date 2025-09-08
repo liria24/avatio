@@ -89,9 +89,10 @@ const onSelect = async (id: string, platform?: Platform) => {
     loadingRef.value = true
 
     try {
-        const response = await $fetch<Item>(`/api/items/${id}`, {
-            query: { platform },
-        })
+        const response = await $fetch<Item>(
+            `/api/items/${transformItemId(id).encode()}`,
+            { query: { platform } }
+        )
         emit('select', response)
         open.value = false
         searchTerm.value = ''

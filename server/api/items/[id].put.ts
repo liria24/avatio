@@ -19,7 +19,9 @@ export default defineApi(
 
         await database.update(items).set({ niceName }).where(eq(items.id, id))
 
-        const data = await useEvent().$fetch<Item>(`/api/items/${id}`)
+        const data = await useEvent().$fetch<Item>(
+            `/api/items/${transformItemId(id).encode()}`
+        )
 
         return data
     },

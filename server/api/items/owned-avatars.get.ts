@@ -58,7 +58,9 @@ export default defineApi<Item[]>(
         const updatePromises = outdatedItems.map(async (item) => {
             try {
                 // $fetchの使用を修正
-                const response = await $fetch<Item>(`/api/items/${item.id}`)
+                const response = await $fetch<Item>(
+                    `/api/items/${transformItemId(item.id).encode()}`
+                )
                 console.log(`Updated item ${item.id} from external API`)
                 return { ...item, ...response }
             } catch (error) {
