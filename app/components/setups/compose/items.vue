@@ -18,6 +18,7 @@ const toast = useToast()
 const categoryAttributes = itemCategoryAttributes()
 
 const popoverItemSearch = ref(false)
+const commandPaletteItemSearchRef = ref()
 
 type ItemsState = typeof items.value
 type CategoryKey = keyof ItemsState
@@ -72,6 +73,13 @@ const addItem = async (item: Item) => {
 
     popoverItemSearch.value = false
 }
+
+// Clear search term when popover closes to reset component state
+watch(popoverItemSearch, (isOpen) => {
+    if (!isOpen && commandPaletteItemSearchRef.value?.clearSearchTerm) {
+        commandPaletteItemSearchRef.value.clearSearchTerm()
+    }
+})
 
 const removeItem = (category: string, id: string) => {
     const categoryKey = category as CategoryKey
@@ -196,7 +204,10 @@ const removeShapekey = (options: {
                     />
 
                     <template #content>
-                        <CommandPaletteItemSearch @select="addItem" />
+                        <CommandPaletteItemSearch 
+                            ref="commandPaletteItemSearchRef"
+                            @select="addItem" 
+                        />
                     </template>
                 </UPopover>
             </div>

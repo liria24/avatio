@@ -91,7 +91,8 @@ const onSelect = async (id: string, platform?: Platform) => {
             { query: { platform } }
         )
         emit('select', response)
-        searchTerm.value = ''
+        // Don't clear searchTerm immediately - let parent handle cleanup
+        // when popover closes to avoid state conflicts
     } catch (error) {
         console.error('Failed to fetch item:', error)
         toast.add({
@@ -105,6 +106,15 @@ const onSelect = async (id: string, platform?: Platform) => {
         loadingRef.value = false
     }
 }
+
+// Expose method to clear search term from parent component
+const clearSearchTerm = () => {
+    searchTerm.value = ''
+}
+
+defineExpose({
+    clearSearchTerm
+})
 </script>
 
 <template>
