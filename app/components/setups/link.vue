@@ -154,7 +154,7 @@ watch(colorMode, (newMode) => {
 <template>
     <NuxtLink
         tabindex="0"
-        :to="$localePath(`/setup/${setup.id}`)"
+        :to="setup.id ? $localePath(`/setup/${setup.id}`) : undefined"
         :class="linkClasses"
         :style="elementStyle"
         @click="emit('click')"

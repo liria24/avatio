@@ -9,9 +9,9 @@ const { data: setup, status } = await useFetch(`/api/setups/${props.setupId}`)
 
 <template>
     <UButton
-        :to="`/setup/${setup?.id}`"
+        :to="setup?.id ? `/setup/${setup.id}` : undefined"
         target="_blank"
-        :disabled="status === 'pending'"
+        :disabled="status === 'pending' || !setup?.id"
         variant="outline"
         :prefetch="false"
         class="rounded-full"

@@ -157,7 +157,7 @@ const resolve = async (id: number, resolve?: boolean) => {
                         class="grid w-full grid-cols-1 items-start gap-4 sm:grid-cols-2"
                     >
                         <UPageCard
-                            :to="`/setup/${report.setup.id}`"
+                            :to="report.setup?.id ? `/setup/${report.setup.id}` : undefined"
                             target="_blank"
                             :ui="{ container: 'p-2 sm:p-2' }"
                         >
