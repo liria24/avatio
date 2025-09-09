@@ -296,43 +296,9 @@ const getSetup = defineCachedFunction(
         }
 
         return {
-            id: data.id,
-            createdAt: data.createdAt.toISOString(),
-            updatedAt: data.updatedAt.toISOString(),
-            hidAt: data.hidAt?.toISOString() || null,
-            hidReason: data.hidReason || null,
-            user: {
-                ...data.user,
-                createdAt: data.user.createdAt.toISOString(),
-                badges: data.user.badges.map((badge) => ({
-                    ...badge,
-                    createdAt: badge.createdAt.toISOString(),
-                })),
-                shops: data.user.shops.map((shop) => ({
-                    ...shop,
-                    createdAt: shop.createdAt.toISOString(),
-                })),
-            },
-            name: data.name,
-            description: data.description,
+            ...data,
             items,
-            images: data.images,
             tags: data.tags.map((tag) => tag.tag),
-            coauthors: data.coauthors.map((coauthor) => ({
-                ...coauthor,
-                user: {
-                    ...coauthor.user,
-                    createdAt: coauthor.user.createdAt.toISOString(),
-                    badges: coauthor.user.badges.map((badge) => ({
-                        ...badge,
-                        createdAt: badge.createdAt.toISOString(),
-                    })),
-                    shops: coauthor.user.shops.map((shop) => ({
-                        ...shop,
-                        createdAt: shop.createdAt.toISOString(),
-                    })),
-                },
-            })),
             failedItemsCount,
         }
     },

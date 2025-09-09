@@ -50,18 +50,7 @@ export default defineApi<User[]>(
             },
         })
 
-        return data.map((user) => ({
-            ...user,
-            createdAt: user.createdAt.toISOString(),
-            badges: user.badges?.map((badge) => ({
-                ...badge,
-                createdAt: badge.createdAt.toISOString(),
-            })),
-            shops: user.shops?.map((shop) => ({
-                ...shop,
-                createdAt: shop.createdAt.toISOString(),
-            })),
-        }))
+        return data
     },
     {
         errorMessage: 'Failed to get users',

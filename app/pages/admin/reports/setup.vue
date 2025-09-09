@@ -121,7 +121,7 @@ const resolve = async (id: number, resolve?: boolean) => {
                             >
                                 <UUser
                                     :avatar="{
-                                        src: report.reporter.image,
+                                        src: report.reporter.image || undefined,
                                         alt: report.reporter.name,
                                         icon: 'lucide:user-round',
                                     }"

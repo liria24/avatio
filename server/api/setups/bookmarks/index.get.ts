@@ -182,6 +182,7 @@ export default defineApi<PaginationResponse<Bookmark[]>>(
                                         price: true,
                                         likes: true,
                                         nsfw: true,
+                                        outdated: true,
                                     },
                                 },
                             },
@@ -248,40 +249,11 @@ export default defineApi<PaginationResponse<Bookmark[]>>(
         })
 
         const result = data.map((bookmark) => ({
-            createdAt: bookmark.createdAt.toISOString(),
+            ...bookmark,
             setup: {
-                id: bookmark.setup.id,
-                createdAt: bookmark.setup.createdAt.toISOString(),
-                updatedAt: bookmark.setup.updatedAt.toISOString(),
-                hidAt: bookmark.setup.hidAt?.toISOString() || null,
-                hidReason: bookmark.setup.hidReason,
-                user: {
-                    ...bookmark.setup.user,
-                    createdAt: bookmark.setup.user.createdAt.toISOString(),
-                    badges: bookmark.setup.user.badges.map((badge) => ({
-                        ...badge,
-                        createdAt: badge.createdAt.toISOString(),
-                    })),
-                },
-                name: bookmark.setup.name,
-                description: bookmark.setup.description,
-                items: bookmark.setup.items.map((item) => ({
-                    ...item.item,
-                    updatedAt: item.item.updatedAt.toISOString(),
-                })),
-                images: bookmark.setup.images,
+                ...bookmark.setup,
+                items: bookmark.setup.items.map((item) => item.item),
                 tags: bookmark.setup.tags.map((tag) => tag.tag),
-                coauthors: bookmark.setup.coauthors.map((coauthor) => ({
-                    user: {
-                        ...coauthor.user,
-                        createdAt: coauthor.user.createdAt.toISOString(),
-                        badges: coauthor.user.badges.map((badge) => ({
-                            ...badge,
-                            createdAt: badge.createdAt.toISOString(),
-                        })),
-                    },
-                    note: coauthor.note,
-                })),
             },
         }))
 

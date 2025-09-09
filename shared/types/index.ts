@@ -32,6 +32,7 @@ import {
     createSelectSchema,
     createUpdateSchema,
 } from 'drizzle-zod'
+import type { Serialize } from 'nitropack/types'
 import { z } from 'zod'
 
 export const userBadgeSchema = z.enum(userBadge.enumValues)
@@ -43,10 +44,7 @@ export type Platform = z.infer<typeof platformSchema>
 export const itemCategorySchema = z.enum(itemCategory.enumValues)
 export type ItemCategory = z.infer<typeof itemCategorySchema>
 
-export const shopsSelectSchema = createSelectSchema(shops, {
-    createdAt: (schema) => schema.transform((val) => val.toISOString()),
-    updatedAt: (schema) => schema.transform((val) => val.toISOString()),
-})
+export const shopsSelectSchema = createSelectSchema(shops)
 export const shopsInsertSchema = createInsertSchema(shops)
 export const shopsUpdateSchema = createUpdateSchema(shops)
 export const shopsPublicSchema = shopsSelectSchema.pick({
@@ -58,9 +56,7 @@ export const shopsPublicSchema = shopsSelectSchema.pick({
 })
 export type Shop = z.infer<typeof shopsPublicSchema>
 
-export const userShopsSelectSchema = createSelectSchema(userShops, {
-    createdAt: (schema) => schema.transform((val) => val.toISOString()),
-})
+export const userShopsSelectSchema = createSelectSchema(userShops)
 export const userShopsInsertSchema = createInsertSchema(userShops)
 export const userShopsPublicSchema = userShopsSelectSchema
     .pick({
@@ -70,20 +66,14 @@ export const userShopsPublicSchema = userShopsSelectSchema
         shop: shopsPublicSchema,
     })
 
-export const userBadgesSelectSchema = createSelectSchema(userBadges, {
-    createdAt: (schema) => schema.transform((val) => val.toISOString()),
-})
+export const userBadgesSelectSchema = createSelectSchema(userBadges)
 export const userBadgesInsertSchema = createInsertSchema(userBadges)
 export const userBadgesPublicSchema = userBadgesSelectSchema.pick({
     createdAt: true,
     badge: true,
 })
 
-export const userSelectSchema = createSelectSchema(user, {
-    createdAt: (schema) => schema.transform((val) => val.toISOString()),
-    updatedAt: (schema) => schema.transform((val) => val.toISOString()),
-    banExpires: (schema) => schema.transform((val) => val?.toISOString()),
-})
+export const userSelectSchema = createSelectSchema(user)
 export const userInsertSchema = createInsertSchema(user, {
     id: (schema) =>
         schema
@@ -130,14 +120,9 @@ export const userPublicSchema = userSelectSchema
         shops: userShopsPublicSchema.array().optional(),
     })
 export type User = z.infer<typeof userPublicSchema>
-export type UserWithSetups = z.infer<typeof userPublicSchema> & {
-    setups: Setup[]
-}
+export type SerializedUser = Serialize<User>
 
-export const itemsSelectSchema = createSelectSchema(items, {
-    createdAt: (schema) => schema.transform((val) => val.toISOString()),
-    updatedAt: (schema) => schema.transform((val) => val.toISOString()),
-})
+export const itemsSelectSchema = createSelectSchema(items)
 export const itemsInsertSchema = createInsertSchema(items)
 export const itemsUpdateSchema = createUpdateSchema(items)
 export const itemsPublicSchema = itemsSelectSchema
@@ -252,11 +237,7 @@ export const setupCoauthorsPublicSchema = setupCoauthorsSelectSchema
     })
 export type SetupCoauthor = z.infer<typeof setupCoauthorsPublicSchema>
 
-export const setupsSelectSchema = createSelectSchema(setups, {
-    createdAt: (schema) => schema.transform((val) => val.toISOString()),
-    updatedAt: (schema) => schema.transform((val) => val.toISOString()),
-    hidAt: (schema) => schema.transform((val) => val?.toISOString()),
-})
+export const setupsSelectSchema = createSelectSchema(setups)
 export const setupsInsertSchema = createInsertSchema(setups, {
     name: (schema) =>
         schema
@@ -329,8 +310,10 @@ export const setupsClientFormSchema = createInsertSchema(setups, {
                 userId: true,
             })
             .extend({
-                user: userPublicSchema.extend({
-                    createdAt: z.string(),
+                user: userPublicSchema.pick({
+                    id: true,
+                    name: true,
+                    image: true,
                 }),
             })
             .array()
@@ -390,6 +373,7 @@ export const setupsPublicSchema = setupsSelectSchema
         failedItemsCount: z.number().min(0).optional(),
     })
 export type Setup = z.infer<typeof setupsPublicSchema>
+export type SerializedSetup = Serialize<Setup>
 
 export const setupDraftContentSchema = setupsInsertSchema
     .pick({
@@ -401,31 +385,29 @@ export const setupDraftContentSchema = setupsInsertSchema
         items: true,
     })
     .partial()
-export const setupDraftsSelectSchema = createSelectSchema(setupDrafts, {
-    createdAt: (schema) => schema.transform((val) => val.toISOString()),
-    updatedAt: (schema) => schema.transform((val) => val.toISOString()),
-    content: () => setupDraftContentSchema,
-})
+export const setupDraftsSelectSchema = createSelectSchema(setupDrafts)
 export const setupDraftsInsertSchema = createInsertSchema(setupDrafts, {
     content: () => setupDraftContentSchema,
 })
-export const setupDraftsPublicSchema = setupDraftsSelectSchema.pick({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    setupId: true,
-    content: true,
-})
+export const setupDraftsPublicSchema = setupDraftsSelectSchema
+    .pick({
+        id: true,
+        createdAt: true,
+        updatedAt: true,
+        setupId: true,
+    })
+    .extend({
+        content: setupDraftContentSchema,
+    })
 export type SetupDraftContent = z.infer<typeof setupDraftContentSchema>
 export type SetupDraft = z.infer<typeof setupDraftsPublicSchema>
+export type SerializedSetupDraft = Serialize<SetupDraft>
 
 export const setupDraftImagesSelectSchema = createSelectSchema(setupDraftImages)
 export const setupDraftImagesInsertSchema = createInsertSchema(setupDraftImages)
 export type SetupDraftImage = z.infer<typeof setupDraftImagesSelectSchema>
 
-export const bookmarksSelectSchema = createSelectSchema(bookmarks, {
-    createdAt: (schema) => schema.transform((val) => val.toISOString()),
-})
+export const bookmarksSelectSchema = createSelectSchema(bookmarks)
 export const bookmarksInsertSchema = createInsertSchema(bookmarks)
 export const bookmarksPublicSchema = bookmarksSelectSchema
     .pick({
@@ -435,10 +417,9 @@ export const bookmarksPublicSchema = bookmarksSelectSchema
         setup: setupsPublicSchema,
     })
 export type Bookmark = z.infer<typeof bookmarksPublicSchema>
+export type SerializedBookmark = Serialize<Bookmark>
 
-export const feedbacksSelectSchema = createSelectSchema(feedbacks, {
-    createdAt: (schema) => schema.transform((val) => val.toISOString()),
-})
+export const feedbacksSelectSchema = createSelectSchema(feedbacks)
 export const feedbacksInsertSchema = createInsertSchema(feedbacks, {
     comment: (schema) =>
         schema
@@ -455,9 +436,7 @@ export const feedbacksPublicSchema = feedbacksSelectSchema.pick({
 })
 export type Feedback = z.infer<typeof feedbacksPublicSchema>
 
-export const itemReportsSelectSchema = createSelectSchema(itemReports, {
-    createdAt: (schema) => schema.transform((val) => val.toISOString()),
-})
+export const itemReportsSelectSchema = createSelectSchema(itemReports)
 export const itemReportsInsertSchema = createInsertSchema(itemReports, {
     comment: (schema) =>
         schema.max(1000, 'コメントは最大 1000 文字です。').optional(),
@@ -479,9 +458,7 @@ export const itemReportsPublicSchema = itemReportsSelectSchema
     })
 export type ItemReport = z.infer<typeof itemReportsPublicSchema>
 
-export const setupReportsSelectSchema = createSelectSchema(setupReports, {
-    createdAt: (schema) => schema.transform((val) => val.toISOString()),
-})
+export const setupReportsSelectSchema = createSelectSchema(setupReports)
 export const setupReportsInsertSchema = createInsertSchema(setupReports, {
     comment: (schema) =>
         schema.max(1000, 'コメントは最大 1000 文字です。').optional(),
@@ -508,9 +485,7 @@ export const setupReportsPublicSchema = setupReportsSelectSchema
     })
 export type SetupReport = z.infer<typeof setupReportsPublicSchema>
 
-export const userReportsSelectSchema = createSelectSchema(userReports, {
-    createdAt: (schema) => schema.transform((val) => val.toISOString()),
-})
+export const userReportsSelectSchema = createSelectSchema(userReports)
 export const userReportsInsertSchema = createInsertSchema(userReports)
 export const userReportsUpdateSchema = createUpdateSchema(userReports)
 export const userReportsPublicSchema = userReportsSelectSchema
@@ -537,9 +512,7 @@ export type AuditActionType = z.infer<typeof auditActionTypeSchema>
 export const auditTargetTypeSchema = z.enum(auditTargetType.enumValues)
 export type AuditTargetType = z.infer<typeof auditTargetTypeSchema>
 
-export const auditLogsSelectSchema = createSelectSchema(auditLogs, {
-    createdAt: (schema) => schema.transform((val) => val.toISOString()),
-})
+export const auditLogsSelectSchema = createSelectSchema(auditLogs)
 export const auditLogsInsertSchema = createInsertSchema(auditLogs)
 export const auditLogsPublicSchema = auditLogsSelectSchema
     .pick({
@@ -558,10 +531,7 @@ export type AuditLog = z.infer<typeof auditLogsPublicSchema>
 export const changelogAuthorsSelectSchema = createSelectSchema(changelogs)
 export const changelogAuthorsInsertSchema = createInsertSchema(changelogs)
 
-export const changelogsSelectSchema = createSelectSchema(changelogs, {
-    createdAt: (schema) => schema.transform((val) => val.toISOString()),
-    updatedAt: (schema) => schema.transform((val) => val.toISOString()),
-})
+export const changelogsSelectSchema = createSelectSchema(changelogs)
 export const changelogsInsertSchema = createInsertSchema(changelogs)
 export const changelogsUpdateSchema = createUpdateSchema(changelogs)
 export const changelogsPublicSchema = changelogsSelectSchema
@@ -580,10 +550,7 @@ export type Changelog = z.infer<typeof changelogsPublicSchema>
 
 export const notificationTypeSchema = z.enum(notificationType.enumValues)
 
-export const notificationsSelectSchema = createSelectSchema(notifications, {
-    createdAt: (schema) => schema.transform((val) => val.toISOString()),
-    readAt: (schema) => schema.transform((val) => val?.toISOString()),
-})
+export const notificationsSelectSchema = createSelectSchema(notifications)
 export const notificationsInsertSchema = createInsertSchema(notifications)
 export const notificationsPublicSchema = notificationsSelectSchema.pick({
     id: true,

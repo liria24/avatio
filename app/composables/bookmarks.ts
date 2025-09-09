@@ -1,9 +1,11 @@
 import type { UseFetchOptions } from 'nuxt/app'
 
 export const useBookmarks = (
-    options?: UseFetchOptions<PaginationResponse<Bookmark[]>>
+    options?: UseFetchOptions<PaginationResponse<SerializedBookmark[]>>
 ) => {
-    const defaultOptions: UseFetchOptions<PaginationResponse<Bookmark[]>> = {
+    const defaultOptions: UseFetchOptions<
+        PaginationResponse<SerializedBookmark[]>
+    > = {
         key: computed(
             () => `bookmarks-${JSON.stringify(unref(options?.query))}`
         ),
@@ -12,8 +14,11 @@ export const useBookmarks = (
         immediate: true,
     }
 
-    return useFetch<PaginationResponse<Bookmark[]>>('/api/setups/bookmarks', {
-        ...defaultOptions,
-        ...options,
-    })
+    return useFetch<PaginationResponse<SerializedBookmark[]>>(
+        '/api/setups/bookmarks',
+        {
+            ...defaultOptions,
+            ...options,
+        }
+    )
 }

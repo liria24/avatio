@@ -62,7 +62,7 @@ const { data, status, refresh } = await useSetups({
     watch: false,
 })
 
-const setups = ref<Setup[]>([])
+const setups = ref<SerializedSetup[]>([])
 
 const search = async () => {
     const hasSearchParams =

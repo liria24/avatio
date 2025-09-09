@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 const { isMobile } = useDevice()
 
-const setups = defineModel<Setup[]>('setups', {
+const setups = defineModel<SerializedSetup[]>('setups', {
     default: [],
 })
 const loading = defineModel<boolean>('loading', {

@@ -168,40 +168,7 @@ export default defineApi<ApiResponse>(
         })
 
         return {
-            data: data.map((report) => ({
-                ...report,
-                createdAt: report.createdAt.toISOString(),
-                setup: {
-                    ...report.setup,
-                    createdAt: report.setup.createdAt.toISOString(),
-                    updatedAt: report.setup.updatedAt.toISOString(),
-                    hidAt: report.setup.hidAt?.toISOString() || null,
-                    user: {
-                        ...report.setup.user,
-                        createdAt: report.setup.user.createdAt.toISOString(),
-                        badges: report.setup.user.badges.map((badge) => ({
-                            ...badge,
-                            createdAt: badge.createdAt.toISOString(),
-                        })),
-                        shops: report.setup.user.shops.map((userShop) => ({
-                            ...userShop,
-                            createdAt: userShop.createdAt.toISOString(),
-                        })),
-                    },
-                },
-                reporter: {
-                    ...report.reporter,
-                    createdAt: report.reporter.createdAt.toISOString(),
-                    badges: report.reporter.badges.map((badge) => ({
-                        ...badge,
-                        createdAt: badge.createdAt.toISOString(),
-                    })),
-                    shops: report.reporter.shops.map((userShop) => ({
-                        ...userShop,
-                        createdAt: userShop.createdAt.toISOString(),
-                    })),
-                },
-            })),
+            data,
             pagination: {
                 page,
                 limit,

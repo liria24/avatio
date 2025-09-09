@@ -127,7 +127,7 @@ const resolve = async (id: number, resolve?: boolean) => {
                             >
                                 <UUser
                                     :avatar="{
-                                        src: report.reporter.image,
+                                        src: report.reporter.image || undefined,
                                         alt: report.reporter.name,
                                         icon: 'lucide:user-round',
                                     }"
@@ -247,8 +247,8 @@ const resolve = async (id: number, resolve?: boolean) => {
                                 <UBadge
                                     v-if="report.other"
                                     label="その他"
-                                    variant="outline px-2"
-                                    class="rounded-full"
+                                    variant="outline"
+                                    class="rounded-full px-2"
                                 />
                             </div>
 

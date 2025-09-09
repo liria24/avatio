@@ -1,7 +1,10 @@
 import type { UseFetchOptions } from 'nuxt/app'
 
-export const useSetup = (id: number, options?: UseFetchOptions<Setup>) => {
-    const defaultOptions: UseFetchOptions<Setup> = {
+export const useSetup = (
+    id: number,
+    options?: UseFetchOptions<SerializedSetup>
+) => {
+    const defaultOptions: UseFetchOptions<SerializedSetup> = {
         key: computed(
             () => `setup-${id}-${JSON.stringify(unref(options?.query))}`
         ),
@@ -10,7 +13,7 @@ export const useSetup = (id: number, options?: UseFetchOptions<Setup>) => {
         immediate: true,
     }
 
-    return useFetch<Setup>(id.toString(), {
+    return useFetch<SerializedSetup>(id.toString(), {
         ...defaultOptions,
         ...options,
         baseURL: '/api/setups/',

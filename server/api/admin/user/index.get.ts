@@ -27,17 +27,7 @@ export default defineApi(
             offset: number | undefined
         }
 
-        return {
-            ...result,
-            users: result.users.map((user) => {
-                return {
-                    ...user,
-                    createdAt: user.createdAt.toISOString(),
-                    updatedAt: user.updatedAt.toISOString(),
-                    banExpires: user.banExpires?.toISOString(),
-                }
-            }),
-        }
+        return result
     },
     {
         errorMessage: 'Failed to list users',

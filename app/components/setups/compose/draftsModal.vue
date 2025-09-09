@@ -16,10 +16,7 @@ const {
     data: drafts,
     status,
     refresh,
-} = await useFetch(`/api/setups/drafts`, {
-    transform: (data) => data.drafts,
-    default: () => [],
-})
+} = await useFetch('/api/setups/drafts', { default: () => [] })
 
 const deleteDrafts = async () => {
     if (selectedDrafts.value.length === 0) return
@@ -88,9 +85,10 @@ watch(deleteMode, (value) => {
                     :items="
                         drafts.map((draft) => ({
                             value: draft.id,
-                            label: draft.content.name,
-                            description: draft.content.description || undefined,
-                            items: draft.content.items || [],
+                            label: draft.content?.name,
+                            description:
+                                draft.content?.description || undefined,
+                            items: draft.content?.items || [],
                             updatedAt: draft.updatedAt,
                         }))
                     "

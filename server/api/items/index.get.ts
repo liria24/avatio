@@ -75,24 +75,8 @@ export default defineApi<PaginationResponse<Item[]>>(
             },
         })
 
-        const result = data.map((item) => ({
-            id: item.id,
-            createdAt: item.createdAt.toISOString(),
-            updatedAt: item.updatedAt.toISOString(),
-            platform: item.platform,
-            category: item.category,
-            name: item.name,
-            niceName: item.niceName,
-            image: item.image,
-            price: item.price,
-            likes: item.likes,
-            nsfw: item.nsfw,
-            shop: item.shop,
-            outdated: item.outdated,
-        }))
-
         return {
-            data: result,
+            data,
             pagination: {
                 page,
                 limit,
