@@ -90,7 +90,8 @@ onMounted(() => {
                     @click="emit('continue')"
                 />
                 <UButton
-                    :to="`/setup/${props.setupId}`"
+                    :to="props.setupId ? `/setup/${props.setupId}` : undefined"
+                    :disabled="!props.setupId"
                     trailing-icon="lucide:arrow-right"
                     label="投稿したセットアップを見る"
                     color="neutral"

@@ -16,6 +16,14 @@ const overlay = useOverlay()
 
 const id = Number(route.params.id)
 
+// Handle invalid IDs (null, undefined, NaN, etc.)
+if (!id || isNaN(id) || id <= 0) {
+    throw showError({
+        statusCode: 400,
+        message: 'IDが無効です',
+    })
+}
+
 const modalImage = overlay.create(LazyModalImage)
 const modalLogin = overlay.create(LazyModalLogin)
 const modalReport = overlay.create(LazyModalReportSetup)
@@ -24,12 +32,6 @@ const modalHide = overlay.create(LazyModalSetupHide)
 const modalUnhide = overlay.create(LazyModalSetupUnhide)
 
 const { data, status } = await useSetup(id)
-
-if (status.value === 'success' && !id)
-    throw showError({
-        statusCode: 400,
-        message: 'IDが無効です',
-    })
 
 if (status.value === 'error' || (status.value === 'success' && !data.value))
     throw showError({
