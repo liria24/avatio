@@ -24,7 +24,7 @@
         "@nuxt/ui": "^4.0.0-alpha.1",
         "@nuxtjs/device": "3.2.4",
         "@nuxtjs/i18n": "^10.0.6",
-        "@nuxtjs/mdc": "0.17.3",
+        "@nuxtjs/mdc": "0.17.4",
         "@nuxtjs/robots": "5.5.1",
         "@nuxtjs/sitemap": "7.4.3",
         "@pinia/nuxt": "0.11.2",
