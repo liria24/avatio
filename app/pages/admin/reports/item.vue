@@ -6,7 +6,6 @@ definePageMeta({
     layout: 'dashboard',
 })
 
-const nuxtApp = useNuxtApp()
 const toast = useToast()
 const overlay = useOverlay()
 const categoryAttributes = itemCategoryAttributes()
@@ -15,10 +14,6 @@ const modalChangeItemNiceName = overlay.create(LazyModalAdminChangeItemNiceName)
 
 const { data, status, refresh } = await useFetch('/api/reports/item', {
     dedupe: 'defer',
-    headers:
-        import.meta.server && nuxtApp.ssrContext?.event.headers
-            ? nuxtApp.ssrContext.event.headers
-            : undefined,
     default: () => ({
         data: [],
         pagination: {

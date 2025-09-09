@@ -4,8 +4,6 @@ definePageMeta({
     layout: 'dashboard',
 })
 
-const nuxtApp = useNuxtApp()
-
 const auditLogAttributes: Record<
     AuditActionType,
     {
@@ -95,10 +93,6 @@ const auditLogAttributes: Record<
 
 const { data, status, refresh } = await useFetch('/api/admin/audit-log', {
     dedupe: 'defer',
-    headers:
-        import.meta.server && nuxtApp.ssrContext?.event.headers
-            ? nuxtApp.ssrContext.event.headers
-            : undefined,
     default: () => ({
         data: [],
         pagination: {

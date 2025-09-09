@@ -7,8 +7,6 @@ type Options = UseFetchOptions<{
 }>
 
 export const useNotifications = (options?: Options) => {
-    const nuxtApp = useNuxtApp()
-
     const defaultOptions = {
         key: computed(
             () => `notifications-${JSON.stringify(unref(options?.query))}`
@@ -21,10 +19,6 @@ export const useNotifications = (options?: Options) => {
         dedupe: 'defer',
         lazy: true,
         immediate: true,
-        headers: computed(() => {
-            if (import.meta.server && nuxtApp.ssrContext?.event.headers)
-                return nuxtApp.ssrContext.event.headers
-        }),
     }
 
     return useFetch('/api/notifications', {

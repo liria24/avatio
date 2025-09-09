@@ -1,8 +1,6 @@
 <script lang="ts" setup>
 import { VueDraggable } from 'vue-draggable-plus'
 
-const nuxtApp = useNuxtApp()
-
 const items = defineModel<Record<ItemCategory, SetupItem[]>>({
     default: () => ({
         avatar: [],
@@ -40,10 +38,6 @@ const ownedAvatars = ref<Item[]>([])
 try {
     const avatarsData = await $fetch<Item[]>('/api/items/owned-avatars', {
         query: { limit: 10 },
-        headers:
-            import.meta.server && nuxtApp.ssrContext?.event.headers
-                ? nuxtApp.ssrContext.event.headers
-                : undefined,
     })
     ownedAvatars.value = avatarsData || []
 } catch (error) {

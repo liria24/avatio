@@ -4,15 +4,10 @@ definePageMeta({
     layout: 'dashboard',
 })
 
-const nuxtApp = useNuxtApp()
 const toast = useToast()
 
 const { data, status, refresh } = await useFetch('/api/reports/setup', {
     dedupe: 'defer',
-    headers:
-        import.meta.server && nuxtApp.ssrContext?.event.headers
-            ? nuxtApp.ssrContext.event.headers
-            : undefined,
     default: () => ({
         data: [],
         pagination: {

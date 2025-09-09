@@ -8,8 +8,6 @@ const props = defineProps<Props>()
 
 const emit = defineEmits(['load'])
 
-const nuxtApp = useNuxtApp()
-
 const deleteMode = ref(false)
 const selectedDrafts = ref<string[]>([])
 const deleting = ref(false)
@@ -19,10 +17,6 @@ const {
     status,
     refresh,
 } = await useFetch(`/api/setups/drafts`, {
-    headers:
-        import.meta.server && nuxtApp.ssrContext?.event.headers
-            ? nuxtApp.ssrContext.event.headers
-            : undefined,
     transform: (data) => data.drafts,
     default: () => [],
 })

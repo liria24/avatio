@@ -1,8 +1,6 @@
 import type { UseFetchOptions } from 'nuxt/app'
 
 export const useSetup = (id: number, options?: UseFetchOptions<Setup>) => {
-    const nuxtApp = useNuxtApp()
-
     const defaultOptions: UseFetchOptions<Setup> = {
         key: computed(
             () => `setup-${id}-${JSON.stringify(unref(options?.query))}`
@@ -10,10 +8,6 @@ export const useSetup = (id: number, options?: UseFetchOptions<Setup>) => {
         dedupe: 'defer',
         lazy: false,
         immediate: true,
-        headers: computed(() => {
-            if (import.meta.server && nuxtApp.ssrContext?.event.headers)
-                return nuxtApp.ssrContext.event.headers
-        }),
     }
 
     return useFetch<Setup>(id.toString(), {

@@ -5,7 +5,6 @@ definePageMeta({
     middleware: 'session',
 })
 
-const nuxtApp = useNuxtApp()
 const router = useRouter()
 const route = useRoute()
 const toast = useToast()
@@ -171,10 +170,6 @@ const loadDraft = async (draftId: string) => {
 
         const { drafts } = await $fetch('/api/setups/drafts', {
             query: { id: draftId },
-            headers:
-                import.meta.server && nuxtApp.ssrContext?.event.headers
-                    ? nuxtApp.ssrContext.event.headers
-                    : undefined,
         })
 
         if (!drafts.length || !drafts[0]) throw new Error('Draft not found')
@@ -401,10 +396,6 @@ const enterEditModeAndRestoreDraft = async (args: {
         try {
             const { drafts } = await $fetch(`/api/setups/drafts`, {
                 query: { setupId: args.edit },
-                headers:
-                    import.meta.server && nuxtApp.ssrContext?.event.headers
-                        ? nuxtApp.ssrContext.event.headers
-                        : undefined,
             })
 
             if (drafts.length && drafts[0]) {

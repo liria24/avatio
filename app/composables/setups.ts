@@ -3,8 +3,6 @@ import type { UseFetchOptions } from 'nuxt/app'
 export const useSetups = (
     options?: UseFetchOptions<PaginationResponse<Setup[]>>
 ) => {
-    const nuxtApp = useNuxtApp()
-
     const defaultOptions = {
         key: computed(() => `setups-${JSON.stringify(unref(options?.query))}`),
         default: () => ({
@@ -21,10 +19,6 @@ export const useSetups = (
         dedupe: 'defer',
         lazy: false,
         immediate: true,
-        headers: computed(() => {
-            if (import.meta.server && nuxtApp.ssrContext?.event.headers)
-                return nuxtApp.ssrContext.event.headers
-        }),
     }
 
     return useFetch<PaginationResponse<Setup[]>>('/api/setups', {

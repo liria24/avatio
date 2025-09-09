@@ -8,16 +8,11 @@ definePageMeta({
 
 const toast = useToast()
 const overlay = useOverlay()
-const nuxtApp = useNuxtApp()
 
 const modalBan = overlay.create(LazyModalAdminBanUser)
 
 const { data, status, refresh } = await useFetch('/api/admin/user', {
     dedupe: 'defer',
-    headers:
-        import.meta.server && nuxtApp.ssrContext?.event.headers
-            ? nuxtApp.ssrContext.event.headers
-            : undefined,
     getCachedData: (key, nuxtApp, ctx) =>
         ctx.cause !== 'initial'
             ? undefined

@@ -3,7 +3,6 @@ import type { NavigationMenuItem } from '@nuxt/ui'
 
 const { $session } = useNuxtApp()
 const session = await $session()
-const nuxtApp = useNuxtApp()
 
 const title = 'Avatio'
 
@@ -19,10 +18,6 @@ const { data } = await useFetch('/api/admin/stats', {
         setupReports: 0,
         userReports: 0,
     }),
-    headers:
-        import.meta.server && nuxtApp.ssrContext?.event.headers
-            ? nuxtApp.ssrContext.event.headers
-            : undefined,
     getCachedData: (key, nuxtApp, ctx) =>
         ctx.cause !== 'initial'
             ? undefined

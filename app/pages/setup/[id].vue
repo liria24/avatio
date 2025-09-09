@@ -10,7 +10,6 @@ import {
 
 const { $session } = useNuxtApp()
 const session = await $session()
-const nuxtApp = useNuxtApp()
 const route = useRoute()
 const toast = useToast()
 const overlay = useOverlay()
@@ -47,10 +46,6 @@ const {
     transform: (data) => data.data.length > 0,
     dedupe: 'defer',
     default: () => false,
-    headers:
-        import.meta.server && nuxtApp.ssrContext?.event.headers
-            ? nuxtApp.ssrContext.event.headers
-            : undefined,
     immediate: !!session.value,
 })
 
