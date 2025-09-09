@@ -3,9 +3,6 @@ const emit = defineEmits<{
     select: [item: Item]
 }>()
 
-const open = defineModel<boolean>({
-    default: false,
-})
 const props = defineProps<{
     loading?: boolean
 }>()
@@ -94,7 +91,6 @@ const onSelect = async (id: string, platform?: Platform) => {
             { query: { platform } }
         )
         emit('select', response)
-        open.value = false
         searchTerm.value = ''
     } catch (error) {
         console.error('Failed to fetch item:', error)
@@ -113,7 +109,6 @@ const onSelect = async (id: string, platform?: Platform) => {
 
 <template>
     <UCommandPalette
-        v-model:open="open"
         v-model:search-term="searchTerm"
         :loading="loadingComputed"
         placeholder="アイテムを検索 / URLを入力"
