@@ -1,22 +1,19 @@
 import type { UseFetchOptions } from 'nuxt/app'
 
-export const useSetup = (id: number, options?: UseFetchOptions<Setup>) => {
-    const nuxtApp = useNuxtApp()
-
-    const defaultOptions: UseFetchOptions<Setup> = {
+export const useSetup = (
+    id: number,
+    options?: UseFetchOptions<SerializedSetup>
+) => {
+    const defaultOptions: UseFetchOptions<SerializedSetup> = {
         key: computed(
             () => `setup-${id}-${JSON.stringify(unref(options?.query))}`
         ),
         dedupe: 'defer',
         lazy: false,
         immediate: true,
-        headers: computed(() => {
-            if (import.meta.server && nuxtApp.ssrContext?.event.headers)
-                return nuxtApp.ssrContext.event.headers
-        }),
     }
 
-    return useFetch<Setup>(id.toString(), {
+    return useFetch<SerializedSetup>(id.toString(), {
         ...defaultOptions,
         ...options,
         baseURL: '/api/setups/',

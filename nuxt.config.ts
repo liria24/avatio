@@ -123,16 +123,16 @@ export default defineNuxtConfig({
         storage: {
             r2: {
                 driver: 's3',
-                accessKeyId: import.meta.env.NUXT_R2_ACCESS_KEY,
-                secretAccessKey: import.meta.env.NUXT_R2_SECRET_KEY,
-                endpoint: import.meta.env.NUXT_R2_ENDPOINT,
+                accessKeyId: import.meta.env.NUXT_R2_ACCESS_KEY || '',
+                secretAccessKey: import.meta.env.NUXT_R2_SECRET_KEY || '',
+                endpoint: import.meta.env.NUXT_R2_ENDPOINT || '',
                 bucket: 'avatio',
                 region: 'auto',
             },
             cache: {
                 driver: 'upstash',
-                url: import.meta.env.NUXT_UPSTASH_KV_REST_API_URL,
-                token: import.meta.env.NUXT_UPSTASH_KV_REST_API_TOKEN,
+                url: import.meta.env.NUXT_UPSTASH_KV_REST_API_URL || '',
+                token: import.meta.env.NUXT_UPSTASH_KV_REST_API_TOKEN || '',
             },
         },
         devStorage: {

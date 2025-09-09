@@ -14,10 +14,7 @@ export default defineApi<Feedback[]>(
             },
         })
 
-        return data.map((feedback) => ({
-            ...feedback,
-            createdAt: feedback.createdAt.toISOString(),
-        }))
+        return data
     },
     {
         errorMessage: 'Failed to get feedbacks.',

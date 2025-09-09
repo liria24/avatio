@@ -54,23 +54,7 @@ const getUser = defineCachedFunction(
                 statusMessage: 'User not found',
             })
 
-        return {
-            id: data.id,
-            createdAt: data.createdAt.toISOString(),
-            name: data.name,
-            image: data.image,
-            bio: data.bio,
-            links: data.links,
-            badges: data.badges?.map((badge) => ({
-                badge: badge.badge,
-                createdAt: badge.createdAt.toISOString(),
-            })),
-            shops: data.shops?.map((shop) => ({
-                id: shop.id,
-                createdAt: shop.createdAt.toISOString(),
-                shop: shop.shop,
-            })),
-        }
+        return data
     },
     {
         maxAge: 60 * 60, // 1 hour

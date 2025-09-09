@@ -1,11 +1,11 @@
 <script lang="ts" setup>
 import type { z } from 'zod'
+import type { Serialize } from 'nitropack/types'
 
 definePageMeta({
     middleware: 'session',
 })
 
-const nuxtApp = useNuxtApp()
 const router = useRouter()
 const route = useRoute()
 const toast = useToast()
@@ -81,17 +81,13 @@ const applyDraftData = async (content: SetupDraftContent) => {
     state.coauthors = content.coauthors
         ? await Promise.all(
               content.coauthors.map(async (coauthor) => {
-                  const user = await $fetch<UserWithSetups>(
+                  const user = await $fetch<Serialize<User>>(
                       `/api/users/${coauthor.userId}`
                   )
                   return {
                       user: {
-                          id: user.id,
-                          createdAt: user.createdAt,
-                          name: user.name,
-                          image: user.image,
-                          bio: user.bio,
-                          links: user.links,
+                          ...user,
+                          createdAt: new Date(user.createdAt),
                       },
                       note: coauthor.note || '',
                   }
@@ -169,17 +165,15 @@ const loadDraft = async (draftId: string) => {
     try {
         draftStatus.value = 'restoring'
 
-        const { drafts } = await $fetch('/api/setups/drafts', {
+        const { data: drafts } = await useFetch('/api/setups/drafts', {
             query: { id: draftId },
-            headers:
-                import.meta.server && nuxtApp.ssrContext?.event.headers
-                    ? nuxtApp.ssrContext.event.headers
-                    : undefined,
+            default: () => [],
         })
 
-        if (!drafts.length || !drafts[0]) throw new Error('Draft not found')
+        if (!drafts.value.length || !drafts.value[0])
+            throw new Error('Draft not found')
 
-        const draft = drafts[0]
+        const draft = drafts.value[0]
 
         await applyDraftData(draft.content)
         referencedDraft.value = draft.id
@@ -399,25 +393,22 @@ const enterEditModeAndRestoreDraft = async (args: {
         await loadDraft(args.draftId)
     } else if (args.edit) {
         try {
-            const { drafts } = await $fetch(`/api/setups/drafts`, {
+            const { data: drafts } = await useFetch('/api/setups/drafts', {
                 query: { setupId: args.edit },
-                headers:
-                    import.meta.server && nuxtApp.ssrContext?.event.headers
-                        ? nuxtApp.ssrContext.event.headers
-                        : undefined,
+                default: () => [],
             })
 
-            if (drafts.length && drafts[0]) {
+            if (drafts.value.length && drafts.value[0]) {
                 draftStatus.value = 'restoring'
 
-                await applyDraftData(drafts[0].content)
+                await applyDraftData(drafts.value[0].content)
 
                 editingSetupId.value = args.edit
-                referencedDraft.value = drafts[0].id
+                referencedDraft.value = drafts.value[0].id
                 router.replace({
                     query: {
                         ...route.query,
-                        draftId: drafts[0].id,
+                        draftId: drafts.value[0].id,
                     },
                 })
                 draftStatus.value = 'restored'
@@ -434,7 +425,7 @@ const enterEditModeAndRestoreDraft = async (args: {
 
         try {
             // 編集モードの場合、セットアップのデータを取得して状態に設定
-            const setup = await $fetch<Setup>(`/api/setups/${args.edit}`)
+            const setup = await $fetch(`/api/setups/${args.edit}`)
             if (setup) {
                 skipDraftSave.value = true
 
@@ -444,10 +435,7 @@ const enterEditModeAndRestoreDraft = async (args: {
                 state.tags = setup.tags || []
                 state.coauthors = setup.coauthors || []
                 for (const item of setup.items)
-                    state.items[item.category].push({
-                        ...item,
-                        category: item.category,
-                    })
+                    state.items[item.category].push(item)
 
                 // 少し待ってから自動保存を再有効化
                 await nextTick()

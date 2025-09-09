@@ -4,15 +4,10 @@ definePageMeta({
     layout: 'dashboard',
 })
 
-const nuxtApp = useNuxtApp()
 const toast = useToast()
 
 const { data, status, refresh } = await useFetch('/api/reports/setup', {
     dedupe: 'defer',
-    headers:
-        import.meta.server && nuxtApp.ssrContext?.event.headers
-            ? nuxtApp.ssrContext.event.headers
-            : undefined,
     default: () => ({
         data: [],
         pagination: {
@@ -126,7 +121,7 @@ const resolve = async (id: number, resolve?: boolean) => {
                             >
                                 <UUser
                                     :avatar="{
-                                        src: report.reporter.image,
+                                        src: report.reporter.image || undefined,
                                         alt: report.reporter.name,
                                         icon: 'lucide:user-round',
                                     }"
@@ -162,7 +157,7 @@ const resolve = async (id: number, resolve?: boolean) => {
                         class="grid w-full grid-cols-1 items-start gap-4 sm:grid-cols-2"
                     >
                         <UPageCard
-                            :to="`/setup/${report.setup.id}`"
+                            :to="report.setup?.id ? `/setup/${report.setup.id}` : undefined"
                             target="_blank"
                             :ui="{ container: 'p-2 sm:p-2' }"
                         >

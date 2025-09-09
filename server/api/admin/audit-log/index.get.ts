@@ -113,24 +113,7 @@ export default defineApi<PaginationResponse<AuditLog[]>>(
         })
 
         return {
-            data: data.map((log) => ({
-                ...log,
-                createdAt: log.createdAt.toISOString(),
-                user: log.user
-                    ? {
-                          ...log.user,
-                          createdAt: log.user?.createdAt.toISOString(),
-                          badges: log.user?.badges.map((badge) => ({
-                              ...badge,
-                              createdAt: badge.createdAt.toISOString(),
-                          })),
-                          shops: log.user?.shops.map((shop) => ({
-                              ...shop,
-                              createdAt: shop.createdAt.toISOString(),
-                          })),
-                      }
-                    : null,
-            })),
+            data,
             pagination: {
                 page,
                 limit,

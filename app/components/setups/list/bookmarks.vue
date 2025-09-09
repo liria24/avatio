@@ -11,7 +11,7 @@ const { data, status, refresh } = useBookmarks({
     immediate: false,
 })
 
-const setups = ref<Setup[]>([])
+const setups = ref<SerializedSetup[]>([])
 
 const initialize = async () => {
     await refresh()

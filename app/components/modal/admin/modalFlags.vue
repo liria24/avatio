@@ -1,13 +1,8 @@
 <script lang="ts" setup>
 const toast = useToast()
-const nuxtApp = useNuxtApp()
 
 const { data, status, refresh } = useFetch<EdgeConfig>('/api/edge-config', {
     dedupe: 'defer',
-    headers:
-        import.meta.server && nuxtApp.ssrContext?.event.headers
-            ? nuxtApp.ssrContext.event.headers
-            : undefined,
 })
 
 const maintenanceMode = ref(data.value?.isMaintenance || false)

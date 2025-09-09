@@ -8,10 +8,6 @@ const modalFeedback = overlay.create(LazyModalFeedback)
 const { data: repo } = useFetch<GithubRepo>(
     'https://ungh.cc/repos/liria24/avatio'
 )
-
-onBeforeRouteLeave(() => {
-    modalFeedback.close()
-})
 </script>
 
 <template>

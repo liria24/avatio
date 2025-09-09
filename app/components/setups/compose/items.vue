@@ -1,8 +1,6 @@
 <script lang="ts" setup>
 import { VueDraggable } from 'vue-draggable-plus'
 
-const nuxtApp = useNuxtApp()
-
 const items = defineModel<Record<ItemCategory, SetupItem[]>>({
     default: () => ({
         avatar: [],
@@ -35,20 +33,10 @@ const totalItemsCount = computed(() =>
 
 const getItemsByCategory = (category: CategoryKey) => items.value[category]
 
-const ownedAvatars = ref<Item[]>([])
-
-try {
-    const avatarsData = await $fetch<Item[]>('/api/items/owned-avatars', {
-        query: { limit: 10 },
-        headers:
-            import.meta.server && nuxtApp.ssrContext?.event.headers
-                ? nuxtApp.ssrContext.event.headers
-                : undefined,
-    })
-    ownedAvatars.value = avatarsData || []
-} catch (error) {
-    console.error('Failed to fetch owned avatars:', error)
-}
+const { data: ownedAvatars } = await useFetch('/api/items/owned-avatars', {
+    query: { limit: 10 },
+    default: () => [],
+})
 
 const isItemAlreadyAdded = (itemId: string): boolean =>
     itemCategories.some((category) =>
@@ -81,8 +69,6 @@ const addItem = async (item: Item) => {
         note: '',
         unsupported: false,
     })
-
-    popoverItemSearch.value = false
 }
 
 const removeItem = (category: string, id: string) => {
@@ -208,7 +194,10 @@ const removeShapekey = (options: {
                     />
 
                     <template #content>
-                        <CommandPaletteItemSearch @select="addItem" />
+                        <CommandPaletteItemSearch
+                            v-model:open="popoverItemSearch"
+                            @select="addItem"
+                        />
                     </template>
                 </UPopover>
             </div>

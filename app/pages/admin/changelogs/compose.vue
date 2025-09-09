@@ -10,7 +10,7 @@ const { $session } = useNuxtApp()
 const session = await $session()
 const toast = useToast()
 
-const me = await $fetch<UserWithSetups>(`/api/users/${session.value?.user.id}`)
+const me = await $fetch<SerializedUser>(`/api/users/${session.value?.user.id}`)
 
 const state = reactive({
     slug: '',
@@ -18,9 +18,9 @@ const state = reactive({
     markdown: '',
     authors: [me.id],
 })
-const authors = ref<User[]>([me])
+const authors = ref<SerializedUser[]>([me])
 
-const addAuthor = (user: User) => {
+const addAuthor = (user: SerializedUser) => {
     if (!user?.id) return
 
     if (authors.value.some((author) => author.id === user.id)) {

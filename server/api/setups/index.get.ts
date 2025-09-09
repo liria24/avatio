@@ -277,35 +277,10 @@ export default defineApi<PaginationResponse<Setup[]>>(
 
         const result = data.map((setup) => ({
             ...setup,
-            createdAt: setup.createdAt.toISOString(),
-            updatedAt: setup.updatedAt.toISOString(),
-            hidAt: setup.hidAt?.toISOString() || null,
-            user: {
-                ...setup.user,
-                createdAt: setup.user.createdAt.toISOString(),
-                badges: setup.user.badges.map((badge) => ({
-                    ...badge,
-                    createdAt: badge.createdAt.toISOString(),
-                })),
-            },
             items: setup.items
                 .filter((item) => !item.item.outdated)
-                .map((item) => ({
-                    ...item.item,
-                    updatedAt: item.item.updatedAt.toISOString(),
-                })),
+                .map((item) => item.item),
             tags: setup.tags.map((tag) => tag.tag),
-            coauthors: setup.coauthors.map((coauthor) => ({
-                user: {
-                    ...coauthor.user,
-                    createdAt: coauthor.user.createdAt.toISOString(),
-                    badges: coauthor.user.badges.map((badge) => ({
-                        ...badge,
-                        createdAt: badge.createdAt.toISOString(),
-                    })),
-                },
-                note: coauthor.note,
-            })),
             failedItemsCount: setup.items.filter((item) => item.item.outdated)
                 .length,
         }))

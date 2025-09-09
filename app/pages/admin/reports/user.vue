@@ -4,15 +4,10 @@ definePageMeta({
     layout: 'dashboard',
 })
 
-const nuxtApp = useNuxtApp()
 const toast = useToast()
 
 const { data, status, refresh } = await useFetch('/api/reports/user', {
     dedupe: 'defer',
-    headers:
-        import.meta.server && nuxtApp.ssrContext?.event.headers
-            ? nuxtApp.ssrContext.event.headers
-            : undefined,
     default: () => ({
         data: [],
         pagination: {
@@ -126,7 +121,7 @@ const resolve = async (id: number, resolve?: boolean) => {
                             >
                                 <UUser
                                     :avatar="{
-                                        src: report.reporter.image,
+                                        src: report.reporter.image || undefined,
                                         alt: report.reporter.name,
                                         icon: 'lucide:user-round',
                                     }"
@@ -170,7 +165,7 @@ const resolve = async (id: number, resolve?: boolean) => {
                                 :name="report.reportee.name"
                                 :description="`@${report.reportee.id}`"
                                 :avatar="{
-                                    src: report.reportee.image,
+                                    src: report.reportee.image || undefined,
                                     alt: report.reportee.name,
                                     icon: 'lucide:user-round',
                                 }"

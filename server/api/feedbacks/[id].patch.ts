@@ -32,10 +32,7 @@ export default defineApi<Feedback>(
             .where(eq(feedbacks.id, id))
             .returning()
 
-        return {
-            ...data[0],
-            createdAt: data[0].createdAt.toISOString(),
-        }
+        return data[0]
     },
     {
         errorMessage: 'Failed to update feedbacks.',

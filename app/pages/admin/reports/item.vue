@@ -6,7 +6,6 @@ definePageMeta({
     layout: 'dashboard',
 })
 
-const nuxtApp = useNuxtApp()
 const toast = useToast()
 const overlay = useOverlay()
 const categoryAttributes = itemCategoryAttributes()
@@ -15,10 +14,6 @@ const modalChangeItemNiceName = overlay.create(LazyModalAdminChangeItemNiceName)
 
 const { data, status, refresh } = await useFetch('/api/reports/item', {
     dedupe: 'defer',
-    headers:
-        import.meta.server && nuxtApp.ssrContext?.event.headers
-            ? nuxtApp.ssrContext.event.headers
-            : undefined,
     default: () => ({
         data: [],
         pagination: {
@@ -132,7 +127,7 @@ const resolve = async (id: number, resolve?: boolean) => {
                             >
                                 <UUser
                                     :avatar="{
-                                        src: report.reporter.image,
+                                        src: report.reporter.image || undefined,
                                         alt: report.reporter.name,
                                         icon: 'lucide:user-round',
                                     }"
@@ -252,8 +247,8 @@ const resolve = async (id: number, resolve?: boolean) => {
                                 <UBadge
                                     v-if="report.other"
                                     label="その他"
-                                    variant="outline px-2"
-                                    class="rounded-full"
+                                    variant="outline"
+                                    class="rounded-full px-2"
                                 />
                             </div>
 

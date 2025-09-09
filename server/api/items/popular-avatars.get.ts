@@ -42,23 +42,7 @@ export default defineApi<Item[]>(
             .orderBy(desc(count(setupItems.itemId)))
             .limit(limit)
 
-        const result = data.map((item) => ({
-            id: item.id,
-            createdAt: item.createdAt.toISOString(),
-            updatedAt: item.updatedAt.toISOString(),
-            platform: item.platform,
-            category: item.category,
-            name: item.name,
-            niceName: item.niceName,
-            image: item.image,
-            price: item.price,
-            likes: item.likes,
-            nsfw: item.nsfw,
-            shop: item.shop,
-            outdated: item.outdated,
-        }))
-
-        return result
+        return data
     },
     {
         errorMessage: 'Failed to get popular avatars.',

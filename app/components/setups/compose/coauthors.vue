@@ -2,7 +2,7 @@
 import { VueDraggable } from 'vue-draggable-plus'
 
 interface Model {
-    user: User
+    user: Pick<SerializedUser, 'id' | 'name' | 'image'>
     note?: string | null
 }
 const coauthors = defineModel<Model[]>({
@@ -11,7 +11,7 @@ const coauthors = defineModel<Model[]>({
 
 const toast = useToast()
 
-const addCoauthor = (user: User) => {
+const addCoauthor = (user: SerializedUser) => {
     if (!user?.id) return
 
     if (coauthors.value.some((coauthor) => coauthor.user.id === user.id)) {

@@ -66,16 +66,8 @@ export default defineApi<{
 
         return {
             data: data.map((notification) => ({
-                id: notification.id,
-                createdAt: notification.createdAt.toISOString(),
-                type: notification.type,
-                readAt: notification.readAt?.toISOString() || null,
-                title: notification.title,
-                message: notification.message,
+                ...notification,
                 data: notification.data ? JSON.parse(notification.data) : null,
-                actionUrl: notification.actionUrl,
-                actionLabel: notification.actionLabel,
-                banner: notification.banner,
             })),
             unread: Number(unreadCount),
         }

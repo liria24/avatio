@@ -8,8 +8,6 @@ const props = defineProps<Props>()
 
 const emit = defineEmits(['load'])
 
-const nuxtApp = useNuxtApp()
-
 const deleteMode = ref(false)
 const selectedDrafts = ref<string[]>([])
 const deleting = ref(false)
@@ -18,14 +16,7 @@ const {
     data: drafts,
     status,
     refresh,
-} = await useFetch(`/api/setups/drafts`, {
-    headers:
-        import.meta.server && nuxtApp.ssrContext?.event.headers
-            ? nuxtApp.ssrContext.event.headers
-            : undefined,
-    transform: (data) => data.drafts,
-    default: () => [],
-})
+} = await useFetch('/api/setups/drafts', { default: () => [] })
 
 const deleteDrafts = async () => {
     if (selectedDrafts.value.length === 0) return
@@ -94,9 +85,10 @@ watch(deleteMode, (value) => {
                     :items="
                         drafts.map((draft) => ({
                             value: draft.id,
-                            label: draft.content.name,
-                            description: draft.content.description || undefined,
-                            items: draft.content.items || [],
+                            label: draft.content?.name,
+                            description:
+                                draft.content?.description || undefined,
+                            items: draft.content?.items || [],
                             updatedAt: draft.updatedAt,
                         }))
                     "

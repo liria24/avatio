@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const emit = defineEmits<{
-    select: [user: User]
+    select: [user: SerializedUser]
 }>()
 
 const open = defineModel<boolean>({
@@ -62,7 +62,7 @@ const groups = computed(() => {
 
 const onSelect = async (id: string) => {
     try {
-        const user = await $fetch<UserWithSetups>(`/api/users/${id}`)
+        const user = await $fetch<SerializedUser>(`/api/users/${id}`)
         emit('select', {
             id: user.id,
             createdAt: user.createdAt,

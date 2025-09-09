@@ -130,22 +130,7 @@ export default defineApi<PaginationResponse<ItemReport[]>>(
         })
 
         return {
-            data: data.map((report) => ({
-                ...report,
-                createdAt: report.createdAt.toISOString(),
-                reporter: {
-                    ...report.reporter,
-                    createdAt: report.reporter.createdAt.toISOString(),
-                    badges: report.reporter.badges.map((badge) => ({
-                        ...badge,
-                        createdAt: badge.createdAt.toISOString(),
-                    })),
-                    shops: report.reporter.shops.map((userShop) => ({
-                        ...userShop,
-                        createdAt: userShop.createdAt.toISOString(),
-                    })),
-                },
-            })),
+            data,
             pagination: {
                 page,
                 limit,

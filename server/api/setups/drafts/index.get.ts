@@ -11,13 +11,13 @@ const query = z.object({
         .optional(),
 })
 
-export default defineApi(
+export default defineApi<SetupDraft[]>(
     async ({ session }) => {
         const { id, setupId } = await validateQuery(query)
 
         const data = await database.query.setupDrafts.findMany({
             where: (table, { and, eq, inArray }) => {
-                const conditions = [eq(table.userId, session.user.id)]
+                const conditions = [eq(table.userId, session!.user.id)]
 
                 if (id) conditions.push(inArray(table.id, id))
 
@@ -37,14 +37,10 @@ export default defineApi(
             },
         })
 
-        return {
-            drafts: data.map((draft) => ({
-                ...draft,
-                createdAt: draft.createdAt.toISOString(),
-                updatedAt: draft.updatedAt.toISOString(),
-                content: draft.content as SetupDraftContent,
-            })),
-        }
+        return data.map((draft) => ({
+            ...draft,
+            content: draft.content as SetupDraftContent,
+        }))
     },
     {
         errorMessage: 'Failed to get setups',

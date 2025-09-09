@@ -4,15 +4,10 @@ definePageMeta({
     layout: 'dashboard',
 })
 
-const nuxtApp = useNuxtApp()
 const toast = useToast()
 
 const { data, status, refresh } = await useFetch('/api/feedbacks', {
     dedupe: 'defer',
-    headers:
-        import.meta.server && nuxtApp.ssrContext?.event.headers
-            ? nuxtApp.ssrContext.event.headers
-            : undefined,
     getCachedData: (key, nuxtApp, ctx) =>
         ctx.cause !== 'initial'
             ? undefined

@@ -132,20 +132,7 @@ export default defineApi<PaginationResponse<Changelog[]>>(
         return {
             data: data.map((changelog) => ({
                 ...changelog,
-                createdAt: changelog.createdAt.toISOString(),
-                updatedAt: changelog.updatedAt.toISOString(),
-                authors: changelog.authors.map((author) => ({
-                    ...author.user,
-                    createdAt: author.user.createdAt.toISOString(),
-                    badges: author.user.badges.map((badge) => ({
-                        ...badge,
-                        createdAt: badge.createdAt.toISOString(),
-                    })),
-                    shops: author.user.shops.map((userShop) => ({
-                        ...userShop,
-                        createdAt: userShop.createdAt.toISOString(),
-                    })),
-                })),
+                authors: changelog.authors.map((author) => author.user),
             })),
             pagination: {
                 page,

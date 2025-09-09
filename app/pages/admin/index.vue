@@ -6,7 +6,6 @@ definePageMeta({
     layout: 'dashboard',
 })
 
-const nuxtApp = useNuxtApp()
 const overlay = useOverlay()
 
 const modalFlags = overlay.create(LazyModalAdminModalFlags)
@@ -20,10 +19,6 @@ const { data } = await useFetch('/api/admin/stats', {
         items: 0,
         feedbacks: 0,
     }),
-    headers:
-        import.meta.server && nuxtApp.ssrContext?.event.headers
-            ? nuxtApp.ssrContext.event.headers
-            : undefined,
     getCachedData: (key, nuxtApp, ctx) =>
         ctx.cause !== 'initial'
             ? undefined
