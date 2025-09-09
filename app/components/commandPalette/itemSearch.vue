@@ -30,7 +30,6 @@ const { data, status } = useFetch('/api/items', {
                     shop: item.shop?.name,
                     image: item.image,
                     slot: 'item' as const,
-                    onSelect: () => onSelect(item.id),
                 })),
         }))
     },
@@ -56,7 +55,8 @@ const groups = computed(() => {
                             slot: 'url',
                             onSelect: () => {
                                 const result = extractItemId(searchTerm.value)
-                                if (result) onSelect(result.id, result.platform)
+                                if (result)
+                                    onSelected(result.id, result.platform)
                                 else
                                     toast.add({
                                         title: '無効なURL',
@@ -68,13 +68,34 @@ const groups = computed(() => {
                         },
                     ],
                 },
-                // @ts-expect-error TypeScript doesn't recognize the type of `data.value`
-                ...data.value,
+                ...(data.value?.map((category) => ({
+                    ...category,
+                    items: category.items.map((item) => ({
+                        ...item,
+                        onSelect: () => onSelected(item.id),
+                    })),
+                })) || []),
             ]
         }
-        return data.value
+        return (
+            data.value?.map((category) => ({
+                ...category,
+                items: category.items.map((item) => ({
+                    ...item,
+                    onSelect: () => onSelected(item.id),
+                })),
+            })) || []
+        )
     } catch {
-        return data.value
+        return (
+            data.value?.map((category) => ({
+                ...category,
+                items: category.items.map((item) => ({
+                    ...item,
+                    onSelect: () => onSelected(item.id),
+                })),
+            })) || []
+        )
     }
 })
 
@@ -82,7 +103,7 @@ const loadingComputed = computed(
     () => props.loading || loadingRef.value || status.value === 'pending'
 )
 
-const onSelect = async (id: string, platform?: Platform) => {
+const onSelected = async (id: string, platform?: Platform) => {
     loadingRef.value = true
 
     try {
