@@ -33,16 +33,10 @@ const totalItemsCount = computed(() =>
 
 const getItemsByCategory = (category: CategoryKey) => items.value[category]
 
-const ownedAvatars = ref<Item[]>([])
-
-try {
-    const avatarsData = await $fetch<Item[]>('/api/items/owned-avatars', {
-        query: { limit: 10 },
-    })
-    ownedAvatars.value = avatarsData || []
-} catch (error) {
-    console.error('Failed to fetch owned avatars:', error)
-}
+const { data: ownedAvatars } = await useFetch('/api/items/owned-avatars', {
+    query: { limit: 10 },
+    default: () => [],
+})
 
 const isItemAlreadyAdded = (itemId: string): boolean =>
     itemCategories.some((category) =>
@@ -200,9 +194,9 @@ const removeShapekey = (options: {
                     />
 
                     <template #content>
-                        <CommandPaletteItemSearch 
+                        <CommandPaletteItemSearch
                             v-model:open="popoverItemSearch"
-                            @select="addItem" 
+                            @select="addItem"
                         />
                     </template>
                 </UPopover>

@@ -165,13 +165,15 @@ const loadDraft = async (draftId: string) => {
     try {
         draftStatus.value = 'restoring'
 
-        const drafts = await $fetch('/api/setups/drafts', {
+        const { data: drafts } = await useFetch('/api/setups/drafts', {
             query: { id: draftId },
+            default: () => [],
         })
 
-        if (!drafts.length || !drafts[0]) throw new Error('Draft not found')
+        if (!drafts.value.length || !drafts.value[0])
+            throw new Error('Draft not found')
 
-        const draft = drafts[0]
+        const draft = drafts.value[0]
 
         await applyDraftData(draft.content)
         referencedDraft.value = draft.id
@@ -391,21 +393,22 @@ const enterEditModeAndRestoreDraft = async (args: {
         await loadDraft(args.draftId)
     } else if (args.edit) {
         try {
-            const drafts = await $fetch(`/api/setups/drafts`, {
+            const { data: drafts } = await useFetch('/api/setups/drafts', {
                 query: { setupId: args.edit },
+                default: () => [],
             })
 
-            if (drafts.length && drafts[0]) {
+            if (drafts.value.length && drafts.value[0]) {
                 draftStatus.value = 'restoring'
 
-                await applyDraftData(drafts[0].content)
+                await applyDraftData(drafts.value[0].content)
 
                 editingSetupId.value = args.edit
-                referencedDraft.value = drafts[0].id
+                referencedDraft.value = drafts.value[0].id
                 router.replace({
                     query: {
                         ...route.query,
-                        draftId: drafts[0].id,
+                        draftId: drafts.value[0].id,
                     },
                 })
                 draftStatus.value = 'restored'
