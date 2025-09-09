@@ -69,6 +69,8 @@ const addItem = async (item: Item) => {
         note: '',
         unsupported: false,
     })
+
+    popoverItemSearch.value = false
 }
 
 const removeItem = (category: string, id: string) => {
@@ -194,10 +196,7 @@ const removeShapekey = (options: {
                     />
 
                     <template #content>
-                        <CommandPaletteItemSearch
-                            v-model:open="popoverItemSearch"
-                            @select="addItem"
-                        />
+                        <CommandPaletteItemSearch @select="addItem" />
                     </template>
                 </UPopover>
             </div>
