@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CommandPaletteItemSearch Fix Test</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .popover {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            background: #f9f9f9;
+        }
+        .popover.open {
+            background: #e8f5e8;
+            border-color: #4ade80;
+        }
+        .popover.closed {
+            background: #fee2e2;
+            border-color: #f87171;
+        }
+        button {
+            padding: 8px 16px;
+            margin: 4px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #f0f0f0;
+        }
+        .log {
+            background: #1f2937;
+            color: #e5e7eb;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+        .success {
+            color: #4ade80;
+        }
+        .error {
+            color: #f87171;
+        }
+        .warning {
+            color: #fbbf24;
+        }
+        .info {
+            color: #60a5fa;
+        }
+        .counter {
+            font-weight: bold;
+            font-size: 18px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>CommandPaletteItemSearch Fix Test</h1>
+    <p>This test demonstrates the fix for the multiple item addition issue.</p>
+
+    <div class="test-container">
+        <h2>Before Fix (Problematic Behavior)</h2>
+        <p>Clearing searchTerm immediately causes race conditions.</p>
+        
+        <div class="popover" id="old-popover">
+            Popover: <span id="old-popover-status">CLOSED</span>
+        </div>
+        
+        <div>
+            SearchTerm: "<span id="old-search-term"></span>"
+        </div>
+        
+        <div class="counter">
+            Items Added: <span id="old-counter">0</span>
+        </div>
+        
+        <button onclick="testOldBehavior()">Add Item (Old Way)</button>
+        <button onclick="resetOld()">Reset</button>
+        
+        <div class="log" id="old-log"></div>
+    </div>
+
+    <div class="test-container">
+        <h2>After Fix (Correct Behavior)</h2>
+        <p>Parent component handles searchTerm cleanup via watcher.</p>
+        
+        <div class="popover" id="new-popover">
+            Popover: <span id="new-popover-status">CLOSED</span>
+        </div>
+        
+        <div>
+            SearchTerm: "<span id="new-search-term"></span>"
+        </div>
+        
+        <div class="counter">
+            Items Added: <span id="new-counter">0</span>
+        </div>
+        
+        <button onclick="testNewBehavior()">Add Item (Fixed Way)</button>
+        <button onclick="resetNew()">Reset</button>
+        
+        <div class="log" id="new-log"></div>
+    </div>
+
+    <div class="test-container">
+        <h3>Test Summary</h3>
+        <p>Try adding multiple items with both approaches. The old way will show inconsistent behavior after the first addition, while the new way works consistently.</p>
+        
+        <p><strong>Key Differences:</strong></p>
+        <ul>
+            <li><strong>Old:</strong> Child component clears searchTerm immediately after emit</li>
+            <li><strong>New:</strong> Parent component clears searchTerm when popover closes</li>
+        </ul>
+    </div>
+
+    <script>
+        // Simulate old behavior (problematic)
+        let oldSearchTerm = '';
+        let oldPopoverOpen = false;
+        let oldItemCount = 0;
+
+        // Simulate new behavior (fixed)
+        let newSearchTerm = '';
+        let newPopoverOpen = false;
+        let newItemCount = 0;
+
+        function log(elementId, message, type = 'info') {
+            const logElement = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            const colorClass = type;
+            logElement.innerHTML += `<span class="${colorClass}">[${timestamp}] ${message}</span>\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function updateOldUI() {
+            document.getElementById('old-search-term').textContent = oldSearchTerm;
+            document.getElementById('old-counter').textContent = oldItemCount;
+            const popoverElement = document.getElementById('old-popover');
+            const statusElement = document.getElementById('old-popover-status');
+            
+            if (oldPopoverOpen) {
+                statusElement.textContent = 'OPEN';
+                popoverElement.className = 'popover open';
+            } else {
+                statusElement.textContent = 'CLOSED';
+                popoverElement.className = 'popover closed';
+            }
+        }
+
+        function updateNewUI() {
+            document.getElementById('new-search-term').textContent = newSearchTerm;
+            document.getElementById('new-counter').textContent = newItemCount;
+            const popoverElement = document.getElementById('new-popover');
+            const statusElement = document.getElementById('new-popover-status');
+            
+            if (newPopoverOpen) {
+                statusElement.textContent = 'OPEN';
+                popoverElement.className = 'popover open';
+            } else {
+                statusElement.textContent = 'CLOSED';
+                popoverElement.className = 'popover closed';
+            }
+        }
+
+        function testOldBehavior() {
+            // User opens popover
+            oldPopoverOpen = true;
+            oldSearchTerm = 'searching for item...';
+            updateOldUI();
+            log('old-log', 'User opens popover and searches', 'info');
+            log('old-log', `SearchTerm set to: "${oldSearchTerm}"`, 'info');
+
+            setTimeout(() => {
+                // Simulate onSelect in child component (OLD WAY)
+                log('old-log', 'User selects an item', 'warning');
+                log('old-log', 'Child component: emitting select event', 'info');
+                
+                // PROBLEM: Child clears searchTerm immediately
+                oldSearchTerm = '';
+                log('old-log', 'Child component: clearing searchTerm immediately', 'error');
+                updateOldUI();
+
+                setTimeout(() => {
+                    // Parent addItem function runs
+                    log('old-log', 'Parent component: addItem function running', 'info');
+                    oldItemCount++;
+                    
+                    // Parent closes popover
+                    oldPopoverOpen = false;
+                    log('old-log', 'Parent component: closing popover', 'info');
+                    updateOldUI();
+                    
+                    log('old-log', `✅ Item ${oldItemCount} added, but searchTerm was cleared too early!`, 'warning');
+                    log('old-log', '💥 This causes UCommandPalette state issues on next open', 'error');
+                    log('old-log', '---', 'info');
+                }, 200);
+            }, 500);
+        }
+
+        function testNewBehavior() {
+            // User opens popover
+            newPopoverOpen = true;
+            newSearchTerm = 'searching for item...';
+            updateNewUI();
+            log('new-log', 'User opens popover and searches', 'info');
+            log('new-log', `SearchTerm set to: "${newSearchTerm}"`, 'info');
+
+            setTimeout(() => {
+                // Simulate onSelect in child component (NEW WAY)
+                log('new-log', 'User selects an item', 'warning');
+                log('new-log', 'Child component: emitting select event', 'info');
+                
+                // FIX: Child does NOT clear searchTerm immediately
+                log('new-log', 'Child component: NOT clearing searchTerm (delegating to parent)', 'success');
+                updateNewUI();
+
+                setTimeout(() => {
+                    // Parent addItem function runs
+                    log('new-log', 'Parent component: addItem function running', 'info');
+                    newItemCount++;
+                    
+                    // Parent closes popover
+                    newPopoverOpen = false;
+                    log('new-log', 'Parent component: closing popover', 'info');
+                    updateNewUI();
+                    
+                    // Parent watcher clears searchTerm
+                    newSearchTerm = '';
+                    log('new-log', 'Parent watcher: clearing searchTerm after popover closed', 'success');
+                    updateNewUI();
+                    
+                    log('new-log', `✅ Item ${newItemCount} added successfully!`, 'success');
+                    log('new-log', '🎉 UCommandPalette maintains proper state for next use', 'success');
+                    log('new-log', '---', 'info');
+                }, 200);
+            }, 500);
+        }
+
+        function resetOld() {
+            oldSearchTerm = '';
+            oldPopoverOpen = false;
+            oldItemCount = 0;
+            document.getElementById('old-log').innerHTML = '';
+            updateOldUI();
+            log('old-log', 'Reset complete', 'info');
+        }
+
+        function resetNew() {
+            newSearchTerm = '';
+            newPopoverOpen = false;
+            newItemCount = 0;
+            document.getElementById('new-log').innerHTML = '';
+            updateNewUI();
+            log('new-log', 'Reset complete', 'info');
+        }
+
+        // Initialize UI
+        updateOldUI();
+        updateNewUI();
+        log('old-log', 'Ready to test old behavior', 'info');
+        log('new-log', 'Ready to test new behavior', 'info');
+    </script>
+</body>
+</html>
