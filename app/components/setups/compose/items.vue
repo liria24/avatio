@@ -222,7 +222,7 @@ const removeShapekey = (options: {
                         :height="24"
                         format="webp"
                         loading="lazy"
-                        fetch-priority="low"
+                        fetchpriority="low"
                         class="aspect-square size-6 shrink-0 rounded-md object-cover"
                     />
                     <span class="text-toned text-xs">

@@ -54,7 +54,7 @@ const { data: repo } = useFetch<GithubRepo>(
                                     src="https://avatars.githubusercontent.com/u/172270941?v=4"
                                     alt="Liria"
                                     loading="lazy"
-                                    fetch-priority="low"
+                                    fetchpriority="low"
                                     :width="48"
                                     :height="48"
                                     format="webp"

@@ -252,7 +252,7 @@ const cancelCropImage = () => {
                         :height="256"
                         format="webp"
                         loading="eager"
-                        fetch-priority="high"
+                        fetchpriority="high"
                         custom
                         class="aspect-square size-24 shrink-0 rounded-full object-cover md:size-48"
                     >
