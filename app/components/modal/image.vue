@@ -17,7 +17,7 @@ const props = defineProps<Props>()
                 :src="props.src"
                 :alt="props.alt"
                 loading="lazy"
-                fetch-priority="low"
+                fetchpriority="low"
                 class="h-full object-contain"
             />
         </template>

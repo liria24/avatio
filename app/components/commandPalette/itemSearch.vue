@@ -148,7 +148,7 @@ const onSelected = async (id: string, platform?: Platform) => {
                 :height="24"
                 format="webp"
                 loading="lazy"
-                fetch-priority="low"
+                fetchpriority="low"
                 custom
                 class="aspect-square size-6 shrink-0 rounded-md object-cover"
             >

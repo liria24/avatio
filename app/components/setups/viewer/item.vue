@@ -60,7 +60,7 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                     :height="88"
                     format="webp"
                     loading="lazy"
-                    fetch-priority="low"
+                    fetchpriority="low"
                     custom
                     class="aspect-square size-22 shrink-0 rounded-lg object-cover text-xs"
                 >
@@ -126,7 +126,7 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                                 :height="24"
                                 format="webp"
                                 loading="lazy"
-                                fetch-priority="low"
+                                fetchpriority="low"
                                 custom
                                 class="ring-accented aspect-square size-5 shrink-0 rounded-sm object-cover ring-1"
                             >
@@ -168,7 +168,7 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                                     :height="48"
                                     format="webp"
                                     loading="lazy"
-                                    fetch-priority="low"
+                                    fetchpriority="low"
                                     custom
                                     class="aspect-square size-10 shrink-0 rounded-md object-cover"
                                 >

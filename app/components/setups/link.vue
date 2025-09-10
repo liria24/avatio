@@ -176,7 +176,7 @@ watch(colorMode, (newMode) => {
                 fit="cover"
                 preload
                 loading="eager"
-                fetch-priority="high"
+                fetchpriority="high"
                 class="size-full max-h-[420px] rounded-lg object-cover"
             />
             <div
@@ -223,7 +223,7 @@ watch(colorMode, (newMode) => {
                 :height="88"
                 format="webp"
                 loading="lazy"
-                fetch-priority="low"
+                fetchpriority="low"
                 custom
                 class="m-1 aspect-square size-14 shrink-0 rounded-lg object-cover md:size-20"
             >

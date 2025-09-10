@@ -25,7 +25,7 @@ const { data: item } = useFetch<Item>(
                 :width="48"
                 format="webp"
                 loading="lazy"
-                fetch-priority="low"
+                fetchpriority="low"
                 custom
                 class="aspect-square size-9 shrink-0 rounded-lg object-cover"
             >

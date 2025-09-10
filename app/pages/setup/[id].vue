@@ -390,7 +390,7 @@ if (data.value) {
                     :height="Math.min(data.images[0].height, 720)"
                     format="webp"
                     loading="eager"
-                    fetch-priority="high"
+                    fetchpriority="high"
                     preload
                     custom
                     class="max-h-[720px] w-fit shrink-0 grow-0 cursor-zoom-in overflow-hidden rounded-lg object-contain"

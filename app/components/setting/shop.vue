@@ -191,7 +191,7 @@ watch(modalVerify, async (value) => {
                         :height="32"
                         format="webp"
                         loading="lazy"
-                        fetch-priority="low"
+                        fetchpriority="low"
                         class="aspect-square size-7 shrink-0 rounded-md object-cover"
                     />
 

@@ -19,7 +19,10 @@ const onClick = () => {
 </script>
 
 <template>
-    <div v-if="visible" class="flex items-center gap-3 px-2">
+    <div
+        v-if="visible"
+        class="ring-muted flex items-center justify-between gap-3 rounded-lg px-3 py-2 ring-1"
+    >
         <p
             class="text-toned text-xs wrap-anywhere break-keep"
             v-html="
