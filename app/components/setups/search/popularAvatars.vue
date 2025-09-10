@@ -45,6 +45,7 @@ const { data: popularAvatars } = await useFetch('/api/items/popular-avatars', {
                     format="webp"
                     fit="cover"
                     loading="lazy"
+                    fetch-priority="low"
                     custom
                     class="aspect-square shrink-0 rounded-lg object-cover"
                 >

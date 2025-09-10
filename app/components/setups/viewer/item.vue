@@ -59,6 +59,8 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                     :width="88"
                     :height="88"
                     format="webp"
+                    loading="lazy"
+                    fetch-priority="low"
                     custom
                     class="aspect-square size-22 shrink-0 rounded-lg object-cover text-xs"
                 >
@@ -120,10 +122,11 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                                 v-slot="{ isLoaded, src, imgAttrs }"
                                 :src="item.shop.image || undefined"
                                 :alt="item.shop.name"
-                                :width="20"
-                                :height="20"
+                                :width="24"
+                                :height="24"
                                 format="webp"
                                 loading="lazy"
+                                fetch-priority="low"
                                 custom
                                 class="ring-accented aspect-square size-5 shrink-0 rounded-sm object-cover ring-1"
                             >
@@ -161,9 +164,11 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                                     v-slot="{ isLoaded, src, imgAttrs }"
                                     :src="item.shop.image || undefined"
                                     :alt="item.shop.name"
-                                    :width="40"
-                                    :height="40"
+                                    :width="48"
+                                    :height="48"
                                     format="webp"
+                                    loading="lazy"
+                                    fetch-priority="low"
                                     custom
                                     class="aspect-square size-10 shrink-0 rounded-md object-cover"
                                 >

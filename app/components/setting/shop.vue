@@ -187,6 +187,11 @@ watch(modalVerify, async (value) => {
                     <NuxtImg
                         :src="shop.shop.image || undefined"
                         :alt="shop.shop.name"
+                        :width="32"
+                        :height="32"
+                        format="webp"
+                        loading="lazy"
+                        fetch-priority="low"
                         class="aspect-square size-7 shrink-0 rounded-md object-cover"
                     />
 

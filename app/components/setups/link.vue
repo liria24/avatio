@@ -175,6 +175,8 @@ watch(colorMode, (newMode) => {
                 format="webp"
                 fit="cover"
                 preload
+                loading="eager"
+                fetch-priority="high"
                 class="size-full max-h-[420px] rounded-lg object-cover"
             />
             <div
@@ -217,10 +219,11 @@ watch(colorMode, (newMode) => {
                 v-slot="{ isLoaded, src, imgAttrs }"
                 :src="firstAvatar.image || undefined"
                 :alt="firstAvatar.name"
-                :width="80"
-                :height="80"
+                :width="88"
+                :height="88"
                 format="webp"
                 loading="lazy"
+                fetch-priority="low"
                 custom
                 class="m-1 aspect-square size-14 shrink-0 rounded-lg object-cover md:size-20"
             >

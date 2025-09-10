@@ -144,6 +144,7 @@ export default defineNuxtConfig({
             config: {
                 images: {
                     minimumCacheTTL: 2678400, // 31 days
+                    sizes: [24, 32, 48, 88, 256, 640, 1080, 2048, 3840],
                 },
                 crons: [
                     {
@@ -280,6 +281,7 @@ export default defineNuxtConfig({
             r2Domain, // R2
             'booth.pximg.net', // booth
             's2.booth.pm', // booth
+            'github.com', // GitHub
             'avatars.githubusercontent.com', // GitHub User Avatars
         ],
         alias: {

@@ -378,9 +378,19 @@ if (data.value) {
                     v-slot="{ src, imgAttrs, isLoaded }"
                     :src="data.images[0].url"
                     :alt="data.name"
-                    :width="data.images[0].width"
-                    :height="data.images[0].height"
+                    :width="
+                        data.images[0].height > 720
+                            ? Math.round(
+                                  (data.images[0].width * 720) /
+                                      data.images[0].height
+                              )
+                            : data.images[0].width
+                    "
+                    :height="Math.min(data.images[0].height, 720)"
                     format="webp"
+                    loading="eager"
+                    fetch-priority="high"
+                    preload
                     custom
                     class="max-h-[720px] w-fit shrink-0 grow-0 cursor-zoom-in overflow-hidden rounded-lg object-contain"
                 >

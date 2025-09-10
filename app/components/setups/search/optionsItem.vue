@@ -21,10 +21,11 @@ const { data: item } = useFetch<Item>(
                 v-slot="{ isLoaded, src, imgAttrs }"
                 :src="item.image || undefined"
                 :alt="item.name"
-                :height="36"
-                :width="36"
+                :height="48"
+                :width="48"
                 format="webp"
                 loading="lazy"
+                fetch-priority="low"
                 custom
                 class="aspect-square size-9 shrink-0 rounded-lg object-cover"
             >

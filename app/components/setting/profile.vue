@@ -248,9 +248,11 @@ const cancelCropImage = () => {
                         v-slot="{ isLoaded, src, imgAttrs }"
                         :src="state.image"
                         :alt="state.name"
-                        :width="192"
-                        :height="192"
+                        :width="256"
+                        :height="256"
                         format="webp"
+                        loading="eager"
+                        fetch-priority="high"
                         custom
                         class="aspect-square size-24 shrink-0 rounded-full object-cover md:size-48"
                     >

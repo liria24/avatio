@@ -16,6 +16,8 @@ const props = defineProps<Props>()
             <NuxtImg
                 :src="props.src"
                 :alt="props.alt"
+                loading="lazy"
+                fetch-priority="low"
                 class="h-full object-contain"
             />
         </template>
