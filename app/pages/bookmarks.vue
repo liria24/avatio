@@ -13,7 +13,7 @@ const { data, status, refresh } = await useBookmarks({
     })),
 })
 
-const setups = ref<Setup[]>([])
+const setups = ref<SerializedSetup[]>([])
 
 const loadMoreSetups = () => {
     if (data.value?.pagination.hasNext) {

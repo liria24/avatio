@@ -78,9 +78,12 @@ if (user.value) {
                         v-slot="{ isLoaded, src, imgAttrs }"
                         :src="user.image"
                         :alt="user.name"
-                        :width="80"
-                        :height="80"
+                        :width="88"
+                        :height="88"
                         format="webp"
+                        loading="eager"
+                        fetch-priority="high"
+                        preload
                         custom
                         class="aspect-square size-14 shrink-0 rounded-full object-cover sm:size-20"
                     >
@@ -205,6 +208,8 @@ if (user.value) {
                         :height="32"
                         format="webp"
                         fit="cover"
+                        loading="lazy"
+                        fetch-priority="low"
                         custom
                         class="aspect-square size-8 shrink-0 rounded-lg object-cover"
                     >

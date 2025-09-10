@@ -50,8 +50,8 @@ const inputShapekeyValue = ref(0)
                         v-slot="{ isLoaded, src, imgAttrs }"
                         :src="props.item.image || undefined"
                         :alt="props.item.name"
-                        :width="72"
-                        :height="72"
+                        :width="88"
+                        :height="88"
                         format="webp"
                         custom
                         class="aspect-square size-18 shrink-0 rounded-lg object-cover"

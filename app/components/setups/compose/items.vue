@@ -218,9 +218,11 @@ const removeShapekey = (options: {
                     <NuxtImg
                         :src="ownedAvatar.image || undefined"
                         :alt="ownedAvatar.name"
-                        width="24"
-                        height="24"
+                        :width="24"
+                        :height="24"
                         format="webp"
+                        loading="lazy"
+                        fetch-priority="low"
                         class="aspect-square size-6 shrink-0 rounded-md object-cover"
                     />
                     <span class="text-toned text-xs">

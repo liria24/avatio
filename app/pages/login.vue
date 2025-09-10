@@ -19,6 +19,7 @@ definePageMeta({
 defineSeo({
     title: 'ログイン',
     description: 'ユーザーアカウントにログインします。',
+    image: 'https://avatio.me/ogp.png',
 })
 </script>
 

@@ -148,6 +148,7 @@ await search()
 defineSeo({
     title: 'セットアップ検索',
     description: '条件を指定してセットアップを検索できます。',
+    image: 'https://avatio.me/ogp.png',
 })
 </script>
 
