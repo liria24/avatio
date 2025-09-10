@@ -4,12 +4,14 @@ export default ({
     description,
     image,
     type,
+    twitterCard,
 }: {
     title?: string
     titleTemplate?: string
     description?: string
     image?: string
     type?: 'website' | 'article'
+    twitterCard?: 'summary' | 'summary_large_image'
 }) => {
     useSeoMeta({
         title: title,
@@ -20,6 +22,7 @@ export default ({
         twitterTitle: title,
         twitterDescription: description,
         twitterImage: image,
+        twitterCard: twitterCard || 'summary',
     })
     useHead({
         meta: [{ property: 'og:type', content: type || 'article' }],

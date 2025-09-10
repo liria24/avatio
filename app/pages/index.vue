@@ -24,6 +24,7 @@ defineSeo({
     titleTemplate: '%s',
     description: 'あなたのアバター改変を共有しよう',
     image: 'https://avatio.me/ogp_2.png',
+    twitterCard: 'summary_large_image',
 })
 useSchemaOrg([
     defineWebSite({

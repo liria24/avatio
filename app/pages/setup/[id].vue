@@ -127,6 +127,7 @@ if (data.value) {
             data.value.images?.length && data.value.images[0]
                 ? data.value.images[0].url
                 : 'https://avatio.me/ogp.png',
+        twitterCard: 'summary_large_image',
     })
     useSchemaOrg([
         defineWebPage({

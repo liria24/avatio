@@ -33,6 +33,7 @@ const versions = computed(() => {
 defineSeo({
     title: '変更履歴',
     description: 'Avatio の変更履歴を確認できます。',
+    image: 'https://avatio.me/ogp.png',
 })
 </script>
 
