@@ -277,6 +277,7 @@ export default defineNuxtConfig({
     },
 
     image: {
+        densities: [1, 2],
         domains: [
             r2Domain, // R2
             'booth.pximg.net', // booth
