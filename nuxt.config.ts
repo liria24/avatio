@@ -277,6 +277,20 @@ export default defineNuxtConfig({
     },
 
     image: {
+        screens: {
+            xsIcon: 24,
+            smIcon: 32,
+            mdIcon: 48,
+            lgIcon: 88,
+            xxs: 256,
+            xs: 320,
+            sm: 640,
+            md: 768,
+            lg: 1024,
+            xl: 1280,
+            xxl: 1536,
+            '2xl': 1536,
+        },
         densities: [1, 2],
         domains: [
             r2Domain, // R2
