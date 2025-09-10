@@ -14,7 +14,7 @@ const { data: repo } = useFetch<GithubRepo>(
     <footer class="flex flex-col gap-4 self-stretch pb-6">
         <USeparator icon="avatio:avatio" />
 
-        <BannerOwnerWarning />
+        <LazyBannerOwnerWarning hydrate-on-visible />
 
         <div
             class="flex w-full flex-col items-center justify-between gap-x-4 gap-y-2 pb-0 sm:flex-row"
@@ -33,7 +33,11 @@ const { data: repo } = useFetch<GithubRepo>(
                         class="p-2"
                     />
 
-                    <UPopover mode="hover" :open-delay="100">
+                    <LazyUPopover
+                        hydrate-on-visible
+                        mode="hover"
+                        :open-delay="100"
+                    >
                         <UButton
                             to="https://github.com/liria24/avatio"
                             target="_blank"
@@ -105,7 +109,7 @@ const { data: repo } = useFetch<GithubRepo>(
                                 </div>
                             </div>
                         </template>
-                    </UPopover>
+                    </LazyUPopover>
                 </div>
 
                 <div class="flex items-center gap-0.5">
