@@ -26,7 +26,7 @@
         "@nuxtjs/i18n": "^10.0.6",
         "@nuxtjs/mdc": "0.17.3",
         "@nuxtjs/robots": "5.5.1",
-        "@nuxtjs/sitemap": "7.4.3",
+        "@nuxtjs/sitemap": "7.4.7",
         "@pinia/nuxt": "0.11.2",
         "@stefanobartoletti/nuxt-social-share": "1.2.3",
         "@upstash/redis": "^1.35.3",
