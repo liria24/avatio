@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { LazyModalFeedback } from '#components'
 
+const { app } = useAppConfig()
 const overlay = useOverlay()
 
 const modalFeedback = overlay.create(LazyModalFeedback)
@@ -24,7 +25,7 @@ const { data: repo } = useFetch<GithubRepo>(
             >
                 <div class="flex items-center gap-0.5">
                     <UButton
-                        to="https://x.com/liria_24"
+                        :to="app.liria.twitter"
                         target="_blank"
                         icon="simple-icons:x"
                         aria-label="X"
@@ -39,7 +40,7 @@ const { data: repo } = useFetch<GithubRepo>(
                         :open-delay="100"
                     >
                         <UButton
-                            to="https://github.com/liria24/avatio"
+                            :to="app.repo"
                             target="_blank"
                             icon="simple-icons:github"
                             aria-label="GitHub"
@@ -55,7 +56,7 @@ const { data: repo } = useFetch<GithubRepo>(
                             >
                                 <NuxtImg
                                     v-slot="{ src, imgAttrs, isLoaded }"
-                                    src="https://avatars.githubusercontent.com/u/172270941?v=4"
+                                    :src="app.liria.avatar"
                                     alt="Liria"
                                     loading="lazy"
                                     fetchpriority="low"
@@ -160,7 +161,7 @@ const { data: repo } = useFetch<GithubRepo>(
                         © 2025
                     </p>
                     <UButton
-                        to="https://liria.me"
+                        :to="app.liria.website"
                         target="_blank"
                         label="Liria"
                         trailing-icon="avatio:liria"

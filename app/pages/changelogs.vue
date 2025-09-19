@@ -1,4 +1,6 @@
 <script setup lang="ts">
+const { app } = useAppConfig()
+
 const { data } = await useFetch<PaginationResponse<Changelog[]>>(
     '/api/changelogs',
     {
@@ -33,7 +35,7 @@ const versions = computed(() => {
 defineSeo({
     title: '変更履歴',
     description: 'Avatio の変更履歴を確認できます。',
-    image: 'https://avatio.me/ogp.png',
+    image: `${app.site}/ogp.png`,
 })
 </script>
 

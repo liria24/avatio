@@ -6,9 +6,9 @@ definePageMeta({
     layout: 'dashboard',
 })
 
+const { itemCategory } = useAppConfig()
 const toast = useToast()
 const overlay = useOverlay()
-const categoryAttributes = itemCategoryAttributes()
 
 const modalChangeItemNiceName = overlay.create(LazyModalAdminChangeItemNiceName)
 
@@ -217,7 +217,7 @@ const resolve = async (id: number, resolve?: boolean) => {
                                         />
                                         <UBadge
                                             :label="
-                                                categoryAttributes[
+                                                itemCategory[
                                                     report.item.category
                                                 ].label
                                             "

@@ -80,7 +80,7 @@ const toggleBookmark = async () => {
     }
 }
 
-const categoryAttributes = itemCategoryAttributes()
+const { itemCategory } = useAppConfig()
 
 const categorizedItems = computed(() => {
     const itemsByCategory = data.value?.items.reduce(
@@ -97,12 +97,12 @@ const categorizedItems = computed(() => {
 
     if (!itemsByCategory) return
 
-    // itemCategoryAttributesで定義された順序でプロパティを追加
-    for (const categoryKey of Object.keys(categoryAttributes))
+    // itemCategoryで定義された順序でプロパティを追加
+    for (const categoryKey of Object.keys(itemCategory))
         if (itemsByCategory[categoryKey])
             orderedCategories[categoryKey] = itemsByCategory[categoryKey]
 
-    // itemCategoryAttributesに定義されていないカテゴリがあれば最後に追加
+    // itemCategoryに定義されていないカテゴリがあれば最後に追加
     for (const [categoryKey, items] of Object.entries(itemsByCategory))
         if (!orderedCategories[categoryKey])
             orderedCategories[categoryKey] = items
@@ -428,8 +428,8 @@ if (data.value) {
                             <div class="flex items-center gap-2">
                                 <Icon
                                     :name="
-                                        categoryAttributes[
-                                            key as keyof typeof categoryAttributes
+                                        itemCategory[
+                                            key as keyof typeof itemCategory
                                         ]?.icon || 'lucide:box'
                                     "
                                     :size="22"
@@ -439,8 +439,8 @@ if (data.value) {
                                     class="pb-0.5 text-lg leading-none font-semibold text-nowrap"
                                 >
                                     {{
-                                        categoryAttributes[
-                                            key as keyof typeof categoryAttributes
+                                        itemCategory[
+                                            key as keyof typeof itemCategory
                                         ]?.label || key
                                     }}
                                 </h2>

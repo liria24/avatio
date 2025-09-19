@@ -12,7 +12,9 @@ const emit = defineEmits<{
     (e: 'continue'): void
 }>()
 
-const link = `https://avatio.me/setup/${props.setupId}`
+const { app } = useAppConfig()
+
+const link = `${app.site}/setup/${props.setupId}`
 
 const { data } = await useSetup(props.setupId)
 

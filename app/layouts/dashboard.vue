@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import type { NavigationMenuItem } from '@nuxt/ui'
 
+const { app } = useAppConfig()
 const { $session } = useNuxtApp()
 const session = await $session()
 
@@ -96,13 +97,13 @@ const links = [
         {
             label: 'X/Twitter',
             icon: 'simple-icons:x',
-            to: 'https://x.com/liria_24',
+            to: app.liria.twitter,
             target: '_blank',
         },
         {
             label: 'GitHub',
             icon: 'simple-icons:github',
-            to: 'https://github.com/liria24/avatio',
+            to: app.repo,
             target: '_blank',
         },
     ],
