@@ -1,4 +1,3 @@
-import type { auth } from '@@/better-auth'
 import {
     adminClient,
     customSessionClient,
@@ -32,10 +31,7 @@ export default defineNuxtPlugin(() => {
             session: async () => {
                 if (globalSession.value !== undefined) return globalSession
 
-                const { data: session } = await client.useSession(
-                    (url, options) =>
-                        useFetch(url, { ...options, dedupe: 'defer' })
-                )
+                const { data: session } = await client.useSession(useFetch)
 
                 globalSession.value = session.value
                 return session
