@@ -10,8 +10,8 @@ const props = defineProps<{
 const searchTerm = ref('')
 const loadingRef = ref(false)
 
+const { itemCategory } = useAppConfig()
 const toast = useToast()
-const categoryAttributes = itemCategoryAttributes()
 
 const { data, status } = useFetch('/api/items', {
     query: {
@@ -21,7 +21,7 @@ const { data, status } = useFetch('/api/items', {
     transform: (data) => {
         return itemCategorySchema.options.map((category) => ({
             id: category,
-            label: categoryAttributes[category].label,
+            label: itemCategory[category].label,
             items: data.data
                 .filter((item: Item) => item.category === category)
                 .map((item: Item) => ({

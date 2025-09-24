@@ -1,10 +1,12 @@
 <script lang="ts" setup>
 import FaqContent from '~/content/faq.md?raw'
 
+const { app } = useAppConfig()
+
 defineSeo({
     title: 'FAQ',
     description: 'よくある質問',
-    image: 'https://avatio.me/ogp.png',
+    image: `${app.site}/ogp.png`,
 })
 </script>
 

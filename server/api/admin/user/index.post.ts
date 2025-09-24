@@ -1,4 +1,3 @@
-import { auth } from '@@/better-auth'
 import { z } from 'zod'
 
 const body = z.object({

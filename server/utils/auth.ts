@@ -1,8 +1,8 @@
+import database from '@@/database'
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { admin, customSession, multiSession } from 'better-auth/plugins'
 import { nanoid } from 'nanoid'
-import database from './database'
 
 const JPG_FILENAME_LENGTH = 16
 const USER_ID_LENGTH = 10

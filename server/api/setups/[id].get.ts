@@ -1,4 +1,3 @@
-import type { Session } from '@@/better-auth'
 import database from '@@/database'
 import { user } from '@@/database/schema'
 import { z } from 'zod'

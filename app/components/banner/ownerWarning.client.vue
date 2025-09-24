@@ -2,6 +2,8 @@
 import { createStorage } from 'unstorage'
 import localStorageDriver from 'unstorage/drivers/localstorage'
 
+const { app } = useAppConfig()
+
 const storage = createStorage({
     driver: localStorageDriver({}),
 })
@@ -33,7 +35,7 @@ const onClick = () => {
         />
 
         <UButton
-            to="https://github.com/liria24/avatio/issues/new/choose"
+            :to="app.githubIssue"
             target="_blank"
             label="GitHub"
             icon="simple-icons:github"

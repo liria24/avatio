@@ -21,7 +21,7 @@ const emit = defineEmits([
     'shapekey-remove',
 ])
 
-const categoryAttributes = itemCategoryAttributes()
+const { itemCategory } = useAppConfig()
 
 const inputShapekeyName = ref('')
 const inputShapekeyValue = ref(0)
@@ -212,14 +212,12 @@ const inputShapekeyValue = ref(0)
 
                 <UDropdownMenu
                     :items="
-                        Object.entries(categoryAttributes).map(
-                            ([key, value]) => ({
-                                label: value.label,
-                                icon: value.icon,
-                                value: key,
-                                onSelect: () => emit('change-category', key),
-                            })
-                        )
+                        Object.entries(itemCategory).map(([key, value]) => ({
+                            label: value.label,
+                            icon: value.icon,
+                            value: key,
+                            onSelect: () => emit('change-category', key),
+                        }))
                     "
                     :content="{
                         align: 'center',
@@ -230,7 +228,7 @@ const inputShapekeyValue = ref(0)
                 >
                     <UButton
                         :icon="
-                            categoryAttributes[props.item.category]?.icon ||
+                            itemCategory[props.item.category]?.icon ||
                             'lucide:box'
                         "
                         variant="ghost"

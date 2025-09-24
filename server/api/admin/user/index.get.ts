@@ -1,4 +1,3 @@
-import { auth } from '@@/better-auth'
 import type { UserWithRole } from 'better-auth/plugins'
 import { z } from 'zod'
 

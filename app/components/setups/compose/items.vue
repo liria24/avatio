@@ -14,8 +14,8 @@ const items = defineModel<Record<ItemCategory, SetupItem[]>>({
     }),
 })
 
+const { itemCategory } = useAppConfig()
 const toast = useToast()
-const categoryAttributes = itemCategoryAttributes()
 
 const popoverItemSearch = ref(false)
 
@@ -247,19 +247,14 @@ const removeShapekey = (options: {
                 <template v-if="getItemsByCategory(category).length">
                     <div class="flex items-center gap-2">
                         <Icon
-                            :name="
-                                categoryAttributes[category]?.icon ||
-                                'lucide:box'
-                            "
+                            :name="itemCategory[category]?.icon || 'lucide:box'"
                             :size="22"
                             class="text-muted shrink-0"
                         />
                         <h2
                             class="pb-0.5 text-lg leading-none font-semibold text-nowrap"
                         >
-                            {{
-                                categoryAttributes[category]?.label || category
-                            }}
+                            {{ itemCategory[category]?.label || category }}
                         </h2>
                     </div>
 
