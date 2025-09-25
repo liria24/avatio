@@ -77,7 +77,7 @@ export default defineApi(
         // ユーザーショップの登録
         await database.insert(userShops).values({
             userId: session.user.id,
-            shopId: itemData.shop.id,
+            shopId: itemData.shop!.id,
         })
 
         // ショップオーナーバッジの付与
@@ -94,10 +94,11 @@ export default defineApi(
             .delete(userShopVerification)
             .where(eq(userShopVerification.userId, session.user.id))
 
-        return { success: true, shopId: itemData.shop.id }
+        return { success: true, shopId: itemData.shop?.id }
     },
     {
         errorMessage: 'Failed to verify shop.',
         requireSession: true,
+        rejectBannedUser: true,
     }
 )

@@ -61,22 +61,30 @@ export const user = authSchema.table(
     (table) => [index('user_email_index').on(table.email)]
 )
 
-export const session = authSchema.table('session', {
-    id: text('id').primaryKey(),
-    expiresAt: timestamp('expires_at').notNull(),
-    token: text('token').notNull().unique(),
-    createdAt: timestamp('created_at').notNull(),
-    updatedAt: timestamp('updated_at').notNull(),
-    ipAddress: text('ip_address'),
-    userAgent: text('user_agent'),
-    userId: text('user_id')
-        .notNull()
-        .references(() => user.id, {
-            onUpdate: 'cascade',
-            onDelete: 'cascade',
-        }),
-    impersonatedBy: text('impersonated_by'),
-})
+export const session = authSchema.table(
+    'session',
+    {
+        id: text('id').primaryKey(),
+        expiresAt: timestamp('expires_at').notNull(),
+        token: text('token').notNull().unique(),
+        createdAt: timestamp('created_at').notNull(),
+        updatedAt: timestamp('updated_at').notNull(),
+        ipAddress: text('ip_address'),
+        userAgent: text('user_agent'),
+        userId: text('user_id')
+            .notNull()
+            .references(() => user.id, {
+                onUpdate: 'cascade',
+                onDelete: 'cascade',
+            }),
+        impersonatedBy: text('impersonated_by'),
+    },
+    (table) => [
+        index('session_user_id_index').on(table.userId),
+        index('session_expires_at_index').on(table.expiresAt),
+        index('session_token_index').on(table.token),
+    ]
+)
 
 export const account = authSchema.table(
     'account',

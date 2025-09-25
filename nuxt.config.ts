@@ -165,13 +165,29 @@ export default defineNuxtConfig({
     },
 
     runtimeConfig: {
-        adminKey: '',
-        ai: { gateway: { apiKey: '' } },
-        betterAuth: { url: baseUrl, secret: '' },
-        liria: { accessToken: '' },
-        neon: { databaseUrl: '' },
-        r2: { endpoint: '', accessKey: '', secretKey: '' },
-        vercel: { token: '', edgeConfig: { endpoint: '' } },
+        adminKey: import.meta.env.ADMIN_KEY || '',
+        ai: { gateway: { apiKey: import.meta.env.AI_GATEWAY_API_KEY || '' } },
+        betterAuth: {
+            url: import.meta.env.NUXT_BETTER_AUTH_URL || baseUrl,
+            secret: import.meta.env.NUXT_BETTER_AUTH_SECRET || '',
+        },
+        liria: { accessToken: import.meta.env.LIRIA_ACCESS_TOKEN || '' },
+        neon: { databaseUrl: import.meta.env.NUXT_NEON_DATABASE_URL || '' },
+        r2: {
+            endpoint: import.meta.env.NUXT_R2_ENDPOINT || '',
+            accessKey: import.meta.env.NUXT_R2_ACCESS_KEY || '',
+            secretKey: import.meta.env.NUXT_R2_SECRET_KEY || '',
+        },
+        upstash: {
+            redisRestUrl: import.meta.env.UPSTASH_REDIS_REST_URL || '',
+            redisRestToken: import.meta.env.UPSTASH_REDIS_REST_TOKEN || '',
+        },
+        vercel: {
+            token: import.meta.env.NUXT_VERCEL_TOKEN || '',
+            edgeConfig: {
+                endpoint: import.meta.env.NUXT_VERCEL_EDGE_CONFIG || '',
+            },
+        },
         public: {
             siteUrl: baseUrl,
             r2: { domain: r2Domain },
