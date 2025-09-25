@@ -58,8 +58,8 @@ export default defineNuxtPlugin(() => {
                     const { data: sessions } =
                         await client.multiSession.listDeviceSessions()
                     return sessions || []
-                } catch (error) {
-                    console.error('Error fetching multi-session:', error)
+                } catch {
+                    // console.error('Error fetching multi-session:', error)
                     return []
                 }
             },

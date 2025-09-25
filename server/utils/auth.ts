@@ -28,8 +28,8 @@ export const auth = betterAuth({
         },
     },
 
-    baseURL: import.meta.env.NUXT_BETTER_AUTH_URL as string,
-    secret: import.meta.env.NUXT_BETTER_AUTH_SECRET as string,
+    baseURL: process.env.NUXT_BETTER_AUTH_URL as string,
+    secret: process.env.NUXT_BETTER_AUTH_SECRET as string,
 
     trustedOrigins: [
         'http://localhost:3000',
@@ -37,14 +37,63 @@ export const auth = betterAuth({
         'https://avatio.me',
     ],
 
+    // レート制限の設定（Nuxt server storage使用）
+    rateLimit: {
+        enabled: true,
+        window: 60, // 60秒のウィンドウ
+        max: 100, // 最大100リクエスト
+        customRules: {
+            // Twitter認証エンドポイントに厳しい制限
+            '/sign-in/social': {
+                window: 60,
+                max: 10,
+            },
+            // セッション取得は緩い制限
+            '/get-session': {
+                window: 60,
+                max: 200,
+            },
+        },
+        // Nuxt server storageのcacheを使用（既にUpstash KVが設定済み）
+        customStorage: {
+            get: async (key: string) => {
+                try {
+                    const storage = useStorage('cache')
+                    // better-authのRateLimit型に合わせて取得
+                    const result = await storage.getItem<{
+                        key: string
+                        count: number
+                        lastRequest: number
+                    }>(`rate-limit:${key}`)
+                    return result || undefined
+                } catch (error) {
+                    console.error('Rate limit storage get error:', error)
+                    return undefined
+                }
+            },
+            set: async (
+                key: string,
+                value: { key: string; count: number; lastRequest: number }
+            ) => {
+                try {
+                    const storage = useStorage('cache')
+                    // storageはTTLを内部で管理するため、単純にsetItemを使用
+                    await storage.setItem(`rate-limit:${key}`, value)
+                } catch (error) {
+                    console.error('Rate limit storage set error:', error)
+                }
+            },
+        },
+    },
+
     database: drizzleAdapter(database, {
         provider: 'pg',
     }),
 
     socialProviders: {
         twitter: {
-            clientId: import.meta.env.TWITTER_CLIENT_ID as string,
-            clientSecret: import.meta.env.TWITTER_CLIENT_SECRET as string,
+            clientId: process.env.TWITTER_CLIENT_ID as string,
+            clientSecret: process.env.TWITTER_CLIENT_SECRET as string,
             mapProfileToUser: async (profile) => {
                 let image: string | null = null
                 if (profile.data.profile_image_url)
@@ -64,7 +113,7 @@ export const auth = betterAuth({
                             `avatar:${imageId}.jpg`,
                             Buffer.from(await fetched.arrayBuffer())
                         )
-                        image = `${import.meta.env.NUXT_PUBLIC_R2_DOMAIN}/avatar/${imageId}.jpg`
+                        image = `${process.env.NUXT_PUBLIC_R2_DOMAIN}/avatar/${imageId}.jpg`
                     } catch {
                         image = null
                     }
@@ -108,9 +157,15 @@ export const auth = betterAuth({
         ),
     ],
 
-    cookieCache: {
-        enabled: true,
-        maxAge: 3 * 60,
+    // セッション設定の改善
+    session: {
+        expiresIn: 60 * 60 * 24 * 30, // 30日間
+        updateAge: 60 * 60 * 24, // 1日ごとに更新
+        freshAge: 60 * 15, // 15分間はフレッシュとみなす
+        cookieCache: {
+            enabled: true,
+            maxAge: 5 * 60, // 5分間のキャッシュ
+        },
     },
 
     onAPIError: {
@@ -118,6 +173,25 @@ export const auth = betterAuth({
     },
 
     advanced: {
+        // IPアドレストラッキングの設定（プロキシ環境対応）
+        ipAddress: {
+            ipAddressHeaders: [
+                'x-forwarded-for',
+                'x-real-ip',
+                'cf-connecting-ip',
+            ],
+            disableIpTracking: false,
+        },
+        // セキュアクッキーの強制（本番環境）
+        useSecureCookies: process.env.NUXT_ENV_VERCEL_ENV === 'production',
+        // CSRF保護を有効化
+        disableCSRFCheck: false,
+        // デフォルトクッキー属性の設定
+        defaultCookieAttributes: {
+            httpOnly: true,
+            secure: process.env.NUXT_ENV_VERCEL_ENV === 'production',
+            sameSite: 'lax',
+        },
         database: {
             generateId: () => nanoid(USER_ID_LENGTH),
         },
