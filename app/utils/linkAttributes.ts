@@ -1,8 +1,8 @@
 import { parseURL } from 'ufo'
 
-const { links } = useAppConfig()
-
 export default (url: string) => {
+    const { links } = useAppConfig()
+
     const parsed = parseURL(url)
     if (!parsed.host) return { label: null, icon: 'lucide:link', iconSize: 20 }
 
