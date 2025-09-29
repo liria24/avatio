@@ -16,7 +16,7 @@ const { copy, copied } = useClipboard({ source: verifyCode.value || '' })
 
 const verifiable = computed(() => {
     const result = extractItemId(itemUrl.value)
-    if (result) return true
+    if (result && result.platform === 'booth') return true
     else return false
 })
 
@@ -84,32 +84,42 @@ watch(modalVerify, async (value) => {
         <template #body>
             <div class="flex flex-col gap-6">
                 <UFormField
-                    label="1. 認証するショップで販売しているアイテムを 1 つ選定してください"
-                >
-                    <UAlert
-                        description="認証に使用できるアイテムは、Avatio に登録できるアイテムのみです。非公開アイテムや、非対応プラットフォームのアイテムは使用できません。"
-                        variant="outline"
-                        :ui="{ description: 'text-xs' }"
-                    />
-                </UFormField>
-
-                <UFormField
-                    label="2. 選定したアイテムの URL を入力してください"
+                    label="1. 認証するショップで販売しているアイテムを 1 つ選定し、URL を入力してください"
                     :error="
                         itemUrl.length && !verifiable
                             ? 'この URL は認証可能なアイテムではありません'
                             : undefined
                     "
                 >
-                    <UInput
-                        v-model="itemUrl"
-                        placeholder="https://booth.pm/ja/items/1234567"
-                        class="w-full"
-                    />
+                    <div class="flex flex-col gap-2 pt-2">
+                        <UInput
+                            v-model="itemUrl"
+                            placeholder="https://booth.pm/ja/items/1234567"
+                            class="w-full"
+                        />
+                        <UAlert
+                            icon="lucide:info"
+                            variant="outline"
+                            :ui="{
+                                icon: 'size-4',
+                                description: 'text-xs break-keep wrap-anywhere',
+                            }"
+                        >
+                            <template #description>
+                                <p
+                                    v-html="
+                                        useLineBreak(
+                                            '認証に使用できるアイテムは、Avatio に登録できるアイテムのみです。非公開アイテムや、非対応プラットフォームのアイテムは使用できません。また、現在 GitHub はショップ認証に対応していません。'
+                                        )
+                                    "
+                                />
+                            </template>
+                        </UAlert>
+                    </div>
                 </UFormField>
 
                 <UFormField
-                    label="3. 選定したアイテムの説明文に以下のコードを追記してください"
+                    label="2. 選定したアイテムの説明文に以下のコードを追記してください"
                 >
                     <div class="flex flex-col gap-2 pt-2">
                         <UButton
@@ -127,6 +137,7 @@ watch(modalVerify, async (value) => {
                             icon="lucide:info"
                             title="認証が完了した後、追記したコードは削除してください"
                             variant="subtle"
+                            color="secondary"
                             :ui="{
                                 icon: 'size-4',
                                 title: 'text-xs font-semibold',
