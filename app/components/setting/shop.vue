@@ -16,8 +16,7 @@ const { copy, copied } = useClipboard({ source: verifyCode.value || '' })
 
 const verifiable = computed(() => {
     const result = extractItemId(itemUrl.value)
-    if (result && result.platform === 'booth') return true
-    else return false
+    return result?.platform === 'booth'
 })
 
 const shopUrl = (shopId: string, platform: Platform) => {
