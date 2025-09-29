@@ -47,7 +47,10 @@ const Submit = async () => {
 </script>
 
 <template>
-    <UModal title="フィードバック">
+    <UModal
+        title="フィードバック"
+        description="ご意見をお聞かせください。フィードバックは匿名で送信されます。"
+    >
         <slot />
 
         <template #body>
@@ -61,7 +64,7 @@ const Submit = async () => {
                     <UTextarea
                         v-model="state.comment"
                         autoresize
-                        placeholder="フィードバックを入力"
+                        placeholder="ご意見・ご要望・不具合報告など、ご自由にお書きください。"
                         class="w-full"
                     />
 
@@ -79,12 +82,6 @@ const Submit = async () => {
                         </UTooltip>
                     </template>
                 </UFormField>
-
-                <UAlert
-                    icon="lucide:info"
-                    title="フィードバックは匿名で送信されます"
-                    variant="subtle"
-                />
             </UForm>
         </template>
 

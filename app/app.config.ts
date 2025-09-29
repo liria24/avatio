@@ -1,14 +1,14 @@
 export default defineAppConfig({
     app: {
         name: 'Avatio',
-        version: '1.2.4',
+        version: '1.2.5',
         site: 'https://avatio.me',
         repo: 'https://github.com/liria24/avatio',
         githubIssue: 'https://github.com/liria24/avatio/issues/new/choose',
         liria: {
             website: 'https://liria.me',
             twitter: 'https://x.com/liria_24',
-            avatar: 'https://avatars.githubusercontent.com/u/172270941?v=4',
+            avatar: 'https://github.com/liria24.png',
         },
     },
     itemCategory: {

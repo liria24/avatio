@@ -319,6 +319,7 @@ export default defineNuxtConfig({
             avatio: `https://${r2Domain}`,
             booth: 'https://booth.pximg.net',
             boothS2: 'https://s2.booth.pm',
+            github: 'https://github.com',
             githubAvatar: 'https://avatars.githubusercontent.com',
         },
     },
