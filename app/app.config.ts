@@ -8,7 +8,7 @@ export default defineAppConfig({
         liria: {
             website: 'https://liria.me',
             twitter: 'https://x.com/liria_24',
-            avatar: 'https://avatars.githubusercontent.com/u/172270941?v=4',
+            avatar: 'https://github.com/liria24.png',
         },
     },
     itemCategory: {
