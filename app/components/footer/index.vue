@@ -15,7 +15,7 @@ const { data: repo } = useFetch<GithubRepo>(
     <footer class="flex flex-col gap-4 self-stretch pb-6">
         <USeparator icon="avatio:avatio" />
 
-        <LazyBannerOwnerWarning hydrate-on-visible />
+        <LazyBannerOwnerWarning />
 
         <div
             class="flex w-full flex-col items-center justify-between gap-x-4 gap-y-2 pb-0 sm:flex-row"

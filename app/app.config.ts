@@ -5,6 +5,7 @@ export default defineAppConfig({
         site: 'https://avatio.me',
         repo: 'https://github.com/liria24/avatio',
         githubIssue: 'https://github.com/liria24/avatio/issues/new/choose',
+        mailaddress: 'hello@avatio.me',
         liria: {
             website: 'https://liria.me',
             twitter: 'https://x.com/liria_24',
