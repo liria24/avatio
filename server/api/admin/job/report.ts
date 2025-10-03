@@ -156,7 +156,7 @@ export default defineApi(
             }
 
             try {
-                await $fetch('https://www.liria.me/api/discord/message', {
+                await $fetch(config.liria.discordEndpoint, {
                     method: 'POST',
                     body: JSON.stringify({
                         embeds: [embed, ...embedsFeedback],

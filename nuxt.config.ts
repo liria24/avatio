@@ -166,13 +166,22 @@ export default defineNuxtConfig({
 
     runtimeConfig: {
         adminKey: import.meta.env.ADMIN_KEY || '',
-        ai: { gateway: { apiKey: import.meta.env.AI_GATEWAY_API_KEY || '' } },
+        ai: {
+            gateway: {
+                apiKey: import.meta.env.AI_GATEWAY_API_KEY || '',
+            },
+        },
         betterAuth: {
             url: import.meta.env.NUXT_BETTER_AUTH_URL || baseUrl,
             secret: import.meta.env.NUXT_BETTER_AUTH_SECRET || '',
         },
-        liria: { accessToken: import.meta.env.LIRIA_ACCESS_TOKEN || '' },
-        neon: { databaseUrl: import.meta.env.NUXT_NEON_DATABASE_URL || '' },
+        liria: {
+            accessToken: import.meta.env.NUXT_LIRIA_ACCESS_TOKEN || '',
+            discordEndpoint: import.meta.env.NUXT_LIRIA_DISCORD_ENDPOINT || '',
+        },
+        neon: {
+            databaseUrl: import.meta.env.NUXT_NEON_DATABASE_URL || '',
+        },
         r2: {
             endpoint: import.meta.env.NUXT_R2_ENDPOINT || '',
             accessKey: import.meta.env.NUXT_R2_ACCESS_KEY || '',
@@ -190,7 +199,9 @@ export default defineNuxtConfig({
         },
         public: {
             siteUrl: baseUrl,
-            r2: { domain: r2Domain },
+            r2: {
+                domain: r2Domain,
+            },
         },
     },
 

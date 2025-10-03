@@ -49,7 +49,7 @@ export default defineApi(
         // 処理対象の画像がある場合のみDiscord通知を送信
         if (allImages.length > 0) {
             try {
-                await $fetch('https://www.liria.me/api/discord/message', {
+                await $fetch(config.liria.discordEndpoint, {
                     method: 'POST',
                     body: {
                         embeds: [
