@@ -8,6 +8,7 @@ import {
     LazyModalImage,
 } from '#components'
 
+const { app } = useAppConfig()
 const { $session } = useNuxtApp()
 const session = await $session()
 const route = useRoute()
@@ -179,10 +180,13 @@ if (data.value) {
                             label: '異議申し立て',
                             variant: 'soft',
                             onClick: () => {
-                                navigateTo('mailto:hello@liria.me', {
-                                    external: true,
-                                    open: { target: '_blank' },
-                                })
+                                navigateTo(
+                                    `mailto:${app.mailaddress}?subject=セットアップ非表示に対する異議申し立て%20(ID: ${data?.id})`,
+                                    {
+                                        external: true,
+                                        open: { target: '_blank' },
+                                    }
+                                )
                             },
                         },
                     ]"
