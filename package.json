@@ -38,7 +38,7 @@
         "@yeger/vue-masonry-wall": "^5.1.1",
         "ai": "^5.0.60",
         "aws4fetch": "^1.0.20",
-        "better-auth": "1.3.25",
+        "better-auth": "1.3.26",
         "budoux": "^0.7.0",
         "bumpp": "^10.2.3",
         "canvas-confetti": "^1.9.3",
