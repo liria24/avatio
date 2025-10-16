@@ -1,7 +1,7 @@
 export default defineAppConfig({
     app: {
         name: 'Avatio',
-        version: '1.2.5',
+        version: '1.2.6',
         site: 'https://avatio.me',
         repo: 'https://github.com/liria24/avatio',
         githubIssue: 'https://github.com/liria24/avatio/issues/new/choose',
