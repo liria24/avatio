@@ -5,6 +5,7 @@ import {
     LazyModalSetupDelete,
     LazyModalSetupHide,
     LazyModalSetupUnhide,
+    LazyImageViewer,
 } from '#components'
 
 const { app } = useAppConfig()
@@ -29,20 +30,7 @@ const modalReport = overlay.create(LazyModalReportSetup)
 const modalDelete = overlay.create(LazyModalSetupDelete)
 const modalHide = overlay.create(LazyModalSetupHide)
 const modalUnhide = overlay.create(LazyModalSetupUnhide)
-
-const showImageViewer = ref(false)
-const viewerImageSrc = ref('')
-const viewerImageAlt = ref('')
-
-const openImageViewer = (src: string, alt: string) => {
-    viewerImageSrc.value = src
-    viewerImageAlt.value = alt
-    showImageViewer.value = true
-}
-
-const closeImageViewer = () => {
-    showImageViewer.value = false
-}
+const ImageViewer = overlay.create(LazyImageViewer)
 
 const { data, status } = await useSetup(id)
 
@@ -129,6 +117,7 @@ onBeforeRouteLeave(() => {
     modalDelete.close()
     modalHide.close()
     modalUnhide.close()
+    ImageViewer.close()
 })
 
 if (data.value) {
@@ -409,7 +398,12 @@ if (data.value) {
                     preload
                     custom
                     class="max-h-[720px] w-fit shrink-0 grow-0 cursor-zoom-in overflow-hidden rounded-lg object-contain"
-                    @click="openImageViewer(data.images[0].url, data.name)"
+                    @click="
+                        ImageViewer.open({
+                            src: data.images[0].url,
+                            alt: data.name,
+                        })
+                    "
                 >
                     <img v-if="isLoaded" v-bind="imgAttrs" :src="src" />
                     <USkeleton
@@ -421,13 +415,6 @@ if (data.value) {
                         class="max-h-[720px] w-full shrink-0 grow-0 rounded-lg"
                     />
                 </NuxtImg>
-
-                <ImageViewer
-                    v-if="showImageViewer"
-                    :src="viewerImageSrc"
-                    :alt="viewerImageAlt"
-                    @close="closeImageViewer"
-                />
 
                 <SetupsViewerInfo :setup="data" class="mt-3 w-full lg:hidden" />
 
