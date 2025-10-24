@@ -161,7 +161,7 @@ const removeShapekey = (options: {
 </script>
 
 <template>
-    <div class="relative flex h-full flex-col items-center gap-8">
+    <div class="relative flex flex-col items-center gap-8 lg:h-full">
         <div class="flex w-full flex-col items-stretch gap-4">
             <div class="flex items-center gap-2">
                 <div class="flex grow items-center gap-1">
@@ -202,38 +202,27 @@ const removeShapekey = (options: {
             </div>
         </div>
 
-        <div
+        <UEmpty
             v-if="!totalItemsCount"
-            class="flex h-full flex-col items-center justify-center gap-6 pb-8"
-        >
-            <p class="text-muted text-sm">アイテムが登録されていません</p>
-
-            <div class="flex flex-wrap items-center justify-center gap-2">
-                <UButton
-                    v-for="ownedAvatar in ownedAvatars"
-                    :key="`owned-avatar-${ownedAvatar.id}`"
-                    variant="soft"
-                    @click="addItem(ownedAvatar)"
-                >
-                    <NuxtImg
-                        :src="ownedAvatar.image || undefined"
-                        :alt="ownedAvatar.name"
-                        :width="24"
-                        :height="24"
-                        format="webp"
-                        loading="lazy"
-                        fetchpriority="low"
-                        class="aspect-square size-6 shrink-0 rounded-md object-cover"
-                    />
-                    <span class="text-toned text-xs">
-                        {{
-                            ownedAvatar.niceName ||
-                            avatarShortName(ownedAvatar.name)
-                        }}
-                    </span>
-                </UButton>
-            </div>
-        </div>
+            icon="lucide:shirt"
+            title="アイテムが登録されていません"
+            variant="naked"
+            :actions="
+                ownedAvatars.map((ownedAvatar) => ({
+                    label:
+                        ownedAvatar.niceName ||
+                        avatarShortName(ownedAvatar.name),
+                    avatar: { src: ownedAvatar.image || undefined },
+                    variant: 'soft',
+                    ui: {
+                        label: 'whitespace-normal line-clamp-1',
+                        leadingAvatar: 'rounded-md',
+                    },
+                    onClick: () => addItem(ownedAvatar),
+                }))
+            "
+            class="lg:my-auto"
+        />
 
         <div
             v-else

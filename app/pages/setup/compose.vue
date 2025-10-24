@@ -507,11 +507,7 @@ await enterEditModeAndRestoreDraft({
 </script>
 
 <template>
-    <UForm
-        :state
-        class="relative size-full pb-5 lg:pl-[23rem]"
-        @submit="onSubmit"
-    >
+    <UForm :state class="relative size-full pb-5 lg:pl-92" @submit="onSubmit">
         <ModalPublishSetupComplete
             v-if="publishedSetupId"
             v-model:open="modalPublishComplete"
@@ -523,12 +519,12 @@ await enterEditModeAndRestoreDraft({
             :class="
                 cn(
                     'ring-accented static top-0 bottom-4 left-0 flex flex-col overflow-y-auto rounded-lg',
-                    'lg:absolute lg:w-[22rem] lg:ring-2'
+                    'lg:absolute lg:w-88 lg:ring-2'
                 )
             "
         >
             <div
-                class="sticky top-0 right-0 left-0 z-[1] hidden flex-col gap-2 p-5 backdrop-blur-lg lg:flex"
+                class="sticky top-0 right-0 left-0 z-1 hidden flex-col gap-2 p-5 backdrop-blur-lg lg:flex"
             >
                 <div class="flex items-center gap-2">
                     <UButton
@@ -638,7 +634,7 @@ await enterEditModeAndRestoreDraft({
             </div>
 
             <div
-                class="static flex w-full items-center justify-end gap-2 p-3 lg:sticky lg:bottom-0 lg:backdrop-blur-lg"
+                class="static mt-auto flex w-full items-center justify-end gap-2 p-3 lg:sticky lg:bottom-0 lg:backdrop-blur-lg"
             >
                 <UBadge
                     v-if="draftStatus !== 'new'"
