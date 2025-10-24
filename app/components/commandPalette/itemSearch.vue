@@ -131,10 +131,12 @@ const onSelected = async (id: string, platform?: Platform) => {
 <template>
     <UCommandPalette
         v-model:search-term="searchTerm"
+        virtualize
         :loading="loadingComputed"
         placeholder="アイテムを検索 / URLを入力"
         :groups="groups"
         :ui="{
+            root: 'min-w-72 md:min-w-96',
             input: '[&>input]:text-sm',
         }"
         class="max-h-80"

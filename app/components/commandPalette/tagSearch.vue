@@ -70,6 +70,7 @@ const groups = computed(() => {
     <UCommandPalette
         v-model:open="open"
         v-model:search-term="searchTerm"
+        virtualize
         :loading="status === 'pending'"
         placeholder="タグを検索 / 入力"
         :groups="groups"
