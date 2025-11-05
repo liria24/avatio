@@ -68,6 +68,7 @@ export default defineNuxtConfig({
         '/api/items/owned-avatars': {
             headers: {
                 'Cache-Control': `max-age=${60 * 10}`,
+                'CDN-Cache-Control': `max-age=${0}`,
             },
         },
         '/api/items/popular-avatars': {
@@ -273,7 +274,12 @@ export default defineNuxtConfig({
     },
 
     icon: {
-        customCollections: [{ prefix: 'avatio', dir: './app/assets/icons' }],
+        customCollections: [
+            {
+                prefix: 'avatio',
+                dir: './app/assets/icons',
+            },
+        ],
         clientBundle: {
             icons: [
                 'lucide:search',
@@ -341,14 +347,14 @@ export default defineNuxtConfig({
         },
     },
 
-    socialShare: {
-        baseUrl,
-    },
-
     robots: {
         allow: ['Twitterbot', 'facebookexternalhit'],
         blockNonSeoBots: true,
         blockAiBots: true,
+    },
+
+    socialShare: {
+        baseUrl,
     },
 
     sitemap: {
@@ -369,6 +375,12 @@ export default defineNuxtConfig({
             email: 'hello@liria.me',
             sameAs: ['https://x.com/liria_24', 'https://github.com/liria24'],
         }),
+    },
+
+    ui: {
+        experimental: {
+            componentDetection: true,
+        },
     },
 
     experimental: {

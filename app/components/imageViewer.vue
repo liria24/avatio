@@ -6,41 +6,18 @@ interface Props {
 
 const props = defineProps<Props>()
 
-const emit = defineEmits<{
-    close: []
-}>()
-
-const handleOverlayClick = (event: MouseEvent) => {
-    if (event.target === event.currentTarget) emit('close')
-}
-
-const handleKeydown = (event: KeyboardEvent) => {
-    if (event.key === 'Escape') emit('close')
-}
-
-onMounted(() => {
-    document.addEventListener('keydown', handleKeydown)
-    document.body.style.overflow = 'hidden'
-})
-
-onUnmounted(() => {
-    document.removeEventListener('keydown', handleKeydown)
-    document.body.style.overflow = ''
-})
+const open = defineModel<boolean>('open', { default: false })
 </script>
 
 <template>
-    <Teleport to="body">
-        <div
-            class="animate-in fade-in fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 p-0 backdrop-blur-sm"
-            @click="handleOverlayClick"
-        >
+    <UModal v-model:open="open" fullscreen :ui="{ content: 'bg-transparent' }">
+        <template #content>
             <img
                 :src="props.src"
                 :alt="props.alt"
                 class="size-full max-h-full max-w-full object-contain"
-                @click="emit('close')"
+                @click="open = false"
             />
-        </div>
-    </Teleport>
+        </template>
+    </UModal>
 </template>

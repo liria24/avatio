@@ -90,6 +90,7 @@ const onSelect = async (id: string) => {
     <UCommandPalette
         v-model:open="open"
         v-model:search-term="searchTerm"
+        virtualize
         :loading="status === 'pending'"
         placeholder="ユーザーを検索 / ID を入力"
         :groups="groups"
