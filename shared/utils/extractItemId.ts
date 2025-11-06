@@ -5,11 +5,7 @@ export const transformItemId = (itemId: string) => {
             .map((part) => encodeURIComponent(part))
             .join('+')
 
-    const decode = () =>
-        itemId
-            .split('+')
-            .map((part) => decodeURIComponent(part))
-            .join('/')
+    const decode = () => decodeURIComponent(itemId).split('+').join('/')
 
     return { encode, decode }
 }

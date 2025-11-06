@@ -54,7 +54,7 @@ const socialShareItems = ref<DropdownMenuItem[]>([
             label: 'X',
             icon: 'simple-icons:x',
             onSelect: () => {
-                navigateTo(shareX.value.shareUrl, {
+                navigateTo(shareX.value?.shareUrl, {
                     external: true,
                     open: { target: '_blank' },
                 })
@@ -64,7 +64,7 @@ const socialShareItems = ref<DropdownMenuItem[]>([
             label: 'Bluesky',
             icon: 'simple-icons:bluesky',
             onSelect: () => {
-                navigateTo(shareBluesky.value.shareUrl, {
+                navigateTo(shareBluesky.value?.shareUrl, {
                     external: true,
                     open: { target: '_blank' },
                 })
@@ -74,7 +74,7 @@ const socialShareItems = ref<DropdownMenuItem[]>([
             label: 'LINE',
             icon: 'simple-icons:line',
             onSelect: () => {
-                navigateTo(shareLine.value.shareUrl, {
+                navigateTo(shareLine.value?.shareUrl, {
                     external: true,
                     open: { target: '_blank' },
                 })
