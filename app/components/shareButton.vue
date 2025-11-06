@@ -16,17 +16,17 @@ const { share, isSupported: shareSupported } = useShare()
 
 const shareX = useSocialShare({
     network: 'x',
-    title: encodeURIComponent(props.title),
+    title: props.title,
     image: props.image || undefined,
 })
 const shareBluesky = useSocialShare({
     network: 'bluesky',
-    title: encodeURIComponent(props.title),
+    title: props.title,
     image: props.image || undefined,
 })
 const shareLine = useSocialShare({
     network: 'line',
-    title: encodeURIComponent(props.title),
+    title: props.title,
     image: props.image || undefined,
 })
 
