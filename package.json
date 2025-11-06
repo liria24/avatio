@@ -30,7 +30,7 @@
         "@nuxtjs/sitemap": "7.4.7",
         "@pinia/nuxt": "0.11.3",
         "@prettier/plugin-oxc": "^0.0.4",
-        "@stefanobartoletti/nuxt-social-share": "2.1.1",
+        "@stefanobartoletti/nuxt-social-share": "2.2.1",
         "@upstash/redis": "1.35.6",
         "@vercel/analytics": "1.5.0",
         "@vercel/edge-config": "1.4.3",
