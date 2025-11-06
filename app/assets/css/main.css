@@ -3,7 +3,11 @@
 @plugin 'tailwindcss-animate';
 
 @theme {
-    --font-sans: 'Noto Sans JP', 'Geist', sans-serif;
+    --font-sans:
+        'Noto Sans JP', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN',
+        'Yu Gothic UI', 'Meiryo', system-ui, -apple-system, 'Segoe UI',
+        'Roboto', 'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji',
+        'Segoe UI Emoji', 'Noto Color Emoji', 'Geist';
 }
 
 :root {
