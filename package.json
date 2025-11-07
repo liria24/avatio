@@ -48,7 +48,7 @@
         "drizzle-zod": "0.8.3",
         "extract-colors": "4.2.1",
         "get-pixels": "3.3.3",
-        "marked": "16.4.1",
+        "marked": "17.0.0",
         "nuxt": "4.2.0",
         "nuxt-link-checker": "4.3.6",
         "nuxt-schema-org": "5.0.9",
