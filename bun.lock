@@ -1,5 +1,6 @@
 {
   "lockfileVersion": 1,
+  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "avatio",
@@ -26,7 +27,7 @@
         "@vercel/edge-config": "1.4.3",
         "@vercel/functions": "3.3.0",
         "@vueuse/nuxt": "14.0.0",
-        "@yeger/vue-masonry-wall": "5.1.3",
+        "@yeger/vue-masonry-wall": "5.1.4",
         "ai": "5.0.89",
         "aws4fetch": "1.0.20",
         "better-auth": "1.3.34",
@@ -921,13 +922,13 @@
 
     "@vueuse/shared": ["@vueuse/shared@13.9.0", "", { "peerDependencies": { "vue": "^3.5.0" } }, "sha512-e89uuTLMh0U5cZ9iDpEI2senqPGfbPRTHM/0AaQkcxnpqjkZqDYP8rpfm7edOz8s+pOCOROEy1PIveSW8+fL5g=="],
 
-    "@yeger/debounce": ["@yeger/debounce@2.0.16", "", {}, "sha512-aNYqNyRgkMRfSkoQirwmumNtLqz9ShThliK7JS6csTpJyOgV6tPIc1+g6rcPprPayofp9ZvidU9K4+0RG0hylQ=="],
+    "@yeger/debounce": ["@yeger/debounce@2.0.17", "", {}, "sha512-wz9ARkGnY25yToyaZaCz887aRxsIg96uI/waBLkV/Qfh9/VHP+C6uAFpOg8FPba0KMS2QYo2dhCOqPvCoDigyA=="],
 
-    "@yeger/vue-lib-adapter": ["@yeger/vue-lib-adapter@2.0.15", "", {}, "sha512-FxCJ8mx9HqjMzgAun4w/GSNX/snfvEIXKkZ9uG7lR/WUL4/sUS4p++smBmcQXJ2o66cWY/QArFG5TVTcpKJMPA=="],
+    "@yeger/vue-lib-adapter": ["@yeger/vue-lib-adapter@2.0.16", "", {}, "sha512-fxD0xY5dOy5G/c59gQ/IMbZl1MWw8tPK+moJu2WiUqpFrRQBz2U8bx95k0VSFMZqBCTEhXXomCi93C7FVRQB6A=="],
 
-    "@yeger/vue-masonry-wall": ["@yeger/vue-masonry-wall@5.1.3", "", { "dependencies": { "@yeger/vue-masonry-wall-core": "5.0.20" }, "peerDependencies": { "vue": "^3.0.0" } }, "sha512-RufGlfVN4JiM/D96Vl1oaQno4J6UH7N0z9J/f1Ofk3lHxcOEci/8zdyOrI1ztpEnbTmOT6ENz7zausJ3QR//kQ=="],
+    "@yeger/vue-masonry-wall": ["@yeger/vue-masonry-wall@5.1.4", "", { "dependencies": { "@yeger/vue-masonry-wall-core": "5.0.21" }, "peerDependencies": { "vue": "^3.0.0" } }, "sha512-13a6PihxVHTyYdQzJeFY9GNz1QdpvGxlGcPqPiG/AVVD6ccMqRsxjkRHB2Bmwzs5oBhFZmO/sx5s5hB9+L5iiw=="],
 
-    "@yeger/vue-masonry-wall-core": ["@yeger/vue-masonry-wall-core@5.0.20", "", { "dependencies": { "@yeger/debounce": "2.0.16", "@yeger/vue-lib-adapter": "2.0.15" } }, "sha512-YrzvlW1Xo8bSbF5IGkZkePlYRiTBsV26ttyrm7U0wvc5o5K7TII8d57a9mQjmUHrYMDeC7MATRS+tGqtG/yocg=="],
+    "@yeger/vue-masonry-wall-core": ["@yeger/vue-masonry-wall-core@5.0.21", "", { "dependencies": { "@yeger/debounce": "2.0.17", "@yeger/vue-lib-adapter": "2.0.16" } }, "sha512-YX2kQaxjYk6hOxdS5EKeZRQJy5Dmx/F2S5883xMFSS6pePji5d+2U82jVdXEkWYisFjq+I5K+5xx/MSLgSt7Hw=="],
 
     "abbrev": ["abbrev@3.0.1", "", {}, "sha512-AO2ac6pjRB3SJmGJo+v5/aK6Omggp6fsLrs6wN9bd35ulu4cCwaAU9+7ZhXjeqHVkaHThLuzH0nZr0YpCDhygg=="],
 
