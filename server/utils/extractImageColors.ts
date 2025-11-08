@@ -1,5 +1,4 @@
 import { extractColors } from 'extract-colors'
-import getPixels from 'get-pixels'
 import sharp from 'sharp'
 
 interface ExtractImageColorsOptions {
@@ -22,47 +21,40 @@ export default async (
         hueDistance = 0.8,
     } = options
 
-    // 画像をフェッチして基本情報を取得
+    // 画像をフェッチしてバッファに変換
     const blob = await $fetch<Blob>(imageUrl)
     const buffer = Buffer.from(await blob.arrayBuffer())
-    const metadata = await sharp(buffer).metadata()
+
+    // sharpを使用して画像データを取得
+    const image = sharp(buffer)
+    const metadata = await image.metadata()
     const { width = 0, height = 0 } = metadata
 
+    // 画像を生のピクセルデータに変換
+    const { data, info } = await image
+        .ensureAlpha()
+        .raw()
+        .toBuffer({ resolveWithObject: true })
+
     // 色を抽出
-    const colors = await new Promise<string[]>((resolve, reject) => {
-        getPixels(imageUrl, async (err, px) => {
-            if (err) {
-                console.error('Error getting pixels:', err)
-                reject(err)
-                return
-            }
+    const extractedColors = await extractColors(
+        {
+            data: [...data],
+            width: info.width,
+            height: info.height,
+        },
+        {
+            pixels,
+            distance,
+            saturationDistance,
+            lightnessDistance,
+            hueDistance,
+        }
+    )
 
-            try {
-                const data = [...px.data]
-                const [width, height] = px.shape
-
-                const extractedColors = await extractColors(
-                    { data, width, height },
-                    {
-                        pixels,
-                        distance,
-                        saturationDistance,
-                        lightnessDistance,
-                        hueDistance,
-                    }
-                )
-
-                resolve(
-                    extractedColors
-                        .sort((a, b) => b.area - a.area)
-                        .map((color) => color.hex)
-                )
-            } catch (error) {
-                console.error('Error extracting colors:', error)
-                reject(error)
-            }
-        })
-    })
+    const colors = extractedColors
+        .sort((a, b) => b.area - a.area)
+        .map((color) => color.hex)
 
     return {
         colors,
