@@ -7,7 +7,7 @@ interface Props {
 }
 const props = defineProps<Props>()
 
-const { $session } = useNuxtApp()
+const { $session, $logout } = useNuxtApp()
 const session = await $session()
 const toast = useToast()
 
@@ -136,7 +136,7 @@ const updateId = async (newId: string) => {
             description: 'ページを更新しています...',
             progress: false,
         })
-        await navigateTo('/settings', { external: true })
+        await $logout()
     } catch (error) {
         console.error('Error updating user ID:', error)
         toast.add({
