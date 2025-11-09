@@ -1,5 +1,6 @@
 {
   "lockfileVersion": 1,
+  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "avatio",
@@ -7,7 +8,7 @@
         "@iconify-json/fluent-color": "1.2.20",
         "@iconify-json/lucide": "1.2.72",
         "@iconify-json/mingcute": "1.2.5",
-        "@iconify-json/simple-icons": "1.2.57",
+        "@iconify-json/simple-icons": "1.2.58",
         "@iconify-json/svg-spinners": "1.2.4",
         "@iconify-json/twemoji": "1.2.4",
         "@neondatabase/serverless": "1.0.2",
@@ -279,7 +280,7 @@
 
     "@iconify-json/mingcute": ["@iconify-json/mingcute@1.2.5", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-LKlW4wahStprbfJcpzUnuayObOVAuztgYSy3v5oTke6cBJNfqEeE/mtMhHgpoSgGJvo5hhde2Q0+DoxKEldY2A=="],
 
-    "@iconify-json/simple-icons": ["@iconify-json/simple-icons@1.2.57", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-/yWbO502M6WfvmcV5OjEgA4uoPN/76nrn7Hri/8g9L4GiNQ6VMgXWE9vFp4tDsmGMAe4ZCov3NbH6vJCgXZ1hA=="],
+    "@iconify-json/simple-icons": ["@iconify-json/simple-icons@1.2.58", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-XtXEoRALqztdNc9ujYBj2tTCPKdIPKJBdLNDebFF46VV1aOAwTbAYMgNsK5GMCpTJupLCmpBWDn+gX5SpECorQ=="],
 
     "@iconify-json/svg-spinners": ["@iconify-json/svg-spinners@1.2.4", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-ayn0pogFPwJA1WFZpDnoq9/hjDxN+keeCMyThaX4d3gSJ3y0mdKUxIA/b1YXWGtY9wVtZmxwcvOIeEieG4+JNg=="],
 
