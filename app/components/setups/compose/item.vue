@@ -45,6 +45,7 @@ const inputShapekeyValue = ref(0)
                     v-if="props.item.image"
                     :to="computeItemUrl(props.item.id, props.item.platform)"
                     target="_blank"
+                    class="shrink-0"
                 >
                     <NuxtImg
                         v-slot="{ isLoaded, src, imgAttrs }"
@@ -98,7 +99,7 @@ const inputShapekeyValue = ref(0)
                                 )
                             "
                             target="_blank"
-                            class="text-toned py-1 text-sm"
+                            class="text-toned line-clamp-2 py-1 text-sm"
                         >
                             {{ props.item.name }}
                         </NuxtLink>
