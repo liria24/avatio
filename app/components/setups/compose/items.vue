@@ -226,7 +226,7 @@ const removeShapekey = (options: {
 
         <div
             v-else
-            class="absolute inset-0 mt-10 flex flex-col gap-6 overflow-y-auto p-1"
+            class="flex w-full flex-col gap-6 overflow-y-auto p-1 lg:absolute lg:inset-0 lg:mt-10"
         >
             <div
                 v-for="category in itemCategories"
