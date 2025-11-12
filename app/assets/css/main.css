@@ -10,6 +10,65 @@
         'Segoe UI Emoji', 'Noto Color Emoji', 'Geist';
 }
 
+@layer utilities {
+    .rounded-xs {
+        border-radius: var(--radius-xs);
+        @supports (-webkit-appearance: none) and (not (-moz-appearance: none)) {
+            corner-shape: squircle;
+            border-radius: 0.25rem;
+        }
+    }
+    .rounded-sm {
+        border-radius: var(--radius-sm);
+        @supports (-webkit-appearance: none) and (not (-moz-appearance: none)) {
+            corner-shape: squircle;
+            border-radius: 0.5rem;
+        }
+    }
+    .rounded-md {
+        border-radius: var(--radius-md);
+        @supports (-webkit-appearance: none) and (not (-moz-appearance: none)) {
+            corner-shape: squircle;
+            border-radius: 0.75rem;
+        }
+    }
+    .rounded-lg {
+        border-radius: var(--radius-lg);
+        @supports (-webkit-appearance: none) and (not (-moz-appearance: none)) {
+            corner-shape: squircle;
+            border-radius: 1rem;
+        }
+    }
+    .rounded-xl {
+        border-radius: var(--radius-xl);
+        @supports (-webkit-appearance: none) and (not (-moz-appearance: none)) {
+            corner-shape: squircle;
+            border-radius: 1.5rem;
+        }
+    }
+    .rounded-2xl {
+        border-radius: var(--radius-2xl);
+        @supports (-webkit-appearance: none) and (not (-moz-appearance: none)) {
+            corner-shape: squircle;
+            border-radius: 2rem;
+        }
+    }
+    .rounded-3xl {
+        border-radius: var(--radius-3xl);
+        @supports (-webkit-appearance: none) and (not (-moz-appearance: none)) {
+            corner-shape: squircle;
+            border-radius: 2.5rem;
+        }
+    }
+    .rounded-4xl {
+        border-radius: var(--radius-4xl);
+        @supports (-webkit-appearance: none) and (not (-moz-appearance: none)) {
+            corner-shape: squircle;
+            border-radius: 3rem;
+        }
+    }
+}
+
 :root {
     --ui-container: 64rem;
 }
