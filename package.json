@@ -22,7 +22,7 @@
         "@iconify-json/twemoji": "1.2.4",
         "@neondatabase/serverless": "1.0.2",
         "@nuxt/image": "2.0.0",
-        "@nuxt/ui": "4.1.0",
+        "@nuxt/ui": "4.2.1",
         "@nuxtjs/device": "3.2.4",
         "@nuxtjs/i18n": "10.2.0",
         "@nuxtjs/mdc": "0.18.2",
