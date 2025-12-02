@@ -1,5 +1,7 @@
 <script lang="ts" setup>
-import PrivacyPolicyContent from '~/content/privacy-policy.md?raw'
+const { data: page } = await useAsyncData(() =>
+    queryCollection('general').path('/general/privacy-policy').first()
+)
 
 defineSeo({
     title: 'プライバシーポリシー',
@@ -9,5 +11,11 @@ defineSeo({
 </script>
 
 <template>
-    <MDC :value="PrivacyPolicyContent" class="w-full max-w-full" />
+    <UPage>
+        <ContentRenderer v-if="page" :value="page" />
+
+        <template #right>
+            <UContentToc :links="page?.body?.toc?.links" />
+        </template>
+    </UPage>
 </template>

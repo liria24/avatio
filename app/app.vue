@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import * as locales from '@nuxt/ui/locale'
-import { Analytics } from '@vercel/analytics/nuxt'
 
 const { locale } = useI18n()
 </script>
@@ -10,7 +9,6 @@ const { locale } = useI18n()
         <NuxtRouteAnnouncer />
         <NuxtLoadingIndicator />
         <NuxtLayout>
-            <Analytics />
             <NuxtPage />
         </NuxtLayout>
     </UApp>

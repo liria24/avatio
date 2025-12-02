@@ -15,17 +15,17 @@ const r2Domain = (() => {
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-    compatibilityDate: '2025-07-28',
+    compatibilityDate: 'latest',
 
     devtools: { enabled: true, timeline: { enabled: true } },
 
     modules: [
         '@nuxt/eslint',
-        '@nuxt/image',
         '@nuxt/ui',
+        '@nuxt/image',
         '@nuxtjs/device',
         '@nuxtjs/i18n',
-        '@nuxtjs/mdc',
+        '@nuxt/content',
         '@nuxtjs/robots',
         '@nuxtjs/sitemap',
         '@pinia/nuxt',
@@ -34,6 +34,8 @@ export default defineNuxtConfig({
         'nuxt-link-checker',
         'nuxt-schema-org',
         'nuxt-seo-utils',
+        '@nuxt/hints',
+        '@vercel/analytics/nuxt/module',
     ],
 
     plugins: [{ src: '~/plugins/axe.client.ts', mode: 'client' }],
@@ -235,6 +237,10 @@ export default defineNuxtConfig({
                 { name: 'twitter:card', content: 'summary_large_image' },
             ],
         },
+    },
+
+    content: {
+        experimental: { sqliteConnector: 'native' },
     },
 
     fonts: {
