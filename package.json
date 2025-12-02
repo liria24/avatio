@@ -30,7 +30,7 @@
         "@nuxtjs/robots": "5.6.0",
         "@nuxtjs/sitemap": "7.4.7",
         "@pinia/nuxt": "0.11.3",
-        "@stefanobartoletti/nuxt-social-share": "2.2.1",
+        "@stefanobartoletti/nuxt-social-share": "2.3.0",
         "@upstash/redis": "1.35.7",
         "@vercel/analytics": "1.6.0",
         "@vercel/edge-config": "1.4.3",
