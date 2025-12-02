@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { NuxtError } from '#app'
 import * as locales from '@nuxt/ui/locale'
-import { Analytics } from '@vercel/analytics/nuxt'
 
 const { locale } = useI18n()
 
@@ -21,7 +20,6 @@ const props = defineProps({
         <NuxtRouteAnnouncer />
         <NuxtLoadingIndicator />
         <NuxtLayout>
-            <Analytics />
             <div
                 class="mt-24 flex w-full flex-col items-center justify-center gap-4"
             >

@@ -1,7 +1,14 @@
 <script lang="ts" setup>
-import FaqContent from '~/content/faq.md?raw'
-
 const { app } = useAppConfig()
+
+const { data: page } = await useAsyncData(() =>
+    queryCollection('general').path('/general/faq').first()
+)
+if (!page.value)
+    showError({
+        statusCode: 404,
+        statusMessage: 'Page Not Found.',
+    })
 
 defineSeo({
     title: 'FAQ',
@@ -11,5 +18,11 @@ defineSeo({
 </script>
 
 <template>
-    <MDC :value="FaqContent" class="w-full max-w-full" />
+    <UPage>
+        <ContentRenderer v-if="page" :value="page" />
+
+        <template #right>
+            <UContentToc :links="page?.body?.toc?.links" />
+        </template>
+    </UPage>
 </template>

@@ -1,5 +1,7 @@
 <script lang="ts" setup>
-import TermsContent from '~/content/terms.md?raw'
+const { data: page } = await useAsyncData(() =>
+    queryCollection('general').path('/general/terms').first()
+)
 
 defineSeo({
     title: '利用規約',
@@ -9,5 +11,11 @@ defineSeo({
 </script>
 
 <template>
-    <MDC :value="TermsContent" class="w-full max-w-full" />
+    <UPage>
+        <ContentRenderer v-if="page" :value="page" />
+
+        <template #right>
+            <UContentToc :links="page?.body?.toc?.links" />
+        </template>
+    </UPage>
 </template>
