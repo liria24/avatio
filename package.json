@@ -32,7 +32,7 @@
         "@pinia/nuxt": "0.11.3",
         "@stefanobartoletti/nuxt-social-share": "2.2.1",
         "@upstash/redis": "1.35.7",
-        "@vercel/analytics": "1.6.0",
+        "@vercel/analytics": "1.6.1",
         "@vercel/edge-config": "1.4.3",
         "@vercel/functions": "3.3.4",
         "@vueuse/nuxt": "14.1.0",
