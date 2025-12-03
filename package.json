@@ -70,7 +70,7 @@
         "bumpp": "10.3.2",
         "drizzle-kit": "0.31.7",
         "eslint": "9.39.1",
-        "prettier": "3.7.3",
+        "prettier": "3.7.4",
         "prettier-plugin-organize-imports": "4.3.0",
         "prettier-plugin-tailwindcss": "0.7.2",
         "tailwindcss-animate": "^1.0.7",
