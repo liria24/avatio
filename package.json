@@ -48,7 +48,7 @@
         "extract-colors": "4.2.1",
         "marked": "17.0.1",
         "nuxt": "4.2.1",
-        "nuxt-link-checker": "4.3.6",
+        "nuxt-link-checker": "4.3.9",
         "nuxt-schema-org": "5.0.9",
         "nuxt-seo-utils": "7.0.18",
         "pinia": "3.0.4",
