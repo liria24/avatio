@@ -6,7 +6,7 @@
       "name": "avatio",
       "dependencies": {
         "@iconify-json/fluent-color": "1.2.20",
-        "@iconify-json/lucide": "1.2.77",
+        "@iconify-json/lucide": "1.2.79",
         "@iconify-json/mingcute": "1.2.5",
         "@iconify-json/simple-icons": "1.2.61",
         "@iconify-json/svg-spinners": "1.2.4",
@@ -269,7 +269,7 @@
 
     "@iconify-json/fluent-color": ["@iconify-json/fluent-color@1.2.20", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-rg1WWURAjrJo4eSIz9I6Q+/9/nm6NvGKZal6R9zM71sGoPcQpUTSjeJykMuGDDQCkAjp96MjMX2E6HtLkxs7zg=="],
 
-    "@iconify-json/lucide": ["@iconify-json/lucide@1.2.77", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-FF3Z+np6Ksb0MaoQymhCHZ4xs5Oo8992Fw7By7bCgVCbBCClYV3wxpF8KzsI1FlxHD4ZXR42NVmXuqdW8YQGgA=="],
+    "@iconify-json/lucide": ["@iconify-json/lucide@1.2.79", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-CcwoXfC2Y7UVW0PXopmXtB4Do/eUJkhAqQqOnVENEiw3FwU707TK4uyIUqdo9tlvBaFBl95wnJf3smqsTnSyKA=="],
 
     "@iconify-json/mingcute": ["@iconify-json/mingcute@1.2.5", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-LKlW4wahStprbfJcpzUnuayObOVAuztgYSy3v5oTke6cBJNfqEeE/mtMhHgpoSgGJvo5hhde2Q0+DoxKEldY2A=="],
 
