@@ -35,6 +35,7 @@ export default defineNuxtConfig({
         'nuxt-schema-org',
         'nuxt-seo-utils',
         '@nuxt/hints',
+        'motion-v/nuxt',
     ],
 
     plugins: [{ src: '~/plugins/axe.client.ts', mode: 'client' }],
