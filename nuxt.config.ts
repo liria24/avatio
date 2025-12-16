@@ -35,7 +35,6 @@ export default defineNuxtConfig({
         'nuxt-schema-org',
         'nuxt-seo-utils',
         '@nuxt/hints',
-        '@vercel/analytics/nuxt/module',
     ],
 
     plugins: [{ src: '~/plugins/axe.client.ts', mode: 'client' }],
@@ -258,14 +257,12 @@ export default defineNuxtConfig({
                 code: 'en',
                 language: 'en-US',
                 name: 'English (US)',
-                file: 'en.json',
                 icon: 'twemoji:flag-united-states',
             },
             {
                 code: 'ja',
                 language: 'ja-JP',
                 name: '日本語',
-                file: 'ja.json',
                 icon: 'twemoji:flag-japan',
             },
         ],
@@ -389,6 +386,9 @@ export default defineNuxtConfig({
     experimental: {
         crossOriginPrefetch: true,
         sharedPrerenderData: true,
+        extractAsyncDataHandlers: true,
+        typescriptPlugin: true,
+        inlineRouteRules: true,
     },
 })
 
