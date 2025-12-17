@@ -14,8 +14,10 @@ const loading = defineModel<boolean>('loading', {
 })
 
 const isInitialLoad = ref(true)
-onMounted(() => {
-    isInitialLoad.value = false
+onMounted(async () => {
+    await setTimeout(() => {
+        isInitialLoad.value = false
+    }, 100)
 })
 </script>
 
@@ -48,12 +50,21 @@ onMounted(() => {
                 :aria-label="item.name"
                 :image-size="{ width: 16, height: 9 }"
                 :setup="item"
-                :initial="{ opacity: 0, y: 10 }"
-                :in-view="{ opacity: 1, y: 0 }"
-                :in-view-options="{ once: true, amount: 0.4 }"
+                :initial="{
+                    opacity: 0,
+                    y: 10,
+                }"
+                :in-view="{
+                    opacity: 1,
+                    y: 0,
+                }"
+                :in-view-options="{
+                    once: true,
+                    amount: 0.4,
+                }"
                 :transition="{
                     duration: 0.2,
-                    delay: isInitialLoad ? index * 0.05 : undefined,
+                    delay: isInitialLoad ? 0.1 + 0.05 * index : 0,
                 }"
                 class="mb-2"
             />
