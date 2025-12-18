@@ -1,4 +1,3 @@
-import database from '@@/database'
 import { z } from 'zod'
 
 const query = z.object({
@@ -15,17 +14,15 @@ export default defineApi<SetupDraft[]>(
     async ({ session }) => {
         const { id, setupId } = await validateQuery(query)
 
-        const data = await database.query.setupDrafts.findMany({
-            where: (table, { and, eq, inArray }) => {
-                const conditions = [eq(table.userId, session!.user.id)]
-
-                if (id) conditions.push(inArray(table.id, id))
-
-                if (setupId) conditions.push(eq(table.setupId, setupId))
-
-                return and(...conditions)
+        const data = await db.query.setupDrafts.findMany({
+            where: {
+                userId: { eq: session!.user.id },
+                id: id ? { in: id } : undefined,
+                setupId: setupId ? { eq: setupId } : undefined,
             },
-            orderBy: (table, { desc }) => desc(table.updatedAt),
+            orderBy: {
+                updatedAt: 'desc',
+            },
             limit: 32,
             columns: {
                 id: true,

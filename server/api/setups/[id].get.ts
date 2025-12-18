@@ -1,5 +1,3 @@
-import database from '@@/database'
-import { user } from '@@/database/schema'
 import { z } from 'zod'
 
 const params = z.object({
@@ -8,25 +6,16 @@ const params = z.object({
 
 const getSetup = defineCachedFunction(
     async (id: number, session: Session | undefined) => {
-        const data = await database.query.setups.findFirst({
-            where: (setups, { eq, and, exists, or, isNull }) =>
-                and(
-                    eq(setups.id, id),
-                    exists(
-                        database
-                            .select()
-                            .from(user)
-                            .where(
-                                and(
-                                    eq(user.id, setups.userId),
-                                    or(
-                                        eq(user.banned, false),
-                                        isNull(user.banned)
-                                    )
-                                )
-                            )
-                    )
-                ),
+        const data = await db.query.setups.findFirst({
+            where: {
+                id: { eq: id },
+                user: {
+                    OR: [
+                        { banned: { eq: false } },
+                        { banned: { isNull: true } },
+                    ],
+                },
+            },
             columns: {
                 id: true,
                 createdAt: true,
@@ -126,21 +115,14 @@ const getSetup = defineCachedFunction(
                     },
                 },
                 coauthors: {
-                    where: (coauthors, { eq, or, and, exists, isNull }) =>
-                        exists(
-                            database
-                                .select()
-                                .from(user)
-                                .where(
-                                    and(
-                                        eq(user.id, coauthors.userId),
-                                        or(
-                                            eq(user.banned, false),
-                                            isNull(user.banned)
-                                        )
-                                    )
-                                )
-                        ),
+                    where: {
+                        user: {
+                            OR: [
+                                { banned: { eq: false } },
+                                { banned: { isNull: true } },
+                            ],
+                        },
+                    },
                     columns: {
                         note: true,
                     },

@@ -1,7 +1,6 @@
-import database from '@@/database'
-import { changelogAuthors } from '@@/database/schema'
 import { and, eq, exists, ilike } from 'drizzle-orm'
 import { z } from 'zod'
+import { changelogAuthors, changelogs } from '~~/database/schema'
 
 const query = z.object({
     q: z.string().optional(),
@@ -17,66 +16,50 @@ export default defineApi<PaginationResponse<Changelog[]>>(
 
         const offset = (page - 1) * limit
 
-        const data = await database.query.changelogs.findMany({
-            extras: (table) => {
-                const conditions = []
-
-                if (q) conditions.push(ilike(table.title, `%${q}%`))
-
-                if (userId)
-                    conditions.push(
-                        exists(
-                            database
-                                .select()
-                                .from(changelogAuthors)
-                                .where(
-                                    and(
-                                        eq(
-                                            changelogAuthors.changelogSlug,
-                                            table.slug
-                                        ),
-                                        eq(changelogAuthors.userId, userId)
-                                    )
-                                )
+        const data = await db.query.changelogs.findMany({
+            extras: {
+                count: db
+                    .$count(
+                        changelogs,
+                        and(
+                            ...[
+                                q
+                                    ? ilike(changelogs.title, `%${q}%`)
+                                    : undefined,
+                                userId
+                                    ? exists(
+                                          db
+                                              .select()
+                                              .from(changelogAuthors)
+                                              .where(
+                                                  and(
+                                                      eq(
+                                                          changelogAuthors.changelogSlug,
+                                                          changelogs.slug
+                                                      ),
+                                                      eq(
+                                                          changelogAuthors.userId,
+                                                          userId
+                                                      )
+                                                  )
+                                              )
+                                      )
+                                    : undefined,
+                            ]
                         )
                     )
-
-                return {
-                    count: database
-                        .$count(changelogAuthors, and(...conditions))
-                        .as('count'),
-                }
+                    .as('count'),
             },
             limit,
             offset,
-            orderBy: (table, { asc, desc }) => {
-                const sortFn = sort === 'desc' ? desc : asc
-                return sortFn(table.createdAt)
+            orderBy: {
+                createdAt: sort,
             },
-            where: (table, { and, eq, ilike }) => {
-                const conditions = []
-
-                if (q) conditions.push(ilike(table.title, `%${q}%`))
-
-                if (userId)
-                    conditions.push(
-                        exists(
-                            database
-                                .select()
-                                .from(changelogAuthors)
-                                .where(
-                                    and(
-                                        eq(
-                                            changelogAuthors.changelogSlug,
-                                            table.slug
-                                        ),
-                                        eq(changelogAuthors.userId, userId)
-                                    )
-                                )
-                        )
-                    )
-
-                return and(...conditions)
+            where: {
+                title: q ? { ilike: `%${q}%` } : undefined,
+                authors: userId
+                    ? { userId: { eq: userId || undefined } }
+                    : undefined,
             },
             columns: {
                 slug: true,

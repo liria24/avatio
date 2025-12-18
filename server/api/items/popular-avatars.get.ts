@@ -1,4 +1,3 @@
-import database from '@@/database'
 import { items, setupItems, shops } from '@@/database/schema'
 import { and, count, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
@@ -11,7 +10,7 @@ export default defineApi<Item[]>(
     async () => {
         const { limit } = await validateQuery(query)
 
-        const data = await database
+        const data = await db
             .select({
                 id: items.id,
                 createdAt: items.createdAt,

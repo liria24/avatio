@@ -1,4 +1,3 @@
-import database from '@@/database'
 import {
     feedbacks,
     itemReports,
@@ -21,11 +20,11 @@ const getStats = defineCachedFunction(
             setupReportsCount,
             userReportsCount,
         ] = await Promise.all([
-            database
+            db
                 .select({ total: count() })
                 .from(user)
                 .where(or(eq(user.banned, false), isNull(user.banned))),
-            database
+            db
                 .select({ count: count() })
                 .from(setups)
                 .leftJoin(user, sql`${user.id} = ${setups.userId}`)
@@ -48,23 +47,23 @@ const getStats = defineCachedFunction(
                         )
                     )
                 ),
-            database
+            db
                 .select({ count: count() })
                 .from(items)
                 .where(eq(items.outdated, false)),
-            database
+            db
                 .select({ count: count() })
                 .from(feedbacks)
                 .where(eq(feedbacks.isClosed, false)),
-            database
+            db
                 .select({ count: count() })
                 .from(itemReports)
                 .where(eq(itemReports.isResolved, false)),
-            database
+            db
                 .select({ count: count() })
                 .from(setupReports)
                 .where(eq(setupReports.isResolved, false)),
-            database
+            db
                 .select({ count: count() })
                 .from(userReports)
                 .where(eq(userReports.isResolved, false)),

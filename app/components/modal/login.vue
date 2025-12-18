@@ -44,19 +44,23 @@ onBeforeUnmount(() => {
             <div class="flex flex-col gap-2">
                 <UButton
                     :loading="signingIn"
-                    label="X (Twitter) で続行"
+                    label="X (Twitter)"
                     icon="simple-icons:x"
                     block
                     size="lg"
                     variant="subtle"
                     color="neutral"
+                    class="py-4"
                     @click="handleLogin('twitter')"
                 />
             </div>
         </template>
 
         <template #footer>
-            <div class="flex items-center gap-3">
+            <div class="flex w-full items-center justify-end gap-3">
+                <p class="text-muted text-xs">
+                    ログインすることで以下に同意したことになります:
+                </p>
                 <UButton
                     :to="localePath('/terms')"
                     target="_blank"

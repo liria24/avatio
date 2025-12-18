@@ -1,4 +1,3 @@
-import database from '@@/database'
 import { setupDrafts } from '@@/database/schema'
 import { inArray } from 'drizzle-orm'
 import { z } from 'zod'
@@ -14,20 +13,17 @@ export default defineApi(
     async ({ session }) => {
         const { id } = await validateQuery(query)
 
-        const data = await database.query.setupDrafts.findMany({
-            where: (table, { and, eq, inArray }) => {
-                const conditions = [eq(table.userId, session.user.id)]
-
-                if (id) conditions.push(inArray(table.id, id))
-
-                return and(...conditions)
+        const data = await db.query.setupDrafts.findMany({
+            where: {
+                userId: { eq: session.user.id },
+                id: id ? { in: id } : undefined,
             },
             columns: {
                 id: true,
             },
         })
 
-        const result = await database
+        const result = await db
             .delete(setupDrafts)
             .where(
                 inArray(

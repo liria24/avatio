@@ -1,4 +1,3 @@
-import database from '@@/database'
 import { setupItems, setups, setupTags, user } from '@@/database/schema'
 import { and, eq, exists, ilike, inArray, isNull, or } from 'drizzle-orm'
 import { z } from 'zod'
@@ -11,7 +10,7 @@ const query = z.object({
     itemId: z.union([z.string(), z.array(z.string())]).optional(),
     tag: z.union([z.string(), z.array(z.string())]).optional(),
     page: z.coerce.number().min(1).optional().default(1),
-    limit: z.coerce.number().min(1).max(1000).optional().default(24),
+    limit: z.coerce.number().min(1).max(1000).optional().default(64),
 })
 
 export default defineApi<PaginationResponse<Setup[]>>(
@@ -21,154 +20,100 @@ export default defineApi<PaginationResponse<Setup[]>>(
 
         const offset = (page - 1) * limit
 
-        const data = await database.query.setups.findMany({
-            extras: (table) => {
-                const conditions = [
-                    isNull(table.hidAt),
-                    exists(
-                        database
-                            .select()
-                            .from(user)
-                            .where(
-                                and(
-                                    eq(user.id, table.userId),
-                                    or(
-                                        eq(user.banned, false),
-                                        isNull(user.banned)
-                                    )
-                                )
-                            )
-                    ),
-                ]
-
-                if (q) conditions.push(ilike(table.name, `%${q}%`))
-                if (userId) conditions.push(eq(table.userId, userId))
-
-                if (itemId) {
-                    conditions.push(
-                        exists(
-                            database
-                                .select()
-                                .from(setupItems)
-                                .where(
-                                    and(
-                                        eq(setupItems.setupId, table.id),
-                                        inArray(
-                                            setupItems.itemId,
-                                            Array.isArray(itemId)
-                                                ? itemId
-                                                : [itemId]
+        const data = await db.query.setups.findMany({
+            extras: {
+                count: db
+                    .$count(
+                        setups,
+                        and(
+                            ...[
+                                isNull(setups.hidAt),
+                                exists(
+                                    db
+                                        .select()
+                                        .from(user)
+                                        .where(
+                                            and(
+                                                eq(user.id, setups.userId),
+                                                or(
+                                                    eq(user.banned, false),
+                                                    isNull(user.banned)
+                                                )
+                                            )
                                         )
-                                    )
-                                )
+                                ),
+                                q ? ilike(setups.name, `%${q}%`) : undefined,
+                                userId ? eq(setups.userId, userId) : undefined,
+                                itemId
+                                    ? exists(
+                                          db
+                                              .select()
+                                              .from(setupItems)
+                                              .where(
+                                                  and(
+                                                      eq(
+                                                          setupItems.setupId,
+                                                          setups.id
+                                                      ),
+                                                      inArray(
+                                                          setupItems.itemId,
+                                                          Array.isArray(itemId)
+                                                              ? itemId
+                                                              : [itemId]
+                                                      )
+                                                  )
+                                              )
+                                      )
+                                    : undefined,
+                                tag
+                                    ? exists(
+                                          db
+                                              .select()
+                                              .from(setupTags)
+                                              .where(
+                                                  and(
+                                                      eq(
+                                                          setupTags.setupId,
+                                                          setups.id
+                                                      ),
+                                                      inArray(
+                                                          setupTags.tag,
+                                                          Array.isArray(tag)
+                                                              ? tag
+                                                              : [tag]
+                                                      )
+                                                  )
+                                              )
+                                      )
+                                    : undefined,
+                            ]
                         )
                     )
-                }
-
-                if (tag) {
-                    conditions.push(
-                        exists(
-                            database
-                                .select()
-                                .from(setupTags)
-                                .where(
-                                    and(
-                                        eq(setupTags.setupId, table.id),
-                                        inArray(
-                                            setupTags.tag,
-                                            Array.isArray(tag) ? tag : [tag]
-                                        )
-                                    )
-                                )
-                        )
-                    )
-                }
-
-                return {
-                    count: database
-                        .$count(setups, and(...conditions))
-                        .as('count'),
-                }
+                    .as('count'),
             },
             limit,
             offset,
-            where: (
-                setups,
-                { eq, or, and, ilike, exists, inArray, isNull }
-            ) => {
-                const conditions = [
-                    isNull(setups.hidAt),
-                    exists(
-                        database
-                            .select()
-                            .from(user)
-                            .where(
-                                and(
-                                    eq(user.id, setups.userId),
-                                    or(
-                                        eq(user.banned, false),
-                                        isNull(user.banned)
-                                    )
-                                )
-                            )
-                    ),
-                ]
-
-                if (q) conditions.push(ilike(setups.name, `%${q}%`))
-                if (userId) conditions.push(eq(setups.userId, userId))
-
-                if (itemId) {
-                    conditions.push(
-                        exists(
-                            database
-                                .select()
-                                .from(setupItems)
-                                .where(
-                                    and(
-                                        eq(setupItems.setupId, setups.id),
-                                        inArray(
-                                            setupItems.itemId,
-                                            Array.isArray(itemId)
-                                                ? itemId
-                                                : [itemId]
-                                        )
-                                    )
-                                )
-                        )
-                    )
-                }
-
-                if (tag) {
-                    conditions.push(
-                        exists(
-                            database
-                                .select()
-                                .from(setupTags)
-                                .where(
-                                    and(
-                                        eq(setupTags.setupId, setups.id),
-                                        inArray(
-                                            setupTags.tag,
-                                            Array.isArray(tag) ? tag : [tag]
-                                        )
-                                    )
-                                )
-                        )
-                    )
-                }
-
-                return and(...conditions)
+            where: {
+                hidAt: { isNull: true },
+                user: {
+                    OR: [
+                        { banned: { eq: false } },
+                        { banned: { isNull: true } },
+                    ],
+                },
+                name: q ? { ilike: `%${q}%` } : undefined,
+                userId: userId ? { eq: userId } : undefined,
+                items: {
+                    itemId: itemId
+                        ? { in: Array.isArray(itemId) ? itemId : [itemId] }
+                        : undefined,
+                },
+                tags: tag
+                    ? { tag: { in: Array.isArray(tag) ? tag : [tag] } }
+                    : undefined,
             },
-            orderBy: (products, { asc, desc }) => {
-                const sortFn = sort === 'desc' ? desc : asc
-                switch (orderBy) {
-                    case 'createdAt':
-                        return sortFn(products.createdAt)
-                    case 'name':
-                        return sortFn(products.name)
-                    default:
-                        return sortFn(products.createdAt)
-                }
+            orderBy: {
+                [orderBy]: sort,
             },
             columns: {
                 id: true,
@@ -200,7 +145,9 @@ export default defineApi<PaginationResponse<Setup[]>>(
                     },
                 },
                 items: {
-                    where: (table, { eq }) => eq(table.category, 'avatar'),
+                    where: {
+                        category: { eq: 'avatar' },
+                    },
                     with: {
                         item: {
                             columns: {
@@ -233,21 +180,14 @@ export default defineApi<PaginationResponse<Setup[]>>(
                     },
                 },
                 coauthors: {
-                    where: (coauthors, { eq, or, and, exists, isNull }) =>
-                        exists(
-                            database
-                                .select()
-                                .from(user)
-                                .where(
-                                    and(
-                                        eq(user.id, coauthors.userId),
-                                        or(
-                                            eq(user.banned, false),
-                                            isNull(user.banned)
-                                        )
-                                    )
-                                )
-                        ),
+                    where: {
+                        user: {
+                            OR: [
+                                { banned: { eq: false } },
+                                { banned: { isNull: true } },
+                            ],
+                        },
+                    },
                     columns: {
                         note: true,
                     },

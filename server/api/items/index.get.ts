@@ -1,6 +1,4 @@
-import database from '@@/database'
 import { items } from '@@/database/schema'
-import type { SQL } from 'drizzle-orm'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 
@@ -22,31 +20,18 @@ export default defineApi<PaginationResponse<Item[]>>(
 
         const offset = (page - 1) * limit
 
-        const data = await database.query.items.findMany({
-            extras: (table) => ({
-                count: database
-                    .$count(items, eq(table.outdated, false))
-                    .as('count'),
-            }),
+        const data = await db.query.items.findMany({
+            extras: {
+                count: db.$count(items, eq(items.outdated, false)).as('count'),
+            },
             limit,
             offset,
-            where: (items, { eq, and, ilike }) => {
-                const conditions: SQL[] = [eq(items.outdated, false)]
-
-                if (q) conditions.push(ilike(items.name, `%${q}%`))
-
-                return and(...conditions)
+            where: {
+                outdated: { eq: false },
+                name: q ? { ilike: `%${q}%` } : undefined,
             },
-            orderBy: (products, { asc, desc }) => {
-                const sortFn = sort === 'desc' ? desc : asc
-                switch (orderBy) {
-                    case 'createdAt':
-                        return sortFn(products.createdAt)
-                    case 'name':
-                        return sortFn(products.name)
-                    default:
-                        return sortFn(products.createdAt)
-                }
+            orderBy: {
+                [orderBy]: sort,
             },
             columns: {
                 id: true,

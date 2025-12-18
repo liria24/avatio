@@ -1,4 +1,3 @@
-import database from '@@/database'
 import { feedbacks } from '@@/database/schema'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
@@ -24,7 +23,7 @@ export default defineApi<Feedback>(
         const { id } = await validateParams(params)
         const { isClosed } = await validateBody(body)
 
-        const data = await database
+        const data = await db
             .update(feedbacks)
             .set({
                 isClosed,

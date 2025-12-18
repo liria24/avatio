@@ -1,4 +1,3 @@
-import database from '@@/database'
 import { feedbacks } from '@@/database/schema'
 
 const body = feedbacksInsertSchema.pick({
@@ -31,7 +30,7 @@ export default defineApi(
             sanitize: true,
         })
 
-        await database.insert(feedbacks).values({
+        await db.insert(feedbacks).values({
             fingerprint: await generateHash(),
             comment,
             contextPath,

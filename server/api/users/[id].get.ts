@@ -1,4 +1,3 @@
-import database from '@@/database'
 import { z } from 'zod'
 
 const params = z.object({
@@ -7,12 +6,11 @@ const params = z.object({
 
 const getUser = defineCachedFunction(
     async (id: string) => {
-        const data = await database.query.user.findFirst({
-            where: (user, { eq, or, and, isNull }) =>
-                and(
-                    eq(user.id, id),
-                    or(eq(user.banned, false), isNull(user.banned))
-                ),
+        const data = await db.query.user.findFirst({
+            where: {
+                id: { eq: id },
+                banned: { OR: [{ eq: false }, { isNull: true }] },
+            },
             columns: {
                 id: true,
                 createdAt: true,

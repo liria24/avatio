@@ -4,8 +4,14 @@ const sanitizeObject = <T>(obj: T): T => {
     if (typeof obj === 'string')
         return sanitizeHtml(obj, {
             allowedTags: [
+                'span',
+                'div',
+                'ul',
+                'ol',
+                'li',
                 'p',
                 'br',
+                'b',
                 'strong',
                 'em',
                 'u',

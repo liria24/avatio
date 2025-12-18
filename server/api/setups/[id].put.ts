@@ -1,4 +1,3 @@
-import database from '@@/database'
 import {
     setupCoauthors,
     setupImages,
@@ -16,12 +15,12 @@ const params = z.object({
 
 const body = setupsUpdateSchema
 
-export default defineApi<Setup>(
+export default defineApi<Serialized<Setup>>(
     async ({ session }) => {
         const { id } = await validateParams(params)
 
         // セットアップの存在確認と権限チェック
-        const existingSetup = await database
+        const existingSetup = await db
             .select({ userId: setups.userId })
             .from(setups)
             .where(eq(setups.id, id))
@@ -54,30 +53,27 @@ export default defineApi<Setup>(
         updateData.updatedAt = new Date()
 
         if (Object.keys(updateData).length > 0)
-            await database
-                .update(setups)
-                .set(updateData)
-                .where(eq(setups.id, id))
+            await db.update(setups).set(updateData).where(eq(setups.id, id))
 
         // アイテムの更新
         // 既存のアイテムとシェイプキーを削除
-        await database
+        await db
             .delete(setupItemShapekeys)
             .where(
                 inArray(
                     setupItemShapekeys.setupItemId,
-                    database
+                    db
                         .select({ id: setupItems.id })
                         .from(setupItems)
                         .where(eq(setupItems.setupId, id))
                 )
             )
 
-        await database.delete(setupItems).where(eq(setupItems.setupId, id))
+        await db.delete(setupItems).where(eq(setupItems.setupId, id))
 
         // 新しいアイテムを挿入
         if (items.length) {
-            const insertedItems = await database
+            const insertedItems = await db
                 .insert(setupItems)
                 .values(
                     items.map((item) => ({
@@ -110,15 +106,13 @@ export default defineApi<Setup>(
                 })
 
                 if (shapekeys.length)
-                    await database.insert(setupItemShapekeys).values(shapekeys)
+                    await db.insert(setupItemShapekeys).values(shapekeys)
             }
         }
 
         // 画像の更新
         if (images !== undefined) {
-            await database
-                .delete(setupImages)
-                .where(eq(setupImages.setupId, id))
+            await db.delete(setupImages).where(eq(setupImages.setupId, id))
 
             if (images.length) {
                 const imageData = await Promise.all(
@@ -135,16 +129,16 @@ export default defineApi<Setup>(
                     })
                 )
 
-                await database.insert(setupImages).values(imageData)
+                await db.insert(setupImages).values(imageData)
             }
         }
 
         // タグの更新
         if (tags !== undefined) {
-            await database.delete(setupTags).where(eq(setupTags.setupId, id))
+            await db.delete(setupTags).where(eq(setupTags.setupId, id))
 
             if (tags.length)
-                await database.insert(setupTags).values(
+                await db.insert(setupTags).values(
                     tags.map((tag) => ({
                         setupId: id,
                         tag: tag.tag,
@@ -154,12 +148,12 @@ export default defineApi<Setup>(
 
         // 共同作者の更新
         if (coauthors !== undefined) {
-            await database
+            await db
                 .delete(setupCoauthors)
                 .where(eq(setupCoauthors.setupId, id))
 
             if (coauthors.length > 0)
-                await database.insert(setupCoauthors).values(
+                await db.insert(setupCoauthors).values(
                     coauthors.map((coauthor) => ({
                         setupId: id,
                         userId: coauthor.userId,

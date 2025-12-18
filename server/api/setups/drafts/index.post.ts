@@ -1,4 +1,3 @@
-import database from '@@/database'
 import { setupDraftImages, setupDrafts } from '@@/database/schema'
 import { waitUntil } from '@vercel/functions'
 import { count, eq } from 'drizzle-orm'
@@ -10,14 +9,14 @@ const body = setupDraftsInsertSchema.pick({
 })
 
 const refreshDraftImages = async (draftId: string, imageUrls: string[]) => {
-    await database
+    await db
         .delete(setupDraftImages)
         .where(eq(setupDraftImages.setupDraftId, draftId))
     const images = imageUrls.map((url) => ({
         setupDraftId: draftId,
         url,
     }))
-    if (images.length) await database.insert(setupDraftImages).values(images)
+    if (images.length) await db.insert(setupDraftImages).values(images)
 }
 
 export default defineApi(
@@ -26,7 +25,7 @@ export default defineApi(
             sanitize: true,
         })
 
-        const userSetupDraftsCount = await database
+        const userSetupDraftsCount = await db
             .select({ count: count() })
             .from(setupDrafts)
             .where(eq(setupDrafts.userId, session.user.id))
@@ -42,11 +41,11 @@ export default defineApi(
         if (!id && !Object.keys(content).length) return null
 
         if (id && !Object.keys(content).length) {
-            await database.delete(setupDrafts).where(eq(setupDrafts.id, id))
+            await db.delete(setupDrafts).where(eq(setupDrafts.id, id))
             return null
         }
 
-        const result = await database
+        const result = await db
             .insert(setupDrafts)
             .values({
                 id,

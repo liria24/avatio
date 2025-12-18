@@ -6,6 +6,7 @@ definePageMeta({
 const { $authClient, $logout, $multiSession } = useNuxtApp()
 const sessions = await $multiSession()
 const route = useRoute()
+const toast = useToast()
 
 const query = route.query
 const changeUserId = query.changeUserId
@@ -13,7 +14,25 @@ const changeUserId = query.changeUserId
 const modalDeleteUser = ref(false)
 
 const deleteUser = async () => {
-    await $authClient.deleteUser({ callbackURL: '/' })
+    try {
+        await $authClient.deleteUser({ callbackURL: '/' })
+
+        toast.add({
+            icon: 'lucide:check',
+            title: 'アカウントを削除しました',
+            description: 'ページをリロードしています...',
+            color: 'success',
+        })
+        navigateTo('/', { external: true })
+    } catch (error) {
+        console.error(error)
+        toast.add({
+            icon: 'lucide:x',
+            title: 'アカウントを削除できませんでした',
+            description: '時間をおいて再度お試しください。',
+            color: 'error',
+        })
+    }
 }
 
 defineSeo({
@@ -121,6 +140,7 @@ defineSeo({
                                 label="削除"
                                 color="error"
                                 variant="solid"
+                                loading-auto
                                 @click="deleteUser"
                             />
                         </div>

@@ -1,7 +1,6 @@
-import database from '@@/database'
-import { itemReports } from '@@/database/schema'
 import { and, eq } from 'drizzle-orm'
 import { z } from 'zod'
+import { userReports } from '~~/database/schema'
 
 const query = z.object({
     sort: z.enum(['asc', 'desc']).optional().default('desc'),
@@ -25,36 +24,36 @@ export default defineApi<PaginationResponse<UserReport[]>>(
 
         const offset = (page - 1) * limit
 
-        const data = await database.query.userReports.findMany({
-            extras: (table) => {
-                const conditions = []
-
-                if (reporterId)
-                    conditions.push(eq(table.reporterId, reporterId))
-                if (isResolved !== undefined && isResolved.length === 1)
-                    conditions.push(eq(table.isResolved, isResolved[0]))
-
-                return {
-                    count: database
-                        .$count(itemReports, and(...conditions))
-                        .as('count'),
-                }
+        const data = await db.query.userReports.findMany({
+            extras: {
+                count: db
+                    .$count(
+                        userReports,
+                        and(
+                            ...[
+                                reporterId
+                                    ? eq(userReports.reporterId, reporterId)
+                                    : undefined,
+                                isResolved !== undefined &&
+                                isResolved.length === 1
+                                    ? eq(userReports.isResolved, isResolved[0])
+                                    : undefined,
+                            ]
+                        )
+                    )
+                    .as('count'),
             },
-            where: (table, { and, eq }) => {
-                const conditions = []
-
-                if (reporterId)
-                    conditions.push(eq(table.reporterId, reporterId))
-                if (isResolved !== undefined && isResolved.length === 1)
-                    conditions.push(eq(table.isResolved, isResolved[0]))
-
-                return and(...conditions)
+            where: {
+                reporterId: reporterId ? { eq: reporterId } : undefined,
+                isResolved:
+                    isResolved !== undefined && isResolved.length === 1
+                        ? { eq: isResolved[0] }
+                        : undefined,
             },
             limit,
             offset,
-            orderBy: (table, { asc, desc }) => {
-                const sortFn = sort === 'desc' ? desc : asc
-                return sortFn(table.createdAt)
+            orderBy: {
+                createdAt: sort,
             },
             columns: {
                 id: true,

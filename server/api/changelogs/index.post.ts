@@ -1,4 +1,3 @@
-import database from '@@/database'
 import { changelogAuthors, changelogs } from '@@/database/schema'
 import { marked } from 'marked'
 import { z } from 'zod'
@@ -22,7 +21,7 @@ export default defineApi(
             breaks: true,
         })
 
-        const data = await database
+        const data = await db
             .insert(changelogs)
             .values({
                 slug,
@@ -35,7 +34,7 @@ export default defineApi(
             })
 
         if (authors?.length)
-            await database.insert(changelogAuthors).values(
+            await db.insert(changelogAuthors).values(
                 authors.map((author) => ({
                     changelogSlug: data[0].slug,
                     userId: author,

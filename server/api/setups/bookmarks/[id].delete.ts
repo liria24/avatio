@@ -1,4 +1,3 @@
-import database from '@@/database'
 import { bookmarks } from '@@/database/schema'
 import { and, eq } from 'drizzle-orm'
 import { z } from 'zod'
@@ -11,7 +10,7 @@ export default defineApi(
     async ({ session }) => {
         const { id } = await validateParams(params)
 
-        await database
+        await db
             .delete(bookmarks)
             .where(
                 and(

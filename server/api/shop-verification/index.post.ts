@@ -1,4 +1,3 @@
-import database from '@@/database'
 import { userBadges, userShops, userShopVerification } from '@@/database/schema'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
@@ -32,12 +31,14 @@ export default defineApi(
         )
 
         // ショップが既に登録されているか確認
-        const existingShop = await database.query.userShops.findFirst({
-            where: (userShops, { eq, and }) =>
-                and(
-                    eq(userShops.shopId, item.shop.subdomain),
-                    eq(userShops.userId, session.user.id)
-                ),
+        const existingShop = await db.query.userShops.findFirst({
+            where: {
+                shopId: { eq: item.shop.subdomain },
+                userId: { eq: session.user.id },
+            },
+            columns: {
+                id: true,
+            },
         })
 
         if (existingShop)
@@ -47,11 +48,14 @@ export default defineApi(
             })
 
         // ユーザーの検証コードを取得
-        const verificationCode =
-            await database.query.userShopVerification.findFirst({
-                where: (shopVerification, { eq }) =>
-                    eq(shopVerification.userId, session.user.id),
-            })
+        const verificationCode = await db.query.userShopVerification.findFirst({
+            where: {
+                userId: { eq: session.user.id },
+            },
+            columns: {
+                code: true,
+            },
+        })
 
         if (!verificationCode)
             throw createError({
@@ -75,13 +79,13 @@ export default defineApi(
         )
 
         // ユーザーショップの登録
-        await database.insert(userShops).values({
+        await db.insert(userShops).values({
             userId: session.user.id,
             shopId: itemData.shop!.id,
         })
 
         // ショップオーナーバッジの付与
-        await database
+        await db
             .insert(userBadges)
             .values({
                 userId: session.user.id,
@@ -90,7 +94,7 @@ export default defineApi(
             .onConflictDoNothing()
 
         // 検証コードの削除
-        await database
+        await db
             .delete(userShopVerification)
             .where(eq(userShopVerification.userId, session.user.id))
 

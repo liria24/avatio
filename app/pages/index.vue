@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { LazyModalLogin } from '#components'
+import { LazyModalLogin, LineBreak } from '#components'
+import { motion } from 'motion-v'
 
 const { $session } = useNuxtApp()
 const session = await $session()
@@ -8,6 +9,7 @@ const router = useRouter()
 const overlay = useOverlay()
 
 const modalLogin = overlay.create(LazyModalLogin)
+const MotionLineBreak = motion.create(LineBreak)
 
 type Tab = 'latest' | 'me' | 'bookmarks'
 
@@ -40,28 +42,70 @@ useSchemaOrg([
 
 <template>
     <div class="flex w-full flex-col gap-6">
-        <div
+        <UPageHero
             v-if="!session"
-            class="flex w-full max-w-xl flex-col items-center gap-6 self-center py-12 sm:mt-12 sm:mb-6"
+            :ui="{ container: 'pt-18 sm:pt-24 lg:pt-32', title: 'sm:text-6xl' }"
         >
-            <LogoAvatio
-                by-liria
-                aria-label="Avatio by Liria"
-                class="w-64 sm:w-96"
-            />
-            <p class="sm:text-md text-muted text-sm font-medium">
-                あなたのアバター改変を共有しよう
-            </p>
-            <UButton
-                v-if="!session"
-                label="ログイン"
-                variant="outline"
-                size="lg"
-                color="neutral"
-                class="rounded-full px-5 hover:bg-zinc-700 hover:text-zinc-200 hover:dark:bg-zinc-300 hover:dark:text-zinc-800"
-                @click="modalLogin.open()"
-            />
-        </div>
+            <template #title>
+                <MotionLineBreak
+                    content="お気に入りの改変を記録して共有しよう"
+                    :initial="{
+                        opacity: 0,
+                        filter: 'blur(30px)',
+                    }"
+                    :animate="{
+                        opacity: 1,
+                        filter: 'blur(0px)',
+                    }"
+                    :transition="{
+                        duration: 0.5,
+                    }"
+                />
+            </template>
+
+            <template #description>
+                <MotionLineBreak
+                    content="あのアイテムってどれだっけ？ 記録しておけば、もう忘れません。"
+                    :initial="{
+                        opacity: 0,
+                        filter: 'blur(20px)',
+                    }"
+                    :animate="{
+                        opacity: 1,
+                        filter: 'blur(0px)',
+                    }"
+                    :transition="{
+                        duration: 0.5,
+                        delay: 0.3,
+                    }"
+                />
+            </template>
+
+            <template #links>
+                <motion.div
+                    :initial="{
+                        opacity: 0,
+                        filter: 'blur(20px)',
+                    }"
+                    :animate="{
+                        opacity: 1,
+                        filter: 'blur(0px)',
+                    }"
+                    :transition="{
+                        duration: 0.5,
+                        delay: 0.5,
+                    }"
+                >
+                    <UButton
+                        label="ログイン"
+                        color="neutral"
+                        variant="outline"
+                        class="rounded-full px-6 pt-2.5 pb-2 hover:bg-zinc-700 hover:text-zinc-200 hover:dark:bg-zinc-300 hover:dark:text-zinc-800"
+                        @click="modalLogin.open()"
+                    />
+                </motion.div>
+            </template>
+        </UPageHero>
 
         <div v-if="session" class="flex w-full flex-col items-start gap-5">
             <h1 class="text-lg font-medium text-nowrap">ホーム</h1>

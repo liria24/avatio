@@ -4,10 +4,10 @@
 
 @theme {
     --font-sans:
-        'Noto Sans JP', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN',
+        'Geist', 'Noto Sans JP', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN',
         'Yu Gothic UI', 'Meiryo', system-ui, -apple-system, 'Segoe UI',
         'Roboto', 'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji',
-        'Segoe UI Emoji', 'Noto Color Emoji', 'Geist';
+        'Segoe UI Emoji', 'Noto Color Emoji';
 }
 
 @layer utilities {
@@ -70,7 +70,7 @@
 }
 
 :root {
-    --ui-container: 64rem;
+    --ui-container: 70rem;
 }
 
 html {

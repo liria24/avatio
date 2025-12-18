@@ -1,4 +1,3 @@
-import database from '@@/database'
 import { z } from 'zod'
 
 const query = z.object({
@@ -11,8 +10,10 @@ export default defineApi<{
     async () => {
         const { id } = await validateQuery(query)
 
-        const data = await database.query.user.findFirst({
-            where: (user, { eq }) => eq(user.id, id),
+        const data = await db.query.user.findFirst({
+            where: {
+                id: { eq: id },
+            },
             columns: {
                 id: true,
             },
