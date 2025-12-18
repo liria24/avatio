@@ -6,7 +6,9 @@ import {
     LazyModalSetupHide,
     LazyModalSetupUnhide,
     LazyImageViewer,
+    SetupsViewerItem,
 } from '#components'
+import { motion } from 'motion-v'
 
 const { app } = useAppConfig()
 const { $session } = useNuxtApp()
@@ -25,6 +27,7 @@ if (!id || isNaN(id) || id <= 0) {
     })
 }
 
+const MotionSetupsViewerItem = motion.create(SetupsViewerItem)
 const modalLogin = overlay.create(LazyModalLogin)
 const modalReport = overlay.create(LazyModalReportSetup)
 const modalDelete = overlay.create(LazyModalSetupDelete)
@@ -109,6 +112,13 @@ const categorizedItems = computed(() => {
             orderedCategories[categoryKey] = items
 
     return orderedCategories
+})
+
+const isInitialLoad = ref(true)
+onMounted(async () => {
+    await setTimeout(() => {
+        isInitialLoad.value = false
+    }, 100)
 })
 
 onBeforeRouteLeave(() => {
@@ -445,10 +455,28 @@ if (data.value) {
                                     }}
                                 </h2>
                             </div>
-                            <SetupsViewerItem
+                            <MotionSetupsViewerItem
                                 v-for="(item, index) in value"
                                 :key="`item-${key}-${index}`"
                                 :item="item"
+                                :initial="{
+                                    opacity: 0,
+                                    y: 10,
+                                }"
+                                :in-view="{
+                                    opacity: 1,
+                                    y: 0,
+                                }"
+                                :in-view-options="{
+                                    once: true,
+                                    amount: 0.4,
+                                }"
+                                :transition="{
+                                    duration: 0.2,
+                                    delay: isInitialLoad
+                                        ? 0.1 + 0.05 * index
+                                        : 0,
+                                }"
                             />
                         </template>
                     </div>
@@ -458,7 +486,7 @@ if (data.value) {
 
                         <UAlert
                             icon="lucide:circle-question-mark"
-                            :title="`${data.failedItemsCount}個のアイテムが取得できませんでした`"
+                            :title="`${data.failedItemsCount} 個のアイテムが取得できませんでした`"
                             description="削除されたか、非公開になっている可能性があります。"
                             variant="subtle"
                             orientation="horizontal"
