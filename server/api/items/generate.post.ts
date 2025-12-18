@@ -42,18 +42,51 @@ EC サイトや GitHub で配布されているデジタル商品の情報から
 - 出力は結果のみとしてください。
 `
 
+const previousItemsMessage = (
+    previousItems: { name: string; niceName: string | null; category: string }[]
+) => `
+以下のアイテムが既に存在します。
+
+${previousItems.map((item) => `${item.name}: ${item.niceName} [${item.category}]`).join('\n')}
+
+これらの情報を参考にしてください。
+`
+
 export default defineApi(
     async () => {
         const { name, description, category } = await validateBody(body)
 
+        const previousItems = await db.query.items.findMany({
+            where: {
+                niceName: { isNotNull: true },
+            },
+            columns: {
+                name: true,
+                niceName: true,
+                category: true,
+            },
+            limit: 32,
+        })
+
+        const messages = [
+            {
+                role: 'user' as const,
+                content: previousItemsMessage(previousItems),
+            },
+            {
+                role: 'user' as const,
+                content: JSON.stringify({
+                    name,
+                    description,
+                    originalCategory: category,
+                }),
+            },
+        ]
+
         const result = await generateObject({
-            model: 'google/gemini-2.5-flash',
+            model: 'google/gemini-3-flash',
             system,
-            prompt: JSON.stringify({
-                name,
-                description,
-                originalCategory: category,
-            }),
+            messages,
             schema: z.object({
                 niceName: z.string().min(1),
                 category: itemCategorySchema,
