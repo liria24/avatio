@@ -1,39 +1,29 @@
 <script setup lang="ts">
 import {
-    LazyModalLogin,
     LazyModalReportSetup,
-    LazyModalSetupDelete,
-    LazyModalSetupHide,
-    LazyModalSetupUnhide,
     LazyImageViewer,
     SetupsViewerItem,
 } from '#components'
 import { motion } from 'motion-v'
 
 const { app } = useAppConfig()
-const { $session } = useNuxtApp()
-const session = await $session()
 const route = useRoute()
-const toast = useToast()
 const overlay = useOverlay()
 
 const id = Number(route.params.id)
 
 // Handle invalid IDs (null, undefined, NaN, etc.)
-if (!id || isNaN(id) || id <= 0) {
+if (!id || isNaN(id) || id <= 0)
     throw showError({
         statusCode: 400,
         message: 'IDが無効です',
     })
-}
 
 const MotionSetupsViewerItem = motion.create(SetupsViewerItem)
-const modalLogin = overlay.create(LazyModalLogin)
-const modalReport = overlay.create(LazyModalReportSetup)
-const modalDelete = overlay.create(LazyModalSetupDelete)
-const modalHide = overlay.create(LazyModalSetupHide)
-const modalUnhide = overlay.create(LazyModalSetupUnhide)
 const ImageViewer = overlay.create(LazyImageViewer)
+const modalReport = overlay.create(LazyModalReportSetup, {
+    props: { setupId: id },
+})
 
 const { data, status } = await useSetup(id)
 
@@ -42,47 +32,6 @@ if (status.value === 'error' || (status.value === 'success' && !data.value))
         statusCode: 404,
         message: 'セットアップが見つかりません',
     })
-
-const {
-    data: bookmark,
-    status: bookmarkStatus,
-    refresh: bookmarkRefresh,
-} = await useFetch('/api/setups/bookmarks', {
-    query: { setupId: data.value?.id, limit: 1 },
-    transform: (data) => data.data.length > 0,
-    dedupe: 'defer',
-    default: () => false,
-    immediate: !!session.value,
-})
-
-const toggleBookmark = async () => {
-    try {
-        if (!bookmark.value)
-            await $fetch(`/api/setups/bookmarks/${data.value?.id}`, {
-                method: 'POST',
-            })
-        else
-            await $fetch(`/api/setups/bookmarks/${data.value?.id}`, {
-                method: 'DELETE',
-            })
-
-        await bookmarkRefresh()
-
-        toast.add({
-            title: bookmark.value
-                ? 'ブックマークしました'
-                : 'ブックマークを解除しました',
-            color: bookmark.value ? 'success' : 'info',
-        })
-    } catch (error) {
-        console.error('ブックマークの変更に失敗:', error)
-        toast.add({
-            title: 'ブックマークの変更に失敗しました',
-            color: 'error',
-        })
-        return
-    }
-}
 
 const { itemCategory } = useAppConfig()
 
@@ -122,11 +71,7 @@ onMounted(async () => {
 })
 
 onBeforeRouteLeave(() => {
-    modalLogin.close()
     modalReport.close()
-    modalDelete.close()
-    modalHide.close()
-    modalUnhide.close()
     ImageViewer.close()
 })
 
@@ -178,7 +123,7 @@ if (data.value) {
         />
 
         <UPageBody>
-            <div class="flex w-full flex-col items-start gap-4">
+            <div class="flex w-full flex-col items-start gap-10">
                 <UAlert
                     v-if="data.hidAt"
                     icon="lucide:eye-off"
@@ -202,191 +147,6 @@ if (data.value) {
                     ]"
                     class="w-full"
                 />
-
-                <div class="flex w-full flex-col items-start gap-3">
-                    <h1
-                        class="text-highlighted text-3xl font-bold wrap-anywhere break-keep"
-                        v-html="useLineBreak(data.name)"
-                    />
-
-                    <div class="flex w-full items-center justify-between gap-3">
-                        <div
-                            class="flex flex-wrap items-center gap-x-4 gap-y-2"
-                        >
-                            <NuxtLink :to="`/@${data.user.id}`">
-                                <UUser
-                                    :name="data.user.name"
-                                    :avatar="{
-                                        src: data.user.image || undefined,
-                                        icon: 'lucide:user-round',
-                                    }"
-                                    size="sm"
-                                    :ui="{ name: 'text-sm' }"
-                                >
-                                    <template #description>
-                                        <UserBadges
-                                            v-if="data.user.badges?.length"
-                                            :badges="data.user.badges"
-                                            size="xs"
-                                        />
-                                    </template>
-                                </UUser>
-                            </NuxtLink>
-
-                            <div
-                                class="ml-0.5 flex flex-wrap items-center gap-1.5"
-                            >
-                                <div
-                                    class="text-muted flex items-center gap-1.5"
-                                >
-                                    <Icon name="lucide:calendar" size="16" />
-                                    <NuxtTime
-                                        :datetime="data.createdAt"
-                                        locale="ja-JP"
-                                        year="numeric"
-                                        month="2-digit"
-                                        day="2-digit"
-                                        hour="2-digit"
-                                        minute="2-digit"
-                                        class="font-[Geist] text-sm leading-none text-nowrap"
-                                    />
-                                </div>
-
-                                <UTooltip
-                                    v-if="data.updatedAt !== data.createdAt"
-                                    :delay-duration="50"
-                                >
-                                    <div
-                                        class="text-dimmed flex items-center gap-1.5"
-                                    >
-                                        <Icon
-                                            name="lucide:pen-line"
-                                            size="16"
-                                        />
-                                        <span
-                                            class="text-xs leading-none text-nowrap"
-                                        >
-                                            <NuxtTime
-                                                :datetime="data.updatedAt"
-                                                relative
-                                            />
-                                            に更新
-                                        </span>
-                                    </div>
-
-                                    <template #content>
-                                        <NuxtTime
-                                            :datetime="data.updatedAt"
-                                            locale="ja-JP"
-                                            year="numeric"
-                                            month="2-digit"
-                                            day="2-digit"
-                                            hour="2-digit"
-                                            minute="2-digit"
-                                            class="text-muted font-[Geist] text-xs leading-none text-nowrap"
-                                        />
-                                        <span
-                                            class="text-muted text-xs leading-none text-nowrap"
-                                        >
-                                            に編集
-                                        </span>
-                                    </template>
-                                </UTooltip>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center gap-0.5">
-                            <UButton
-                                v-if="session?.user.role === 'admin'"
-                                :icon="
-                                    data.hidAt ? 'lucide:eye' : 'lucide:eye-off'
-                                "
-                                variant="ghost"
-                                size="sm"
-                                class="p-2"
-                                @click="
-                                    data.hidAt
-                                        ? modalUnhide.open({
-                                              setupId: data.id,
-                                          })
-                                        : modalHide.open({
-                                              setupId: data.id,
-                                          })
-                                "
-                            />
-
-                            <UButton
-                                loading-auto
-                                :loading="bookmarkStatus === 'pending'"
-                                :icon="
-                                    bookmark
-                                        ? 'lucide:bookmark-check'
-                                        : 'lucide:bookmark'
-                                "
-                                :aria-label="
-                                    bookmark
-                                        ? 'ブックマークから削除'
-                                        : 'ブックマーク'
-                                "
-                                :color="bookmark ? 'secondary' : 'primary'"
-                                variant="ghost"
-                                size="sm"
-                                class="p-2"
-                                @click="
-                                    session
-                                        ? toggleBookmark()
-                                        : modalLogin.open()
-                                "
-                            />
-
-                            <template v-if="session?.user.id === data.user.id">
-                                <UButton
-                                    :to="`/setup/compose?edit=${data.id}`"
-                                    aria-label="編集"
-                                    icon="lucide:pen"
-                                    variant="ghost"
-                                    size="sm"
-                                    class="p-2"
-                                />
-
-                                <UButton
-                                    aria-label="削除"
-                                    icon="lucide:trash"
-                                    variant="ghost"
-                                    size="sm"
-                                    class="p-2"
-                                    @click="
-                                        modalDelete.open({
-                                            setupId: data.id,
-                                        })
-                                    "
-                                />
-                            </template>
-
-                            <UButton
-                                v-else
-                                icon="lucide:flag"
-                                aria-label="報告"
-                                variant="ghost"
-                                size="sm"
-                                class="p-2"
-                                @click="
-                                    session
-                                        ? modalReport.open({
-                                              setupId: data.id,
-                                          })
-                                        : modalLogin.open()
-                                "
-                            />
-
-                            <ShareButton
-                                :title="data.name"
-                                :description="data.description"
-                                :image="data.images?.[0]?.url"
-                            />
-                        </div>
-                    </div>
-                </div>
 
                 <NuxtImg
                     v-if="data.images?.length && data.images[0]"
@@ -426,9 +186,9 @@ if (data.value) {
                     />
                 </NuxtImg>
 
-                <SetupsViewerInfo :setup="data" class="mt-3 w-full lg:hidden" />
+                <SetupsViewerInfo :setup="data" class="w-full" />
 
-                <div class="mt-3 flex w-full flex-col gap-7">
+                <div class="flex w-full flex-col gap-7">
                     <div
                         v-for="(value, key) in categorizedItems"
                         :key="'category-' + key"
@@ -501,12 +261,25 @@ if (data.value) {
                         />
                     </template>
                 </div>
+
+                <UButton
+                    icon="lucide:flag"
+                    label="このセットアップを報告"
+                    variant="ghost"
+                    size="sm"
+                    class="ml-auto"
+                    @click="modalReport.open()"
+                />
             </div>
         </UPageBody>
 
         <template #right>
             <UPageAside>
-                <SetupsViewerInfo :setup="data" class="sticky top-3 pt-3" />
+                <SetupsViewerInfo
+                    :setup="data"
+                    sidebar
+                    class="sticky top-3 pt-3"
+                />
             </UPageAside>
         </template>
     </UPage>

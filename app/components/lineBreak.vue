@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import type { PrimitiveProps } from 'reka-ui'
+import { Primitive } from 'reka-ui'
 import { loadDefaultJapaneseParser } from 'budoux'
 
-interface Props {
+interface Props extends PrimitiveProps {
     content: string
 }
 const props = defineProps<Props>()
@@ -16,5 +18,7 @@ const lineBreak = (text: string) => {
 </script>
 
 <template>
-    <span class="wrap-anywhere break-keep" v-html="lineBreak(props.content)" />
+    <Primitive :as="props.as" class="wrap-anywhere break-keep">
+        <span v-html="lineBreak(props.content)" />
+    </Primitive>
 </template>

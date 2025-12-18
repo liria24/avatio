@@ -1,12 +1,12 @@
 <script setup lang="ts">
-const setupsPerPage: number = 50
+const setupsPerPage: number = 64
 const page = ref(1)
 const loading = ref(true)
 
 const { data, status, refresh } = useSetups({
     query: computed(() => ({
         page: page.value,
-        perPage: setupsPerPage,
+        limit: setupsPerPage,
     })),
     immediate: false,
 })
