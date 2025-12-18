@@ -1,4 +1,9 @@
 <script lang="ts" setup>
+import { SetupsLink } from '#components'
+import { motion } from 'motion-v'
+
+const MotionLazySetupsLink = motion.create(SetupsLink)
+
 const { isMobile } = useDevice()
 
 const setups = defineModel<SerializedSetup[]>('setups', {
@@ -6,6 +11,13 @@ const setups = defineModel<SerializedSetup[]>('setups', {
 })
 const loading = defineModel<boolean>('loading', {
     default: false,
+})
+
+const isInitialLoad = ref(true)
+onMounted(async () => {
+    await setTimeout(() => {
+        isInitialLoad.value = false
+    }, 100)
 })
 </script>
 
@@ -33,11 +45,27 @@ const loading = defineModel<boolean>('loading', {
         :max-columns="4"
         :ssr-columns="isMobile ? 2 : 3"
     >
-        <template #default="{ item }">
-            <LazySetupsLink
+        <template #default="{ item, index }">
+            <MotionLazySetupsLink
                 :aria-label="item.name"
                 :image-size="{ width: 16, height: 9 }"
                 :setup="item"
+                :initial="{
+                    opacity: 0,
+                    y: 10,
+                }"
+                :in-view="{
+                    opacity: 1,
+                    y: 0,
+                }"
+                :in-view-options="{
+                    once: true,
+                    amount: 0.4,
+                }"
+                :transition="{
+                    duration: 0.2,
+                    delay: isInitialLoad ? 0.1 + 0.05 * index : 0,
+                }"
                 class="mb-2"
             />
         </template>
