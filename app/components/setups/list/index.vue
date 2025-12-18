@@ -42,7 +42,7 @@ onMounted(async () => {
         :column-width="240"
         :gap="6"
         :min-columns="2"
-        :max-columns="4"
+        :max-columns="3"
         :ssr-columns="isMobile ? 2 : 3"
     >
         <template #default="{ item, index }">

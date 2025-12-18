@@ -44,7 +44,7 @@ useSchemaOrg([
     <div class="flex w-full flex-col gap-6">
         <UPageHero
             v-if="!session"
-            :ui="{ container: 'pt-18 sm:pt-24 lg:pt-32' }"
+            :ui="{ container: 'pt-18 sm:pt-24 lg:pt-32', title: 'sm:text-6xl' }"
         >
             <template #title>
                 <MotionLineBreak
