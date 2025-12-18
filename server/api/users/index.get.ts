@@ -1,20 +1,22 @@
-import database from '@@/database'
-import { setups } from '@@/database/schema'
+import { eq, exists } from 'drizzle-orm'
+import { user } from '~~/database/schema'
 
 export default defineApi<User[]>(
     async () => {
-        const data = await database.query.user.findMany({
-            where: (user, { eq, or, and, isNull, exists }) =>
-                and(
-                    exists(
-                        database
-                            .select()
-                            .from(setups)
-                            .where((setup) => eq(setup.userId, user.id))
-                            .limit(1)
-                    ),
-                    or(eq(user.banned, false), isNull(user.banned))
-                ),
+        const data = await db.query.user.findMany({
+            where: {
+                banned: { OR: [{ eq: false }, { isNull: true }] },
+                setups: {
+                    RAW: (table) =>
+                        exists(
+                            db
+                                .select()
+                                .from(table)
+                                .where((setup) => eq(setup.userId, user.id))
+                                .limit(1)
+                        ),
+                },
+            },
             columns: {
                 id: true,
                 createdAt: true,

@@ -1,4 +1,3 @@
-import database from '@@/database'
 import { notifications } from '@@/database/schema'
 import type { Notification } from '@@/shared/types'
 import { and, eq, isNull } from 'drizzle-orm'
@@ -24,30 +23,30 @@ export default defineApi<{
         const userId = session!.user.id
 
         const [unreadCount, data] = await Promise.all([
-            database.$count(
+            db.$count(
                 notifications,
                 and(
                     eq(notifications.userId, userId),
                     isNull(notifications.readAt)
                 )
             ),
-            database.query.notifications.findMany({
-                orderBy: (notifications, { desc }) =>
-                    desc(notifications.createdAt),
-                where: (table, { eq, and, isNotNull, isNull }) => {
-                    const conditions = [eq(table.userId, userId)]
-
-                    const hasRead = status.includes('read')
-                    const hasUnread = status.includes('unread')
-
-                    if (hasRead && !hasUnread)
-                        conditions.push(isNotNull(table.readAt))
-                    else if (!hasRead && hasUnread)
-                        conditions.push(isNull(table.readAt))
-                    else if (!hasRead && !hasUnread)
-                        conditions.push(isNull(table.id))
-
-                    return and(...conditions)
+            db.query.notifications.findMany({
+                orderBy: {
+                    createdAt: 'desc',
+                },
+                where: {
+                    userId: { eq: userId },
+                    readAt:
+                        status.includes('read') && !status.includes('unread')
+                            ? { isNotNull: true }
+                            : !status.includes('read') &&
+                                status.includes('unread')
+                              ? { isNull: true }
+                              : undefined,
+                    id:
+                        !status.includes('read') && !status.includes('unread')
+                            ? { isNull: true }
+                            : undefined,
                 },
                 columns: {
                     id: true,

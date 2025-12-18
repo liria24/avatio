@@ -1,4 +1,3 @@
-import database from '@@/database'
 import { itemReports } from '@@/database/schema'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
@@ -16,7 +15,7 @@ export default defineApi(
         const { id } = await validateParams(params)
         const { isResolved } = await validateBody(body)
 
-        await database
+        await db
             .update(itemReports)
             .set({
                 isResolved,

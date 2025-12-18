@@ -1,4 +1,3 @@
-import database from '@@/database'
 import { items } from '@@/database/schema'
 import { waitUntil } from '@vercel/functions'
 import { consola } from 'consola'
@@ -15,7 +14,7 @@ const { adminKey } = useRuntimeConfig()
 
 const markItemAsOutdated = async (id: string): Promise<void> => {
     try {
-        await database
+        await db
             .update(items)
             .set({ outdated: true, updatedAt: new Date() })
             .where(eq(items.id, id))
@@ -55,12 +54,12 @@ export default defineApi<Item>(
         waitUntil(
             (async () => {
                 if (cachedItem && cachedItem.id !== item.id)
-                    await database
+                    await db
                         .update(items)
                         .set({ id: item.id })
                         .where(eq(items.id, cachedItem.id))
 
-                await database
+                await db
                     .insert(items)
                     .values({
                         id: item.id,
@@ -104,7 +103,7 @@ export default defineApi<Item>(
                             }
                         )
 
-                        await database
+                        await db
                             .update(items)
                             .set({ niceName, category })
                             .where(eq(items.id, item.id))

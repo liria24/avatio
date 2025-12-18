@@ -1,4 +1,3 @@
-import database from '@@/database'
 import { items } from '@@/database/schema'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
@@ -17,7 +16,7 @@ export default defineApi(
 
         const { niceName } = await validateBody(body, { sanitize: true })
 
-        await database.update(items).set({ niceName }).where(eq(items.id, id))
+        await db.update(items).set({ niceName }).where(eq(items.id, id))
 
         const data = await useEvent().$fetch<Item>(
             `/api/items/${transformItemId(id).encode()}`

@@ -1,4 +1,3 @@
-import database from '@@/database'
 import {
     setupCoauthors,
     setupImages,
@@ -15,7 +14,7 @@ export default defineApi(
         const { name, description, items, images, tags, coauthors } =
             await validateBody(body, { sanitize: true })
 
-        const resultSetups = await database
+        const resultSetups = await db
             .insert(setups)
             .values({
                 userId: session.user.id,
@@ -28,7 +27,7 @@ export default defineApi(
 
         const setupId = resultSetups[0].id
 
-        const insertedItems = await database
+        const insertedItems = await db
             .insert(setupItems)
             .values(
                 items.map((item) => ({
@@ -58,7 +57,7 @@ export default defineApi(
             })
 
             if (shapekeys.length > 0)
-                await database.insert(setupItemShapekeys).values(shapekeys)
+                await db.insert(setupItemShapekeys).values(shapekeys)
         }
 
         if (images?.length) {
@@ -76,11 +75,11 @@ export default defineApi(
                 })
             )
 
-            await database.insert(setupImages).values(imageData)
+            await db.insert(setupImages).values(imageData)
         }
 
         if (tags?.length)
-            await database.insert(setupTags).values(
+            await db.insert(setupTags).values(
                 tags.map((tag) => ({
                     setupId,
                     tag: tag.tag,
@@ -88,7 +87,7 @@ export default defineApi(
             )
 
         if (coauthors?.length)
-            await database.insert(setupCoauthors).values(
+            await db.insert(setupCoauthors).values(
                 coauthors.map((coauthor) => ({
                     setupId,
                     userId: coauthor.userId,

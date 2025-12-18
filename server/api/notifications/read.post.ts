@@ -1,4 +1,3 @@
-import database from '@@/database'
 import { notifications } from '@@/database/schema'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
@@ -11,8 +10,10 @@ export default defineApi(
     async ({ session }) => {
         const { id } = await validateBody(body)
 
-        const data = await database.query.notifications.findFirst({
-            where: eq(notifications.id, id),
+        const data = await db.query.notifications.findFirst({
+            where: {
+                id: { eq: id },
+            },
             columns: {
                 userId: true,
             },
@@ -30,7 +31,7 @@ export default defineApi(
                 statusMessage: 'Forbidden.',
             })
 
-        await database
+        await db
             .update(notifications)
             .set({
                 readAt: new Date(),

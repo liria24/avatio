@@ -1,7 +1,5 @@
-import database from '@@/database'
-import { setupTags } from '@@/database/schema'
-import { asc, count, desc, ilike } from 'drizzle-orm'
 import { z } from 'zod'
+import { setupTags } from '~~/database/schema'
 
 const query = z.object({
     q: z.string().optional(),
@@ -14,26 +12,21 @@ export default defineApi(
     async () => {
         const { q, orderBy, sort, limit } = await validateQuery(query)
 
-        const data = await database
-            .select({
-                tag: setupTags.tag,
-                count: count(setupTags.tag).as('count'),
-            })
-            .from(setupTags)
-            .groupBy(setupTags.tag)
-            .where((setupTags) => {
-                if (q) return ilike(setupTags.tag, `%${q}%`)
-            })
-            .orderBy((setupTags) => {
-                const sortFn = sort === 'desc' ? desc : asc
-                switch (orderBy) {
-                    case 'name':
-                        return sortFn(setupTags.tag)
-                    default:
-                        return sortFn(count(setupTags.tag))
-                }
-            })
-            .limit(limit)
+        const data = await db.query.setupTags.findMany({
+            where: {
+                tag: q ? { ilike: `%${q}%` } : undefined,
+            },
+            orderBy: {
+                [orderBy]: sort,
+            },
+            limit,
+            columns: {
+                tag: true,
+            },
+            extras: {
+                count: db.$count(setupTags.tag).as('count'),
+            },
+        })
 
         return data
     },

@@ -1,6 +1,3 @@
-import database from '@@/database'
-import { items, setupItems, setups, shops } from '@@/database/schema'
-import { and, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 
 const query = z.object({
@@ -14,42 +11,21 @@ export default defineApi<Item[]>(
         const oneDayAgo = new Date()
         oneDayAgo.setDate(oneDayAgo.getDate() - 1)
 
-        const data = await database
-            .select({
-                id: items.id,
-                createdAt: items.createdAt,
-                updatedAt: items.updatedAt,
-                platform: items.platform,
-                category: items.category,
-                name: items.name,
-                niceName: items.niceName,
-                image: items.image,
-                price: items.price,
-                likes: items.likes,
-                nsfw: items.nsfw,
-                shop: {
-                    id: shops.id,
-                    name: shops.name,
-                    image: shops.image,
-                    verified: shops.verified,
-                    platform: shops.platform,
+        const data = await db.query.items.findMany({
+            where: {
+                outdated: { eq: false },
+                category: { eq: 'avatar' },
+                setupItems: {
+                    setup: {
+                        userId: { eq: session!.user.id },
+                    },
                 },
-                outdated: items.outdated,
-            })
-            .from(items)
-            .innerJoin(shops, eq(items.shopId, shops.id))
-            .innerJoin(setupItems, eq(setupItems.itemId, items.id))
-            .innerJoin(
-                setups,
-                and(
-                    eq(setupItems.setupId, setups.id),
-                    eq(setups.userId, session!.user.id)
-                )
-            )
-            .where(and(eq(items.outdated, false), eq(items.category, 'avatar')))
-            .groupBy(items.id, shops.id)
-            .orderBy(desc(items.createdAt))
-            .limit(limit)
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
+            limit,
+        })
 
         // 1日以上古いアイテムのみフィルタリング
         const outdatedItems = data.filter((item) => item.updatedAt < oneDayAgo)

@@ -1,6 +1,4 @@
-import database from '@@/database'
-import { bookmarks, setupTags, setups, user } from '@@/database/schema'
-import type { SQL } from 'drizzle-orm'
+import { bookmarks } from '@@/database/schema'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 
@@ -29,108 +27,40 @@ export default defineApi<PaginationResponse<Bookmark[]>>(
 
         const offset = (page - 1) * limit
 
-        const data = await database.query.bookmarks.findMany({
-            extras: (table) => ({
-                count: database
-                    .$count(bookmarks, eq(table.userId, session!.user.id))
+        const data = await db.query.bookmarks.findMany({
+            extras: {
+                count: db
+                    .$count(bookmarks, eq(bookmarks.userId, session!.user.id))
                     .as('count'),
-            }),
+            },
             limit,
             offset,
-            where: (
-                bookmarks,
-                { eq, or, and, ilike, exists, inArray, isNull }
-            ) => {
-                const conditions: SQL[] = [
-                    eq(bookmarks.userId, session!.user.id),
-                    exists(
-                        database
-                            .select()
-                            .from(setups)
-                            .innerJoin(user, eq(setups.userId, user.id))
-                            .where(
-                                and(
-                                    eq(setups.id, bookmarks.setupId),
-                                    isNull(setups.hidAt),
-                                    or(
-                                        isNull(user.banned),
-                                        eq(user.banned, false)
-                                    )
-                                )
-                            )
-                    ),
-                ]
-
-                if (userId)
-                    conditions.push(
-                        exists(
-                            database
-                                .select()
-                                .from(setups)
-                                .where(
-                                    and(
-                                        eq(setups.id, bookmarks.setupId),
-                                        eq(setups.userId, userId)
-                                    )
-                                )
-                        )
-                    )
-
-                if (setupId) {
-                    const setupIds = Array.isArray(setupId)
-                        ? setupId.map((id) => Number(id))
-                        : [Number(setupId)]
-                    conditions.push(inArray(bookmarks.setupId, setupIds))
-                }
-
-                if (q)
-                    conditions.push(
-                        exists(
-                            database
-                                .select()
-                                .from(setups)
-                                .where(
-                                    and(
-                                        eq(setups.id, bookmarks.setupId),
-                                        ilike(setups.name, `%${q}%`)
-                                    )
-                                )
-                        )
-                    )
-
-                if (tag)
-                    conditions.push(
-                        exists(
-                            database
-                                .select()
-                                .from(setupTags)
-                                .where(
-                                    and(
-                                        eq(
-                                            setupTags.setupId,
-                                            bookmarks.setupId
-                                        ),
-                                        inArray(
-                                            setupTags.tag,
-                                            Array.isArray(tag) ? tag : [tag]
-                                        )
-                                    )
-                                )
-                        )
-                    )
-
-                return and(...conditions)
+            where: {
+                user: {
+                    AND: [
+                        { id: { eq: session!.user.id } },
+                        {
+                            OR: [
+                                { banned: { eq: false } },
+                                { banned: { isNull: true } },
+                            ],
+                        },
+                    ],
+                },
+                setup: {
+                    hidAt: { isNull: true },
+                    id: setupId
+                        ? { in: Array.isArray(setupId) ? setupId : [setupId] }
+                        : undefined,
+                    userId: userId ? { eq: userId } : undefined,
+                    name: q ? { ilike: `%${q}%` } : undefined,
+                    tags: tag
+                        ? { tag: { in: Array.isArray(tag) ? tag : [tag] } }
+                        : undefined,
+                },
             },
-            orderBy: (bookmarks, { asc, desc }) => {
-                const sortFn = sort === 'desc' ? desc : asc
-                switch (orderBy) {
-                    case 'createdAt':
-                        return sortFn(bookmarks.createdAt)
-                    case 'name':
-                        return sortFn(bookmarks.createdAt)
-                    default:
-                        return sortFn(bookmarks.createdAt)
-                }
+            orderBy: {
+                [orderBy]: sort,
             },
             columns: {
                 id: true,
@@ -167,8 +97,9 @@ export default defineApi<PaginationResponse<Bookmark[]>>(
                             },
                         },
                         items: {
-                            where: (table, { eq }) =>
-                                eq(table.category, 'avatar'),
+                            where: {
+                                category: { eq: 'avatar' },
+                            },
                             with: {
                                 item: {
                                     columns: {
@@ -201,24 +132,14 @@ export default defineApi<PaginationResponse<Bookmark[]>>(
                             },
                         },
                         coauthors: {
-                            where: (
-                                coauthors,
-                                { eq, or, and, exists, isNull }
-                            ) =>
-                                exists(
-                                    database
-                                        .select()
-                                        .from(user)
-                                        .where(
-                                            and(
-                                                eq(user.id, coauthors.userId),
-                                                or(
-                                                    eq(user.banned, false),
-                                                    isNull(user.banned)
-                                                )
-                                            )
-                                        )
-                                ),
+                            where: {
+                                user: {
+                                    OR: [
+                                        { banned: { eq: false } },
+                                        { banned: { isNull: true } },
+                                    ],
+                                },
+                            },
                             columns: {
                                 note: true,
                             },

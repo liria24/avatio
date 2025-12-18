@@ -1,5 +1,3 @@
-import database from '@@/database'
-import { auditLogs } from '@@/database/schema'
 import { and, eq, ilike } from 'drizzle-orm'
 import { z } from 'zod'
 
@@ -21,48 +19,33 @@ export default defineApi<PaginationResponse<AuditLog[]>>(
 
         const offset = (page - 1) * limit
 
-        const data = await database.query.auditLogs.findMany({
-            extras: (table) => {
-                const conditions = []
+        const countConditions = []
 
-                if (q) conditions.push(ilike(table.details, `%${q}%`))
+        if (q) countConditions.push(ilike(schema.auditLogs.details, `%${q}%`))
+        if (userId) countConditions.push(eq(schema.auditLogs.userId, userId))
+        if (action) countConditions.push(eq(schema.auditLogs.action, action))
+        if (targetType)
+            countConditions.push(eq(schema.auditLogs.targetType, targetType))
+        if (targetId)
+            countConditions.push(eq(schema.auditLogs.targetId, targetId))
 
-                if (userId) conditions.push(eq(table.userId, userId))
-
-                if (action) conditions.push(eq(table.action, action))
-
-                if (targetType)
-                    conditions.push(eq(table.targetType, targetType))
-
-                if (targetId) conditions.push(eq(table.targetId, targetId))
-
-                return {
-                    count: database
-                        .$count(auditLogs, and(...conditions))
-                        .as('count'),
-                }
+        const data = await db.query.auditLogs.findMany({
+            extras: {
+                count: db
+                    .$count(schema.auditLogs, and(...countConditions))
+                    .as('count'),
             },
             limit,
             offset,
-            orderBy: (auditLogs, { asc, desc }) => {
-                const sortFn = sort === 'desc' ? desc : asc
-                return sortFn(auditLogs.createdAt)
+            orderBy: {
+                createdAt: sort,
             },
-            where: (auditLogs, { and, eq, ilike }) => {
-                const conditions = []
-
-                if (q) conditions.push(ilike(auditLogs.details, `%${q}%`))
-
-                if (userId) conditions.push(eq(auditLogs.userId, userId))
-
-                if (action) conditions.push(eq(auditLogs.action, action))
-
-                if (targetType)
-                    conditions.push(eq(auditLogs.targetType, targetType))
-
-                if (targetId) conditions.push(eq(auditLogs.targetId, targetId))
-
-                return and(...conditions)
+            where: {
+                details: q ? { ilike: `%${q}%` } : undefined,
+                userId: userId ? { eq: userId } : undefined,
+                action: action ? { eq: action } : undefined,
+                targetType: targetType ? { eq: targetType } : undefined,
+                targetId: targetId ? { eq: targetId } : undefined,
             },
             columns: {
                 id: true,

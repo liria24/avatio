@@ -1,11 +1,11 @@
-import database from '@@/database'
-
 export default defineApi<{
     result: boolean
 }>(
     async ({ session }) => {
-        const data = await database.query.user.findFirst({
-            where: (user, { eq }) => eq(user.id, session!.user.id),
+        const data = await db.query.user.findFirst({
+            where: {
+                id: { eq: session!.user.id },
+            },
             columns: {
                 id: true,
                 isInitialized: true,

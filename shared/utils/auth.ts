@@ -1,8 +1,8 @@
-import database from '@@/database'
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { admin, customSession, multiSession } from 'better-auth/plugins'
 import { nanoid } from 'nanoid'
+import { db } from '~~/server/utils/database'
 
 const JPG_FILENAME_LENGTH = 16
 const USER_ID_LENGTH = 10
@@ -25,6 +25,9 @@ export const auth = betterAuth({
                 defaultValue: false,
                 required: true,
             },
+        },
+        deleteUser: {
+            enabled: true,
         },
     },
 
@@ -86,50 +89,29 @@ export const auth = betterAuth({
         },
     },
 
-    database: drizzleAdapter(database, {
-        provider: 'pg',
-    }),
+    database: drizzleAdapter(db, { provider: 'pg' }),
 
     socialProviders: {
         twitter: {
             clientId: process.env.TWITTER_CLIENT_ID as string,
             clientSecret: process.env.TWITTER_CLIENT_SECRET as string,
             mapProfileToUser: async (profile) => {
-                let image: string | null = null
-                if (profile.data.profile_image_url)
-                    try {
-                        const fetched = await $fetch<Blob>(
-                            profile.data.profile_image_url.endsWith(
-                                '_normal.jpg'
-                            )
-                                ? profile.data.profile_image_url.replace(
-                                      /_normal\.jpg$/,
-                                      '_400x400.jpg'
-                                  )
-                                : profile.data.profile_image_url
-                        )
-                        const imageId = nanoid(JPG_FILENAME_LENGTH)
-                        await useStorage('r2').setItemRaw(
-                            `avatar:${imageId}.jpg`,
-                            Buffer.from(await fetched.arrayBuffer())
-                        )
-                        image = `${process.env.NUXT_PUBLIC_R2_DOMAIN}/avatar/${imageId}.jpg`
-                    } catch {
-                        image = null
-                    }
-
                 return {
                     email: profile.data.email,
                     name: profile.data.name,
-                    image,
                     bio: profile.data.description,
+                    image: profile.data.profile_image_url?.endsWith(
+                        '_normal.jpg'
+                    )
+                        ? profile.data.profile_image_url.replace(
+                              /_normal\.jpg$/,
+                              '_400x400.jpg'
+                          )
+                        : profile.data.profile_image_url,
+                    emailVerified: true,
                 }
             },
         },
-    },
-
-    deleteUser: {
-        enabled: true,
     },
 
     plugins: [
@@ -137,8 +119,10 @@ export const auth = betterAuth({
         multiSession(),
         customSession(
             async ({ user, session }) => {
-                const data = await database.query.user.findFirst({
-                    where: (users, { eq }) => eq(users.id, user.id),
+                const data = await db.query.user.findFirst({
+                    where: {
+                        id: { eq: user.id },
+                    },
                     columns: {
                         isInitialized: true,
                     },
@@ -165,6 +149,36 @@ export const auth = betterAuth({
         cookieCache: {
             enabled: true,
             maxAge: 5 * 60, // 5分間のキャッシュ
+        },
+    },
+
+    databaseHooks: {
+        user: {
+            create: {
+                before: async (user) => {
+                    let image = user.image
+
+                    if (image)
+                        try {
+                            const fetched = await $fetch<Blob>(image)
+                            const imageId = nanoid(JPG_FILENAME_LENGTH)
+                            await useStorage('r2').setItemRaw(
+                                `avatar:${imageId}.jpg`,
+                                Buffer.from(await fetched.arrayBuffer())
+                            )
+                            image = `${process.env.NUXT_PUBLIC_R2_DOMAIN}/avatar/${imageId}.jpg`
+                        } catch {
+                            image = null
+                        }
+
+                    return {
+                        data: {
+                            ...user,
+                            image,
+                        },
+                    }
+                },
+            },
         },
     },
 

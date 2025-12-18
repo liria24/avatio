@@ -1,10 +1,10 @@
-import database from '@@/database'
-
 export default defineCachedFunction(
     async (id: string) => {
-        const item = await database.query.items
+        const item = await db.query.items
             .findFirst({
-                where: (items, { eq }) => eq(items.id, id),
+                where: {
+                    id: { eq: id },
+                },
                 columns: {
                     id: true,
                     updatedAt: true,

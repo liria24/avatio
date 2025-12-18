@@ -1,9 +1,9 @@
-import database from '@@/database'
-
 export default defineApi<Feedback[]>(
     async () => {
-        const data = await database.query.feedbacks.findMany({
-            orderBy: (table, { desc }) => desc(table.createdAt),
+        const data = await db.query.feedbacks.findMany({
+            orderBy: {
+                createdAt: 'desc',
+            },
             columns: {
                 id: true,
                 createdAt: true,

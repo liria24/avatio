@@ -1,4 +1,3 @@
-import database from '@@/database'
 import { userBadges, userShops } from '@@/database/schema'
 import { and, eq } from 'drizzle-orm'
 import { z } from 'zod'
@@ -13,7 +12,7 @@ export default defineApi(
         const { shopId } = await validateBody(body)
 
         // ショップを削除
-        await database
+        await db
             .delete(userShops)
             .where(
                 and(
@@ -22,11 +21,16 @@ export default defineApi(
                 )
             )
 
-        const shops = await database.query.userShops.findFirst({
-            where: (userShops, { eq }) => eq(userShops.userId, session.user.id),
+        const shops = await db.query.userShops.findFirst({
+            where: {
+                userId: { eq: session.user.id },
+            },
+            columns: {
+                id: true,
+            },
         })
         if (!shops)
-            await database
+            await db
                 .delete(userBadges)
                 .where(
                     and(

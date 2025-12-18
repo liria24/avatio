@@ -1,5 +1,4 @@
 import type { SitemapUrlInput } from '#sitemap/types'
-import database from '@@/database'
 
 export default defineSitemapEventHandler(async () => {
     const permanent = [
@@ -12,8 +11,10 @@ export default defineSitemapEventHandler(async () => {
         { loc: '/privacy-policy' },
     ]
 
-    const setups = await database.query.setups.findMany({
-        where: (setups, { isNull }) => isNull(setups.hidAt),
+    const setups = await db.query.setups.findMany({
+        where: {
+            hidAt: { isNull: true },
+        },
         columns: {
             id: true,
             updatedAt: true,
@@ -27,7 +28,7 @@ export default defineSitemapEventHandler(async () => {
         },
     })
 
-    const users = await database.query.user.findMany({
+    const users = await db.query.user.findMany({
         columns: {
             id: true,
             updatedAt: true,

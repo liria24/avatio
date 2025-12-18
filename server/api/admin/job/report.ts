@@ -1,5 +1,3 @@
-import database from '@@/database'
-
 export default defineApi(
     async () => {
         const config = useRuntimeConfig()
@@ -11,16 +9,15 @@ export default defineApi(
         // データ取得を並列実行
         const [feedbacksData, setupReportsData, userReportsData] =
             await Promise.all([
-                database.query.feedbacks
+                db.query.feedbacks
                     .findMany({
-                        where: (feedback, { eq, and, lt, gt }) =>
-                            and(
-                                eq(feedback.isClosed, false),
-                                lt(feedback.createdAt, now),
-                                gt(feedback.createdAt, yesterday)
-                            ),
-                        orderBy: (feedback, { desc }) =>
-                            desc(feedback.createdAt),
+                        where: {
+                            isClosed: { eq: false },
+                            createdAt: { gte: yesterday, lt: now },
+                        },
+                        orderBy: {
+                            createdAt: 'desc',
+                        },
                         columns: {
                             id: true,
                             createdAt: true,
@@ -33,15 +30,15 @@ export default defineApi(
                         console.error('Failed to fetch feedback data:', error)
                         return null
                     }),
-                database.query.setupReports
+                db.query.setupReports
                     .findMany({
-                        where: (report, { eq, and, lt, gt }) =>
-                            and(
-                                eq(report.isResolved, false),
-                                lt(report.createdAt, now),
-                                gt(report.createdAt, yesterday)
-                            ),
-                        orderBy: (report, { desc }) => desc(report.createdAt),
+                        where: {
+                            isResolved: { eq: false },
+                            createdAt: { gte: yesterday, lt: now },
+                        },
+                        orderBy: {
+                            createdAt: 'desc',
+                        },
                     })
                     .catch((error) => {
                         console.error(
@@ -50,15 +47,15 @@ export default defineApi(
                         )
                         return null
                     }),
-                database.query.userReports
+                db.query.userReports
                     .findMany({
-                        where: (report, { eq, and, lt, gt }) =>
-                            and(
-                                eq(report.isResolved, false),
-                                lt(report.createdAt, now),
-                                gt(report.createdAt, yesterday)
-                            ),
-                        orderBy: (report, { desc }) => desc(report.createdAt),
+                        where: {
+                            isResolved: { eq: false },
+                            createdAt: { gte: yesterday, lt: now },
+                        },
+                        orderBy: {
+                            createdAt: 'desc',
+                        },
                     })
                     .catch((error) => {
                         console.error(

@@ -1,4 +1,3 @@
-import database from '@@/database'
 import { items, shops } from '@@/database/schema'
 import { getAll } from '@vercel/edge-config'
 import { waitUntil } from '@vercel/functions'
@@ -16,7 +15,7 @@ const { adminKey } = useRuntimeConfig()
 
 const markItemAsOutdated = async (id: string): Promise<void> => {
     try {
-        await database
+        await db
             .update(items)
             .set({ outdated: true, updatedAt: new Date() })
             .where(eq(items.id, id))
@@ -30,7 +29,7 @@ const updateDatabase = async (
 ): Promise<void> => {
     try {
         // ショップ情報更新
-        await database
+        await db
             .insert(shops)
             .values({
                 id: item.shop.id,
@@ -60,7 +59,7 @@ const updateDatabase = async (
             shopId: item.shop.id,
         }
 
-        await database
+        await db
             .insert(items)
             .values(itemData)
             .onConflictDoUpdate({
@@ -165,7 +164,7 @@ export default defineApi<Item>(
                             }
                         )
 
-                        await database
+                        await db
                             .update(items)
                             .set({ niceName, category })
                             .where(eq(items.id, id))

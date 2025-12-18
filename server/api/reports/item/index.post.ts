@@ -1,4 +1,3 @@
-import database from '@@/database'
 import { itemReports } from '@@/database/schema'
 
 const body = itemReportsInsertSchema.pick({
@@ -14,7 +13,7 @@ export default defineApi(
         const { itemId, nameError, irrelevant, other, comment } =
             await validateBody(body, { sanitize: true })
 
-        await database.insert(itemReports).values({
+        await db.insert(itemReports).values({
             reporterId: session.user.id,
             itemId,
             nameError,

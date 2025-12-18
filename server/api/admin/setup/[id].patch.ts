@@ -1,4 +1,3 @@
-import database from '@@/database'
 import { setups } from '@@/database/schema'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
@@ -17,7 +16,7 @@ export default defineApi(
         const { hide, hideReason } = await validateBody(body)
 
         if (hide !== undefined)
-            await database
+            await db
                 .update(setups)
                 .set({
                     hidAt: hide ? new Date() : null,

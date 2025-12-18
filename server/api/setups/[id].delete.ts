@@ -1,4 +1,3 @@
-import database from '@@/database'
 import { setups } from '@@/database/schema'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
@@ -11,8 +10,11 @@ export default defineApi(
     async ({ session }) => {
         const { id } = await validateParams(params)
 
-        const data = await database.query.setups.findFirst({
-            where: (setups, { eq }) => eq(setups.id, id),
+        const data = await db.query.setups.findFirst({
+            // where: (setups, { eq }) => eq(setups.id, id),
+            where: {
+                id: { eq: id },
+            },
             columns: {
                 userId: true,
                 name: true,
@@ -25,7 +27,7 @@ export default defineApi(
                 statusMessage: 'Forbidden',
             })
 
-        await database.delete(setups).where(eq(setups.id, Number(id)))
+        await db.delete(setups).where(eq(setups.id, Number(id)))
 
         const keys = await useStorage('cache').keys(
             `nitro:functions:setup:${id}`

@@ -1,4 +1,3 @@
-import database from '@@/database'
 import { userShopVerification } from '@@/database/schema'
 import crypto from 'crypto'
 import { eq } from 'drizzle-orm'
@@ -13,11 +12,11 @@ export default defineApi<{ code: string }>(
     async ({ session }) => {
         const code = generateSecureRandomString(32)
 
-        await database
+        await db
             .delete(userShopVerification)
             .where(eq(userShopVerification.userId, session!.user.id))
 
-        const result = await database
+        const result = await db
             .insert(userShopVerification)
             .values({
                 code,

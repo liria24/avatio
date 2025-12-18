@@ -1,4 +1,3 @@
-import database from '@@/database'
 import { AwsClient } from 'aws4fetch'
 
 interface ImageInfo {
@@ -85,13 +84,13 @@ export default defineApi(
         ] = await Promise.all([
             // DB クエリを並列実行
             Promise.all([
-                database.query.setupImages.findMany({
+                db.query.setupImages.findMany({
                     columns: { url: true },
                 }),
-                database.query.setupDraftImages.findMany({
+                db.query.setupDraftImages.findMany({
                     columns: { url: true },
                 }),
-                database.query.user.findMany({
+                db.query.user.findMany({
                     columns: { image: true },
                 }),
             ]),

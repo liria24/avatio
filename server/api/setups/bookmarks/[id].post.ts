@@ -1,4 +1,3 @@
-import database from '@@/database'
 import { bookmarks } from '@@/database/schema'
 import { z } from 'zod'
 
@@ -10,7 +9,7 @@ export default defineApi(
     async ({ session }) => {
         const { id } = await validateParams(params)
 
-        await database
+        await db
             .insert(bookmarks)
             .values({
                 setupId: id,

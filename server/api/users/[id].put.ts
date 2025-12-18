@@ -1,4 +1,3 @@
-import database from '@@/database'
 import { user } from '@@/database/schema'
 import { consola } from 'consola'
 import { eq } from 'drizzle-orm'
@@ -21,8 +20,11 @@ export default defineApi(
             isInitialized,
         } = await validateBody(body, { sanitize: true })
 
-        const data = await database.query.user.findFirst({
-            where: (users, { eq }) => eq(users.id, id),
+        const data = await db.query.user.findFirst({
+            where: {
+                id: { eq: id },
+                banned: { OR: [{ eq: false }, { isNull: true }] },
+            },
             columns: {
                 id: true,
             },
@@ -41,8 +43,11 @@ export default defineApi(
             })
 
         if (newId && data.id !== newId) {
-            const existingUser = await database.query.user.findFirst({
-                where: (users, { eq }) => eq(users.id, newId),
+            const existingUser = await db.query.user.findFirst({
+                where: {
+                    id: { eq: newId },
+                    banned: { OR: [{ eq: false }, { isNull: true }] },
+                },
             })
 
             if (existingUser)
@@ -52,7 +57,7 @@ export default defineApi(
                 })
         }
 
-        await database
+        await db
             .update(user)
             .set({
                 id: newId,

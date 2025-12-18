@@ -1,4 +1,3 @@
-import database from '@@/database'
 import { auditLogs } from '@@/database/schema'
 
 const body = auditLogsInsertSchema
@@ -8,7 +7,7 @@ export default defineApi<{ id: number }>(
         const { userId, action, targetType, targetId, details } =
             await validateBody(body)
 
-        const data = await database
+        const data = await db
             .insert(auditLogs)
             .values({
                 userId,

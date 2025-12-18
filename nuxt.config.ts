@@ -44,7 +44,13 @@ export default defineNuxtConfig({
 
     vite: {
         optimizeDeps: {
-            include: import.meta.dev ? ['axe-core'] : [],
+            include: [
+                'prosemirror-state',
+                'prosemirror-transform',
+                'prosemirror-model',
+                'prosemirror-view',
+                ...(import.meta.dev ? ['axe-core'] : []),
+            ],
         },
     },
 
@@ -240,6 +246,13 @@ export default defineNuxtConfig({
     },
 
     content: {
+        build: {
+            markdown: {
+                remarkPlugins: {
+                    'remark-breaks': {},
+                },
+            },
+        },
         experimental: { sqliteConnector: 'native' },
     },
 

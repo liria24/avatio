@@ -1,4 +1,3 @@
-import database from '@@/database'
 import { notifications } from '@@/database/schema'
 
 const body = notificationsInsertSchema.pick({
@@ -25,7 +24,7 @@ export default defineApi(
             banner,
         } = await validateBody(body, { sanitize: true })
 
-        const result = await database
+        const result = await db
             .insert(notifications)
             .values({
                 userId,
