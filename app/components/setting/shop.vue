@@ -3,7 +3,7 @@ const { $session } = useNuxtApp()
 const session = await $session()
 const toast = useToast()
 
-const { data, refresh } = await useUser(session.value!.user.id)
+const { data, refresh } = await useUser(session.value!.user.username!)
 
 const itemUrl = ref('')
 const verifyCode = ref<string | null>(null)

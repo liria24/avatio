@@ -1,14 +1,37 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import { admin, customSession, multiSession } from 'better-auth/plugins'
+import {
+    admin,
+    customSession,
+    multiSession,
+    username,
+} from 'better-auth/plugins'
 import { nanoid } from 'nanoid'
-import { db } from '~~/server/utils/database'
+import { db, schema } from '../../server/utils/database'
 
 const JPG_FILENAME_LENGTH = 16
-const USER_ID_LENGTH = 10
+
+const plugins = [
+    username({
+        minUsernameLength: 3,
+    }),
+    admin(),
+    multiSession(),
+]
 
 export const auth = betterAuth({
     appName: 'Avatio',
+
+    baseURL: process.env.NUXT_BETTER_AUTH_URL as string,
+    secret: process.env.NUXT_BETTER_AUTH_SECRET as string,
+
+    trustedOrigins: [
+        'http://localhost:3000',
+        'https://dev.avatio.me',
+        'https://avatio.me',
+    ],
+
+    database: drizzleAdapter(db, { provider: 'pg', schema }),
 
     user: {
         additionalFields: {
@@ -31,92 +54,39 @@ export const auth = betterAuth({
         },
     },
 
-    baseURL: process.env.NUXT_BETTER_AUTH_URL as string,
-    secret: process.env.NUXT_BETTER_AUTH_SECRET as string,
-
-    trustedOrigins: [
-        'http://localhost:3000',
-        'https://dev.avatio.me',
-        'https://avatio.me',
-    ],
-
-    // レート制限の設定（Nuxt server storage使用）
-    rateLimit: {
-        enabled: true,
-        window: 60, // 60秒のウィンドウ
-        max: 100, // 最大100リクエスト
-        customRules: {
-            // Twitter認証エンドポイントに厳しい制限
-            '/sign-in/social': {
-                window: 60,
-                max: 10,
-            },
-            // セッション取得は緩い制限
-            '/get-session': {
-                window: 60,
-                max: 200,
-            },
-        },
-        // Nuxt server storageのcacheを使用（既にUpstash KVが設定済み）
-        customStorage: {
-            get: async (key: string) => {
-                try {
-                    const storage = useStorage('cache')
-                    // better-authのRateLimit型に合わせて取得
-                    const result = await storage.getItem<{
-                        key: string
-                        count: number
-                        lastRequest: number
-                    }>(`rate-limit:${key}`)
-                    return result || undefined
-                } catch (error) {
-                    console.error('Rate limit storage get error:', error)
-                    return undefined
-                }
-            },
-            set: async (
-                key: string,
-                value: { key: string; count: number; lastRequest: number }
-            ) => {
-                try {
-                    const storage = useStorage('cache')
-                    // storageはTTLを内部で管理するため、単純にsetItemを使用
-                    await storage.setItem(`rate-limit:${key}`, value)
-                } catch (error) {
-                    console.error('Rate limit storage set error:', error)
-                }
-            },
+    session: {
+        expiresIn: 60 * 60 * 24 * 30, // 30日間
+        updateAge: 60 * 60 * 24, // 1日ごとに更新
+        freshAge: 60 * 15, // 15分間はフレッシュとみなす
+        cookieCache: {
+            enabled: true,
+            maxAge: 5 * 60, // 5分間のキャッシュ
         },
     },
-
-    database: drizzleAdapter(db, { provider: 'pg' }),
 
     socialProviders: {
         twitter: {
             clientId: process.env.TWITTER_CLIENT_ID as string,
             clientSecret: process.env.TWITTER_CLIENT_SECRET as string,
-            mapProfileToUser: async (profile) => {
-                return {
-                    email: profile.data.email,
-                    name: profile.data.name,
-                    bio: profile.data.description,
-                    image: profile.data.profile_image_url?.endsWith(
-                        '_normal.jpg'
-                    )
-                        ? profile.data.profile_image_url.replace(
-                              /_normal\.jpg$/,
-                              '_400x400.jpg'
-                          )
-                        : profile.data.profile_image_url,
-                    emailVerified: true,
-                }
-            },
+            mapProfileToUser: async (profile) => ({
+                username: profile.data.username,
+                displayUsername: profile.data.username,
+                email: profile.data.email,
+                name: profile.data.name,
+                bio: profile.data.description,
+                image: profile.data.profile_image_url?.endsWith('_normal.jpg')
+                    ? profile.data.profile_image_url.replace(
+                          /_normal\.jpg$/,
+                          '_400x400.jpg'
+                      )
+                    : profile.data.profile_image_url,
+                emailVerified: true,
+            }),
         },
     },
 
     plugins: [
-        admin(),
-        multiSession(),
+        ...plugins,
         customSession(
             async ({ user, session }) => {
                 const data = await db.query.user.findFirst({
@@ -135,20 +105,50 @@ export const auth = betterAuth({
                     session,
                 }
             },
-            {
-                plugins: [admin(), multiSession()],
-            }
+            { plugins }
         ),
     ],
 
-    // セッション設定の改善
-    session: {
-        expiresIn: 60 * 60 * 24 * 30, // 30日間
-        updateAge: 60 * 60 * 24, // 1日ごとに更新
-        freshAge: 60 * 15, // 15分間はフレッシュとみなす
-        cookieCache: {
-            enabled: true,
-            maxAge: 5 * 60, // 5分間のキャッシュ
+    rateLimit: {
+        enabled: true,
+        window: 60,
+        max: 100,
+        customRules: {
+            '/sign-in/social': {
+                window: 60,
+                max: 10,
+            },
+            '/get-session': {
+                window: 60,
+                max: 200,
+            },
+        },
+        customStorage: {
+            get: async (key: string) => {
+                try {
+                    const storage = useStorage('cache')
+                    const result = await storage.getItem<{
+                        key: string
+                        count: number
+                        lastRequest: number
+                    }>(`rate-limit:${key}`)
+                    return result || undefined
+                } catch (error) {
+                    console.error('Rate limit storage get error:', error)
+                    return undefined
+                }
+            },
+            set: async (
+                key: string,
+                value: { key: string; count: number; lastRequest: number }
+            ) => {
+                try {
+                    const storage = useStorage('cache')
+                    await storage.setItem(`rate-limit:${key}`, value)
+                } catch (error) {
+                    console.error('Rate limit storage set error:', error)
+                }
+            },
         },
     },
 
@@ -200,14 +200,10 @@ export const auth = betterAuth({
         useSecureCookies: process.env.NUXT_ENV_VERCEL_ENV === 'production',
         // CSRF保護を有効化
         disableCSRFCheck: false,
-        // デフォルトクッキー属性の設定
         defaultCookieAttributes: {
             httpOnly: true,
             secure: process.env.NUXT_ENV_VERCEL_ENV === 'production',
             sameSite: 'lax',
-        },
-        database: {
-            generateId: () => nanoid(USER_ID_LENGTH),
         },
     },
 })

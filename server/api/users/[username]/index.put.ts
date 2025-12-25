@@ -4,29 +4,24 @@ import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 
 const params = z.object({
-    id: z.string(),
+    username: z.string(),
 })
 const body = userUpdateSchema
 
 export default defineApi(
     async ({ session }) => {
-        const { id } = await validateParams(params)
-        const {
-            id: newId,
-            name,
-            image,
-            bio,
-            links,
-            isInitialized,
-        } = await validateBody(body, { sanitize: true })
+        const { username: oldUsername } = await validateParams(params)
+        const { username, name, image, bio, links, isInitialized } =
+            await validateBody(body, { sanitize: true })
 
         const data = await db.query.user.findFirst({
             where: {
-                id: { eq: id },
+                username: { eq: oldUsername },
                 banned: { OR: [{ eq: false }, { isNull: true }] },
             },
             columns: {
                 id: true,
+                username: true,
             },
         })
 
@@ -42,37 +37,33 @@ export default defineApi(
                 statusMessage: 'Forbidden',
             })
 
-        if (newId && data.id !== newId) {
-            const existingUser = await db.query.user.findFirst({
-                where: {
-                    id: { eq: newId },
-                    banned: { OR: [{ eq: false }, { isNull: true }] },
-                },
+        if (username) {
+            const isUsernameAvailable = await auth.api.isUsernameAvailable({
+                body: { username },
             })
-
-            if (existingUser)
+            if (!isUsernameAvailable)
                 throw createError({
-                    statusCode: 409,
-                    statusMessage: 'User with this ID already exists',
+                    statusCode: 400,
+                    statusMessage: 'Username is not available',
                 })
         }
 
         await db
             .update(user)
             .set({
-                id: newId,
                 updatedAt: new Date(),
+                username,
                 name,
                 image,
                 bio,
                 links,
                 isInitialized,
             })
-            .where(eq(user.id, id))
+            .where(eq(user.id, data.id))
 
-        consola.success(`User ${id} updated successfully`)
+        consola.success(`User ${username} updated successfully`)
 
-        await purgeUserCache(id)
+        await purgeUserCache(data.id)
 
         return null
     },

@@ -161,7 +161,7 @@ const { data, status, refresh } = await useFetch('/api/admin/audit-log', {
 
                             <NuxtLink
                                 v-if="log.user"
-                                :to="`/@${log.user.id}`"
+                                :to="`/@${log.user.username}`"
                                 class="text-muted flex items-center gap-2"
                             >
                                 <UAvatar

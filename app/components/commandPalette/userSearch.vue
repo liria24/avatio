@@ -27,7 +27,7 @@ const existingUsersGroup = computed(() => ({
         id: `existing-${index}`,
         label: user.name,
         avatar: { src: user.image || undefined },
-        onSelect: () => onSelect(user.id),
+        onSelect: () => onSelect(user.username),
     })),
 }))
 
@@ -60,11 +60,11 @@ const groups = computed(() => {
     return hasExistingUsers ? [existingUsersGroup.value] : []
 })
 
-const onSelect = async (id: string) => {
+const onSelect = async (username: string) => {
     try {
-        const user = await $fetch<SerializedUser>(`/api/users/${id}`)
+        const user = await $fetch<SerializedUser>(`/api/users/${username}`)
         emit('select', {
-            id: user.id,
+            username: user.username,
             createdAt: user.createdAt,
             name: user.name,
             image: user.image,

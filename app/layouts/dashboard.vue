@@ -160,7 +160,7 @@ const links = [
                         <template #footer>
                             <UUser
                                 :name="session?.user.name"
-                                :description="`@${session?.user.id}`"
+                                :description="`@${session?.user.username}`"
                                 :avatar="{
                                     src: session?.user.image || undefined,
                                     icon: 'lucide:user-round',

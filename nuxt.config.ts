@@ -67,12 +67,6 @@ export default defineNuxtConfig({
                 'CDN-Cache-Control': `max-age=${60 * 60 * 24}`,
             },
         },
-        '/api/items/extract-item-name': {
-            headers: {
-                'Cache-Control': `max-age=${0}`,
-                'CDN-Cache-Control': `max-age=${0}`,
-            },
-        },
         '/api/items/owned-avatars': {
             headers: {
                 'Cache-Control': `max-age=${60 * 10}`,
@@ -85,7 +79,7 @@ export default defineNuxtConfig({
                 'CDN-Cache-Control': `max-age=${60 * 60 * 24}`,
             },
         },
-        '/api/setups/tag': {
+        '/api/setups/tags': {
             headers: {
                 'Cache-Control': `max-age=${60}`,
                 'CDN-Cache-Control': `max-age=${60 * 60}`,

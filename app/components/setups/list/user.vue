@@ -1,6 +1,6 @@
 <script setup lang="ts">
 interface Props {
-    userId: string
+    username: string
 }
 const props = defineProps<Props>()
 
@@ -12,7 +12,7 @@ const { data, status, refresh } = useSetups({
     query: computed(() => ({
         page: page.value,
         perPage: setupsPerPage,
-        userId: props.userId,
+        username: props.username,
     })),
     immediate: false,
 })

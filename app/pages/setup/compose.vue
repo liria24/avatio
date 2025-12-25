@@ -230,7 +230,7 @@ const onSubmit = async () => {
                 : undefined,
             coauthors: state.coauthors.length
                 ? state.coauthors.map((coauthor) => ({
-                      userId: coauthor.user.id,
+                      username: coauthor.user.username,
                       note: coauthor.note || undefined,
                   }))
                 : undefined,
@@ -342,7 +342,7 @@ const saveDraftDebounce = useDebounceFn(async () => {
             : undefined,
         coauthors: state.coauthors.length
             ? state.coauthors.map((coauthor) => ({
-                  userId: coauthor.user.id,
+                  userId: coauthor.user.username,
                   note: coauthor.note || undefined,
               }))
             : undefined,

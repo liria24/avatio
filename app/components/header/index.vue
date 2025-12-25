@@ -50,12 +50,8 @@ const themeMenu = [
 const menuItems = ref<DropdownMenuItem[][]>([
     [
         {
-            to: `/@${session.value?.user.id}`,
-            label: session.value?.user.name,
-            avatar: {
-                src: session.value?.user.image || undefined,
-                icon: 'lucide:user-round',
-            },
+            to: `/@${session.value?.user.username}`,
+            slot: 'user',
         },
     ],
     [
@@ -210,6 +206,18 @@ const menuItems = ref<DropdownMenuItem[][]>([
                                 icon="lucide:user-round"
                             />
                         </button>
+
+                        <template #user>
+                            <UUser
+                                :name="session.user.name"
+                                :description="`@${session.user.username}`"
+                                :avatar="{
+                                    src: session.user.image || undefined,
+                                    alt: session.user.name,
+                                    icon: 'lucide:user-round',
+                                }"
+                            />
+                        </template>
                     </UDropdownMenu>
                 </div>
 

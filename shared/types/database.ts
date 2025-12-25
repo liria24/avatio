@@ -75,7 +75,7 @@ export const userBadgesPublicSchema = userBadgesSelectSchema.pick({
 
 export const userSelectSchema = createSelectSchema(user)
 export const userInsertSchema = createInsertSchema(user, {
-    id: (schema) =>
+    username: (schema) =>
         schema
             .min(3, 'ID は 3 文字以上必要です。')
             .max(64, 'ID は最大 64 文字です。')
@@ -91,7 +91,7 @@ export const userInsertSchema = createInsertSchema(user, {
     links: (schema) => schema.max(8, 'リンクは最大 8 個です。').optional(),
 })
 export const userUpdateSchema = createUpdateSchema(user, {
-    id: (schema) =>
+    username: (schema) =>
         schema
             .min(3, 'ID は 3 文字以上必要です。')
             .max(64, 'ID は最大 64 文字です。')
@@ -108,7 +108,7 @@ export const userUpdateSchema = createUpdateSchema(user, {
 })
 export const userPublicSchema = userSelectSchema
     .pick({
-        id: true,
+        username: true,
         createdAt: true,
         name: true,
         image: true,
@@ -311,7 +311,7 @@ export const setupsClientFormSchema = createInsertSchema(setups, {
             })
             .extend({
                 user: userPublicSchema.pick({
-                    id: true,
+                    username: true,
                     name: true,
                     image: true,
                 }),

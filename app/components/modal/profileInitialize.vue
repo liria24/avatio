@@ -8,7 +8,7 @@ const open = defineModel<boolean>('open', {
     default: false,
 })
 
-const input = ref<string>(session.value?.user.id || '')
+const input = ref<string>(session.value?.user.username || '')
 const available = ref<boolean>(false)
 const updating = ref<boolean>(false)
 
@@ -16,10 +16,10 @@ const updateId = async (newId: string) => {
     updating.value = true
 
     try {
-        await $fetch(session.value!.user.id, {
+        await $fetch(session.value!.user.username!, {
             baseURL: '/api/users/',
             method: 'PUT',
-            body: { id: newId },
+            body: { username: newId },
         })
         toast.add({
             title: 'ユーザーIDが変更されました',
@@ -40,7 +40,7 @@ const updateId = async (newId: string) => {
 }
 
 const close = () => {
-    $fetch(session.value!.user.id, {
+    $fetch(session.value!.user.username!, {
         baseURL: '/api/users/',
         method: 'PUT',
         body: { isInitialized: true },
@@ -57,7 +57,7 @@ const close = () => {
         :dismissible="false"
     >
         <template #body>
-            <InputUserId v-model="input" v-model:available="available" />
+            <InputUsername v-model="input" v-model:available="available" />
         </template>
 
         <template #footer>

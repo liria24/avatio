@@ -7,15 +7,15 @@ interface Props {
 }
 const props = defineProps<Props>()
 
-const { $session, $logout } = useNuxtApp()
+const { $session } = useNuxtApp()
 const session = await $session()
 const toast = useToast()
 
-const { data } = await useUser(session.value!.user.id)
+const { data } = await useUser(session.value!.user.username!)
 
 // リアクティブな状態を統合
 const ui = reactive({
-    newId: data.value?.id || '',
+    newId: data.value?.username || '',
     newLink: '',
     croppingImage: null as Blob | null,
     imageUploading: false,
@@ -23,12 +23,11 @@ const ui = reactive({
     idUpdating: false,
     modalChangeUserId: props.changeUserId || false,
     modalCropImage: false,
-    newIdAvailability: false,
 })
 
 const _schema = userUpdateSchema
     .required({
-        id: true,
+        username: true,
         name: true,
         image: true,
         bio: true,
@@ -38,7 +37,7 @@ const _schema = userUpdateSchema
     })
 type profileSchema = z.infer<typeof _schema>
 const state = reactive<profileSchema>({
-    id: data.value?.id || '',
+    username: data.value?.username || '',
     name: data.value?.name || '',
     image: data.value?.image || '',
     bio: data.value?.bio || '',
@@ -80,7 +79,7 @@ const removeLink = (index: number) => {
 
 // API呼び出しを共通化
 const updateUserData = async (updateData: Partial<profileSchema>) => {
-    await $fetch(session.value!.user.id, {
+    await $fetch(session.value!.user.username!, {
         baseURL: '/api/users/',
         method: 'PUT',
         body: updateData,
@@ -123,29 +122,6 @@ const removeUserImage = async () => {
             description: 'プロフィール画像の削除中にエラーが発生しました。',
             color: 'error',
         })
-    }
-}
-
-const updateId = async (newId: string) => {
-    ui.idUpdating = true
-
-    try {
-        await updateUserData({ id: newId })
-        toast.add({
-            title: 'ユーザーIDが変更されました',
-            description: 'ページを更新しています...',
-            progress: false,
-        })
-        await $logout()
-    } catch (error) {
-        console.error('Error updating user ID:', error)
-        toast.add({
-            title: 'ユーザーIDの変更に失敗しました',
-            description: 'ユーザーIDの変更中にエラーが発生しました。',
-            color: 'error',
-        })
-    } finally {
-        ui.idUpdating = false
     }
 }
 
@@ -309,67 +285,10 @@ const cancelCropImage = () => {
                 </div>
 
                 <div class="flex w-full flex-col gap-4">
-                    <UFormField label="ID" class="w-full">
-                        <div class="flex items-center gap-1.5">
-                            <span
-                                class="text-muted leading-none font-semibold text-nowrap"
-                            >
-                                {{ state.id }}
-                            </span>
-                            <UModal
-                                v-model:open="ui.modalChangeUserId"
-                                title="ID の変更"
-                            >
-                                <UButton
-                                    icon="lucide:pen-line"
-                                    label="変更"
-                                    variant="ghost"
-                                    size="sm"
-                                />
-
-                                <template #body>
-                                    <div class="flex flex-col gap-4">
-                                        <UAlert
-                                            icon="lucide:alert-triangle"
-                                            title="注意"
-                                            description="ユーザーページの URL が変更され、変更前の URL からはアクセスできなくなります。"
-                                            color="neutral"
-                                            variant="subtle"
-                                        />
-                                        <InputUserId
-                                            v-model="ui.newId"
-                                            v-model:available="
-                                                ui.newIdAvailability
-                                            "
-                                        />
-                                    </div>
-                                </template>
-
-                                <template #footer>
-                                    <div
-                                        class="flex w-full items-center justify-end gap-2"
-                                    >
-                                        <UButton
-                                            :disabled="ui.idUpdating"
-                                            label="キャンセル"
-                                            variant="ghost"
-                                            @click="
-                                                ui.modalChangeUserId = false
-                                            "
-                                        />
-                                        <UButton
-                                            :loading="ui.idUpdating"
-                                            label="変更を保存"
-                                            color="neutral"
-                                            variant="solid"
-                                            :disabled="!ui.newIdAvailability"
-                                            @click="updateId(ui.newId)"
-                                        />
-                                    </div>
-                                </template>
-                            </UModal>
-                        </div>
-                    </UFormField>
+                    <InputUsername
+                        v-model="state.username"
+                        placeholder="新しいユーザーIDを入力"
+                    />
 
                     <UFormField name="name" label="ユーザー名" class="w-full">
                         <UInput

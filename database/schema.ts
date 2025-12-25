@@ -42,19 +42,21 @@ export const authSchema = pgSchema('auth')
 export const user = authSchema.table(
     'user',
     {
-        id: text('id').primaryKey(),
-        name: text('name').notNull(),
-        email: text('email').notNull().unique(),
+        id: text().primaryKey(),
+        name: text().notNull(),
+        username: text().unique().notNull(),
+        displayUsername: text('display_username').notNull(),
+        email: text().notNull().unique(),
         emailVerified: boolean('email_verified').default(false).notNull(),
-        image: text('image'),
+        image: text(),
         createdAt: timestamp('created_at').defaultNow().notNull(),
         updatedAt: timestamp('updated_at').defaultNow().notNull(),
-        role: text('role'),
-        banned: boolean('banned'),
+        role: text(),
+        banned: boolean(),
         banReason: text('ban_reason'),
         banExpires: timestamp('ban_expires'),
-        bio: text('bio'),
-        links: text('links').array(),
+        bio: text(),
+        links: text().array(),
         isInitialized: boolean('is_initialized').notNull().default(false),
     },
     (table) => [index('user_email_index').on(table.email)]
@@ -63,9 +65,9 @@ export const user = authSchema.table(
 export const session = authSchema.table(
     'session',
     {
-        id: text('id').primaryKey(),
+        id: text().primaryKey(),
         expiresAt: timestamp('expires_at').notNull(),
-        token: text('token').notNull().unique(),
+        token: text().notNull().unique(),
         createdAt: timestamp('created_at').notNull(),
         updatedAt: timestamp('updated_at').notNull(),
         ipAddress: text('ip_address'),
@@ -88,7 +90,7 @@ export const session = authSchema.table(
 export const account = authSchema.table(
     'account',
     {
-        id: text('id').primaryKey(),
+        id: text().primaryKey(),
         accountId: text('account_id').notNull(),
         providerId: text('provider_id').notNull(),
         userId: text('user_id')
@@ -102,8 +104,8 @@ export const account = authSchema.table(
         idToken: text('id_token'),
         accessTokenExpiresAt: timestamp('access_token_expires_at'),
         refreshTokenExpiresAt: timestamp('refresh_token_expires_at'),
-        scope: text('scope'),
-        password: text('password'),
+        scope: text(),
+        password: text(),
         createdAt: timestamp('created_at').notNull(),
         updatedAt: timestamp('updated_at').notNull(),
     },
@@ -113,9 +115,9 @@ export const account = authSchema.table(
 export const verification = authSchema.table(
     'verification',
     {
-        id: text('id').primaryKey(),
-        identifier: text('identifier').notNull(),
-        value: text('value').notNull(),
+        id: text().primaryKey(),
+        identifier: text().notNull(),
+        value: text().notNull(),
         expiresAt: timestamp('expires_at').notNull(),
         createdAt: timestamp('created_at').defaultNow().notNull(),
         updatedAt: timestamp('updated_at').defaultNow().notNull(),
@@ -311,7 +313,7 @@ export const setupItems = pgTable(
         itemId: text('item_id').notNull(),
         setupId: integer('setup_id').notNull(),
         category: itemCategory(),
-        unsupported: boolean('unsupported').default(false).notNull(),
+        unsupported: boolean().default(false).notNull(),
         note: text(),
     },
     (table) => [
@@ -360,7 +362,7 @@ export const setupTags = pgTable(
     {
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
         setupId: integer('setup_id').notNull(),
-        tag: text('tag').notNull(),
+        tag: text().notNull(),
     },
     (table) => [
         index('setup_tags_id_index').on(table.id),
@@ -533,7 +535,7 @@ export const notifications = personalSchema.table(
         data: text(),
         actionUrl: text('action_url'),
         actionLabel: text('action_label'),
-        banner: boolean('banner').default(false).notNull(),
+        banner: boolean().default(false).notNull(),
     },
     (table) => [
         index('notifications_user_id_index').on(table.userId),
@@ -555,7 +557,7 @@ export const feedbacks = feedbackSchema.table(
     {
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
         createdAt: timestamp('created_at').defaultNow().notNull(),
-        fingerprint: text('fingerprint').notNull(),
+        fingerprint: text().notNull(),
         comment: text().notNull(),
         contextPath: text('context_path'),
         isClosed: boolean('is_closed').default(false).notNull(),
@@ -703,15 +705,13 @@ export const auditTargetType = pgEnum('audit_target_type', [
 export const auditLogs = adminSchema.table(
     'audit_logs',
     {
-        id: bigint('id', { mode: 'number' })
-            .primaryKey()
-            .generatedAlwaysAsIdentity(),
+        id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
         createdAt: timestamp('created_at').defaultNow().notNull(),
         userId: text('user_id'),
         action: auditActionType().notNull(),
         targetType: auditTargetType().notNull(),
         targetId: text('target_id'),
-        details: text('details'),
+        details: text(),
     },
     (table) => [
         index('audit_logs_created_at_index').on(table.createdAt),
