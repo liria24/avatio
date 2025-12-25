@@ -1,6 +1,6 @@
 import { setupDraftImages, setupDrafts } from '@@/database/schema'
 import { waitUntil } from '@vercel/functions'
-import { count, eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 
 const body = setupDraftsInsertSchema.pick({
     id: true,
@@ -25,11 +25,17 @@ export default defineApi(
             sanitize: true,
         })
 
-        const userSetupDraftsCount = await db
-            .select({ count: count() })
-            .from(setupDrafts)
-            .where(eq(setupDrafts.userId, session.user.id))
-            .execute()
+        const userSetupDraftsCount = await db.query.setupDrafts.findMany({
+            where: {
+                userId: { eq: session.user.id },
+            },
+            columns: {
+                id: true,
+            },
+            extras: {
+                count: sql<number>`CAST(COUNT(*) OVER() AS INTEGER)`,
+            },
+        })
 
         if (userSetupDraftsCount[0].count >= 32)
             throw createError({

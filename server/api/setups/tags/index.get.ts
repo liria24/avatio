@@ -20,7 +20,7 @@ export default defineApi(
         const data = await db
             .select({
                 tag: setupTags.tag,
-                count: sql<number>`count(*)`,
+                count: sql<number>`CAST(COUNT(*) OVER() AS INTEGER)`,
             })
             .from(setupTags)
             .groupBy(setupTags.tag)

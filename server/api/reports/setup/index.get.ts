@@ -1,6 +1,5 @@
-import { and, eq } from 'drizzle-orm'
+import { sql } from 'drizzle-orm'
 import { z } from 'zod'
-import { setupReports } from '~~/database/schema'
 
 const query = z.object({
     sort: z.enum(['asc', 'desc']).optional().default('desc'),
@@ -32,22 +31,7 @@ export default defineApi<ApiResponse>(
 
         const data = await db.query.setupReports.findMany({
             extras: {
-                count: db
-                    .$count(
-                        setupReports,
-                        and(
-                            ...[
-                                reporterId
-                                    ? eq(setupReports.reporterId, reporterId)
-                                    : undefined,
-                                isResolved !== undefined &&
-                                isResolved.length === 1
-                                    ? eq(setupReports.isResolved, isResolved[0])
-                                    : undefined,
-                            ]
-                        )
-                    )
-                    .as('count'),
+                count: sql<number>`CAST(COUNT(*) OVER() AS INTEGER)`,
             },
             where: {
                 reporterId: reporterId ? { eq: reporterId } : undefined,
@@ -86,7 +70,7 @@ export default defineApi<ApiResponse>(
                     with: {
                         user: {
                             columns: {
-                                id: true,
+                                username: true,
                                 createdAt: true,
                                 name: true,
                                 image: true,
@@ -130,7 +114,7 @@ export default defineApi<ApiResponse>(
                 },
                 reporter: {
                     columns: {
-                        id: true,
+                        username: true,
                         createdAt: true,
                         name: true,
                         image: true,

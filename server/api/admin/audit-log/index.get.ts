@@ -1,4 +1,4 @@
-import { and, eq, ilike } from 'drizzle-orm'
+import { sql } from 'drizzle-orm'
 import { z } from 'zod'
 
 const query = z.object({
@@ -19,21 +19,9 @@ export default defineApi<PaginationResponse<AuditLog[]>>(
 
         const offset = (page - 1) * limit
 
-        const countConditions = []
-
-        if (q) countConditions.push(ilike(schema.auditLogs.details, `%${q}%`))
-        if (userId) countConditions.push(eq(schema.auditLogs.userId, userId))
-        if (action) countConditions.push(eq(schema.auditLogs.action, action))
-        if (targetType)
-            countConditions.push(eq(schema.auditLogs.targetType, targetType))
-        if (targetId)
-            countConditions.push(eq(schema.auditLogs.targetId, targetId))
-
         const data = await db.query.auditLogs.findMany({
             extras: {
-                count: db
-                    .$count(schema.auditLogs, and(...countConditions))
-                    .as('count'),
+                count: sql<number>`CAST(COUNT(*) OVER() AS INTEGER)`,
             },
             limit,
             offset,
@@ -59,7 +47,7 @@ export default defineApi<PaginationResponse<AuditLog[]>>(
             with: {
                 user: {
                     columns: {
-                        id: true,
+                        username: true,
                         createdAt: true,
                         name: true,
                         image: true,

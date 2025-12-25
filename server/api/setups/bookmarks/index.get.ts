@@ -1,5 +1,4 @@
-import { bookmarks } from '@@/database/schema'
-import { eq } from 'drizzle-orm'
+import { sql } from 'drizzle-orm'
 import { z } from 'zod'
 
 const query = z.object({
@@ -29,9 +28,7 @@ export default defineApi<PaginationResponse<Bookmark[]>>(
 
         const data = await db.query.bookmarks.findMany({
             extras: {
-                count: db
-                    .$count(bookmarks, eq(bookmarks.userId, session!.user.id))
-                    .as('count'),
+                count: sql<number>`CAST(COUNT(*) OVER() AS INTEGER)`,
             },
             limit,
             offset,
@@ -80,7 +77,7 @@ export default defineApi<PaginationResponse<Bookmark[]>>(
                     with: {
                         user: {
                             columns: {
-                                id: true,
+                                username: true,
                                 createdAt: true,
                                 name: true,
                                 image: true,
@@ -146,7 +143,7 @@ export default defineApi<PaginationResponse<Bookmark[]>>(
                             with: {
                                 user: {
                                     columns: {
-                                        id: true,
+                                        username: true,
                                         createdAt: true,
                                         name: true,
                                         image: true,
