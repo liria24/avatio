@@ -22,7 +22,9 @@ export default async (
     } = options
 
     // 画像をフェッチしてバッファに変換
-    const blob = await $fetch<Blob>(imageUrl)
+    const blob = await $fetch<Blob>(imageUrl).catch(() => null)
+    if (!blob) return { colors: [], width: 0, height: 0 }
+
     const buffer = Buffer.from(await blob.arrayBuffer())
 
     // sharpを使用して画像データを取得

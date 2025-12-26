@@ -14,23 +14,20 @@ export default defineApi(
         const { name, description, items, images, tags, coauthors } =
             await validateBody(body, { sanitize: true })
 
-        const imageData = images?.length
-            ? await Promise.all(
-                  images.map(async (image) => {
-                      const { colors, width, height } =
-                          await extractImageColors(image)
-                      return {
-                          url: image,
-                          width,
-                          height,
-                          themeColors: colors.length ? colors : null,
-                      }
-                  })
-              )
-            : []
+        const imageData = await Promise.all(
+            (images || []).map(async (url) => {
+                const { colors, width, height } = await extractImageColors(url)
+                return {
+                    url,
+                    width,
+                    height,
+                    themeColors: colors.length ? colors : null,
+                }
+            })
+        )
 
         const setupId = await db.transaction(async (tx) => {
-            const resultSetups = await tx
+            const [setup] = await tx
                 .insert(setups)
                 .values({
                     userId: session.user.id,
@@ -41,7 +38,7 @@ export default defineApi(
                     id: setups.id,
                 })
 
-            const setupId = resultSetups[0].id
+            const setupId = setup.id
 
             const insertedItems = await tx
                 .insert(setupItems)
@@ -57,52 +54,35 @@ export default defineApi(
                                 : item.unsupported,
                     }))
                 )
-                .returning({
-                    id: setupItems.id,
-                    itemId: setupItems.itemId,
-                })
+                .returning({ id: setupItems.id })
 
-            if (items.some((item) => item.shapekeys?.length)) {
-                const shapekeys = items.flatMap((item, index) => {
-                    const setupItemId = insertedItems[index].id
-                    return (
-                        item.shapekeys?.map((shapekey) => ({
-                            setupItemId,
-                            name: shapekey.name,
-                            value: shapekey.value,
-                        })) || []
-                    )
-                })
+            const shapekeys = items.flatMap((item, i) =>
+                (item.shapekeys || []).map((s) => ({
+                    setupItemId: insertedItems[i].id,
+                    ...s,
+                }))
+            )
 
-                if (shapekeys.length > 0)
-                    await tx.insert(setupItemShapekeys).values(shapekeys)
-            }
-
-            if (imageData.length > 0) {
-                await tx.insert(setupImages).values(
-                    imageData.map((image) => ({
-                        ...image,
-                        setupId,
-                    }))
-                )
-            }
-
-            if (tags?.length)
-                await tx.insert(setupTags).values(
-                    tags.map((tag) => ({
-                        setupId,
-                        tag: tag.tag,
-                    }))
-                )
-
-            if (coauthors?.length)
-                await tx.insert(setupCoauthors).values(
-                    coauthors.map((coauthor) => ({
-                        setupId,
-                        userId: coauthor.userId,
-                        note: coauthor.note,
-                    }))
-                )
+            await Promise.all(
+                [
+                    shapekeys.length &&
+                        tx.insert(setupItemShapekeys).values(shapekeys),
+                    imageData.length &&
+                        tx
+                            .insert(setupImages)
+                            .values(
+                                imageData.map((img) => ({ ...img, setupId }))
+                            ),
+                    tags?.length &&
+                        tx
+                            .insert(setupTags)
+                            .values(tags.map((t) => ({ setupId, tag: t.tag }))),
+                    coauthors?.length &&
+                        tx
+                            .insert(setupCoauthors)
+                            .values(coauthors.map((c) => ({ setupId, ...c }))),
+                ].filter(Boolean)
+            )
 
             return setupId
         })
