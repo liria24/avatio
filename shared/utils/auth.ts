@@ -43,11 +43,6 @@ export const auth = betterAuth({
                 type: 'string[]',
                 required: false,
             },
-            isInitialized: {
-                type: 'boolean',
-                defaultValue: false,
-                required: true,
-            },
         },
         deleteUser: {
             enabled: true,
@@ -89,19 +84,8 @@ export const auth = betterAuth({
         ...plugins,
         customSession(
             async ({ user, session }) => {
-                const data = await db.query.user.findFirst({
-                    where: {
-                        id: { eq: user.id },
-                    },
-                    columns: {
-                        isInitialized: true,
-                    },
-                })
                 return {
-                    user: {
-                        ...user,
-                        isInitialized: data?.isInitialized ?? false,
-                    },
+                    user,
                     session,
                 }
             },
@@ -209,3 +193,4 @@ export const auth = betterAuth({
 })
 
 export type Session = typeof auth.$Infer.Session
+export type Sessions = Awaited<ReturnType<typeof auth.api.listDeviceSessions>>

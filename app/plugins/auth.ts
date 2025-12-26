@@ -67,7 +67,10 @@ export default defineNuxtPlugin(() => {
             },
 
             login: async (provider: 'twitter') =>
-                await client.signIn.social({ provider }),
+                await client.signIn.social({
+                    provider,
+                    newUserCallbackURL: '/welcome',
+                }),
 
             logout: async () => {
                 const localePath = useLocalePath()

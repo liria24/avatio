@@ -11,8 +11,9 @@ const body = userUpdateSchema
 export default defineApi(
     async ({ session }) => {
         const { username: oldUsername } = await validateParams(params)
-        const { username, name, image, bio, links, isInitialized } =
-            await validateBody(body, { sanitize: true })
+        const { username, name, image, bio, links } = await validateBody(body, {
+            sanitize: true,
+        })
 
         const data = await db.query.user.findFirst({
             where: {
@@ -57,7 +58,6 @@ export default defineApi(
                 image,
                 bio,
                 links,
-                isInitialized,
             })
             .where(eq(user.id, data.id))
 

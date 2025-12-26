@@ -4,6 +4,7 @@ import type { Serialize } from 'nitropack/types'
 
 definePageMeta({
     middleware: 'session',
+    layout: 'minimal',
 })
 
 const router = useRouter()
