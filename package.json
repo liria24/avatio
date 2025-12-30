@@ -37,7 +37,7 @@
         "@vercel/functions": "3.3.4",
         "@vueuse/nuxt": "14.1.0",
         "@yeger/vue-masonry-wall": "5.1.4",
-        "ai": "5.0.115",
+        "ai": "5.0.117",
         "aws4fetch": "1.0.20",
         "better-auth": "1.4.7",
         "budoux": "0.7.0",
