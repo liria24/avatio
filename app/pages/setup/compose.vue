@@ -82,9 +82,7 @@ const applyDraftData = async (content: SetupDraftContent) => {
     state.coauthors = content.coauthors
         ? await Promise.all(
               content.coauthors.map(async (coauthor) => {
-                  const user = await $fetch<Serialize<User>>(
-                      `/api/users/${coauthor.userId}`
-                  )
+                  const user = await $fetch<Serialize<User>>(`/api/users/${coauthor.userId}`)
                   return {
                       user: {
                           ...user,
@@ -171,8 +169,7 @@ const loadDraft = async (draftId: string) => {
             default: () => [],
         })
 
-        if (!drafts.value.length || !drafts.value[0])
-            throw new Error('Draft not found')
+        if (!drafts.value.length || !drafts.value[0]) throw new Error('Draft not found')
 
         const draft = drafts.value[0]
 
@@ -221,14 +218,10 @@ const onSubmit = async () => {
                     category: item.category,
                     note: item.note || undefined,
                     unsupported: item.unsupported || false,
-                    shapekeys: item.shapekeys?.length
-                        ? item.shapekeys
-                        : undefined,
+                    shapekeys: item.shapekeys?.length ? item.shapekeys : undefined,
                 })),
             images: state.images.length ? state.images : undefined,
-            tags: state.tags.length
-                ? state.tags.map((tag) => ({ tag }))
-                : undefined,
+            tags: state.tags.length ? state.tags.map((tag) => ({ tag })) : undefined,
             coauthors: state.coauthors.length
                 ? state.coauthors.map((coauthor) => ({
                       username: coauthor.user.username,
@@ -250,9 +243,7 @@ const onSubmit = async () => {
 
         // 編集モードか新規作成かで分岐
         const isEditing = editingSetupId.value !== null
-        const url = isEditing
-            ? `/api/setups/${editingSetupId.value}`
-            : '/api/setups'
+        const url = isEditing ? `/api/setups/${editingSetupId.value}` : '/api/setups'
         const method = isEditing ? 'PUT' : 'POST'
 
         const response = await $fetch<Setup>(url, {
@@ -270,10 +261,7 @@ const onSubmit = async () => {
         modalPublishComplete.value = true
     } catch (error) {
         const isEditing = editingSetupId.value !== null
-        console.error(
-            isEditing ? 'Failed to update setup:' : 'Failed to submit setup:',
-            error
-        )
+        console.error(isEditing ? 'Failed to update setup:' : 'Failed to submit setup:', error)
 
         toast.add({
             title: isEditing
@@ -338,9 +326,7 @@ const saveDraftDebounce = useDebounceFn(async () => {
         name: state.name.length ? state.name : undefined,
         description: state.description?.length ? state.description : undefined,
         images: state.images.length ? state.images : undefined,
-        tags: state.tags.length
-            ? state.tags.map((tag) => ({ tag }))
-            : undefined,
+        tags: state.tags.length ? state.tags.map((tag) => ({ tag })) : undefined,
         coauthors: state.coauthors.length
             ? state.coauthors.map((coauthor) => ({
                   userId: coauthor.user.username,
@@ -386,10 +372,7 @@ watch(
     { deep: true }
 )
 
-const enterEditModeAndRestoreDraft = async (args: {
-    draftId?: string
-    edit?: number
-}) => {
+const enterEditModeAndRestoreDraft = async (args: { draftId?: string; edit?: number }) => {
     if (args.draftId) {
         await loadDraft(args.draftId)
     } else if (args.edit) {
@@ -435,8 +418,7 @@ const enterEditModeAndRestoreDraft = async (args: {
                 state.images = setup.images?.map((image) => image.url) || []
                 state.tags = setup.tags || []
                 state.coauthors = setup.coauthors || []
-                for (const item of setup.items)
-                    state.items[item.category].push(item)
+                for (const item of setup.items) state.items[item.category].push(item)
 
                 // 少し待ってから自動保存を再有効化
                 await nextTick()
@@ -475,9 +457,7 @@ onBeforeRouteLeave((to, from, next) => {
         draftStatus.value !== 'saved' &&
         draftStatus.value !== 'restored'
     ) {
-        const answer = window.confirm(
-            '入力された内容が破棄されます。よろしいですか？'
-        )
+        const answer = window.confirm('入力された内容が破棄されます。よろしいですか？')
         return next(answer)
     }
     return next(true)
@@ -499,11 +479,7 @@ await enterEditModeAndRestoreDraft({
         : draftId
           ? draftId.toString()
           : undefined,
-    edit: Array.isArray(edit)
-        ? Number(edit[0])
-        : edit
-          ? Number(edit)
-          : undefined,
+    edit: Array.isArray(edit) ? Number(edit[0]) : edit ? Number(edit) : undefined,
 })
 </script>
 
@@ -539,16 +515,11 @@ await enterEditModeAndRestoreDraft({
                         class="rounded-full p-3"
                     />
 
-                    <UModal
-                        v-model:open="modalNewSetupConfirm"
-                        title="新規作成"
-                    >
+                    <UModal v-model:open="modalNewSetupConfirm" title="新規作成">
                         <UButton
                             v-if="hasFormChanges"
                             :disabled="
-                                draftStatus === 'unsaved' ||
-                                draftStatus === 'saving' ||
-                                publishing
+                                draftStatus === 'unsaved' || draftStatus === 'saving' || publishing
                             "
                             icon="lucide:plus"
                             variant="soft"
@@ -565,11 +536,7 @@ await enterEditModeAndRestoreDraft({
                                         ? 'エラーにより下書きが保存されていません！'
                                         : '現在の状態は下書きに保存されています'
                                 "
-                                :color="
-                                    draftStatus === 'error'
-                                        ? 'error'
-                                        : 'neutral'
-                                "
+                                :color="draftStatus === 'error' ? 'error' : 'neutral'"
                                 variant="outline"
                             />
                         </template>
@@ -592,10 +559,7 @@ await enterEditModeAndRestoreDraft({
                     </UModal>
                 </div>
 
-                <SetupsComposeEditingSetup
-                    v-if="editingSetupId"
-                    :setup-id="editingSetupId"
-                />
+                <SetupsComposeEditingSetup v-if="editingSetupId" :setup-id="editingSetupId" />
             </div>
 
             <div class="flex flex-col gap-8 p-5 pt-2">

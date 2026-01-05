@@ -38,15 +38,13 @@ export default defineApi<Serialized<Setup>>(
                 statusMessage: 'Access denied',
             })
 
-        const { name, description, items, images, tags, coauthors } =
-            await validateBody(body, { sanitize: true })
+        const { name, description, items, images, tags, coauthors } = await validateBody(body, {
+            sanitize: true,
+        })
 
         // セットアップ基本情報の更新
         const updateData: Partial<
-            Pick<
-                typeof setups.$inferInsert,
-                'name' | 'description' | 'updatedAt'
-            >
+            Pick<typeof setups.$inferInsert, 'name' | 'description' | 'updatedAt'>
         > = {}
         if (name !== undefined) updateData.name = name
         if (description !== undefined) updateData.description = description
@@ -81,10 +79,7 @@ export default defineApi<Serialized<Setup>>(
                         itemId: item.itemId,
                         category: item.category,
                         note: item.note,
-                        unsupported:
-                            item.category === 'avatar'
-                                ? false
-                                : item.unsupported,
+                        unsupported: item.category === 'avatar' ? false : item.unsupported,
                     }))
                 )
                 .returning({
@@ -105,8 +100,7 @@ export default defineApi<Serialized<Setup>>(
                     )
                 })
 
-                if (shapekeys.length)
-                    await db.insert(setupItemShapekeys).values(shapekeys)
+                if (shapekeys.length) await db.insert(setupItemShapekeys).values(shapekeys)
             }
         }
 
@@ -117,8 +111,7 @@ export default defineApi<Serialized<Setup>>(
             if (images.length) {
                 const imageData = await Promise.all(
                     images.map(async (image) => {
-                        const { colors, width, height } =
-                            await extractImageColors(image)
+                        const { colors, width, height } = await extractImageColors(image)
                         return {
                             setupId: id,
                             url: image,
@@ -148,9 +141,7 @@ export default defineApi<Serialized<Setup>>(
 
         // 共同作者の更新
         if (coauthors !== undefined) {
-            await db
-                .delete(setupCoauthors)
-                .where(eq(setupCoauthors.setupId, id))
+            await db.delete(setupCoauthors).where(eq(setupCoauthors.setupId, id))
 
             if (coauthors.length > 0)
                 await db.insert(setupCoauthors).values(

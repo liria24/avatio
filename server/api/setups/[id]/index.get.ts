@@ -10,10 +10,7 @@ const getSetup = defineCachedFunction(
             where: {
                 id: { eq: id },
                 user: {
-                    OR: [
-                        { banned: { eq: false } },
-                        { banned: { isNull: true } },
-                    ],
+                    OR: [{ banned: { eq: false } }, { banned: { isNull: true } }],
                 },
             },
             columns: {
@@ -117,10 +114,7 @@ const getSetup = defineCachedFunction(
                 coauthors: {
                     where: {
                         user: {
-                            OR: [
-                                { banned: { eq: false } },
-                                { banned: { isNull: true } },
-                            ],
+                            OR: [{ banned: { eq: false } }, { banned: { isNull: true } }],
                         },
                     },
                     columns: {
@@ -190,19 +184,12 @@ const getSetup = defineCachedFunction(
 
         const expiredFilter = (date: string | Date) => {
             if (forceUpdateItem) return true
-            return (
-                new Date().getTime() - new Date(date).getTime() >=
-                24 * 60 * 60 * 1000
-            )
+            return new Date().getTime() - new Date(date).getTime() >= 24 * 60 * 60 * 1000
         }
 
-        const expiredItems = data.items.filter((item) =>
-            expiredFilter(item.item.updatedAt)
-        )
+        const expiredItems = data.items.filter((item) => expiredFilter(item.item.updatedAt))
 
-        const validItems = data.items.filter(
-            (item) => !expiredFilter(item.item.updatedAt)
-        )
+        const validItems = data.items.filter((item) => !expiredFilter(item.item.updatedAt))
 
         // 有効なアイテムを処理（outdatedなものは除外）
         for (const item of validItems) {

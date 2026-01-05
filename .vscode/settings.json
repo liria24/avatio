@@ -7,11 +7,7 @@
     },
     "tailwindCSS.classAttributes": ["class", "ui"],
     "tailwindCSS.experimental.classRegex": [
-        [
-            "ui:\\s*{([^)]*)\\s*}",
-            "(?:'|\"|`)([^']*)(?:'|\"|`)",
-            "class:\\s*?[\"'`]([^\"'`]*).*?,"
-        ]
+        ["ui:\\s*{([^)]*)\\s*}", "(?:'|\"|`)([^']*)(?:'|\"|`)", "class:\\s*?[\"'`]([^\"'`]*).*?,"]
     ],
     "typescript.tsdk": "node_modules\\typescript\\lib",
     "[typescript]": {

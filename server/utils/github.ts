@@ -22,9 +22,7 @@ export const getGithubRepo = defineCachedFunction(
     async (repo: string) => {
         if (!validateRepo(repo)) return null
 
-        const response = await $fetch<GithubRepo>(
-            `https://ungh.cc/repos/${repo}`
-        ).catch(() => null)
+        const response = await $fetch<GithubRepo>(`https://ungh.cc/repos/${repo}`).catch(() => null)
         return response
     },
     {
@@ -66,9 +64,9 @@ export const getGithubLatestRelease = defineCachedFunction(
 export const getGithubReadme = async (repo: string) => {
     if (!validateRepo(repo)) return null
 
-    const response = await $fetch<GithubReadme>(
-        `https://ungh.cc/repos/${repo}/readme`
-    ).catch(() => null)
+    const response = await $fetch<GithubReadme>(`https://ungh.cc/repos/${repo}/readme`).catch(
+        () => null
+    )
     return response
 }
 
@@ -76,9 +74,9 @@ export const getGithubUser = defineCachedFunction(
     async (username: string) => {
         if (!validateUser(username)) return null
 
-        const response = await $fetch<GithubUser>(
-            `https://ungh.cc/users/${username}`
-        ).catch(() => null)
+        const response = await $fetch<GithubUser>(`https://ungh.cc/users/${username}`).catch(
+            () => null
+        )
         return response
     },
     {
@@ -87,10 +85,7 @@ export const getGithubUser = defineCachedFunction(
     }
 )
 
-type GithubItem = Omit<
-    Item,
-    'outdated' | 'image' | 'niceName' | 'price' | 'nsfw'
-> & {
+type GithubItem = Omit<Item, 'outdated' | 'image' | 'niceName' | 'price' | 'nsfw'> & {
     platform: 'github'
     category: 'other'
     outdated: false

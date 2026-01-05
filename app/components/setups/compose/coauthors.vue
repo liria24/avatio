@@ -14,11 +14,7 @@ const toast = useToast()
 const addCoauthor = (user: SerializedUser) => {
     if (!user?.username) return
 
-    if (
-        coauthors.value.some(
-            (coauthor) => coauthor.user.username === user.username
-        )
-    ) {
+    if (coauthors.value.some((coauthor) => coauthor.user.username === user.username)) {
         toast.add({
             title: '共同作者を重複して追加することはできません',
             color: 'warning',
@@ -33,9 +29,7 @@ const addCoauthor = (user: SerializedUser) => {
 }
 
 const removeCoauthor = (username: string) => {
-    const index = coauthors.value.findIndex(
-        (coauthor) => coauthor.user.username === username
-    )
+    const index = coauthors.value.findIndex((coauthor) => coauthor.user.username === username)
     if (index !== -1) {
         coauthors.value.splice(index, 1)
     }
@@ -86,11 +80,7 @@ const removeCoauthor = (username: string) => {
                                 @click="removeCoauthor(coauthor.user.username)"
                             />
                         </div>
-                        <UInput
-                            v-model="coauthor.note"
-                            placeholder="ノート"
-                            size="sm"
-                        />
+                        <UInput v-model="coauthor.note" placeholder="ノート" size="sm" />
                     </div>
                 </div>
             </VueDraggable>

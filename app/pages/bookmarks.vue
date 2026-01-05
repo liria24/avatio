@@ -23,8 +23,7 @@ const loadMoreSetups = () => {
 }
 
 watchEffect(() => {
-    if (data.value)
-        setups.value.push(...data.value.data.map((bookmark) => bookmark.setup))
+    if (data.value) setups.value.push(...data.value.data.map((bookmark) => bookmark.setup))
 })
 
 defineSeo({
@@ -37,9 +36,7 @@ defineSeo({
     <div class="flex flex-col gap-5">
         <div class="flex items-center gap-2">
             <Icon name="lucide:bookmark" size="22" class="text-muted" />
-            <h1 class="text-xl leading-none font-semibold text-nowrap">
-                ブックマーク
-            </h1>
+            <h1 class="text-xl leading-none font-semibold text-nowrap">ブックマーク</h1>
         </div>
 
         <div class="flex w-full flex-col gap-3 self-center">

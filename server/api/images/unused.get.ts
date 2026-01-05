@@ -27,14 +27,11 @@ export default defineApi(
 
         // XMLパースを最適化
         const parseStorageObjects = (xmlText: string): ImageInfo[] => {
-            const contents =
-                xmlText.match(/<Contents>[\s\S]*?<\/Contents>/g) || []
+            const contents = xmlText.match(/<Contents>[\s\S]*?<\/Contents>/g) || []
 
             return contents.reduce<ImageInfo[]>((acc, content) => {
                 const keyMatch = content.match(/<Key>(.*?)<\/Key>/)
-                const lastModifiedMatch = content.match(
-                    /<LastModified>(.*?)<\/LastModified>/
-                )
+                const lastModifiedMatch = content.match(/<LastModified>(.*?)<\/LastModified>/)
 
                 if (!keyMatch || !lastModifiedMatch) return acc
 
@@ -53,26 +50,19 @@ export default defineApi(
             }, [])
         }
 
-        const getStorageObjects = async (
-            prefix: string
-        ): Promise<ImageInfo[]> => {
+        const getStorageObjects = async (prefix: string): Promise<ImageInfo[]> => {
             try {
                 const url = `${config.r2.endpoint}/avatio?list-type=2&prefix=${prefix}/`
                 const response = await aws.fetch(url)
 
                 if (!response.ok) {
-                    throw new Error(
-                        `Failed to list objects: ${response.status}`
-                    )
+                    throw new Error(`Failed to list objects: ${response.status}`)
                 }
 
                 const xmlText = await response.text()
                 return parseStorageObjects(xmlText)
             } catch (error) {
-                console.error(
-                    `Failed to get storage objects for prefix ${prefix}:`,
-                    error
-                )
+                console.error(`Failed to get storage objects for prefix ${prefix}:`, error)
                 return []
             }
         }
@@ -95,10 +85,7 @@ export default defineApi(
                 }),
             ]),
             // ストレージクエリを並列実行
-            Promise.all([
-                getStorageObjects('setup'),
-                getStorageObjects('avatar'),
-            ]),
+            Promise.all([getStorageObjects('setup'), getStorageObjects('avatar')]),
         ])
 
         // Set を使って高速な検索を実現
@@ -113,12 +100,8 @@ export default defineApi(
         )
 
         // 未使用画像を抽出
-        const unusedSetupImages = allSetupImages.filter(
-            (img) => !usedSetupUrls.has(img.url)
-        )
-        const unusedUserImages = allUserImages.filter(
-            (img) => !usedUserUrls.has(img.url)
-        )
+        const unusedSetupImages = allSetupImages.filter((img) => !usedSetupUrls.has(img.url))
+        const unusedUserImages = allUserImages.filter((img) => !usedUserUrls.has(img.url))
 
         const allUnusedImages = [...unusedSetupImages, ...unusedUserImages]
 
@@ -136,12 +119,8 @@ export default defineApi(
         )
 
         // 最終的な分類
-        const setupImages = oldImages.filter((img) =>
-            img.key.startsWith('setup/')
-        )
-        const userImages = oldImages.filter((img) =>
-            img.key.startsWith('avatar/')
-        )
+        const setupImages = oldImages.filter((img) => img.key.startsWith('setup/'))
+        const userImages = oldImages.filter((img) => img.key.startsWith('avatar/'))
 
         return {
             setupImages,

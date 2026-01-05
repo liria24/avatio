@@ -12,8 +12,10 @@ const body = userReportsInsertSchema.pick({
 
 export default defineApi(
     async ({ session }) => {
-        const { reporteeId, spam, hate, infringe, badImage, other, comment } =
-            await validateBody(body, { sanitize: true })
+        const { reporteeId, spam, hate, infringe, badImage, other, comment } = await validateBody(
+            body,
+            { sanitize: true }
+        )
 
         await db.insert(userReports).values({
             reporterId: session.user.id,

@@ -8,10 +8,7 @@ const bodySchema = z.object({
         .union([z.enum(['admin', 'user']), z.array(z.enum(['admin', 'user']))])
         .nullable()
         .optional(),
-    revokeUserSessions: z
-        .union([z.boolean(), z.stringbool()])
-        .nullable()
-        .optional(),
+    revokeUserSessions: z.union([z.boolean(), z.stringbool()]).nullable().optional(),
     ban: z.union([z.boolean(), z.stringbool()]).nullable().optional(),
     banReason: z.string().optional(),
     banExpiresIn: z.number().optional(),

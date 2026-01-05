@@ -18,9 +18,7 @@ const { data, status, refresh } = await useFetch('/api/changelogs', {
         },
     }),
     getCachedData: (key, nuxtApp, ctx) =>
-        ctx.cause !== 'initial'
-            ? undefined
-            : nuxtApp.payload.data[key] || nuxtApp.static.data[key],
+        ctx.cause !== 'initial' ? undefined : nuxtApp.payload.data[key] || nuxtApp.static.data[key],
 })
 </script>
 
@@ -74,10 +72,7 @@ const { data, status, refresh } = await useFetch('/api/changelogs', {
                         />
 
                         <template #content>
-                            <MDC
-                                :value="changelog.markdown"
-                                class="w-full max-w-full"
-                            />
+                            <MDC :value="changelog.markdown" class="w-full max-w-full" />
                         </template>
                     </UCollapsible>
                 </UCard>

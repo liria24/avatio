@@ -4,8 +4,7 @@ const body = auditLogsInsertSchema
 
 export default defineApi<{ id: number }>(
     async () => {
-        const { userId, action, targetType, targetId, details } =
-            await validateBody(body)
+        const { userId, action, targetType, targetId, details } = await validateBody(body)
 
         const data = await db
             .insert(auditLogs)

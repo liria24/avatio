@@ -8,9 +8,7 @@ type Options = UseFetchOptions<{
 
 export const useNotifications = (options?: Options) => {
     const defaultOptions = {
-        key: computed(
-            () => `notifications-${JSON.stringify(unref(options?.query))}`
-        ),
+        key: computed(() => `notifications-${JSON.stringify(unref(options?.query))}`),
         default: () => ({
             data: [],
             unread: 0,

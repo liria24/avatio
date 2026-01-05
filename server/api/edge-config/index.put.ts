@@ -1,9 +1,6 @@
 import { z } from 'zod'
 
-const bodySchema = z.record(
-    z.string().min(1, 'Value must be a non-empty string'),
-    z.any()
-)
+const bodySchema = z.record(z.string().min(1, 'Value must be a non-empty string'), z.any())
 
 const config = useRuntimeConfig()
 

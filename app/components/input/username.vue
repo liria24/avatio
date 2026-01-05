@@ -20,9 +20,7 @@ const props = withDefaults(defineProps<Props>(), {
 const { $session, $authClient } = useNuxtApp()
 const session = await $session()
 
-const checkState = ref<
-    'idle' | 'checking' | 'available' | 'unavailable' | 'error'
->('idle')
+const checkState = ref<'idle' | 'checking' | 'available' | 'unavailable' | 'error'>('idle')
 
 const stateMessages = {
     idle: { icon: '', message: '' },
@@ -76,18 +74,10 @@ watch(
 
 <template>
     <UFormField :label="props.label">
-        <UInput
-            v-model="input"
-            :placeholder="props.placeholder"
-            class="w-full"
-        />
+        <UInput v-model="input" :placeholder="props.placeholder" class="w-full" />
         <template #hint>
             <div v-if="checkState !== 'idle'" class="flex items-center gap-1">
-                <Icon
-                    :name="stateMessages[checkState].icon"
-                    size="16"
-                    class="text-toned"
-                />
+                <Icon :name="stateMessages[checkState].icon" size="16" class="text-toned" />
                 <span class="text-toned text-xs">
                     {{ stateMessages[checkState].message }}
                 </span>

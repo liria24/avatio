@@ -244,10 +244,7 @@ export const shops = pgTable(
         image: text(),
         verified: boolean().default(false).notNull(),
     },
-    (table) => [
-        index('shops_id_index').on(table.id),
-        index('shops_name_index').on(table.name),
-    ]
+    (table) => [index('shops_id_index').on(table.id), index('shops_name_index').on(table.name)]
 )
 
 export const items = pgTable(

@@ -9,10 +9,7 @@ interface ExtractImageColorsOptions {
     hueDistance?: number
 }
 
-export default async (
-    imageUrl: string,
-    options: ExtractImageColorsOptions = {}
-) => {
+export default async (imageUrl: string, options: ExtractImageColorsOptions = {}) => {
     const {
         pixels = 64000,
         distance = 0.22,
@@ -33,10 +30,7 @@ export default async (
     const { width = 0, height = 0 } = metadata
 
     // 画像を生のピクセルデータに変換
-    const { data, info } = await image
-        .ensureAlpha()
-        .raw()
-        .toBuffer({ resolveWithObject: true })
+    const { data, info } = await image.ensureAlpha().raw().toBuffer({ resolveWithObject: true })
 
     // 色を抽出
     const extractedColors = await extractColors(
@@ -54,9 +48,7 @@ export default async (
         }
     )
 
-    const colors = extractedColors
-        .sort((a, b) => b.area - a.area)
-        .map((color) => color.hex)
+    const colors = extractedColors.sort((a, b) => b.area - a.area).map((color) => color.hex)
 
     return {
         colors,

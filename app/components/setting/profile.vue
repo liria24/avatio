@@ -193,11 +193,7 @@ const cancelCropImage = () => {
         </template>
 
         <template #footer>
-            <UButton
-                label="キャンセル"
-                variant="ghost"
-                @click="cancelCropImage"
-            />
+            <UButton label="キャンセル" variant="ghost" @click="cancelCropImage" />
             <UButton
                 label="保存"
                 color="neutral"
@@ -210,9 +206,7 @@ const cancelCropImage = () => {
     <UForm :state :schema="userUpdateSchema" @submit="onSubmit">
         <UCard>
             <template #header>
-                <h2 class="text-lg leading-none font-semibold text-nowrap">
-                    プロフィール
-                </h2>
+                <h2 class="text-lg leading-none font-semibold text-nowrap">プロフィール</h2>
             </template>
 
             <div class="flex w-full flex-col items-start gap-8 md:flex-row">
@@ -242,11 +236,7 @@ const cancelCropImage = () => {
                         v-else
                         class="bg-muted flex size-48 shrink-0 items-center justify-center rounded-full"
                     >
-                        <Icon
-                            name="lucide:user-round"
-                            size="64"
-                            class="text-muted"
-                        />
+                        <Icon name="lucide:user-round" size="64" class="text-muted" />
                     </div>
 
                     <UFieldGroup class="w-full">
@@ -285,10 +275,7 @@ const cancelCropImage = () => {
                 </div>
 
                 <div class="flex w-full flex-col gap-4">
-                    <InputUsername
-                        v-model="state.username"
-                        placeholder="新しいユーザーIDを入力"
-                    />
+                    <InputUsername v-model="state.username" placeholder="新しいユーザーIDを入力" />
 
                     <UFormField name="name" label="ユーザー名" class="w-full">
                         <UInput
@@ -361,9 +348,7 @@ const cancelCropImage = () => {
                                 />
 
                                 <template #content>
-                                    <div
-                                        class="flex max-w-96 items-center gap-2 p-2"
-                                    >
+                                    <div class="flex max-w-96 items-center gap-2 p-2">
                                         <UInput
                                             v-model="ui.newLink"
                                             placeholder="リンクを追加"

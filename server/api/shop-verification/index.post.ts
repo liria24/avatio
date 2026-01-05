@@ -20,15 +20,12 @@ export default defineApi(
             })
 
         // Boothからアイテム情報を取得
-        const item = await $fetch<Booth>(
-            `https://booth.pm/ja/items/${itemId.id}.json`,
-            {
-                headers: {
-                    Accept: 'application/json',
-                    'Accept-Language': 'ja,en-US;q=0.9,en;q=0.8',
-                },
-            }
-        )
+        const item = await $fetch<Booth>(`https://booth.pm/ja/items/${itemId.id}.json`, {
+            headers: {
+                Accept: 'application/json',
+                'Accept-Language': 'ja,en-US;q=0.9,en;q=0.8',
+            },
+        })
 
         // ショップが既に登録されているか確認
         const existingShop = await db.query.userShops.findFirst({
@@ -71,12 +68,9 @@ export default defineApi(
             })
 
         // アイテムの詳細情報を取得
-        const itemData = await $fetch<Required<Item>>(
-            `/api/items/${itemId.id}`,
-            {
-                query: { platform: itemId.platform },
-            }
-        )
+        const itemData = await $fetch<Required<Item>>(`/api/items/${itemId.id}`, {
+            query: { platform: itemId.platform },
+        })
 
         // ユーザーショップの登録
         await db.insert(userShops).values({

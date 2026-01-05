@@ -27,9 +27,7 @@ const hideSetup = async () => {
             method: 'PATCH',
             body: {
                 hide: true,
-                hideReason: hideReason.value.length
-                    ? hideReason.value
-                    : undefined,
+                hideReason: hideReason.value.length ? hideReason.value : undefined,
             },
         })
         toast.add({

@@ -14,9 +14,7 @@ const modalBan = overlay.create(LazyModalAdminBanUser)
 const { data, status, refresh } = await useFetch('/api/admin/user', {
     dedupe: 'defer',
     getCachedData: (key, nuxtApp, ctx) =>
-        ctx.cause !== 'initial'
-            ? undefined
-            : nuxtApp.payload.data[key] || nuxtApp.static.data[key],
+        ctx.cause !== 'initial' ? undefined : nuxtApp.payload.data[key] || nuxtApp.static.data[key],
 })
 
 const unbanUser = async (userId: string) => {
@@ -84,17 +82,11 @@ const unbanUser = async (userId: string) => {
 
         <template #body>
             <UPageList divide>
-                <div
-                    v-for="user in data?.users"
-                    :key="user.id"
-                    class="flex items-center gap-3 p-2"
-                >
+                <div v-for="user in data?.users" :key="user.id" class="flex items-center gap-3 p-2">
                     <UAvatar :src="user.image || undefined" size="xs" />
 
                     <div class="flex grow items-center gap-2">
-                        <p
-                            class="text-muted line-clamp-1 text-sm leading-none break-all"
-                        >
+                        <p class="text-muted line-clamp-1 text-sm leading-none break-all">
                             {{ user.name }}
                         </p>
                         <UBadge
@@ -152,9 +144,7 @@ const unbanUser = async (userId: string) => {
                                 },
                                 {
                                     label: user.banned ? 'BAN 解除' : 'BAN',
-                                    icon: user.banned
-                                        ? 'lucide:undo-2'
-                                        : 'lucide:ban',
+                                    icon: user.banned ? 'lucide:undo-2' : 'lucide:ban',
                                     onSelect: () => {
                                         if (user.banned) unbanUser(user.id)
                                         else

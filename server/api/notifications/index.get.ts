@@ -5,10 +5,7 @@ import { z } from 'zod'
 
 const query = z.object({
     status: z
-        .union([
-            z.enum(['read', 'unread']),
-            z.array(z.enum(['read', 'unread'])),
-        ])
+        .union([z.enum(['read', 'unread']), z.array(z.enum(['read', 'unread']))])
         .transform((value) => (Array.isArray(value) ? value : [value]))
         .optional()
         .default(['unread', 'read']),
@@ -25,10 +22,7 @@ export default defineApi<{
         const [unreadCount, data] = await Promise.all([
             db.$count(
                 notifications,
-                and(
-                    eq(notifications.userId, userId),
-                    isNull(notifications.readAt)
-                )
+                and(eq(notifications.userId, userId), isNull(notifications.readAt))
             ),
             db.query.notifications.findMany({
                 orderBy: {
@@ -39,8 +33,7 @@ export default defineApi<{
                     readAt:
                         status.includes('read') && !status.includes('unread')
                             ? { isNotNull: true }
-                            : !status.includes('read') &&
-                                status.includes('unread')
+                            : !status.includes('read') && status.includes('unread')
                               ? { isNull: true }
                               : undefined,
                     id:

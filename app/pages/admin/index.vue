@@ -20,9 +20,7 @@ const { data } = await useFetch('/api/admin/stats', {
         feedbacks: 0,
     }),
     getCachedData: (key, nuxtApp, ctx) =>
-        ctx.cause !== 'initial'
-            ? undefined
-            : nuxtApp.payload.data[key] || nuxtApp.static.data[key],
+        ctx.cause !== 'initial' ? undefined : nuxtApp.payload.data[key] || nuxtApp.static.data[key],
 })
 
 const stats = ref([

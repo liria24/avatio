@@ -47,11 +47,7 @@ watch(deleteMode, (value) => {
 </script>
 
 <template>
-    <UModal
-        v-model:open="open"
-        title="下書き"
-        description="最大で 32 件まで保存できます"
-    >
+    <UModal v-model:open="open" title="下書き" description="最大で 32 件まで保存できます">
         <slot />
 
         <template #body>
@@ -86,8 +82,7 @@ watch(deleteMode, (value) => {
                         drafts.map((draft) => ({
                             value: draft.id,
                             label: draft.content?.name,
-                            description:
-                                draft.content?.description || undefined,
+                            description: draft.content?.description || undefined,
                             items: draft.content?.items || [],
                             updatedAt: draft.updatedAt,
                         }))
@@ -149,9 +144,7 @@ watch(deleteMode, (value) => {
                             <div class="flex grow flex-col gap-1">
                                 <div class="flex items-center gap-1.5">
                                     <span
-                                        v-if="
-                                            draft.id === props.referencedDraftId
-                                        "
+                                        v-if="draft.id === props.referencedDraftId"
                                         class="ring-muted text-muted flex rounded-full px-2.5 pt-1 pb-1.5 text-xs leading-none ring-1"
                                     >
                                         編集中
@@ -190,9 +183,7 @@ watch(deleteMode, (value) => {
                     </UButton>
                 </UFieldGroup>
 
-                <p v-else class="text-muted py-8 text-center text-sm">
-                    下書きがありません
-                </p>
+                <p v-else class="text-muted py-8 text-center text-sm">下書きがありません</p>
             </div>
         </template>
 

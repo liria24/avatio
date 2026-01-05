@@ -4,10 +4,7 @@ export const computeItemUrl = (itemId: string, platform: Platform) => {
     else return undefined
 }
 
-export const computeShopUrl = (
-    shopId: string | undefined,
-    platform: Platform | undefined
-) => {
+export const computeShopUrl = (shopId: string | undefined, platform: Platform | undefined) => {
     if (!shopId || !platform) return undefined
     if (platform === 'booth') return `https://${shopId}.booth.pm/`
     else if (platform === 'github') return `https://github.com/${shopId}`

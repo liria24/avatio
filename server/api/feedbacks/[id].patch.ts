@@ -11,12 +11,9 @@ const body = z
         isClosed: z.union([z.boolean(), z.stringbool()]),
     })
     .partial()
-    .refine(
-        (data) => Object.values(data).some((value) => value !== undefined),
-        {
-            message: 'At least one field must be provided',
-        }
-    )
+    .refine((data) => Object.values(data).some((value) => value !== undefined), {
+        message: 'At least one field must be provided',
+    })
 
 export default defineApi<Feedback>(
     async () => {

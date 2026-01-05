@@ -22,9 +22,7 @@ const markItemAsOutdated = async (id: string): Promise<void> => {
     }
 }
 
-const updateDatabase = async (
-    item: Item & { shop: NonNullable<Item['shop']> }
-): Promise<void> => {
+const updateDatabase = async (item: Item & { shop: NonNullable<Item['shop']> }): Promise<void> => {
     try {
         // ショップ情報更新
         await db
@@ -78,24 +76,16 @@ export default defineApi<Item>(
     async () => {
         const { id } = await validateParams(params)
 
-        const {
-            forceUpdateItem,
-            allowedBoothCategoryId,
-            specificItemCategories,
-        } = await getAll<EdgeConfig>()
+        const { forceUpdateItem, allowedBoothCategoryId, specificItemCategories } =
+            await getAll<EdgeConfig>()
 
-        const cachedItem = forceUpdateItem
-            ? null
-            : await getItemFromDatabase(id)
+        const cachedItem = forceUpdateItem ? null : await getItemFromDatabase(id)
 
         const isCacheValid =
-            cachedItem &&
-            Date.now() - new Date(cachedItem.updatedAt).getTime() <
-                CACHE_DURATION_MS
+            cachedItem && Date.now() - new Date(cachedItem.updatedAt).getTime() < CACHE_DURATION_MS
 
         if (isCacheValid && !cachedItem.outdated) return cachedItem
-        if (isCacheValid && cachedItem.outdated)
-            throw new Error('Item not found or not allowed')
+        if (isCacheValid && cachedItem.outdated) throw new Error('Item not found or not allowed')
 
         const BOOTH_CATEGORY_MAP: Record<number, ItemCategory> = {
             208: 'avatar',
@@ -153,18 +143,10 @@ export default defineApi<Item>(
                             category: processedItem.category,
                         })
 
-                        await db
-                            .update(items)
-                            .set({ niceName, category })
-                            .where(eq(items.id, id))
-                        consola.log(
-                            `Item info defined for item ${id}: ${niceName}, ${category}`
-                        )
+                        await db.update(items).set({ niceName, category }).where(eq(items.id, id))
+                        consola.log(`Item info defined for item ${id}: ${niceName}, ${category}`)
                     } catch (error) {
-                        consola.error(
-                            `Failed to define item info for item ${id}:`,
-                            error
-                        )
+                        consola.error(`Failed to define item info for item ${id}:`, error)
                     }
             })
         )

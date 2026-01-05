@@ -1,27 +1,24 @@
 <script setup lang="ts">
 const { app } = useAppConfig()
 
-const { data } = await useFetch<PaginationResponse<Changelog[]>>(
-    '/api/changelogs',
-    {
-        default: () => ({
-            data: [],
-            pagination: {
-                page: 1,
-                limit: 0,
-                total: 0,
-                totalPages: 0,
-                hasPrev: false,
-                hasNext: false,
-            },
-        }),
-        dedupe: 'defer',
-        getCachedData: (key, nuxtApp, ctx) =>
-            ctx.cause === 'refresh:manual'
-                ? undefined
-                : nuxtApp.payload.data[key] || nuxtApp.static.data[key],
-    }
-)
+const { data } = await useFetch<PaginationResponse<Changelog[]>>('/api/changelogs', {
+    default: () => ({
+        data: [],
+        pagination: {
+            page: 1,
+            limit: 0,
+            total: 0,
+            totalPages: 0,
+            hasPrev: false,
+            hasNext: false,
+        },
+    }),
+    dedupe: 'defer',
+    getCachedData: (key, nuxtApp, ctx) =>
+        ctx.cause === 'refresh:manual'
+            ? undefined
+            : nuxtApp.payload.data[key] || nuxtApp.static.data[key],
+})
 
 const versions = computed(() => {
     return data.value.data.map((item) => ({
