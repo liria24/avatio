@@ -13,16 +13,8 @@ const body = notificationsInsertSchema.pick({
 
 export default defineApi(
     async () => {
-        const {
-            userId,
-            title,
-            type,
-            message,
-            data,
-            actionUrl,
-            actionLabel,
-            banner,
-        } = await validateBody(body, { sanitize: true })
+        const { userId, title, type, message, data, actionUrl, actionLabel, banner } =
+            await validateBody(body, { sanitize: true })
 
         const result = await db
             .insert(notifications)

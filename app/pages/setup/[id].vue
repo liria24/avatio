@@ -1,9 +1,5 @@
 <script setup lang="ts">
-import {
-    LazyModalReportSetup,
-    LazyImageViewer,
-    SetupsViewerItem,
-} from '#components'
+import { LazyModalReportSetup, LazyImageViewer, SetupsViewerItem } from '#components'
 import { motion } from 'motion-v'
 
 const { app } = useAppConfig()
@@ -57,8 +53,7 @@ const categorizedItems = computed(() => {
 
     // itemCategoryに定義されていないカテゴリがあれば最後に追加
     for (const [categoryKey, items] of Object.entries(itemsByCategory))
-        if (!orderedCategories[categoryKey])
-            orderedCategories[categoryKey] = items
+        if (!orderedCategories[categoryKey]) orderedCategories[categoryKey] = items
 
     return orderedCategories
 })
@@ -110,10 +105,7 @@ if (data.value) {
 </script>
 
 <template>
-    <UPage
-        v-if="data"
-        :ui="{ center: 'lg:col-span-7', right: 'lg:col-span-3' }"
-    >
+    <UPage v-if="data" :ui="{ center: 'lg:col-span-7', right: 'lg:col-span-3' }">
         <UBreadcrumb
             :items="[
                 { label: data.user.name, to: `/@${data.user.username}` },
@@ -155,10 +147,7 @@ if (data.value) {
                     :alt="data.name"
                     :width="
                         data.images[0].height > 720
-                            ? Math.round(
-                                  (data.images[0].width * 720) /
-                                      data.images[0].height
-                              )
+                            ? Math.round((data.images[0].width * 720) / data.images[0].height)
                             : data.images[0].width
                     "
                     :height="Math.min(data.images[0].height, 720)"
@@ -179,8 +168,7 @@ if (data.value) {
                     <USkeleton
                         v-else
                         :style="{
-                            aspectRatio:
-                                data.images[0].width / data.images[0].height,
+                            aspectRatio: data.images[0].width / data.images[0].height,
                         }"
                         class="max-h-[720px] w-full shrink-0 grow-0 rounded-lg"
                     />
@@ -198,20 +186,15 @@ if (data.value) {
                             <div class="flex items-center gap-2">
                                 <Icon
                                     :name="
-                                        itemCategory[
-                                            key as keyof typeof itemCategory
-                                        ]?.icon || 'lucide:box'
+                                        itemCategory[key as keyof typeof itemCategory]?.icon ||
+                                        'lucide:box'
                                     "
                                     :size="22"
                                     class="text-muted shrink-0"
                                 />
-                                <h2
-                                    class="pb-0.5 text-lg leading-none font-semibold text-nowrap"
-                                >
+                                <h2 class="pb-0.5 text-lg leading-none font-semibold text-nowrap">
                                     {{
-                                        itemCategory[
-                                            key as keyof typeof itemCategory
-                                        ]?.label || key
+                                        itemCategory[key as keyof typeof itemCategory]?.label || key
                                     }}
                                 </h2>
                             </div>
@@ -233,9 +216,7 @@ if (data.value) {
                                 }"
                                 :transition="{
                                     duration: 0.2,
-                                    delay: isInitialLoad
-                                        ? 0.1 + 0.05 * index
-                                        : 0,
+                                    delay: isInitialLoad ? 0.1 + 0.05 * index : 0,
                                 }"
                             />
                         </template>
@@ -275,11 +256,7 @@ if (data.value) {
 
         <template #right>
             <UPageAside>
-                <SetupsViewerInfo
-                    :setup="data"
-                    sidebar
-                    class="sticky top-3 pt-3"
-                />
+                <SetupsViewerInfo :setup="data" sidebar class="sticky top-3 pt-3" />
             </UPageAside>
         </template>
     </UPage>

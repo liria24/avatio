@@ -6,11 +6,7 @@ const props = defineProps<Props>()
 </script>
 
 <template>
-    <svg
-        width="100%"
-        height="100%"
-        :viewBox="props.byLiria ? '0 0 754 157' : '0 0 512 157'"
-    >
+    <svg width="100%" height="100%" :viewBox="props.byLiria ? '0 0 754 157' : '0 0 512 157'">
         <g
             transform="matrix(0.514397,0,0,0.514397,-6.0777,-242.31)"
             class="fill-zinc-800 dark:fill-zinc-100"

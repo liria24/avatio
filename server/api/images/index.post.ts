@@ -45,9 +45,7 @@ const compressImage = async (buffer: Buffer) => {
             resizedHeight = MAX_DIMENSION
             resizedWidth = Math.round(MAX_DIMENSION * aspectRatio)
         }
-        consola.info(
-            `Resizing image from ${width}x${height} to ${resizedWidth}x${resizedHeight}`
-        )
+        consola.info(`Resizing image from ${width}x${height} to ${resizedWidth}x${resizedHeight}`)
     }
 
     // 品質を段階的に下げて目標サイズに収める
@@ -64,9 +62,7 @@ const compressImage = async (buffer: Buffer) => {
             })
         }
 
-        compressedImage = await sharpInstance
-            .jpeg({ quality, progressive: true })
-            .toBuffer()
+        compressedImage = await sharpInstance.jpeg({ quality, progressive: true }).toBuffer()
 
         consola.info(
             `Compressed image with quality ${quality}: ${(
@@ -76,8 +72,7 @@ const compressImage = async (buffer: Buffer) => {
             ).toFixed(2)}MB`
         )
 
-        if (compressedImage.length <= TARGET_MAX_FILE_SIZE || quality <= 30)
-            break
+        if (compressedImage.length <= TARGET_MAX_FILE_SIZE || quality <= 30) break
 
         quality -= 10
     } while (quality > 0)
@@ -109,11 +104,7 @@ export default defineApi(
         const processedBuffer = Buffer.from(await blob.arrayBuffer())
 
         // 画像を圧縮
-        const {
-            buffer: compressedImage,
-            width,
-            height,
-        } = await compressImage(processedBuffer)
+        const { buffer: compressedImage, width, height } = await compressImage(processedBuffer)
 
         const jpgFilename = `${nanoid(JPG_FILENAME_LENGTH)}.jpg`
 

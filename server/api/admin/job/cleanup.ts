@@ -4,10 +4,7 @@ export default defineApi(
         const event = useEvent()
 
         const unusedImages = await event.$fetch('/api/images/unused')
-        const allImages = [
-            ...unusedImages.setupImages,
-            ...unusedImages.userImages,
-        ]
+        const allImages = [...unusedImages.setupImages, ...unusedImages.userImages]
 
         // Execute deletion in parallel
         const deleteResults = await Promise.allSettled(
@@ -26,11 +23,7 @@ export default defineApi(
                 if (result.status === 'fulfilled') {
                     acc.successful.push(imageKey)
                 } else {
-                    console.error(
-                        'Failed to delete image:',
-                        imageKey,
-                        result.reason
-                    )
+                    console.error('Failed to delete image:', imageKey, result.reason)
                     acc.failed.push({
                         key: imageKey,
                         error: result.reason?.message || 'Unknown error',
@@ -79,10 +72,7 @@ export default defineApi(
                                               {
                                                   name: 'Failed Images',
                                                   value: failed
-                                                      .map(
-                                                          (f) =>
-                                                              `${f.key}: ${f.error}`
-                                                      )
+                                                      .map((f) => `${f.key}: ${f.error}`)
                                                       .join('\n')
                                                       .slice(0, 1024),
                                                   inline: false,
@@ -93,8 +83,7 @@ export default defineApi(
                                 author: {
                                     name: 'Avatio',
                                     url: 'https://avatio.me',
-                                    icon_url:
-                                        'https://avatio.me/icon_outlined.png',
+                                    icon_url: 'https://avatio.me/icon_outlined.png',
                                 },
                             },
                         ],

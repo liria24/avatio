@@ -3,14 +3,7 @@ interface Props {
     icon?: string
     title?: string
     description?: string
-    color?:
-        | 'error'
-        | 'info'
-        | 'success'
-        | 'primary'
-        | 'secondary'
-        | 'warning'
-        | 'neutral'
+    color?: 'error' | 'info' | 'success' | 'primary' | 'secondary' | 'warning' | 'neutral'
     variant?: 'subtle' | 'solid' | 'outline' | 'soft'
 }
 const props = defineProps<Props>()

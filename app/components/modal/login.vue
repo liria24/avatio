@@ -31,8 +31,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
     // イベントリスナーを削除
-    if (import.meta.client)
-        window.removeEventListener('popstate', handlePopState)
+    if (import.meta.client) window.removeEventListener('popstate', handlePopState)
 })
 </script>
 
@@ -58,9 +57,7 @@ onBeforeUnmount(() => {
 
         <template #footer>
             <div class="flex w-full items-center justify-end gap-3">
-                <p class="text-muted text-xs">
-                    ログインすることで以下に同意したことになります:
-                </p>
+                <p class="text-muted text-xs">ログインすることで以下に同意したことになります:</p>
                 <UButton
                     :to="localePath('/terms')"
                     target="_blank"

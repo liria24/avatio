@@ -7,11 +7,7 @@ const query = z.object({
     page: z.coerce.number().min(1).optional().default(1),
     limit: z.coerce.number().min(1).max(1000).optional().default(100),
     isResolved: z
-        .union([
-            z.union([z.boolean(), z.stringbool()]).array(),
-            z.boolean(),
-            z.stringbool(),
-        ])
+        .union([z.union([z.boolean(), z.stringbool()]).array(), z.boolean(), z.stringbool()])
         .transform((val) => (Array.isArray(val) ? val : [val]))
         .optional(),
 })
@@ -24,8 +20,7 @@ type ApiResponse = PaginationResponse<
 
 export default defineApi<ApiResponse>(
     async () => {
-        const { sort, reporterId, page, limit, isResolved } =
-            await validateQuery(query)
+        const { sort, reporterId, page, limit, isResolved } = await validateQuery(query)
 
         const offset = (page - 1) * limit
 

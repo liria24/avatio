@@ -14,12 +14,7 @@ export default defineApi(
         // ショップを削除
         await db
             .delete(userShops)
-            .where(
-                and(
-                    eq(userShops.userId, session.user.id),
-                    eq(userShops.shopId, shopId)
-                )
-            )
+            .where(and(eq(userShops.userId, session.user.id), eq(userShops.shopId, shopId)))
 
         const shops = await db.query.userShops.findFirst({
             where: {
@@ -33,10 +28,7 @@ export default defineApi(
             await db
                 .delete(userBadges)
                 .where(
-                    and(
-                        eq(userBadges.userId, session.user.id),
-                        eq(userBadges.badge, 'shop_owner')
-                    )
+                    and(eq(userBadges.userId, session.user.id), eq(userBadges.badge, 'shop_owner'))
                 )
 
         return { success: true }

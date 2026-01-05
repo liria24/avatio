@@ -12,12 +12,7 @@ export default defineApi(
 
         await db
             .delete(bookmarks)
-            .where(
-                and(
-                    eq(bookmarks.setupId, id),
-                    eq(bookmarks.userId, session.user.id)
-                )
-            )
+            .where(and(eq(bookmarks.setupId, id), eq(bookmarks.userId, session.user.id)))
 
         return null
     },

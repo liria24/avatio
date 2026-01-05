@@ -14,8 +14,7 @@ const query = z.object({
 
 export default defineApi<PaginationResponse<Setup[]>>(
     async () => {
-        const { q, orderBy, sort, username, itemId, tag, page, limit } =
-            await validateQuery(query)
+        const { q, orderBy, sort, username, itemId, tag, page, limit } = await validateQuery(query)
 
         const offset = (page - 1) * limit
 
@@ -28,21 +27,14 @@ export default defineApi<PaginationResponse<Setup[]>>(
             where: {
                 hidAt: { isNull: true },
                 user: {
-                    OR: [
-                        { banned: { eq: false } },
-                        { banned: { isNull: true } },
-                    ],
+                    OR: [{ banned: { eq: false } }, { banned: { isNull: true } }],
                     username: username ? { eq: username } : undefined,
                 },
                 name: q ? { ilike: `%${q}%` } : undefined,
                 items: {
-                    itemId: itemId
-                        ? { in: Array.isArray(itemId) ? itemId : [itemId] }
-                        : undefined,
+                    itemId: itemId ? { in: Array.isArray(itemId) ? itemId : [itemId] } : undefined,
                 },
-                tags: tag
-                    ? { tag: { in: Array.isArray(tag) ? tag : [tag] } }
-                    : undefined,
+                tags: tag ? { tag: { in: Array.isArray(tag) ? tag : [tag] } } : undefined,
             },
             orderBy: {
                 [orderBy]: sort,
@@ -114,10 +106,7 @@ export default defineApi<PaginationResponse<Setup[]>>(
                 coauthors: {
                     where: {
                         user: {
-                            OR: [
-                                { banned: { eq: false } },
-                                { banned: { isNull: true } },
-                            ],
+                            OR: [{ banned: { eq: false } }, { banned: { isNull: true } }],
                         },
                     },
                     columns: {
@@ -149,12 +138,9 @@ export default defineApi<PaginationResponse<Setup[]>>(
 
         const result = data.map((setup) => ({
             ...setup,
-            items: setup.items
-                .filter((item) => !item.item.outdated)
-                .map((item) => item.item),
+            items: setup.items.filter((item) => !item.item.outdated).map((item) => item.item),
             tags: setup.tags.map((tag) => tag.tag),
-            failedItemsCount: setup.items.filter((item) => item.item.outdated)
-                .length,
+            failedItemsCount: setup.items.filter((item) => item.item.outdated).length,
             count: undefined,
         }))
 

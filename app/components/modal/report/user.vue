@@ -78,11 +78,7 @@ const Submit = async () => {
                 class="flex w-full flex-col items-center gap-4 overflow-y-auto"
                 @submit="Submit"
             >
-                <UFormField
-                    name="reportReason"
-                    label="報告の理由"
-                    class="w-full"
-                >
+                <UFormField name="reportReason" label="報告の理由" class="w-full">
                     <UCheckboxGroup
                         v-model="state.reportReason"
                         variant="table"
@@ -94,8 +90,7 @@ const Submit = async () => {
                             },
                             {
                                 label: '悪意のあるユーザー',
-                                description:
-                                    'ヘイト、差別、脅迫など悪意のある内容を投稿している。',
+                                description: 'ヘイト、差別、脅迫など悪意のある内容を投稿している。',
                                 value: 'hate',
                             },
                             {
@@ -119,11 +114,7 @@ const Submit = async () => {
                     />
                 </UFormField>
 
-                <UFormField
-                    name="comment"
-                    label="報告の詳細や背景情報"
-                    class="w-full"
-                >
+                <UFormField name="comment" label="報告の詳細や背景情報" class="w-full">
                     <UTextarea
                         v-model="state.comment"
                         autoresize
@@ -150,13 +141,7 @@ const Submit = async () => {
 
         <template #footer>
             <div class="flex w-full justify-end">
-                <UButton
-                    loading-auto
-                    label="報告"
-                    color="neutral"
-                    size="lg"
-                    @click="Submit()"
-                />
+                <UButton loading-auto label="報告" color="neutral" size="lg" @click="Submit()" />
             </div>
         </template>
     </UModal>

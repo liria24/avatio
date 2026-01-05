@@ -14,9 +14,7 @@ export default defineApi<Item>(
         const { id } = await validateParams(params)
         let { platform } = await validateQuery(query)
 
-        consola.log(
-            `Processing item: ${id}, Platform: ${platform || 'auto-detect'}`
-        )
+        consola.log(`Processing item: ${id}, Platform: ${platform || 'auto-detect'}`)
 
         if (!platform) {
             const item = await getItemFromDatabase(transformItemId(id).decode())
@@ -24,10 +22,8 @@ export default defineApi<Item>(
         }
 
         try {
-            if (platform === 'booth')
-                return await $fetch<Item>(`/api/items/booth/${id}`)
-            else if (platform === 'github')
-                return await $fetch<Item>(`/api/items/github/${id}`)
+            if (platform === 'booth') return await $fetch<Item>(`/api/items/booth/${id}`)
+            else if (platform === 'github') return await $fetch<Item>(`/api/items/github/${id}`)
             else throw new Error()
         } catch {
             throw createError({

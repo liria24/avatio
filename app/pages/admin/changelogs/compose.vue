@@ -10,9 +10,7 @@ const { $session } = useNuxtApp()
 const session = await $session()
 const toast = useToast()
 
-const me = await $fetch<SerializedUser>(
-    `/api/users/${session.value!.user.username!}`
-)
+const me = await $fetch<SerializedUser>(`/api/users/${session.value!.user.username!}`)
 
 const state = reactive({
     slug: '',
@@ -37,9 +35,7 @@ const addAuthor = (user: SerializedUser) => {
 }
 
 const removeAuthor = (username: string) => {
-    const index = authors.value.findIndex(
-        (author) => author.username === username
-    )
+    const index = authors.value.findIndex((author) => author.username === username)
     if (index !== -1) authors.value.splice(index, 1)
 }
 
@@ -84,34 +80,16 @@ const resetForm = () => {
 
         <template #body>
             <UForm :state class="flex flex-col gap-4" @submit="onSubmit">
-                <UButton
-                    icon="lucide:rotate-ccw"
-                    label="Reset"
-                    variant="soft"
-                    @click="resetForm"
-                />
+                <UButton icon="lucide:rotate-ccw" label="Reset" variant="soft" @click="resetForm" />
 
                 <UFormField name="slug" label="Slug" required>
-                    <UInput
-                        v-model="state.slug"
-                        placeholder="Enter slug"
-                        class="w-full"
-                    />
+                    <UInput v-model="state.slug" placeholder="Enter slug" class="w-full" />
                 </UFormField>
                 <UFormField name="title" label="Title" required>
-                    <UInput
-                        v-model="state.title"
-                        placeholder="Enter title"
-                        class="w-full"
-                    />
+                    <UInput v-model="state.title" placeholder="Enter title" class="w-full" />
                 </UFormField>
                 <UFormField name="markdown" label="Markdown" required>
-                    <UTextarea
-                        v-model="state.markdown"
-                        autoresize
-                        :rows="10"
-                        class="w-full"
-                    />
+                    <UTextarea v-model="state.markdown" autoresize :rows="10" class="w-full" />
                 </UFormField>
 
                 <UFormField name="authors" label="Authors">
@@ -162,9 +140,7 @@ const resetForm = () => {
                         <UPopover :content="{ side: 'right', align: 'start' }">
                             <UButton
                                 icon="lucide:plus"
-                                :label="
-                                    authors.length ? undefined : 'Add Author'
-                                "
+                                :label="authors.length ? undefined : 'Add Author'"
                                 variant="soft"
                             />
 
@@ -175,13 +151,7 @@ const resetForm = () => {
                     </div>
                 </UFormField>
 
-                <UButton
-                    type="submit"
-                    label="Submit"
-                    color="neutral"
-                    size="lg"
-                    block
-                />
+                <UButton type="submit" label="Submit" color="neutral" size="lg" block />
             </UForm>
         </template>
     </UDashboardPanel>

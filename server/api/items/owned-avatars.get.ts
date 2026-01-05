@@ -47,9 +47,7 @@ export default defineApi<Item[]>(
 
         // 並列実行がある場合のみ待機
         const updatedItems =
-            updatePromises.length > 0
-                ? await Promise.allSettled(updatePromises)
-                : []
+            updatePromises.length > 0 ? await Promise.allSettled(updatePromises) : []
 
         // Promise.allSettledの結果を処理
         const updatedItemsMap = new Map<string, Item>()

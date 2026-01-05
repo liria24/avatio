@@ -1,11 +1,6 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import {
-    admin,
-    customSession,
-    multiSession,
-    username,
-} from 'better-auth/plugins'
+import { admin, customSession, multiSession, username } from 'better-auth/plugins'
 import { nanoid } from 'nanoid'
 import { db, schema } from '../../server/utils/database'
 
@@ -25,11 +20,7 @@ export const auth = betterAuth({
     baseURL: process.env.NUXT_BETTER_AUTH_URL as string,
     secret: process.env.NUXT_BETTER_AUTH_SECRET as string,
 
-    trustedOrigins: [
-        'http://localhost:3000',
-        'https://dev.avatio.me',
-        'https://avatio.me',
-    ],
+    trustedOrigins: ['http://localhost:3000', 'https://dev.avatio.me', 'https://avatio.me'],
 
     database: drizzleAdapter(db, { provider: 'pg', schema }),
 
@@ -70,10 +61,7 @@ export const auth = betterAuth({
                 name: profile.data.name,
                 bio: profile.data.description,
                 image: profile.data.profile_image_url?.endsWith('_normal.jpg')
-                    ? profile.data.profile_image_url.replace(
-                          /_normal\.jpg$/,
-                          '_400x400.jpg'
-                      )
+                    ? profile.data.profile_image_url.replace(/_normal\.jpg$/, '_400x400.jpg')
                     : profile.data.profile_image_url,
                 emailVerified: true,
             }),
@@ -173,11 +161,7 @@ export const auth = betterAuth({
     advanced: {
         // IPアドレストラッキングの設定（プロキシ環境対応）
         ipAddress: {
-            ipAddressHeaders: [
-                'x-forwarded-for',
-                'x-real-ip',
-                'cf-connecting-ip',
-            ],
+            ipAddressHeaders: ['x-forwarded-for', 'x-real-ip', 'cf-connecting-ip'],
             disableIpTracking: false,
         },
         // セキュアクッキーの強制（本番環境）

@@ -75,9 +75,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div
-        class="flex flex-col items-center gap-5 overflow-x-hidden overflow-y-auto"
-    >
+    <div class="flex flex-col items-center gap-5 overflow-x-hidden overflow-y-auto">
         <cropper
             v-if="originalImageURL"
             ref="cropperRef"

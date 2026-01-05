@@ -21,10 +21,7 @@ export default defineNuxtPlugin(() => {
 
     type Session = typeof client.$Infer.Session
 
-    const globalSession = useState<Session | null | undefined>(
-        'auth:session',
-        () => undefined
-    )
+    const globalSession = useState<Session | null | undefined>('auth:session', () => undefined)
 
     return {
         provide: {
@@ -40,9 +37,8 @@ export default defineNuxtPlugin(() => {
             },
 
             refreshSession: async () => {
-                const { data: session } = await client.useSession(
-                    (url, options) =>
-                        useFetch(url, { ...options, dedupe: 'defer' })
+                const { data: session } = await client.useSession((url, options) =>
+                    useFetch(url, { ...options, dedupe: 'defer' })
                 )
 
                 // グローバルステートを更新
@@ -57,8 +53,7 @@ export default defineNuxtPlugin(() => {
 
             multiSession: async () => {
                 try {
-                    const { data: sessions } =
-                        await client.multiSession.listDeviceSessions()
+                    const { data: sessions } = await client.multiSession.listDeviceSessions()
                     return sessions || []
                 } catch {
                     // console.error('Error fetching multi-session:', error)

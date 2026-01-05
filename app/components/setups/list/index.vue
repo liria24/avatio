@@ -29,10 +29,7 @@ onMounted(async () => {
         class="mt-4 self-center bg-zinc-500"
     />
 
-    <p
-        v-else-if="!setups?.length"
-        class="text-muted mt-4 self-center text-center text-sm"
-    >
+    <p v-else-if="!setups?.length" class="text-muted mt-4 self-center text-center text-sm">
         セットアップが見つかりませんでした
     </p>
 

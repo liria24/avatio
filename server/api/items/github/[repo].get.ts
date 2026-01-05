@@ -28,18 +28,13 @@ export default defineApi<Item>(
 
         const { forceUpdateItem } = await getEdgeConfig()
 
-        const cachedItem = forceUpdateItem
-            ? null
-            : await getItemFromDatabase(repo)
+        const cachedItem = forceUpdateItem ? null : await getItemFromDatabase(repo)
 
         const isCacheValid =
-            cachedItem &&
-            Date.now() - new Date(cachedItem.updatedAt).getTime() <
-                CACHE_DURATION_MS
+            cachedItem && Date.now() - new Date(cachedItem.updatedAt).getTime() < CACHE_DURATION_MS
 
         if (isCacheValid && !cachedItem.outdated) return cachedItem
-        if (isCacheValid && cachedItem.outdated)
-            throw new Error('Item not found or not allowed')
+        if (isCacheValid && cachedItem.outdated) throw new Error('Item not found or not allowed')
 
         const item = await getGithubItem(repo)
 
@@ -52,10 +47,7 @@ export default defineApi<Item>(
         waitUntil(
             (async () => {
                 if (cachedItem && cachedItem.id !== item.id)
-                    await db
-                        .update(items)
-                        .set({ id: item.id })
-                        .where(eq(items.id, cachedItem.id))
+                    await db.update(items).set({ id: item.id }).where(eq(items.id, cachedItem.id))
 
                 await db
                     .insert(items)
@@ -101,10 +93,7 @@ export default defineApi<Item>(
                             `Item info defined for item ${item.id}: ${niceName}, ${category}`
                         )
                     } catch (error) {
-                        consola.error(
-                            `Failed to define item info for item ${item.id}:`,
-                            error
-                        )
+                        consola.error(`Failed to define item info for item ${item.id}:`, error)
                     }
             })()
         )

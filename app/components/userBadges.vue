@@ -15,15 +15,11 @@ const getBaseSize = () => {
     return 20
 }
 
-const getIconSize = (multiplier: number) =>
-    Math.round(getBaseSize() * multiplier)
+const getIconSize = (multiplier: number) => Math.round(getBaseSize() * multiplier)
 </script>
 
 <template>
-    <div
-        v-if="props.badges?.length"
-        class="flex items-center gap-1 empty:hidden"
-    >
+    <div v-if="props.badges?.length" class="flex items-center gap-1 empty:hidden">
         <UTooltip
             v-if="props.badges.find((b) => b.badge === 'developer')"
             text="デベロッパー"
@@ -37,10 +33,7 @@ const getIconSize = (multiplier: number) =>
             text="コントリビューター"
             :delay-duration="50"
         >
-            <Icon
-                name="fluent-color:animal-paw-print-24"
-                :size="getIconSize(1)"
-            />
+            <Icon name="fluent-color:animal-paw-print-24" :size="getIconSize(1)" />
         </UTooltip>
 
         <UTooltip
@@ -64,10 +57,7 @@ const getIconSize = (multiplier: number) =>
             text="ショップオーナー"
             :delay-duration="50"
         >
-            <Icon
-                name="fluent-color:building-store-24"
-                :size="getIconSize(1)"
-            />
+            <Icon name="fluent-color:building-store-24" :size="getIconSize(1)" />
         </UTooltip>
 
         <UTooltip

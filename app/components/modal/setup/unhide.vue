@@ -52,13 +52,7 @@ const unhideSetup = async () => {
             />
         </template>
         <template #footer>
-            <UButton
-                label="再表示する"
-                color="neutral"
-                size="lg"
-                block
-                @click="unhideSetup"
-            />
+            <UButton label="再表示する" color="neutral" size="lg" block @click="unhideSetup" />
         </template>
     </UModal>
 </template>

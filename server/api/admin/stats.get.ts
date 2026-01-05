@@ -38,23 +38,14 @@ const getStats = defineCachedFunction(
                                 .where(
                                     and(
                                         eq(user.id, setups.userId),
-                                        or(
-                                            eq(user.banned, false),
-                                            isNull(user.banned)
-                                        )
+                                        or(eq(user.banned, false), isNull(user.banned))
                                     )
                                 )
                         )
                     )
                 ),
-            db
-                .select({ count: count() })
-                .from(items)
-                .where(eq(items.outdated, false)),
-            db
-                .select({ count: count() })
-                .from(feedbacks)
-                .where(eq(feedbacks.isClosed, false)),
+            db.select({ count: count() }).from(items).where(eq(items.outdated, false)),
+            db.select({ count: count() }).from(feedbacks).where(eq(feedbacks.isClosed, false)),
             db
                 .select({ count: count() })
                 .from(itemReports)

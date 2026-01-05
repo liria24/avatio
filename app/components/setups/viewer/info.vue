@@ -55,9 +55,7 @@ const toggleBookmark = async () => {
         await bookmarkRefresh()
 
         toast.add({
-            title: bookmark.value
-                ? 'ブックマークしました'
-                : 'ブックマークを解除しました',
+            title: bookmark.value ? 'ブックマークしました' : 'ブックマークを解除しました',
             color: bookmark.value ? 'success' : 'info',
         })
     } catch (error) {
@@ -87,14 +85,7 @@ onBeforeRouteLeave(() => {
             class="text-highlighted text-3xl font-bold wrap-anywhere break-keep"
         />
 
-        <div
-            :class="
-                cn(
-                    'grid gap-4',
-                    !props.sidebar && 'flex items-center lg:hidden'
-                )
-            "
-        >
+        <div :class="cn('grid gap-4', !props.sidebar && 'flex items-center lg:hidden')">
             <NuxtLink :to="`/@${props.setup.user.username}`">
                 <UUser
                     :name="props.setup.user.name"
@@ -115,14 +106,7 @@ onBeforeRouteLeave(() => {
                 </UUser>
             </NuxtLink>
 
-            <div
-                :class="
-                    cn(
-                        'ml-1.5 flex flex-wrap items-center gap-2',
-                        props.sidebar && 'grid'
-                    )
-                "
-            >
+            <div :class="cn('ml-1.5 flex flex-wrap items-center gap-2', props.sidebar && 'grid')">
                 <div class="text-muted flex items-center gap-1.5">
                     <Icon name="lucide:calendar" size="16" />
                     <NuxtTime
@@ -144,10 +128,7 @@ onBeforeRouteLeave(() => {
                     <div class="text-dimmed flex items-center gap-1.5">
                         <Icon name="lucide:pen-line" size="16" />
                         <span class="text-xs leading-none text-nowrap">
-                            <NuxtTime
-                                :datetime="props.setup.updatedAt"
-                                relative
-                            />
+                            <NuxtTime :datetime="props.setup.updatedAt" relative />
                             に更新
                         </span>
                     </div>
@@ -163,11 +144,7 @@ onBeforeRouteLeave(() => {
                             minute="2-digit"
                             class="text-muted font-[Geist] text-xs leading-none text-nowrap"
                         />
-                        <span
-                            class="text-muted text-xs leading-none text-nowrap"
-                        >
-                            に編集
-                        </span>
+                        <span class="text-muted text-xs leading-none text-nowrap"> に編集 </span>
                     </template>
                 </UTooltip>
             </div>
@@ -179,22 +156,14 @@ onBeforeRouteLeave(() => {
                     variant="ghost"
                     size="sm"
                     class="p-2"
-                    @click="
-                        props.setup.hidAt
-                            ? modalUnhide.open()
-                            : modalHide.open()
-                    "
+                    @click="props.setup.hidAt ? modalUnhide.open() : modalHide.open()"
                 />
 
                 <UButton
                     loading-auto
                     :loading="bookmarkStatus === 'pending'"
-                    :icon="
-                        bookmark ? 'lucide:bookmark-check' : 'lucide:bookmark'
-                    "
-                    :aria-label="
-                        bookmark ? 'ブックマークから削除' : 'ブックマーク'
-                    "
+                    :icon="bookmark ? 'lucide:bookmark-check' : 'lucide:bookmark'"
+                    :aria-label="bookmark ? 'ブックマークから削除' : 'ブックマーク'"
                     :color="bookmark ? 'secondary' : 'primary'"
                     variant="ghost"
                     size="sm"
@@ -202,9 +171,7 @@ onBeforeRouteLeave(() => {
                     @click="session ? toggleBookmark() : modalLogin.open()"
                 />
 
-                <template
-                    v-if="session?.user.username === props.setup.user.username"
-                >
+                <template v-if="session?.user.username === props.setup.user.username">
                     <UButton
                         :to="`/setup/compose?edit=${props.setup.id}`"
                         aria-label="編集"
@@ -256,12 +223,7 @@ onBeforeRouteLeave(() => {
 
         <div
             v-if="props.setup.coauthors?.length"
-            :class="
-                cn(
-                    'flex flex-col gap-3 self-stretch',
-                    !props.sidebar && 'lg:hidden'
-                )
-            "
+            :class="cn('flex flex-col gap-3 self-stretch', !props.sidebar && 'lg:hidden')"
         >
             <h2 class="text-toned text-sm leading-none">共同作者</h2>
             <ul class="grid gap-2 pl-1 md:grid-cols-2 lg:grid-cols-1">

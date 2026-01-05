@@ -20,9 +20,7 @@ const { data, status, refresh } = await useFetch('/api/reports/user', {
         },
     }),
     getCachedData: (key, nuxtApp, ctx) =>
-        ctx.cause !== 'initial'
-            ? undefined
-            : nuxtApp.payload.data[key] || nuxtApp.static.data[key],
+        ctx.cause !== 'initial' ? undefined : nuxtApp.payload.data[key] || nuxtApp.static.data[key],
 })
 
 const resolve = async (id: number, resolve?: boolean) => {
@@ -92,21 +90,15 @@ const resolve = async (id: number, resolve?: boolean) => {
                 <UCard v-for="report in data.data" :key="report.id">
                     <template #header>
                         <div class="flex w-full items-center gap-2">
-                            <span
-                                class="text-muted text-lg leading-none font-light text-nowrap"
-                            >
+                            <span class="text-muted text-lg leading-none font-light text-nowrap">
                                 #{{ report.id }}
                             </span>
                             <UBadge
                                 :label="report.isResolved ? 'Closed' : 'Open'"
                                 :icon="
-                                    report.isResolved
-                                        ? 'lucide:circle-slash'
-                                        : 'lucide:circle-dot'
+                                    report.isResolved ? 'lucide:circle-slash' : 'lucide:circle-dot'
                                 "
-                                :color="
-                                    report.isResolved ? 'neutral' : 'success'
-                                "
+                                :color="report.isResolved ? 'neutral' : 'success'"
                                 variant="outline"
                                 class="rounded-full py-1.5 pr-3 pl-2.5"
                             />
@@ -116,9 +108,7 @@ const resolve = async (id: number, resolve?: boolean) => {
                                 class="text-muted text-xs"
                             />
 
-                            <div
-                                class="flex grow items-center justify-end gap-2"
-                            >
+                            <div class="flex grow items-center justify-end gap-2">
                                 <UUser
                                     :avatar="{
                                         src: report.reporter.image || undefined,
@@ -153,9 +143,7 @@ const resolve = async (id: number, resolve?: boolean) => {
                         </div>
                     </template>
 
-                    <div
-                        class="grid w-full grid-cols-1 items-start gap-4 sm:grid-cols-2"
-                    >
+                    <div class="grid w-full grid-cols-1 items-start gap-4 sm:grid-cols-2">
                         <UPageCard
                             :to="`/@${report.reportee.id}`"
                             target="_blank"

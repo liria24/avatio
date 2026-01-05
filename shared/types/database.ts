@@ -27,11 +27,7 @@ import {
     userReports,
     userShops,
 } from '@@/database/schema'
-import {
-    createInsertSchema,
-    createSelectSchema,
-    createUpdateSchema,
-} from 'drizzle-zod'
+import { createInsertSchema, createSelectSchema, createUpdateSchema } from 'drizzle-zod'
 import type { Serialize } from 'nitropack/types'
 import { z } from 'zod'
 
@@ -75,10 +71,7 @@ export const userUpdateSchema = createUpdateSchema(user, {
         schema
             .min(3, 'ID は 3 文字以上必要です。')
             .max(64, 'ID は最大 64 文字です。')
-            .refine(
-                (val) => /^[a-zA-Z0-9_-]+$/.test(val),
-                '使用できない文字が含まれています。'
-            ),
+            .refine((val) => /^[a-zA-Z0-9_-]+$/.test(val), '使用できない文字が含まれています。'),
     name: (schema) =>
         schema
             .min(1, 'ユーザー名は 1 文字以上必要です。')
@@ -130,25 +123,19 @@ export type Item = z.infer<typeof itemsPublicSchema> & {
     }[]
 }
 
-export const setupItemShapekeysSelectSchema =
-    createSelectSchema(setupItemShapekeys)
-export const setupItemShapekeysInsertSchema = createInsertSchema(
-    setupItemShapekeys,
-    {
-        name: (schema) => schema.min(1).max(64),
-    }
-)
-export const setupItemShapekeysPublicSchema =
-    setupItemShapekeysSelectSchema.pick({
-        name: true,
-        value: true,
-    })
+export const setupItemShapekeysSelectSchema = createSelectSchema(setupItemShapekeys)
+export const setupItemShapekeysInsertSchema = createInsertSchema(setupItemShapekeys, {
+    name: (schema) => schema.min(1).max(64),
+})
+export const setupItemShapekeysPublicSchema = setupItemShapekeysSelectSchema.pick({
+    name: true,
+    value: true,
+})
 export type SetupItemShapekey = z.infer<typeof setupItemShapekeysPublicSchema>
 
 export const setupItemsSelectSchema = createSelectSchema(setupItems)
 export const setupItemsInsertSchema = createInsertSchema(setupItems, {
-    itemId: () =>
-        z.union([z.string(), z.number()]).transform((val) => val.toString()),
+    itemId: () => z.union([z.string(), z.number()]).transform((val) => val.toString()),
     note: (schema) => schema.max(300, 'ノートは最大 300 文字です。').optional(),
 }).extend({
     shapekeys: setupItemShapekeysInsertSchema
@@ -182,9 +169,7 @@ export type SetupItem = z.infer<typeof setupItemsPublicSchema> & {
 export const setupTagsSelectSchema = createSelectSchema(setupTags)
 export const setupTagsInsertSchema = createInsertSchema(setupTags, {
     tag: (schema) =>
-        schema
-            .min(1, 'タグは 1 文字以上必要です。')
-            .max(32, 'タグは最大 32 文字です。'),
+        schema.min(1, 'タグは 1 文字以上必要です。').max(32, 'タグは最大 32 文字です。'),
 })
 export const setupTagsPublicSchema = setupTagsSelectSchema.pick({
     tag: true,
@@ -223,8 +208,7 @@ export const setupsInsertSchema = createInsertSchema(setups, {
         schema
             .min(1, 'セットアップ名は 1 文字以上必要です。')
             .max(64, 'セットアップ名は最大 64 文字です。'),
-    description: (schema) =>
-        schema.max(512, '説明文は最大 512 文字です。').optional(),
+    description: (schema) => schema.max(512, '説明文は最大 512 文字です。').optional(),
 })
     .omit({ userId: true })
     .extend({
@@ -250,8 +234,7 @@ export const setupsUpdateSchema = createUpdateSchema(setups, {
             .min(1, 'セットアップ名は 1 文字以上必要です。')
             .max(64, 'セットアップ名は最大 64 文字です。')
             .optional(),
-    description: (schema) =>
-        schema.max(512, '説明文は最大 512 文字です。').optional(),
+    description: (schema) => schema.max(512, '説明文は最大 512 文字です。').optional(),
 }).extend({
     tags: setupTagsInsertSchema
         .omit({ setupId: true })
@@ -274,8 +257,7 @@ export const setupsClientFormSchema = createInsertSchema(setups, {
         schema
             .min(1, 'セットアップ名は 1 文字以上必要です。')
             .max(64, 'セットアップ名は最大 64 文字です。'),
-    description: (schema) =>
-        schema.max(512, '説明文は最大 512 文字です。').optional(),
+    description: (schema) => schema.max(512, '説明文は最大 512 文字です。').optional(),
 })
     .pick({
         name: true,
@@ -416,8 +398,7 @@ export type Feedback = z.infer<typeof feedbacksPublicSchema>
 
 export const itemReportsSelectSchema = createSelectSchema(itemReports)
 export const itemReportsInsertSchema = createInsertSchema(itemReports, {
-    comment: (schema) =>
-        schema.max(1000, 'コメントは最大 1000 文字です。').optional(),
+    comment: (schema) => schema.max(1000, 'コメントは最大 1000 文字です。').optional(),
 })
     .pick({
         itemId: true,
@@ -446,8 +427,7 @@ export type ItemReport = z.infer<typeof itemReportsPublicSchema>
 
 export const setupReportsSelectSchema = createSelectSchema(setupReports)
 export const setupReportsInsertSchema = createInsertSchema(setupReports, {
-    comment: (schema) =>
-        schema.max(1000, 'コメントは最大 1000 文字です。').optional(),
+    comment: (schema) => schema.max(1000, 'コメントは最大 1000 文字です。').optional(),
 })
     .pick({
         setupId: true,
@@ -458,14 +438,7 @@ export const setupReportsInsertSchema = createInsertSchema(setupReports, {
         other: true,
         comment: true,
     })
-    .refine(
-        (data) =>
-            data.spam ||
-            data.hate ||
-            data.infringe ||
-            data.badImage ||
-            data.other
-    )
+    .refine((data) => data.spam || data.hate || data.infringe || data.badImage || data.other)
 export const setupReportsUpdateSchema = createUpdateSchema(setupReports)
 export const setupReportsPublicSchema = setupReportsSelectSchema
     .pick({

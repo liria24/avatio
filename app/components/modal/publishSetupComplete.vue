@@ -35,12 +35,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <UModal
-        v-model:open="open"
-        title="投稿が完了しました！"
-        :close="false"
-        :dismissible="false"
-    >
+    <UModal v-model:open="open" title="投稿が完了しました！" :close="false" :dismissible="false">
         <template #body>
             <div v-if="data" class="flex flex-col items-center gap-3">
                 <div
@@ -70,11 +65,7 @@ onMounted(() => {
                         @click="copy(link)"
                     />
                     <DropdownMenuShareSetup :setup="data">
-                        <UButton
-                            icon="lucide:share-2"
-                            variant="ghost"
-                            size="sm"
-                        />
+                        <UButton icon="lucide:share-2" variant="ghost" size="sm" />
                     </DropdownMenuShareSetup>
                 </div>
             </div>

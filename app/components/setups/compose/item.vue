@@ -14,12 +14,7 @@ interface Props {
 }
 const props = defineProps<Props>()
 
-const emit = defineEmits([
-    'change-category',
-    'remove-item',
-    'shapekey-add',
-    'shapekey-remove',
-])
+const emit = defineEmits(['change-category', 'remove-item', 'shapekey-add', 'shapekey-remove'])
 
 const { itemCategory } = useAppConfig()
 
@@ -32,11 +27,7 @@ const inputShapekeyValue = ref(0)
         <div
             class="draggable hover:bg-elevated grid h-full cursor-move rounded-md px-1 py-2 transition-colors"
         >
-            <Icon
-                name="lucide:grip-vertical"
-                size="18"
-                class="text-muted shrink-0 self-center"
-            />
+            <Icon name="lucide:grip-vertical" size="18" class="text-muted shrink-0 self-center" />
         </div>
 
         <div class="flex grow flex-col gap-2">
@@ -58,10 +49,7 @@ const inputShapekeyValue = ref(0)
                         class="aspect-square size-18 shrink-0 rounded-lg object-cover"
                     >
                         <img v-if="isLoaded" v-bind="imgAttrs" :src="src" />
-                        <USkeleton
-                            v-else
-                            class="aspect-square size-18 shrink-0 rounded-lg"
-                        />
+                        <USkeleton v-else class="aspect-square size-18 shrink-0 rounded-lg" />
                     </NuxtImg>
                 </NuxtLink>
 
@@ -72,11 +60,7 @@ const inputShapekeyValue = ref(0)
                             text="BOOTH"
                             :delay-duration="50"
                         >
-                            <Icon
-                                name="avatio:booth"
-                                size="16"
-                                class="text-muted shrink-0"
-                            />
+                            <Icon name="avatio:booth" size="16" class="text-muted shrink-0" />
                         </UTooltip>
 
                         <UTooltip
@@ -92,12 +76,7 @@ const inputShapekeyValue = ref(0)
                         </UTooltip>
 
                         <NuxtLink
-                            :to="
-                                computeItemUrl(
-                                    props.item.id,
-                                    props.item.platform
-                                )
-                            "
+                            :to="computeItemUrl(props.item.id, props.item.platform)"
                             target="_blank"
                             class="text-toned line-clamp-2 py-1 text-sm"
                         >
@@ -107,12 +86,9 @@ const inputShapekeyValue = ref(0)
                     <div class="flex items-center gap-2">
                         <UPopover
                             v-if="
-                                [
-                                    'avatar',
-                                    'hair',
-                                    'clothing',
-                                    'accessory',
-                                ].includes(props.item.category)
+                                ['avatar', 'hair', 'clothing', 'accessory'].includes(
+                                    props.item.category
+                                )
                             "
                         >
                             <UButton
@@ -122,31 +98,20 @@ const inputShapekeyValue = ref(0)
                             />
 
                             <template #content>
-                                <div
-                                    class="flex flex-col items-center gap-2 p-2"
-                                >
-                                    <p
-                                        v-if="!shapekeys?.length"
-                                        class="text-muted p-3 text-sm"
-                                    >
+                                <div class="flex flex-col items-center gap-2 p-2">
+                                    <p v-if="!shapekeys?.length" class="text-muted p-3 text-sm">
                                         シェイプキーがありません
                                     </p>
                                     <template v-else>
                                         <div
-                                            v-for="(
-                                                shapekey, index
-                                            ) in shapekeys"
+                                            v-for="(shapekey, index) in shapekeys"
                                             :key="`shapekey-${index}`"
                                             class="flex w-full items-center gap-3"
                                         >
-                                            <span
-                                                class="text-muted grow text-right text-sm"
-                                            >
+                                            <span class="text-muted grow text-right text-sm">
                                                 {{ shapekey.name }}
                                             </span>
-                                            <span
-                                                class="text-toned text-sm font-semibold"
-                                            >
+                                            <span class="text-toned text-sm font-semibold">
                                                 {{ shapekey.value }}
                                             </span>
                                             <UButton
@@ -155,8 +120,7 @@ const inputShapekeyValue = ref(0)
                                                 size="sm"
                                                 @click="
                                                     emit('shapekey-remove', {
-                                                        category:
-                                                            props.item.category,
+                                                        category: props.item.category,
                                                         id: props.item.id,
                                                         index: index,
                                                     })
@@ -185,8 +149,7 @@ const inputShapekeyValue = ref(0)
                                             @click="
                                                 () => {
                                                     emit('shapekey-add', {
-                                                        category:
-                                                            props.item.category,
+                                                        category: props.item.category,
                                                         id: props.item.id,
                                                         name: inputShapekeyName,
                                                         value: inputShapekeyValue,
@@ -228,21 +191,13 @@ const inputShapekeyValue = ref(0)
                     :ui="{ content: 'w-40' }"
                 >
                     <UButton
-                        :icon="
-                            itemCategory[props.item.category]?.icon ||
-                            'lucide:box'
-                        "
+                        :icon="itemCategory[props.item.category]?.icon || 'lucide:box'"
                         variant="ghost"
                         size="sm"
                     />
                 </UDropdownMenu>
 
-                <UButton
-                    icon="lucide:x"
-                    variant="ghost"
-                    size="sm"
-                    @click="emit('remove-item')"
-                />
+                <UButton icon="lucide:x" variant="ghost" size="sm" @click="emit('remove-item')" />
             </div>
 
             <UTextarea

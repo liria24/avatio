@@ -7,64 +7,57 @@ export default defineApi(
         yesterday.setDate(yesterday.getDate() - 1)
 
         // データ取得を並列実行
-        const [feedbacksData, setupReportsData, userReportsData] =
-            await Promise.all([
-                db.query.feedbacks
-                    .findMany({
-                        where: {
-                            isClosed: { eq: false },
-                            createdAt: { gte: yesterday, lt: now },
-                        },
-                        orderBy: {
-                            createdAt: 'desc',
-                        },
-                        columns: {
-                            id: true,
-                            createdAt: true,
-                            fingerprint: true,
-                            contextPath: true,
-                            comment: true,
-                        },
-                    })
-                    .catch((error) => {
-                        console.error('Failed to fetch feedback data:', error)
-                        return null
-                    }),
-                db.query.setupReports
-                    .findMany({
-                        where: {
-                            isResolved: { eq: false },
-                            createdAt: { gte: yesterday, lt: now },
-                        },
-                        orderBy: {
-                            createdAt: 'desc',
-                        },
-                    })
-                    .catch((error) => {
-                        console.error(
-                            'Failed to fetch setup report data:',
-                            error
-                        )
-                        return null
-                    }),
-                db.query.userReports
-                    .findMany({
-                        where: {
-                            isResolved: { eq: false },
-                            createdAt: { gte: yesterday, lt: now },
-                        },
-                        orderBy: {
-                            createdAt: 'desc',
-                        },
-                    })
-                    .catch((error) => {
-                        console.error(
-                            'Failed to fetch user report data:',
-                            error
-                        )
-                        return null
-                    }),
-            ])
+        const [feedbacksData, setupReportsData, userReportsData] = await Promise.all([
+            db.query.feedbacks
+                .findMany({
+                    where: {
+                        isClosed: { eq: false },
+                        createdAt: { gte: yesterday, lt: now },
+                    },
+                    orderBy: {
+                        createdAt: 'desc',
+                    },
+                    columns: {
+                        id: true,
+                        createdAt: true,
+                        fingerprint: true,
+                        contextPath: true,
+                        comment: true,
+                    },
+                })
+                .catch((error) => {
+                    console.error('Failed to fetch feedback data:', error)
+                    return null
+                }),
+            db.query.setupReports
+                .findMany({
+                    where: {
+                        isResolved: { eq: false },
+                        createdAt: { gte: yesterday, lt: now },
+                    },
+                    orderBy: {
+                        createdAt: 'desc',
+                    },
+                })
+                .catch((error) => {
+                    console.error('Failed to fetch setup report data:', error)
+                    return null
+                }),
+            db.query.userReports
+                .findMany({
+                    where: {
+                        isResolved: { eq: false },
+                        createdAt: { gte: yesterday, lt: now },
+                    },
+                    orderBy: {
+                        createdAt: 'desc',
+                    },
+                })
+                .catch((error) => {
+                    console.error('Failed to fetch user report data:', error)
+                    return null
+                }),
+        ])
 
         const response = {
             feedback: {

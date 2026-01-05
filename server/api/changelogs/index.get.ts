@@ -26,9 +26,7 @@ export default defineApi<PaginationResponse<Changelog[]>>(
             },
             where: {
                 title: q ? { ilike: `%${q}%` } : undefined,
-                authors: userId
-                    ? { userId: { eq: userId || undefined } }
-                    : undefined,
+                authors: userId ? { userId: { eq: userId || undefined } } : undefined,
             },
             columns: {
                 slug: true,

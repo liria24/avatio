@@ -36,16 +36,11 @@ const themeMenu = [
             <Meta name="lang" content="ja" />
         </Head>
         <Body>
-            <UContainer
-                class="flex min-h-dvh flex-col items-center gap-6 pt-6 md:gap-8"
-            >
+            <UContainer class="flex min-h-dvh flex-col items-center gap-6 pt-6 md:gap-8">
                 <header class="flex w-full items-center justify-between gap-6">
                     <div class="flex items-center gap-3">
                         <NuxtLinkLocale to="/">
-                            <LogoAvatio
-                                class="w-24 sm:w-28"
-                                aria-label="Avatio"
-                            />
+                            <LogoAvatio class="w-24 sm:w-28" aria-label="Avatio" />
                         </NuxtLinkLocale>
 
                         <UButton
@@ -70,9 +65,7 @@ const themeMenu = [
                             <UTooltip text="テーマ" :delay-duration="50">
                                 <UButton
                                     :icon="
-                                        colorMode.value === 'dark'
-                                            ? 'lucide:moon'
-                                            : 'lucide:sun'
+                                        colorMode.value === 'dark' ? 'lucide:moon' : 'lucide:sun'
                                     "
                                     aria-label="テーマ"
                                     variant="ghost"
@@ -81,11 +74,7 @@ const themeMenu = [
                         </UDropdownMenu>
 
                         <template #fallback>
-                            <UButton
-                                icon="lucide:palette"
-                                aria-label="テーマ"
-                                variant="ghost"
-                            />
+                            <UButton icon="lucide:palette" aria-label="テーマ" variant="ghost" />
                         </template>
                     </ClientOnly>
                 </header>

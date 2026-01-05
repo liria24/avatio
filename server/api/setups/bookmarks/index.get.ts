@@ -21,8 +21,7 @@ const query = z.object({
 
 export default defineApi<PaginationResponse<Bookmark[]>>(
     async ({ session }) => {
-        const { q, orderBy, sort, userId, setupId, tag, page, limit } =
-            await validateQuery(query)
+        const { q, orderBy, sort, userId, setupId, tag, page, limit } = await validateQuery(query)
 
         const offset = (page - 1) * limit
 
@@ -37,23 +36,16 @@ export default defineApi<PaginationResponse<Bookmark[]>>(
                     AND: [
                         { id: { eq: session!.user.id } },
                         {
-                            OR: [
-                                { banned: { eq: false } },
-                                { banned: { isNull: true } },
-                            ],
+                            OR: [{ banned: { eq: false } }, { banned: { isNull: true } }],
                         },
                     ],
                 },
                 setup: {
                     hidAt: { isNull: true },
-                    id: setupId
-                        ? { in: Array.isArray(setupId) ? setupId : [setupId] }
-                        : undefined,
+                    id: setupId ? { in: Array.isArray(setupId) ? setupId : [setupId] } : undefined,
                     userId: userId ? { eq: userId } : undefined,
                     name: q ? { ilike: `%${q}%` } : undefined,
-                    tags: tag
-                        ? { tag: { in: Array.isArray(tag) ? tag : [tag] } }
-                        : undefined,
+                    tags: tag ? { tag: { in: Array.isArray(tag) ? tag : [tag] } } : undefined,
                 },
             },
             orderBy: {
@@ -131,10 +123,7 @@ export default defineApi<PaginationResponse<Bookmark[]>>(
                         coauthors: {
                             where: {
                                 user: {
-                                    OR: [
-                                        { banned: { eq: false } },
-                                        { banned: { isNull: true } },
-                                    ],
+                                    OR: [{ banned: { eq: false } }, { banned: { isNull: true } }],
                                 },
                             },
                             columns: {

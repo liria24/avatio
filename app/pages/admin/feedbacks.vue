@@ -9,9 +9,7 @@ const toast = useToast()
 const { data, status, refresh } = await useFetch('/api/feedbacks', {
     dedupe: 'defer',
     getCachedData: (key, nuxtApp, ctx) =>
-        ctx.cause !== 'initial'
-            ? undefined
-            : nuxtApp.payload.data[key] || nuxtApp.static.data[key],
+        ctx.cause !== 'initial' ? undefined : nuxtApp.payload.data[key] || nuxtApp.static.data[key],
 })
 
 const closeFeedback = async (feedbackId: number) => {
@@ -102,15 +100,10 @@ const openFeedback = async (feedbackId: number) => {
 
         <template #body>
             <div v-if="!data?.length">
-                <p class="text-muted text-center text-sm">
-                    フィードバックはありません。
-                </p>
+                <p class="text-muted text-center text-sm">フィードバックはありません。</p>
             </div>
 
-            <div
-                v-else
-                class="flex max-h-96 flex-col gap-2 overflow-y-auto p-1"
-            >
+            <div v-else class="flex max-h-96 flex-col gap-2 overflow-y-auto p-1">
                 <div
                     v-for="feedback in data"
                     :key="feedback.id"
@@ -118,14 +111,10 @@ const openFeedback = async (feedbackId: number) => {
                 >
                     <div class="flex items-center gap-2">
                         <div class="flex grow items-center gap-2">
-                            <p
-                                class="text-muted text-xs leading-none text-nowrap"
-                            >
+                            <p class="text-muted text-xs leading-none text-nowrap">
                                 {{ feedback.fingerprint }}
                             </p>
-                            <p
-                                class="text-muted text-xs leading-none text-nowrap"
-                            >
+                            <p class="text-muted text-xs leading-none text-nowrap">
                                 {{ feedback.contextPath }}
                             </p>
                         </div>
@@ -148,22 +137,15 @@ const openFeedback = async (feedbackId: number) => {
                                     icon: feedback.isClosed
                                         ? 'lucide:circle-dot'
                                         : 'lucide:circle-slash',
-                                    label: feedback.isClosed
-                                        ? 'オープン'
-                                        : 'クローズ',
+                                    label: feedback.isClosed ? 'オープン' : 'クローズ',
                                     onSelect: () => {
-                                        if (feedback.isClosed)
-                                            openFeedback(feedback.id)
+                                        if (feedback.isClosed) openFeedback(feedback.id)
                                         else closeFeedback(feedback.id)
                                     },
                                 },
                             ]"
                         >
-                            <UButton
-                                icon="lucide:menu"
-                                variant="ghost"
-                                size="xs"
-                            />
+                            <UButton icon="lucide:menu" variant="ghost" size="xs" />
                         </UDropdownMenu>
                     </div>
                     <p class="text-toned text-sm">{{ feedback.comment }}</p>

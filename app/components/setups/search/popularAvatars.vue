@@ -13,9 +13,7 @@ const { data: popularAvatars } = await useFetch('/api/items/popular-avatars', {
     <div class="flex flex-col gap-6">
         <div class="flex items-center gap-2">
             <Icon name="lucide:person-standing" size="22" class="text-muted" />
-            <h2 class="text-xl leading-none font-semibold text-nowrap">
-                人気のアバターから検索
-            </h2>
+            <h2 class="text-xl leading-none font-semibold text-nowrap">人気のアバターから検索</h2>
         </div>
 
         <div class="flex flex-wrap items-center justify-center gap-5">
@@ -29,9 +27,7 @@ const { data: popularAvatars } = await useFetch('/api/items/popular-avatars', {
                 <div
                     class="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100"
                 >
-                    <span
-                        class="p-1 text-center text-sm font-semibold text-white"
-                    >
+                    <span class="p-1 text-center text-sm font-semibold text-white">
                         {{ avatar.niceName || avatarShortName(avatar.name) }}
                     </span>
                 </div>
@@ -50,10 +46,7 @@ const { data: popularAvatars } = await useFetch('/api/items/popular-avatars', {
                     class="aspect-square shrink-0 rounded-lg object-cover"
                 >
                     <img v-if="isLoaded" v-bind="imgAttrs" :src="src" />
-                    <USkeleton
-                        v-else
-                        class="aspect-square shrink-0 rounded-lg object-cover"
-                    />
+                    <USkeleton v-else class="aspect-square shrink-0 rounded-lg object-cover" />
                 </NuxtImg>
             </button>
         </div>

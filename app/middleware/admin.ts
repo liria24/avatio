@@ -6,6 +6,5 @@ export default defineNuxtRouteMiddleware(async () => {
         useFetch(url, { ...options, dedupe: 'defer' })
     )
 
-    if (session.value?.user?.role !== 'admin')
-        return navigateTo(localePath('/login'))
+    if (session.value?.user?.role !== 'admin') return navigateTo(localePath('/login'))
 })

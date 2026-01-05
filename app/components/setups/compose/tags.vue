@@ -36,12 +36,7 @@ const removeTag = (tag: string) => {
                 class="py-1 pr-1 pl-3"
             >
                 <template #trailing>
-                    <UButton
-                        icon="lucide:x"
-                        variant="ghost"
-                        size="xs"
-                        @click="removeTag(tag)"
-                    />
+                    <UButton icon="lucide:x" variant="ghost" size="xs" @click="removeTag(tag)" />
                 </template>
             </UBadge>
 

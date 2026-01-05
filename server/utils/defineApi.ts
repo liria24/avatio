@@ -39,10 +39,7 @@ type MergeOptions<O extends ApiOptions | undefined> = O extends undefined
 /**
  * エラーハンドリング関数
  */
-const handleError = (
-    error: unknown,
-    errorMessage = 'Internal server error'
-): never => {
+const handleError = (error: unknown, errorMessage = 'Internal server error'): never => {
     // HTTPエラーの場合はそのまま投げる
     if (error && typeof error === 'object' && 'statusCode' in error) throw error
 
@@ -105,10 +102,10 @@ const validateAccess = async (
         })
 }
 
-export default function defineApi<
-    T,
-    O extends ApiOptions = Record<string, unknown>,
->(handler: (context: ApiContext<MergeOptions<O>>) => Promise<T>, options?: O) {
+export default function defineApi<T, O extends ApiOptions = Record<string, unknown>>(
+    handler: (context: ApiContext<MergeOptions<O>>) => Promise<T>,
+    options?: O
+) {
     const mergedOptions = { ...defaultOptions, ...options } as MergeOptions<O>
 
     return defineEventHandler(async (): Promise<T> => {
