@@ -38,7 +38,7 @@
         "@stefanobartoletti/nuxt-social-share": "2.3.0",
         "@upstash/redis": "1.36.0",
         "@vercel/analytics": "1.6.1",
-        "@vercel/config": "^0.0.24",
+        "@vercel/config": "^0.0.25",
         "@vercel/edge-config": "1.4.3",
         "@vercel/functions": "3.3.4",
         "@vueuse/nuxt": "14.1.0",
