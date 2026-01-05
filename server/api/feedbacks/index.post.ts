@@ -5,40 +5,20 @@ const body = feedbacksInsertSchema.pick({
     contextPath: true,
 })
 
-const generateHash = async (): Promise<string> => {
-    const event = useEvent()
+export default defineEventHandler(async () => {
+    const { comment, contextPath } = await validateBody(body, {
+        sanitize: true,
+    })
 
-    const today = new Date().toISOString().split('T')[0]
-    const ip = getRequestIP(event)
-    const userAgent = event.headers.get('user-agent') || 'unknown'
+    const fingerprint = await getFingerprint()
 
-    const data = `${today}+${ip}+${userAgent}`
+    await db.insert(feedbacks).values({
+        fingerprint,
+        comment,
+        contextPath,
+    })
 
-    const buffer = await crypto.subtle.digest(
-        'SHA-1',
-        new TextEncoder().encode(data)
-    )
+    logger('feedback').log(`Feedback created: ${fingerprint}`)
 
-    return [...new Uint8Array(buffer)]
-        .map((b) => b.toString(16).padStart(2, '0'))
-        .join('')
-}
-
-export default defineApi(
-    async () => {
-        const { comment, contextPath } = await validateBody(body, {
-            sanitize: true,
-        })
-
-        await db.insert(feedbacks).values({
-            fingerprint: await generateHash(),
-            comment,
-            contextPath,
-        })
-
-        return null
-    },
-    {
-        errorMessage: 'Failed to post feedback.',
-    }
-)
+    return null
+})

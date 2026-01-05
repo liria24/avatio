@@ -1,3 +1,4 @@
+import { destr } from 'destr'
 import type { z } from 'zod'
 
 export const validateBody = async <T extends z.ZodTypeAny>(
@@ -10,28 +11,34 @@ export const validateBody = async <T extends z.ZodTypeAny>(
         return schema.safeParse(body)
     })
 
-    if (!result.success) {
-        console.error('Validation failed:', result.error)
-        throw result.error
-    }
+    if (!result.success)
+        throw createError({
+            statusCode: 400,
+            statusMessage: 'Validation Error',
+            data: result.error.cause,
+        })
 
     return result.data
 }
 
 export const validateFormData = async <T extends z.ZodTypeAny>(
-    schema: T,
-    transformer?: (formData: FormData) => Record<string, unknown>
+    schema: T
 ): Promise<z.infer<T>> => {
     const formData = await readFormData(useEvent())
 
-    // デフォルトはFormDataをオブジェクトに変換
-    const dataToValidate = transformer
-        ? transformer(formData)
-        : Object.fromEntries(formData.entries())
+    const dataToValidate: Record<string, unknown> = {}
+    for (const [key, value] of formData.entries()) {
+        dataToValidate[key] = destr(value)
+    }
 
     const result = schema.safeParse(dataToValidate)
 
-    if (!result.success) throw result.error
+    if (!result.success)
+        throw createError({
+            statusCode: 400,
+            statusMessage: 'Validation Error',
+            data: result.error.cause,
+        })
 
     return result.data
 }
@@ -43,7 +50,12 @@ export const validateParams = async <T extends z.ZodTypeAny>(
         schema.safeParse(body)
     )
 
-    if (!result.success) throw result.error
+    if (!result.success)
+        throw createError({
+            statusCode: 400,
+            statusMessage: 'Validation Error',
+            data: result.error.cause,
+        })
 
     return result.data
 }
@@ -55,7 +67,12 @@ export const validateQuery = async <T extends z.ZodTypeAny>(
         schema.safeParse(query)
     )
 
-    if (!result.success) throw result.error
+    if (!result.success)
+        throw createError({
+            statusCode: 400,
+            statusMessage: 'Validation Error',
+            data: result.error.cause,
+        })
 
     return result.data
 }

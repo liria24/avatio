@@ -59,6 +59,18 @@ export const relations = defineRelations(schema, (r) => ({
             from: r.user.id,
             to: r.changelogAuthors.userId,
         }),
+        drafts: r.many.setupDrafts({
+            from: r.user.id,
+            to: r.setupDrafts.userId,
+        }),
+        follows: r.many.followUsers({
+            from: r.user.id,
+            to: r.followUsers.userId,
+        }),
+        followers: r.many.followUsers({
+            from: r.user.id,
+            to: r.followUsers.targetUserId,
+        }),
     },
     account: {
         user: r.one.user({
@@ -213,6 +225,18 @@ export const relations = defineRelations(schema, (r) => ({
         }),
         user: r.one.user({
             from: r.setupCoauthors.userId,
+            to: r.user.id,
+            optional: false,
+        }),
+    },
+    followUsers: {
+        user: r.one.user({
+            from: r.followUsers.userId,
+            to: r.user.id,
+            optional: false,
+        }),
+        targetUser: r.one.user({
+            from: r.followUsers.targetUserId,
             to: r.user.id,
             optional: false,
         }),

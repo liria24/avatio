@@ -432,6 +432,35 @@ export const setupCoauthors = pgTable(
 
 export const personalSchema = pgSchema('personal')
 
+export const followUsers = personalSchema.table(
+    'follow_users',
+    {
+        id: integer().primaryKey().generatedAlwaysAsIdentity(),
+        createdAt: timestamp('created_at').defaultNow().notNull(),
+        userId: text('user_id').notNull(),
+        targetUserId: text('target_user_id').notNull(),
+    },
+    (table) => [
+        index('follow_users_id_index').on(table.id),
+        index('follow_users_user_id_index').on(table.userId),
+        index('follow_users_target_user_id_index').on(table.targetUserId),
+        foreignKey({
+            name: 'follow_users_user_id_fkey',
+            columns: [table.userId],
+            foreignColumns: [user.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+        foreignKey({
+            name: 'follow_users_target_user_id_fkey',
+            columns: [table.targetUserId],
+            foreignColumns: [user.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+    ]
+)
+
 export const setupDrafts = personalSchema.table(
     'setup_drafts',
     {
@@ -520,6 +549,8 @@ export const notificationType = pgEnum('notification_type', [
     'user_role_changed',
     'user_banned',
     'user_unbanned',
+    'user_followed',
+    'setup_created',
 ])
 
 export const notifications = personalSchema.table(
