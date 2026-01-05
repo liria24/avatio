@@ -4,14 +4,19 @@
     "private": true,
     "author": "Liria",
     "type": "module",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/liria24/avatio.git"
+    },
     "scripts": {
         "build": "nuxt build",
         "dev": "nuxt dev",
         "generate": "nuxt generate",
         "preview": "nuxt preview",
         "postinstall": "nuxt prepare",
-        "drizzle:generate": "bunx drizzle-kit generate",
-        "changelogen": "bunx changelogen --hideAuthorEmail"
+        "release": "npx bumpp && npx gh release create v$(node -p \"require('./package.json').version\")",
+        "drizzle:generate": "npx drizzle-kit generate",
+        "changelogen": "npx changelogen --hideAuthorEmail"
     },
     "dependencies": {
         "@iconify-json/fluent-color": "1.2.21",
