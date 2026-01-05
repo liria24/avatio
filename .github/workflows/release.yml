@@ -6,12 +6,17 @@ on:
             - main
         types: [closed]
     workflow_dispatch:
+        inputs:
+            tag_name:
+                description: 'Release tag (e.g. v1.0.0)'
+                required: true
+                default: 'v0.0.0'
 
 jobs:
     release:
         if: |
-            github.event.pull_request.merged == true &&
-            startsWith(github.event.pull_request.title, 'v')
+            (github.event.pull_request.merged == true && startsWith(github.event.pull_request.title, 'v')) ||
+            github.event_name == 'workflow_dispatch'
         runs-on: ubuntu-slim
         permissions:
             contents: write
@@ -36,8 +41,9 @@ jobs:
             - name: Create GitHub Release
               uses: softprops/action-gh-release@v2
               with:
-                  name: ${{ github.event.pull_request.title }}
-                  tag_name: ${{ github.event.pull_request.title }}
+                  tag_name: ${{ github.event.pull_request.title || github.event.inputs.tag_name }}
+                  name: ${{ github.event.pull_request.title || github.event.inputs.tag_name }}
                   body: ${{ env.CHANGELOG_BODY }}
+                  generate_release_notes: false
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
