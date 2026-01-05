@@ -2,8 +2,8 @@
 import type { NavigationMenuItem } from '@nuxt/ui'
 
 const { app } = useAppConfig()
-const { $session } = useNuxtApp()
-const session = await $session()
+const { getSession } = useAuth()
+const session = await getSession()
 
 const title = 'Avatio'
 

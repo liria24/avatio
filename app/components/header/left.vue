@@ -1,6 +1,6 @@
 <script setup lang="ts">
-const { $session } = useNuxtApp()
-const session = await $session()
+const { getSession } = useAuth()
+const session = await getSession()
 </script>
 
 <template>

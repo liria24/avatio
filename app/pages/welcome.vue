@@ -4,8 +4,8 @@ definePageMeta({
     layout: 'minimal',
 })
 
-const { $session } = useNuxtApp()
-const session = await $session()
+const { getSession } = useAuth()
+const session = await getSession()
 const toast = useToast()
 
 const input = ref<string>(session.value?.user.username || '')
@@ -35,15 +35,20 @@ const updateId = async (username: string) => {
 }
 
 defineSeo({
-    title: 'Avatioにようこそ！',
+    title: 'Avatioにようこそ',
 })
 </script>
 
 <template>
-    <div class="flex flex-col items-center gap-6">
-        <h1 class="text-2xl font-medium text-nowrap">Avatioにようこそ！</h1>
+    <div class="mx-auto flex h-full max-w-sm flex-col items-center justify-center gap-6 pb-28">
+        <h1 class="mb-4 text-4xl font-bold text-nowrap">Avatio にようこそ</h1>
 
-        <InputUsername v-model="input" v-model:available="available" />
+        <InputUsername
+            v-model="input"
+            v-model:available="available"
+            :ui="{ input: { variant: 'soft', size: 'lg' } }"
+            class="w-full"
+        />
 
         <UButton
             label="ユーザーIDを変更"
@@ -52,6 +57,7 @@ defineSeo({
             size="lg"
             :disabled="!available"
             loading-auto
+            class="rounded-xl px-4"
             @click="updateId(input)"
         />
     </div>

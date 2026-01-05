@@ -3,19 +3,15 @@ definePageMeta({
     middleware: 'session',
 })
 
-const { $authClient, $logout, $multiSession } = useNuxtApp()
-const sessions = await $multiSession()
-const route = useRoute()
+const { auth, signOut, getSessions } = useAuth()
+const sessions = await getSessions()
 const toast = useToast()
-
-const query = route.query
-const changeUserId = query.changeUserId
 
 const modalDeleteUser = ref(false)
 
 const deleteUser = async () => {
     try {
-        await $authClient.deleteUser({ callbackURL: '/' })
+        await auth.deleteUser({ callbackURL: '/' })
 
         toast.add({
             icon: 'lucide:check',
@@ -45,7 +41,7 @@ defineSeo({
     <div class="flex flex-col gap-6">
         <h1 class="text-lg font-medium text-nowrap">ユーザー設定</h1>
 
-        <SettingProfile :change-user-id="!!changeUserId" />
+        <SettingProfile />
 
         <SettingShop />
 
@@ -66,12 +62,12 @@ defineSeo({
                         label="すべてのデバイスからログアウト"
                         color="neutral"
                         variant="subtle"
-                        @click="$logout"
+                        @click="auth.revokeOtherSessions()"
                     />
                 </div>
 
                 <div
-                    v-if="sessions.length > 1"
+                    v-if="(sessions?.length || 0) > 1"
                     class="flex w-full items-center justify-between gap-2"
                 >
                     <div class="flex flex-col gap-1">
@@ -84,7 +80,7 @@ defineSeo({
                         label="すべてログアウト"
                         color="neutral"
                         variant="subtle"
-                        @click="$logout"
+                        @click="signOut()"
                     />
                 </div>
             </div>

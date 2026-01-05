@@ -15,8 +15,8 @@ const props = defineProps<Props>()
 
 const toast = useToast()
 const overlay = useOverlay()
-const { $session } = useNuxtApp()
-const session = await $session()
+const { getSession } = useAuth()
+const session = await getSession()
 
 const modalLogin = overlay.create(LazyModalLogin)
 const modalHide = overlay.create(LazyModalSetupHide, {

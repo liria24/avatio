@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import { LazyModalLogin } from '#components'
 
-const { $session, $multiSession } = useNuxtApp()
-const session = await $session()
-const sessions = await $multiSession()
+const { getSession, getSessions } = useAuth()
+const session = await getSession()
+const sessions = await getSessions()
 const route = useRoute()
 const overlay = useOverlay()
 

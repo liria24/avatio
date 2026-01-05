@@ -1,10 +1,8 @@
 export default defineNuxtRouteMiddleware(async () => {
-    const { $authClient } = useNuxtApp()
+    const { getSession } = useAuth()
     const localePath = useLocalePath()
 
-    const { data: session } = await $authClient.useSession((url, options) =>
-        useFetch(url, { ...options, dedupe: 'defer' })
-    )
+    const session = await getSession()
 
     if (!session.value) return navigateTo(localePath('/login'))
 })

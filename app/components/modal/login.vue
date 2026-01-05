@@ -3,15 +3,9 @@ const emit = defineEmits(['close'])
 
 const route = useRoute()
 const localePath = useLocalePath()
-const { $login } = useNuxtApp()
+const { signIn } = useAuth()
 
 const isInternalUpdate = ref(false)
-const signingIn = ref(false)
-
-const handleLogin = (provider: 'twitter') => {
-    signingIn.value = true
-    $login(provider)
-}
 
 // ブラウザの戻るボタンでモーダルを閉じる
 const handlePopState = () => {
@@ -42,7 +36,7 @@ onBeforeUnmount(() => {
         <template #body>
             <div class="flex flex-col gap-2">
                 <UButton
-                    :loading="signingIn"
+                    loading-auto
                     label="X (Twitter)"
                     icon="simple-icons:x"
                     block
@@ -50,7 +44,7 @@ onBeforeUnmount(() => {
                     variant="subtle"
                     color="neutral"
                     class="py-4"
-                    @click="handleLogin('twitter')"
+                    @click="signIn.twitter()"
                 />
             </div>
         </template>

@@ -1,18 +1,11 @@
 <script setup lang="ts">
-const { $login } = useNuxtApp()
-
-const signingIn = ref(false)
-
-const handleLogin = (provider: 'twitter') => {
-    signingIn.value = true
-    $login(provider)
-}
+const { signIn } = useAuth()
 
 definePageMeta({
     middleware: defineNuxtRouteMiddleware(async () => {
         const localePath = useLocalePath()
-        const { $session } = useNuxtApp()
-        const session = await $session()
+        const { getSession } = useAuth()
+        const session = await getSession()
         if (session.value) return navigateTo(localePath('/'))
     }),
 })
@@ -32,14 +25,14 @@ defineSeo({
 
             <div class="flex flex-col gap-2">
                 <UButton
-                    :loading="signingIn"
+                    loading-auto
                     label="X (Twitter) で続行"
                     icon="simple-icons:x"
                     block
                     size="lg"
                     variant="subtle"
                     color="neutral"
-                    @click="handleLogin('twitter')"
+                    @click="signIn.twitter()"
                 />
             </div>
 
