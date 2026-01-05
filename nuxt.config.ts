@@ -20,22 +20,22 @@ export default defineNuxtConfig({
     devtools: { enabled: true, timeline: { enabled: true } },
 
     modules: [
-        '@nuxt/eslint',
         '@nuxt/ui',
         '@nuxt/image',
+        '@nuxt/content',
+        '@nuxt/hints',
+        '@nuxt/eslint',
         '@nuxtjs/device',
         '@nuxtjs/i18n',
-        '@nuxt/content',
         '@nuxtjs/robots',
         '@nuxtjs/sitemap',
         '@pinia/nuxt',
-        '@stefanobartoletti/nuxt-social-share',
         '@vueuse/nuxt',
+        'motion-v/nuxt',
+        '@stefanobartoletti/nuxt-social-share',
         'nuxt-link-checker',
         'nuxt-schema-org',
         'nuxt-seo-utils',
-        '@nuxt/hints',
-        'motion-v/nuxt',
     ],
 
     plugins: [{ src: '~/plugins/axe.client.ts', mode: 'client' }],
@@ -67,12 +67,6 @@ export default defineNuxtConfig({
                 'CDN-Cache-Control': `max-age=${60 * 60 * 24}`,
             },
         },
-        '/api/items/extract-item-name': {
-            headers: {
-                'Cache-Control': `max-age=${0}`,
-                'CDN-Cache-Control': `max-age=${0}`,
-            },
-        },
         '/api/items/owned-avatars': {
             headers: {
                 'Cache-Control': `max-age=${60 * 10}`,
@@ -85,7 +79,7 @@ export default defineNuxtConfig({
                 'CDN-Cache-Control': `max-age=${60 * 60 * 24}`,
             },
         },
-        '/api/setups/tag': {
+        '/api/setups/tags': {
             headers: {
                 'Cache-Control': `max-age=${60}`,
                 'CDN-Cache-Control': `max-age=${60 * 60}`,

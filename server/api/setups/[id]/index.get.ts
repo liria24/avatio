@@ -28,7 +28,7 @@ const getSetup = defineCachedFunction(
             with: {
                 user: {
                     columns: {
-                        id: true,
+                        username: true,
                         createdAt: true,
                         name: true,
                         image: true,
@@ -129,7 +129,7 @@ const getSetup = defineCachedFunction(
                     with: {
                         user: {
                             columns: {
-                                id: true,
+                                username: true,
                                 createdAt: true,
                                 name: true,
                                 image: true,
@@ -175,7 +175,7 @@ const getSetup = defineCachedFunction(
 
         if (
             data.hidAt &&
-            session?.user.id !== data.user.id &&
+            session?.user.username !== data.user.username &&
             session?.user.role !== 'admin'
         )
             throw createError({

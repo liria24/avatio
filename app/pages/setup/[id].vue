@@ -93,7 +93,7 @@ if (data.value) {
             author: {
                 '@type': 'Person',
                 name: data.value.user.name,
-                url: `/@${data.value.user.id}`,
+                url: `/@${data.value.user.username}`,
             },
             primaryImageOfPage: data.value.images?.[0]?.url,
             breadcrumb: defineBreadcrumb({
@@ -116,7 +116,7 @@ if (data.value) {
     >
         <UBreadcrumb
             :items="[
-                { label: data.user.name, to: `/@${data.user.id}` },
+                { label: data.user.name, to: `/@${data.user.username}` },
                 { label: data.name },
             ]"
             :ui="{ link: 'text-xs', separatorIcon: 'size-4' }"

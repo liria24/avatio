@@ -9,7 +9,7 @@ const open = defineModel<boolean>({
 
 const searchTerm = ref('')
 
-const { data: tags, status } = useFetch('/api/setups/tag', {
+const { data: tags, status } = useFetch('/api/setups/tags', {
     key: 'tag-search',
     default: () => [],
     getCachedData: (key, nuxtApp, ctx) =>

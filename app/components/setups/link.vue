@@ -189,13 +189,13 @@ watch(colorMode, (newMode) => {
                 :style="gradientStyle"
             >
                 <span
-                    class="md:text-md line-clamp-2 translate-y-[1rem] text-sm font-medium break-all text-white opacity-0 duration-200 group-hover:translate-y-0 group-hover:opacity-100"
+                    class="md:text-md line-clamp-2 translate-y-4 text-sm font-medium break-all text-white opacity-0 duration-200 group-hover:translate-y-0 group-hover:opacity-100"
                 >
                     {{ setup.name }}
                 </span>
 
                 <div
-                    class="flex translate-y-[1rem] items-center gap-1 opacity-0 duration-200 group-hover:translate-y-0 group-hover:opacity-100"
+                    class="flex translate-y-4 items-center gap-1 opacity-0 duration-200 group-hover:translate-y-0 group-hover:opacity-100"
                 >
                     <Icon
                         name="lucide:person-standing"
@@ -281,7 +281,7 @@ watch(colorMode, (newMode) => {
 
                     <template #content>
                         <NuxtLink
-                            :to="`/@${setup.user.id}`"
+                            :to="`/@${setup.user.username}`"
                             class="flex py-2 pr-3 pl-2"
                         >
                             <UUser
@@ -326,7 +326,7 @@ watch(colorMode, (newMode) => {
 
                         <template #content>
                             <NuxtLink
-                                :to="`/@${setup.user.id}`"
+                                :to="`/@${setup.user.username}`"
                                 class="flex py-2 pr-3 pl-2"
                             >
                                 <UUser

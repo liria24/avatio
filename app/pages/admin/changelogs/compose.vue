@@ -10,20 +10,22 @@ const { $session } = useNuxtApp()
 const session = await $session()
 const toast = useToast()
 
-const me = await $fetch<SerializedUser>(`/api/users/${session.value?.user.id}`)
+const me = await $fetch<SerializedUser>(
+    `/api/users/${session.value!.user.username!}`
+)
 
 const state = reactive({
     slug: '',
     title: '',
     markdown: '',
-    authors: [me.id],
+    authors: [me.username],
 })
 const authors = ref<SerializedUser[]>([me])
 
 const addAuthor = (user: SerializedUser) => {
-    if (!user?.id) return
+    if (!user?.username) return
 
-    if (authors.value.some((author) => author.id === user.id)) {
+    if (authors.value.some((author) => author.username === user.username)) {
         toast.add({
             title: '著者を重複して追加することはできません',
             color: 'warning',
@@ -34,13 +36,15 @@ const addAuthor = (user: SerializedUser) => {
     authors.value.push(user)
 }
 
-const removeAuthor = (id: string) => {
-    const index = authors.value.findIndex((author) => author.id === id)
+const removeAuthor = (username: string) => {
+    const index = authors.value.findIndex(
+        (author) => author.username === username
+    )
     if (index !== -1) authors.value.splice(index, 1)
 }
 
 watch(authors, (newAuthors) => {
-    state.authors = newAuthors.map((author) => author.id)
+    state.authors = newAuthors.map((author) => author.username)
 })
 
 const onSubmit = async () => {
@@ -67,7 +71,7 @@ const resetForm = () => {
     state.slug = ''
     state.title = ''
     state.markdown = ''
-    state.authors = [me.id]
+    state.authors = [me.username]
     authors.value = [me]
 }
 </script>
@@ -122,7 +126,7 @@ const resetForm = () => {
                         >
                             <div
                                 v-for="author in authors"
-                                :key="`author-${author.id}`"
+                                :key="`author-${author.username}`"
                                 class="ring-accented flex items-stretch gap-2 rounded-md p-2 ring-1"
                             >
                                 <div
@@ -149,7 +153,7 @@ const resetForm = () => {
                                         icon="lucide:x"
                                         variant="ghost"
                                         size="xs"
-                                        @click="removeAuthor(author.id)"
+                                        @click="removeAuthor(author.username)"
                                     />
                                 </div>
                             </div>

@@ -95,7 +95,7 @@ onBeforeRouteLeave(() => {
                 )
             "
         >
-            <NuxtLink :to="`/@${props.setup.user.id}`">
+            <NuxtLink :to="`/@${props.setup.user.username}`">
                 <UUser
                     :name="props.setup.user.name"
                     :avatar="{
@@ -202,7 +202,9 @@ onBeforeRouteLeave(() => {
                     @click="session ? toggleBookmark() : modalLogin.open()"
                 />
 
-                <template v-if="session?.user.id === props.setup.user.id">
+                <template
+                    v-if="session?.user.username === props.setup.user.username"
+                >
                     <UButton
                         :to="`/setup/compose?edit=${props.setup.id}`"
                         aria-label="編集"
@@ -265,11 +267,11 @@ onBeforeRouteLeave(() => {
             <ul class="grid gap-2 pl-1 md:grid-cols-2 lg:grid-cols-1">
                 <li
                     v-for="coAuthor in props.setup.coauthors"
-                    :key="coAuthor.user.id"
+                    :key="coAuthor.user.username"
                     class="ring-muted flex flex-col gap-1.5 rounded-lg p-2 ring-1"
                 >
                     <NuxtLink
-                        :to="`/@${coAuthor.user.id}`"
+                        :to="`/@${coAuthor.user.username}`"
                         class="flex flex-row items-center gap-2"
                     >
                         <UAvatar

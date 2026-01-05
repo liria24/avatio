@@ -1,12 +1,11 @@
-import { setupItems, setups, setupTags, user } from '@@/database/schema'
-import { and, eq, exists, ilike, inArray, isNull, or } from 'drizzle-orm'
+import { sql } from 'drizzle-orm'
 import { z } from 'zod'
 
 const query = z.object({
     q: z.string().optional(),
     orderBy: z.enum(['createdAt', 'name']).optional().default('createdAt'),
     sort: z.enum(['asc', 'desc']).optional().default('desc'),
-    userId: z.string().optional(),
+    username: z.string().optional(),
     itemId: z.union([z.string(), z.array(z.string())]).optional(),
     tag: z.union([z.string(), z.array(z.string())]).optional(),
     page: z.coerce.number().min(1).optional().default(1),
@@ -15,81 +14,14 @@ const query = z.object({
 
 export default defineApi<PaginationResponse<Setup[]>>(
     async () => {
-        const { q, orderBy, sort, userId, itemId, tag, page, limit } =
+        const { q, orderBy, sort, username, itemId, tag, page, limit } =
             await validateQuery(query)
 
         const offset = (page - 1) * limit
 
         const data = await db.query.setups.findMany({
             extras: {
-                count: db
-                    .$count(
-                        setups,
-                        and(
-                            ...[
-                                isNull(setups.hidAt),
-                                exists(
-                                    db
-                                        .select()
-                                        .from(user)
-                                        .where(
-                                            and(
-                                                eq(user.id, setups.userId),
-                                                or(
-                                                    eq(user.banned, false),
-                                                    isNull(user.banned)
-                                                )
-                                            )
-                                        )
-                                ),
-                                q ? ilike(setups.name, `%${q}%`) : undefined,
-                                userId ? eq(setups.userId, userId) : undefined,
-                                itemId
-                                    ? exists(
-                                          db
-                                              .select()
-                                              .from(setupItems)
-                                              .where(
-                                                  and(
-                                                      eq(
-                                                          setupItems.setupId,
-                                                          setups.id
-                                                      ),
-                                                      inArray(
-                                                          setupItems.itemId,
-                                                          Array.isArray(itemId)
-                                                              ? itemId
-                                                              : [itemId]
-                                                      )
-                                                  )
-                                              )
-                                      )
-                                    : undefined,
-                                tag
-                                    ? exists(
-                                          db
-                                              .select()
-                                              .from(setupTags)
-                                              .where(
-                                                  and(
-                                                      eq(
-                                                          setupTags.setupId,
-                                                          setups.id
-                                                      ),
-                                                      inArray(
-                                                          setupTags.tag,
-                                                          Array.isArray(tag)
-                                                              ? tag
-                                                              : [tag]
-                                                      )
-                                                  )
-                                              )
-                                      )
-                                    : undefined,
-                            ]
-                        )
-                    )
-                    .as('count'),
+                count: sql<number>`CAST(COUNT(*) OVER() AS INTEGER)`,
             },
             limit,
             offset,
@@ -100,9 +32,9 @@ export default defineApi<PaginationResponse<Setup[]>>(
                         { banned: { eq: false } },
                         { banned: { isNull: true } },
                     ],
+                    username: username ? { eq: username } : undefined,
                 },
                 name: q ? { ilike: `%${q}%` } : undefined,
-                userId: userId ? { eq: userId } : undefined,
                 items: {
                     itemId: itemId
                         ? { in: Array.isArray(itemId) ? itemId : [itemId] }
@@ -128,7 +60,7 @@ export default defineApi<PaginationResponse<Setup[]>>(
             with: {
                 user: {
                     columns: {
-                        id: true,
+                        username: true,
                         createdAt: true,
                         name: true,
                         image: true,
@@ -194,7 +126,7 @@ export default defineApi<PaginationResponse<Setup[]>>(
                     with: {
                         user: {
                             columns: {
-                                id: true,
+                                username: true,
                                 createdAt: true,
                                 name: true,
                                 image: true,
@@ -223,6 +155,7 @@ export default defineApi<PaginationResponse<Setup[]>>(
             tags: setup.tags.map((tag) => tag.tag),
             failedItemsCount: setup.items.filter((item) => item.item.outdated)
                 .length,
+            count: undefined,
         }))
 
         return {

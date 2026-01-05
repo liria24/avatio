@@ -2,7 +2,7 @@
 import { VueDraggable } from 'vue-draggable-plus'
 
 interface Model {
-    user: Pick<SerializedUser, 'id' | 'name' | 'image'>
+    user: Pick<SerializedUser, 'username' | 'name' | 'image'>
     note?: string | null
 }
 const coauthors = defineModel<Model[]>({
@@ -12,9 +12,13 @@ const coauthors = defineModel<Model[]>({
 const toast = useToast()
 
 const addCoauthor = (user: SerializedUser) => {
-    if (!user?.id) return
+    if (!user?.username) return
 
-    if (coauthors.value.some((coauthor) => coauthor.user.id === user.id)) {
+    if (
+        coauthors.value.some(
+            (coauthor) => coauthor.user.username === user.username
+        )
+    ) {
         toast.add({
             title: '共同作者を重複して追加することはできません',
             color: 'warning',
@@ -28,9 +32,9 @@ const addCoauthor = (user: SerializedUser) => {
     })
 }
 
-const removeCoauthor = (id: string) => {
+const removeCoauthor = (username: string) => {
     const index = coauthors.value.findIndex(
-        (coauthor) => coauthor.user.id === id
+        (coauthor) => coauthor.user.username === username
     )
     if (index !== -1) {
         coauthors.value.splice(index, 1)
@@ -51,7 +55,7 @@ const removeCoauthor = (id: string) => {
             >
                 <div
                     v-for="coauthor in coauthors"
-                    :key="`coauthor-${coauthor.user.id}`"
+                    :key="`coauthor-${coauthor.user.username}`"
                     class="ring-accented flex items-stretch gap-2 rounded-md p-2 ring-1"
                 >
                     <div
@@ -79,7 +83,7 @@ const removeCoauthor = (id: string) => {
                                 icon="lucide:x"
                                 variant="ghost"
                                 size="xs"
-                                @click="removeCoauthor(coauthor.user.id)"
+                                @click="removeCoauthor(coauthor.user.username)"
                             />
                         </div>
                         <UInput

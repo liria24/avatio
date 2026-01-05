@@ -139,7 +139,10 @@ useSchemaOrg([
                 />
             </div>
             <SetupsListLatest v-if="tab === 'latest'" />
-            <SetupsListUser v-if="tab === 'me'" :user-id="session?.user.id" />
+            <SetupsListUser
+                v-if="tab === 'me'"
+                :username="session?.user.username!"
+            />
             <SetupsListBookmarks v-if="tab === 'bookmarks'" />
         </div>
 

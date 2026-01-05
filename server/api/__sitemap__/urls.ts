@@ -30,9 +30,9 @@ export default defineSitemapEventHandler(async () => {
 
     const users = await db.query.user.findMany({
         columns: {
-            id: true,
             updatedAt: true,
             image: true,
+            username: true,
         },
     })
 
@@ -51,7 +51,7 @@ export default defineSitemapEventHandler(async () => {
         ),
         ...users.map(
             (user): SitemapUrlInput => ({
-                loc: `/user/${user.id}`,
+                loc: `/@${user.username}`,
                 lastmod: user.updatedAt,
                 images: user.image ? [{ loc: user.image }] : undefined,
             })

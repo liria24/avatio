@@ -3,6 +3,7 @@ import {
     customSessionClient,
     inferAdditionalFields,
     multiSessionClient,
+    usernameClient,
 } from 'better-auth/client/plugins'
 import { createAuthClient } from 'better-auth/vue'
 
@@ -10,6 +11,7 @@ export default defineNuxtPlugin(() => {
     const client = createAuthClient({
         baseURL: import.meta.env.NUXT_BETTER_AUTH_URL as string,
         plugins: [
+            usernameClient(),
             adminClient(),
             multiSessionClient(),
             customSessionClient<typeof auth>(),
@@ -65,7 +67,10 @@ export default defineNuxtPlugin(() => {
             },
 
             login: async (provider: 'twitter') =>
-                await client.signIn.social({ provider }),
+                await client.signIn.social({
+                    provider,
+                    newUserCallbackURL: '/welcome',
+                }),
 
             logout: async () => {
                 const localePath = useLocalePath()

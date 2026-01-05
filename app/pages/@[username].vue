@@ -6,13 +6,13 @@ const route = useRoute()
 const overlay = useOverlay()
 const session = await $session()
 
-const id = route.params.id as string
+const username = route.params.username as string
 
-const { data: user, status: userStatus } = await useUser(id)
+const { data: user, status: userStatus } = await useUser(username)
 
 const modalLogin = overlay.create(LazyModalLogin)
 const modalReport = overlay.create(LazyModalReportUser, {
-    props: { userId: user.value?.id || '' },
+    props: { userId: user.value?.username || '' },
 })
 
 if (userStatus.value === 'success' && !user.value)
@@ -128,7 +128,7 @@ if (user.value) {
                 </div>
                 <div class="flex items-center gap-1 self-end sm:self-auto">
                     <UButton
-                        v-if="session?.user.id === user.id"
+                        v-if="session?.user.username === user.username"
                         :to="$localePath('/settings')"
                         label="プロフィールを編集"
                         icon="lucide:pen-line"
@@ -173,7 +173,7 @@ if (user.value) {
                         bio
                     </span>
                     <p
-                        class="text-relaxed text-sm [overflow-wrap:anywhere] break-keep whitespace-break-spaces"
+                        class="text-relaxed text-sm wrap-anywhere break-keep whitespace-break-spaces"
                         v-html="useLineBreak(user.bio)"
                     />
                 </div>
@@ -245,7 +245,7 @@ if (user.value) {
                 </h2>
             </div>
 
-            <SetupsListUser :user-id="user.id" />
+            <SetupsListUser :username="user.username" />
         </div>
     </div>
 </template>

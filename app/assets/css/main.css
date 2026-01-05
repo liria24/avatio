@@ -1,6 +1,5 @@
 @import 'tailwindcss';
 @import '@nuxt/ui';
-@plugin 'tailwindcss-animate';
 
 @theme {
     --font-sans:

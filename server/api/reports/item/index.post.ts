@@ -1,12 +1,6 @@
 import { itemReports } from '@@/database/schema'
 
-const body = itemReportsInsertSchema.pick({
-    itemId: true,
-    nameError: true,
-    irrelevant: true,
-    other: true,
-    comment: true,
-})
+const body = itemReportsInsertSchema
 
 export default defineApi(
     async ({ session }) => {

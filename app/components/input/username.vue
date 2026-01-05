@@ -8,7 +8,16 @@ const available = defineModel<boolean>('available', {
     default: false,
 })
 
-const { $session } = useNuxtApp()
+interface Props {
+    label?: string
+    placeholder?: string
+}
+const props = withDefaults(defineProps<Props>(), {
+    label: 'ユーザーID',
+    placeholder: 'ユーザーIDを入力',
+})
+
+const { $session, $authClient } = useNuxtApp()
 const session = await $session()
 
 const checkState = ref<
@@ -29,14 +38,8 @@ const stateMessages = {
     },
 } as const
 
-const checkNewIdAvailability = useDebounceFn(async (id: string) => {
-    if (!id?.length || id === session.value!.user.id) {
-        checkState.value = 'idle'
-        return
-    }
-
-    const validateResult = userUpdateSchema.shape.id.safeParse(id)
-    if (!validateResult.success) {
+const checkNewIdAvailability = useDebounceFn(async (username: string) => {
+    if (!username?.length || username === session.value!.user.username) {
         checkState.value = 'idle'
         return
     }
@@ -44,10 +47,10 @@ const checkNewIdAvailability = useDebounceFn(async (id: string) => {
     checkState.value = 'checking'
 
     try {
-        const response = await $fetch('/api/users/id-availability', {
-            query: { id },
+        const available = await $authClient.isUsernameAvailable({
+            username: username,
         })
-        checkState.value = response.available ? 'available' : 'unavailable'
+        checkState.value = available ? 'available' : 'unavailable'
     } catch (error) {
         console.error('Error checking profile ID availability:', error)
         checkState.value = 'error'
@@ -72,10 +75,10 @@ watch(
 </script>
 
 <template>
-    <UFormField label="新しいユーザーID">
+    <UFormField :label="props.label">
         <UInput
             v-model="input"
-            placeholder="新しいユーザーIDを入力"
+            :placeholder="props.placeholder"
             class="w-full"
         />
         <template #hint>

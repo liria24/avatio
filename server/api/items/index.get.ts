@@ -1,5 +1,4 @@
-import { items } from '@@/database/schema'
-import { eq } from 'drizzle-orm'
+import { sql } from 'drizzle-orm'
 import { z } from 'zod'
 
 const query = z.object({
@@ -22,7 +21,7 @@ export default defineApi<PaginationResponse<Item[]>>(
 
         const data = await db.query.items.findMany({
             extras: {
-                count: db.$count(items, eq(items.outdated, false)).as('count'),
+                count: sql<number>`CAST(COUNT(*) OVER() AS INTEGER)`,
             },
             limit,
             offset,

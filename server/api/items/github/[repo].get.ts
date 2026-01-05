@@ -10,8 +10,6 @@ const params = z.object({
 
 const CACHE_DURATION_MS = 1000 * 60 * 60 // 1時間
 
-const { adminKey } = useRuntimeConfig()
-
 const markItemAsOutdated = async (id: string): Promise<void> => {
     try {
         await db
@@ -88,20 +86,11 @@ export default defineApi<Item>(
                             readme: readme?.markdown || '',
                         }
 
-                        const { niceName, category } = await $fetch(
-                            '/api/items/generate',
-                            {
-                                method: 'POST',
-                                headers: {
-                                    authorization: `Bearer ${adminKey}`,
-                                },
-                                body: {
-                                    name: item.name,
-                                    description,
-                                    category: item.category,
-                                },
-                            }
-                        )
+                        const { niceName, category } = await generateItemAttr({
+                            name: item.name,
+                            description,
+                            category: item.category,
+                        })
 
                         await db
                             .update(items)

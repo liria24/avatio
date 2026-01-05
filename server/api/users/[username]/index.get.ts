@@ -1,18 +1,18 @@
 import { z } from 'zod'
 
 const params = z.object({
-    id: z.string(),
+    username: z.string(),
 })
 
 const getUser = defineCachedFunction(
-    async (id: string) => {
+    async (username: string) => {
         const data = await db.query.user.findFirst({
             where: {
-                id: { eq: id },
+                username: { eq: username },
                 banned: { OR: [{ eq: false }, { isNull: true }] },
             },
             columns: {
-                id: true,
+                username: true,
                 createdAt: true,
                 name: true,
                 image: true,
@@ -64,9 +64,9 @@ const getUser = defineCachedFunction(
 
 export default defineApi<User>(
     async () => {
-        const { id } = await validateParams(params)
+        const { username } = await validateParams(params)
 
-        return await getUser(id)
+        return await getUser(username)
     },
     {
         errorMessage: 'Failed to get user',

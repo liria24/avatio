@@ -1,6 +1,5 @@
-import { and, eq } from 'drizzle-orm'
+import { sql } from 'drizzle-orm'
 import { z } from 'zod'
-import { itemReports } from '~~/database/schema'
 
 const query = z.object({
     sort: z.enum(['asc', 'desc']).optional().default('desc'),
@@ -26,22 +25,7 @@ export default defineApi<PaginationResponse<ItemReport[]>>(
 
         const data = await db.query.itemReports.findMany({
             extras: {
-                count: db
-                    .$count(
-                        itemReports,
-                        and(
-                            ...[
-                                reporterId
-                                    ? eq(itemReports.reporterId, reporterId)
-                                    : undefined,
-                                isResolved !== undefined &&
-                                isResolved.length === 1
-                                    ? eq(itemReports.isResolved, isResolved[0])
-                                    : undefined,
-                            ]
-                        )
-                    )
-                    .as('count'),
+                count: sql<number>`CAST(COUNT(*) OVER() AS INTEGER)`,
             },
             where: {
                 reporterId: reporterId ? { eq: reporterId } : undefined,
@@ -92,7 +76,7 @@ export default defineApi<PaginationResponse<ItemReport[]>>(
                 },
                 reporter: {
                     columns: {
-                        id: true,
+                        username: true,
                         createdAt: true,
                         name: true,
                         image: true,

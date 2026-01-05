@@ -1,6 +1,5 @@
-import { and, eq, exists, ilike } from 'drizzle-orm'
+import { sql } from 'drizzle-orm'
 import { z } from 'zod'
-import { changelogAuthors, changelogs } from '~~/database/schema'
 
 const query = z.object({
     q: z.string().optional(),
@@ -18,37 +17,7 @@ export default defineApi<PaginationResponse<Changelog[]>>(
 
         const data = await db.query.changelogs.findMany({
             extras: {
-                count: db
-                    .$count(
-                        changelogs,
-                        and(
-                            ...[
-                                q
-                                    ? ilike(changelogs.title, `%${q}%`)
-                                    : undefined,
-                                userId
-                                    ? exists(
-                                          db
-                                              .select()
-                                              .from(changelogAuthors)
-                                              .where(
-                                                  and(
-                                                      eq(
-                                                          changelogAuthors.changelogSlug,
-                                                          changelogs.slug
-                                                      ),
-                                                      eq(
-                                                          changelogAuthors.userId,
-                                                          userId
-                                                      )
-                                                  )
-                                              )
-                                      )
-                                    : undefined,
-                            ]
-                        )
-                    )
-                    .as('count'),
+                count: sql<number>`CAST(COUNT(*) OVER() AS INTEGER)`,
             },
             limit,
             offset,
@@ -74,7 +43,7 @@ export default defineApi<PaginationResponse<Changelog[]>>(
                     with: {
                         user: {
                             columns: {
-                                id: true,
+                                username: true,
                                 createdAt: true,
                                 name: true,
                                 image: true,
