@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import type { FormFieldProps, InputProps } from '@nuxt/ui'
+
 const input = defineModel<string>({
     default: '',
     required: true,
@@ -11,18 +13,21 @@ const available = defineModel<boolean>('available', {
 interface Props {
     label?: string
     placeholder?: string
+    ui?: {
+        input?: InputProps
+        field?: FormFieldProps
+    }
 }
 const props = withDefaults(defineProps<Props>(), {
     label: 'ユーザーID',
     placeholder: 'ユーザーIDを入力',
+    ui: undefined,
 })
 
-const { $session, $authClient } = useNuxtApp()
-const session = await $session()
+const { getSession, auth } = useAuth()
+const session = await getSession()
 
-const checkState = ref<
-    'idle' | 'checking' | 'available' | 'unavailable' | 'error'
->('idle')
+const checkState = ref<'idle' | 'checking' | 'available' | 'unavailable' | 'error'>('idle')
 
 const stateMessages = {
     idle: { icon: '', message: '' },
@@ -47,7 +52,7 @@ const checkNewIdAvailability = useDebounceFn(async (username: string) => {
     checkState.value = 'checking'
 
     try {
-        const available = await $authClient.isUsernameAvailable({
+        const available = await auth.isUsernameAvailable({
             username: username,
         })
         checkState.value = available ? 'available' : 'unavailable'
@@ -75,19 +80,16 @@ watch(
 </script>
 
 <template>
-    <UFormField :label="props.label">
+    <UFormField :label="props.label" v-bind="props.ui?.field">
         <UInput
             v-model="input"
             :placeholder="props.placeholder"
             class="w-full"
+            v-bind="props.ui?.input"
         />
         <template #hint>
             <div v-if="checkState !== 'idle'" class="flex items-center gap-1">
-                <Icon
-                    :name="stateMessages[checkState].icon"
-                    size="16"
-                    class="text-toned"
-                />
+                <Icon :name="stateMessages[checkState].icon" size="16" class="text-toned" />
                 <span class="text-toned text-xs">
                     {{ stateMessages[checkState].message }}
                 </span>

@@ -6,8 +6,8 @@ const props = defineProps<Props>()
 
 const emit = defineEmits(['close'])
 
-const { $session } = useNuxtApp()
-const session = await $session()
+const { getSession } = useAuth()
+const session = await getSession()
 const toast = useToast()
 
 const hideReason = ref('')
@@ -27,9 +27,7 @@ const hideSetup = async () => {
             method: 'PATCH',
             body: {
                 hide: true,
-                hideReason: hideReason.value.length
-                    ? hideReason.value
-                    : undefined,
+                hideReason: hideReason.value.length ? hideReason.value : undefined,
             },
         })
         toast.add({

@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-const { $session } = useNuxtApp()
-const session = await $session()
+const { getSession } = useAuth()
+const session = await getSession()
 const toast = useToast()
 
 const { data, refresh } = await useUser(session.value!.user.username!)
@@ -66,20 +66,14 @@ const unverify = async (shopId: string) => {
 
 watch(modalVerify, async (value) => {
     if (value) {
-        const data = await $fetch<{ code: string }>(
-            '/api/shop-verification/code'
-        )
+        const data = await $fetch<{ code: string }>('/api/shop-verification/code')
         verifyCode.value = data.code
     } else verifyCode.value = null
 })
 </script>
 
 <template>
-    <UModal
-        v-model:open="modalVerify"
-        :dismissible="false"
-        title="新規ショップ認証"
-    >
+    <UModal v-model:open="modalVerify" :dismissible="false" title="新規ショップ認証">
         <template #body>
             <div class="flex flex-col gap-6">
                 <UFormField
@@ -117,14 +111,10 @@ watch(modalVerify, async (value) => {
                     </div>
                 </UFormField>
 
-                <UFormField
-                    label="2. 選定したアイテムの説明文に以下のコードを追記してください"
-                >
+                <UFormField label="2. 選定したアイテムの説明文に以下のコードを追記してください">
                     <div class="flex flex-col gap-2 pt-2">
                         <UButton
-                            :trailing-icon="
-                                copied ? 'lucide:check' : 'lucide:copy'
-                            "
+                            :trailing-icon="copied ? 'lucide:check' : 'lucide:copy'"
                             :label="verifyCode || 'コードを生成中...'"
                             variant="outline"
                             color="neutral"
@@ -163,9 +153,7 @@ watch(modalVerify, async (value) => {
     <UCard>
         <template #header>
             <div class="flex w-full items-center justify-between">
-                <h2 class="text-lg leading-none font-semibold text-nowrap">
-                    ショップ
-                </h2>
+                <h2 class="text-lg leading-none font-semibold text-nowrap">ショップ</h2>
 
                 <UButton
                     icon="lucide:plus"
@@ -178,10 +166,7 @@ watch(modalVerify, async (value) => {
         </template>
 
         <div class="flex flex-col gap-2">
-            <p
-                v-if="!data?.shops?.length"
-                class="text-muted self-center py-2 text-sm leading-none"
-            >
+            <p v-if="!data?.shops?.length" class="text-muted self-center py-2 text-sm leading-none">
                 認証済みのショップはありません
             </p>
 

@@ -5,9 +5,7 @@ const query = z.object({
         .union([z.uuid(), z.uuid().array()])
         .transform((val) => (Array.isArray(val) ? val : [val]))
         .optional(),
-    setupId: z
-        .union([z.string().transform((val) => Number(val)), z.number()])
-        .optional(),
+    setupId: z.union([z.string().transform((val) => Number(val)), z.number()]).optional(),
 })
 
 export default defineApi<SetupDraft[]>(

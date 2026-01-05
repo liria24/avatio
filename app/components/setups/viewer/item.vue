@@ -22,9 +22,7 @@ const modalReport = overlay.create(LazyModalReportItem, {
 })
 
 const shopPath = computed(() => {
-    const url = parseURL(
-        computeShopUrl(props.item.shop?.id, props.item.shop?.platform)
-    )
+    const url = parseURL(computeShopUrl(props.item.shop?.id, props.item.shop?.platform))
     const path = url.pathname === '/' ? '' : url.pathname
     return url.host + path
 })
@@ -65,10 +63,7 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                     class="aspect-square size-22 shrink-0 rounded-lg object-cover text-xs"
                 >
                     <img v-if="isLoaded" v-bind="imgAttrs" :src />
-                    <USkeleton
-                        v-else
-                        class="aspect-square size-20 shrink-0 rounded-lg text-xs"
-                    />
+                    <USkeleton v-else class="aspect-square size-20 shrink-0 rounded-lg text-xs" />
                 </NuxtImg>
             </NuxtLink>
 
@@ -86,9 +81,7 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                         target="_blank"
                         class="flex items-center gap-3"
                     >
-                        <span
-                            class="text-left text-sm/relaxed font-semibold sm:text-base/relaxed"
-                        >
+                        <span class="text-left text-sm/relaxed font-semibold sm:text-base/relaxed">
                             {{ item.niceName || item.name }}
                         </span>
                     </NuxtLink>
@@ -107,14 +100,10 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                     class="p-0"
                 />
 
-                <div
-                    class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 pl-0.5"
-                >
+                <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 pl-0.5">
                     <UPopover v-if="item.shop" mode="hover">
                         <NuxtLink
-                            :to="
-                                computeShopUrl(item.shop.id, item.shop.platform)
-                            "
+                            :to="computeShopUrl(item.shop.id, item.shop.platform)"
                             target="_blank"
                             class="flex w-fit items-center gap-1.5"
                         >
@@ -136,9 +125,7 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                                     class="aspect-square size-5 shrink-0 rounded-md"
                                 />
                             </NuxtImg>
-                            <span
-                                class="text-muted text-xs font-semibold text-nowrap"
-                            >
+                            <span class="text-muted text-xs font-semibold text-nowrap">
                                 {{ item.shop.name }}
                             </span>
                             <Icon
@@ -151,12 +138,7 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
 
                         <template #content>
                             <NuxtLink
-                                :to="
-                                    computeShopUrl(
-                                        item.shop.id,
-                                        item.shop.platform
-                                    )
-                                "
+                                :to="computeShopUrl(item.shop.id, item.shop.platform)"
                                 target="_blank"
                                 class="flex items-center gap-3 py-2 pr-3 pl-2"
                             >
@@ -172,25 +154,17 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                                     custom
                                     class="aspect-square size-10 shrink-0 rounded-md object-cover"
                                 >
-                                    <img
-                                        v-if="isLoaded"
-                                        v-bind="imgAttrs"
-                                        :src="src"
-                                    />
+                                    <img v-if="isLoaded" v-bind="imgAttrs" :src="src" />
                                     <USkeleton
                                         v-else
                                         class="aspect-square size-10 shrink-0 rounded-md"
                                     />
                                 </NuxtImg>
                                 <div class="flex flex-col gap-1.5">
-                                    <span
-                                        class="text-toned text-sm leading-none font-semibold"
-                                    >
+                                    <span class="text-toned text-sm leading-none font-semibold">
                                         {{ item.shop.name }}
                                     </span>
-                                    <span
-                                        class="text-muted text-xs leading-none font-semibold"
-                                    >
+                                    <span class="text-muted text-xs leading-none font-semibold">
                                         {{ shopPath }}
                                     </span>
                                 </div>
@@ -198,10 +172,7 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                         </template>
                     </UPopover>
 
-                    <div
-                        v-if="item.price"
-                        class="flex w-fit items-center gap-1.5"
-                    >
+                    <div v-if="item.price" class="flex w-fit items-center gap-1.5">
                         <Icon
                             name="mingcute:currency-cny-fill"
                             :size="18"
@@ -214,10 +185,7 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                         </span>
                     </div>
 
-                    <div
-                        v-if="item.likes !== null"
-                        class="flex w-fit items-center gap-1.5"
-                    >
+                    <div v-if="item.likes !== null" class="flex w-fit items-center gap-1.5">
                         <Icon
                             v-if="item.platform === 'github'"
                             name="mingcute:star-fill"
@@ -241,11 +209,7 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                         v-if="item.forks !== null && item.forks !== undefined"
                         class="flex w-fit items-center gap-1.5"
                     >
-                        <Icon
-                            name="lucide:git-fork"
-                            :size="17"
-                            class="text-muted shrink-0"
-                        />
+                        <Icon name="lucide:git-fork" :size="17" class="text-muted shrink-0" />
                         <span
                             class="text-muted pt-px font-[Geist] text-xs leading-none font-semibold text-nowrap"
                         >
@@ -253,15 +217,8 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                         </span>
                     </div>
 
-                    <div
-                        v-if="item.version"
-                        class="flex w-fit items-center gap-1.5"
-                    >
-                        <Icon
-                            name="lucide:tag"
-                            :size="16"
-                            class="text-muted shrink-0"
-                        />
+                    <div v-if="item.version" class="flex w-fit items-center gap-1.5">
+                        <Icon name="lucide:tag" :size="16" class="text-muted shrink-0" />
                         <span
                             class="text-muted pt-px font-[Geist] text-xs leading-none font-semibold text-nowrap"
                         >
@@ -269,12 +226,7 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                         </span>
                     </div>
 
-                    <UAvatarGroup
-                        v-if="item.contributors?.length"
-                        :max="3"
-                        size="2xs"
-                        class=""
-                    >
+                    <UAvatarGroup v-if="item.contributors?.length" :max="3" size="2xs" class="">
                         <UTooltip
                             v-for="contributor in item.contributors"
                             :key="encodeURIComponent(contributor.name)"
@@ -316,11 +268,7 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                     />
                 </UTooltip>
 
-                <UTooltip
-                    v-if="props.actions"
-                    text="アイテムを報告"
-                    :delay-duration="50"
-                >
+                <UTooltip v-if="props.actions" text="アイテムを報告" :delay-duration="50">
                     <UButton
                         icon="lucide:flag"
                         aria-label="アイテムを報告"
@@ -340,11 +288,7 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
             class="ring-accented flex w-full flex-col gap-1.5 rounded-lg p-2 ring-1 ring-inset empty:hidden data-[noted=false]:p-0 data-[noted=false]:ring-0"
         >
             <div v-if="item.note?.length" class="flex items-start gap-2 px-1">
-                <Icon
-                    name="lucide:pen-line"
-                    :size="15"
-                    class="text-muted mt-[0.2rem] shrink-0"
-                />
+                <Icon name="lucide:pen-line" :size="15" class="text-muted mt-[0.2rem] shrink-0" />
                 <p
                     class="text-left text-xs/relaxed wrap-anywhere break-keep whitespace-pre-wrap"
                     v-html="useLineBreak(item.note)"
@@ -354,18 +298,9 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                 v-if="item.shapekeys?.length || item.unsupported"
                 class="flex flex-wrap items-center justify-end gap-3"
             >
-                <div
-                    v-if="item.unsupported"
-                    class="flex items-center gap-2 px-3 py-2"
-                >
-                    <Icon
-                        name="lucide:user-round-x"
-                        :size="15"
-                        class="text-muted shrink-0"
-                    />
-                    <p
-                        class="text-muted text-left text-xs leading-none font-medium"
-                    >
+                <div v-if="item.unsupported" class="flex items-center gap-2 px-3 py-2">
+                    <Icon name="lucide:user-round-x" :size="15" class="text-muted shrink-0" />
+                    <p class="text-muted text-left text-xs leading-none font-medium">
                         アバター非対応
                     </p>
                 </div>
@@ -388,11 +323,7 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                     <template #content>
                         <div class="flex min-w-48 flex-col gap-3 p-3">
                             <div class="flex w-full items-center gap-2">
-                                <Icon
-                                    name="lucide:shapes"
-                                    :size="18"
-                                    class="text-muted shrink-0"
-                                />
+                                <Icon name="lucide:shapes" :size="18" class="text-muted shrink-0" />
                                 <p class="text-sm font-medium">シェイプキー</p>
                             </div>
                             <div class="flex flex-col gap-3 rounded-lg">
@@ -401,31 +332,24 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                                     :key="'shapekey-' + index"
                                     class="flex items-center justify-between gap-3"
                                 >
-                                    <p
-                                        class="text-toned text-sm leading-none text-nowrap"
-                                    >
+                                    <p class="text-toned text-sm leading-none text-nowrap">
                                         {{ key.name }}
                                     </p>
                                     <UButton
                                         :label="
-                                            key.value.toLocaleString(
-                                                undefined,
-                                                {
-                                                    minimumFractionDigits: 1,
-                                                    maximumFractionDigits: 4,
-                                                }
-                                            )
+                                            key.value.toLocaleString(undefined, {
+                                                minimumFractionDigits: 1,
+                                                maximumFractionDigits: 4,
+                                            })
                                         "
                                         variant="soft"
                                         size="sm"
                                         @click="
-                                            copy(key.value.toString()).then(
-                                                () => {
-                                                    toast.add({
-                                                        title: `${key.name} の値をコピーしました`,
-                                                    })
-                                                }
-                                            )
+                                            copy(key.value.toString()).then(() => {
+                                                toast.add({
+                                                    title: `${key.name} の値をコピーしました`,
+                                                })
+                                            })
                                         "
                                     />
                                 </div>

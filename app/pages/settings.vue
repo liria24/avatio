@@ -3,19 +3,15 @@ definePageMeta({
     middleware: 'session',
 })
 
-const { $authClient, $logout, $multiSession } = useNuxtApp()
-const sessions = await $multiSession()
-const route = useRoute()
+const { auth, signOut, getSessions } = useAuth()
+const sessions = await getSessions()
 const toast = useToast()
-
-const query = route.query
-const changeUserId = query.changeUserId
 
 const modalDeleteUser = ref(false)
 
 const deleteUser = async () => {
     try {
-        await $authClient.deleteUser({ callbackURL: '/' })
+        await auth.deleteUser({ callbackURL: '/' })
 
         toast.add({
             icon: 'lucide:check',
@@ -37,8 +33,7 @@ const deleteUser = async () => {
 
 defineSeo({
     title: 'ユーザー設定',
-    description:
-        'ユーザープロフィールの編集や、アカウントに関する操作を行うことができます。',
+    description: 'ユーザープロフィールの編集や、アカウントに関する操作を行うことができます。',
 })
 </script>
 
@@ -46,23 +41,19 @@ defineSeo({
     <div class="flex flex-col gap-6">
         <h1 class="text-lg font-medium text-nowrap">ユーザー設定</h1>
 
-        <SettingProfile :change-user-id="!!changeUserId" />
+        <SettingProfile />
 
         <SettingShop />
 
         <UCard>
             <template #header>
-                <h2 class="text-lg leading-none font-semibold text-nowrap">
-                    アカウント
-                </h2>
+                <h2 class="text-lg leading-none font-semibold text-nowrap">アカウント</h2>
             </template>
 
             <div class="flex w-full flex-col gap-6">
                 <div class="flex w-full items-center justify-between gap-2">
                     <div class="flex flex-col gap-1">
-                        <h3 class="text-sm font-semibold">
-                            このブラウザ以外からログアウト
-                        </h3>
+                        <h3 class="text-sm font-semibold">このブラウザ以外からログアウト</h3>
                         <p class="text-muted text-xs">
                             現在使用しているブラウザ以外のすべてのデバイスからログアウトします。
                         </p>
@@ -71,18 +62,16 @@ defineSeo({
                         label="すべてのデバイスからログアウト"
                         color="neutral"
                         variant="subtle"
-                        @click="$logout"
+                        @click="auth.revokeOtherSessions()"
                     />
                 </div>
 
                 <div
-                    v-if="sessions.length > 1"
+                    v-if="(sessions?.length || 0) > 1"
                     class="flex w-full items-center justify-between gap-2"
                 >
                     <div class="flex flex-col gap-1">
-                        <h3 class="text-sm font-semibold">
-                            すべてのアカウントからログアウト
-                        </h3>
+                        <h3 class="text-sm font-semibold">すべてのアカウントからログアウト</h3>
                         <p class="text-muted text-xs">
                             同時にログインしているすべてのアカウントからログアウトします。
                         </p>
@@ -91,7 +80,7 @@ defineSeo({
                         label="すべてログアウト"
                         color="neutral"
                         variant="subtle"
-                        @click="$logout"
+                        @click="signOut()"
                     />
                 </div>
             </div>
@@ -99,9 +88,7 @@ defineSeo({
 
         <UCard variant="soft">
             <template #header>
-                <h2 class="text-lg leading-none font-semibold text-nowrap">
-                    DANGER ZONE
-                </h2>
+                <h2 class="text-lg leading-none font-semibold text-nowrap">DANGER ZONE</h2>
             </template>
 
             <div class="flex w-full items-center justify-between gap-2">
@@ -113,11 +100,7 @@ defineSeo({
                     </p>
                 </div>
                 <UModal v-model:open="modalDeleteUser" title="アカウント削除">
-                    <UButton
-                        label="アカウント削除"
-                        color="error"
-                        variant="subtle"
-                    />
+                    <UButton label="アカウント削除" color="error" variant="subtle" />
 
                     <template #body>
                         <UAlert

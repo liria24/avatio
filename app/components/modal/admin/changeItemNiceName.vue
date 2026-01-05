@@ -46,12 +46,7 @@ const changeItemNiceName = async () => {
 
         <template #footer>
             <div class="flex w-full justify-end">
-                <UButton
-                    loading-auto
-                    label="変更"
-                    color="neutral"
-                    @click="changeItemNiceName()"
-                />
+                <UButton loading-auto label="変更" color="neutral" @click="changeItemNiceName()" />
             </div>
         </template>
     </UModal>

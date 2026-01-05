@@ -77,8 +77,7 @@ const onSelect = async (username: string) => {
         console.error('User not found:', error)
         toast.add({
             title: 'ユーザーが見つかりません',
-            description:
-                '入力したIDのユーザーが存在しないか、アクセスできません。',
+            description: '入力したIDのユーザーが存在しないか、アクセスできません。',
             color: 'error',
         })
         return

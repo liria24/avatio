@@ -3,15 +3,9 @@ const emit = defineEmits(['close'])
 
 const route = useRoute()
 const localePath = useLocalePath()
-const { $login } = useNuxtApp()
+const { signIn } = useAuth()
 
 const isInternalUpdate = ref(false)
-const signingIn = ref(false)
-
-const handleLogin = (provider: 'twitter') => {
-    signingIn.value = true
-    $login(provider)
-}
 
 // ブラウザの戻るボタンでモーダルを閉じる
 const handlePopState = () => {
@@ -31,8 +25,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
     // イベントリスナーを削除
-    if (import.meta.client)
-        window.removeEventListener('popstate', handlePopState)
+    if (import.meta.client) window.removeEventListener('popstate', handlePopState)
 })
 </script>
 
@@ -43,7 +36,7 @@ onBeforeUnmount(() => {
         <template #body>
             <div class="flex flex-col gap-2">
                 <UButton
-                    :loading="signingIn"
+                    loading-auto
                     label="X (Twitter)"
                     icon="simple-icons:x"
                     block
@@ -51,16 +44,14 @@ onBeforeUnmount(() => {
                     variant="subtle"
                     color="neutral"
                     class="py-4"
-                    @click="handleLogin('twitter')"
+                    @click="signIn.twitter()"
                 />
             </div>
         </template>
 
         <template #footer>
             <div class="flex w-full items-center justify-end gap-3">
-                <p class="text-muted text-xs">
-                    ログインすることで以下に同意したことになります:
-                </p>
+                <p class="text-muted text-xs">ログインすることで以下に同意したことになります:</p>
                 <UButton
                     :to="localePath('/terms')"
                     target="_blank"

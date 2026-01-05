@@ -9,9 +9,7 @@ const body = setupDraftsInsertSchema.pick({
 })
 
 const refreshDraftImages = async (draftId: string, imageUrls: string[]) => {
-    await db
-        .delete(setupDraftImages)
-        .where(eq(setupDraftImages.setupDraftId, draftId))
+    await db.delete(setupDraftImages).where(eq(setupDraftImages.setupDraftId, draftId))
     const images = imageUrls.map((url) => ({
         setupDraftId: draftId,
         url,
@@ -40,8 +38,7 @@ export default defineApi(
         if (userSetupDraftsCount[0].count >= 32)
             throw createError({
                 statusCode: 429,
-                message:
-                    'You have reached the maximum number of setup drafts allowed.',
+                message: 'You have reached the maximum number of setup drafts allowed.',
             })
 
         if (!id && !Object.keys(content).length) return null

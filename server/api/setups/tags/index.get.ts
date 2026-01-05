@@ -14,8 +14,7 @@ export default defineApi(
         const { q, orderBy, sort, limit } = await validateQuery(query)
 
         const sortFn = sort === 'asc' ? asc : desc
-        const orderByFn =
-            orderBy === 'name' ? setupTags.tag : sql<number>`count(*)`
+        const orderByFn = orderBy === 'name' ? setupTags.tag : sql<number>`count(*)`
 
         const data = await db
             .select({

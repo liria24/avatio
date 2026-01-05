@@ -23,10 +23,7 @@ const deleteSetup = async () => {
     } catch (error) {
         toast.add({
             title: 'セットアップの削除に失敗しました',
-            description:
-                error instanceof Error
-                    ? error.message
-                    : '不明なエラーが発生しました',
+            description: error instanceof Error ? error.message : '不明なエラーが発生しました',
             color: 'error',
         })
     }
@@ -46,14 +43,7 @@ const deleteSetup = async () => {
         </template>
 
         <template #footer>
-            <UButton
-                loading-auto
-                label="削除"
-                color="error"
-                size="lg"
-                block
-                @click="deleteSetup"
-            />
+            <UButton loading-auto label="削除" color="error" size="lg" block @click="deleteSetup" />
         </template>
     </UModal>
 </template>

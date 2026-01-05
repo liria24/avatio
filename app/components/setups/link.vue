@@ -8,9 +8,7 @@ const emit = defineEmits(['click'])
 const colorMode = useColorMode()
 
 // アバター情報の取得
-const firstAvatar = computed(() =>
-    props.setup.items.find((item) => item.category === 'avatar')
-)
+const firstAvatar = computed(() => props.setup.items.find((item) => item.category === 'avatar'))
 
 const avatarName = computed(() => {
     const avatar = firstAvatar.value
@@ -90,10 +88,7 @@ const initializeThemeColor = () => {
     }
 
     dominantColor.value = themeColor
-    adjustedColor.value = adjustColorForTheme(
-        themeColor,
-        colorMode.value === 'dark'
-    )
+    adjustedColor.value = adjustColorForTheme(themeColor, colorMode.value === 'dark')
 }
 
 // グラデーション色の計算
@@ -118,9 +113,7 @@ const elementStyle = computed(() =>
 
 // グラデーションスタイル
 const gradientStyle = computed(() => {
-    const gradient = adjustedColor.value
-        ? 'var(--gradient-color)'
-        : 'rgba(0,0,0,0.8)'
+    const gradient = adjustedColor.value ? 'var(--gradient-color)' : 'rgba(0,0,0,0.8)'
 
     return `background-image: linear-gradient(to top, ${gradient} 0%, transparent 80%)`
 })
@@ -166,12 +159,7 @@ watch(colorMode, (newMode) => {
                 :alt="setup.name"
                 :width="imageSize.width"
                 :height="imageSize.height"
-                :placeholder="[
-                    placeholderSize.width,
-                    placeholderSize.height,
-                    50,
-                    5,
-                ]"
+                :placeholder="[placeholderSize.width, placeholderSize.height, 50, 5]"
                 format="webp"
                 fit="cover"
                 preload
@@ -197,11 +185,7 @@ watch(colorMode, (newMode) => {
                 <div
                     class="flex translate-y-4 items-center gap-1 opacity-0 duration-200 group-hover:translate-y-0 group-hover:opacity-100"
                 >
-                    <Icon
-                        name="lucide:person-standing"
-                        size="15"
-                        class="shrink-0 text-zinc-300"
-                    />
+                    <Icon name="lucide:person-standing" size="15" class="shrink-0 text-zinc-300" />
                     <span
                         class="line-clamp-1 overflow-visible text-xs leading-none break-all text-zinc-300"
                     >
@@ -227,11 +211,7 @@ watch(colorMode, (newMode) => {
                 custom
                 class="m-1 aspect-square size-14 shrink-0 rounded-lg object-cover md:size-20"
             >
-                <UTooltip
-                    v-if="isLoaded"
-                    :text="avatarName"
-                    :delay-duration="100"
-                >
+                <UTooltip v-if="isLoaded" :text="avatarName" :delay-duration="100">
                     <img v-bind="imgAttrs" :src="src" />
                 </UTooltip>
 
@@ -250,10 +230,7 @@ watch(colorMode, (newMode) => {
             </div>
 
             <!-- 画像がある場合のメタ情報 -->
-            <div
-                v-if="hasImages"
-                class="flex w-full items-center justify-end gap-2 px-2 pb-2"
-            >
+            <div v-if="hasImages" class="flex w-full items-center justify-end gap-2 px-2 pb-2">
                 <UTooltip :delay-duration="0">
                     <NuxtTime
                         :datetime="setup.createdAt"
@@ -280,10 +257,7 @@ watch(colorMode, (newMode) => {
                     />
 
                     <template #content>
-                        <NuxtLink
-                            :to="`/@${setup.user.username}`"
-                            class="flex py-2 pr-3 pl-2"
-                        >
+                        <NuxtLink :to="`/@${setup.user.username}`" class="flex py-2 pr-3 pl-2">
                             <UUser
                                 :name="setup.user.name"
                                 :avatar="{
@@ -305,10 +279,7 @@ watch(colorMode, (newMode) => {
             </div>
 
             <!-- 画像がない場合のメタ情報 -->
-            <div
-                v-else
-                class="flex w-full flex-col items-start justify-center gap-2 pr-2 pl-3"
-            >
+            <div v-else class="flex w-full flex-col items-start justify-center gap-2 pr-2 pl-3">
                 <span
                     class="md:text-md text-toned line-clamp-2 text-sm font-medium break-keep"
                     v-html="setupNameHtml"
@@ -325,10 +296,7 @@ watch(colorMode, (newMode) => {
                         />
 
                         <template #content>
-                            <NuxtLink
-                                :to="`/@${setup.user.username}`"
-                                class="flex py-2 pr-3 pl-2"
-                            >
+                            <NuxtLink :to="`/@${setup.user.username}`" class="flex py-2 pr-3 pl-2">
                                 <UUser
                                     :name="setup.user.name"
                                     :avatar="{

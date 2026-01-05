@@ -4,8 +4,9 @@ const body = itemReportsInsertSchema
 
 export default defineApi(
     async ({ session }) => {
-        const { itemId, nameError, irrelevant, other, comment } =
-            await validateBody(body, { sanitize: true })
+        const { itemId, nameError, irrelevant, other, comment } = await validateBody(body, {
+            sanitize: true,
+        })
 
         await db.insert(itemReports).values({
             reporterId: session.user.id,

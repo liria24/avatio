@@ -25,10 +25,7 @@ type CategoryKey = keyof ItemsState
 const itemCategories = Object.keys(items.value) as CategoryKey[]
 
 const totalItemsCount = computed(() =>
-    Object.values(items.value).reduce(
-        (total, category) => total + category.length,
-        0
-    )
+    Object.values(items.value).reduce((total, category) => total + category.length, 0)
 )
 
 const getItemsByCategory = (category: CategoryKey) => items.value[category]
@@ -39,9 +36,7 @@ const { data: ownedAvatars } = await useFetch('/api/items/owned-avatars', {
 })
 
 const isItemAlreadyAdded = (itemId: string): boolean =>
-    itemCategories.some((category) =>
-        items.value[category].some((item) => item.id === itemId)
-    )
+    itemCategories.some((category) => items.value[category].some((item) => item.id === itemId))
 
 const addItem = async (item: Item) => {
     if (!item?.id || !item?.category) {
@@ -111,12 +106,7 @@ const changeItemCategory = (id: string, newCategory: ItemCategory) => {
     console.error('Item not found for category change:', id)
 }
 
-const addShapekey = (options: {
-    category: string
-    id: string
-    name: string
-    value: number
-}) => {
+const addShapekey = (options: { category: string; id: string; name: string; value: number }) => {
     const { category, id, name, value } = options
     const categoryKey = category as CategoryKey
 
@@ -136,11 +126,7 @@ const addShapekey = (options: {
     item.shapekeys.push({ name, value })
 }
 
-const removeShapekey = (options: {
-    category: string
-    id: string
-    index: number
-}) => {
+const removeShapekey = (options: { category: string; id: string; index: number }) => {
     const { category, id, index } = options
 
     const categoryKey = category as CategoryKey
@@ -169,14 +155,8 @@ const removeShapekey = (options: {
                         :data-exceeded="totalItemsCount > 32"
                         class="ring-accented ml-1 flex items-center gap-1.5 rounded-full py-1 pr-3 pl-2.5 ring-1 data-[exceeded=true]:ring-red-500"
                     >
-                        <Icon
-                            name="lucide:box"
-                            size="16"
-                            class="text-muted shrink-0"
-                        />
-                        <span
-                            class="pt-px font-[Geist] text-xs leading-none text-nowrap"
-                        >
+                        <Icon name="lucide:box" size="16" class="text-muted shrink-0" />
+                        <span class="pt-px font-[Geist] text-xs leading-none text-nowrap">
                             <span>{{ totalItemsCount }}</span>
                             <span v-if="totalItemsCount > 32"> / 32</span>
                         </span>
@@ -209,9 +189,7 @@ const removeShapekey = (options: {
             variant="naked"
             :actions="
                 ownedAvatars.map((ownedAvatar) => ({
-                    label:
-                        ownedAvatar.niceName ||
-                        avatarShortName(ownedAvatar.name),
+                    label: ownedAvatar.niceName || avatarShortName(ownedAvatar.name),
                     avatar: { src: ownedAvatar.image || undefined },
                     variant: 'soft',
                     ui: {
@@ -240,9 +218,7 @@ const removeShapekey = (options: {
                             :size="22"
                             class="text-muted shrink-0"
                         />
-                        <h2
-                            class="pb-0.5 text-lg leading-none font-semibold text-nowrap"
-                        >
+                        <h2 class="pb-0.5 text-lg leading-none font-semibold text-nowrap">
                             {{ itemCategory[category]?.label || category }}
                         </h2>
                     </div>
@@ -262,9 +238,7 @@ const removeShapekey = (options: {
                             v-model:shapekeys="item.shapekeys"
                             v-model:note="item.note"
                             :item="item"
-                            @change-category="
-                                changeItemCategory(item.id, $event)
-                            "
+                            @change-category="changeItemCategory(item.id, $event)"
                             @remove-item="removeItem(item.category, item.id)"
                             @shapekey-add="addShapekey($event)"
                             @shapekey-remove="removeShapekey($event)"

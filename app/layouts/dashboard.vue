@@ -2,8 +2,8 @@
 import type { NavigationMenuItem } from '@nuxt/ui'
 
 const { app } = useAppConfig()
-const { $session } = useNuxtApp()
-const session = await $session()
+const { getSession } = useAuth()
+const session = await getSession()
 
 const title = 'Avatio'
 
@@ -20,9 +20,7 @@ const { data } = await useFetch('/api/admin/stats', {
         userReports: 0,
     }),
     getCachedData: (key, nuxtApp, ctx) =>
-        ctx.cause !== 'initial'
-            ? undefined
-            : nuxtApp.payload.data[key] || nuxtApp.static.data[key],
+        ctx.cause !== 'initial' ? undefined : nuxtApp.payload.data[key] || nuxtApp.static.data[key],
 })
 
 const links = [

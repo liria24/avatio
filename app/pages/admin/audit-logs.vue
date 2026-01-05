@@ -9,14 +9,7 @@ const auditLogAttributes: Record<
     {
         icon: string
         label: string
-        color:
-            | 'primary'
-            | 'success'
-            | 'error'
-            | 'info'
-            | 'secondary'
-            | 'warning'
-            | 'neutral'
+        color: 'primary' | 'success' | 'error' | 'info' | 'secondary' | 'warning' | 'neutral'
     }
 > = {
     user_ban: {
@@ -105,9 +98,7 @@ const { data, status, refresh } = await useFetch('/api/admin/audit-log', {
         },
     }),
     getCachedData: (key, nuxtApp, ctx) =>
-        ctx.cause !== 'initial'
-            ? undefined
-            : nuxtApp.payload.data[key] || nuxtApp.static.data[key],
+        ctx.cause !== 'initial' ? undefined : nuxtApp.payload.data[key] || nuxtApp.static.data[key],
 })
 </script>
 
@@ -140,9 +131,7 @@ const { data, status, refresh } = await useFetch('/api/admin/audit-log', {
                     }"
                 >
                     <template #title>
-                        <div
-                            class="flex w-full items-center justify-between gap-2"
-                        >
+                        <div class="flex w-full items-center justify-between gap-2">
                             <span class="font-medium">
                                 {{ auditLogAttributes[log.action].label }}
                             </span>

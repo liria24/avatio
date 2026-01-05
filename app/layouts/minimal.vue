@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import { LazyModalLogin } from '#components'
 
-const { $session, $multiSession } = useNuxtApp()
-const session = await $session()
-const sessions = await $multiSession()
+const { getSession, getSessions } = useAuth()
+const session = await getSession()
+const sessions = await getSessions()
 const route = useRoute()
 const overlay = useOverlay()
 
@@ -12,9 +12,7 @@ const modalLogin = overlay.create(LazyModalLogin)
 
 <template>
     <MotionConfig :transition="{ duration: 0.6 }" reduced-motion="user">
-        <UContainer
-            class="flex min-h-dvh flex-col items-center gap-6 pt-6 md:gap-8"
-        >
+        <UContainer class="flex min-h-dvh flex-col items-center gap-6 pt-6 md:gap-8">
             <header class="flex w-full items-center justify-between gap-6">
                 <HeaderLeft />
 

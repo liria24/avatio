@@ -40,13 +40,7 @@ const processImages = async (files: FileList | File[] | null) => {
 
 const { isOverDropZone } = useDropZone(dropZoneRef, {
     onDrop: processImages,
-    dataTypes: [
-        'image/jpg',
-        'image/jpeg',
-        'image/png',
-        'image/webp',
-        'image/tiff',
-    ],
+    dataTypes: ['image/jpg', 'image/jpeg', 'image/png', 'image/webp', 'image/tiff'],
     multiple: false,
     preventDefaultForUnhandled: true,
 })
@@ -78,20 +72,13 @@ const removeImage = (index: number) => {
         />
     </div>
 
-    <div
-        v-else-if="imageUploading"
-        class="flex h-24 w-full items-center justify-center gap-2"
-    >
+    <div v-else-if="imageUploading" class="flex h-24 w-full items-center justify-center gap-2">
         <Icon name="svg-spinners:ring-resize" size="24" class="text-muted" />
         <p class="text-muted text-sm">画像をアップロード中...</p>
     </div>
 
     <div v-else class="grid grid-cols-3 gap-2">
-        <div
-            v-for="(image, index) in images"
-            :key="`image-${index}`"
-            class="relative grid"
-        >
+        <div v-for="(image, index) in images" :key="`image-${index}`" class="relative grid">
             <NuxtImg
                 v-slot="{ isLoaded, src, imgAttrs }"
                 :src="image"

@@ -1,9 +1,6 @@
 import type { UseFetchOptions } from 'nuxt/app'
 
-export const useUser = (
-    username: string,
-    options?: UseFetchOptions<SerializedUser>
-) => {
+export const useUser = (username: string, options?: UseFetchOptions<SerializedUser>) => {
     const defaultOptions: UseFetchOptions<SerializedUser> = {
         key: computed(() => `user-${unref(username)}`),
         dedupe: 'defer',

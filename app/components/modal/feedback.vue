@@ -87,12 +87,7 @@ const Submit = async () => {
 
         <template #footer>
             <div class="flex w-full justify-end">
-                <UButton
-                    loading-auto
-                    label="送信"
-                    color="neutral"
-                    @click="Submit()"
-                />
+                <UButton loading-auto label="送信" color="neutral" @click="Submit()" />
             </div>
         </template>
     </UModal>

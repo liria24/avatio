@@ -23,10 +23,7 @@ const onRead = async (id: string) => {
 </script>
 
 <template>
-    <div
-        v-if="visible"
-        class="ring-accented flex items-center gap-3 rounded-lg p-2 ring-1"
-    >
+    <div v-if="visible" class="ring-accented flex items-center gap-3 rounded-lg p-2 ring-1">
         <div
             v-if="props.data.actionUrl && !props.data.actionLabel"
             class="flex grow flex-col gap-1 pl-2"
@@ -65,11 +62,6 @@ const onRead = async (id: string) => {
             @click="onRead(props.data.id)"
         />
 
-        <UButton
-            icon="lucide:x"
-            variant="ghost"
-            size="sm"
-            @click="onRead(props.data.id)"
-        />
+        <UButton icon="lucide:x" variant="ghost" size="sm" @click="onRead(props.data.id)" />
     </div>
 </template>

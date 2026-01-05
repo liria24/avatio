@@ -42,16 +42,8 @@ const onSelectItemSearch = async (item: Partial<Item> & Pick<Item, 'id'>) => {
                 <!-- アイテム選択セクション -->
                 <div class="flex w-full flex-col gap-2">
                     <div class="flex items-center gap-1">
-                        <Icon
-                            name="lucide:package"
-                            size="18"
-                            class="text-muted"
-                        />
-                        <h2
-                            class="text-sm leading-none font-semibold text-nowrap"
-                        >
-                            アイテム
-                        </h2>
+                        <Icon name="lucide:package" size="18" class="text-muted" />
+                        <h2 class="text-sm leading-none font-semibold text-nowrap">アイテム</h2>
                     </div>
 
                     <div class="flex w-full flex-wrap items-center gap-2">
@@ -65,9 +57,7 @@ const onSelectItemSearch = async (item: Partial<Item> & Pick<Item, 'id'>) => {
 
                         <UPopover v-model:open="popoverItemSearch">
                             <UButton
-                                :label="
-                                    items.length ? undefined : 'アイテムを選択'
-                                "
+                                :label="items.length ? undefined : 'アイテムを選択'"
                                 icon="lucide:plus"
                                 aria-label="Add item"
                                 variant="ghost"
@@ -75,9 +65,7 @@ const onSelectItemSearch = async (item: Partial<Item> & Pick<Item, 'id'>) => {
                             />
 
                             <template #content>
-                                <CommandPaletteItemSearch
-                                    @select="onSelectItemSearch"
-                                />
+                                <CommandPaletteItemSearch @select="onSelectItemSearch" />
                             </template>
                         </UPopover>
                     </div>
@@ -87,20 +75,14 @@ const onSelectItemSearch = async (item: Partial<Item> & Pick<Item, 'id'>) => {
                 <div class="flex w-full flex-col gap-1.5">
                     <div class="flex items-center gap-1">
                         <Icon name="lucide:tags" size="18" class="text-muted" />
-                        <h2
-                            class="text-sm leading-none font-semibold text-nowrap"
-                        >
-                            タグ
-                        </h2>
+                        <h2 class="text-sm leading-none font-semibold text-nowrap">タグ</h2>
                     </div>
 
                     <UInputTags
                         v-model="tags"
                         placeholder="タグを入力"
                         @add-tag="tags = [...tags, $event as string]"
-                        @remove-tag="
-                            tags = tags.filter((tag) => tag !== $event)
-                        "
+                        @remove-tag="tags = tags.filter((tag) => tag !== $event)"
                     />
                 </div>
             </div>

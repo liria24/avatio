@@ -49,9 +49,7 @@ const updateRouteQuery = () => {
     })
 }
 
-const shouldShowDetails = computed(
-    () => !!(query.itemId.length || query.tag.length)
-)
+const shouldShowDetails = computed(() => !!(query.itemId.length || query.tag.length))
 
 const searchStatus = ref<'idle' | 'pending' | 'success'>('idle')
 const collapsibleSearchOptions = ref(shouldShowDetails.value)
@@ -65,8 +63,7 @@ const { data, status, refresh } = await useSetups({
 const setups = ref<SerializedSetup[]>([])
 
 const search = async () => {
-    const hasSearchParams =
-        query.q.length || query.itemId.length || query.tag.length
+    const hasSearchParams = query.q.length || query.itemId.length || query.tag.length
 
     if (!hasSearchParams) {
         searchStatus.value = 'idle'
@@ -154,9 +151,7 @@ defineSeo({
 
 <template>
     <div class="flex w-full flex-col items-stretch gap-8">
-        <h1
-            class="text-highlighted text-2xl leading-none font-semibold text-nowrap"
-        >
+        <h1 class="text-highlighted text-2xl leading-none font-semibold text-nowrap">
             セットアップ検索
         </h1>
 
@@ -186,10 +181,7 @@ defineSeo({
         />
 
         <!-- 検索結果表示 -->
-        <div
-            v-else-if="setups.length"
-            class="flex flex-col gap-2 lg:grid lg:grid-cols-1"
-        >
+        <div v-else-if="setups.length" class="flex flex-col gap-2 lg:grid lg:grid-cols-1">
             <SetupsList v-model:setups="setups" v-model:status="status" />
             <UButton
                 v-if="data?.pagination.hasNext"

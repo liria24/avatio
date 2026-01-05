@@ -6,8 +6,8 @@ const props = defineProps<Props>()
 
 const emit = defineEmits(['close'])
 
-const { $session } = useNuxtApp()
-const session = await $session()
+const { getSession } = useAuth()
+const session = await getSession()
 const toast = useToast()
 
 const unhideSetup = async () => {
@@ -52,13 +52,7 @@ const unhideSetup = async () => {
             />
         </template>
         <template #footer>
-            <UButton
-                label="再表示する"
-                color="neutral"
-                size="lg"
-                block
-                @click="unhideSetup"
-            />
+            <UButton label="再表示する" color="neutral" size="lg" block @click="unhideSetup" />
         </template>
     </UModal>
 </template>

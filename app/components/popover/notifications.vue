@@ -59,9 +59,7 @@ watch(open, (isOpen) => {
         <template #content>
             <div class="flex w-xs max-w-md flex-col gap-4 p-4 sm:w-sm md:w-md">
                 <div class="flex items-center justify-between gap-2">
-                    <span class="text-lg leading-none font-bold text-nowrap">
-                        通知
-                    </span>
+                    <span class="text-lg leading-none font-bold text-nowrap"> 通知 </span>
 
                     <UButton
                         label="既読の通知"
@@ -70,9 +68,7 @@ watch(open, (isOpen) => {
                         :active="viewingReadNotifications"
                         active-variant="subtle"
                         class="rounded-full"
-                        @click="
-                            viewingReadNotifications = !viewingReadNotifications
-                        "
+                        @click="viewingReadNotifications = !viewingReadNotifications"
                     />
                 </div>
 
@@ -85,10 +81,7 @@ watch(open, (isOpen) => {
                     class="text-muted m-8 self-center"
                 />
 
-                <p
-                    v-else-if="!notifications.length"
-                    class="text-muted my-8 self-center text-sm"
-                >
+                <p v-else-if="!notifications.length" class="text-muted my-8 self-center text-sm">
                     新しい通知はありません
                 </p>
 
@@ -98,13 +91,7 @@ watch(open, (isOpen) => {
                         :key="notification.id"
                         variant="ghost"
                         class="flex flex-col items-start gap-2 rounded-lg p-2"
-                        @click="
-                            onClick(
-                                $event,
-                                notification.id,
-                                notification.actionUrl
-                            )
-                        "
+                        @click="onClick($event, notification.id, notification.actionUrl)"
                     >
                         <div class="flex w-full items-start gap-2">
                             <p
@@ -127,26 +114,15 @@ watch(open, (isOpen) => {
                             />
                         </div>
 
-                        <div
-                            class="flex w-full items-center justify-end-safe gap-2 empty:hidden"
-                        >
+                        <div class="flex w-full items-center justify-end-safe gap-2 empty:hidden">
                             <UButton
-                                v-if="
-                                    notification.actionUrl &&
-                                    notification.actionLabel
-                                "
+                                v-if="notification.actionUrl && notification.actionLabel"
                                 :to="$localePath(notification.actionUrl)"
                                 :label="notification.actionLabel"
                                 icon="lucide:arrow-right"
                                 variant="outline"
                                 size="xs"
-                                @click="
-                                    onClick(
-                                        $event,
-                                        notification.id,
-                                        notification.actionUrl
-                                    )
-                                "
+                                @click="onClick($event, notification.id, notification.actionUrl)"
                             />
 
                             <UTooltip
@@ -163,11 +139,7 @@ watch(open, (isOpen) => {
                                 />
                             </UTooltip>
 
-                            <UTooltip
-                                v-else
-                                text="未読にする"
-                                :delay-duration="100"
-                            >
+                            <UTooltip v-else text="未読にする" :delay-duration="100">
                                 <UButton
                                     icon="lucide:mail"
                                     variant="ghost"

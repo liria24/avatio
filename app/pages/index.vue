@@ -2,8 +2,8 @@
 import { LazyModalLogin, LineBreak } from '#components'
 import { motion } from 'motion-v'
 
-const { $session } = useNuxtApp()
-const session = await $session()
+const { getSession } = useAuth()
+const session = await getSession()
 const route = useRoute()
 const router = useRouter()
 const overlay = useOverlay()
@@ -139,10 +139,7 @@ useSchemaOrg([
                 />
             </div>
             <SetupsListLatest v-if="tab === 'latest'" />
-            <SetupsListUser
-                v-if="tab === 'me'"
-                :username="session?.user.username!"
-            />
+            <SetupsListUser v-if="tab === 'me'" :username="session?.user.username!" />
             <SetupsListBookmarks v-if="tab === 'bookmarks'" />
         </div>
 

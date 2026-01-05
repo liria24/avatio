@@ -38,11 +38,7 @@ const themeMenu = [
         >
             <UTooltip text="テーマ" :delay-duration="50">
                 <UButton
-                    :icon="
-                        colorMode.value === 'dark'
-                            ? 'lucide:moon'
-                            : 'lucide:sun'
-                    "
+                    :icon="colorMode.value === 'dark' ? 'lucide:moon' : 'lucide:sun'"
                     aria-label="テーマ"
                     variant="ghost"
                 />
@@ -50,11 +46,7 @@ const themeMenu = [
         </UDropdownMenu>
 
         <template #fallback>
-            <UButton
-                icon="lucide:palette"
-                aria-label="テーマ"
-                variant="ghost"
-            />
+            <UButton icon="lucide:palette" aria-label="テーマ" variant="ghost" />
         </template>
     </ClientOnly>
 </template>

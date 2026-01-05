@@ -40,8 +40,7 @@ const sanitizeObject = <T>(obj: T): T => {
 
     if (obj && typeof obj === 'object' && obj !== null) {
         const sanitizedObj = {} as Record<string, unknown>
-        for (const [key, value] of Object.entries(obj))
-            sanitizedObj[key] = sanitizeObject(value)
+        for (const [key, value] of Object.entries(obj)) sanitizedObj[key] = sanitizeObject(value)
 
         return sanitizedObj as T
     }

@@ -113,12 +113,6 @@ const socialShareItems = ref<DropdownMenuItem[]>([
             content: 'w-40',
         }"
     >
-        <UButton
-            icon="lucide:share-2"
-            aria-label="シェア"
-            variant="ghost"
-            size="sm"
-            class="p-2"
-        />
+        <UButton icon="lucide:share-2" aria-label="シェア" variant="ghost" size="sm" class="p-2" />
     </UDropdownMenu>
 </template>

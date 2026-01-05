@@ -1,10 +1,10 @@
 <script lang="ts" setup>
 import { LazyModalLogin, LazyModalReportUser } from '#components'
 
-const { $session } = useNuxtApp()
+const { getSession } = useAuth()
 const route = useRoute()
 const overlay = useOverlay()
-const session = await $session()
+const session = await getSession()
 
 const username = route.params.username as string
 
@@ -98,31 +98,19 @@ if (user.value) {
                         v-else
                         class="bg-muted flex size-14 shrink-0 items-center justify-center rounded-full md:size-20"
                     >
-                        <Icon
-                            name="lucide:user-round"
-                            size="32"
-                            class="text-muted"
-                        />
+                        <Icon name="lucide:user-round" size="32" class="text-muted" />
                     </div>
 
                     <div class="flex flex-col gap-1">
-                        <div
-                            class="flex flex-wrap items-center gap-x-3 gap-y-1"
-                        >
+                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
                             <p class="text-2xl font-bold">
                                 {{ user.name }}
                             </p>
-                            <UserBadges
-                                v-if="user.badges"
-                                :badges="user.badges"
-                            />
+                            <UserBadges v-if="user.badges" :badges="user.badges" />
                         </div>
                         <p class="text-dimmed text-sm">
                             アカウント作成日:
-                            <NuxtTime
-                                :datetime="user.createdAt"
-                                class="text-muted font-[Geist]"
-                            />
+                            <NuxtTime :datetime="user.createdAt" class="text-muted font-[Geist]" />
                         </p>
                     </div>
                 </div>
@@ -143,18 +131,13 @@ if (user.value) {
                         variant="ghost"
                         size="sm"
                         class="self-end"
-                        @click="
-                            session ? modalReport.open() : modalLogin.open()
-                        "
+                        @click="session ? modalReport.open() : modalLogin.open()"
                     />
                 </div>
             </div>
 
             <div class="flex w-full flex-col gap-3 px-2 empty:hidden">
-                <div
-                    v-if="links?.length"
-                    class="flex flex-wrap items-center gap-2"
-                >
+                <div v-if="links?.length" class="flex flex-wrap items-center gap-2">
                     <UButton
                         v-for="(link, index) in links"
                         :key="'link-' + index"
@@ -169,9 +152,7 @@ if (user.value) {
                     v-if="user.bio?.length"
                     class="flex w-full flex-col gap-1 rounded-xl border border-zinc-400 px-4 py-3 dark:border-zinc-600"
                 >
-                    <span class="text-dimmed text-xs leading-none text-nowrap">
-                        bio
-                    </span>
+                    <span class="text-dimmed text-xs leading-none text-nowrap"> bio </span>
                     <p
                         class="text-relaxed text-sm wrap-anywhere break-keep whitespace-break-spaces"
                         v-html="useLineBreak(user.bio)"
@@ -180,15 +161,10 @@ if (user.value) {
             </div>
         </div>
 
-        <div
-            v-if="user.shops?.length"
-            class="mb-4 flex w-full flex-col gap-5 px-2"
-        >
+        <div v-if="user.shops?.length" class="mb-4 flex w-full flex-col gap-5 px-2">
             <div class="flex items-center gap-2">
                 <Icon name="lucide:store" size="22" class="text-muted" />
-                <h2 class="text-xl leading-none font-semibold text-nowrap">
-                    ショップ
-                </h2>
+                <h2 class="text-xl leading-none font-semibold text-nowrap">ショップ</h2>
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
@@ -214,10 +190,7 @@ if (user.value) {
                         class="aspect-square size-8 shrink-0 rounded-lg object-cover"
                     >
                         <img v-if="isLoaded" v-bind="imgAttrs" :src="src" />
-                        <USkeleton
-                            v-else
-                            class="aspect-square size-8 shrink-0 rounded-lg"
-                        />
+                        <USkeleton v-else class="aspect-square size-8 shrink-0 rounded-lg" />
                     </NuxtImg>
                     <div class="flex flex-col items-start gap-1">
                         <span
@@ -240,9 +213,7 @@ if (user.value) {
         <div class="flex w-full flex-col gap-5 px-2">
             <div class="flex items-center gap-2">
                 <Icon name="lucide:shirt" size="22" class="text-muted" />
-                <h2 class="text-xl leading-none font-semibold text-nowrap">
-                    セットアップ
-                </h2>
+                <h2 class="text-xl leading-none font-semibold text-nowrap">セットアップ</h2>
             </div>
 
             <SetupsListUser :username="user.username" />
