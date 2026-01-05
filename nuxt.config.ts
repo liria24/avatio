@@ -43,6 +43,11 @@ export default defineNuxtConfig({
     css: ['~/assets/css/main.css'],
 
     vite: {
+        vue: {
+            features: {
+                optionsAPI: false,
+            },
+        },
         optimizeDeps: {
             include: [
                 'prosemirror-state',
