@@ -2,8 +2,8 @@
 import { LazyModalLogin, LineBreak } from '#components'
 import { motion } from 'motion-v'
 
-const { $session } = useNuxtApp()
-const session = await $session()
+const { getSession } = useAuth()
+const session = await getSession()
 const route = useRoute()
 const router = useRouter()
 const overlay = useOverlay()

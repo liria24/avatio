@@ -4,11 +4,11 @@ import { LazyModalFeedback, LazyModalLogin } from '#components'
 
 interface Props {
     session: Session
-    sessions: Sessions
+    sessions?: Sessions
 }
 const props = defineProps<Props>()
 
-const { $authClient, $revoke } = useNuxtApp()
+const { auth, revoke } = useAuth()
 const route = useRoute()
 const toast = useToast()
 const colorMode = useColorMode()
@@ -18,7 +18,7 @@ const modalLogin = overlay.create(LazyModalLogin)
 const modalFeedback = overlay.create(LazyModalFeedback)
 
 const switchAccount = async (sessionToken: string) => {
-    await $authClient.multiSession.setActive({ sessionToken })
+    await auth.multiSession.setActive({ sessionToken })
     toast.add({
         title: 'アカウントを切り替えました',
         description: 'ページを更新しています...',
@@ -87,7 +87,7 @@ const menuItems = ref<DropdownMenuItem[][]>([
             label: 'アカウント切替',
             icon: 'lucide:users-round',
             children: [
-                ...props.sessions.map((session) => ({
+                ...(props.sessions?.map((session) => ({
                     label: session.user.name,
                     avatar: {
                         src: session.user.image || undefined,
@@ -95,7 +95,7 @@ const menuItems = ref<DropdownMenuItem[][]>([
                         icon: 'lucide:user-round',
                     },
                     onSelect: () => switchAccount(session.session.token),
-                })),
+                })) || []),
                 {
                     label: '新しいアカウント',
                     icon: 'lucide:user-round-plus',
@@ -106,7 +106,7 @@ const menuItems = ref<DropdownMenuItem[][]>([
         {
             label: 'ログアウト',
             icon: 'lucide:log-out',
-            onSelect: $revoke,
+            onSelect: revoke,
         },
     ],
 ])

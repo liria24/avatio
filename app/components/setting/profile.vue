@@ -2,13 +2,8 @@
 import { z } from 'zod'
 import { VueDraggable } from 'vue-draggable-plus'
 
-interface Props {
-    changeUserId?: boolean
-}
-const props = defineProps<Props>()
-
-const { $session } = useNuxtApp()
-const session = await $session()
+const { getSession } = useAuth()
+const session = await getSession()
 const toast = useToast()
 
 const { data } = await useUser(session.value!.user.username!)
@@ -20,8 +15,6 @@ const ui = reactive({
     croppingImage: null as Blob | null,
     imageUploading: false,
     profileUpdating: false,
-    idUpdating: false,
-    modalChangeUserId: props.changeUserId || false,
     modalCropImage: false,
 })
 

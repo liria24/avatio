@@ -1,10 +1,10 @@
 <script lang="ts" setup>
 import { LazyModalLogin, LazyModalReportUser } from '#components'
 
-const { $session } = useNuxtApp()
+const { getSession } = useAuth()
 const route = useRoute()
 const overlay = useOverlay()
-const session = await $session()
+const session = await getSession()
 
 const username = route.params.username as string
 

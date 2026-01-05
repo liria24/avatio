@@ -6,8 +6,8 @@ definePageMeta({
     layout: 'dashboard',
 })
 
-const { $session } = useNuxtApp()
-const session = await $session()
+const { getSession } = useAuth()
+const session = await getSession()
 const toast = useToast()
 
 const me = await $fetch<SerializedUser>(`/api/users/${session.value!.user.username!}`)

@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-const { $session } = useNuxtApp()
-const session = await $session()
+const { getSession } = useAuth()
+const session = await getSession()
 const toast = useToast()
 
 const { data, refresh } = await useUser(session.value!.user.username!)
