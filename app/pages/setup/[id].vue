@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { LazyModalReportSetup, LazyImageViewer, SetupsViewerItem } from '#components'
-import { motion } from 'motion-v'
 
 const { app } = useAppConfig()
 const route = useRoute()
@@ -15,7 +14,6 @@ if (!id || isNaN(id) || id <= 0)
         message: 'IDが無効です',
     })
 
-const MotionSetupsViewerItem = motion.create(SetupsViewerItem)
 const ImageViewer = overlay.create(LazyImageViewer)
 const modalReport = overlay.create(LazyModalReportSetup, {
     props: { setupId: id },
@@ -198,26 +196,10 @@ if (data.value) {
                                     }}
                                 </h2>
                             </div>
-                            <MotionSetupsViewerItem
+                            <SetupsViewerItem
                                 v-for="(item, index) in value"
                                 :key="`item-${key}-${index}`"
                                 :item="item"
-                                :initial="{
-                                    opacity: 0,
-                                    y: 10,
-                                }"
-                                :in-view="{
-                                    opacity: 1,
-                                    y: 0,
-                                }"
-                                :in-view-options="{
-                                    once: true,
-                                    amount: 0.4,
-                                }"
-                                :transition="{
-                                    duration: 0.2,
-                                    delay: isInitialLoad ? 0.1 + 0.05 * index : 0,
-                                }"
                             />
                         </template>
                     </div>
