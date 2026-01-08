@@ -16,8 +16,6 @@ const avatarName = computed(() => {
     return avatar.niceName || avatarShortName(avatar.name)
 })
 
-const setupNameHtml = computed(() => useLineBreak(props.setup.name))
-
 // 画像関連の処理
 const firstImage = computed(() => props.setup.images?.[0])
 const hasImages = computed(() => !!props.setup.images?.length)
@@ -280,10 +278,9 @@ watch(colorMode, (newMode) => {
 
             <!-- 画像がない場合のメタ情報 -->
             <div v-else class="flex w-full flex-col items-start justify-center gap-2 pr-2 pl-3">
-                <span
-                    class="md:text-md text-toned line-clamp-2 text-sm font-medium break-keep"
-                    v-html="setupNameHtml"
-                />
+                <span class="md:text-md text-toned sentence line-clamp-2 text-sm font-medium">
+                    {{ props.setup.name }}
+                </span>
 
                 <div class="flex items-center gap-2">
                     <UPopover mode="hover">

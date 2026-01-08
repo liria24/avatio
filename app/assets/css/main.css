@@ -9,6 +9,14 @@
 }
 
 @layer utilities {
+    .sentence {
+        font-family: 'Noto Sans JP', var(--font-sans);
+        text-autospace: normal;
+        text-spacing-trim: trim-start;
+        line-break: strict;
+        overflow-wrap: anywhere;
+    }
+
     .rounded-xs {
         border-radius: var(--radius-xs);
         @supports (-webkit-appearance: none) and (not (-moz-appearance: none)) {

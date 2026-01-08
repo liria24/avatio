@@ -29,27 +29,21 @@ const onRead = async (id: string) => {
             class="flex grow flex-col gap-1 pl-2"
         >
             <NuxtLink :to="$localePath(props.data.actionUrl)">
-                <p
-                    class="text-toned text-xs wrap-anywhere break-keep"
-                    v-html="useLineBreak(props.data.title)"
-                />
+                <p class="text-toned sentence text-xs">
+                    {{ props.data.title }}
+                </p>
             </NuxtLink>
-            <p
-                v-if="props.data.message?.length"
-                class="text-muted text-xs wrap-anywhere break-keep"
-                v-html="useLineBreak(props.data.message)"
-            />
+            <p v-if="props.data.message?.length" class="text-muted sentence text-xs">
+                {{ props.data.message }}
+            </p>
         </div>
         <div v-else class="flex grow flex-col gap-1 pl-2">
-            <p
-                class="text-toned text-xs wrap-anywhere break-keep"
-                v-html="useLineBreak(props.data.title)"
-            />
-            <p
-                v-if="props.data.message?.length"
-                class="text-muted text-xs wrap-anywhere break-keep"
-                v-html="useLineBreak(props.data.message)"
-            />
+            <p class="text-toned sentence text-xs">
+                {{ props.data.title }}
+            </p>
+            <p v-if="props.data.message?.length" class="text-muted sentence text-xs">
+                {{ props.data.message }}
+            </p>
         </div>
 
         <UButton

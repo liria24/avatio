@@ -199,12 +199,12 @@ onBeforeRouteLeave(() => {
             </div>
         </div>
 
-        <LineBreak
+        <p
             v-if="!props.sidebar && props.setup.description?.length"
-            :content="props.setup.description"
-            as="p"
-            class="pl-1 text-sm/relaxed whitespace-pre-wrap"
-        />
+            class="sentence pl-1 text-sm/relaxed whitespace-pre-wrap"
+        >
+            {{ props.setup.description }}
+        </p>
 
         <div
             v-if="!props.sidebar && props.setup.tags?.length"
@@ -251,12 +251,13 @@ onBeforeRouteLeave(() => {
                             size="sm"
                         />
                     </NuxtLink>
-                    <LineBreak
+
+                    <p
                         v-if="coAuthor.note?.length"
-                        :content="coAuthor.note"
-                        as="p"
-                        class="text-muted pl-1 text-sm"
-                    />
+                        class="sentence pl-1 text-sm whitespace-pre-wrap"
+                    >
+                        {{ coAuthor.note }}
+                    </p>
                 </li>
             </ul>
         </div>
