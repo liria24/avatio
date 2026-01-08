@@ -153,10 +153,9 @@ if (user.value) {
                     class="flex w-full flex-col gap-1 rounded-xl border border-zinc-400 px-4 py-3 dark:border-zinc-600"
                 >
                     <span class="text-dimmed text-xs leading-none text-nowrap"> bio </span>
-                    <p
-                        class="text-relaxed text-sm wrap-anywhere break-keep whitespace-break-spaces"
-                        v-html="useLineBreak(user.bio)"
-                    />
+                    <p class="text-relaxed sentence text-sm whitespace-pre-wrap">
+                        {{ user.bio }}
+                    </p>
                 </div>
             </div>
         </div>

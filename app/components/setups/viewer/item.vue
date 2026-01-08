@@ -289,10 +289,9 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
         >
             <div v-if="item.note?.length" class="flex items-start gap-2 px-1">
                 <Icon name="lucide:pen-line" :size="15" class="text-muted mt-[0.2rem] shrink-0" />
-                <p
-                    class="text-left text-xs/relaxed wrap-anywhere break-keep whitespace-pre-wrap"
-                    v-html="useLineBreak(item.note)"
-                />
+                <p class="sentence text-xs/relaxed whitespace-pre-wrap">
+                    {{ item.note }}
+                </p>
             </div>
             <div
                 v-if="item.shapekeys?.length || item.unsupported"

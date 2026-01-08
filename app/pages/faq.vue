@@ -19,7 +19,7 @@ defineSeo({
 
 <template>
     <UPage>
-        <ContentRenderer v-if="page" :value="page" />
+        <ContentRenderer v-if="page" :value="page" class="sentence" />
 
         <template #right>
             <UContentToc :links="page?.body?.toc?.links" />

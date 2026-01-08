@@ -31,7 +31,7 @@ const versions = computed(() => {
 
 defineSeo({
     title: '変更履歴',
-    description: 'Avatio の変更履歴を確認できます。',
+    description: 'Avatioの変更履歴を確認できます。',
     image: `${app.site}/ogp.png`,
 })
 </script>
@@ -45,13 +45,13 @@ defineSeo({
                 v-for="(version, index) in versions"
                 :key="index"
                 v-bind="version"
-                :ui="{ container: 'ml-40 mr-0 max-w-full', title: 'text-3xl' }"
+                :ui="{ container: 'ml-40 mr-0 max-w-full', title: 'text-3xl sentence' }"
             >
                 <template #description>
                     <MDC
                         v-if="version.content"
-                        :value="useLineBreak(version.content)"
-                        class="w-full max-w-full wrap-anywhere break-keep"
+                        :value="version.content"
+                        class="sentence w-full max-w-full"
                     />
                 </template>
             </UChangelogVersion>

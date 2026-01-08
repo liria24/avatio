@@ -32,6 +32,7 @@ export default defineNuxtConfig({
         '@pinia/nuxt',
         '@vueuse/nuxt',
         'motion-v/nuxt',
+        'nuxt-charts',
         '@stefanobartoletti/nuxt-social-share',
         'nuxt-link-checker',
         'nuxt-schema-org',

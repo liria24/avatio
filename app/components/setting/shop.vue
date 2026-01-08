@@ -92,22 +92,13 @@ watch(modalVerify, async (value) => {
                         />
                         <UAlert
                             icon="lucide:info"
+                            description="認証に使用できるアイテムは、Avatio に登録できるアイテムのみです。非公開アイテムや、非対応プラットフォームのアイテムは使用できません。また、現在 GitHub はショップ認証に対応していません。"
                             variant="outline"
                             :ui="{
                                 icon: 'size-4',
-                                description: 'text-xs break-keep wrap-anywhere',
+                                description: 'text-xs sentence',
                             }"
-                        >
-                            <template #description>
-                                <p
-                                    v-html="
-                                        useLineBreak(
-                                            '認証に使用できるアイテムは、Avatio に登録できるアイテムのみです。非公開アイテムや、非対応プラットフォームのアイテムは使用できません。また、現在 GitHub はショップ認証に対応していません。'
-                                        )
-                                    "
-                                />
-                            </template>
-                        </UAlert>
+                        />
                     </div>
                 </UFormField>
 

@@ -5,14 +5,14 @@ const { data: page } = await useAsyncData(() =>
 
 defineSeo({
     title: 'プライバシーポリシー',
-    description: 'Avatio のご利用におけるプライバシーポリシーについて',
+    description: 'Avatioのご利用におけるプライバシーポリシーについて',
     image: 'https://avatio.me/ogp.png',
 })
 </script>
 
 <template>
     <UPage>
-        <ContentRenderer v-if="page" :value="page" />
+        <ContentRenderer v-if="page" :value="page" class="sentence" />
 
         <template #right>
             <UContentToc :links="page?.body?.toc?.links" />

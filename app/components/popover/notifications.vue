@@ -96,9 +96,10 @@ watch(open, (isOpen) => {
                         <div class="flex w-full items-start gap-2">
                             <p
                                 :data-unread="!notification.readAt"
-                                class="text-muted data-[unread=true]:text-toned grow px-1 text-left text-sm wrap-anywhere break-keep"
-                                v-html="useLineBreak(notification.title)"
-                            />
+                                class="text-muted data-[unread=true]:text-toned sentence grow px-1 text-left text-sm"
+                            >
+                                {{ notification.title }}
+                            </p>
                             <NuxtTime
                                 :datetime="notification.createdAt"
                                 relative
@@ -109,9 +110,10 @@ watch(open, (isOpen) => {
                         <div v-if="notification.message?.length">
                             <p
                                 :data-unread="!notification.readAt"
-                                class="text-dimmed data-[unread=true]:text-muted grow px-1 text-left text-xs wrap-anywhere break-keep"
-                                v-html="useLineBreak(notification.message)"
-                            />
+                                class="text-dimmed data-[unread=true]:text-muted sentence grow px-1 text-left text-xs"
+                            >
+                                {{ notification.message }}
+                            </p>
                         </div>
 
                         <div class="flex w-full items-center justify-end-safe gap-2 empty:hidden">
