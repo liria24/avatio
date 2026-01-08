@@ -14,11 +14,12 @@ const loading = defineModel<boolean>('loading', {
 })
 
 const isInitialLoad = ref(true)
-onMounted(async () => {
+
+const setLoaded = async () => {
     await setTimeout(() => {
         isInitialLoad.value = false
     }, 100)
-})
+}
 </script>
 
 <template>
@@ -41,6 +42,7 @@ onMounted(async () => {
         :min-columns="2"
         :max-columns="3"
         :ssr-columns="isMobile ? 2 : 3"
+        @vue:mounted="setLoaded"
     >
         <template #default="{ item, index }">
             <MotionLazySetupsLink
@@ -51,19 +53,18 @@ onMounted(async () => {
                     opacity: 0,
                     y: 10,
                 }"
-                :in-view="{
+                :while-in-view="{
                     opacity: 1,
                     y: 0,
                 }"
                 :in-view-options="{
                     once: true,
-                    amount: 0.4,
+                    amount: 0.3,
                 }"
                 :transition="{
                     duration: 0.2,
-                    delay: isInitialLoad ? 0.1 + 0.05 * index : 0,
+                    delay: isInitialLoad ? 0.05 * index : 0,
                 }"
-                class="mb-2"
             />
         </template>
     </MasonryWall>
