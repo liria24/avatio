@@ -37,9 +37,8 @@ export default defineNuxtConfig({
         'nuxt-link-checker',
         'nuxt-schema-org',
         'nuxt-seo-utils',
+        '@nuxt/a11y',
     ],
-
-    plugins: [{ src: '~/plugins/axe.client.ts', mode: 'client' }],
 
     css: ['~/assets/css/main.css'],
 
@@ -55,7 +54,6 @@ export default defineNuxtConfig({
                 'prosemirror-transform',
                 'prosemirror-model',
                 'prosemirror-view',
-                ...(import.meta.dev ? ['axe-core'] : []),
             ],
         },
     },
