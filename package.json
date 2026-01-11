@@ -65,7 +65,7 @@
         "remark-breaks": "4.0.0",
         "sanitize-html": "2.17.0",
         "vue-advanced-cropper": "2.8.9",
-        "vue-draggable-plus": "0.6.0",
+        "vue-draggable-plus": "0.6.1",
         "zod": "4.3.5"
     },
     "devDependencies": {
