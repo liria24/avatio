@@ -99,7 +99,7 @@
         "@tiptap/starter-kit": "3.14.0",
         "@tiptap/suggestion": "3.14.0",
         "@tiptap/vue-3": "3.14.0",
-        "vite": "8.0.0-beta.6",
+        "vite": "8.0.0-beta.8",
         "vue": "latest"
     },
     "engines": {
