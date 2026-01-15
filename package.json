@@ -71,7 +71,7 @@
     "devDependencies": {
         "@nuxt/eslint": "1.12.1",
         "@types/canvas-confetti": "1.9.0",
-        "@types/node": "25.0.3",
+        "@types/node": "25.0.9",
         "@types/sanitize-html": "2.16.0",
         "@types/ws": "^8.18.1",
         "@typescript-eslint/eslint-plugin": "8.52.0",
