@@ -20,7 +20,7 @@
     },
     "dependencies": {
         "@iconify-json/fluent-color": "1.2.21",
-        "@iconify-json/lucide": "1.2.82",
+        "@iconify-json/lucide": "1.2.86",
         "@iconify-json/mingcute": "1.2.6",
         "@iconify-json/simple-icons": "1.2.65",
         "@iconify-json/svg-spinners": "1.2.4",
