@@ -26,8 +26,6 @@ const { data: repo } = useFetch<GithubRepo>('https://ungh.cc/repos/liria24/avati
                         icon="mingcute:social-x-fill"
                         aria-label="X"
                         variant="ghost"
-                        size="sm"
-                        class="p-2"
                     />
 
                     <LazyUPopover hydrate-on-visible mode="hover" :open-delay="100">
@@ -37,8 +35,6 @@ const { data: repo } = useFetch<GithubRepo>('https://ungh.cc/repos/liria24/avati
                             icon="mingcute:github-fill"
                             aria-label="GitHub"
                             variant="ghost"
-                            size="sm"
-                            class="p-2"
                         />
 
                         <template #content>

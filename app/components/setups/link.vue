@@ -163,7 +163,7 @@ watch(colorMode, (newMode) => {
                 preload
                 loading="eager"
                 fetchpriority="high"
-                class="size-full max-h-[420px] rounded-lg object-cover"
+                class="size-full max-h-105 rounded-lg object-cover"
             />
             <div
                 :class="[
@@ -262,7 +262,10 @@ watch(colorMode, (newMode) => {
                                     icon: 'mingcute:user-3-fill',
                                 }"
                                 :description="`@${setup.user.username}`"
-                                :ui="{ name: 'flex gap-1 items-center' }"
+                                :ui="{
+                                    name: 'flex gap-1 items-center',
+                                    description: 'line-clamp-1 break-all wrap-anywhere',
+                                }"
                             >
                                 <template #name>
                                     <span>{{ setup.user.name }}</span>
@@ -297,17 +300,22 @@ watch(colorMode, (newMode) => {
                         <template #content>
                             <NuxtLink :to="`/@${setup.user.username}`" class="flex py-2 pr-3 pl-2">
                                 <UUser
-                                    :name="setup.user.name"
                                     :avatar="{
                                         src: setup.user.image || undefined,
                                         icon: 'mingcute:user-3-fill',
                                     }"
+                                    :description="`@${setup.user.username}`"
+                                    :ui="{
+                                        name: 'flex gap-1 items-center',
+                                        description: 'line-clamp-1 break-all wrap-anywhere',
+                                    }"
                                 >
-                                    <template #description>
+                                    <template #name>
+                                        <span>{{ setup.user.name }}</span>
                                         <UserBadges
                                             v-if="setup.user.badges?.length"
                                             :badges="setup.user.badges"
-                                            size="xs"
+                                            size="sm"
                                         />
                                     </template>
                                 </UUser>

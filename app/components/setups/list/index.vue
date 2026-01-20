@@ -44,7 +44,7 @@ const setLoaded = async () => {
                 :aria-label="item.name"
                 :image-size="{ width: 16, height: 9 }"
                 :setup="item"
-                :style="`animation-delay: ${100 + 50 * index}ms`"
+                :style="`animation-delay: ${50 * index}ms`"
                 class="fade-in"
             />
         </template>
