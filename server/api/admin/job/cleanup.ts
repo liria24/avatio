@@ -1,118 +1,111 @@
-export default defineApi(
-    async () => {
-        const config = useRuntimeConfig()
-        const event = useEvent()
+export default cronEventHandler(async ({ event }) => {
+    const config = useRuntimeConfig()
 
-        const unusedImages = await event.$fetch('/api/images/unused')
-        const allImages = [...unusedImages.setupImages, ...unusedImages.userImages]
+    const unusedImages = await event.$fetch('/api/images/unused')
+    const allImages = [...unusedImages.setupImages, ...unusedImages.userImages]
 
-        // Execute deletion in parallel
-        const deleteResults = await Promise.allSettled(
-            allImages.map(async (image) => {
-                console.log('Deleting image from storage:', image.key)
-                await useStorage('r2').del(image.key)
-                return image.key
-            })
-        )
+    // Execute deletion in parallel
+    const deleteResults = await Promise.allSettled(
+        allImages.map(async (image) => {
+            console.log('Deleting image from storage:', image.key)
+            await useStorage('r2').del(image.key)
+            return image.key
+        })
+    )
 
-        // Categorize results
-        const { successful, failed } = deleteResults.reduce(
-            (acc, result, index) => {
-                const imageKey = allImages[index].key
+    // Categorize results
+    const { successful, failed } = deleteResults.reduce(
+        (acc, result, index) => {
+            const imageKey = allImages[index].key
 
-                if (result.status === 'fulfilled') {
-                    acc.successful.push(imageKey)
-                } else {
-                    console.error('Failed to delete image:', imageKey, result.reason)
-                    acc.failed.push({
-                        key: imageKey,
-                        error: result.reason?.message || 'Unknown error',
-                    })
-                }
-                return acc
-            },
-            {
-                successful: [] as string[],
-                failed: [] as Array<{ key: string; error: string }>,
+            if (result.status === 'fulfilled') {
+                acc.successful.push(imageKey)
+            } else {
+                console.error('Failed to delete image:', imageKey, result.reason)
+                acc.failed.push({
+                    key: imageKey,
+                    error: result.reason?.message || 'Unknown error',
+                })
             }
-        )
+            return acc
+        },
+        {
+            successful: [] as string[],
+            failed: [] as Array<{ key: string; error: string }>,
+        }
+    )
 
-        const message = 'Cleanup completed.'
+    const message = 'Cleanup completed.'
 
-        // 処理対象の画像がある場合のみDiscord通知を送信
-        if (allImages.length > 0) {
-            try {
-                await $fetch(config.liria.discordEndpoint, {
-                    method: 'POST',
-                    body: {
-                        embeds: [
-                            {
-                                title: 'Avatio Data Cleanup',
-                                description: message,
-                                color: 0xeeeeee,
-                                timestamp: new Date().toISOString(),
-                                fields: [
-                                    {
-                                        name: 'Total Processed',
-                                        value: allImages.length.toString(),
-                                        inline: true,
-                                    },
-                                    {
-                                        name: 'Successfully Deleted',
-                                        value: successful.length.toString(),
-                                        inline: true,
-                                    },
-                                    {
-                                        name: 'Failed',
-                                        value: failed.length.toString(),
-                                        inline: true,
-                                    },
-                                    ...(failed.length
-                                        ? [
-                                              {
-                                                  name: 'Failed Images',
-                                                  value: failed
-                                                      .map((f) => `${f.key}: ${f.error}`)
-                                                      .join('\n')
-                                                      .slice(0, 1024),
-                                                  inline: false,
-                                              },
-                                          ]
-                                        : []),
-                                ],
-                                author: {
-                                    name: 'Avatio',
-                                    url: 'https://avatio.me',
-                                    icon_url: 'https://avatio.me/icon_outlined.png',
+    // 処理対象の画像がある場合のみDiscord通知を送信
+    if (allImages.length > 0) {
+        try {
+            await $fetch(config.liria.discordEndpoint, {
+                method: 'POST',
+                body: {
+                    embeds: [
+                        {
+                            title: 'Avatio Data Cleanup',
+                            description: message,
+                            color: 0xeeeeee,
+                            timestamp: new Date().toISOString(),
+                            fields: [
+                                {
+                                    name: 'Total Processed',
+                                    value: allImages.length.toString(),
+                                    inline: true,
                                 },
+                                {
+                                    name: 'Successfully Deleted',
+                                    value: successful.length.toString(),
+                                    inline: true,
+                                },
+                                {
+                                    name: 'Failed',
+                                    value: failed.length.toString(),
+                                    inline: true,
+                                },
+                                ...(failed.length
+                                    ? [
+                                          {
+                                              name: 'Failed Images',
+                                              value: failed
+                                                  .map((f) => `${f.key}: ${f.error}`)
+                                                  .join('\n')
+                                                  .slice(0, 1024),
+                                              inline: false,
+                                          },
+                                      ]
+                                    : []),
+                            ],
+                            author: {
+                                name: 'Avatio',
+                                url: 'https://avatio.me',
+                                icon_url: 'https://avatio.me/icon_outlined.png',
                             },
-                        ],
-                    },
-                    headers: {
-                        authorization: `Bearer ${config.liria.accessToken}`,
-                    },
-                })
-            } catch (error) {
-                console.error('Failed to send Discord notification:', error)
-                throw createError({
-                    statusCode: 500,
-                    statusMessage: 'Failed to send Discord notification',
-                })
-            }
+                        },
+                    ],
+                },
+                headers: {
+                    authorization: `Bearer ${config.liria.accessToken}`,
+                },
+            })
+        } catch (error) {
+            console.error('Failed to send Discord notification:', error)
+            throw createError({
+                statusCode: 500,
+                statusMessage: 'Failed to send Discord notification',
+            })
         }
-
-        return {
-            success: true,
-            message,
-            data: {
-                successfulDeletes: successful,
-                failedDeletes: failed,
-                totalProcessed: allImages.length,
-            },
-        }
-    },
-    {
-        errorMessage: 'Failed to cleanup unused images.',
-        requireCron: true,
     }
-)
+
+    return {
+        success: true,
+        message,
+        data: {
+            successfulDeletes: successful,
+            failedDeletes: failed,
+            totalProcessed: allImages.length,
+        },
+    }
+})

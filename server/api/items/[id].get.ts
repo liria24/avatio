@@ -9,30 +9,27 @@ const query = z.object({
     platform: platformSchema.optional(),
 })
 
-export default defineApi<Item>(
-    async () => {
-        const { id } = await validateParams(params)
-        let { platform } = await validateQuery(query)
+export default promiseEventHandler<Item>(async () => {
+    const { id } = await validateParams(params)
+    let { platform } = await validateQuery(query)
 
-        consola.log(`Processing item: ${id}, Platform: ${platform || 'auto-detect'}`)
+    consola.log(`Processing item: ${id}, Platform: ${platform || 'auto-detect'}`)
 
-        if (!platform) {
-            const item = await getItemFromDatabase(transformItemId(id).decode())
-            platform = item?.platform
-        }
-
-        try {
-            if (platform === 'booth') return await $fetch<Item>(`/api/items/booth/${id}`)
-            else if (platform === 'github') return await $fetch<Item>(`/api/items/github/${id}`)
-            else throw new Error()
-        } catch {
-            throw createError({
-                statusCode: 404,
-                statusMessage: 'Item not found',
-            })
-        }
-    },
-    {
-        errorMessage: 'Failed to get items.',
+    if (!platform) {
+        const item = await getItemFromDatabase(transformItemId(id).decode())
+        platform = item?.platform
     }
-)
+
+    defineCacheControl({ cdnAge: 60 * 60 * 24, clientAge: 60 * 60 })
+
+    try {
+        if (platform === 'booth') return await $fetch<Item>(`/api/items/booth/${id}`)
+        else if (platform === 'github') return await $fetch<Item>(`/api/items/github/${id}`)
+        else throw new Error()
+    } catch {
+        throw createError({
+            statusCode: 404,
+            statusMessage: 'Item not found',
+        })
+    }
+})

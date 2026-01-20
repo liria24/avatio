@@ -18,147 +18,141 @@ type ApiResponse = PaginationResponse<
     })[]
 >
 
-export default defineApi<ApiResponse>(
-    async () => {
-        const { sort, reporterId, page, limit, isResolved } = await validateQuery(query)
+export default adminSessionEventHandler<ApiResponse>(async () => {
+    const { sort, reporterId, page, limit, isResolved } = await validateQuery(query)
 
-        const offset = (page - 1) * limit
+    const offset = (page - 1) * limit
 
-        const data = await db.query.setupReports.findMany({
-            extras: {
-                count: sql<number>`CAST(COUNT(*) OVER() AS INTEGER)`,
-            },
-            where: {
-                reporterId: reporterId ? { eq: reporterId } : undefined,
-                isResolved:
-                    isResolved !== undefined && isResolved.length === 1
-                        ? { eq: isResolved[0] }
-                        : undefined,
-            },
-            limit,
-            offset,
-            orderBy: {
-                createdAt: sort,
-            },
-            columns: {
-                id: true,
-                createdAt: true,
-                spam: true,
-                hate: true,
-                infringe: true,
-                badImage: true,
-                other: true,
-                comment: true,
-                isResolved: true,
-            },
-            with: {
-                setup: {
-                    columns: {
-                        id: true,
-                        createdAt: true,
-                        updatedAt: true,
-                        name: true,
-                        description: true,
-                        hidAt: true,
-                        hidReason: true,
-                    },
-                    with: {
-                        user: {
-                            columns: {
-                                username: true,
-                                createdAt: true,
-                                name: true,
-                                image: true,
-                                bio: true,
-                                links: true,
-                            },
-                            with: {
-                                badges: {
-                                    columns: {
-                                        badge: true,
-                                        createdAt: true,
-                                    },
+    const data = await db.query.setupReports.findMany({
+        extras: {
+            count: sql<number>`CAST(COUNT(*) OVER() AS INTEGER)`,
+        },
+        where: {
+            reporterId: reporterId ? { eq: reporterId } : undefined,
+            isResolved:
+                isResolved !== undefined && isResolved.length === 1
+                    ? { eq: isResolved[0] }
+                    : undefined,
+        },
+        limit,
+        offset,
+        orderBy: {
+            createdAt: sort,
+        },
+        columns: {
+            id: true,
+            createdAt: true,
+            spam: true,
+            hate: true,
+            infringe: true,
+            badImage: true,
+            other: true,
+            comment: true,
+            isResolved: true,
+        },
+        with: {
+            setup: {
+                columns: {
+                    id: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    name: true,
+                    description: true,
+                    hidAt: true,
+                    hidReason: true,
+                },
+                with: {
+                    user: {
+                        columns: {
+                            username: true,
+                            createdAt: true,
+                            name: true,
+                            image: true,
+                            bio: true,
+                            links: true,
+                        },
+                        with: {
+                            badges: {
+                                columns: {
+                                    badge: true,
+                                    createdAt: true,
                                 },
-                                shops: {
-                                    columns: {
-                                        id: true,
-                                        createdAt: true,
-                                    },
-                                    with: {
-                                        shop: {
-                                            columns: {
-                                                id: true,
-                                                platform: true,
-                                                name: true,
-                                                image: true,
-                                                verified: true,
-                                            },
+                            },
+                            shops: {
+                                columns: {
+                                    id: true,
+                                    createdAt: true,
+                                },
+                                with: {
+                                    shop: {
+                                        columns: {
+                                            id: true,
+                                            platform: true,
+                                            name: true,
+                                            image: true,
+                                            verified: true,
                                         },
                                     },
                                 },
                             },
                         },
-                        images: {
-                            columns: {
-                                url: true,
-                                width: true,
-                                height: true,
-                            },
+                    },
+                    images: {
+                        columns: {
+                            url: true,
+                            width: true,
+                            height: true,
                         },
                     },
                 },
-                reporter: {
-                    columns: {
-                        username: true,
-                        createdAt: true,
-                        name: true,
-                        image: true,
-                        bio: true,
-                        links: true,
-                    },
-                    with: {
-                        badges: {
-                            columns: {
-                                badge: true,
-                                createdAt: true,
-                            },
+            },
+            reporter: {
+                columns: {
+                    username: true,
+                    createdAt: true,
+                    name: true,
+                    image: true,
+                    bio: true,
+                    links: true,
+                },
+                with: {
+                    badges: {
+                        columns: {
+                            badge: true,
+                            createdAt: true,
                         },
-                        shops: {
-                            columns: {
-                                id: true,
-                                createdAt: true,
-                            },
-                            with: {
-                                shop: {
-                                    columns: {
-                                        id: true,
-                                        platform: true,
-                                        name: true,
-                                        image: true,
-                                        verified: true,
-                                    },
+                    },
+                    shops: {
+                        columns: {
+                            id: true,
+                            createdAt: true,
+                        },
+                        with: {
+                            shop: {
+                                columns: {
+                                    id: true,
+                                    platform: true,
+                                    name: true,
+                                    image: true,
+                                    verified: true,
                                 },
                             },
                         },
                     },
                 },
             },
-        })
+        },
+    })
 
-        return {
-            data,
-            pagination: {
-                page,
-                limit,
-                total: data[0]?.count || 0,
-                totalPages: Math.ceil((data[0]?.count || 0) / limit),
-                hasNext: offset + limit < (data[0]?.count || 0),
-                hasPrev: offset > 0,
-            },
-        }
-    },
-    {
-        errorMessage: 'Failed to get item reports.',
-        requireAdmin: true,
+    return {
+        data,
+        pagination: {
+            page,
+            limit,
+            total: data[0]?.count || 0,
+            totalPages: Math.ceil((data[0]?.count || 0) / limit),
+            hasNext: offset + limit < (data[0]?.count || 0),
+            hasPrev: offset > 0,
+        },
     }
-)
+})

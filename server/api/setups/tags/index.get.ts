@@ -9,27 +9,24 @@ const query = z.object({
     limit: z.coerce.number().min(1).max(1000).optional().default(24),
 })
 
-export default defineApi(
-    async () => {
-        const { q, orderBy, sort, limit } = await validateQuery(query)
+export default eventHandler(async () => {
+    const { q, orderBy, sort, limit } = await validateQuery(query)
 
-        const sortFn = sort === 'asc' ? asc : desc
-        const orderByFn = orderBy === 'name' ? setupTags.tag : sql<number>`count(*)`
+    const sortFn = sort === 'asc' ? asc : desc
+    const orderByFn = orderBy === 'name' ? setupTags.tag : sql<number>`count(*)`
 
-        const data = await db
-            .select({
-                tag: setupTags.tag,
-                count: sql<number>`CAST(COUNT(*) OVER() AS INTEGER)`,
-            })
-            .from(setupTags)
-            .groupBy(setupTags.tag)
-            .limit(limit)
-            .orderBy(sortFn(orderByFn))
-            .where(q ? ilike(setupTags.tag, `%${q}%`) : undefined)
+    const data = await db
+        .select({
+            tag: setupTags.tag,
+            count: sql<number>`CAST(COUNT(*) OVER() AS INTEGER)`,
+        })
+        .from(setupTags)
+        .groupBy(setupTags.tag)
+        .limit(limit)
+        .orderBy(sortFn(orderByFn))
+        .where(q ? ilike(setupTags.tag, `%${q}%`) : undefined)
 
-        return data
-    },
-    {
-        errorMessage: 'Failed to get tags.',
-    }
-)
+    defineCacheControl({ cdnAge: 60 * 60, clientAge: 60 })
+
+    return data
+})

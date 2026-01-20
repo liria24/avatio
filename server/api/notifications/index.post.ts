@@ -11,29 +11,23 @@ const body = notificationsInsertSchema.pick({
     banner: true,
 })
 
-export default defineApi(
-    async () => {
-        const { userId, title, type, message, data, actionUrl, actionLabel, banner } =
-            await validateBody(body, { sanitize: true })
+export default adminSessionEventHandler(async () => {
+    const { userId, title, type, message, data, actionUrl, actionLabel, banner } =
+        await validateBody(body, { sanitize: true })
 
-        const result = await db
-            .insert(notifications)
-            .values({
-                userId,
-                title,
-                type,
-                message,
-                data,
-                actionUrl,
-                actionLabel,
-                banner,
-            })
-            .returning({ id: notifications.id })
+    const result = await db
+        .insert(notifications)
+        .values({
+            userId,
+            title,
+            type,
+            message,
+            data,
+            actionUrl,
+            actionLabel,
+            banner,
+        })
+        .returning({ id: notifications.id })
 
-        return result[0]
-    },
-    {
-        errorMessage: 'Failed to create notification.',
-        requireAdmin: true,
-    }
-)
+    return result[0]
+})

@@ -12,39 +12,33 @@ const body = changelogsInsertSchema
         authors: z.string().array().optional(),
     })
 
-export default defineApi(
-    async () => {
-        const { slug, title, markdown, authors } = await validateBody(body)
+export default adminSessionEventHandler(async () => {
+    const { slug, title, markdown, authors } = await validateBody(body)
 
-        const html = await marked.parse(markdown, {
-            gfm: true,
-            breaks: true,
+    const html = await marked.parse(markdown, {
+        gfm: true,
+        breaks: true,
+    })
+
+    const data = await db
+        .insert(changelogs)
+        .values({
+            slug,
+            title,
+            markdown,
+            html,
+        })
+        .returning({
+            slug: changelogs.slug,
         })
 
-        const data = await db
-            .insert(changelogs)
-            .values({
-                slug,
-                title,
-                markdown,
-                html,
-            })
-            .returning({
-                slug: changelogs.slug,
-            })
+    if (authors?.length)
+        await db.insert(changelogAuthors).values(
+            authors.map((author) => ({
+                changelogSlug: data[0].slug,
+                userId: author,
+            }))
+        )
 
-        if (authors?.length)
-            await db.insert(changelogAuthors).values(
-                authors.map((author) => ({
-                    changelogSlug: data[0].slug,
-                    userId: author,
-                }))
-            )
-
-        return data[0]
-    },
-    {
-        errorMessage: 'Failed to create changelog.',
-        requireAdmin: true,
-    }
-)
+    return data[0]
+})

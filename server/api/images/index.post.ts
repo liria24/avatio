@@ -93,7 +93,7 @@ const compressImage = async (buffer: Buffer) => {
     }
 }
 
-export default defineApi(
+export default authedSessionEventHandler(
     async () => {
         const { blob, path } = await validateFormData(formData)
 
@@ -122,8 +122,6 @@ export default defineApi(
         }
     },
     {
-        errorMessage: 'Failed to upload image',
-        requireSession: true,
         rejectBannedUser: true,
     }
 )

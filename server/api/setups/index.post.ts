@@ -9,10 +9,11 @@ import {
 
 const body = setupsInsertSchema
 
-export default defineApi(
+export default authedSessionEventHandler(
     async ({ session }) => {
-        const { name, description, items, images, tags, coauthors } =
-            await validateBody(body, { sanitize: true })
+        const { name, description, items, images, tags, coauthors } = await validateBody(body, {
+            sanitize: true,
+        })
 
         const imageData = await Promise.all(
             (images || []).map(async (url) => {
@@ -48,10 +49,7 @@ export default defineApi(
                         itemId: item.itemId,
                         category: item.category,
                         note: item.note,
-                        unsupported:
-                            item.category === 'avatar'
-                                ? false
-                                : item.unsupported,
+                        unsupported: item.category === 'avatar' ? false : item.unsupported,
                     }))
                 )
                 .returning({ id: setupItems.id })
@@ -65,22 +63,15 @@ export default defineApi(
 
             await Promise.all(
                 [
-                    shapekeys.length &&
-                        tx.insert(setupItemShapekeys).values(shapekeys),
+                    shapekeys.length && tx.insert(setupItemShapekeys).values(shapekeys),
                     imageData.length &&
                         tx
                             .insert(setupImages)
-                            .values(
-                                imageData.map((img) => ({ ...img, setupId }))
-                            ),
+                            .values(imageData.map((img) => ({ ...img, setupId }))),
                     tags?.length &&
-                        tx
-                            .insert(setupTags)
-                            .values(tags.map((t) => ({ setupId, tag: t.tag }))),
+                        tx.insert(setupTags).values(tags.map((t) => ({ setupId, tag: t.tag }))),
                     coauthors?.length &&
-                        tx
-                            .insert(setupCoauthors)
-                            .values(coauthors.map((c) => ({ setupId, ...c }))),
+                        tx.insert(setupCoauthors).values(coauthors.map((c) => ({ setupId, ...c }))),
                 ].filter(Boolean)
             )
 
@@ -92,8 +83,6 @@ export default defineApi(
         return data
     },
     {
-        errorMessage: 'Failed to post setup.',
-        requireSession: true,
         rejectBannedUser: true,
     }
 )

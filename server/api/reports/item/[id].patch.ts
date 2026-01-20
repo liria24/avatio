@@ -10,22 +10,16 @@ const body = itemReportsUpdateSchema.pick({
     isResolved: true,
 })
 
-export default defineApi(
-    async () => {
-        const { id } = await validateParams(params)
-        const { isResolved } = await validateBody(body)
+export default adminSessionEventHandler(async () => {
+    const { id } = await validateParams(params)
+    const { isResolved } = await validateBody(body)
 
-        await db
-            .update(itemReports)
-            .set({
-                isResolved,
-            })
-            .where(eq(itemReports.id, id))
+    await db
+        .update(itemReports)
+        .set({
+            isResolved,
+        })
+        .where(eq(itemReports.id, id))
 
-        return null
-    },
-    {
-        errorMessage: 'Failed to update item report.',
-        requireAdmin: true,
-    }
-)
+    return null
+})

@@ -36,6 +36,8 @@ export default defineSitemapEventHandler(async () => {
         },
     })
 
+    defineCacheControl({ cdnAge: 60 * 60, clientAge: 60 })
+
     return [
         ...permanent,
         ...setups.map(

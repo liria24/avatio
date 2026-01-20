@@ -10,26 +10,20 @@ const body = z.object({
     hideReason: z.string().optional(),
 })
 
-export default defineApi(
-    async () => {
-        const { id } = await validateParams(params)
-        const { hide, hideReason } = await validateBody(body)
+export default adminSessionEventHandler(async () => {
+    const { id } = await validateParams(params)
+    const { hide, hideReason } = await validateBody(body)
 
-        if (hide !== undefined)
-            await db
-                .update(setups)
-                .set({
-                    hidAt: hide ? new Date() : null,
-                    hidReason: hide ? hideReason || null : null,
-                })
-                .where(eq(setups.id, id))
+    if (hide !== undefined)
+        await db
+            .update(setups)
+            .set({
+                hidAt: hide ? new Date() : null,
+                hidReason: hide ? hideReason || null : null,
+            })
+            .where(eq(setups.id, id))
 
-        purgeSetupCache(id)
+    purgeSetupCache(id)
 
-        return null
-    },
-    {
-        errorMessage: 'Failed to patch setup.',
-        requireAdmin: true,
-    }
-)
+    return null
+})

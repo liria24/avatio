@@ -4,19 +4,13 @@ const params = z.object({
     id: z.string(),
 })
 
-export default defineApi(
-    async () => {
-        const { id: userId } = await validateParams(params)
-        const { headers } = useEvent()
+export default adminSessionEventHandler(async () => {
+    const { id: userId } = await validateParams(params)
+    const { headers } = useEvent()
 
-        const result = await auth.api.removeUser({ headers, body: { userId } })
+    const result = await auth.api.removeUser({ headers, body: { userId } })
 
-        purgeUserCache(userId)
+    purgeUserCache(userId)
 
-        return result
-    },
-    {
-        errorMessage: 'Failed to remove user',
-        requireAdmin: true,
-    }
-)
+    return result
+})

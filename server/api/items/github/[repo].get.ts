@@ -21,86 +21,76 @@ const markItemAsOutdated = async (id: string): Promise<void> => {
     }
 }
 
-export default defineApi<Item>(
-    async () => {
-        let { repo } = await validateParams(params)
-        repo = transformItemId(repo).decode()
+export default promiseEventHandler<Item>(async () => {
+    let { repo } = await validateParams(params)
+    repo = transformItemId(repo).decode()
 
-        const { forceUpdateItem } = await getEdgeConfig()
+    const { forceUpdateItem } = await getEdgeConfig()
 
-        const cachedItem = forceUpdateItem ? null : await getItemFromDatabase(repo)
+    const cachedItem = forceUpdateItem ? null : await getItemFromDatabase(repo)
 
-        const isCacheValid =
-            cachedItem && Date.now() - new Date(cachedItem.updatedAt).getTime() < CACHE_DURATION_MS
+    const isCacheValid =
+        cachedItem && Date.now() - new Date(cachedItem.updatedAt).getTime() < CACHE_DURATION_MS
 
-        if (isCacheValid && !cachedItem.outdated) return cachedItem
-        if (isCacheValid && cachedItem.outdated) throw new Error('Item not found or not allowed')
+    if (isCacheValid && !cachedItem.outdated) return cachedItem
+    if (isCacheValid && cachedItem.outdated) throw new Error('Item not found or not allowed')
 
-        const item = await getGithubItem(repo)
+    const item = await getGithubItem(repo)
 
-        if (!item) {
-            if (cachedItem) markItemAsOutdated(cachedItem.id)
-            throw new Error('Repository not found')
-        }
-
-        // DBに無いあるいはforceUpdateItemがtrueの場合はniceNameとcategoryをAI生成
-        waitUntil(
-            (async () => {
-                if (cachedItem && cachedItem.id !== item.id)
-                    await db.update(items).set({ id: item.id }).where(eq(items.id, cachedItem.id))
-
-                await db
-                    .insert(items)
-                    .values({
-                        id: item.id,
-                        platform: item.platform,
-                        name: item.name,
-                        niceName: cachedItem?.niceName || item.niceName,
-                        category: cachedItem?.category || item.category,
-                    })
-                    .onConflictDoUpdate({
-                        target: items.id,
-                        set: {
-                            ...item,
-                            updatedAt: new Date(),
-                            outdated: false,
-                        },
-                    })
-
-                if (!cachedItem)
-                    try {
-                        consola.log(`Defining item info for item ${item.id}`)
-
-                        const repoData = await getGithubRepo(repo)
-                        const readme = await getGithubReadme(repo)
-                        const description = {
-                            description: repoData?.repo.description || '',
-                            readme: readme?.markdown || '',
-                        }
-
-                        const { niceName, category } = await generateItemAttr({
-                            name: item.name,
-                            description,
-                            category: item.category,
-                        })
-
-                        await db
-                            .update(items)
-                            .set({ niceName, category })
-                            .where(eq(items.id, item.id))
-
-                        consola.log(
-                            `Item info defined for item ${item.id}: ${niceName}, ${category}`
-                        )
-                    } catch (error) {
-                        consola.error(`Failed to define item info for item ${item.id}:`, error)
-                    }
-            })()
-        )
-
-        return item
-    },
-    {
-        errorMessage: 'Failed to get github item.',
+    if (!item) {
+        if (cachedItem) markItemAsOutdated(cachedItem.id)
+        throw new Error('Repository not found')
     }
-)
+
+    // DBに無いあるいはforceUpdateItemがtrueの場合はniceNameとcategoryをAI生成
+    waitUntil(
+        (async () => {
+            if (cachedItem && cachedItem.id !== item.id)
+                await db.update(items).set({ id: item.id }).where(eq(items.id, cachedItem.id))
+
+            await db
+                .insert(items)
+                .values({
+                    id: item.id,
+                    platform: item.platform,
+                    name: item.name,
+                    niceName: cachedItem?.niceName || item.niceName,
+                    category: cachedItem?.category || item.category,
+                })
+                .onConflictDoUpdate({
+                    target: items.id,
+                    set: {
+                        ...item,
+                        updatedAt: new Date(),
+                        outdated: false,
+                    },
+                })
+
+            if (!cachedItem)
+                try {
+                    consola.log(`Defining item info for item ${item.id}`)
+
+                    const repoData = await getGithubRepo(repo)
+                    const readme = await getGithubReadme(repo)
+                    const description = {
+                        description: repoData?.repo.description || '',
+                        readme: readme?.markdown || '',
+                    }
+
+                    const { niceName, category } = await generateItemAttr({
+                        name: item.name,
+                        description,
+                        category: item.category,
+                    })
+
+                    await db.update(items).set({ niceName, category }).where(eq(items.id, item.id))
+
+                    consola.log(`Item info defined for item ${item.id}: ${niceName}, ${category}`)
+                } catch (error) {
+                    consola.error(`Failed to define item info for item ${item.id}:`, error)
+                }
+        })()
+    )
+
+    return item
+})

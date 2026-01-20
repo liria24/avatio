@@ -15,7 +15,7 @@ const params = z.object({
 
 const body = setupsUpdateSchema
 
-export default defineApi<Serialized<Setup>>(
+export default authedSessionEventHandler<Serialized<Setup>>(
     async ({ session }) => {
         const { id } = await validateParams(params)
 
@@ -160,8 +160,6 @@ export default defineApi<Serialized<Setup>>(
         return data
     },
     {
-        errorMessage: 'Failed to update setup.',
-        requireSession: true,
         rejectBannedUser: true,
     }
 )

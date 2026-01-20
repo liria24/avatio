@@ -15,23 +15,17 @@ const body = z
         message: 'At least one field must be provided',
     })
 
-export default defineApi<Feedback>(
-    async () => {
-        const { id } = await validateParams(params)
-        const { isClosed } = await validateBody(body)
+export default adminSessionEventHandler<Feedback>(async () => {
+    const { id } = await validateParams(params)
+    const { isClosed } = await validateBody(body)
 
-        const data = await db
-            .update(feedbacks)
-            .set({
-                isClosed,
-            })
-            .where(eq(feedbacks.id, id))
-            .returning()
+    const data = await db
+        .update(feedbacks)
+        .set({
+            isClosed,
+        })
+        .where(eq(feedbacks.id, id))
+        .returning()
 
-        return data[0]
-    },
-    {
-        errorMessage: 'Failed to update feedbacks.',
-        requireAdmin: true,
-    }
-)
+    return data[0]
+})

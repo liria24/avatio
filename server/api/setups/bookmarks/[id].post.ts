@@ -5,7 +5,7 @@ const params = z.object({
     id: z.union([z.string().transform((val) => Number(val)), z.number()]),
 })
 
-export default defineApi(
+export default authedSessionEventHandler(
     async ({ session }) => {
         const { id } = await validateParams(params)
 
@@ -20,8 +20,6 @@ export default defineApi(
         return null
     },
     {
-        errorMessage: 'Failed to post bookmark.',
-        requireSession: true,
         rejectBannedUser: true,
     }
 )

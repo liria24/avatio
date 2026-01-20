@@ -2,7 +2,7 @@ import { itemReports } from '@@/database/schema'
 
 const body = itemReportsInsertSchema
 
-export default defineApi(
+export default authedSessionEventHandler(
     async ({ session }) => {
         const { itemId, nameError, irrelevant, other, comment } = await validateBody(body, {
             sanitize: true,
@@ -20,8 +20,6 @@ export default defineApi(
         return null
     },
     {
-        errorMessage: 'Failed to report item.',
-        requireSession: true,
         rejectBannedUser: true,
     }
 )
