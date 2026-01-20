@@ -1,9 +1,4 @@
 <script lang="ts" setup>
-import { SetupsLink } from '#components'
-import { motion } from 'motion-v'
-
-const MotionLazySetupsLink = motion.create(SetupsLink)
-
 const { isMobile } = useDevice()
 
 const setups = defineModel<SerializedSetup[]>('setups', {
@@ -45,27 +40,33 @@ const setLoaded = async () => {
         @vue:mounted="setLoaded"
     >
         <template #default="{ item, index }">
-            <MotionLazySetupsLink
+            <SetupsLink
                 :aria-label="item.name"
                 :image-size="{ width: 16, height: 9 }"
                 :setup="item"
-                :initial="{
-                    opacity: 0,
-                    y: 10,
-                }"
-                :while-in-view="{
-                    opacity: 1,
-                    y: 0,
-                }"
-                :in-view-options="{
-                    once: true,
-                    amount: 0.3,
-                }"
-                :transition="{
-                    duration: 0.2,
-                    delay: isInitialLoad ? 0.05 * index : 0,
-                }"
+                :style="`animation-delay: ${100 + 50 * index}ms`"
+                class="fade-in"
             />
         </template>
     </MasonryWall>
 </template>
+
+<style scoped>
+.fade-in {
+    opacity: 0;
+    animation: fadeIn 400ms ease-in-out forwards;
+}
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+        transform: translateY(10px);
+        filter: blur(4px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+        filter: blur(0);
+    }
+}
+</style>
