@@ -91,7 +91,7 @@ watch(modalVerify, async (value) => {
                             class="w-full"
                         />
                         <UAlert
-                            icon="lucide:info"
+                            icon="mingcute:information-fill"
                             description="認証に使用できるアイテムは、Avatio に登録できるアイテムのみです。非公開アイテムや、非対応プラットフォームのアイテムは使用できません。また、現在 GitHub はショップ認証に対応していません。"
                             variant="outline"
                             :ui="{
@@ -105,7 +105,7 @@ watch(modalVerify, async (value) => {
                 <UFormField label="2. 選定したアイテムの説明文に以下のコードを追記してください">
                     <div class="flex flex-col gap-2 pt-2">
                         <UButton
-                            :trailing-icon="copied ? 'lucide:check' : 'lucide:copy'"
+                            :trailing-icon="copied ? 'mingcute:check-line' : 'mingcute:copy-2-fill'"
                             :label="verifyCode || 'コードを生成中...'"
                             variant="outline"
                             color="neutral"
@@ -114,7 +114,7 @@ watch(modalVerify, async (value) => {
                             @click="copy(verifyCode || '')"
                         />
                         <UAlert
-                            icon="lucide:info"
+                            icon="mingcute:information-fill"
                             title="認証が完了した後、追記したコードは削除してください"
                             variant="subtle"
                             color="secondary"
@@ -147,7 +147,7 @@ watch(modalVerify, async (value) => {
                 <h2 class="text-lg leading-none font-semibold text-nowrap">ショップ</h2>
 
                 <UButton
-                    icon="lucide:plus"
+                    icon="mingcute:add-line"
                     label="新しくショップを認証"
                     color="neutral"
                     variant="soft"
@@ -203,7 +203,7 @@ watch(modalVerify, async (value) => {
                 <UModal v-model:open="modalUnverify" title="認証解除">
                     <UTooltip text="ショップの認証を解除" :delay-duration="100">
                         <UButton
-                            icon="lucide:x"
+                            icon="mingcute:close-line"
                             aria-label="ショップの認証を解除"
                             variant="ghost"
                             size="sm"
@@ -212,7 +212,7 @@ watch(modalVerify, async (value) => {
 
                     <template #body>
                         <UAlert
-                            icon="lucide:trash"
+                            icon="mingcute:delete-2-fill"
                             title="ショップの認証を解除しますか？"
                             color="warning"
                             variant="subtle"

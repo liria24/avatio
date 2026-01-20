@@ -116,7 +116,7 @@ watch(deleteMode, (value) => {
                                     class="text-muted text-xs text-nowrap"
                                 />
                                 <div class="text-muted flex items-center gap-1">
-                                    <Icon name="lucide:package" size="16" />
+                                    <Icon name="mingcute:package-2-fill" size="16" />
                                     <span class="font-[Geist] text-xs">
                                         {{ item.items?.length || 0 }}
                                     </span>
@@ -173,7 +173,7 @@ watch(deleteMode, (value) => {
                                     class="text-muted text-xs text-nowrap"
                                 />
                                 <div class="text-muted flex items-center gap-1">
-                                    <Icon name="lucide:package" size="16" />
+                                    <Icon name="mingcute:package-2-fill" size="16" />
                                     <span class="font-[Geist] text-xs">
                                         {{ draft.content.items?.length || 0 }}
                                     </span>
@@ -190,7 +190,7 @@ watch(deleteMode, (value) => {
         <template v-if="drafts.length" #footer>
             <div v-if="deleteMode" class="flex w-full justify-between">
                 <UButton
-                    icon="lucide:arrow-left"
+                    icon="mingcute:arrow-left-line"
                     label="戻る"
                     variant="ghost"
                     size="lg"
@@ -200,7 +200,7 @@ watch(deleteMode, (value) => {
                 <UButton
                     :disabled="!selectedDrafts.length"
                     :loading="deleting"
-                    icon="lucide:trash"
+                    icon="mingcute:delete-2-fill"
                     label="削除"
                     variant="subtle"
                     color="neutral"

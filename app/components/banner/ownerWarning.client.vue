@@ -33,7 +33,7 @@ const onClick = () => {
 
         <UButton
             aria-label="閉じる"
-            icon="lucide:x"
+            icon="mingcute:close-line"
             variant="ghost"
             size="sm"
             class="place-self-end"

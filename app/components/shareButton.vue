@@ -34,7 +34,7 @@ const socialShareItems = ref<DropdownMenuItem[]>([
     [
         {
             label: copied.value ? 'コピーしました' : 'リンクをコピー',
-            icon: copied.value ? 'lucide:check' : 'lucide:link',
+            icon: copied.value ? 'mingcute:check-fill' : 'mingcute:link-fill',
             onSelect: () => {
                 copy(location.value.href)
                     .then(() => {
@@ -52,7 +52,7 @@ const socialShareItems = ref<DropdownMenuItem[]>([
     [
         {
             label: 'X',
-            icon: 'simple-icons:x',
+            icon: 'mingcute:social-x-fill',
             onSelect: () => {
                 navigateTo(shareX.value?.shareUrl, {
                     external: true,
@@ -62,7 +62,7 @@ const socialShareItems = ref<DropdownMenuItem[]>([
         },
         {
             label: 'Bluesky',
-            icon: 'simple-icons:bluesky',
+            icon: 'mingcute:bluesky-social-fill',
             onSelect: () => {
                 navigateTo(shareBluesky.value?.shareUrl, {
                     external: true,
@@ -72,7 +72,7 @@ const socialShareItems = ref<DropdownMenuItem[]>([
         },
         {
             label: 'LINE',
-            icon: 'simple-icons:line',
+            icon: 'mingcute:line-app-fill',
             onSelect: () => {
                 navigateTo(shareLine.value?.shareUrl, {
                     external: true,
@@ -87,7 +87,7 @@ const socialShareItems = ref<DropdownMenuItem[]>([
 <template>
     <UButton
         v-if="isMobile && shareSupported"
-        icon="lucide:share-2"
+        icon="mingcute:share-2-fill"
         aria-label="シェア"
         variant="ghost"
         size="sm"
@@ -113,6 +113,12 @@ const socialShareItems = ref<DropdownMenuItem[]>([
             content: 'w-40',
         }"
     >
-        <UButton icon="lucide:share-2" aria-label="シェア" variant="ghost" size="sm" class="p-2" />
+        <UButton
+            icon="mingcute:share-2-fill"
+            aria-label="シェア"
+            variant="ghost"
+            size="sm"
+            class="p-2"
+        />
     </UDropdownMenu>
 </template>

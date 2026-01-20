@@ -279,13 +279,8 @@ const getSetup = defineCachedFunction(
     }
 )
 
-export default defineApi<Setup>(
-    async ({ session }) => {
-        const { id } = await validateParams(params)
+export default sessionEventHandler<Setup>(async ({ session }) => {
+    const { id } = await validateParams(params)
 
-        return await getSetup(id, session || undefined)
-    },
-    {
-        errorMessage: 'Failed to get setups',
-    }
-)
+    return await getSetup(id, session || undefined)
+})

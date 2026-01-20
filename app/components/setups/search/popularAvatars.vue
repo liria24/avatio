@@ -12,7 +12,7 @@ const { data: popularAvatars } = await useFetch('/api/items/popular-avatars', {
 <template>
     <div class="flex flex-col gap-6">
         <div class="flex items-center gap-2">
-            <Icon name="lucide:person-standing" size="22" class="text-muted" />
+            <Icon name="mingcute:baby-fill" size="22" class="text-muted" />
             <h2 class="text-xl leading-none font-semibold text-nowrap">人気のアバターから検索</h2>
         </div>
 

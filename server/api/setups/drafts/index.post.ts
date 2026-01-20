@@ -17,7 +17,7 @@ const refreshDraftImages = async (draftId: string, imageUrls: string[]) => {
     if (images.length) await db.insert(setupDraftImages).values(images)
 }
 
-export default defineApi(
+export default authedSessionEventHandler(
     async ({ session }) => {
         const { id, setupId, content } = await validateBody(body, {
             sanitize: true,
@@ -73,8 +73,6 @@ export default defineApi(
         return { draftId: result[0].id }
     },
     {
-        errorMessage: 'Failed to post setup draft.',
-        requireSession: true,
         rejectBannedUser: true,
     }
 )

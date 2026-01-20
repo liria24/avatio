@@ -8,7 +8,7 @@ const query = z.object({
     setupId: z.union([z.string().transform((val) => Number(val)), z.number()]).optional(),
 })
 
-export default defineApi<SetupDraft[]>(
+export default authedSessionEventHandler<SetupDraft[]>(
     async ({ session }) => {
         const { id, setupId } = await validateQuery(query)
 
@@ -38,8 +38,6 @@ export default defineApi<SetupDraft[]>(
         }))
     },
     {
-        errorMessage: 'Failed to get setups',
-        requireSession: true,
         rejectBannedUser: true,
     }
 )

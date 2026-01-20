@@ -12,127 +12,121 @@ const query = z.object({
         .optional(),
 })
 
-export default defineApi<PaginationResponse<UserReport[]>>(
-    async () => {
-        const { sort, reporterId, page, limit, isResolved } = await validateQuery(query)
+export default adminSessionEventHandler<PaginationResponse<UserReport[]>>(async () => {
+    const { sort, reporterId, page, limit, isResolved } = await validateQuery(query)
 
-        const offset = (page - 1) * limit
+    const offset = (page - 1) * limit
 
-        const data = await db.query.userReports.findMany({
-            extras: {
-                count: sql<number>`CAST(COUNT(*) OVER() AS INTEGER)`,
+    const data = await db.query.userReports.findMany({
+        extras: {
+            count: sql<number>`CAST(COUNT(*) OVER() AS INTEGER)`,
+        },
+        where: {
+            reporterId: reporterId ? { eq: reporterId } : undefined,
+            isResolved:
+                isResolved !== undefined && isResolved.length === 1
+                    ? { eq: isResolved[0] }
+                    : undefined,
+        },
+        limit,
+        offset,
+        orderBy: {
+            createdAt: sort,
+        },
+        columns: {
+            id: true,
+            createdAt: true,
+            spam: true,
+            hate: true,
+            infringe: true,
+            badImage: true,
+            other: true,
+            comment: true,
+            isResolved: true,
+        },
+        with: {
+            reportee: {
+                columns: {
+                    username: true,
+                    createdAt: true,
+                    name: true,
+                    image: true,
+                    bio: true,
+                    links: true,
+                },
+                with: {
+                    badges: {
+                        columns: {
+                            badge: true,
+                            createdAt: true,
+                        },
+                    },
+                    shops: {
+                        columns: {
+                            id: true,
+                            createdAt: true,
+                        },
+                        with: {
+                            shop: {
+                                columns: {
+                                    id: true,
+                                    platform: true,
+                                    name: true,
+                                    image: true,
+                                    verified: true,
+                                },
+                            },
+                        },
+                    },
+                },
             },
-            where: {
-                reporterId: reporterId ? { eq: reporterId } : undefined,
-                isResolved:
-                    isResolved !== undefined && isResolved.length === 1
-                        ? { eq: isResolved[0] }
-                        : undefined,
+            reporter: {
+                columns: {
+                    username: true,
+                    createdAt: true,
+                    name: true,
+                    image: true,
+                    bio: true,
+                    links: true,
+                },
+                with: {
+                    badges: {
+                        columns: {
+                            badge: true,
+                            createdAt: true,
+                        },
+                    },
+                    shops: {
+                        columns: {
+                            id: true,
+                            createdAt: true,
+                        },
+                        with: {
+                            shop: {
+                                columns: {
+                                    id: true,
+                                    platform: true,
+                                    name: true,
+                                    image: true,
+                                    verified: true,
+                                },
+                            },
+                        },
+                    },
+                },
             },
+        },
+    })
+
+    return {
+        data,
+        pagination: {
+            page,
             limit,
-            offset,
-            orderBy: {
-                createdAt: sort,
-            },
-            columns: {
-                id: true,
-                createdAt: true,
-                spam: true,
-                hate: true,
-                infringe: true,
-                badImage: true,
-                other: true,
-                comment: true,
-                isResolved: true,
-            },
-            with: {
-                reportee: {
-                    columns: {
-                        username: true,
-                        createdAt: true,
-                        name: true,
-                        image: true,
-                        bio: true,
-                        links: true,
-                    },
-                    with: {
-                        badges: {
-                            columns: {
-                                badge: true,
-                                createdAt: true,
-                            },
-                        },
-                        shops: {
-                            columns: {
-                                id: true,
-                                createdAt: true,
-                            },
-                            with: {
-                                shop: {
-                                    columns: {
-                                        id: true,
-                                        platform: true,
-                                        name: true,
-                                        image: true,
-                                        verified: true,
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
-                reporter: {
-                    columns: {
-                        username: true,
-                        createdAt: true,
-                        name: true,
-                        image: true,
-                        bio: true,
-                        links: true,
-                    },
-                    with: {
-                        badges: {
-                            columns: {
-                                badge: true,
-                                createdAt: true,
-                            },
-                        },
-                        shops: {
-                            columns: {
-                                id: true,
-                                createdAt: true,
-                            },
-                            with: {
-                                shop: {
-                                    columns: {
-                                        id: true,
-                                        platform: true,
-                                        name: true,
-                                        image: true,
-                                        verified: true,
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
-            },
-        })
-
-        return {
-            data,
-            pagination: {
-                page,
-                limit,
-                total: data[0]?.count || 0,
-                totalPages: Math.ceil((data[0]?.count || 0) / limit),
-                hasNext: offset + limit < (data[0]?.count || 0),
-                hasPrev: offset > 0,
-            },
-        }
-    },
-    {
-        errorMessage: 'Failed to get user reports.',
-        requireAdmin: true,
+            total: data[0]?.count || 0,
+            totalPages: Math.ceil((data[0]?.count || 0) / limit),
+            hasNext: offset + limit < (data[0]?.count || 0),
+            hasPrev: offset > 0,
+        },
     }
-)
+})

@@ -1,3 +1,4 @@
+import { StatusCodes, getReasonPhrase } from 'http-status-codes'
 import { z } from 'zod'
 
 const params = z.object({
@@ -48,8 +49,8 @@ const getUser = defineCachedFunction(
 
         if (!data)
             throw createError({
-                statusCode: 404,
-                statusMessage: 'User not found',
+                statusCode: StatusCodes.NOT_FOUND,
+                statusMessage: getReasonPhrase(StatusCodes.NOT_FOUND),
             })
 
         return data
@@ -62,13 +63,10 @@ const getUser = defineCachedFunction(
     }
 )
 
-export default defineApi<User>(
-    async () => {
-        const { username } = await validateParams(params)
+export default promiseEventHandler<User>(async () => {
+    const { username } = await validateParams(params)
 
-        return await getUser(username)
-    },
-    {
-        errorMessage: 'Failed to get user',
-    }
-)
+    defineCacheControl({ cdnAge: 60 * 30, clientAge: 60 })
+
+    return await getUser(username)
+})

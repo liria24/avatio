@@ -10,22 +10,16 @@ const body = setupReportsUpdateSchema.pick({
     isResolved: true,
 })
 
-export default defineApi(
-    async () => {
-        const { id } = await validateParams(params)
-        const { isResolved } = await validateBody(body)
+export default adminSessionEventHandler(async () => {
+    const { id } = await validateParams(params)
+    const { isResolved } = await validateBody(body)
 
-        await db
-            .update(setupReports)
-            .set({
-                isResolved,
-            })
-            .where(eq(setupReports.id, id))
+    await db
+        .update(setupReports)
+        .set({
+            isResolved,
+        })
+        .where(eq(setupReports.id, id))
 
-        return null
-    },
-    {
-        errorMessage: 'Failed to update setup report.',
-        requireAdmin: true,
-    }
-)
+    return null
+})

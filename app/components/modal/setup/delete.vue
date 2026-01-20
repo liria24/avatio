@@ -34,7 +34,7 @@ const deleteSetup = async () => {
     <UModal title="セットアップを削除">
         <template #body>
             <UAlert
-                icon="lucide:trash"
+                icon="mingcute:delete-2-fill"
                 title="本当に削除しますか？"
                 description="この操作は取り消すことができません。"
                 color="warning"

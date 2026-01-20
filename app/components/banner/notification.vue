@@ -50,12 +50,17 @@ const onRead = async (id: string) => {
             v-if="props.data.actionUrl && props.data.actionLabel"
             :to="$localePath(props.data.actionUrl)"
             :label="props.data.actionLabel"
-            icon="lucide:arrow-right"
+            icon="mingcute:arrow-right-line"
             variant="outline"
             size="xs"
             @click="onRead(props.data.id)"
         />
 
-        <UButton icon="lucide:x" variant="ghost" size="sm" @click="onRead(props.data.id)" />
+        <UButton
+            icon="mingcute:close-line"
+            variant="ghost"
+            size="sm"
+            @click="onRead(props.data.id)"
+        />
     </div>
 </template>

@@ -117,7 +117,7 @@ const Submit = async () => {
                             :delay-duration="50"
                         >
                             <Icon
-                                name="simple-icons:markdown"
+                                name="mingcute:markdown-fill"
                                 size="20"
                                 class="text-dimmed -my-1 mr-0.5"
                             />

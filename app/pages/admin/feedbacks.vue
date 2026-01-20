@@ -68,7 +68,7 @@ const openFeedback = async (feedbackId: number) => {
                         :items="[
                             {
                                 label: 'All',
-                                icon: 'lucide:filter',
+                                icon: 'mingcute:filter-fill',
                                 value: 'all',
                             },
                             {
@@ -89,7 +89,7 @@ const openFeedback = async (feedbackId: number) => {
 
                     <UButton
                         :loading="status === 'pending'"
-                        icon="lucide:refresh-cw"
+                        icon="mingcute:refresh-2-fill"
                         variant="soft"
                         color="neutral"
                         @click="refresh()"

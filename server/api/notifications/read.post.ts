@@ -6,40 +6,34 @@ const body = z.object({
     id: z.uuid(),
 })
 
-export default defineApi(
-    async ({ session }) => {
-        const { id } = await validateBody(body)
+export default authedSessionEventHandler(async ({ session }) => {
+    const { id } = await validateBody(body)
 
-        const data = await db.query.notifications.findFirst({
-            where: {
-                id: { eq: id },
-            },
-            columns: {
-                userId: true,
-            },
+    const data = await db.query.notifications.findFirst({
+        where: {
+            id: { eq: id },
+        },
+        columns: {
+            userId: true,
+        },
+    })
+
+    if (!data)
+        throw createError({
+            statusCode: 404,
+            statusMessage: 'Notification not found.',
         })
 
-        if (!data)
-            throw createError({
-                statusCode: 404,
-                statusMessage: 'Notification not found.',
-            })
+    if (data.userId !== session.user.id)
+        throw createError({
+            statusCode: 403,
+            statusMessage: 'Forbidden.',
+        })
 
-        if (data.userId !== session.user.id)
-            throw createError({
-                statusCode: 403,
-                statusMessage: 'Forbidden.',
-            })
-
-        await db
-            .update(notifications)
-            .set({
-                readAt: new Date(),
-            })
-            .where(eq(notifications.id, id))
-    },
-    {
-        errorMessage: 'Failed to mark notifications as read.',
-        requireSession: true,
-    }
-)
+    await db
+        .update(notifications)
+        .set({
+            readAt: new Date(),
+        })
+        .where(eq(notifications.id, id))
+})

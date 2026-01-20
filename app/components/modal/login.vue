@@ -38,7 +38,7 @@ onBeforeUnmount(() => {
                 <UButton
                     loading-auto
                     label="X (Twitter)"
-                    icon="simple-icons:x"
+                    icon="mingcute:social-x-fill"
                     block
                     size="lg"
                     variant="subtle"

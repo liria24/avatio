@@ -10,7 +10,7 @@ const body = userReportsInsertSchema.pick({
     comment: true,
 })
 
-export default defineApi(
+export default authedSessionEventHandler(
     async ({ session }) => {
         const { reporteeId, spam, hate, infringe, badImage, other, comment } = await validateBody(
             body,
@@ -31,8 +31,6 @@ export default defineApi(
         return null
     },
     {
-        errorMessage: 'Failed to report user.',
-        requireSession: true,
         rejectBannedUser: true,
     }
 )

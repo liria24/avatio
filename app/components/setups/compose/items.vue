@@ -155,7 +155,7 @@ const removeShapekey = (options: { category: string; id: string; index: number }
                         :data-exceeded="totalItemsCount > 32"
                         class="ring-accented ml-1 flex items-center gap-1.5 rounded-full py-1 pr-3 pl-2.5 ring-1 data-[exceeded=true]:ring-red-500"
                     >
-                        <Icon name="lucide:box" size="16" class="text-muted shrink-0" />
+                        <Icon name="mingcute:box-3-fill" size="16" class="text-muted shrink-0" />
                         <span class="pt-px font-[Geist] text-xs leading-none text-nowrap">
                             <span>{{ totalItemsCount }}</span>
                             <span v-if="totalItemsCount > 32"> / 32</span>
@@ -169,7 +169,7 @@ const removeShapekey = (options: { category: string; id: string; index: number }
                     :ui="{ content: 'max-w-96' }"
                 >
                     <UButton
-                        icon="lucide:plus"
+                        icon="mingcute:add-line"
                         label="アイテムを追加"
                         variant="soft"
                         color="neutral"
@@ -184,7 +184,7 @@ const removeShapekey = (options: { category: string; id: string; index: number }
 
         <UEmpty
             v-if="!totalItemsCount"
-            icon="lucide:shirt"
+            icon="mingcute:dress-fill"
             title="アイテムが登録されていません"
             variant="naked"
             :actions="
@@ -214,7 +214,7 @@ const removeShapekey = (options: { category: string; id: string; index: number }
                 <template v-if="getItemsByCategory(category).length">
                     <div class="flex items-center gap-2">
                         <Icon
-                            :name="itemCategory[category]?.icon || 'lucide:box'"
+                            :name="itemCategory[category]?.icon || 'mingcute:box-3-fill'"
                             :size="22"
                             class="text-muted shrink-0"
                         />

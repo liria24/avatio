@@ -27,7 +27,7 @@ const inputShapekeyValue = ref(0)
         <div
             class="draggable hover:bg-elevated grid h-full cursor-move rounded-md px-1 py-2 transition-colors"
         >
-            <Icon name="lucide:grip-vertical" size="18" class="text-muted shrink-0 self-center" />
+            <Icon name="mingcute:dots-fill" size="18" class="text-muted shrink-0 self-center" />
         </div>
 
         <div class="flex grow flex-col gap-2">
@@ -69,7 +69,7 @@ const inputShapekeyValue = ref(0)
                             :delay-duration="50"
                         >
                             <Icon
-                                name="simple-icons:github"
+                                name="mingcute:github-fill"
                                 size="16"
                                 class="text-muted shrink-0"
                             />
@@ -115,7 +115,7 @@ const inputShapekeyValue = ref(0)
                                                 {{ shapekey.value }}
                                             </span>
                                             <UButton
-                                                icon="lucide:x"
+                                                icon="mingcute:close-line"
                                                 variant="ghost"
                                                 size="sm"
                                                 @click="
@@ -143,7 +143,7 @@ const inputShapekeyValue = ref(0)
                                             class="max-w-32"
                                         />
                                         <UButton
-                                            icon="lucide:plus"
+                                            icon="mingcute:add-line"
                                             variant="soft"
                                             size="sm"
                                             @click="
@@ -191,13 +191,18 @@ const inputShapekeyValue = ref(0)
                     :ui="{ content: 'w-40' }"
                 >
                     <UButton
-                        :icon="itemCategory[props.item.category]?.icon || 'lucide:box'"
+                        :icon="itemCategory[props.item.category]?.icon || 'mingcute:box-3-fill'"
                         variant="ghost"
                         size="sm"
                     />
                 </UDropdownMenu>
 
-                <UButton icon="lucide:x" variant="ghost" size="sm" @click="emit('remove-item')" />
+                <UButton
+                    icon="mingcute:close-line"
+                    variant="ghost"
+                    size="sm"
+                    @click="emit('remove-item')"
+                />
             </div>
 
             <UTextarea

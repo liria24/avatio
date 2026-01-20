@@ -121,7 +121,7 @@ watch(open, (isOpen) => {
                                 v-if="notification.actionUrl && notification.actionLabel"
                                 :to="$localePath(notification.actionUrl)"
                                 :label="notification.actionLabel"
-                                icon="lucide:arrow-right"
+                                icon="mingcute:arrow-right-line"
                                 variant="outline"
                                 size="xs"
                                 @click="onClick($event, notification.id, notification.actionUrl)"
@@ -133,7 +133,7 @@ watch(open, (isOpen) => {
                                 :delay-duration="100"
                             >
                                 <UButton
-                                    icon="lucide:mail-open"
+                                    icon="mingcute:mail-open-fill"
                                     variant="ghost"
                                     size="xs"
                                     class="self-end"
@@ -143,7 +143,7 @@ watch(open, (isOpen) => {
 
                             <UTooltip v-else text="未読にする" :delay-duration="100">
                                 <UButton
-                                    icon="lucide:mail"
+                                    icon="mingcute:mail-fill"
                                     variant="ghost"
                                     size="xs"
                                     class="self-end"

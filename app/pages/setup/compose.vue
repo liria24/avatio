@@ -31,11 +31,11 @@ const draftStatusBadge = {
         label: '復元中...',
     },
     restored: {
-        icon: 'lucide:refresh-cw',
+        icon: 'mingcute:refresh-2-fill',
         label: '復元しました',
     },
     unsaved: {
-        icon: 'lucide:pen-line',
+        icon: 'mingcute:edit-3-fill',
         label: '未保存の変更',
     },
     saving: {
@@ -43,11 +43,11 @@ const draftStatusBadge = {
         label: '保存中...',
     },
     saved: {
-        icon: 'lucide:check',
+        icon: 'mingcute:check-line',
         label: '保存しました',
     },
     error: {
-        icon: 'lucide:x',
+        icon: 'mingcute:close-line',
         label: '保存に失敗',
     },
 }
@@ -507,7 +507,7 @@ await enterEditModeAndRestoreDraft({
                     <UButton
                         type="submit"
                         :label="editingSetupId ? '更新' : '公開'"
-                        icon="lucide:upload"
+                        icon="mingcute:upload-fill"
                         color="neutral"
                         block
                         :loading="publishing"
@@ -521,7 +521,7 @@ await enterEditModeAndRestoreDraft({
                             :disabled="
                                 draftStatus === 'unsaved' || draftStatus === 'saving' || publishing
                             "
-                            icon="lucide:plus"
+                            icon="mingcute:add-line"
                             variant="soft"
                             color="neutral"
                             :ui="{ leadingIcon: 'size-4.5' }"
@@ -615,7 +615,7 @@ await enterEditModeAndRestoreDraft({
                 >
                     <UButton
                         label="下書き"
-                        icon="lucide:circle-dashed"
+                        icon="mingcute:circle-dash-fill"
                         variant="subtle"
                         size="sm"
                         :ui="{ leadingIcon: 'size-4' }"
@@ -631,7 +631,7 @@ await enterEditModeAndRestoreDraft({
 
         <UButton
             type="submit"
-            icon="lucide:upload"
+            icon="mingcute:upload-fill"
             aria-label="セットアップを投稿"
             :loading="publishing"
             variant="solid"

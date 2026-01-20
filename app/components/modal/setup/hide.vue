@@ -51,7 +51,7 @@ const hideSetup = async () => {
         <template #body>
             <div class="flex flex-col gap-2">
                 <UAlert
-                    icon="lucide:eye-off"
+                    icon="mingcute:eye-close-fill"
                     title="これは Admin アクションです"
                     description="セットアップは非表示になり、再度表示するまでユーザーには見えなくなります。"
                     color="warning"

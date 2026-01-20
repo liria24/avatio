@@ -55,12 +55,12 @@ const resolve = async (id: number, resolve?: boolean) => {
                         :items="[
                             {
                                 label: 'All',
-                                icon: 'lucide:filter',
+                                icon: 'mingcute:filter-fill',
                                 value: 'all',
                             },
                             {
                                 label: 'Open',
-                                icon: 'lucide:circle-dot',
+                                icon: 'mingcute:three-quarters-circle-dash-fill',
                                 value: 'open',
                             },
                             {
@@ -76,7 +76,7 @@ const resolve = async (id: number, resolve?: boolean) => {
 
                     <UButton
                         :loading="status === 'pending'"
-                        icon="lucide:refresh-cw"
+                        icon="mingcute:refresh-2-fill"
                         variant="soft"
                         color="neutral"
                         @click="refresh()"
@@ -96,7 +96,9 @@ const resolve = async (id: number, resolve?: boolean) => {
                             <UBadge
                                 :label="report.isResolved ? 'Closed' : 'Open'"
                                 :icon="
-                                    report.isResolved ? 'lucide:circle-slash' : 'lucide:circle-dot'
+                                    report.isResolved
+                                        ? 'lucide:circle-slash'
+                                        : 'mingcute:three-quarters-circle-dash-fill'
                                 "
                                 :color="report.isResolved ? 'neutral' : 'success'"
                                 variant="outline"
@@ -113,7 +115,7 @@ const resolve = async (id: number, resolve?: boolean) => {
                                     :avatar="{
                                         src: report.reporter.image || undefined,
                                         alt: report.reporter.name,
-                                        icon: 'lucide:user-round',
+                                        icon: 'mingcute:user-3-fill',
                                     }"
                                     :name="report.reporter.name"
                                     size="sm"
@@ -123,7 +125,7 @@ const resolve = async (id: number, resolve?: boolean) => {
                                 <UButton
                                     v-if="report.isResolved"
                                     loading-auto
-                                    icon="lucide:x"
+                                    icon="mingcute:close-line"
                                     label="Mark as Unresolved"
                                     color="neutral"
                                     variant="subtle"
@@ -133,7 +135,7 @@ const resolve = async (id: number, resolve?: boolean) => {
                                 <UButton
                                     v-else
                                     loading-auto
-                                    icon="lucide:check"
+                                    icon="mingcute:check-line"
                                     label="Mark as Resolved"
                                     color="neutral"
                                     size="sm"
@@ -155,7 +157,7 @@ const resolve = async (id: number, resolve?: boolean) => {
                                 :avatar="{
                                     src: report.reportee.image || undefined,
                                     alt: report.reportee.name,
-                                    icon: 'lucide:user-round',
+                                    icon: 'mingcute:user-3-fill',
                                 }"
                             />
                         </UPageCard>

@@ -41,7 +41,7 @@ Nuxt UI provides MCP server.
 ## Notes
 
 - To use an icon in Vue, use the <Icon> component.
-    - Enter the icon name in the name directive (e.g. name="lucide:arrow-right")
+    - Enter the icon name in the name directive (e.g. name="mingcute:arrow-right-line")
     - Enter the icon size in the size directive (e.g. size="18")
 - Nuxt 4 uses auto-importing. Elements exported in the following directories do not need to be explicitly imported:
     - app/composables

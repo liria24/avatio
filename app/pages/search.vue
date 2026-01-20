@@ -158,7 +158,7 @@ defineSeo({
         <div class="flex w-full flex-col gap-3">
             <UInput
                 v-model="query.q"
-                icon="lucide:search"
+                icon="mingcute:search-line"
                 placeholder="検索キーワード"
                 aria-label="検索キーワード"
                 size="xl"

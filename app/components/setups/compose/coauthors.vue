@@ -56,7 +56,7 @@ const removeCoauthor = (username: string) => {
                         class="draggable hover:bg-elevated grid cursor-move rounded-md px-1 py-2 transition-colors"
                     >
                         <Icon
-                            name="lucide:grip-vertical"
+                            name="mingcute:dots-fill"
                             size="18"
                             class="text-muted shrink-0 self-center"
                         />
@@ -67,14 +67,14 @@ const removeCoauthor = (username: string) => {
                             <UAvatar
                                 :src="coauthor.user.image || undefined"
                                 :alt="coauthor.user.name || 'User'"
-                                icon="lucide:user-round"
+                                icon="mingcute:user-3-fill"
                                 size="xs"
                             />
                             <span class="text-toned grow text-xs">
                                 {{ coauthor.user.name }}
                             </span>
                             <UButton
-                                icon="lucide:x"
+                                icon="mingcute:close-line"
                                 variant="ghost"
                                 size="xs"
                                 @click="removeCoauthor(coauthor.user.username)"
@@ -87,7 +87,7 @@ const removeCoauthor = (username: string) => {
 
             <UPopover :content="{ side: 'right', align: 'start' }">
                 <UButton
-                    icon="lucide:plus"
+                    icon="mingcute:add-line"
                     :label="coauthors.length ? undefined : '共同作者を追加'"
                     variant="soft"
                     block

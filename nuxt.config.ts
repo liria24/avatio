@@ -32,14 +32,12 @@ export default defineNuxtConfig({
         '@pinia/nuxt',
         '@vueuse/nuxt',
         'motion-v/nuxt',
-        'nuxt-charts',
         '@stefanobartoletti/nuxt-social-share',
         'nuxt-link-checker',
         'nuxt-schema-org',
         'nuxt-seo-utils',
+        '@nuxt/a11y',
     ],
-
-    plugins: [{ src: '~/plugins/axe.client.ts', mode: 'client' }],
 
     css: ['~/assets/css/main.css'],
 
@@ -51,64 +49,16 @@ export default defineNuxtConfig({
         },
         optimizeDeps: {
             include: [
-                'prosemirror-state',
-                'prosemirror-transform',
-                'prosemirror-model',
-                'prosemirror-view',
-                ...(import.meta.dev ? ['axe-core'] : []),
+                '@nuxt/ui > prosemirror-state',
+                '@nuxt/ui > prosemirror-transform',
+                '@nuxt/ui > prosemirror-model',
+                '@nuxt/ui > prosemirror-view',
+                '@nuxt/ui > prosemirror-gapcursor',
             ],
         },
     },
 
     routeRules: {
-        '/api/items': {
-            headers: {
-                'Cache-Control': `max-age=${60}`,
-                'CDN-Cache-Control': `max-age=${60 * 5}`,
-            },
-        },
-        '/api/items/*': {
-            headers: {
-                'Cache-Control': `max-age=${60 * 60}`,
-                'CDN-Cache-Control': `max-age=${60 * 60 * 24}`,
-            },
-        },
-        '/api/items/owned-avatars': {
-            headers: {
-                'Cache-Control': `max-age=${60 * 10}`,
-                'CDN-Cache-Control': `max-age=${0}`,
-            },
-        },
-        '/api/items/popular-avatars': {
-            headers: {
-                'Cache-Control': `max-age=${60 * 60}`,
-                'CDN-Cache-Control': `max-age=${60 * 60 * 24}`,
-            },
-        },
-        '/api/setups/tags': {
-            headers: {
-                'Cache-Control': `max-age=${60}`,
-                'CDN-Cache-Control': `max-age=${60 * 60}`,
-            },
-        },
-        '/api/users': {
-            headers: {
-                'Cache-Control': `max-age=${60}`,
-                'CDN-Cache-Control': `max-age=${60 * 30}`,
-            },
-        },
-        '/api/changelogs': {
-            headers: {
-                'Cache-Control': `max-age=${60 * 60}`,
-                'CDN-Cache-Control': `max-age=${60 * 60 * 24}`,
-            },
-        },
-        '/api/__sitemap__/urls': {
-            headers: {
-                'Cache-Control': `max-age=${60}`,
-                'CDN-Cache-Control': `max-age=${60 * 60}`,
-            },
-        },
         '/faq': {
             prerender: true,
         },
@@ -227,10 +177,7 @@ export default defineNuxtConfig({
             title,
             meta: [
                 { charset: 'utf-8' },
-                {
-                    name: 'viewport',
-                    content: 'width=device-width, initial-scale=1',
-                },
+                { name: 'viewport', content: 'width=device-width, initial-scale=1' },
                 { name: 'icon', content: '/favicon.svg' },
                 { property: 'og:site_name', content: title },
                 { property: 'og:type', content: 'website' },
@@ -296,27 +243,27 @@ export default defineNuxtConfig({
         ],
         clientBundle: {
             icons: [
-                'lucide:search',
-                'lucide:plus',
-                'lucide:x',
-                'lucide:check',
                 'svg-spinners:ring-resize',
-                'lucide:bookmark',
-                'lucide:sun',
-                'lucide:moon',
-                'lucide:palette',
-                'lucide:bolt',
-                'lucide:bell',
-                'lucide:user-round',
-                'lucide:users-round',
-                'lucide:log-out',
-                'lucide:message-square',
-                'lucide:share-2',
-                'lucide:chevron-right',
-                'lucide:chevron-left',
-                'lucide:chevron-down',
-                'lucide:chevron-up',
-                'lucide:copy',
+                'mingcute:search-line',
+                'mingcute:add-line',
+                'mingcute:close-line',
+                'mingcute:check-line',
+                'mingcute:bookmark-line',
+                'mingcute:sun-fill',
+                'mingcute:moon-fill',
+                'mingcute:palette-fill',
+                'mingcute:settings-1-fill',
+                'mingcute:notification-fill',
+                'mingcute:user-3-fill',
+                'mingcute:group-2-fill',
+                'mingcute:open-door-fill',
+                'mingcute:chat-3-fill',
+                'mingcute:share-2-fill',
+                'mingcute:right-small-fill',
+                'mingcute:left-small-fill',
+                'mingcute:down-small-fill',
+                'mingcute:up-small-fill',
+                'mingcute:copy-2-fill',
             ],
             scan: true,
             includeCustomCollections: true,
@@ -346,13 +293,6 @@ export default defineNuxtConfig({
             'github.com', // GitHub
             'avatars.githubusercontent.com', // GitHub User Avatars
         ],
-        alias: {
-            avatio: `https://${r2Domain}`,
-            booth: 'https://booth.pximg.net',
-            boothS2: 'https://s2.booth.pm',
-            github: 'https://github.com',
-            githubAvatar: 'https://avatars.githubusercontent.com',
-        },
     },
 
     mdc: {
@@ -362,7 +302,6 @@ export default defineNuxtConfig({
     },
 
     robots: {
-        allow: ['Twitterbot', 'facebookexternalhit'],
         blockNonSeoBots: true,
         blockAiBots: true,
     },

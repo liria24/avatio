@@ -9,7 +9,7 @@ const query = z.object({
         .optional(),
 })
 
-export default defineApi(
+export default authedSessionEventHandler(
     async ({ session }) => {
         const { id } = await validateQuery(query)
 
@@ -38,8 +38,6 @@ export default defineApi(
         }
     },
     {
-        errorMessage: 'Failed to delete setup drafts',
-        requireSession: true,
         rejectBannedUser: true,
     }
 )

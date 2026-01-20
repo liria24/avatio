@@ -6,9 +6,8 @@ const body = z.object({
     url: z.url({ error: 'URL must be in valid format' }),
 })
 
-export default defineApi(
+export default authedSessionEventHandler(
     async ({ session }) => {
-        // リクエストボディの検証
         const { url } = await validateBody(body)
 
         // URLからアイテムIDを抽出
@@ -95,8 +94,6 @@ export default defineApi(
         return { success: true, shopId: itemData.shop?.id }
     },
     {
-        errorMessage: 'Failed to verify shop.',
-        requireSession: true,
         rejectBannedUser: true,
     }
 )

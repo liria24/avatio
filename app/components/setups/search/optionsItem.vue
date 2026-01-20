@@ -37,7 +37,7 @@ const { data: item } = useFetch<Item>(`/api/items/${transformItemId(props.itemId
             </p>
 
             <UButton
-                icon="lucide:x"
+                icon="mingcute:close-line"
                 variant="ghost"
                 size="sm"
                 :aria-label="`${item.name} を削除`"

@@ -2,7 +2,7 @@ import { setupReports } from '@@/database/schema'
 
 const body = setupReportsInsertSchema
 
-export default defineApi(
+export default authedSessionEventHandler(
     async ({ session }) => {
         const { setupId, spam, hate, infringe, badImage, other, comment } = await validateBody(
             body,
@@ -23,8 +23,6 @@ export default defineApi(
         return null
     },
     {
-        errorMessage: 'Failed to report setup.',
-        requireSession: true,
         rejectBannedUser: true,
     }
 )

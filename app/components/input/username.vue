@@ -32,13 +32,13 @@ const checkState = ref<'idle' | 'checking' | 'available' | 'unavailable' | 'erro
 const stateMessages = {
     idle: { icon: '', message: '' },
     checking: { icon: 'svg-spinners:ring-resize', message: '確認中...' },
-    available: { icon: 'lucide:check', message: '使用可能' },
+    available: { icon: 'mingcute:check-line', message: '使用可能' },
     unavailable: {
-        icon: 'lucide:x',
+        icon: 'mingcute:close-line',
         message: 'このユーザーIDはすでに使用されています。',
     },
     error: {
-        icon: 'lucide:alert-triangle',
+        icon: 'mingcute:alert-fill',
         message: 'ユーザーIDの確認中にエラーが発生しました。',
     },
 } as const

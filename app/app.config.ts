@@ -1,7 +1,7 @@
 export default defineAppConfig({
     app: {
         name: 'Avatio',
-        version: '1.4.2',
+        version: '1.5.0',
         site: 'https://avatio.me',
         repo: 'https://github.com/liria24/avatio',
         githubIssue: 'https://github.com/liria24/avatio/issues/new/choose',
@@ -15,35 +15,35 @@ export default defineAppConfig({
     itemCategory: {
         avatar: {
             label: 'ベースアバター',
-            icon: 'lucide:person-standing',
+            icon: 'mingcute:baby-fill',
         },
         hair: {
             label: 'ヘア',
-            icon: 'mingcute:hair-line',
+            icon: 'mingcute:hair-fill',
         },
         clothing: {
             label: '衣装',
-            icon: 'lucide:shirt',
+            icon: 'mingcute:dress-fill',
         },
         accessory: {
             label: 'アクセサリー',
-            icon: 'mingcute:bow-tie-line',
+            icon: 'mingcute:bowknot-fill',
         },
         texture: {
             label: 'テクスチャ',
-            icon: 'lucide:image',
+            icon: 'mingcute:pic-fill',
         },
         shader: {
             label: 'シェーダー',
-            icon: 'mingcute:shadow-line',
+            icon: 'mingcute:shadow-fill',
         },
         tool: {
             label: 'ツール',
-            icon: 'lucide:wrench',
+            icon: 'mingcute:tool-fill',
         },
         other: {
             label: 'その他',
-            icon: 'lucide:package',
+            icon: 'mingcute:package-2-fill',
         },
     },
     links: [
@@ -70,17 +70,17 @@ export default defineAppConfig({
         {
             label: 'Twitter',
             pattern: /^(www\.)?twitter\.com$/,
-            icon: 'simple-icons:twitter',
+            icon: 'mingcute:twitter-fill',
         },
         {
             label: 'X',
             pattern: /^(www\.)?x\.com$/,
-            icon: 'simple-icons:x',
+            icon: 'mingcute:social-x-fill',
         },
         {
             label: 'Bluesky',
             pattern: /^(www\.)?bsky\.app$/,
-            icon: 'simple-icons:bluesky',
+            icon: 'mingcute:bluesky-social-fill',
         },
         {
             // mixi.jp -> mixi
@@ -92,32 +92,32 @@ export default defineAppConfig({
         {
             label: 'Facebook',
             pattern: /^(www\.)?facebook\.com$/,
-            icon: 'simple-icons:facebook',
+            icon: 'mingcute:facebook-fill',
         },
         {
             label: 'Discord',
             pattern: /^(www\.)?discord(app)?\.com$/,
-            icon: 'simple-icons:discord',
+            icon: 'mingcute:discord-fill',
         },
         {
             label: 'Instagram',
             pattern: /^(www\.)?instagram\.com$/,
-            icon: 'simple-icons:instagram',
+            icon: 'mingcute:instagram-fill',
         },
         {
             label: 'Threads',
             pattern: /^(www\.)?threads\.net$/,
-            icon: 'simple-icons:threads',
+            icon: 'mingcute:threads-fill',
         },
         {
             label: 'Pinterest',
             pattern: /^(www\.)?pinterest\.com$/,
-            icon: 'simple-icons:pinterest',
+            icon: 'mingcute:pinterest-fill',
         },
         {
             label: 'Reddit',
             pattern: /^(www\.)?reddit\.com$/,
-            icon: 'simple-icons:reddit',
+            icon: 'mingcute:reddit-fill',
         },
         {
             label: 'Tumblr',
@@ -129,17 +129,17 @@ export default defineAppConfig({
         {
             label: 'YouTube',
             pattern: /^(www\.)?youtube\.com$/,
-            icon: 'simple-icons:youtube',
+            icon: 'mingcute:youtube-fill',
         },
         {
             label: 'Twitch',
             pattern: /^(www\.)?twitch\.tv$/,
-            icon: 'simple-icons:twitch',
+            icon: 'mingcute:twitch-fill',
         },
         {
             label: 'TikTok',
             pattern: /^(www\.)?tiktok\.com$/,
-            icon: 'simple-icons:tiktok',
+            icon: 'mingcute:tiktok-fill',
         },
         {
             label: 'Vimeo',
@@ -154,7 +154,7 @@ export default defineAppConfig({
         {
             label: 'Bilibili',
             pattern: /^(www\.)?bilibili\.com$/,
-            icon: 'simple-icons:bilibili',
+            icon: 'mingcute:bilibili-fill',
         },
         {
             label: 'Pixiv',
@@ -174,13 +174,13 @@ export default defineAppConfig({
         {
             label: 'Spotify',
             pattern: /^(open\.)?spotify\.com$/,
-            icon: 'simple-icons:spotify',
+            icon: 'mingcute:spotify-fill',
         },
         {
             // Short link on Dub
             label: 'Spotify',
             pattern: /^spti\.fi$/,
-            icon: 'simple-icons:spotify',
+            icon: 'mingcute:spotify-fill',
         },
 
         {
@@ -191,23 +191,23 @@ export default defineAppConfig({
         {
             label: 'GitHub',
             pattern: /^github\.com$/,
-            icon: 'simple-icons:github',
+            icon: 'mingcute:github-fill',
         },
         {
             // Short link on Dub
             label: 'GitHub',
             pattern: /^git\.new$/,
-            icon: 'simple-icons:github',
+            icon: 'mingcute:github-fill',
         },
         {
             label: 'Google',
             pattern: /^.*\.google\.com$/,
-            icon: 'simple-icons:google',
+            icon: 'mingcute:google-fill',
         },
         {
             label: 'Steam',
             pattern: /^(www\.)?steamcommunity\.com$/,
-            icon: 'simple-icons:steam',
+            icon: 'mingcute:steam-fill',
         },
         {
             label: 'Patreon',
@@ -229,7 +229,7 @@ export default defineAppConfig({
         {
             label: 'Notion',
             pattern: /^(.*\.)?notion\.site$/,
-            icon: 'simple-icons:notion',
+            icon: 'mingcute:notion-fill',
         },
         {
             label: 'Skeb',
@@ -244,6 +244,47 @@ export default defineAppConfig({
         },
         icons: {
             loading: 'svg-spinners:ring-resize',
+            arrowDown: 'mingcute:arrow-down-line',
+            arrowLeft: 'mingcute:arrow-left-line',
+            arrowRight: 'mingcute:arrow-right-line',
+            arrowUp: 'mingcute:arrow-up-line',
+            caution: 'mingcute:warning-fill',
+            check: 'mingcute:check-fill',
+            chevronDoubleLeft: 'mingcute:arrows-left-line',
+            chevronDoubleRight: 'mingcute:arrows-right-line',
+            chevronDown: 'mingcute:down-line',
+            chevronLeft: 'mingcute:left-line',
+            chevronRight: 'mingcute:right-line',
+            chevronUp: 'mingcute:up-line',
+            close: 'mingcute:close-fill',
+            copy: 'mingcute:copy-2-line',
+            copyCheck: 'mingcute:copy-2-fill',
+            dark: 'mingcute:moon-fill',
+            drag: 'mingcute:dots-fill',
+            ellipsis: 'mingcute:more-1-fill',
+            error: 'mingcute:close-circle-fill',
+            external: 'mingcute:arrow-right-up-line',
+            eye: 'mingcute:eye-2-fill',
+            eyeOff: 'mingcute:eye-close-fill',
+            file: 'mingcute:file-fill',
+            folder: 'mingcute:folder-fill',
+            folderOpen: 'mingcute:folder-open-fill',
+            hash: 'mingcute:hashtag-fill',
+            info: 'mingcute:information-fill',
+            light: 'mingcute:sun-fill',
+            menu: 'mingcute:menu-fill',
+            minus: 'mingcute:minimize-fill',
+            panelClose: 'mingcute:layout-leftbar-close-fill',
+            panelOpen: 'mingcute:layout-leftbar-open-fill',
+            plus: 'mingcute:add-fill',
+            reload: 'mingcute:refresh-2-fill',
+            search: 'mingcute:search-line',
+            stop: 'mingcute:square-fill',
+            success: 'mingcute:check-circle-fill',
+            system: 'mingcute:monitor-fill',
+            tip: 'mingcute:bulb-2-fill',
+            upload: 'mingcute:upload-fill',
+            warning: 'mingcute:alert-fill',
         },
         accordion: {
             slots: {

@@ -14,22 +14,16 @@ const querySchema = z.object({
     searchValue: z.string().optional(),
 })
 
-export default defineApi(
-    async () => {
-        const query = await validateQuery(querySchema)
-        const { headers } = useEvent()
+export default adminSessionEventHandler(async () => {
+    const query = await validateQuery(querySchema)
+    const { headers } = useEvent()
 
-        const result = (await auth.api.listUsers({ headers, query })) as {
-            users: UserWithRole[]
-            total: number
-            limit: number | undefined
-            offset: number | undefined
-        }
-
-        return result
-    },
-    {
-        errorMessage: 'Failed to list users',
-        requireAdmin: true,
+    const result = (await auth.api.listUsers({ headers, query })) as {
+        users: UserWithRole[]
+        total: number
+        limit: number | undefined
+        offset: number | undefined
     }
-)
+
+    return result
+})

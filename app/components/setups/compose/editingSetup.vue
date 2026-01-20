@@ -24,12 +24,12 @@ const { data: setup, status } = await useFetch(`/api/setups/${props.setupId}`)
             v-else-if="setup"
             class="line-clamp-1 flex w-full items-center gap-1.5 pl-0.5 break-all"
         >
-            <Icon name="lucide:pen-line" size="13" />
+            <Icon name="mingcute:edit-3-fill" size="13" />
             <span class="text-muted text-left text-xs font-semibold"> 編集中 </span>
             <span class="text-toned ml-1 grow text-left text-xs">
                 {{ setup.name }}
             </span>
-            <Icon name="lucide:arrow-up-right" size="18" />
+            <Icon name="mingcute:arrow-right-up-fill" size="18" />
         </div>
     </UButton>
 </template>

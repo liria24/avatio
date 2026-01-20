@@ -42,7 +42,7 @@ const onSelectItemSearch = async (item: Partial<Item> & Pick<Item, 'id'>) => {
                 <!-- アイテム選択セクション -->
                 <div class="flex w-full flex-col gap-2">
                     <div class="flex items-center gap-1">
-                        <Icon name="lucide:package" size="18" class="text-muted" />
+                        <Icon name="mingcute:package-2-fill" size="18" class="text-muted" />
                         <h2 class="text-sm leading-none font-semibold text-nowrap">アイテム</h2>
                     </div>
 
@@ -58,7 +58,7 @@ const onSelectItemSearch = async (item: Partial<Item> & Pick<Item, 'id'>) => {
                         <UPopover v-model:open="popoverItemSearch">
                             <UButton
                                 :label="items.length ? undefined : 'アイテムを選択'"
-                                icon="lucide:plus"
+                                icon="mingcute:add-line"
                                 aria-label="Add item"
                                 variant="ghost"
                                 class="p-4"
@@ -74,7 +74,7 @@ const onSelectItemSearch = async (item: Partial<Item> & Pick<Item, 'id'>) => {
                 <!-- タグ入力セクション -->
                 <div class="flex w-full flex-col gap-1.5">
                     <div class="flex items-center gap-1">
-                        <Icon name="lucide:tags" size="18" class="text-muted" />
+                        <Icon name="mingcute:tag-2-fill" size="18" class="text-muted" />
                         <h2 class="text-sm leading-none font-semibold text-nowrap">タグ</h2>
                     </div>
 

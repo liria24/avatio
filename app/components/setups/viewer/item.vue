@@ -29,7 +29,7 @@ const shopPath = computed(() => {
 
 const providerIcons = {
     booth: 'avatio:booth',
-    github: 'simple-icons:github',
+    github: 'mingcute:github-fill',
 }
 const providerIcon = computed(() => providerIcons[props.item.platform])
 </script>
@@ -130,7 +130,7 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                             </span>
                             <Icon
                                 v-if="item.shop.verified"
-                                name="lucide:check"
+                                name="mingcute:check-line"
                                 :size="16"
                                 class="text-muted size-3 shrink-0"
                             />
@@ -209,7 +209,11 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                         v-if="item.forks !== null && item.forks !== undefined"
                         class="flex w-fit items-center gap-1.5"
                     >
-                        <Icon name="lucide:git-fork" :size="17" class="text-muted shrink-0" />
+                        <Icon
+                            name="mingcute:git-branch-fill"
+                            :size="17"
+                            class="text-muted shrink-0"
+                        />
                         <span
                             class="text-muted pt-px font-[Geist] text-xs leading-none font-semibold text-nowrap"
                         >
@@ -218,7 +222,7 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                     </div>
 
                     <div v-if="item.version" class="flex w-fit items-center gap-1.5">
-                        <Icon name="lucide:tag" :size="16" class="text-muted shrink-0" />
+                        <Icon name="mingcute:tag-fill" :size="16" class="text-muted shrink-0" />
                         <span
                             class="text-muted pt-px font-[Geist] text-xs leading-none font-semibold text-nowrap"
                         >
@@ -236,14 +240,14 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                             <UAvatar
                                 :src="`https://github.com/${contributor.name}.png`"
                                 :alt="contributor.name"
-                                icon="lucide:user-round"
+                                icon="mingcute:user-3-fill"
                             />
                         </UTooltip>
                     </UAvatarGroup>
 
                     <UBadge
                         v-if="item.nsfw"
-                        icon="lucide:ban"
+                        icon="mingcute:forbid-circle-fill"
                         label="NSFW"
                         variant="soft"
                         class="text-xs font-semibold"
@@ -260,7 +264,7 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                 >
                     <UButton
                         :to="$localePath(`/search?itemId=${props.item.id}`)"
-                        icon="lucide:search"
+                        icon="mingcute:search-line"
                         aria-label="アイテムからセットアップを検索"
                         variant="ghost"
                         :ui="{ leadingIcon: 'size-4.5' }"
@@ -270,7 +274,7 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
 
                 <UTooltip v-if="props.actions" text="アイテムを報告" :delay-duration="50">
                     <UButton
-                        icon="lucide:flag"
+                        icon="mingcute:flag-3-fill"
                         aria-label="アイテムを報告"
                         variant="ghost"
                         :ui="{
@@ -288,7 +292,11 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
             class="ring-accented flex w-full flex-col gap-1.5 rounded-lg p-2 ring-1 ring-inset empty:hidden data-[noted=false]:p-0 data-[noted=false]:ring-0"
         >
             <div v-if="item.note?.length" class="flex items-start gap-2 px-1">
-                <Icon name="lucide:pen-line" :size="15" class="text-muted mt-[0.2rem] shrink-0" />
+                <Icon
+                    name="mingcute:edit-3-fill"
+                    :size="15"
+                    class="text-muted mt-[0.2rem] shrink-0"
+                />
                 <p class="sentence text-xs/relaxed whitespace-pre-wrap">
                     {{ item.note }}
                 </p>
@@ -298,7 +306,7 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                 class="flex flex-wrap items-center justify-end gap-3"
             >
                 <div v-if="item.unsupported" class="flex items-center gap-2 px-3 py-2">
-                    <Icon name="lucide:user-round-x" :size="15" class="text-muted shrink-0" />
+                    <Icon name="mingcute:user-x-fill" :size="15" class="text-muted shrink-0" />
                     <p class="text-muted text-left text-xs leading-none font-medium">
                         アバター非対応
                     </p>
@@ -312,7 +320,7 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                 >
                     <UButton
                         v-if="item.shapekeys?.length"
-                        icon="lucide:shapes"
+                        icon="mingcute:union-fill"
                         :label="`${item.shapekeys.length} 個のシェイプキー`"
                         variant="subtle"
                         size="sm"
@@ -322,7 +330,11 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                     <template #content>
                         <div class="flex min-w-48 flex-col gap-3 p-3">
                             <div class="flex w-full items-center gap-2">
-                                <Icon name="lucide:shapes" :size="18" class="text-muted shrink-0" />
+                                <Icon
+                                    name="mingcute:union-fill"
+                                    :size="18"
+                                    class="text-muted shrink-0"
+                                />
                                 <p class="text-sm font-medium">シェイプキー</p>
                             </div>
                             <div class="flex flex-col gap-3 rounded-lg">
@@ -364,7 +376,7 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
             class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 p-3 backdrop-blur-xl"
         >
             <UButton
-                icon="lucide:eye"
+                icon="mingcute:eye-2-fill"
                 label="NSFW コンテンツを表示"
                 variant="soft"
                 @click="nsfwMask = false"

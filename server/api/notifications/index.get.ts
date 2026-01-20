@@ -11,61 +11,55 @@ const query = z.object({
         .default(['unread', 'read']),
 })
 
-export default defineApi<{
+export default authedSessionEventHandler<{
     data: Notification[]
     unread: number
-}>(
-    async ({ session }) => {
-        const { status } = await validateQuery(query)
-        const userId = session!.user.id
+}>(async ({ session }) => {
+    const { status } = await validateQuery(query)
+    const userId = session!.user.id
 
-        const [unreadCount, data] = await Promise.all([
-            db.$count(
-                notifications,
-                and(eq(notifications.userId, userId), isNull(notifications.readAt))
-            ),
-            db.query.notifications.findMany({
-                orderBy: {
-                    createdAt: 'desc',
-                },
-                where: {
-                    userId: { eq: userId },
-                    readAt:
-                        status.includes('read') && !status.includes('unread')
-                            ? { isNotNull: true }
-                            : !status.includes('read') && status.includes('unread')
-                              ? { isNull: true }
-                              : undefined,
-                    id:
-                        !status.includes('read') && !status.includes('unread')
-                            ? { isNull: true }
-                            : undefined,
-                },
-                columns: {
-                    id: true,
-                    createdAt: true,
-                    type: true,
-                    readAt: true,
-                    title: true,
-                    message: true,
-                    data: true,
-                    actionUrl: true,
-                    actionLabel: true,
-                    banner: true,
-                },
-            }),
-        ])
+    const [unreadCount, data] = await Promise.all([
+        db.$count(
+            notifications,
+            and(eq(notifications.userId, userId), isNull(notifications.readAt))
+        ),
+        db.query.notifications.findMany({
+            orderBy: {
+                createdAt: 'desc',
+            },
+            where: {
+                userId: { eq: userId },
+                readAt:
+                    status.includes('read') && !status.includes('unread')
+                        ? { isNotNull: true }
+                        : !status.includes('read') && status.includes('unread')
+                          ? { isNull: true }
+                          : undefined,
+                id:
+                    !status.includes('read') && !status.includes('unread')
+                        ? { isNull: true }
+                        : undefined,
+            },
+            columns: {
+                id: true,
+                createdAt: true,
+                type: true,
+                readAt: true,
+                title: true,
+                message: true,
+                data: true,
+                actionUrl: true,
+                actionLabel: true,
+                banner: true,
+            },
+        }),
+    ])
 
-        return {
-            data: data.map((notification) => ({
-                ...notification,
-                data: notification.data ? JSON.parse(notification.data) : null,
-            })),
-            unread: Number(unreadCount),
-        }
-    },
-    {
-        errorMessage: 'Failed to get notifications.',
-        requireSession: true,
+    return {
+        data: data.map((notification) => ({
+            ...notification,
+            data: notification.data ? JSON.parse(notification.data) : null,
+        })),
+        unread: Number(unreadCount),
     }
-)
+})

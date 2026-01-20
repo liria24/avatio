@@ -29,14 +29,14 @@ const { data, status, refresh } = await useFetch('/api/changelogs', {
                 <template #right>
                     <UButton
                         to="/admin/changelogs/compose"
-                        icon="lucide:plus"
+                        icon="mingcute:add-line"
                         label="New Changelog"
                         color="neutral"
                     />
 
                     <UButton
                         :loading="status === 'pending'"
-                        icon="lucide:refresh-cw"
+                        icon="mingcute:refresh-2-fill"
                         variant="soft"
                         color="neutral"
                         @click="refresh()"

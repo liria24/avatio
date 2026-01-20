@@ -116,7 +116,7 @@ if (data.value) {
             <div class="flex w-full flex-col items-start gap-10">
                 <UAlert
                     v-if="data.hidAt"
-                    icon="lucide:eye-off"
+                    icon="mingcute:eye-close-fill"
                     title="このセットアップは現在非表示です"
                     :description="`理由: ${data.hidReason || '不明'}`"
                     variant="subtle"
@@ -185,7 +185,7 @@ if (data.value) {
                                 <Icon
                                     :name="
                                         itemCategory[key as keyof typeof itemCategory]?.icon ||
-                                        'lucide:box'
+                                        'mingcute:box-3-fill'
                                     "
                                     :size="22"
                                     class="text-muted shrink-0"
@@ -208,7 +208,7 @@ if (data.value) {
                         <USeparator />
 
                         <UAlert
-                            icon="lucide:circle-question-mark"
+                            icon="mingcute:question-fill"
                             :title="`${data.failedItemsCount} 個のアイテムが取得できませんでした`"
                             description="削除されたか、非公開になっている可能性があります。"
                             variant="subtle"
@@ -226,7 +226,7 @@ if (data.value) {
                 </div>
 
                 <UButton
-                    icon="lucide:flag"
+                    icon="mingcute:flag-3-fill"
                     label="このセットアップを報告"
                     variant="ghost"
                     size="sm"
