@@ -98,7 +98,7 @@ if (user.value) {
                         v-else
                         class="bg-muted flex size-14 shrink-0 items-center justify-center rounded-full md:size-20"
                     >
-                        <Icon name="lucide:user-round" size="32" class="text-muted" />
+                        <Icon name="mingcute:user-3-fill" size="32" class="text-muted" />
                     </div>
 
                     <div class="flex flex-col gap-1">
@@ -119,7 +119,7 @@ if (user.value) {
                         v-if="session?.user.username === user.username"
                         :to="$localePath('/settings')"
                         label="プロフィールを編集"
-                        icon="lucide:pen-line"
+                        icon="mingcute:edit-3-fill"
                         variant="ghost"
                         size="sm"
                         class="self-end"
@@ -127,7 +127,7 @@ if (user.value) {
 
                     <UButton
                         label="ユーザーを報告"
-                        icon="lucide:flag"
+                        icon="mingcute:flag-3-fill"
                         variant="ghost"
                         size="sm"
                         class="self-end"
@@ -162,7 +162,7 @@ if (user.value) {
 
         <div v-if="user.shops?.length" class="mb-4 flex w-full flex-col gap-5 px-2">
             <div class="flex items-center gap-2">
-                <Icon name="lucide:store" size="22" class="text-muted" />
+                <Icon name="mingcute:store-fill" size="22" class="text-muted" />
                 <h2 class="text-xl leading-none font-semibold text-nowrap">ショップ</h2>
             </div>
 
@@ -211,7 +211,7 @@ if (user.value) {
 
         <div class="flex w-full flex-col gap-5 px-2">
             <div class="flex items-center gap-2">
-                <Icon name="lucide:shirt" size="22" class="text-muted" />
+                <Icon name="mingcute:dress-fill" size="22" class="text-muted" />
                 <h2 class="text-xl leading-none font-semibold text-nowrap">セットアップ</h2>
             </div>
 

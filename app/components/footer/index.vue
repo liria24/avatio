@@ -23,7 +23,7 @@ const { data: repo } = useFetch<GithubRepo>('https://ungh.cc/repos/liria24/avati
                     <UButton
                         :to="app.liria.twitter"
                         target="_blank"
-                        icon="simple-icons:x"
+                        icon="mingcute:social-x-fill"
                         aria-label="X"
                         variant="ghost"
                         size="sm"
@@ -34,7 +34,7 @@ const { data: repo } = useFetch<GithubRepo>('https://ungh.cc/repos/liria24/avati
                         <UButton
                             :to="app.repo"
                             target="_blank"
-                            icon="simple-icons:github"
+                            icon="mingcute:github-fill"
                             aria-label="GitHub"
                             variant="ghost"
                             size="sm"
@@ -64,13 +64,17 @@ const { data: repo } = useFetch<GithubRepo>('https://ungh.cc/repos/liria24/avati
                                         {{ repo.repo.repo }}
                                     </span>
                                     <div class="flex items-center gap-1">
-                                        <Icon name="lucide:star" size="14" class="text-muted" />
+                                        <Icon
+                                            name="mingcute:star-fill"
+                                            size="14"
+                                            class="text-muted"
+                                        />
                                         <span class="text-muted text-xs leading-none text-nowrap">
                                             {{ repo.repo.stars }}
                                         </span>
 
                                         <Icon
-                                            name="lucide:git-pull-request-arrow"
+                                            name="mingcute:git-pull-request-fill"
                                             size="14"
                                             class="text-muted ml-2"
                                         />

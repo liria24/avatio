@@ -36,13 +36,18 @@ const removeTag = (tag: string) => {
                 class="py-1 pr-1 pl-3"
             >
                 <template #trailing>
-                    <UButton icon="lucide:x" variant="ghost" size="xs" @click="removeTag(tag)" />
+                    <UButton
+                        icon="mingcute:close-line"
+                        variant="ghost"
+                        size="xs"
+                        @click="removeTag(tag)"
+                    />
                 </template>
             </UBadge>
 
             <UPopover :content="{ side: 'right', align: 'start' }">
                 <UButton
-                    icon="lucide:plus"
+                    icon="mingcute:add-line"
                     :label="tags.length ? undefined : 'タグを追加'"
                     variant="soft"
                 />

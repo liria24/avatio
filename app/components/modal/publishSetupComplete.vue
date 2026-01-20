@@ -59,13 +59,13 @@ onMounted(() => {
                     </NuxtLink>
                     <UButton
                         v-if="isSupported"
-                        :icon="copied ? 'lucide:check' : 'lucide:copy'"
+                        :icon="copied ? 'mingcute:check-line' : 'mingcute:copy-2-fill'"
                         variant="ghost"
                         size="sm"
                         @click="copy(link)"
                     />
                     <DropdownMenuShareSetup :setup="data">
-                        <UButton icon="lucide:share-2" variant="ghost" size="sm" />
+                        <UButton icon="mingcute:share-2-fill" variant="ghost" size="sm" />
                     </DropdownMenuShareSetup>
                 </div>
             </div>
@@ -74,7 +74,7 @@ onMounted(() => {
         <template #footer>
             <div class="flex w-full gap-1">
                 <UButton
-                    icon="lucide:plus"
+                    icon="mingcute:add-line"
                     label="続けて投稿"
                     variant="soft"
                     color="neutral"
@@ -85,7 +85,7 @@ onMounted(() => {
                 <UButton
                     :to="props.setupId ? `/setup/${props.setupId}` : undefined"
                     :disabled="!props.setupId"
-                    trailing-icon="lucide:arrow-right"
+                    trailing-icon="mingcute:arrow-right-line"
                     label="投稿したセットアップを見る"
                     color="neutral"
                     size="lg"

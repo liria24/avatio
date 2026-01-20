@@ -14,7 +14,7 @@ const deleteUser = async () => {
         await auth.deleteUser({ callbackURL: '/' })
 
         toast.add({
-            icon: 'lucide:check',
+            icon: 'mingcute:check-line',
             title: 'アカウントを削除しました',
             description: 'ページをリロードしています...',
             color: 'success',
@@ -23,7 +23,7 @@ const deleteUser = async () => {
     } catch (error) {
         console.error(error)
         toast.add({
-            icon: 'lucide:x',
+            icon: 'mingcute:close-line',
             title: 'アカウントを削除できませんでした',
             description: '時間をおいて再度お試しください。',
             color: 'error',
@@ -104,7 +104,7 @@ defineSeo({
 
                     <template #body>
                         <UAlert
-                            icon="lucide:trash"
+                            icon="mingcute:delete-2-fill"
                             title="本当にアカウントを削除しますか？"
                             description="削除したアカウントは復元できません。"
                             color="error"

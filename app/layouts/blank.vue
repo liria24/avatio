@@ -6,21 +6,21 @@ const colorMode = useColorMode()
 const themeMenu = [
     {
         label: 'システム',
-        icon: 'lucide:monitor',
+        icon: 'mingcute:monitor-fill',
         onSelect: () => {
             colorMode.preference = 'system'
         },
     },
     {
         label: 'ライト',
-        icon: 'lucide:sun',
+        icon: 'mingcute:sun-fill',
         onSelect: () => {
             colorMode.preference = 'light'
         },
     },
     {
         label: 'ダーク',
-        icon: 'lucide:moon',
+        icon: 'mingcute:moon-fill',
         onSelect: () => {
             colorMode.preference = 'dark'
         },
@@ -65,7 +65,9 @@ const themeMenu = [
                             <UTooltip text="テーマ" :delay-duration="50">
                                 <UButton
                                     :icon="
-                                        colorMode.value === 'dark' ? 'lucide:moon' : 'lucide:sun'
+                                        colorMode.value === 'dark'
+                                            ? 'mingcute:moon-fill'
+                                            : 'mingcute:sun-fill'
                                     "
                                     aria-label="テーマ"
                                     variant="ghost"
@@ -74,7 +76,11 @@ const themeMenu = [
                         </UDropdownMenu>
 
                         <template #fallback>
-                            <UButton icon="lucide:palette" aria-label="テーマ" variant="ghost" />
+                            <UButton
+                                icon="mingcute:palette-fill"
+                                aria-label="テーマ"
+                                variant="ghost"
+                            />
                         </template>
                     </ClientOnly>
                 </header>

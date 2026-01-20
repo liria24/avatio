@@ -30,21 +30,21 @@ const switchAccount = async (sessionToken: string) => {
 const themeMenu = [
     {
         label: 'システム',
-        icon: 'lucide:monitor',
+        icon: 'mingcute:monitor-fill',
         onSelect: () => {
             colorMode.preference = 'system'
         },
     },
     {
         label: 'ライト',
-        icon: 'lucide:sun',
+        icon: 'mingcute:sun-fill',
         onSelect: () => {
             colorMode.preference = 'light'
         },
     },
     {
         label: 'ダーク',
-        icon: 'lucide:moon',
+        icon: 'mingcute:moon-fill',
         onSelect: () => {
             colorMode.preference = 'dark'
         },
@@ -61,51 +61,51 @@ const menuItems = ref<DropdownMenuItem[][]>([
     [
         {
             label: 'ブックマーク',
-            icon: 'lucide:bookmark',
+            icon: 'mingcute:bookmark-fill',
             to: `/bookmarks`,
         },
         {
             label: '設定',
-            icon: 'lucide:bolt',
+            icon: 'mingcute:settings-1-fill',
             to: '/settings',
         },
     ],
     [
         {
             label: 'フィードバック',
-            icon: 'lucide:message-square',
+            icon: 'mingcute:chat-3-fill',
             onSelect: () => modalFeedback.open(),
         },
         {
             label: 'テーマ',
-            icon: 'lucide:moon',
+            icon: 'mingcute:moon-fill',
             children: themeMenu,
         },
     ],
     [
         {
             label: 'アカウント切替',
-            icon: 'lucide:users-round',
+            icon: 'mingcute:group-2-fill',
             children: [
                 ...(props.sessions?.map((session) => ({
                     label: session.user.name,
                     avatar: {
                         src: session.user.image || undefined,
                         alt: session.user.name,
-                        icon: 'lucide:user-round',
+                        icon: 'mingcute:user-3-fill',
                     },
                     onSelect: () => switchAccount(session.session.token),
                 })) || []),
                 {
                     label: '新しいアカウント',
-                    icon: 'lucide:user-round-plus',
+                    icon: 'mingcute:user-add-2-fill',
                     onSelect: () => modalLogin.open(),
                 },
             ],
         },
         {
             label: 'ログアウト',
-            icon: 'lucide:log-out',
+            icon: 'mingcute:open-door-fill',
             onSelect: revoke,
         },
     ],
@@ -121,7 +121,7 @@ const menuItems = ref<DropdownMenuItem[][]>([
             <UAvatar
                 :src="session.user.image || undefined"
                 :alt="session.user.name"
-                icon="lucide:user-round"
+                icon="mingcute:user-3-fill"
             />
         </button>
 
@@ -132,7 +132,7 @@ const menuItems = ref<DropdownMenuItem[][]>([
                 :avatar="{
                     src: session.user.image || undefined,
                     alt: session.user.name,
-                    icon: 'lucide:user-round',
+                    icon: 'mingcute:user-3-fill',
                 }"
             />
         </template>

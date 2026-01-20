@@ -27,54 +27,54 @@ const links = [
     [
         {
             label: 'Home',
-            icon: 'lucide:house',
+            icon: 'mingcute:home-3-fill',
             to: '/admin',
         },
         {
             label: 'Users',
-            icon: 'lucide:users-round',
+            icon: 'mingcute:group-2-fill',
             to: '/admin/users',
             badge: data.value.users,
         },
         {
             label: 'Setups',
-            icon: 'lucide:sparkles',
+            icon: 'mingcute:sparkles-fill',
             to: '/admin/setups',
             badge: data.value.setups,
         },
         {
             label: 'Items',
-            icon: 'lucide:package',
+            icon: 'mingcute:package-2-fill',
             to: '/admin/items',
             badge: data.value.items,
         },
         {
             label: 'Feedbacks',
-            icon: 'lucide:message-square',
+            icon: 'mingcute:chat-3-fill',
             to: '/admin/feedbacks',
             badge: data.value.feedbacks,
         },
         {
             label: 'Reports',
-            icon: 'lucide:flag',
+            icon: 'mingcute:flag-3-fill',
             defaultOpen: true,
             type: 'trigger',
             children: [
                 {
                     label: 'Item',
-                    icon: 'lucide:package',
+                    icon: 'mingcute:package-2-fill',
                     to: '/admin/reports/item',
                     badge: data.value.itemReports,
                 },
                 {
                     label: 'Setup',
-                    icon: 'lucide:sparkles',
+                    icon: 'mingcute:sparkles-fill',
                     to: '/admin/reports/setup',
                     badge: data.value.setupReports,
                 },
                 {
                     label: 'User',
-                    icon: 'lucide:user-round',
+                    icon: 'mingcute:user-3-fill',
                     to: '/admin/reports/user',
                     badge: data.value.userReports,
                 },
@@ -82,25 +82,25 @@ const links = [
         },
         {
             label: 'Changelogs',
-            icon: 'lucide:blocks',
+            icon: 'mingcute:cube-fill',
             to: '/admin/changelogs',
         },
         {
             label: 'Audit Logs',
-            icon: 'lucide:logs',
+            icon: 'mingcute:terminal-box-fill',
             to: '/admin/audit-logs',
         },
     ],
     [
         {
             label: 'X/Twitter',
-            icon: 'simple-icons:x',
+            icon: 'mingcute:social-x-fill',
             to: app.liria.twitter,
             target: '_blank',
         },
         {
             label: 'GitHub',
-            icon: 'simple-icons:github',
+            icon: 'mingcute:github-fill',
             to: app.repo,
             target: '_blank',
         },
@@ -161,7 +161,7 @@ const links = [
                                 :description="`@${session?.user.username}`"
                                 :avatar="{
                                     src: session?.user.image || undefined,
-                                    icon: 'lucide:user-round',
+                                    icon: 'mingcute:user-3-fill',
                                 }"
                             />
                         </template>

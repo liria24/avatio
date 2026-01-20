@@ -32,7 +32,7 @@ const props = defineProps({
                 <UButton
                     :to="$localePath('/')"
                     label="ホームに戻る"
-                    icon="lucide:arrow-left"
+                    icon="mingcute:arrow-left-line"
                     variant="soft"
                     size="lg"
                     class="mt-4"

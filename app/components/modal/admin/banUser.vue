@@ -50,7 +50,7 @@ const banUser = async () => {
                     :description="`@${props.userId}`"
                     :avatar="{
                         src: props.image || undefined,
-                        icon: 'lucide:user-round',
+                        icon: 'mingcute:user-3-fill',
                     }"
                 />
 

@@ -29,7 +29,7 @@ const notifications = computed(() =>
                         <UButton
                             v-if="session"
                             :to="$localePath('/setup/compose')"
-                            icon="lucide:plus"
+                            icon="mingcute:add-line"
                             label="セットアップを投稿"
                             color="neutral"
                             variant="soft"
@@ -40,7 +40,7 @@ const notifications = computed(() =>
                             <UButton
                                 :to="$localePath('/search')"
                                 aria-label="セットアップを検索"
-                                icon="lucide:search"
+                                icon="mingcute:search-line"
                                 variant="ghost"
                             />
                         </UTooltip>
@@ -88,7 +88,7 @@ const notifications = computed(() =>
             <UButton
                 v-if="session"
                 :to="$localePath('/setup/compose')"
-                icon="lucide:plus"
+                icon="mingcute:add-line"
                 aria-label="セットアップを投稿"
                 color="neutral"
                 variant="solid"

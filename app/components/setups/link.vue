@@ -183,7 +183,7 @@ watch(colorMode, (newMode) => {
                 <div
                     class="flex translate-y-4 items-center gap-1 opacity-0 duration-200 group-hover:translate-y-0 group-hover:opacity-100"
                 >
-                    <Icon name="lucide:person-standing" size="15" class="shrink-0 text-zinc-300" />
+                    <Icon name="mingcute:baby-fill" size="15" class="shrink-0 text-zinc-300" />
                     <span
                         class="line-clamp-1 overflow-visible text-xs leading-none break-all text-zinc-300"
                     >
@@ -249,7 +249,7 @@ watch(colorMode, (newMode) => {
                     <UAvatar
                         :src="setup.user.image || undefined"
                         :alt="setup.user.name"
-                        icon="lucide:user-round"
+                        icon="mingcute:user-3-fill"
                         aria-hidden="true"
                         size="2xs"
                     />
@@ -257,17 +257,19 @@ watch(colorMode, (newMode) => {
                     <template #content>
                         <NuxtLink :to="`/@${setup.user.username}`" class="flex py-2 pr-3 pl-2">
                             <UUser
-                                :name="setup.user.name"
                                 :avatar="{
                                     src: setup.user.image || undefined,
-                                    icon: 'lucide:user-round',
+                                    icon: 'mingcute:user-3-fill',
                                 }"
+                                :description="`@${setup.user.username}`"
+                                :ui="{ name: 'flex gap-1 items-center' }"
                             >
-                                <template #description>
+                                <template #name>
+                                    <span>{{ setup.user.name }}</span>
                                     <UserBadges
                                         v-if="setup.user.badges?.length"
                                         :badges="setup.user.badges"
-                                        size="xs"
+                                        size="sm"
                                     />
                                 </template>
                             </UUser>
@@ -287,7 +289,7 @@ watch(colorMode, (newMode) => {
                         <UAvatar
                             :src="setup.user.image || undefined"
                             :alt="setup.user.name"
-                            icon="lucide:user-round"
+                            icon="mingcute:user-3-fill"
                             aria-hidden="true"
                             size="2xs"
                         />
@@ -298,7 +300,7 @@ watch(colorMode, (newMode) => {
                                     :name="setup.user.name"
                                     :avatar="{
                                         src: setup.user.image || undefined,
-                                        icon: 'lucide:user-round',
+                                        icon: 'mingcute:user-3-fill',
                                     }"
                                 >
                                     <template #description>

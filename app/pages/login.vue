@@ -27,7 +27,7 @@ defineSeo({
                 <UButton
                     loading-auto
                     label="X (Twitter) で続行"
-                    icon="simple-icons:x"
+                    icon="mingcute:social-x-fill"
                     block
                     size="lg"
                     variant="subtle"

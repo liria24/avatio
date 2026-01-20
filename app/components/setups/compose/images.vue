@@ -60,7 +60,7 @@ const removeImage = (index: number) => {
 <template>
     <div v-if="!images.length && !imageUploading" ref="dropZoneRef">
         <UButton
-            :icon="isOverDropZone ? 'lucide:import' : 'lucide:image-plus'"
+            :icon="isOverDropZone ? 'mingcute:download-fill' : 'mingcute:pic-fill'"
             :label="isOverDropZone ? 'ドロップして追加' : '画像を追加'"
             variant="soft"
             block
@@ -90,7 +90,7 @@ const removeImage = (index: number) => {
                 <USkeleton v-else class="aspect-square size-full rounded-lg" />
             </NuxtImg>
             <UButton
-                icon="lucide:x"
+                icon="mingcute:close-line"
                 color="neutral"
                 size="xs"
                 class="absolute top-1 right-1 z-10 rounded-full"

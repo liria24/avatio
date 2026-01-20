@@ -44,7 +44,7 @@ const unhideSetup = async () => {
     <UModal title="セットアップを再表示">
         <template #body>
             <UAlert
-                icon="lucide:eye"
+                icon="mingcute:eye-2-fill"
                 title="これは Admin アクションです"
                 description="セットアップは再表示され、ユーザーに見えるようになります。"
                 color="info"

@@ -26,25 +26,25 @@ const stats = ref([
     {
         title: 'Total Users',
         value: data.value.users,
-        icon: 'lucide:users-round',
+        icon: 'mingcute:group-2-fill',
         to: '/admin/users',
     },
     {
         title: 'Active Setups',
         value: data.value.setups,
-        icon: 'lucide:sparkles',
+        icon: 'mingcute:sparkles-fill',
         to: '/admin/setups',
     },
     {
         title: 'Total Items',
         value: data.value.items,
-        icon: 'lucide:package',
+        icon: 'mingcute:package-2-fill',
         to: '/admin/items',
     },
     {
         title: 'Feedbacks',
         value: data.value.feedbacks,
-        icon: 'lucide:message-square',
+        icon: 'mingcute:chat-3-fill',
         to: '/admin/feedbacks',
     },
 ])
@@ -56,7 +56,7 @@ const stats = ref([
             <UDashboardNavbar title="Admin Console">
                 <template #right>
                     <UButton
-                        icon="lucide:flag"
+                        icon="mingcute:flag-3-fill"
                         label="Flags"
                         variant="subtle"
                         color="neutral"

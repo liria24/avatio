@@ -13,72 +13,72 @@ const auditLogAttributes: Record<
     }
 > = {
     user_ban: {
-        icon: 'lucide:ban',
+        icon: 'mingcute:forbid-circle-fill',
         label: 'ユーザーをBAN',
         color: 'error',
     },
     user_unban: {
-        icon: 'lucide:undo-2',
+        icon: 'mingcute:back-fill',
         label: 'ユーザーのBAN解除',
         color: 'info',
     },
     user_delete: {
-        icon: 'lucide:user-round-x',
+        icon: 'mingcute:user-x-fill',
         label: 'ユーザーを削除',
         color: 'error',
     },
     user_role_change: {
-        icon: 'lucide:user-round-check',
+        icon: 'mingcute:user-security-fill',
         label: 'ユーザーロールの変更',
         color: 'info',
     },
     user_shop_verify: {
-        icon: 'lucide:store',
+        icon: 'mingcute:store-fill',
         label: 'ユーザーのショップを承認',
         color: 'success',
     },
     user_shop_unverify: {
-        icon: 'lucide:x-circle',
+        icon: 'mingcute:close-circle-fill',
         label: 'ユーザーのショップを非承認',
         color: 'error',
     },
     user_badge_grant: {
-        icon: 'lucide:award',
+        icon: 'mingcute:award-fill',
         label: 'ユーザーにバッジを付与',
         color: 'success',
     },
     user_badge_revoke: {
-        icon: 'lucide:award',
+        icon: 'mingcute:award-fill',
         label: 'ユーザーのバッジを剥奪',
         color: 'error',
     },
     setup_hide: {
-        icon: 'lucide:eye-off',
+        icon: 'mingcute:eye-close-fill',
         label: 'セットアップを非表示',
         color: 'secondary',
     },
     setup_unhide: {
-        icon: 'lucide:eye',
+        icon: 'mingcute:eye-2-fill',
         label: 'セットアップを表示',
         color: 'secondary',
     },
     setup_delete: {
-        icon: 'lucide:trash',
+        icon: 'mingcute:delete-2-fill',
         label: 'セットアップを削除',
         color: 'error',
     },
     report_resolve: {
-        icon: 'lucide:check-circle',
+        icon: 'mingcute:check-circle-fill',
         label: '報告を解決',
         color: 'success',
     },
     feedback_close: {
-        icon: 'lucide:check-circle',
+        icon: 'mingcute:forbid-circle-fill',
         label: 'フィードバックをクローズ',
         color: 'success',
     },
     cleanup: {
-        icon: 'lucide:trash',
+        icon: 'mingcute:delete-2-fill',
         label: 'クリーンアップ',
         color: 'info',
     },
@@ -109,7 +109,7 @@ const { data, status, refresh } = await useFetch('/api/admin/audit-log', {
                 <template #right>
                     <UButton
                         :loading="status === 'pending'"
-                        icon="lucide:refresh-cw"
+                        icon="mingcute:refresh-2-fill"
                         variant="soft"
                         color="neutral"
                         @click="refresh()"
@@ -156,7 +156,7 @@ const { data, status, refresh } = await useFetch('/api/admin/audit-log', {
                                 <UAvatar
                                     :src="log.user.image || undefined"
                                     :alt="log.user.name"
-                                    icon="lucide:user-round"
+                                    icon="mingcute:user-3-fill"
                                     size="2xs"
                                 />
                                 <span class="text-xs font-medium">

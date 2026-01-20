@@ -80,7 +80,12 @@ const resetForm = () => {
 
         <template #body>
             <UForm :state class="flex flex-col gap-4" @submit="onSubmit">
-                <UButton icon="lucide:rotate-ccw" label="Reset" variant="soft" @click="resetForm" />
+                <UButton
+                    icon="mingcute:refresh-1-fill"
+                    label="Reset"
+                    variant="soft"
+                    @click="resetForm"
+                />
 
                 <UFormField name="slug" label="Slug" required>
                     <UInput v-model="state.slug" placeholder="Enter slug" class="w-full" />
@@ -111,7 +116,7 @@ const resetForm = () => {
                                     class="draggable hover:bg-elevated grid cursor-move rounded-md px-1 py-2 transition-colors"
                                 >
                                     <Icon
-                                        name="lucide:grip-vertical"
+                                        name="mingcute:dots-fill"
                                         size="18"
                                         class="text-muted shrink-0 self-center"
                                     />
@@ -121,14 +126,14 @@ const resetForm = () => {
                                     <UAvatar
                                         :src="author.image || undefined"
                                         :alt="author.name || 'User'"
-                                        icon="lucide:user-round"
+                                        icon="mingcute:user-3-fill"
                                         size="xs"
                                     />
                                     <span class="text-toned grow text-xs">
                                         {{ author.name }}
                                     </span>
                                     <UButton
-                                        icon="lucide:x"
+                                        icon="mingcute:close-line"
                                         variant="ghost"
                                         size="xs"
                                         @click="removeAuthor(author.username)"
@@ -139,7 +144,7 @@ const resetForm = () => {
 
                         <UPopover :content="{ side: 'right', align: 'start' }">
                             <UButton
-                                icon="lucide:plus"
+                                icon="mingcute:add-line"
                                 :label="authors.length ? undefined : 'Add Author'"
                                 variant="soft"
                             />

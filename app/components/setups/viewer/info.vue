@@ -91,7 +91,7 @@ onBeforeRouteLeave(() => {
                     :name="props.setup.user.name"
                     :avatar="{
                         src: props.setup.user.image || undefined,
-                        icon: 'lucide:user-round',
+                        icon: 'mingcute:user-3-fill',
                     }"
                     size="sm"
                     :ui="{ name: 'text-sm' }"
@@ -108,7 +108,7 @@ onBeforeRouteLeave(() => {
 
             <div :class="cn('ml-1.5 flex flex-wrap items-center gap-2', props.sidebar && 'grid')">
                 <div class="text-muted flex items-center gap-1.5">
-                    <Icon name="lucide:calendar" size="16" />
+                    <Icon name="mingcute:calendar-2-fill" size="16" />
                     <NuxtTime
                         :datetime="props.setup.createdAt"
                         locale="ja-JP"
@@ -126,7 +126,7 @@ onBeforeRouteLeave(() => {
                     :delay-duration="50"
                 >
                     <div class="text-dimmed flex items-center gap-1.5">
-                        <Icon name="lucide:pen-line" size="16" />
+                        <Icon name="mingcute:edit-3-fill" size="16" />
                         <span class="text-xs leading-none text-nowrap">
                             <NuxtTime :datetime="props.setup.updatedAt" relative />
                             に更新
@@ -152,7 +152,7 @@ onBeforeRouteLeave(() => {
             <div class="ml-auto flex items-center gap-0.5">
                 <UButton
                     v-if="session?.user.role === 'admin'"
-                    :icon="props.setup.hidAt ? 'lucide:eye' : 'lucide:eye-off'"
+                    :icon="props.setup.hidAt ? 'mingcute:eye-2-fill' : 'mingcute:eye-close-fill'"
                     variant="ghost"
                     size="sm"
                     class="p-2"
@@ -162,7 +162,7 @@ onBeforeRouteLeave(() => {
                 <UButton
                     loading-auto
                     :loading="bookmarkStatus === 'pending'"
-                    :icon="bookmark ? 'lucide:bookmark-check' : 'lucide:bookmark'"
+                    :icon="bookmark ? 'mingcute:bookmark-fill' : 'mingcute:bookmark-line'"
                     :aria-label="bookmark ? 'ブックマークから削除' : 'ブックマーク'"
                     :color="bookmark ? 'secondary' : 'primary'"
                     variant="ghost"
@@ -175,7 +175,7 @@ onBeforeRouteLeave(() => {
                     <UButton
                         :to="`/setup/compose?edit=${props.setup.id}`"
                         aria-label="編集"
-                        icon="lucide:pen"
+                        icon="mingcute:edit-3-fill"
                         variant="ghost"
                         size="sm"
                         class="p-2"
@@ -183,7 +183,7 @@ onBeforeRouteLeave(() => {
 
                     <UButton
                         aria-label="削除"
-                        icon="lucide:trash"
+                        icon="mingcute:delete-2-fill"
                         variant="ghost"
                         size="sm"
                         class="p-2"
@@ -239,7 +239,7 @@ onBeforeRouteLeave(() => {
                         <UAvatar
                             :src="coAuthor.user.image || undefined"
                             :alt="coAuthor.user.name"
-                            icon="lucide:user-round"
+                            icon="mingcute:user-3-fill"
                             size="sm"
                         />
                         <p class="text-left text-sm">

@@ -50,17 +50,17 @@ const unbanUser = async (userId: string) => {
                         :items="[
                             {
                                 label: 'All',
-                                icon: 'lucide:filter',
+                                icon: 'mingcute:filter-fill',
                                 value: 'all',
                             },
                             {
                                 label: 'Admin',
-                                icon: 'lucide:shield-check',
+                                icon: 'mingcute:shield-shape-fill',
                                 value: 'admin',
                             },
                             {
                                 label: 'Banned',
-                                icon: 'lucide:ban',
+                                icon: 'mingcute:forbid-circle-fill',
                                 value: 'banned',
                             },
                         ]"
@@ -71,7 +71,7 @@ const unbanUser = async (userId: string) => {
 
                     <UButton
                         :loading="status === 'pending'"
-                        icon="lucide:refresh-cw"
+                        icon="mingcute:refresh-2-fill"
                         variant="soft"
                         color="neutral"
                         @click="refresh()"
@@ -123,28 +123,30 @@ const unbanUser = async (userId: string) => {
                             [
                                 {
                                     label: 'プロフィール',
-                                    icon: 'lucide:user-round',
+                                    icon: 'mingcute:user-3-fill',
                                     onSelect: () => navigateTo(`/@${user.id}`),
                                 },
                             ],
                             [
                                 {
                                     label: 'ロール',
-                                    icon: 'lucide:shield',
+                                    icon: 'mingcute:shield-shape-fill',
                                     children: [
                                         {
                                             label: 'ユーザー',
-                                            icon: 'lucide:user-round',
+                                            icon: 'mingcute:user-3-fill',
                                         },
                                         {
                                             label: '管理者',
-                                            icon: 'lucide:shield-check',
+                                            icon: 'mingcute:shield-shape-fill',
                                         },
                                     ],
                                 },
                                 {
                                     label: user.banned ? 'BAN 解除' : 'BAN',
-                                    icon: user.banned ? 'lucide:undo-2' : 'lucide:ban',
+                                    icon: user.banned
+                                        ? 'mingcute:back-fill'
+                                        : 'mingcute:forbid-circle-fill',
                                     onSelect: () => {
                                         if (user.banned) unbanUser(user.id)
                                         else
@@ -158,7 +160,7 @@ const unbanUser = async (userId: string) => {
                             ],
                         ]"
                     >
-                        <UButton icon="lucide:menu" variant="soft" size="sm" />
+                        <UButton icon="mingcute:menu-fill" variant="soft" size="sm" />
                     </UDropdownMenu>
                 </div>
             </UPageList>

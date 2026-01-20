@@ -229,12 +229,12 @@ const cancelCropImage = () => {
                         v-else
                         class="bg-muted flex size-48 shrink-0 items-center justify-center rounded-full"
                     >
-                        <Icon name="lucide:user-round" size="64" class="text-muted" />
+                        <Icon name="mingcute:user-3-fill" size="64" class="text-muted" />
                     </div>
 
                     <UFieldGroup class="w-full">
                         <UButton
-                            icon="lucide:folder"
+                            icon="mingcute:folder-fill"
                             label="画像を選択"
                             color="neutral"
                             variant="subtle"
@@ -250,7 +250,7 @@ const cancelCropImage = () => {
                             }"
                             :items="[
                                 {
-                                    icon: 'lucide:trash',
+                                    icon: 'mingcute:delete-2-fill',
                                     label: 'アイコンを削除',
                                     color: 'error',
                                     onSelect: removeUserImage,
@@ -260,7 +260,7 @@ const cancelCropImage = () => {
                             <UButton
                                 color="neutral"
                                 variant="outline"
-                                icon="lucide:chevron-down"
+                                icon="mingcute:down-small-fill"
                                 :disabled="ui.imageUploading"
                             />
                         </UDropdownMenu>
@@ -307,7 +307,7 @@ const cancelCropImage = () => {
                                         class="draggable hover:bg-elevated grid cursor-move rounded-md px-1 py-2 transition-colors"
                                     >
                                         <Icon
-                                            name="lucide:grip-vertical"
+                                            name="mingcute:dots-fill"
                                             size="18"
                                             class="text-muted shrink-0"
                                         />
@@ -320,7 +320,7 @@ const cancelCropImage = () => {
                                         />
                                     </UTooltip>
                                     <UButton
-                                        icon="lucide:x"
+                                        icon="mingcute:close-line"
                                         variant="ghost"
                                         size="sm"
                                         @click="removeLink(index)"
@@ -335,7 +335,7 @@ const cancelCropImage = () => {
                             >
                                 <UButton
                                     v-if="state.links.length < 8"
-                                    icon="lucide:plus"
+                                    icon="mingcute:add-line"
                                     variant="ghost"
                                     class="p-3"
                                 />
