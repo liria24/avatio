@@ -11,7 +11,6 @@ const overlay = useOverlay()
 const modalFlags = overlay.create(LazyModalAdminModalFlags)
 
 const { data } = await useFetch('/api/admin/stats', {
-    key: 'admin-stats',
     dedupe: 'defer',
     default: () => ({
         users: 0,
@@ -19,8 +18,8 @@ const { data } = await useFetch('/api/admin/stats', {
         items: 0,
         feedbacks: 0,
     }),
-    getCachedData: (key, nuxtApp, ctx) =>
-        ctx.cause !== 'initial' ? undefined : nuxtApp.payload.data[key] || nuxtApp.static.data[key],
+    getCachedData: (key, n, ctx) =>
+        ctx.cause !== 'refresh:manual' && n.isHydrating ? n.payload.data[key] : n.static.data[key],
 })
 
 const stats = ref([
@@ -68,7 +67,7 @@ const stats = ref([
         </template>
 
         <template #body>
-            <UPageGrid class="gap-4 sm:gap-6 lg:grid-cols-4 lg:gap-px">
+            <UPageGrid class="gap-2 sm:gap-4 lg:grid-cols-4">
                 <UPageCard
                     v-for="(stat, index) in stats"
                     :key="index"
