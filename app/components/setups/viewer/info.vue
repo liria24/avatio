@@ -88,19 +88,23 @@ onBeforeRouteLeave(() => {
         <div :class="cn('grid gap-4', !props.sidebar && 'flex items-center lg:hidden')">
             <NuxtLink :to="`/@${props.setup.user.username}`">
                 <UUser
-                    :name="props.setup.user.name"
                     :avatar="{
-                        src: props.setup.user.image || undefined,
+                        src: setup.user.image || undefined,
                         icon: 'mingcute:user-3-fill',
                     }"
+                    :description="`@${setup.user.username}`"
                     size="sm"
-                    :ui="{ name: 'text-sm' }"
+                    :ui="{
+                        name: 'flex gap-1 items-center text-sm',
+                        description: 'line-clamp-1 break-all wrap-anywhere',
+                    }"
                 >
-                    <template #description>
+                    <template #name>
+                        <span>{{ setup.user.name }}</span>
                         <UserBadges
-                            v-if="props.setup.user.badges?.length"
-                            :badges="props.setup.user.badges"
-                            size="xs"
+                            v-if="setup.user.badges?.length"
+                            :badges="setup.user.badges"
+                            size="sm"
                         />
                     </template>
                 </UUser>
