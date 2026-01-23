@@ -1,12 +1,7 @@
 <script setup lang="ts">
-definePageMeta({
-    middleware: 'admin',
-    layout: 'dashboard',
-})
-
 const toast = useToast()
 
-const { data, status, refresh } = await useFetch('/api/reports/setup', {
+const { data, refresh } = await useFetch('/api/reports/setup', {
     dedupe: 'defer',
     default: () => ({
         data: [],
@@ -19,8 +14,6 @@ const { data, status, refresh } = await useFetch('/api/reports/setup', {
             hasNext: false,
         },
     }),
-    getCachedData: (key, nuxtApp, ctx) =>
-        ctx.cause !== 'initial' ? undefined : nuxtApp.payload.data[key] || nuxtApp.static.data[key],
 })
 
 const resolve = async (id: number, resolve?: boolean) => {
@@ -50,6 +43,16 @@ const resolve = async (id: number, resolve?: boolean) => {
     <UDashboardPanel id="reports-setup">
         <template #header>
             <UDashboardNavbar title="Reports | Setup">
+                <template #trailing>
+                    <UButton
+                        loading-auto
+                        icon="mingcute:refresh-2-line"
+                        variant="ghost"
+                        size="sm"
+                        @click="refresh()"
+                    />
+                </template>
+
                 <template #right>
                     <USelect
                         :items="[
@@ -72,14 +75,6 @@ const resolve = async (id: number, resolve?: boolean) => {
                         default-value="all"
                         disabled
                         class="min-w-32"
-                    />
-
-                    <UButton
-                        :loading="status === 'pending'"
-                        icon="mingcute:refresh-2-fill"
-                        variant="soft"
-                        color="neutral"
-                        @click="refresh()"
                     />
                 </template>
             </UDashboardNavbar>

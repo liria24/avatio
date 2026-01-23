@@ -1,5 +1,6 @@
-import { destr } from 'destr'
 import type { z } from 'zod'
+
+import { destr } from 'destr'
 
 export const validateBody = async <T extends z.ZodTypeAny>(
     schema: T,
@@ -11,12 +12,13 @@ export const validateBody = async <T extends z.ZodTypeAny>(
         return schema.safeParse(body)
     })
 
-    if (!result.success)
+    if (!result.success) {
+        if (import.meta.dev) logger('validateBody').error(result.error)
         throw createError({
-            statusCode: 400,
-            statusMessage: 'Validation Error',
-            data: result.error.cause,
+            status: 400,
+            statusText: 'Validation Error',
         })
+    }
 
     return result.data
 }
@@ -31,12 +33,13 @@ export const validateFormData = async <T extends z.ZodTypeAny>(schema: T): Promi
 
     const result = schema.safeParse(dataToValidate)
 
-    if (!result.success)
+    if (!result.success) {
+        if (import.meta.dev) logger('validateFormData').error(result.error)
         throw createError({
-            statusCode: 400,
-            statusMessage: 'Validation Error',
-            data: result.error.cause,
+            status: 400,
+            statusText: 'Validation Error',
         })
+    }
 
     return result.data
 }
@@ -44,12 +47,13 @@ export const validateFormData = async <T extends z.ZodTypeAny>(schema: T): Promi
 export const validateParams = async <T extends z.ZodTypeAny>(schema: T): Promise<z.infer<T>> => {
     const result = await getValidatedRouterParams(useEvent(), (body) => schema.safeParse(body))
 
-    if (!result.success)
+    if (!result.success) {
+        if (import.meta.dev) logger('validateParams').error(result.error)
         throw createError({
-            statusCode: 400,
-            statusMessage: 'Validation Error',
-            data: result.error.cause,
+            status: 400,
+            statusText: 'Validation Error',
         })
+    }
 
     return result.data
 }
@@ -57,12 +61,13 @@ export const validateParams = async <T extends z.ZodTypeAny>(schema: T): Promise
 export const validateQuery = async <T extends z.ZodTypeAny>(schema: T): Promise<z.infer<T>> => {
     const result = await getValidatedQuery(useEvent(), (query) => schema.safeParse(query))
 
-    if (!result.success)
+    if (!result.success) {
+        if (import.meta.dev) logger('validateQuery').error(result.error)
         throw createError({
-            statusCode: 400,
-            statusMessage: 'Validation Error',
-            data: result.error.cause,
+            status: 400,
+            statusText: 'Validation Error',
         })
+    }
 
     return result.data
 }

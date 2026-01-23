@@ -163,8 +163,8 @@ const getSetup = defineCachedFunction(
 
         if (!data)
             throw createError({
-                statusCode: 404,
-                statusMessage: 'Setup not found',
+                status: 404,
+                statusText: 'Setup not found',
             })
 
         if (
@@ -173,8 +173,8 @@ const getSetup = defineCachedFunction(
             session?.user.role !== 'admin'
         )
             throw createError({
-                statusCode: 404,
-                statusMessage: 'Setup not found',
+                status: 404,
+                statusText: 'Setup not found',
             })
 
         const items: SetupItem[] = []

@@ -1,5 +1,6 @@
-import { notifications } from '@@/database/schema'
 import type { Notification } from '@@/shared/types/database'
+
+import { notifications } from '@@/database/schema'
 import { and, eq, isNull } from 'drizzle-orm'
 import { z } from 'zod'
 

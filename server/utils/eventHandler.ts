@@ -1,4 +1,5 @@
 import type { H3Event } from 'h3'
+
 import { getReasonPhrase, StatusCodes } from 'http-status-codes'
 
 interface SessionEventHandlerOptions {
@@ -8,17 +9,14 @@ interface SessionEventHandlerOptions {
 const rejectBannedUser = (session: Session | null) => {
     if (session?.user?.banned)
         throw createError({
-            statusCode: StatusCodes.FORBIDDEN,
-            statusMessage: getReasonPhrase(StatusCodes.FORBIDDEN),
+            status: StatusCodes.FORBIDDEN,
+            statusText: getReasonPhrase(StatusCodes.FORBIDDEN),
         })
 }
 
 export const promiseEventHandler = <T = unknown>(
     handler: ({ event }: { event: H3Event }) => Promise<T> | T
-) =>
-    eventHandler(async (event) => {
-        return handler({ event })
-    })
+) => eventHandler(async (event) => handler({ event }))
 
 export const sessionEventHandler = <T = unknown>(
     handler: ({ event, session }: { event: H3Event; session: Session | null }) => Promise<T> | T,
@@ -45,8 +43,8 @@ export const authedSessionEventHandler = <T = unknown>(
     sessionEventHandler(async ({ event, session }) => {
         if (!session)
             throw createError({
-                statusCode: StatusCodes.UNAUTHORIZED,
-                statusMessage: getReasonPhrase(StatusCodes.UNAUTHORIZED),
+                status: StatusCodes.UNAUTHORIZED,
+                statusText: getReasonPhrase(StatusCodes.UNAUTHORIZED),
             })
 
         if (options?.rejectBannedUser) rejectBannedUser(session)
@@ -72,8 +70,8 @@ export const adminSessionEventHandler = <T = unknown>(
 
         if (!session || !isAdmin)
             throw createError({
-                statusCode: StatusCodes.FORBIDDEN,
-                statusMessage: getReasonPhrase(StatusCodes.FORBIDDEN),
+                status: StatusCodes.FORBIDDEN,
+                statusText: getReasonPhrase(StatusCodes.FORBIDDEN),
             })
 
         if (options?.rejectBannedUser) rejectBannedUser(session)
@@ -93,8 +91,8 @@ export const cronEventHandler = <T = unknown>(
 
         if (!isAdmin && !isCronValid)
             throw createError({
-                statusCode: StatusCodes.FORBIDDEN,
-                statusMessage: getReasonPhrase(StatusCodes.FORBIDDEN),
+                status: StatusCodes.FORBIDDEN,
+                statusText: getReasonPhrase(StatusCodes.FORBIDDEN),
             })
 
         return handler({ event })

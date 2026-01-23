@@ -1,11 +1,6 @@
 <script lang="ts" setup>
 import { LazyModalAdminModalFlags } from '#components'
 
-definePageMeta({
-    middleware: 'admin',
-    layout: 'dashboard',
-})
-
 const overlay = useOverlay()
 
 const modalFlags = overlay.create(LazyModalAdminModalFlags)
@@ -18,8 +13,6 @@ const { data } = await useFetch('/api/admin/stats', {
         items: 0,
         feedbacks: 0,
     }),
-    getCachedData: (key, n, ctx) =>
-        ctx.cause !== 'refresh:manual' && n.isHydrating ? n.payload.data[key] : n.static.data[key],
 })
 
 const stats = ref([

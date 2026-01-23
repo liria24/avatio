@@ -16,7 +16,9 @@ export default cronEventHandler(async ({ event }) => {
     // Categorize results
     const { successful, failed } = deleteResults.reduce(
         (acc, result, index) => {
-            const imageKey = allImages[index].key
+            const image = allImages[index]
+            if (!image) return acc
+            const imageKey = image.key
 
             if (result.status === 'fulfilled') {
                 acc.successful.push(imageKey)
@@ -93,8 +95,8 @@ export default cronEventHandler(async ({ event }) => {
         } catch (error) {
             console.error('Failed to send Discord notification:', error)
             throw createError({
-                statusCode: 500,
-                statusMessage: 'Failed to send Discord notification',
+                status: 500,
+                statusText: 'Failed to send Discord notification',
             })
         }
     }

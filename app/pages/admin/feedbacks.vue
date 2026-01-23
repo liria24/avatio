@@ -1,15 +1,8 @@
 <script lang="ts" setup>
-definePageMeta({
-    middleware: 'admin',
-    layout: 'dashboard',
-})
-
 const toast = useToast()
 
-const { data, status, refresh } = await useFetch('/api/feedbacks', {
+const { data, refresh } = await useFetch('/api/feedbacks', {
     dedupe: 'defer',
-    getCachedData: (key, nuxtApp, ctx) =>
-        ctx.cause !== 'initial' ? undefined : nuxtApp.payload.data[key] || nuxtApp.static.data[key],
 })
 
 const closeFeedback = async (feedbackId: number) => {
@@ -63,6 +56,16 @@ const openFeedback = async (feedbackId: number) => {
     <UDashboardPanel id="feedbacks">
         <template #header>
             <UDashboardNavbar title="Feedbacks">
+                <template #trailing>
+                    <UButton
+                        loading-auto
+                        icon="mingcute:refresh-2-line"
+                        variant="ghost"
+                        size="sm"
+                        @click="refresh()"
+                    />
+                </template>
+
                 <template #right>
                     <USelect
                         :items="[
@@ -85,14 +88,6 @@ const openFeedback = async (feedbackId: number) => {
                         default-value="all"
                         disabled
                         class="min-w-32"
-                    />
-
-                    <UButton
-                        :loading="status === 'pending'"
-                        icon="mingcute:refresh-2-fill"
-                        variant="soft"
-                        color="neutral"
-                        @click="refresh()"
                     />
                 </template>
             </UDashboardNavbar>

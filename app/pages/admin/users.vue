@@ -1,20 +1,13 @@
 <script lang="ts" setup>
 import { LazyModalAdminBanUser } from '#components'
 
-definePageMeta({
-    middleware: 'admin',
-    layout: 'dashboard',
-})
-
 const toast = useToast()
 const overlay = useOverlay()
 
 const modalBan = overlay.create(LazyModalAdminBanUser)
 
-const { data, status, refresh } = await useFetch('/api/admin/user', {
+const { data, refresh } = await useFetch('/api/admin/user', {
     dedupe: 'defer',
-    getCachedData: (key, nuxtApp, ctx) =>
-        ctx.cause !== 'initial' ? undefined : nuxtApp.payload.data[key] || nuxtApp.static.data[key],
 })
 
 const unbanUser = async (userId: string) => {
@@ -45,6 +38,16 @@ const unbanUser = async (userId: string) => {
     <UDashboardPanel id="users">
         <template #header>
             <UDashboardNavbar title="Users">
+                <template #trailing>
+                    <UButton
+                        loading-auto
+                        icon="mingcute:refresh-2-line"
+                        variant="ghost"
+                        size="sm"
+                        @click="refresh()"
+                    />
+                </template>
+
                 <template #right>
                     <USelect
                         :items="[
@@ -68,22 +71,23 @@ const unbanUser = async (userId: string) => {
                         disabled
                         class="min-w-32"
                     />
-
-                    <UButton
-                        :loading="status === 'pending'"
-                        icon="mingcute:refresh-2-fill"
-                        variant="soft"
-                        color="neutral"
-                        @click="refresh()"
-                    />
                 </template>
             </UDashboardNavbar>
         </template>
 
         <template #body>
             <UPageList divide>
-                <div v-for="user in data?.users" :key="user.id" class="flex items-center gap-3 p-2">
-                    <UAvatar :src="user.image || undefined" size="xs" />
+                <div
+                    v-for="user in data?.users"
+                    :key="user.id"
+                    class="hover:bg-muted/50 flex items-center gap-3 rounded-md p-2"
+                >
+                    <UAvatar
+                        :src="user.image || undefined"
+                        alt=""
+                        icon="mingcute:user-3-fill"
+                        size="xs"
+                    />
 
                     <div class="flex grow items-center gap-2">
                         <p class="text-muted line-clamp-1 text-sm leading-none break-all">
@@ -160,7 +164,7 @@ const unbanUser = async (userId: string) => {
                             ],
                         ]"
                     >
-                        <UButton icon="mingcute:menu-fill" variant="soft" size="sm" />
+                        <UButton icon="mingcute:more-2-line" variant="ghost" size="sm" />
                     </UDropdownMenu>
                 </div>
             </UPageList>

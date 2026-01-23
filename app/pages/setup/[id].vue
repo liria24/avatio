@@ -10,8 +10,8 @@ const id = Number(route.params.id)
 // Handle invalid IDs (null, undefined, NaN, etc.)
 if (!id || isNaN(id) || id <= 0)
     throw showError({
-        statusCode: 400,
-        message: 'IDが無効です',
+        status: 400,
+        statusText: 'IDが無効です',
     })
 
 const ImageViewer = overlay.create(LazyImageViewer)
@@ -23,8 +23,8 @@ const { data, status } = await useSetup(id)
 
 if (status.value === 'error' || (status.value === 'success' && !data.value))
     throw showError({
-        statusCode: 404,
-        message: 'セットアップが見つかりません',
+        status: 404,
+        statusText: 'セットアップが見つかりません',
     })
 
 const { itemCategory } = useAppConfig()
@@ -154,7 +154,7 @@ if (data.value) {
                     fetchpriority="high"
                     preload
                     custom
-                    class="max-h-[720px] w-fit shrink-0 grow-0 cursor-zoom-in overflow-hidden rounded-lg object-contain"
+                    class="max-h-180 w-fit shrink-0 grow-0 cursor-zoom-in overflow-hidden rounded-lg object-contain"
                     @click="
                         ImageViewer.open({
                             src: data.images[0].url,
@@ -168,7 +168,7 @@ if (data.value) {
                         :style="{
                             aspectRatio: data.images[0].width / data.images[0].height,
                         }"
-                        class="max-h-[720px] w-full shrink-0 grow-0 rounded-lg"
+                        class="max-h-180 w-full shrink-0 grow-0 rounded-lg"
                     />
                 </NuxtImg>
 

@@ -14,8 +14,8 @@ export default authedSessionEventHandler(
         const itemId = extractItemId(url)
         if (!itemId)
             throw createError({
-                statusCode: 400,
-                message: 'Invalid URL or item ID not found',
+                status: 400,
+                statusText: 'Invalid URL or item ID not found',
             })
 
         // Boothからアイテム情報を取得
@@ -39,8 +39,8 @@ export default authedSessionEventHandler(
 
         if (existingShop)
             throw createError({
-                statusCode: 400,
-                message: 'This shop is already registered',
+                status: 400,
+                statusText: 'This shop is already registered',
             })
 
         // ユーザーの検証コードを取得
@@ -55,15 +55,15 @@ export default authedSessionEventHandler(
 
         if (!verificationCode)
             throw createError({
-                statusCode: 400,
-                message: 'Verification code not found',
+                status: 400,
+                statusText: 'Verification code not found',
             })
 
         // 検証コードがアイテムの説明に含まれているか確認
         if (!item.description?.includes(verificationCode.code))
             throw createError({
-                statusCode: 400,
-                message: 'Verification code not found in item description',
+                status: 400,
+                statusText: 'Verification code not found in item description',
             })
 
         // アイテムの詳細情報を取得

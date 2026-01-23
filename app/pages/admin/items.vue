@@ -1,9 +1,4 @@
-<script setup lang="ts">
-definePageMeta({
-    middleware: 'admin',
-    layout: 'dashboard',
-})
-</script>
+<script setup lang="ts"></script>
 
 <template>
     <UDashboardPanel id="items">
