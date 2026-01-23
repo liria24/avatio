@@ -12,8 +12,6 @@ const { data, status, refresh } = await useFetch('/api/changelogs', {
             hasNext: false,
         },
     }),
-    getCachedData: (key, nuxtApp, ctx) =>
-        ctx.cause !== 'initial' ? undefined : nuxtApp.payload.data[key] || nuxtApp.static.data[key],
 })
 </script>
 

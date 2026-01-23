@@ -10,7 +10,7 @@ const overlay = useOverlay()
 const modalLogin = overlay.create(LazyModalLogin)
 
 const notificationsStore = useNotificationsStore()
-if (session.value) await callOnce(notificationsStore.fetch)
+if (session.value) await notificationsStore.fetch()
 const notifications = computed(() =>
     notificationsStore.notifications.filter(
         (notification) => !notification.readAt && notification.banner
@@ -95,7 +95,7 @@ const notifications = computed(() =>
                 class="fixed right-4 bottom-4 rounded-full p-4 shadow-lg sm:hidden"
             />
 
-            <Footer />
+            <AppFooter />
         </UContainer>
     </MotionConfig>
 </template>

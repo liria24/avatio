@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const toast = useToast()
 
-const { data, status, refresh } = await useFetch('/api/reports/user', {
+const { data, refresh } = await useFetch('/api/reports/user', {
     dedupe: 'defer',
     default: () => ({
         data: [],
@@ -14,8 +14,6 @@ const { data, status, refresh } = await useFetch('/api/reports/user', {
             hasNext: false,
         },
     }),
-    getCachedData: (key, nuxtApp, ctx) =>
-        ctx.cause !== 'initial' ? undefined : nuxtApp.payload.data[key] || nuxtApp.static.data[key],
 })
 
 const resolve = async (id: number, resolve?: boolean) => {
@@ -45,6 +43,16 @@ const resolve = async (id: number, resolve?: boolean) => {
     <UDashboardPanel id="reports-user">
         <template #header>
             <UDashboardNavbar title="Reports | User">
+                <template #trailing>
+                    <UButton
+                        loading-auto
+                        icon="mingcute:refresh-2-line"
+                        variant="ghost"
+                        size="sm"
+                        @click="refresh()"
+                    />
+                </template>
+
                 <template #right>
                     <USelect
                         :items="[
@@ -67,14 +75,6 @@ const resolve = async (id: number, resolve?: boolean) => {
                         default-value="all"
                         disabled
                         class="min-w-32"
-                    />
-
-                    <UButton
-                        :loading="status === 'pending'"
-                        icon="mingcute:refresh-2-fill"
-                        variant="soft"
-                        color="neutral"
-                        @click="refresh()"
                     />
                 </template>
             </UDashboardNavbar>
@@ -142,13 +142,13 @@ const resolve = async (id: number, resolve?: boolean) => {
 
                     <div class="grid w-full grid-cols-1 items-start gap-4 sm:grid-cols-2">
                         <UPageCard
-                            :to="`/@${report.reportee.id}`"
+                            :to="`/@${report.reportee.username}`"
                             target="_blank"
                             :ui="{ container: 'p-2 sm:p-2' }"
                         >
                             <UUser
                                 :name="report.reportee.name"
-                                :description="`@${report.reportee.id}`"
+                                :description="`@${report.reportee.username}`"
                                 :avatar="{
                                     src: report.reportee.image || undefined,
                                     alt: report.reportee.name,
