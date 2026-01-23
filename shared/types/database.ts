@@ -1,3 +1,5 @@
+import type { Serialize } from 'nitropack/types'
+
 import {
     auditActionType,
     auditLogs,
@@ -28,7 +30,6 @@ import {
     userShops,
 } from '@@/database/schema'
 import { createInsertSchema, createSelectSchema, createUpdateSchema } from 'drizzle-zod'
-import type { Serialize } from 'nitropack/types'
 import { z } from 'zod'
 
 export const userBadgeSchema = z.enum(userBadge.enumValues)

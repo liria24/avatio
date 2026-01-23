@@ -24,7 +24,6 @@ export default defineNuxtConfig({
         '@nuxt/image',
         '@nuxt/content',
         '@nuxt/hints',
-        '@nuxt/eslint',
         '@nuxtjs/device',
         '@nuxtjs/i18n',
         '@nuxtjs/robots',

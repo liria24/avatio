@@ -14,6 +14,7 @@ VRSNSユーザー向けのアバターセットアップ共有サービス。<br
 [![Better Auth badge][badge-better-auth]][better-auth]
 [![Neon badge][badge-neon]][neon]
 [![Drizzle ORM badge][badge-drizzle]][drizzle]
+[![Oxc badge][badge-oxc]][oxc]
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/liria24/avatio)
 
@@ -38,15 +39,6 @@ VRSNSユーザー向けのアバターセットアップ共有サービス。<br
 Avatioはオープンソースプロジェクトです。
 
 バグの報告、新機能の提案、コードの改善など、あらゆる規模・スキルレベルのコントリビュートを歓迎します。
-
-> [!TIP]
-> コントリビュートのための手順は以下の通りです。
->
-> 1. このリポジトリをフォーク
-> 1. 新規ブランチを作成
-> 1. `bun install`
-> 1. 変更をコミット
-> 1. プルリクエストを作成
 
 ### Contributors
 
@@ -90,3 +82,5 @@ Avatio は、ピクシブ株式会社 および BOOTH とは関係ありませ�
 [badge-better-auth]: https://svgl-badge.vercel.app/api/Authentication/Better%20Auth?theme=dark
 [badge-neon]: https://svgl-badge.vercel.app/api/Database/Neon?theme=dark
 [badge-drizzle]: https://svgl-badge.vercel.app/api/Database/Drizzle%20ORM?theme=dark
+[oxc]: https://oxc.rs
+[badge-oxc]: https://svgl-badge.vercel.app/api/Devtool/Oxc?theme=dark

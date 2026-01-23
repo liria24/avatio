@@ -1,5 +1,6 @@
-import { consola } from 'consola'
 import type { z } from 'zod'
+
+import { consola } from 'consola'
 
 type Body = z.infer<typeof auditLogsInsertSchema>
 

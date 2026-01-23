@@ -1,5 +1,6 @@
 <script lang="ts" setup>
-import { CircleStencil, Cropper, Preview } from 'vue-advanced-cropper'
+import type { Cropper } from 'vue-advanced-cropper'
+import { CircleStencil, Preview } from 'vue-advanced-cropper'
 import 'vue-advanced-cropper/dist/style.css'
 
 const model = defineModel<Blob | null>({

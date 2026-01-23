@@ -1,4 +1,5 @@
 import type { H3Event } from 'h3'
+
 import { getReasonPhrase, StatusCodes } from 'http-status-codes'
 
 interface SessionEventHandlerOptions {

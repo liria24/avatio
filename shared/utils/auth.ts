@@ -2,6 +2,7 @@ import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { admin, customSession, multiSession, username } from 'better-auth/plugins'
 import { nanoid } from 'nanoid'
+
 import { db, schema } from '../../server/utils/database'
 
 const JPG_FILENAME_LENGTH = 16

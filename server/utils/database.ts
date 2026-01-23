@@ -1,6 +1,7 @@
 import { Pool, neonConfig } from '@neondatabase/serverless'
 import { drizzle } from 'drizzle-orm/neon-serverless'
 import ws from 'ws'
+
 import { relations } from '../../database/relations'
 import * as schema from '../../database/schema'
 
