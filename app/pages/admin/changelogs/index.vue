@@ -1,9 +1,4 @@
 <script setup lang="ts">
-definePageMeta({
-    middleware: 'admin',
-    layout: 'dashboard',
-})
-
 const { data, status, refresh } = await useFetch('/api/changelogs', {
     dedupe: 'defer',
     default: () => ({

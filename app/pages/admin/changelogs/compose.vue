@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import { VueDraggable } from 'vue-draggable-plus'
 
-definePageMeta({
-    middleware: 'admin',
-    layout: 'dashboard',
-})
-
 const { getSession } = useAuth()
 const session = await getSession()
 const toast = useToast()

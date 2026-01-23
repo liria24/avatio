@@ -17,8 +17,8 @@ export default adminSessionEventHandler(async () => {
         if (await useStorage('r2').has(target)) {
             console.error('Failed to delete image on storage:', target)
             throw createError({
-                statusCode: 500,
-                message: 'Delete operation on storage failed',
+                status: 500,
+                statusText: 'Delete operation on storage failed',
             })
         }
 
@@ -26,8 +26,8 @@ export default adminSessionEventHandler(async () => {
     } catch (error) {
         console.error('Error during image deletion:', error)
         throw createError({
-            statusCode: 500,
-            message: 'Failed to delete image: internal server error',
+            status: 500,
+            statusText: 'Failed to delete image: internal server error',
         })
     }
 })

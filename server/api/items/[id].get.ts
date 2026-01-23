@@ -28,8 +28,8 @@ export default promiseEventHandler<Item>(async () => {
         else throw new Error()
     } catch {
         throw createError({
-            statusCode: 404,
-            statusMessage: 'Item not found',
+            status: 404,
+            statusText: 'Item not found',
         })
     }
 })

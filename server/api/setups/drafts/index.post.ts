@@ -35,10 +35,10 @@ export default authedSessionEventHandler(
             },
         })
 
-        if (userSetupDraftsCount[0].count >= 32)
+        if ((userSetupDraftsCount[0]?.count || 0) >= 32)
             throw createError({
-                statusCode: 429,
-                message: 'You have reached the maximum number of setup drafts allowed.',
+                status: 429,
+                statusText: 'You have reached the maximum number of setup drafts allowed.',
             })
 
         if (!id && !Object.keys(content).length) return null
@@ -48,7 +48,7 @@ export default authedSessionEventHandler(
             return null
         }
 
-        const result = await db
+        const [result] = await db
             .insert(setupDrafts)
             .values({
                 id,
@@ -68,9 +68,15 @@ export default authedSessionEventHandler(
                 id: setupDrafts.id,
             })
 
-        waitUntil(refreshDraftImages(result[0].id, content.images || []))
+        if (!result)
+            throw createError({
+                status: 500,
+                statusText: 'Failed to create draft',
+            })
 
-        return { draftId: result[0].id }
+        waitUntil(refreshDraftImages(result.id, content.images || []))
+
+        return { draftId: result.id }
     },
     {
         rejectBannedUser: true,

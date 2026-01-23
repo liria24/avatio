@@ -1,9 +1,4 @@
 <script lang="ts" setup>
-definePageMeta({
-    middleware: 'admin',
-    layout: 'dashboard',
-})
-
 const auditLogAttributes: Record<
     AuditActionType,
     {

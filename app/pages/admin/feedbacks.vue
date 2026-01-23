@@ -1,9 +1,4 @@
 <script lang="ts" setup>
-definePageMeta({
-    middleware: 'admin',
-    layout: 'dashboard',
-})
-
 const toast = useToast()
 
 const { data, status, refresh } = await useFetch('/api/feedbacks', {

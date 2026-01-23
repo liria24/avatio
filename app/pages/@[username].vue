@@ -17,8 +17,8 @@ const modalReport = overlay.create(LazyModalReportUser, {
 
 if (userStatus.value === 'success' && !user.value)
     showError({
-        statusCode: 404,
-        message: 'IDが無効です',
+        status: 404,
+        statusText: 'IDが無効です',
     })
 
 const links = computed(() =>

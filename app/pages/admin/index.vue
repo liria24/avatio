@@ -1,11 +1,6 @@
 <script lang="ts" setup>
 import { LazyModalAdminModalFlags } from '#components'
 
-definePageMeta({
-    middleware: 'admin',
-    layout: 'dashboard',
-})
-
 const overlay = useOverlay()
 
 const modalFlags = overlay.create(LazyModalAdminModalFlags)

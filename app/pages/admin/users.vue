@@ -1,11 +1,6 @@
 <script lang="ts" setup>
 import { LazyModalAdminBanUser } from '#components'
 
-definePageMeta({
-    middleware: 'admin',
-    layout: 'dashboard',
-})
-
 const toast = useToast()
 const overlay = useOverlay()
 

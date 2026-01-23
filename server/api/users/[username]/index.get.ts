@@ -49,8 +49,8 @@ const getUser = defineCachedFunction(
 
         if (!data)
             throw createError({
-                statusCode: StatusCodes.NOT_FOUND,
-                statusMessage: getReasonPhrase(StatusCodes.NOT_FOUND),
+                status: StatusCodes.NOT_FOUND,
+                statusText: getReasonPhrase(StatusCodes.NOT_FOUND),
             })
 
         return data

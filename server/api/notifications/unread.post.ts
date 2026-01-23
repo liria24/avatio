@@ -20,14 +20,14 @@ export default authedSessionEventHandler(async ({ session }) => {
 
     if (!data)
         throw createError({
-            statusCode: 404,
-            statusMessage: 'Notification not found.',
+            status: 404,
+            statusText: 'Notification not found.',
         })
 
     if (data.userId !== session.user.id)
         throw createError({
-            statusCode: 403,
-            statusMessage: 'Forbidden.',
+            status: 403,
+            statusText: 'Forbidden.',
         })
 
     await db

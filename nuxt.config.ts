@@ -59,6 +59,10 @@ export default defineNuxtConfig({
     },
 
     routeRules: {
+        '/admin/**': {
+            appLayout: 'dashboard',
+            appMiddleware: 'admin',
+        },
         '/faq': {
             prerender: true,
         },
@@ -117,9 +121,15 @@ export default defineNuxtConfig({
                 ],
             },
         },
+        typescript: {
+            tsConfig: {
+                compilerOptions: {
+                    noUncheckedIndexedAccess: true,
+                },
+            },
+        },
         experimental: {
             asyncContext: true,
-            openAPI: true,
         },
     },
 

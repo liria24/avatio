@@ -28,14 +28,14 @@ export default authedSessionEventHandler<Serialized<Setup>>(
 
         if (!existingSetup.length)
             throw createError({
-                statusCode: 404,
-                statusMessage: 'Setup not found',
+                status: 404,
+                statusText: 'Setup not found',
             })
 
-        if (existingSetup[0].userId !== session!.user.id)
+        if (existingSetup[0]?.userId !== session!.user.id)
             throw createError({
-                statusCode: 403,
-                statusMessage: 'Access denied',
+                status: 403,
+                statusText: 'Access denied',
             })
 
         const { name, description, items, images, tags, coauthors } = await validateBody(body, {
@@ -90,7 +90,8 @@ export default authedSessionEventHandler<Serialized<Setup>>(
             // シェイプキーの挿入
             if (items.some((item) => item.shapekeys?.length)) {
                 const shapekeys = items.flatMap((item, index) => {
-                    const setupItemId = insertedItems[index].id
+                    const setupItemId = insertedItems[index]?.id
+                    if (!setupItemId) return []
                     return (
                         item.shapekeys?.map((shapekey) => ({
                             setupItemId,

@@ -6,8 +6,8 @@ const { data: page } = await useAsyncData(() =>
 )
 if (!page.value)
     showError({
-        statusCode: 404,
-        statusMessage: 'Page Not Found.',
+        status: 404,
+        statusText: 'Page Not Found.',
     })
 
 defineSeo({

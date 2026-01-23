@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import { LazyModalAdminChangeItemNiceName } from '#components'
 
-definePageMeta({
-    middleware: 'admin',
-    layout: 'dashboard',
-})
-
 const { itemCategory } = useAppConfig()
 const toast = useToast()
 const overlay = useOverlay()

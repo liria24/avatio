@@ -9,8 +9,8 @@ const props = defineProps({
     error: {
         type: Object as PropType<NuxtError>,
         default: () => ({
-            statusCode: 500,
-            statusMessage: 'Unknown Error',
+            status: 500,
+            statusText: 'Unknown Error',
         }),
     },
 })
@@ -24,10 +24,10 @@ const props = defineProps({
         <NuxtLayout>
             <div class="mt-24 flex w-full flex-col items-center justify-center gap-4">
                 <h1 class="font-[Geist] text-9xl leading-none font-extralight text-nowrap">
-                    {{ props.error.statusCode }}
+                    {{ props.error.status }}
                 </h1>
                 <h2 class="text-muted text-lg">
-                    {{ props.error.message }}
+                    {{ props.error.statusText }}
                 </h2>
                 <UButton
                     :to="$localePath('/')"

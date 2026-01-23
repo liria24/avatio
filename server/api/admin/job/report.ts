@@ -157,8 +157,8 @@ export default cronEventHandler(async () => {
         } catch (error) {
             console.error('Failed to send Discord message:', error)
             throw createError({
-                statusCode: 500,
-                statusMessage: 'Failed to send Discord message',
+                status: 500,
+                statusText: 'Failed to send Discord message',
             })
         }
     }

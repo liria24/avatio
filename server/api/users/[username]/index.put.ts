@@ -28,14 +28,14 @@ export default authedSessionEventHandler(async ({ session }) => {
 
     if (!data)
         throw createError({
-            statusCode: StatusCodes.NOT_FOUND,
-            statusMessage: getReasonPhrase(StatusCodes.NOT_FOUND),
+            status: StatusCodes.NOT_FOUND,
+            statusText: getReasonPhrase(StatusCodes.NOT_FOUND),
         })
 
     if (data.id !== session.user.id && session.user.role !== 'admin')
         throw createError({
-            statusCode: StatusCodes.FORBIDDEN,
-            statusMessage: getReasonPhrase(StatusCodes.FORBIDDEN),
+            status: StatusCodes.FORBIDDEN,
+            statusText: getReasonPhrase(StatusCodes.FORBIDDEN),
         })
 
     if (username) {
@@ -44,8 +44,8 @@ export default authedSessionEventHandler(async ({ session }) => {
         })
         if (!isUsernameAvailable)
             throw createError({
-                statusCode: StatusCodes.BAD_REQUEST,
-                statusMessage: getReasonPhrase(StatusCodes.BAD_REQUEST),
+                status: StatusCodes.BAD_REQUEST,
+                statusText: getReasonPhrase(StatusCodes.BAD_REQUEST),
             })
     }
 
