@@ -1,6 +1,5 @@
 <script lang="ts" setup>
 import { z } from 'zod'
-import { VueDraggable } from 'vue-draggable-plus'
 
 const { getSession } = useAuth()
 const session = await getSession()
@@ -291,73 +290,76 @@ const cancelCropImage = () => {
                     </UFormField>
 
                     <UFormField name="links" label="リンク" class="w-full">
-                        <div class="flex w-full flex-wrap items-center gap-2">
-                            <VueDraggable
-                                v-model="state.links as string[]"
-                                :animation="150"
-                                handle=".draggable"
-                                class="contents"
+                        <ReorderGroup
+                            v-model:values="state.links"
+                            as="div"
+                            axis="y"
+                            class="flex flex-col"
+                        >
+                            <ReorderItem
+                                v-for="(link, index) in state.links"
+                                :key="link"
+                                :value="link"
+                                as="div"
+                                class="hover:bg-elevated flex cursor-move items-center gap-2 rounded-md p-3 transition-colors"
                             >
-                                <div
-                                    v-for="(link, index) in state.links"
-                                    :key="`link-${index}`"
-                                    class="ring-accented flex items-center gap-2 rounded-md p-1 ring-1"
-                                >
-                                    <div
-                                        class="draggable hover:bg-elevated grid cursor-move rounded-md px-1 py-2 transition-colors"
-                                    >
-                                        <Icon
-                                            name="mingcute:dots-fill"
-                                            size="18"
-                                            class="text-muted shrink-0"
-                                        />
-                                    </div>
-                                    <UTooltip :text="link" :delay-duration="50">
-                                        <Icon
-                                            :name="linkAttributes(link).icon"
-                                            size="18"
-                                            class="text-toned shrink-0"
-                                        />
-                                    </UTooltip>
-                                    <UButton
-                                        icon="mingcute:close-line"
-                                        variant="ghost"
-                                        size="sm"
-                                        @click="removeLink(index)"
-                                    />
-                                </div>
-                            </VueDraggable>
-
-                            <UPopover
-                                :content="{
-                                    side: 'right',
-                                }"
-                            >
-                                <UButton
-                                    v-if="state.links.length < 8"
-                                    icon="mingcute:add-line"
-                                    variant="ghost"
-                                    class="p-3"
+                                <Icon
+                                    name="mingcute:dots-fill"
+                                    size="18"
+                                    class="text-muted shrink-0"
                                 />
 
-                                <template #content>
-                                    <div class="flex max-w-96 items-center gap-2 p-2">
-                                        <UInput
-                                            v-model="ui.newLink"
-                                            placeholder="リンクを追加"
-                                            class="w-full"
-                                            @keyup.enter="addLink"
-                                        />
-                                        <UButton
-                                            label="追加"
-                                            variant="soft"
-                                            :disabled="!ui.newLink.trim()"
-                                            @click="addLink"
-                                        />
-                                    </div>
-                                </template>
-                            </UPopover>
-                        </div>
+                                <UTooltip :text="link" :delay-duration="50">
+                                    <Icon
+                                        :name="linkAttributes(link).icon"
+                                        size="18"
+                                        class="text-toned shrink-0"
+                                    />
+                                </UTooltip>
+
+                                <p class="line-clamp-1 text-sm leading-none break-all">
+                                    {{ link }}
+                                </p>
+
+                                <UButton
+                                    icon="mingcute:close-line"
+                                    variant="ghost"
+                                    size="sm"
+                                    @click="removeLink(index)"
+                                />
+                            </ReorderItem>
+                        </ReorderGroup>
+                        <UPopover
+                            :content="{
+                                side: 'bottom',
+                            }"
+                        >
+                            <UButton
+                                v-if="state.links.length < 8"
+                                icon="mingcute:add-line"
+                                label="リンクを追加"
+                                variant="ghost"
+                                block
+                                class="p-2"
+                            />
+
+                            <template #content>
+                                <div class="flex max-w-96 items-center gap-2 p-2">
+                                    <UInput
+                                        v-model="ui.newLink"
+                                        placeholder="リンクを追加"
+                                        class="w-full"
+                                        @keyup.enter="addLink"
+                                    />
+                                    <UButton
+                                        label="追加"
+                                        variant="soft"
+                                        :disabled="!ui.newLink.trim()"
+                                        @click="addLink"
+                                    />
+                                </div>
+                            </template>
+                        </UPopover>
                     </UFormField>
                 </div>
             </div>
