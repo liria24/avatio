@@ -11,10 +11,8 @@ const { data } = await useUser(session.value!.user.username!)
 const ui = reactive({
     newId: data.value?.username || '',
     newLink: '',
-    croppingImage: null as Blob | null,
     imageUploading: false,
     profileUpdating: false,
-    modalCropImage: false,
 })
 
 const _schema = userUpdateSchema
@@ -71,8 +69,7 @@ const removeLink = (index: number) => {
 
 // API呼び出しを共通化
 const updateUserData = async (updateData: Partial<profileSchema>) => {
-    await $fetch(session.value!.user.username!, {
-        baseURL: '/api/users/',
+    await $fetch(`/api/users/${session.value!.user.username!}`, {
         method: 'PUT',
         body: updateData,
     })
@@ -126,25 +123,16 @@ const { open, reset, onChange } = useFileDialog({
 onChange(async (files) => {
     if (!files?.length || !files[0]) return
 
-    ui.croppingImage = new Blob([files[0]])
-    ui.modalCropImage = true
+    await updateImage(files[0])
     reset()
 })
 
-const updateImage = async () => {
-    if (!ui.croppingImage) {
-        toast.add({
-            title: '画像の取得に失敗しました',
-            color: 'error',
-        })
-        return
-    }
-
+const updateImage = async (file: File) => {
     ui.imageUploading = true
 
     try {
         const formData = new FormData()
-        formData.append('blob', ui.croppingImage)
+        formData.append('blob', file)
         formData.append('path', 'avatar')
 
         const response = await $fetch('/api/images', {
@@ -159,8 +147,6 @@ const updateImage = async () => {
             title: 'プロフィール画像が更新されました。',
             color: 'success',
         })
-
-        ui.modalCropImage = false
     } catch (error) {
         console.error('Failed to upload image:', error)
         toast.add({
@@ -171,30 +157,9 @@ const updateImage = async () => {
         ui.imageUploading = false
     }
 }
-
-const cancelCropImage = () => {
-    ui.modalCropImage = false
-    ui.croppingImage = null
-}
 </script>
 
 <template>
-    <UModal v-model:open="ui.modalCropImage" title="画像のトリミング">
-        <template #body>
-            <ImageCropper v-model="ui.croppingImage" />
-        </template>
-
-        <template #footer>
-            <UButton label="キャンセル" variant="ghost" @click="cancelCropImage" />
-            <UButton
-                label="保存"
-                color="neutral"
-                :loading="ui.imageUploading"
-                @click="updateImage"
-            />
-        </template>
-    </UModal>
-
     <UForm :state :schema="userUpdateSchema" @submit="onSubmit">
         <UCard>
             <template #header>
@@ -257,6 +222,7 @@ const cancelCropImage = () => {
                             ]"
                         >
                             <UButton
+                                aria-label="その他のオプション"
                                 color="neutral"
                                 variant="outline"
                                 icon="mingcute:down-small-fill"
@@ -322,6 +288,7 @@ const cancelCropImage = () => {
                                 </p>
 
                                 <UButton
+                                    aria-label="リンクを削除"
                                     icon="mingcute:close-line"
                                     variant="ghost"
                                     size="sm"
