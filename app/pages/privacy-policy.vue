@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-const { data: page } = await useAsyncData(() =>
+const { data: page } = await useAsyncData('page-privacy-policy', () =>
     queryCollection('general').path('/general/privacy-policy').first()
 )
 

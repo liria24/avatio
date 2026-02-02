@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 const { app } = useAppConfig()
 
-const { data: page } = await useAsyncData(() =>
+const { data: page } = await useAsyncData('page-faq', () =>
     queryCollection('general').path('/general/faq').first()
 )
 if (!page.value)
