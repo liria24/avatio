@@ -1,7 +1,6 @@
 import { items, shops } from '@@/database/schema'
 import { getAll } from '@vercel/edge-config'
 import { waitUntil } from '@vercel/functions'
-import { consola } from 'consola'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 
@@ -11,6 +10,8 @@ const params = z.object({
 
 const CACHE_DURATION_MS = 24 * 60 * 60 * 1000 // 24時間
 
+const log = logger('/api/items/booth/[id]:GET')
+
 const markItemAsOutdated = async (id: string): Promise<void> => {
     try {
         await db
@@ -18,7 +19,7 @@ const markItemAsOutdated = async (id: string): Promise<void> => {
             .set({ outdated: true, updatedAt: new Date() })
             .where(eq(items.id, id))
     } catch (error) {
-        consola.error(`Failed to mark item ${id} as outdated:`, error)
+        log.error(`Failed to mark item ${id} as outdated:`, error)
     }
 }
 
@@ -67,7 +68,7 @@ const updateDatabase = async (item: Item & { shop: NonNullable<Item['shop']> }):
                 },
             })
     } catch (error) {
-        consola.error(`Failed to update database for item ${item.id}:`, error)
+        log.error(`Failed to update database for item ${item.id}:`, error)
         throw error
     }
 }
@@ -99,11 +100,8 @@ export default promiseEventHandler<Item>(async () => {
         throw new Error('Item not found or not allowed')
     }
 
-    const category =
-        Object.hasOwn(specificItemCategories, 'booth') &&
-        Object.hasOwn(specificItemCategories['booth'], item.id)
-            ? specificItemCategories['booth'][item.id]
-            : BOOTH_CATEGORY_MAP[item.category.id] || 'other'
+    const category: ItemCategory =
+        specificItemCategories['booth'][item.id] || BOOTH_CATEGORY_MAP[item.category.id] || 'other'
 
     const price = item.variations.some((v) => v.status === 'free_download') ? 'FREE' : item.price
 
@@ -133,7 +131,7 @@ export default promiseEventHandler<Item>(async () => {
         updateDatabase(processedItem).then(async () => {
             if (!cachedItem)
                 try {
-                    consola.log(`Defining item info for item ${id}`)
+                    log.log(`Defining item info for item ${id}`)
                     const { niceName, category } = await generateItemAttr({
                         name: item.name,
                         description: item.description || undefined,
@@ -141,9 +139,9 @@ export default promiseEventHandler<Item>(async () => {
                     })
 
                     await db.update(items).set({ niceName, category }).where(eq(items.id, id))
-                    consola.log(`Item info defined for item ${id}: ${niceName}, ${category}`)
+                    log.log(`Item info defined for item ${id}: ${niceName}, ${category}`)
                 } catch (error) {
-                    consola.error(`Failed to define item info for item ${id}:`, error)
+                    log.error(`Failed to define item info for item ${id}:`, error)
                 }
         })
     )

@@ -107,7 +107,7 @@ export const getGithubItem = defineCachedFunction(
 
         if (!repoData) return null
 
-        const owner = repoData.repo.repo.split('/')[0]
+        const owner = repoData.repo.repo.split('/')[0]!
         const shop = {
             id: owner,
             name: owner,

@@ -1,6 +1,5 @@
 import { items } from '@@/database/schema'
 import { waitUntil } from '@vercel/functions'
-import { consola } from 'consola'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 
@@ -10,6 +9,8 @@ const params = z.object({
 
 const CACHE_DURATION_MS = 1000 * 60 * 60 // 1時間
 
+const log = logger('/api/items/github/[repo]:GET')
+
 const markItemAsOutdated = async (id: string): Promise<void> => {
     try {
         await db
@@ -17,7 +18,7 @@ const markItemAsOutdated = async (id: string): Promise<void> => {
             .set({ outdated: true, updatedAt: new Date() })
             .where(eq(items.id, id))
     } catch (error) {
-        consola.error(`Failed to mark item ${id} as outdated:`, error)
+        log.error(`Failed to mark item ${id} as outdated:`, error)
     }
 }
 
@@ -68,7 +69,7 @@ export default promiseEventHandler<Item>(async () => {
 
             if (!cachedItem)
                 try {
-                    consola.log(`Defining item info for item ${item.id}`)
+                    log.log(`Defining item info for item ${item.id}`)
 
                     const repoData = await getGithubRepo(repo)
                     const readme = await getGithubReadme(repo)
@@ -85,9 +86,9 @@ export default promiseEventHandler<Item>(async () => {
 
                     await db.update(items).set({ niceName, category }).where(eq(items.id, item.id))
 
-                    consola.log(`Item info defined for item ${item.id}: ${niceName}, ${category}`)
+                    log.log(`Item info defined for item ${item.id}: ${niceName}, ${category}`)
                 } catch (error) {
-                    consola.error(`Failed to define item info for item ${item.id}:`, error)
+                    log.error(`Failed to define item info for item ${item.id}:`, error)
                 }
         })()
     )

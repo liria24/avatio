@@ -1,3 +1,3 @@
-import { consola } from 'consola'
+import consola from 'consola'
 
-export const logger = consola.withTag
+export const logger = (tag: string) => consola.withTag(tag)

@@ -1,10 +1,10 @@
 import type { z } from 'zod'
 
-import { consola } from 'consola'
-
 type Body = z.infer<typeof notificationsInsertSchema>
 
 export default async (body: Body): Promise<{ id: string } | null> => {
+    const log = logger('createNotification')
+
     try {
         const config = useRuntimeConfig()
 
@@ -15,9 +15,9 @@ export default async (body: Body): Promise<{ id: string } | null> => {
             },
             body,
         })
-        return response
+        return response || null
     } catch (error) {
-        consola.error('Failed to create notification:', error)
+        log.error('Failed to create notification:', error)
         return null
     }
 }

@@ -39,7 +39,8 @@ export default authedSessionEventHandler(
                     id: setups.id,
                 })
 
-            const setupId = setup.id
+            const setupId = setup?.id
+            if (!setupId) throw new Error('Failed to create setup')
 
             const insertedItems = await tx
                 .insert(setupItems)
@@ -56,7 +57,7 @@ export default authedSessionEventHandler(
 
             const shapekeys = items.flatMap((item, i) =>
                 (item.shapekeys || []).map((s) => ({
-                    setupItemId: insertedItems[i].id,
+                    setupItemId: insertedItems[i]!.id,
                     ...s,
                 }))
             )

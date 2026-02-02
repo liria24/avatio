@@ -1,4 +1,3 @@
-import { consola } from 'consola'
 import { z } from 'zod'
 
 const params = z.object({
@@ -9,11 +8,13 @@ const query = z.object({
     platform: platformSchema.optional(),
 })
 
+const log = logger('/api/items/[id]:GET')
+
 export default promiseEventHandler<Item>(async () => {
     const { id } = await validateParams(params)
     let { platform } = await validateQuery(query)
 
-    consola.log(`Processing item: ${id}, Platform: ${platform || 'auto-detect'}`)
+    log.log(`Processing item: ${id}, Platform: ${platform || 'auto-detect'}`)
 
     if (!platform) {
         const item = await getItemFromDatabase(transformItemId(id).decode())

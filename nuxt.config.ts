@@ -3,15 +3,6 @@ import { defineOrganization } from 'nuxt-schema-org/schema'
 const baseUrl = import.meta.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 const title = 'Avatio'
 const description = 'あなたのアバター改変を共有しよう'
-const r2Domain = (() => {
-    try {
-        const url = new URL(import.meta.env.NUXT_PUBLIC_R2_DOMAIN || '')
-        return url.hostname
-    } catch (error) {
-        console.error('Error parsing R2 domain:', error)
-        return ''
-    }
-})()
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -41,6 +32,9 @@ export default defineNuxtConfig({
     css: ['~/assets/css/main.css'],
 
     vite: {
+        ssr: {
+            noExternal: ['zod', 'drizzle-zod'],
+        },
         vue: {
             features: {
                 optionsAPI: false,
@@ -150,7 +144,7 @@ export default defineNuxtConfig({
         public: {
             siteUrl: baseUrl,
             r2: {
-                domain: r2Domain,
+                domain: import.meta.env.TIGRIS_DOMAIN,
             },
         },
     },
@@ -278,7 +272,7 @@ export default defineNuxtConfig({
         },
         densities: [1],
         domains: [
-            r2Domain, // R2
+            import.meta.env.TIGRIS_DOMAIN!,
             'booth.pximg.net', // booth
             's2.booth.pm', // booth
             'github.com', // GitHub

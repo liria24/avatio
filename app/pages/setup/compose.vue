@@ -1,6 +1,5 @@
 <script lang="ts" setup>
 import type { z } from 'zod'
-import type { Serialize } from 'nitropack/types'
 
 definePageMeta({
     middleware: 'session',
@@ -82,8 +81,9 @@ const applyDraftData = async (content: SetupDraftContent) => {
     state.coauthors = content.coauthors
         ? await Promise.all(
               content.coauthors.map(async (coauthor) => {
-                  const user = await $fetch<Serialize<User>>(`/api/users/${coauthor.userId}`)
+                  const user = await $fetch<Serialized<User>>(`/api/users/${coauthor.userId}`)
                   return {
+                      userId: coauthor.userId,
                       user: {
                           ...user,
                           createdAt: new Date(user.createdAt),
@@ -224,6 +224,7 @@ const onSubmit = async () => {
             tags: state.tags.length ? state.tags.map((tag) => ({ tag })) : undefined,
             coauthors: state.coauthors.length
                 ? state.coauthors.map((coauthor) => ({
+                      userId: coauthor.userId,
                       username: coauthor.user.username,
                       note: coauthor.note || undefined,
                   }))
@@ -329,7 +330,7 @@ const saveDraftDebounce = useDebounceFn(async () => {
         tags: state.tags.length ? state.tags.map((tag) => ({ tag })) : undefined,
         coauthors: state.coauthors.length
             ? state.coauthors.map((coauthor) => ({
-                  userId: coauthor.user.username,
+                  userId: coauthor.userId,
                   note: coauthor.note || undefined,
               }))
             : undefined,
