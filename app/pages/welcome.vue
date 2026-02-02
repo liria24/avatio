@@ -13,8 +13,7 @@ const available = ref<boolean>(false)
 
 const updateId = async (username: string) => {
     try {
-        await $fetch(session.value!.user.username!, {
-            baseURL: '/api/users/',
+        await $fetch(`/api/users/${session.value!.user.username!}`, {
             method: 'PUT',
             body: { username },
         })
