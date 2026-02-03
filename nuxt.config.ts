@@ -57,16 +57,16 @@ export default defineNuxtConfig({
             appMiddleware: 'admin',
         },
         '/faq': {
-            prerender: true,
+            isr: 60 * 60 * 24 * 30,
         },
         '/terms': {
-            prerender: true,
+            isr: 60 * 60 * 24 * 30,
         },
         '/privacy-policy': {
-            prerender: true,
+            isr: 60 * 60 * 24 * 30,
         },
         '/on-maintenance': {
-            prerender: true,
+            isr: 60 * 60 * 24 * 30,
         },
         '/setup/edit': {
             redirect: '/setup/compose',
