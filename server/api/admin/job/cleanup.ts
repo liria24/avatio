@@ -2,13 +2,13 @@ export default cronEventHandler(async ({ event }) => {
     const config = useRuntimeConfig()
 
     const unusedImages = await event.$fetch('/api/images/unused')
-    const allImages = [...unusedImages.setupImages, ...unusedImages.userImages]
+    const allImages = [...unusedImages.setup, ...unusedImages.user]
 
     // Execute deletion in parallel
     const deleteResults = await Promise.allSettled(
         allImages.map(async (image) => {
             console.log('Deleting image from storage:', image.key)
-            await useStorage('r2').del(image.key)
+            await s3.delete(image.key)
             return image.key
         })
     )

@@ -135,8 +135,8 @@ export const auth = betterAuth({
                         try {
                             const fetched = await $fetch<Blob>(image)
                             const imageId = nanoid(JPG_FILENAME_LENGTH)
-                            await useStorage('r2').setItemRaw(
-                                `avatar:${imageId}.jpg`,
+                            await s3.write(
+                                `avatar/${imageId}.jpg`,
                                 Buffer.from(await fetched.arrayBuffer())
                             )
                             image = `${process.env.NUXT_PUBLIC_R2_DOMAIN}/avatar/${imageId}.jpg`

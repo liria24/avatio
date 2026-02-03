@@ -11,10 +11,10 @@ export default adminSessionEventHandler(async () => {
     console.log('Deleting image on storage:', target)
 
     try {
-        await useStorage('r2').del(target)
+        await s3.delete(path)
 
         // 削除後の検証
-        if (await useStorage('r2').has(target)) {
+        if (await s3.exists(path)) {
             console.error('Failed to delete image on storage:', target)
             throw createError({
                 status: 500,
