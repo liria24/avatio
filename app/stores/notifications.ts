@@ -1,5 +1,10 @@
 import type { Notification } from '#imports'
 
+interface NotificationResponse {
+    data: Notification[]
+    unread: number
+}
+
 export const useNotificationsStore = defineStore('notificationsStore', {
     state: () => ({
         notifications: [] as Notification[],
@@ -10,12 +15,7 @@ export const useNotificationsStore = defineStore('notificationsStore', {
         async fetch() {
             this.fetching = true
             try {
-                const response = await $fetch<{
-                    data: Notification[]
-                    unread: number
-                }>('/api/notifications', {
-                    method: 'GET',
-                })
+                const response = await $fetch<NotificationResponse>('/api/notifications')
                 this.notifications = response.data || []
                 this.unread = response.unread || 0
             } catch (error) {

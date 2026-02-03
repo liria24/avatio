@@ -117,7 +117,7 @@ export default authedSessionEventHandler(
 
         log.success('Image processed and uploaded successfully')
         return {
-            url: `${config.public.r2.domain}/${normalizedPath}/${jpgFilename}`,
+            url: `${config.tigris.domain}/${normalizedPath}/${jpgFilename}`,
             width,
             height,
         }

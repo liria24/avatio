@@ -79,8 +79,8 @@ export default defineNuxtConfig({
         storage: {
             cache: {
                 driver: 'upstash',
-                url: import.meta.env.NUXT_UPSTASH_KV_REST_API_URL || '',
-                token: import.meta.env.NUXT_UPSTASH_KV_REST_API_TOKEN || '',
+                url: import.meta.env.NUXT_UPSTASH_KV_REST_API_URL,
+                token: import.meta.env.NUXT_UPSTASH_KV_REST_API_TOKEN,
             },
         },
         devStorage: {
@@ -101,43 +101,43 @@ export default defineNuxtConfig({
     },
 
     runtimeConfig: {
-        adminKey: import.meta.env.ADMIN_KEY || '',
+        adminKey: import.meta.env.ADMIN_KEY,
         ai: {
             gateway: {
-                apiKey: import.meta.env.AI_GATEWAY_API_KEY || '',
+                apiKey: import.meta.env.AI_GATEWAY_API_KEY,
             },
         },
-        betterAuth: {
-            url: import.meta.env.NUXT_BETTER_AUTH_URL || baseUrl,
-            secret: import.meta.env.NUXT_BETTER_AUTH_SECRET || '',
+        aws: {
+            endpointUrl: {
+                s3: import.meta.env.AWS_ENDPOINT_URL_S3,
+                iam: import.meta.env.AWS_ENDPOINT_URL_IAM,
+            },
+            accessKeyId: import.meta.env.AWS_ACCESS_KEY_ID,
+            secretAccessKey: import.meta.env.AWS_SECRET_ACCESS_KEY,
+            region: import.meta.env.AWS_REGION,
         },
-        liria: {
-            accessToken: import.meta.env.NUXT_LIRIA_ACCESS_TOKEN || '',
-            discordEndpoint: import.meta.env.NUXT_LIRIA_DISCORD_ENDPOINT || '',
+        betterAuth: {
+            url: import.meta.env.NUXT_BETTER_AUTH_URL,
+            secret: import.meta.env.NUXT_BETTER_AUTH_SECRET,
         },
         neon: {
-            databaseUrl: import.meta.env.NUXT_NEON_DATABASE_URL || '',
+            databaseUrl: import.meta.env.NUXT_NEON_DATABASE_URL,
         },
-        r2: {
-            endpoint: import.meta.env.NUXT_R2_ENDPOINT || '',
-            accessKey: import.meta.env.NUXT_R2_ACCESS_KEY || '',
-            secretKey: import.meta.env.NUXT_R2_SECRET_KEY || '',
+        tigris: {
+            domain: import.meta.env.NUXT_TIGRIS_DOMAIN,
         },
         upstash: {
-            redisRestUrl: import.meta.env.UPSTASH_REDIS_REST_URL || '',
-            redisRestToken: import.meta.env.UPSTASH_REDIS_REST_TOKEN || '',
+            redisRestUrl: import.meta.env.UPSTASH_REDIS_REST_URL,
+            redisRestToken: import.meta.env.UPSTASH_REDIS_REST_TOKEN,
         },
         vercel: {
-            token: import.meta.env.NUXT_VERCEL_TOKEN || '',
+            token: import.meta.env.NUXT_VERCEL_TOKEN,
             edgeConfig: {
-                endpoint: import.meta.env.NUXT_VERCEL_EDGE_CONFIG || '',
+                endpoint: import.meta.env.NUXT_VERCEL_EDGE_CONFIG,
             },
         },
         public: {
             siteUrl: baseUrl,
-            r2: {
-                domain: import.meta.env.TIGRIS_DOMAIN,
-            },
         },
     },
 
