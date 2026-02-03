@@ -1,7 +1,11 @@
 <script lang="ts" setup>
 const { getSession } = useAuth()
 const session = await getSession()
-const toast = useToast()
+const {
+    verify: verifyShop,
+    unverify: unverifyShop,
+    generateVerificationCode,
+} = useShopVerification()
 
 const { data, refresh } = await useUser(session.value!.user.username!)
 
@@ -30,16 +34,11 @@ const verify = async () => {
     verifying.value = true
 
     try {
-        await $fetch('/api/shop-verification', {
-            method: 'POST',
-            body: { url: itemUrl.value },
-        })
-        refresh()
-        toast.add({ title: 'ショップを認証しました', color: 'success' })
-        modalVerify.value = false
-    } catch (error) {
-        console.error(error)
-        toast.add({ title: 'ショップの認証に失敗しました', color: 'error' })
+        const success = await verifyShop(itemUrl.value)
+        if (success) {
+            refresh()
+            modalVerify.value = false
+        }
     } finally {
         verifying.value = false
     }
@@ -49,16 +48,11 @@ const unverify = async (shopId: string) => {
     unverifying.value = true
 
     try {
-        await $fetch('/api/shop-verification', {
-            method: 'DELETE',
-            body: { shopId },
-        })
-        refresh()
-        toast.add({ title: 'ショップの認証を解除しました', color: 'success' })
-        modalUnverify.value = false
-    } catch (error) {
-        console.error(error)
-        toast.add({ title: 'ショップの認証解除に失敗しました', color: 'error' })
+        const success = await unverifyShop(shopId)
+        if (success) {
+            refresh()
+            modalUnverify.value = false
+        }
     } finally {
         unverifying.value = false
     }
@@ -66,8 +60,8 @@ const unverify = async (shopId: string) => {
 
 watch(modalVerify, async (value) => {
     if (value) {
-        const data = await $fetch<{ code: string }>('/api/shop-verification/code')
-        verifyCode.value = data.code
+        const code = await generateVerificationCode()
+        verifyCode.value = code
     } else verifyCode.value = null
 })
 </script>

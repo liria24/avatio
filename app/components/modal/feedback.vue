@@ -3,8 +3,8 @@ import { z } from 'zod'
 
 const emit = defineEmits(['close'])
 
-const toast = useToast()
 const route = useRoute()
+const { submitFeedback } = useAdminActions()
 
 const schema = z.object({
     comment: z.string(),
@@ -18,22 +18,13 @@ const Submit = async () => {
     try {
         await schema.parseAsync(state)
 
-        await $fetch('/api/feedbacks', {
-            method: 'POST',
-            body: {
-                comment: state.comment,
-                contextPath: route.fullPath,
-            },
-        })
-        toast.add({
-            title: 'フィードバックが送信されました',
-            description: 'ご協力ありがとうございます。',
-            color: 'success',
-        })
+        const success = await submitFeedback(state.comment, route.fullPath)
+        if (!success) return
 
         emit('close')
         state.comment = ''
     } catch (error) {
+        const toast = useToast()
         toast.add({
             title: 'フィードバックの送信に失敗しました',
             description:

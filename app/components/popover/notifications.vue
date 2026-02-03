@@ -15,20 +15,12 @@ const notifications = computed(() =>
 
 const onRead = async (event: Event, id: string) => {
     event.stopPropagation()
-    await $fetch('/api/notifications/read', {
-        method: 'POST',
-        body: { id },
-    })
-    notificationsStore.fetch()
+    await notificationsStore.markAsRead(id)
 }
 
 const onUnread = async (event: Event, id: string) => {
     event.stopPropagation()
-    await $fetch('/api/notifications/unread', {
-        method: 'POST',
-        body: { id },
-    })
-    notificationsStore.fetch()
+    await notificationsStore.markAsUnread(id)
 }
 
 const onClick = (event: Event, id: string, actionUrl: string | null) => {

@@ -15,7 +15,15 @@ const items = defineModel<Record<ItemCategory, SetupItem[]>>({
 })
 
 const { itemCategory } = useAppConfig()
-const toast = useToast()
+
+const {
+    totalItemsCount,
+    addItem: add,
+    removeItem,
+    changeItemCategory,
+    addShapekey,
+    removeShapekey,
+} = useSetupCompose()
 
 const popoverItemSearch = ref(false)
 
@@ -24,10 +32,6 @@ type CategoryKey = keyof ItemsState
 
 const itemCategories = Object.keys(items.value) as CategoryKey[]
 
-const totalItemsCount = computed(() =>
-    Object.values(items.value).reduce((total, category) => total + category.length, 0)
-)
-
 const getItemsByCategory = (category: CategoryKey) => items.value[category]
 
 const { data: ownedAvatars } = await useFetch('/api/items/owned-avatars', {
@@ -35,114 +39,9 @@ const { data: ownedAvatars } = await useFetch('/api/items/owned-avatars', {
     default: () => [],
 })
 
-const isItemAlreadyAdded = (itemId: string): boolean =>
-    itemCategories.some((category) => items.value[category].some((item) => item.id === itemId))
-
 const addItem = async (item: Item) => {
-    if (!item?.id || !item?.category) {
-        console.error('Invalid item data')
-        return
-    }
-
-    if (isItemAlreadyAdded(item.id)) {
-        toast.add({
-            title: 'アイテムはすでに追加されています',
-            color: 'warning',
-        })
-        return
-    }
-
-    const itemCategory = item.category as CategoryKey
-    if (!(itemCategory in items.value)) {
-        console.error('Invalid item category:', itemCategory)
-        return
-    }
-
-    items.value[itemCategory].push({
-        ...item,
-        id: item.id.toString(),
-        note: '',
-        unsupported: false,
-    })
-
+    add(item)
     popoverItemSearch.value = false
-}
-
-const removeItem = (category: string, id: string) => {
-    const categoryKey = category as CategoryKey
-    if (!(categoryKey in items.value)) {
-        console.error('Invalid category for removal:', category)
-        return
-    }
-
-    const categoryItems = items.value[categoryKey]
-    const index = categoryItems.findIndex((item) => item.id === id)
-
-    if (index !== -1) categoryItems.splice(index, 1)
-    else console.error('Item not found for removal:', id)
-}
-
-const changeItemCategory = (id: string, newCategory: ItemCategory) => {
-    const newCategoryKey = newCategory as CategoryKey
-    if (!(newCategoryKey in items.value)) {
-        console.error('Invalid new category:', newCategory)
-        return
-    }
-
-    for (const category of itemCategories) {
-        const categoryItems = items.value[category]
-        const index = categoryItems.findIndex((item) => item.id === id)
-
-        if (index !== -1) {
-            const [item] = categoryItems.splice(index, 1)
-            if (item) {
-                item.category = newCategory
-                items.value[newCategoryKey].push(item)
-                return
-            }
-        }
-    }
-
-    console.error('Item not found for category change:', id)
-}
-
-const addShapekey = (options: { category: string; id: string; name: string; value: number }) => {
-    const { category, id, name, value } = options
-    const categoryKey = category as CategoryKey
-
-    if (!(categoryKey in items.value)) {
-        console.error('Invalid category for shapekey addition:', category)
-        return
-    }
-
-    const item = items.value[categoryKey].find((item) => item.id === id)
-    if (!item) {
-        console.error('Item not found for shapekey addition:', id)
-        return
-    }
-
-    if (!item.shapekeys) item.shapekeys = []
-
-    item.shapekeys.push({ name, value })
-}
-
-const removeShapekey = (options: { category: string; id: string; index: number }) => {
-    const { category, id, index } = options
-
-    const categoryKey = category as CategoryKey
-
-    if (!(categoryKey in items.value)) {
-        console.error('Invalid category for shapekey removal:', category)
-        return
-    }
-
-    const item = items.value[categoryKey].find((item) => item.id === id)
-    if (!item?.shapekeys || index < 0 || index >= item.shapekeys.length) {
-        console.error('Shapekey not found for removal:', id, index)
-        return
-    }
-
-    item.shapekeys.splice(index, 1)
 }
 </script>
 

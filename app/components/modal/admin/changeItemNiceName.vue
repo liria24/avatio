@@ -7,28 +7,14 @@ const props = defineProps<Props>()
 
 const emit = defineEmits(['close'])
 
-const toast = useToast()
+const { changeItemNiceName: changeItemNiceNameAction } = useAdminActions()
 
 const input = ref(props.current)
 
 const changeItemNiceName = async () => {
-    try {
-        await $fetch(`/api/items/${transformItemId(props.itemId).encode()}`, {
-            method: 'PUT',
-            body: { niceName: input.value },
-        })
-        toast.add({
-            title: 'アイテムの名称を変更しました',
-            color: 'success',
-        })
+    const success = await changeItemNiceNameAction(props.itemId, input.value)
+    if (success) {
         emit('close')
-    } catch (error) {
-        console.error('Failed to change item nice name:', error)
-        toast.add({
-            title: 'アイテムの名称の変更に失敗しました',
-            color: 'error',
-        })
-    } finally {
         input.value = ''
     }
 }

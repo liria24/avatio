@@ -6,30 +6,15 @@ definePageMeta({
 
 const { getSession } = useAuth()
 const session = await getSession()
-const toast = useToast()
+const { updateUsername } = useUserSettings()
 
 const input = ref<string>(session.value?.user.username || '')
 const available = ref<boolean>(false)
 
 const updateId = async (username: string) => {
-    try {
-        await $fetch(`/api/users/${session.value!.user.username!}`, {
-            method: 'PUT',
-            body: { username },
-        })
-        toast.add({
-            title: 'ユーザーIDが変更されました',
-            description: 'ページを更新しています...',
-            progress: false,
-        })
+    const success = await updateUsername(session.value!.user.username!, username)
+    if (success) {
         await navigateTo('/', { external: true })
-    } catch (error) {
-        console.error('Error updating user ID:', error)
-        toast.add({
-            title: 'ユーザーIDの変更に失敗しました',
-            description: 'ユーザーIDの変更中にエラーが発生しました。',
-            color: 'error',
-        })
     }
 }
 

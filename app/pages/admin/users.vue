@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { LazyModalAdminBanUser } from '#components'
 
-const toast = useToast()
+const { unbanUser: unbanUserAction } = useAdminActions()
 const overlay = useOverlay()
 
 const modalBan = overlay.create(LazyModalAdminBanUser)
@@ -11,26 +11,8 @@ const { data, refresh } = await useFetch('/api/admin/user', {
 })
 
 const unbanUser = async (userId: string) => {
-    try {
-        await $fetch(`/api/admin/user/${userId}`, {
-            method: 'PATCH',
-            body: {
-                ban: false,
-            },
-        })
-        toast.add({
-            title: 'ユーザーのBANを解除しました',
-            color: 'success',
-        })
-    } catch (error) {
-        console.error('Failed to unban user:', error)
-        toast.add({
-            title: 'ユーザーのBAN解除に失敗しました',
-            color: 'error',
-        })
-    } finally {
-        refresh()
-    }
+    const success = await unbanUserAction(userId)
+    if (success) refresh()
 }
 </script>
 

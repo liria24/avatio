@@ -64,6 +64,7 @@ const onSelect = async (username: string) => {
     try {
         const user = await $fetch<SerializedUser>(`/api/users/${username}`)
         emit('select', {
+            id: user.id,
             username: user.username,
             createdAt: user.createdAt,
             name: user.name,

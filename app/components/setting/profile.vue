@@ -3,7 +3,7 @@ import { z } from 'zod'
 
 const { getSession } = useAuth()
 const session = await getSession()
-const toast = useToast()
+const { updateProfile, validateAndAddLink, uploadImage } = useUserSettings()
 
 const { data } = await useUser(session.value!.user.username!)
 
@@ -35,30 +35,10 @@ const state = reactive<profileSchema>({
 })
 
 const addLink = () => {
-    const trimmedLink = ui.newLink.trim()
-    if (!trimmedLink) return
+    const result = validateAndAddLink(state.links, ui.newLink)
+    if (!result.success) return
 
-    try {
-        new URL(trimmedLink)
-    } catch {
-        toast.add({
-            title: '無効なリンク',
-            description: '正しいURLを入力してください。',
-            color: 'error',
-        })
-        return
-    }
-
-    if (state.links.includes(trimmedLink)) {
-        toast.add({
-            title: 'リンクがすでに存在します',
-            description: '同じリンクは追加できません。',
-            color: 'warning',
-        })
-        return
-    }
-
-    state.links.push(trimmedLink)
+    state.links.push(result.link!)
     ui.newLink = ''
 }
 
@@ -67,30 +47,13 @@ const removeLink = (index: number) => {
     state.links.splice(index, 1)
 }
 
-// API呼び出しを共通化
-const updateUserData = async (updateData: Partial<profileSchema>) => {
-    await $fetch(`/api/users/${session.value!.user.username!}`, {
-        method: 'PUT',
-        body: updateData,
-    })
-}
-
 const onSubmit = async () => {
     ui.profileUpdating = true
 
     try {
-        await updateUserData(state)
-        toast.add({
-            title: 'プロフィールが保存されました',
-            color: 'success',
-        })
+        await updateProfile(session.value!.user.username!, state)
     } catch (error) {
         console.error('Error saving profile:', error)
-        toast.add({
-            title: '保存に失敗しました',
-            description: 'プロフィールの保存中にエラーが発生しました。',
-            color: 'error',
-        })
     } finally {
         ui.profileUpdating = false
     }
@@ -98,19 +61,10 @@ const onSubmit = async () => {
 
 const removeUserImage = async () => {
     try {
-        await updateUserData({ image: null })
+        await updateProfile(session.value!.user.username!, { image: null })
         state.image = null
-        toast.add({
-            title: 'プロフィール画像が削除されました',
-            color: 'success',
-        })
     } catch (error) {
         console.error('Error removing user image:', error)
-        toast.add({
-            title: '画像の削除に失敗しました',
-            description: 'プロフィール画像の削除中にエラーが発生しました。',
-            color: 'error',
-        })
     }
 }
 
@@ -131,28 +85,13 @@ const updateImage = async (file: File) => {
     ui.imageUploading = true
 
     try {
-        const formData = new FormData()
-        formData.append('blob', file)
-        formData.append('path', 'avatar')
+        const imageUrl = await uploadImage(file, 'avatar')
+        if (!imageUrl) return
 
-        const response = await $fetch('/api/images', {
-            method: 'POST',
-            body: formData,
-        })
-
-        await updateUserData({ image: response.url })
-        state.image = response.url
-
-        toast.add({
-            title: 'プロフィール画像が更新されました。',
-            color: 'success',
-        })
+        await updateProfile(session.value!.user.username!, { image: imageUrl })
+        state.image = imageUrl
     } catch (error) {
         console.error('Failed to upload image:', error)
-        toast.add({
-            title: '画像のアップロードに失敗しました',
-            color: 'error',
-        })
     } finally {
         ui.imageUploading = false
     }

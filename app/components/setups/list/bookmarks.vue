@@ -3,7 +3,7 @@ const setupsPerPage: number = 50
 const page = ref(1)
 const loading = ref(true)
 
-const { data, status, refresh } = useBookmarks({
+const { bookmarks, status, refresh } = useBookmarks({
     query: computed(() => ({
         page: page.value,
         perPage: setupsPerPage,
@@ -15,17 +15,17 @@ const setups = ref<SerializedSetup[]>([])
 
 const initialize = async () => {
     await refresh()
-    setups.value = data.value?.data.map((bookmark) => bookmark.setup) || []
+    setups.value = bookmarks.value?.data.map((bookmark) => bookmark.setup) || []
     loading.value = false
 }
 
 const loadMoreSetups = async () => {
-    if (data.value?.pagination.hasNext) {
+    if (bookmarks.value?.pagination.hasNext) {
         page.value += 1
         await refresh()
         setups.value = [
             ...setups.value,
-            ...(data.value?.data.map((bookmark) => bookmark.setup) || []),
+            ...(bookmarks.value?.data.map((bookmark) => bookmark.setup) || []),
         ]
     }
 }
@@ -37,7 +37,7 @@ await initialize()
     <div class="flex w-full flex-col gap-3 self-center">
         <SetupsList v-model:setups="setups" v-model:loading="loading" />
         <UButton
-            v-if="data?.pagination.hasNext"
+            v-if="bookmarks?.pagination.hasNext"
             :loading="status === 'pending'"
             label="もっと見る"
             variant="soft"

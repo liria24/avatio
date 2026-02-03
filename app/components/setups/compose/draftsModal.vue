@@ -8,36 +8,29 @@ const props = defineProps<Props>()
 
 const emit = defineEmits(['load'])
 
+const { drafts, draftsStatus, refreshDrafts, deleteDrafts: deleteDraftsApi } = useSetupCompose()
+
 const deleteMode = ref(false)
 const selectedDrafts = ref<string[]>([])
 const deleting = ref(false)
-
-const {
-    data: drafts,
-    status,
-    refresh,
-} = await useFetch('/api/setups/drafts', { default: () => [] })
 
 const deleteDrafts = async () => {
     if (selectedDrafts.value.length === 0) return
 
     deleting.value = true
 
-    await $fetch(`/api/setups/drafts`, {
-        method: 'DELETE',
-        query: { id: selectedDrafts.value },
-    })
-
-    refresh().finally(() => {
+    try {
+        await deleteDraftsApi(selectedDrafts.value)
+    } finally {
         selectedDrafts.value = []
         deleting.value = false
-    })
+    }
 }
 
 watch(open, (value) => {
     if (value) {
         deleteMode.value = false
-        refresh()
+        refreshDrafts()
     }
 })
 
@@ -54,7 +47,7 @@ watch(deleteMode, (value) => {
             <div class="flex w-full flex-col gap-2">
                 <div class="flex w-full items-center gap-2">
                     <UBadge
-                        v-if="status === 'pending'"
+                        v-if="draftsStatus === 'pending'"
                         icon="svg-spinners:ring-resize"
                         label="取得中..."
                         variant="soft"
@@ -79,7 +72,7 @@ watch(deleteMode, (value) => {
                     v-if="deleteMode"
                     v-model="selectedDrafts"
                     :items="
-                        drafts.map((draft) => ({
+                        drafts.map((draft: any) => ({
                             value: draft.id,
                             label: draft.content?.name,
                             description: draft.content?.description || undefined,

@@ -3,7 +3,8 @@ const images = defineModel<string[]>({
     default: () => [],
 })
 
-const toast = useToast()
+const { addImage, removeImage } = useSetupCompose()
+const { uploadImage } = useUserSettings()
 
 const dropZoneRef = ref<HTMLDivElement>()
 const imageUploading = ref(false)
@@ -11,31 +12,14 @@ const imageUploading = ref(false)
 const processImages = async (files: FileList | File[] | null) => {
     if (!files?.length) return
 
-    try {
-        const file = files[0]
-        if (!file) return
+    const file = files[0]
+    if (!file) return
 
-        const formData = new FormData()
-        formData.append('blob', new Blob([file]))
-        formData.append('path', 'setup')
-
-        imageUploading.value = true
-        const response = await $fetch('/api/images', {
-            method: 'POST',
-            body: formData,
-        })
-
-        if (response?.url) images.value.push(response.url)
-    } catch (error) {
-        console.error('Failed to upload image:', error)
-        toast.add({
-            title: '画像のアップロードに失敗しました',
-            color: 'error',
-        })
-    } finally {
-        imageUploading.value = false
-        reset()
-    }
+    imageUploading.value = true
+    const imageUrl = await uploadImage(file, 'setup')
+    if (imageUrl) addImage(imageUrl)
+    imageUploading.value = false
+    reset()
 }
 
 const { isOverDropZone } = useDropZone(dropZoneRef, {
@@ -51,10 +35,6 @@ const { open, reset, onChange } = useFileDialog({
     directory: false,
 })
 onChange(processImages)
-
-const removeImage = (index: number) => {
-    if (index >= 0 && index < images.value.length) images.value.splice(index, 1)
-}
 </script>
 
 <template>

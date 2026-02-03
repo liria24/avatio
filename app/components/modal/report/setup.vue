@@ -1,68 +1,14 @@
 <script lang="ts" setup>
-import { z } from 'zod'
-
 const props = defineProps<{ setupId: number }>()
 
 const emit = defineEmits(['close'])
 
-const toast = useToast()
-
-const schema = z
-    .object({
-        reportReason: z.string().array().min(1, '報告の理由を選択してください'),
-        comment: z.string().optional(),
-    })
-    .refine(
-        (data) => {
-            if (data.reportReason.includes('other'))
-                return data.comment && data.comment.trim().length > 0
-            return true
-        },
-        {
-            message: 'その他を選択した場合は詳細を入力してください',
-            path: ['comment'],
-        }
-    )
-type Schema = z.infer<typeof schema>
-const state = reactive<Schema>({
-    reportReason: [],
-    comment: '',
-})
+const { schema, state, submit } = useSetupReport(props.setupId)
 
 const Submit = async () => {
-    try {
-        await schema.parseAsync(state)
-
-        await $fetch('/api/reports/setup', {
-            method: 'POST',
-            body: {
-                setupId: props.setupId,
-                spam: state.reportReason.includes('spam'),
-                hate: state.reportReason.includes('hate'),
-                infringe: state.reportReason.includes('infringe'),
-                badImage: state.reportReason.includes('badImage'),
-                other: state.reportReason.includes('other'),
-                comment: state.comment,
-            },
-        })
-        toast.add({
-            title: '報告が送信されました',
-            description: 'ご協力ありがとうございます。',
-            color: 'success',
-        })
-
-        state.reportReason = []
-        state.comment = ''
+    const success = await submit()
+    if (success) {
         emit('close')
-    } catch (error) {
-        toast.add({
-            title: '報告の送信に失敗しました',
-            description:
-                error instanceof z.ZodError
-                    ? error.issues.map((e) => e.message).join(', ')
-                    : '不明なエラーが発生しました',
-            color: 'error',
-        })
     }
 }
 </script>

@@ -3,26 +3,7 @@ const tags = defineModel<string[]>({
     default: () => [],
 })
 
-const toast = useToast()
-
-const addTag = (tag: string) => {
-    if (!tag.trim()) return
-
-    if (tags.value.includes(tag)) {
-        toast.add({
-            title: 'タグを重複して追加することはできません',
-            color: 'warning',
-        })
-        return
-    }
-
-    tags.value.push(tag)
-}
-
-const removeTag = (tag: string) => {
-    const index = tags.value.indexOf(tag)
-    if (index !== -1) tags.value.splice(index, 1)
-}
+const { addTag, removeTag } = useSetupCompose()
 </script>
 
 <template>

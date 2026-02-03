@@ -2,7 +2,7 @@
 import { LazyModalAdminChangeItemNiceName } from '#components'
 
 const { itemCategory } = useAppConfig()
-const toast = useToast()
+const { resolveReport } = useAdminActions()
 const overlay = useOverlay()
 
 const modalChangeItemNiceName = overlay.create(LazyModalAdminChangeItemNiceName)
@@ -23,25 +23,8 @@ const { data, refresh } = await useFetch('/api/reports/item', {
 })
 
 const resolve = async (id: number, resolve?: boolean) => {
-    try {
-        const isResolved = resolve ?? true
-        await $fetch(`/api/reports/item/${id}`, {
-            method: 'PATCH',
-            body: { isResolved },
-        })
-        toast.add({
-            title: isResolved ? 'Marked as Resolved' : 'Marked as Unresolved',
-            color: 'success',
-        })
-    } catch (error) {
-        console.error('Error:', error)
-        toast.add({
-            title: 'Error',
-            color: 'error',
-        })
-    } finally {
-        refresh()
-    }
+    const success = await resolveReport('item', id, resolve ?? true)
+    if (success) refresh()
 }
 </script>
 

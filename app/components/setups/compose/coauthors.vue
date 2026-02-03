@@ -2,6 +2,7 @@
 import { VueDraggable } from 'vue-draggable-plus'
 
 interface Model {
+    userId: string
     user: Pick<SerializedUser, 'username' | 'name' | 'image'>
     note?: string | null
 }
@@ -9,31 +10,7 @@ const coauthors = defineModel<Model[]>({
     default: () => [],
 })
 
-const toast = useToast()
-
-const addCoauthor = (user: SerializedUser) => {
-    if (!user?.username) return
-
-    if (coauthors.value.some((coauthor) => coauthor.user.username === user.username)) {
-        toast.add({
-            title: '共同作者を重複して追加することはできません',
-            color: 'warning',
-        })
-        return
-    }
-
-    coauthors.value.push({
-        user,
-        note: '',
-    })
-}
-
-const removeCoauthor = (username: string) => {
-    const index = coauthors.value.findIndex((coauthor) => coauthor.user.username === username)
-    if (index !== -1) {
-        coauthors.value.splice(index, 1)
-    }
-}
+const { addCoauthor, removeCoauthor } = useSetupCompose()
 </script>
 
 <template>

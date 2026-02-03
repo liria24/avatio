@@ -6,26 +6,13 @@ const props = defineProps<Props>()
 
 const emit = defineEmits(['close'])
 
-const toast = useToast()
+const { deleteSetup: deleteSetupAction } = useAdminActions()
 
 const deleteSetup = async () => {
-    try {
-        await $fetch(`/api/setups/${props.setupId}`, {
-            method: 'DELETE',
-        })
+    const success = await deleteSetupAction(props.setupId)
+    if (success) {
         emit('close')
-        toast.add({
-            title: 'セットアップが削除されました',
-            description: 'セットアップが正常に削除されました。',
-            color: 'success',
-        })
         navigateTo('/')
-    } catch (error) {
-        toast.add({
-            title: 'セットアップの削除に失敗しました',
-            description: error instanceof Error ? error.message : '不明なエラーが発生しました',
-            color: 'error',
-        })
     }
 }
 </script>

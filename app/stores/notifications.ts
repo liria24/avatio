@@ -9,10 +9,46 @@ export const useNotificationsStore = defineStore('notificationsStore', {
     actions: {
         async fetch() {
             this.fetching = true
-            const { data } = await useNotifications()
-            this.notifications = data.value?.data || []
-            this.unread = data.value?.unread || 0
-            this.fetching = false
+            try {
+                const response = await $fetch<{
+                    data: Notification[]
+                    unread: number
+                }>('/api/notifications', {
+                    method: 'GET',
+                })
+                this.notifications = response.data || []
+                this.unread = response.unread || 0
+            } catch (error) {
+                console.error('Error fetching notifications:', error)
+                this.notifications = []
+                this.unread = 0
+            } finally {
+                this.fetching = false
+            }
+        },
+        async markAsRead(id: string) {
+            try {
+                await $fetch('/api/notifications/read', {
+                    method: 'POST',
+                    body: { id },
+                })
+                await this.fetch()
+            } catch (error) {
+                console.error('Error marking notification as read:', error)
+                throw error
+            }
+        },
+        async markAsUnread(id: string) {
+            try {
+                await $fetch('/api/notifications/unread', {
+                    method: 'POST',
+                    body: { id },
+                })
+                await this.fetch()
+            } catch (error) {
+                console.error('Error marking notification as unread:', error)
+                throw error
+            }
         },
     },
 })

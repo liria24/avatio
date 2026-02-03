@@ -1,54 +1,18 @@
 <script lang="ts" setup>
-const toast = useToast()
+const { closeFeedback: closeFeedbackAction, openFeedback: openFeedbackAction } = useAdminActions()
 
 const { data, refresh } = await useFetch('/api/feedbacks', {
     dedupe: 'defer',
 })
 
 const closeFeedback = async (feedbackId: number) => {
-    try {
-        await $fetch(`/api/feedbacks/${feedbackId}`, {
-            method: 'PATCH',
-            body: {
-                isClosed: true,
-            },
-        })
-        toast.add({
-            title: 'フィードバックをクローズしました',
-            color: 'success',
-        })
-    } catch (error) {
-        console.error('Failed to close feedback:', error)
-        toast.add({
-            title: 'フィードバックのクローズに失敗しました',
-            color: 'error',
-        })
-    } finally {
-        refresh()
-    }
+    const success = await closeFeedbackAction(feedbackId)
+    if (success) refresh()
 }
 
 const openFeedback = async (feedbackId: number) => {
-    try {
-        await $fetch(`/api/feedbacks/${feedbackId}`, {
-            method: 'PATCH',
-            body: {
-                isClosed: false,
-            },
-        })
-        toast.add({
-            title: 'フィードバックをオープンしました',
-            color: 'success',
-        })
-    } catch (error) {
-        console.error('Failed to open feedback:', error)
-        toast.add({
-            title: 'フィードバックのオープンに失敗しました',
-            color: 'error',
-        })
-    } finally {
-        refresh()
-    }
+    const success = await openFeedbackAction(feedbackId)
+    if (success) refresh()
 }
 </script>
 
