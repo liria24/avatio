@@ -82,7 +82,6 @@
         "typescript": "5.9.3"
     },
     "overrides": {
-        "vite": "8.0.0-beta.11",
         "vue": "latest"
     },
     "engines": {
