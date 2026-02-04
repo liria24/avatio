@@ -21,7 +21,7 @@ const onSelectItemSearch = async (item: Partial<Item> & Pick<Item, 'id'>) => {
 <template>
     <UCollapsible
         v-model:open="open"
-        class="data-[state=open]:bg-elevated flex flex-col gap-2 rounded-lg"
+        class="data-[state=open]:bg-elevated flex flex-col rounded-lg"
     >
         <UButton
             label="詳細オプション"
@@ -30,6 +30,7 @@ const onSelectItemSearch = async (item: Partial<Item> & Pick<Item, 'id'>) => {
             size="sm"
             trailing-icon="i-lucide-chevron-down"
             :ui="{
+                label: 'group-data-[state=open]:opacity-0 transition-opacity duration-200',
                 trailingIcon:
                     'group-data-[state=open]:rotate-180 transition-transform duration-200',
             }"
@@ -38,7 +39,7 @@ const onSelectItemSearch = async (item: Partial<Item> & Pick<Item, 'id'>) => {
         />
 
         <template #content>
-            <div class="mx-1 flex w-full flex-col gap-3 rounded-lg p-2">
+            <div class="flex w-full flex-col gap-3 rounded-lg p-4 pt-0">
                 <!-- アイテム選択セクション -->
                 <div class="flex w-full flex-col gap-2">
                     <div class="flex items-center gap-1">
@@ -50,7 +51,7 @@ const onSelectItemSearch = async (item: Partial<Item> & Pick<Item, 'id'>) => {
                         <SetupsSearchOptionsItem
                             v-for="item in items"
                             :key="item"
-                            :item-id="item"
+                            :item-id="item.toString()"
                             class="bg-accented flex max-w-56 items-center gap-2 rounded-lg p-2"
                             @remove="items = items.filter((i) => i !== item)"
                         />

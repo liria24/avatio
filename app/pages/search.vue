@@ -9,50 +9,28 @@ const normalizeArray = (value: unknown): string[] => {
     return value ? [String(value)] : []
 }
 
-interface Query {
-    q: string
-    itemId: string[]
-    tag: string[]
-    page: number
-    perPage: number
-}
+// URLからの検索パラメータ（computed - 単一の情報源）
+const searchQuery = computed(() => (route.query.q as string) || '')
+const searchItemIds = computed(() => normalizeArray(route.query.itemId))
+const searchTags = computed(() => normalizeArray(route.query.tag))
 
-// 同期処理中かどうかのフラグ
-const isSyncing = ref(false)
-
-// 初期クエリ値の設定
-const query = reactive<Query>({
-    q: (route.query.q as string) || '',
-    itemId: normalizeArray(route.query.itemId),
-    tag: normalizeArray(route.query.tag),
+// 検索API用のqueryオブジェクト
+const query = computed(() => ({
+    q: searchQuery.value,
+    itemId: searchItemIds.value,
+    tag: searchTags.value,
     page: 1,
     perPage: 50,
-})
+}))
 
-// 配列が等しいかチェックするヘルパー関数
-const arrayEquals = (a: string[], b: string[]): boolean =>
-    a.length === b.length && a.every((val, index) => val === b[index])
-
-// URLクエリパラメータを更新する関数
-const updateRouteQuery = () => {
-    // 空でないパラメータのみをURLに含める
-    const queryParams: Record<string, string | string[] | number> = {}
-
-    if (query.q) queryParams.q = query.q
-    if (query.itemId.length) queryParams.itemId = query.itemId
-    if (query.tag.length) queryParams.tag = query.tag
-
-    // 現在のルートを維持しながらクエリパラメータのみを更新
-    router.replace({
-        path: route.path,
-        query: queryParams,
-    })
-}
-
-const shouldShowDetails = computed(() => !!(query.itemId.length || query.tag.length))
-
+const shouldShowDetails = computed(() => !!(searchItemIds.value.length || searchTags.value.length))
 const searchStatus = ref<'idle' | 'pending' | 'success'>('idle')
 const collapsibleSearchOptions = ref(shouldShowDetails.value)
+
+// ローカルの編集用state（URL更新前の一時的な値）
+const localQ = ref(searchQuery.value)
+const localItemIds = ref([...searchItemIds.value])
+const localTags = ref([...searchTags.value])
 
 const { data, status, refresh } = await useSetups({
     query,
@@ -63,7 +41,8 @@ const { data, status, refresh } = await useSetups({
 const setups = ref<SerializedSetup[]>([])
 
 const search = async () => {
-    const hasSearchParams = query.q.length || query.itemId.length || query.tag.length
+    const hasSearchParams =
+        query.value.q.length || query.value.itemId.length || query.value.tag.length
 
     if (!hasSearchParams) {
         searchStatus.value = 'idle'
@@ -79,64 +58,52 @@ const search = async () => {
 
 const loadMoreSetups = async () => {
     if (data.value?.pagination.hasNext) {
-        query.page += 1
+        query.value.page += 1
         await search()
     }
 }
 
-// route.queryの変更を監視して内部状態を更新
+// URLクエリパラメータを更新する関数（debounce付き）
+const updateRouteQuery = useDebounceFn(() => {
+    const queryParams: Record<string, string | string[] | number> = {}
+
+    if (localQ.value) queryParams.q = localQ.value
+    if (localItemIds.value.length) queryParams.itemId = localItemIds.value
+    if (localTags.value.length) queryParams.tag = localTags.value
+
+    router.push({
+        path: route.path,
+        query: queryParams,
+    })
+}, 300)
+
+// ローカルstateの変更を監視してURL更新をトリガー
 watch(
-    () => route.query,
-    (newRouteQuery) => {
-        if (isSyncing.value) return
-
-        isSyncing.value = true
-
-        // queryオブジェクトを更新
-        query.q = (newRouteQuery.q as string) || ''
-        query.itemId = normalizeArray(newRouteQuery.itemId)
-        query.tag = normalizeArray(newRouteQuery.tag)
-
-        if (newRouteQuery.itemId?.length) collapsibleSearchOptions.value = true
-        if (newRouteQuery.tag?.length) collapsibleSearchOptions.value = true
-
-        // 検索実行
-        search().finally(() => {
-            isSyncing.value = false
-        })
+    [localItemIds, localTags],
+    () => {
+        if (localItemIds.value.length) collapsibleSearchOptions.value = true
+        if (localTags.value.length) collapsibleSearchOptions.value = true
+        updateRouteQuery()
     },
     { deep: true }
 )
 
-// queryの変更を監視して検索を実行し、URLを更新
+// route.queryの変更を監視して検索を実行（戻る・進む対応）
 watch(
-    query,
-    async (newQuery, oldQuery) => {
-        if (isSyncing.value) return
+    () => route.query,
+    () => {
+        // ローカルstateを同期
+        localQ.value = searchQuery.value
+        localItemIds.value = [...searchItemIds.value]
+        localTags.value = [...searchTags.value]
 
-        // 初回のコンポーネントマウント時は処理をスキップ
-        if (oldQuery === undefined) return
-
-        if (newQuery.itemId.length) collapsibleSearchOptions.value = true
-        if (newQuery.tag.length) collapsibleSearchOptions.value = true
-
-        // 検索条件に変更があった場合はページをリセット
-        if (
-            newQuery.q !== oldQuery.q ||
-            !arrayEquals(newQuery.itemId, oldQuery.itemId) ||
-            !arrayEquals(newQuery.tag, oldQuery.tag)
-        )
-            query.page = 1
+        if (searchItemIds.value.length) collapsibleSearchOptions.value = true
+        if (searchTags.value.length) collapsibleSearchOptions.value = true
 
         // 検索実行
-        isSyncing.value = true
-        await search()
-
-        // URLクエリパラメータを更新
-        updateRouteQuery()
-        isSyncing.value = false
+        search()
     },
-    { deep: true, immediate: false }
+    { deep: true }
 )
 
 // 初期検索の実行
@@ -157,18 +124,18 @@ defineSeo({
 
         <div class="flex w-full flex-col gap-3">
             <UInput
-                v-model="query.q"
+                v-model="localQ"
                 icon="mingcute:search-line"
                 placeholder="検索キーワード"
                 aria-label="検索キーワード"
                 size="xl"
-                @keyup.enter="search"
+                @input="updateRouteQuery"
             />
 
             <SetupsSearchOptions
                 v-model:open="collapsibleSearchOptions"
-                v-model:items="query.itemId"
-                v-model:tags="query.tag"
+                v-model:items="localItemIds"
+                v-model:tags="localTags"
             />
         </div>
 
@@ -177,7 +144,12 @@ defineSeo({
         <!-- 人気アバター表示 -->
         <SetupsSearchPopularAvatars
             v-if="searchStatus === 'idle'"
-            @select="query.itemId = [...query.itemId, $event]"
+            @select="
+                (id) => {
+                    localItemIds.push(id)
+                    updateRouteQuery()
+                }
+            "
         />
 
         <!-- 検索結果表示 -->
