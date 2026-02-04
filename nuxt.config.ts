@@ -57,16 +57,16 @@ export default defineNuxtConfig({
             appMiddleware: 'admin',
         },
         '/faq': {
-            isr: 60 * 60 * 24 * 30,
+            prerender: true,
         },
         '/terms': {
-            isr: 60 * 60 * 24 * 30,
+            prerender: true,
         },
         '/privacy-policy': {
-            isr: 60 * 60 * 24 * 30,
+            prerender: true,
         },
         '/on-maintenance': {
-            isr: 60 * 60 * 24 * 30,
+            prerender: true,
         },
         '/setup/edit': {
             redirect: '/setup/compose',
@@ -78,9 +78,9 @@ export default defineNuxtConfig({
         compressPublicAssets: true,
         storage: {
             cache: {
-                driver: 'upstash',
-                url: import.meta.env.NUXT_UPSTASH_KV_REST_API_URL,
-                token: import.meta.env.NUXT_UPSTASH_KV_REST_API_TOKEN,
+                driver: 'vercel-runtime-cache',
+                base: 'avatio',
+                tags: ['cache'],
             },
         },
         devStorage: {
@@ -107,15 +107,6 @@ export default defineNuxtConfig({
                 apiKey: import.meta.env.AI_GATEWAY_API_KEY,
             },
         },
-        aws: {
-            endpointUrl: {
-                s3: import.meta.env.AWS_ENDPOINT_URL_S3,
-                iam: import.meta.env.AWS_ENDPOINT_URL_IAM,
-            },
-            accessKeyId: import.meta.env.AWS_ACCESS_KEY_ID,
-            secretAccessKey: import.meta.env.AWS_SECRET_ACCESS_KEY,
-            region: import.meta.env.AWS_REGION,
-        },
         betterAuth: {
             url: import.meta.env.NUXT_BETTER_AUTH_URL,
             secret: import.meta.env.NUXT_BETTER_AUTH_SECRET,
@@ -124,11 +115,16 @@ export default defineNuxtConfig({
             databaseUrl: import.meta.env.NUXT_NEON_DATABASE_URL,
         },
         tigris: {
-            domain: import.meta.env.NUXT_TIGRIS_DOMAIN,
+            storage: {
+                domain: import.meta.env.TIGRIS_STORAGE_DOMAIN,
+                accessKeyId: import.meta.env.TIGRIS_STORAGE_ACCESS_KEY_ID,
+                secretAccessKey: import.meta.env.TIGRIS_STORAGE_SECRET_ACCESS_KEY,
+                endpoint: import.meta.env.TIGRIS_STORAGE_ENDPOINT,
+            },
         },
         upstash: {
-            redisRestUrl: import.meta.env.UPSTASH_REDIS_REST_URL,
-            redisRestToken: import.meta.env.UPSTASH_REDIS_REST_TOKEN,
+            redisRestUrl: import.meta.env.NUXT_UPSTASH_REDIS_REST_URL,
+            redisRestToken: import.meta.env.NUXT_UPSTASH_REDIS_REST_TOKEN,
         },
         vercel: {
             token: import.meta.env.NUXT_VERCEL_TOKEN,
@@ -181,9 +177,12 @@ export default defineNuxtConfig({
     },
 
     fonts: {
-        families: [{ name: 'Geist', provider: 'google' }],
+        families: [
+            { name: 'Geist', provider: 'google' },
+            { name: 'Geist Mono', provider: 'google' },
+        ],
         defaults: {
-            weights: [100, 200, 300, 300, 400, 500, 600, 700, 800, 900],
+            weights: [200, 300, 300, 400, 500, 600, 700],
         },
     },
 
@@ -264,7 +263,7 @@ export default defineNuxtConfig({
         },
         densities: [1],
         domains: [
-            import.meta.env.TIGRIS_DOMAIN!,
+            import.meta.env.TIGRIS_STORAGE_DOMAIN!,
             'booth.pximg.net', // booth
             's2.booth.pm', // booth
             'github.com', // GitHub

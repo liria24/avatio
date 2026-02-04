@@ -173,7 +173,7 @@ await initialize({
                     class="grid grid-flow-row gap-6 sm:grid-cols-2 lg:grid-flow-row lg:grid-cols-1"
                 >
                     <div class="flex flex-col gap-4">
-                        <SetupsComposeImages v-model="state.images" />
+                        <SetupsComposeImages />
 
                         <UFormField name="name" label="タイトル" required>
                             <UInput
@@ -197,9 +197,9 @@ await initialize({
                     </div>
 
                     <div class="flex flex-col gap-4">
-                        <SetupsComposeTags v-model="state.tags" />
+                        <SetupsComposeTags />
 
-                        <SetupsComposeCoauthors v-model="state.coauthors" />
+                        <SetupsComposeCoauthors />
                     </div>
                 </div>
             </div>

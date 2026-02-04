@@ -6,6 +6,7 @@
         'Geist', 'Noto Sans JP', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic UI',
         'Meiryo', system-ui, -apple-system, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial,
         sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji';
+    --font-mono: 'Geist Mono', monospace;
 }
 
 @layer utilities {
@@ -77,6 +78,10 @@
 
 :root {
     --ui-container: 70rem;
+}
+
+:where(h1, h2, h3, h4, h5, h6, section) {
+    scroll-margin-top: calc(var(--ui-header-height) + 0.5rem);
 }
 
 html {

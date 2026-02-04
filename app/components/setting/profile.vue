@@ -1,71 +1,26 @@
 <script lang="ts" setup>
-import { z } from 'zod'
-
 const { getSession } = useAuth()
 const session = await getSession()
-const { updateProfile, validateAndAddLink, uploadImage } = useUserSettings()
+const {
+    profileState: state,
+    profileUI: ui,
+    initializeProfile,
+    addLink,
+    removeLink,
+    submitProfile,
+    removeUserImage: removeUserImageAction,
+    processProfileImage,
+} = useUserSettings()
 
-const { data } = await useUser(session.value!.user.username!)
-
-// リアクティブな状態を統合
-const ui = reactive({
-    newId: data.value?.username || '',
-    newLink: '',
-    imageUploading: false,
-    profileUpdating: false,
-})
-
-const _schema = userUpdateSchema
-    .required({
-        username: true,
-        name: true,
-        image: true,
-        bio: true,
-    })
-    .extend({
-        links: z.string().array(),
-    })
-type profileSchema = z.infer<typeof _schema>
-const state = reactive<profileSchema>({
-    username: data.value?.username || '',
-    name: data.value?.name || '',
-    image: data.value?.image || '',
-    bio: data.value?.bio || '',
-    links: data.value?.links || [],
-})
-
-const addLink = () => {
-    const result = validateAndAddLink(state.links, ui.newLink)
-    if (!result.success) return
-
-    state.links.push(result.link!)
-    ui.newLink = ''
-}
-
-const removeLink = (index: number) => {
-    if (index < 0 || index >= state.links.length) return
-    state.links.splice(index, 1)
-}
+// Initialize profile data
+await initializeProfile(session.value!.user.username!)
 
 const onSubmit = async () => {
-    ui.profileUpdating = true
-
-    try {
-        await updateProfile(session.value!.user.username!, state)
-    } catch (error) {
-        console.error('Error saving profile:', error)
-    } finally {
-        ui.profileUpdating = false
-    }
+    await submitProfile(session.value!.user.username!)
 }
 
 const removeUserImage = async () => {
-    try {
-        await updateProfile(session.value!.user.username!, { image: null })
-        state.image = null
-    } catch (error) {
-        console.error('Error removing user image:', error)
-    }
+    await removeUserImageAction(session.value!.user.username!)
 }
 
 const { open, reset, onChange } = useFileDialog({
@@ -77,25 +32,9 @@ const { open, reset, onChange } = useFileDialog({
 onChange(async (files) => {
     if (!files?.length || !files[0]) return
 
-    await updateImage(files[0])
+    await processProfileImage(files[0], session.value!.user.username!)
     reset()
 })
-
-const updateImage = async (file: File) => {
-    ui.imageUploading = true
-
-    try {
-        const imageUrl = await uploadImage(file, 'avatar')
-        if (!imageUrl) return
-
-        await updateProfile(session.value!.user.username!, { image: imageUrl })
-        state.image = imageUrl
-    } catch (error) {
-        console.error('Failed to upload image:', error)
-    } finally {
-        ui.imageUploading = false
-    }
-}
 </script>
 
 <template>
@@ -113,16 +52,20 @@ const updateImage = async (file: File) => {
                         v-if="state.image"
                         v-slot="{ isLoaded, src, imgAttrs }"
                         :src="state.image"
-                        :alt="state.name"
                         :width="256"
                         :height="256"
-                        format="webp"
-                        loading="eager"
-                        fetchpriority="high"
+                        format="avif"
                         custom
-                        class="aspect-square size-24 shrink-0 rounded-full object-cover md:size-48"
                     >
-                        <img v-if="isLoaded" v-bind="imgAttrs" :src="src" />
+                        <img
+                            v-if="isLoaded"
+                            v-bind="imgAttrs"
+                            :src
+                            :alt="state.name"
+                            loading="eager"
+                            fetchpriority="high"
+                            class="aspect-square size-24 shrink-0 rounded-full object-cover md:size-48"
+                        />
                         <USkeleton
                             v-else
                             class="aspect-square size-24 shrink-0 rounded-full md:size-48"

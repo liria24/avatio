@@ -6,7 +6,9 @@ const overlay = useOverlay()
 
 const modalFeedback = overlay.create(LazyModalFeedback)
 
-const { data: repo } = useFetch<GithubRepo>('https://ungh.cc/repos/liria24/avatio')
+const { data: repo } = useFetch<GithubRepo>('https://ungh.cc/repos/liria24/avatio', {
+    dedupe: 'defer',
+})
 </script>
 
 <template>
@@ -42,20 +44,24 @@ const { data: repo } = useFetch<GithubRepo>('https://ungh.cc/repos/liria24/avati
                                 <NuxtImg
                                     v-slot="{ src, imgAttrs, isLoaded }"
                                     :src="app.liria.avatar"
-                                    alt="Liria"
-                                    loading="lazy"
-                                    fetchpriority="low"
                                     :width="48"
                                     :height="48"
                                     format="webp"
                                     custom
-                                    class="aspect-square size-12 rounded-lg object-cover"
                                 >
-                                    <img v-if="isLoaded" v-bind="imgAttrs" :src="src" />
+                                    <img
+                                        v-if="isLoaded"
+                                        v-bind="imgAttrs"
+                                        :src
+                                        alt=""
+                                        loading="lazy"
+                                        fetchpriority="low"
+                                        class="aspect-square size-12 rounded-lg object-cover"
+                                    />
                                     <USkeleton v-else class="aspect-square size-12 rounded-lg" />
                                 </NuxtImg>
 
-                                <div class="flex flex-col gap-2 font-[Geist]">
+                                <div class="flex flex-col gap-2 font-mono">
                                     <span class="text-sm leading-none font-semibold text-nowrap">
                                         {{ repo.repo.repo }}
                                     </span>
@@ -123,7 +129,7 @@ const { data: repo } = useFetch<GithubRepo>('https://ungh.cc/repos/liria24/avati
                     />
                 </div>
 
-                <div class="flex items-center gap-1.5 font-[Geist]">
+                <div class="flex items-center gap-1.5">
                     <p class="text-dimmed text-sm leading-none text-nowrap">© 2025</p>
                     <UButton
                         :to="app.liria.website"

@@ -54,7 +54,7 @@ watch(deleteMode, (value) => {
                     />
 
                     <span
-                        class="text-muted grow py-1 pr-1 text-right font-[Geist] text-sm leading-none text-nowrap"
+                        class="text-muted grow py-1 pr-1 text-right font-mono text-sm leading-none text-nowrap"
                     >
                         {{ drafts.length }} / 32
                     </span>
@@ -110,7 +110,7 @@ watch(deleteMode, (value) => {
                                 />
                                 <div class="text-muted flex items-center gap-1">
                                     <Icon name="mingcute:package-2-fill" size="16" />
-                                    <span class="font-[Geist] text-xs">
+                                    <span class="font-mono text-xs">
                                         {{ item.items?.length || 0 }}
                                     </span>
                                 </div>
@@ -167,7 +167,7 @@ watch(deleteMode, (value) => {
                                 />
                                 <div class="text-muted flex items-center gap-1">
                                     <Icon name="mingcute:package-2-fill" size="16" />
-                                    <span class="font-[Geist] text-xs">
+                                    <span class="font-mono text-xs">
                                         {{ draft.content.items?.length || 0 }}
                                     </span>
                                 </div>

@@ -1,3 +1,4 @@
+import { put } from '@tigrisdata/storage'
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { admin, customSession, multiSession, username } from 'better-auth/plugins'
@@ -133,13 +134,14 @@ export const auth = betterAuth({
 
                     if (image)
                         try {
-                            const fetched = await $fetch<Blob>(image)
+                            const buffer = await $fetch<Blob>(image)
+                            const arrayBuffer = await buffer.arrayBuffer()
                             const imageId = nanoid(JPG_FILENAME_LENGTH)
-                            await s3.write(
-                                `avatar/${imageId}.jpg`,
-                                Buffer.from(await fetched.arrayBuffer())
-                            )
-                            image = `${process.env.NUXT_PUBLIC_R2_DOMAIN}/avatar/${imageId}.jpg`
+                            await put(`avatar/${imageId}.jpg`, Buffer.from(arrayBuffer), {
+                                contentType: 'image/jpeg',
+                                contentDisposition: 'inline',
+                            })
+                            image = `https://${process.env.TIGRIS_STORAGE_DOMAIN}/avatar/${imageId}.jpg`
                         } catch {
                             image = null
                         }

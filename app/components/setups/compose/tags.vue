@@ -1,16 +1,12 @@
 <script lang="ts" setup>
-const tags = defineModel<string[]>({
-    default: () => [],
-})
-
-const { addTag, removeTag } = useSetupCompose()
+const { state, addTag, removeTag } = useSetupCompose()
 </script>
 
 <template>
     <UFormField name="tags" label="タグ">
         <div class="flex flex-wrap items-center gap-2">
             <UBadge
-                v-for="tag in tags"
+                v-for="tag in state.tags"
                 :key="tag"
                 :label="tag"
                 variant="soft"
@@ -29,7 +25,7 @@ const { addTag, removeTag } = useSetupCompose()
             <UPopover :content="{ side: 'right', align: 'start' }">
                 <UButton
                     icon="mingcute:add-line"
-                    :label="tags.length ? undefined : 'タグを追加'"
+                    :label="state.tags.length ? undefined : 'タグを追加'"
                     variant="soft"
                 />
 

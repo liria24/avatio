@@ -2,85 +2,51 @@
 const { getSession } = useAuth()
 const session = await getSession()
 const {
-    verify: verifyShop,
-    unverify: unverifyShop,
-    generateVerificationCode,
-} = useShopVerification()
+    shopState,
+    verifiable,
+    shopUrl,
+    verify: verifyAction,
+    unverify: unverifyAction,
+    initializeShopVerification,
+} = useUserSettings()
 
 const { data, refresh } = await useUser(session.value!.user.username!)
 
-const itemUrl = ref('')
-const verifyCode = ref<string | null>(null)
-const verifying = ref(false)
-const unverifying = ref(false)
-const modalVerify = ref(false)
-const modalUnverify = ref(false)
-
-const { copy, copied } = useClipboard({ source: verifyCode.value || '' })
-
-const verifiable = computed(() => {
-    const result = extractItemId(itemUrl.value)
-    return result?.platform === 'booth'
-})
-
-const shopUrl = (shopId: string, platform: Platform) => {
-    if (platform === 'booth') return `https://${shopId}.booth.pm`
-    return undefined
-}
+const { copy, copied } = useClipboard({ source: shopState.value.verifyCode || '' })
 
 const verify = async () => {
-    if (!verifiable.value) return
-
-    verifying.value = true
-
-    try {
-        const success = await verifyShop(itemUrl.value)
-        if (success) {
-            refresh()
-            modalVerify.value = false
-        }
-    } finally {
-        verifying.value = false
+    const success = await verifyAction()
+    if (success) {
+        refresh()
     }
 }
 
 const unverify = async (shopId: string) => {
-    unverifying.value = true
-
-    try {
-        const success = await unverifyShop(shopId)
-        if (success) {
-            refresh()
-            modalUnverify.value = false
-        }
-    } finally {
-        unverifying.value = false
+    const success = await unverifyAction(shopId)
+    if (success) {
+        refresh()
     }
 }
 
-watch(modalVerify, async (value) => {
-    if (value) {
-        const code = await generateVerificationCode()
-        verifyCode.value = code
-    } else verifyCode.value = null
-})
+// Initialize shop verification watcher
+initializeShopVerification()
 </script>
 
 <template>
-    <UModal v-model:open="modalVerify" :dismissible="false" title="新規ショップ認証">
+    <UModal v-model:open="shopState.modalVerify" :dismissible="false" title="新規ショップ認証">
         <template #body>
             <div class="flex flex-col gap-6">
                 <UFormField
                     label="1. 認証するショップで販売しているアイテムを 1 つ選定し、URL を入力してください"
                     :error="
-                        itemUrl.length && !verifiable
+                        shopState.itemUrl.length && !verifiable
                             ? 'この URL は認証可能なアイテムではありません'
                             : undefined
                     "
                 >
                     <div class="flex flex-col gap-2 pt-2">
                         <UInput
-                            v-model="itemUrl"
+                            v-model="shopState.itemUrl"
                             placeholder="https://booth.pm/ja/items/1234567"
                             class="w-full"
                         />
@@ -100,12 +66,12 @@ watch(modalVerify, async (value) => {
                     <div class="flex flex-col gap-2 pt-2">
                         <UButton
                             :trailing-icon="copied ? 'mingcute:check-line' : 'mingcute:copy-2-fill'"
-                            :label="verifyCode || 'コードを生成中...'"
+                            :label="shopState.verifyCode || 'コードを生成中...'"
                             variant="outline"
                             color="neutral"
                             block
                             :ui="{ base: 'gap-2', trailingIcon: 'size-4' }"
-                            @click="copy(verifyCode || '')"
+                            @click="copy(shopState.verifyCode || '')"
                         />
                         <UAlert
                             icon="mingcute:information-fill"
@@ -124,7 +90,7 @@ watch(modalVerify, async (value) => {
 
                 <UButton
                     :disabled="!verifiable"
-                    :loading="verifying"
+                    :loading="shopState.verifying"
                     label="ショップを認証"
                     color="neutral"
                     size="lg"
@@ -145,7 +111,7 @@ watch(modalVerify, async (value) => {
                     label="新しくショップを認証"
                     color="neutral"
                     variant="soft"
-                    @click="modalVerify = true"
+                    @click="shopState.modalVerify = true"
                 />
             </div>
         </template>
@@ -194,7 +160,7 @@ watch(modalVerify, async (value) => {
                     class="text-muted text-sm leading-none"
                 />
 
-                <UModal v-model:open="modalUnverify" title="認証解除">
+                <UModal v-model:open="shopState.modalUnverify" title="認証解除">
                     <UTooltip text="ショップの認証を解除" :delay-duration="100">
                         <UButton
                             icon="mingcute:close-line"
@@ -216,13 +182,13 @@ watch(modalVerify, async (value) => {
                     <template #footer>
                         <div class="flex w-full items-center justify-end gap-2">
                             <UButton
-                                :disabled="unverifying"
+                                :disabled="shopState.unverifying"
                                 label="キャンセル"
                                 variant="ghost"
-                                @click="modalUnverify = false"
+                                @click="shopState.modalUnverify = false"
                             />
                             <UButton
-                                :loading="unverifying"
+                                :loading="shopState.unverifying"
                                 label="認証解除"
                                 color="error"
                                 variant="solid"

@@ -1,23 +1,14 @@
 <script lang="ts" setup>
 import { VueDraggable } from 'vue-draggable-plus'
 
-interface Model {
-    userId: string
-    user: Pick<SerializedUser, 'username' | 'name' | 'image'>
-    note?: string | null
-}
-const coauthors = defineModel<Model[]>({
-    default: () => [],
-})
-
-const { addCoauthor, removeCoauthor } = useSetupCompose()
+const { state, addCoauthor, removeCoauthor } = useSetupCompose()
 </script>
 
 <template>
     <UFormField name="coauthors" label="共同作者">
         <div class="flex flex-col gap-2">
             <VueDraggable
-                v-model="coauthors"
+                v-model="state.coauthors"
                 :animation="150"
                 handle=".draggable"
                 drag-class="opacity-100"
@@ -25,7 +16,7 @@ const { addCoauthor, removeCoauthor } = useSetupCompose()
                 class="flex h-full w-full flex-col gap-2 empty:hidden"
             >
                 <div
-                    v-for="coauthor in coauthors"
+                    v-for="coauthor in state.coauthors"
                     :key="`coauthor-${coauthor.user.username}`"
                     class="ring-accented flex items-stretch gap-2 rounded-md p-2 ring-1"
                 >
@@ -65,7 +56,7 @@ const { addCoauthor, removeCoauthor } = useSetupCompose()
             <UPopover :content="{ side: 'right', align: 'start' }">
                 <UButton
                     icon="mingcute:add-line"
-                    :label="coauthors.length ? undefined : '共同作者を追加'"
+                    :label="state.coauthors.length ? undefined : '共同作者を追加'"
                     variant="soft"
                     block
                 />

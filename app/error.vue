@@ -23,7 +23,7 @@ const props = defineProps({
         <NuxtLoadingIndicator />
         <NuxtLayout>
             <div class="mt-24 flex w-full flex-col items-center justify-center gap-4">
-                <h1 class="font-[Geist] text-9xl leading-none font-extralight text-nowrap">
+                <h1 class="font-mono text-9xl leading-none font-extralight text-nowrap">
                     {{ props.error.status }}
                 </h1>
                 <h2 class="text-muted text-lg">

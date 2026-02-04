@@ -1,3 +1,5 @@
+import { remove } from '@tigrisdata/storage'
+
 export default cronEventHandler(async ({ event }) => {
     const config = useRuntimeConfig()
 
@@ -8,7 +10,7 @@ export default cronEventHandler(async ({ event }) => {
     const deleteResults = await Promise.allSettled(
         allImages.map(async (image) => {
             console.log('Deleting image from storage:', image.key)
-            await s3.delete(image.key)
+            await remove(image.key)
             return image.key
         })
     )

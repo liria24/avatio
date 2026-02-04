@@ -1,3 +1,4 @@
+import { put } from '@tigrisdata/storage'
 import { nanoid } from 'nanoid'
 import sharp from 'sharp'
 import { z } from 'zod'
@@ -98,8 +99,6 @@ export default authedSessionEventHandler(
     async () => {
         const { blob, path } = await validateFormData(formData)
 
-        const config = useRuntimeConfig()
-
         log.start('Processing and uploading image to Blob Storage...')
 
         const processedBuffer = Buffer.from(await blob.arrayBuffer())
@@ -113,11 +112,19 @@ export default authedSessionEventHandler(
         const normalizedPath = path.replace(/\/+/g, '/').replace(/^\/|\/$/g, '')
         const fullPath = `${normalizedPath}/${jpgFilename}`
 
-        await s3.write(fullPath, compressedImage)
+        const result = await put(fullPath, compressedImage, {
+            contentType: 'image/jpeg',
+            contentDisposition: 'inline',
+        })
+        if (result.error)
+            throw createError({
+                status: 500,
+                statusText: 'Failed to upload image to storage',
+            })
 
-        log.success('Image processed and uploaded successfully')
+        log.success('Image processed and uploaded successfully:', result.data.path)
         return {
-            url: `${config.tigris.domain}/${normalizedPath}/${jpgFilename}`,
+            url: `https://${useRuntimeConfig().tigris.storage.domain}/${result.data.path}`,
             width,
             height,
         }

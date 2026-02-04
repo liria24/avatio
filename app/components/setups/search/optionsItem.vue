@@ -10,6 +10,7 @@ const emit = defineEmits<{
 
 const { data: item } = useFetch<Item>(`/api/items/${transformItemId(props.itemId).encode()}`, {
     immediate: true,
+    dedupe: 'defer',
 })
 </script>
 
@@ -19,16 +20,20 @@ const { data: item } = useFetch<Item>(`/api/items/${transformItemId(props.itemId
             <NuxtImg
                 v-slot="{ isLoaded, src, imgAttrs }"
                 :src="item.image || undefined"
-                :alt="item.name"
                 :height="48"
                 :width="48"
-                format="webp"
-                loading="lazy"
-                fetchpriority="low"
+                format="avif"
                 custom
-                class="aspect-square size-9 shrink-0 rounded-lg object-cover"
             >
-                <img v-if="isLoaded" v-bind="imgAttrs" :src="src" />
+                <img
+                    v-if="isLoaded"
+                    v-bind="imgAttrs"
+                    :src
+                    alt=""
+                    loading="lazy"
+                    fetchpriority="low"
+                    class="aspect-square size-9 shrink-0 rounded-lg object-cover"
+                />
                 <USkeleton v-else class="aspect-square size-9 shrink-0 rounded-lg" />
             </NuxtImg>
 

@@ -5,6 +5,7 @@ const emit = defineEmits<{
 
 const { data: popularAvatars } = await useFetch('/api/items/popular-avatars', {
     key: 'popular-avatars',
+    dedupe: 'defer',
     default: () => [],
 })
 </script>
@@ -35,17 +36,21 @@ const { data: popularAvatars } = await useFetch('/api/items/popular-avatars', {
                 <NuxtImg
                     v-slot="{ src, isLoaded, imgAttrs }"
                     :src="avatar.image || undefined"
-                    :alt="avatar.name"
                     :width="256"
                     :height="256"
-                    format="webp"
+                    format="avif"
                     fit="cover"
-                    loading="lazy"
-                    fetchpriority="low"
                     custom
-                    class="aspect-square shrink-0 rounded-lg object-cover"
                 >
-                    <img v-if="isLoaded" v-bind="imgAttrs" :src="src" />
+                    <img
+                        v-if="isLoaded"
+                        v-bind="imgAttrs"
+                        :src
+                        alt=""
+                        loading="lazy"
+                        fetchpriority="low"
+                        class="aspect-square shrink-0 rounded-lg object-cover"
+                    />
                     <USkeleton v-else class="aspect-square shrink-0 rounded-lg object-cover" />
                 </NuxtImg>
             </button>

@@ -15,7 +15,11 @@ export const useNotificationsStore = defineStore('notificationsStore', {
         async fetch() {
             this.fetching = true
             try {
-                const response = await $fetch<NotificationResponse>('/api/notifications')
+                // useRequestFetch()を使用してSSR時にCookieヘッダーを自動転送
+                const event = import.meta.server ? useRequestEvent() : undefined
+                const fetchFn = event ? useRequestFetch() : $fetch
+
+                const response = await fetchFn<NotificationResponse>('/api/notifications')
                 this.notifications = response.data || []
                 this.unread = response.unread || 0
             } catch (error) {

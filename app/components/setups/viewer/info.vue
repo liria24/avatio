@@ -93,7 +93,7 @@ onBeforeRouteLeave(() => {
                         day="2-digit"
                         hour="2-digit"
                         minute="2-digit"
-                        class="font-[Geist] text-sm leading-none text-nowrap"
+                        class="font-mono text-sm leading-none text-nowrap"
                     />
                 </div>
 
@@ -118,7 +118,7 @@ onBeforeRouteLeave(() => {
                             day="2-digit"
                             hour="2-digit"
                             minute="2-digit"
-                            class="text-muted font-[Geist] text-xs leading-none text-nowrap"
+                            class="text-muted font-mono text-xs leading-none text-nowrap"
                         />
                         <span class="text-muted text-xs leading-none text-nowrap"> に編集 </span>
                     </template>
@@ -129,6 +129,7 @@ onBeforeRouteLeave(() => {
                 <UButton
                     v-if="session?.user.role === 'admin'"
                     :icon="props.setup.hidAt ? 'mingcute:eye-2-fill' : 'mingcute:eye-close-fill'"
+                    :aria-label="props.setup.hidAt ? 'セットアップを表示' : 'セットアップを非表示'"
                     variant="ghost"
                     size="sm"
                     class="p-2"

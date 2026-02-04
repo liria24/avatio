@@ -49,7 +49,6 @@ const themeMenu = [
                             label="admin"
                             variant="subtle"
                             size="xs"
-                            class="font-[Geist]"
                         />
                     </div>
 

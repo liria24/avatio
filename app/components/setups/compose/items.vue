@@ -1,22 +1,10 @@
 <script lang="ts" setup>
 import { VueDraggable } from 'vue-draggable-plus'
 
-const items = defineModel<Record<ItemCategory, SetupItem[]>>({
-    default: () => ({
-        avatar: [],
-        clothing: [],
-        accessory: [],
-        hair: [],
-        shader: [],
-        texture: [],
-        tool: [],
-        other: [],
-    }),
-})
-
 const { itemCategory } = useAppConfig()
 
 const {
+    state,
     totalItemsCount,
     addItem: add,
     removeItem,
@@ -27,15 +15,16 @@ const {
 
 const popoverItemSearch = ref(false)
 
-type ItemsState = typeof items.value
+type ItemsState = typeof state.value.items
 type CategoryKey = keyof ItemsState
 
-const itemCategories = Object.keys(items.value) as CategoryKey[]
+const itemCategories = Object.keys(state.value.items) as CategoryKey[]
 
-const getItemsByCategory = (category: CategoryKey) => items.value[category]
+const getItemsByCategory = (category: CategoryKey) => state.value.items[category]
 
 const { data: ownedAvatars } = await useFetch('/api/items/owned-avatars', {
     query: { limit: 10 },
+    dedupe: 'defer',
     default: () => [],
 })
 
@@ -55,7 +44,7 @@ const addItem = async (item: Item) => {
                         class="ring-accented ml-1 flex items-center gap-1.5 rounded-full py-1 pr-3 pl-2.5 ring-1 data-[exceeded=true]:ring-red-500"
                     >
                         <Icon name="mingcute:box-3-fill" size="16" class="text-muted shrink-0" />
-                        <span class="pt-px font-[Geist] text-xs leading-none text-nowrap">
+                        <span class="font-mono text-xs leading-none text-nowrap">
                             <span>{{ totalItemsCount }}</span>
                             <span v-if="totalItemsCount > 32"> / 32</span>
                         </span>
@@ -83,7 +72,6 @@ const addItem = async (item: Item) => {
 
         <UEmpty
             v-if="!totalItemsCount"
-            icon="mingcute:dress-fill"
             title="アイテムが登録されていません"
             variant="naked"
             :actions="
@@ -98,7 +86,7 @@ const addItem = async (item: Item) => {
                     onClick: () => addItem(ownedAvatar),
                 }))
             "
-            class="lg:my-auto"
+            class="lg:mt-[30cqh] lg:p-0"
         />
 
         <div
@@ -117,13 +105,13 @@ const addItem = async (item: Item) => {
                             :size="22"
                             class="text-muted shrink-0"
                         />
-                        <h2 class="pb-0.5 text-lg leading-none font-semibold text-nowrap">
+                        <h2 class="text-toned font-mono leading-none font-semibold text-nowrap">
                             {{ itemCategory[category]?.label || category }}
                         </h2>
                     </div>
 
                     <VueDraggable
-                        v-model="items[category]"
+                        v-model="state.items[category]"
                         :animation="150"
                         handle=".draggable"
                         drag-class="opacity-100"
@@ -131,7 +119,7 @@ const addItem = async (item: Item) => {
                         class="flex h-full w-full flex-col gap-2"
                     >
                         <SetupsComposeItem
-                            v-for="item in items[category]"
+                            v-for="item in state.items[category]"
                             :key="`item-${item.id}`"
                             v-model:unsupported="item.unsupported"
                             v-model:shapekeys="item.shapekeys"

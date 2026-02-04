@@ -1,3 +1,5 @@
+import { list } from '@tigrisdata/storage'
+
 interface ImageInfo {
     url: string
     key: string
@@ -11,23 +13,22 @@ interface UnusedImagesResponse {
 }
 
 const IMAGE_DELETION_THRESHOLD = 24 * 60 * 60 * 1000 // 1日
+const config = useRuntimeConfig()
 
 export default adminSessionEventHandler<UnusedImagesResponse>(async () => {
     const thresholdDate = new Date(Date.now() - IMAGE_DELETION_THRESHOLD)
 
     const getStorageObjects = async (prefix: string): Promise<ImageInfo[]> => {
         try {
-            const result = await s3.list({ prefix: `${prefix}/` })
+            const result = await list({ prefix: `${prefix}/` })
 
-            if (!result || !result.contents) return []
+            if (!result.data?.items) return []
 
-            return result.contents
-                .filter((obj) => obj.key?.split('/').pop()?.trim())
-                .map((obj) => ({
-                    url: `https://images.avatio.me/${obj.key}`,
-                    key: obj.key,
-                    lastModified: new Date(obj.lastModified!),
-                }))
+            return result.data.items.map((obj) => ({
+                url: `https://${config.tigris.storage.domain}/${obj.name}`,
+                key: obj.name,
+                lastModified: new Date(obj.lastModified!),
+            }))
         } catch (error) {
             console.error(`Failed to get storage objects for prefix ${prefix}:`, error)
             return []
@@ -41,15 +42,9 @@ export default adminSessionEventHandler<UnusedImagesResponse>(async () => {
     ] = await Promise.all([
         // DB クエリを並列実行
         Promise.all([
-            db.query.setupImages.findMany({
-                columns: { url: true },
-            }),
-            db.query.setupDraftImages.findMany({
-                columns: { url: true },
-            }),
-            db.query.user.findMany({
-                columns: { image: true },
-            }),
+            db.query.setupImages.findMany({ columns: { url: true } }),
+            db.query.setupDraftImages.findMany({ columns: { url: true } }),
+            db.query.user.findMany({ columns: { image: true } }),
         ]),
         // ストレージクエリを並列実行
         Promise.all([getStorageObjects('setup'), getStorageObjects('avatar')]),

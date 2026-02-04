@@ -1,26 +1,7 @@
 <script lang="ts" setup>
-const images = defineModel<string[]>({
-    default: () => [],
-})
-
-const { addImage, removeImage } = useSetupCompose()
-const { uploadImage } = useUserSettings()
+const { state, imageUploading, processImages, removeImage } = useSetupCompose()
 
 const dropZoneRef = ref<HTMLDivElement>()
-const imageUploading = ref(false)
-
-const processImages = async (files: FileList | File[] | null) => {
-    if (!files?.length) return
-
-    const file = files[0]
-    if (!file) return
-
-    imageUploading.value = true
-    const imageUrl = await uploadImage(file, 'setup')
-    if (imageUrl) addImage(imageUrl)
-    imageUploading.value = false
-    reset()
-}
 
 const { isOverDropZone } = useDropZone(dropZoneRef, {
     onDrop: processImages,
@@ -34,11 +15,15 @@ const { open, reset, onChange } = useFileDialog({
     multiple: false,
     directory: false,
 })
-onChange(processImages)
+
+onChange(async (files) => {
+    await processImages(files)
+    reset()
+})
 </script>
 
 <template>
-    <div v-if="!images.length && !imageUploading" ref="dropZoneRef">
+    <div v-if="!state.images.length && !imageUploading" ref="dropZoneRef">
         <UButton
             :icon="isOverDropZone ? 'mingcute:download-fill' : 'mingcute:pic-fill'"
             :label="isOverDropZone ? 'ドロップして追加' : '画像を追加'"
@@ -58,15 +43,15 @@ onChange(processImages)
     </div>
 
     <div v-else class="grid grid-cols-3 gap-2">
-        <div v-for="(image, index) in images" :key="`image-${index}`" class="relative grid">
-            <NuxtImg
-                v-slot="{ isLoaded, src, imgAttrs }"
-                :src="image"
-                :alt="`Setup image ${index + 1}`"
-                custom
-                class="aspect-square size-full rounded-lg object-cover"
-            >
-                <img v-if="isLoaded" v-bind="imgAttrs" :src="src" />
+        <div v-for="(image, index) in state.images" :key="`image-${index}`" class="relative grid">
+            <NuxtImg v-slot="{ isLoaded, src, imgAttrs }" :src="image" custom>
+                <img
+                    v-if="isLoaded"
+                    v-bind="imgAttrs"
+                    :src
+                    :alt="`Setup image ${index + 1}`"
+                    class="aspect-square size-full rounded-lg object-cover"
+                />
                 <USkeleton v-else class="aspect-square size-full rounded-lg" />
             </NuxtImg>
             <UButton

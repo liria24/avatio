@@ -135,6 +135,7 @@ const menuItems = ref<DropdownMenuItem[][]>([
                     alt: session.user.name,
                     icon: 'mingcute:user-3-fill',
                 }"
+                :ui="{ description: 'font-mono' }"
             />
         </template>
     </UDropdownMenu>

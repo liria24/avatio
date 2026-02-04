@@ -17,7 +17,7 @@ const { data, status } = useFetch('/api/items', {
     query: {
         limit: 1000,
     },
-    key: 'item-search',
+    dedupe: 'defer',
     transform: (data) => {
         return itemCategorySchema.options.map((category) => ({
             id: category,
@@ -141,16 +141,20 @@ const onSelected = async (id: string, platform?: Platform) => {
             <NuxtImg
                 v-slot="{ isLoaded, src, imgAttrs }"
                 :src="item.image"
-                :alt="item.label"
                 :width="24"
                 :height="24"
-                format="webp"
-                loading="lazy"
-                fetchpriority="low"
+                format="avif"
                 custom
-                class="aspect-square size-6 shrink-0 rounded-md object-cover"
             >
-                <img v-if="isLoaded" v-bind="imgAttrs" :src="src" />
+                <img
+                    v-if="isLoaded"
+                    v-bind="imgAttrs"
+                    :src
+                    :alt="item.label"
+                    loading="lazy"
+                    fetchpriority="low"
+                    class="aspect-square size-6 shrink-0 rounded-md object-cover"
+                />
                 <USkeleton v-else class="aspect-square size-6 shrink-0 rounded-md" />
             </NuxtImg>
             <div class="flex w-full cursor-pointer items-center gap-2">
