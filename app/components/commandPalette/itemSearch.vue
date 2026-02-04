@@ -105,7 +105,6 @@ const onSelected = async (id: string, platform?: Platform) => {
     loadingRef.value = true
 
     try {
-        console.log(id)
         const response = await $fetch<Item>(
             `/api/items/${transformItemId(id.toString()).encode()}`,
             {
