@@ -122,10 +122,6 @@ export default defineNuxtConfig({
                 endpoint: import.meta.env.TIGRIS_STORAGE_ENDPOINT,
             },
         },
-        upstash: {
-            redisRestUrl: import.meta.env.NUXT_UPSTASH_REDIS_REST_URL,
-            redisRestToken: import.meta.env.NUXT_UPSTASH_REDIS_REST_TOKEN,
-        },
         vercel: {
             token: import.meta.env.NUXT_VERCEL_TOKEN,
             edgeConfig: {
