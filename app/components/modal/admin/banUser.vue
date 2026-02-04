@@ -8,33 +8,19 @@ const props = defineProps<Props>()
 
 const emit = defineEmits(['close'])
 
-const toast = useToast()
+const { banUserWithReason } = useAdminActions()
 
 const banReasonInput = ref('')
 const banExpiresInInput = ref(0)
 
 const banUser = async () => {
-    try {
-        await $fetch(`/api/admin/user/${props.userId}`, {
-            method: 'PATCH',
-            body: {
-                ban: true,
-                banReason: banReasonInput.value,
-                banExpiresIn: banExpiresInInput.value || undefined,
-            },
-        })
-        toast.add({
-            title: 'ユーザーをBANしました',
-            color: 'success',
-        })
+    const success = await banUserWithReason(
+        props.userId,
+        banReasonInput.value,
+        banExpiresInInput.value || undefined
+    )
+    if (success) {
         emit('close')
-    } catch (error) {
-        console.error('Failed to ban user:', error)
-        toast.add({
-            title: 'ユーザーのBANに失敗しました',
-            color: 'error',
-        })
-    } finally {
         banReasonInput.value = ''
         banExpiresInInput.value = 0
     }

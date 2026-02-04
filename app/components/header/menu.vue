@@ -116,6 +116,7 @@ const menuItems = ref<DropdownMenuItem[][]>([
     <UDropdownMenu :items="menuItems">
         <button
             type="button"
+            aria-label="ユーザーメニュー"
             class="ring-accented size-8 cursor-pointer rounded-full ring-0 transition-all select-none hover:ring-4"
         >
             <UAvatar
@@ -134,6 +135,7 @@ const menuItems = ref<DropdownMenuItem[][]>([
                     alt: session.user.name,
                     icon: 'mingcute:user-3-fill',
                 }"
+                :ui="{ description: 'font-mono' }"
             />
         </template>
     </UDropdownMenu>

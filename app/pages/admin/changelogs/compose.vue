@@ -3,7 +3,7 @@ import { VueDraggable } from 'vue-draggable-plus'
 
 const { getSession } = useAuth()
 const session = await getSession()
-const toast = useToast()
+const { createChangelog } = useAdminActions()
 
 const me = await $fetch<SerializedUser>(`/api/users/${session.value!.user.username!}`)
 
@@ -39,23 +39,7 @@ watch(authors, (newAuthors) => {
 })
 
 const onSubmit = async () => {
-    try {
-        await $fetch('/api/changelogs', {
-            method: 'POST',
-            body: state,
-        })
-        toast.add({
-            title: 'Changelog created successfully',
-            color: 'success',
-        })
-    } catch (error) {
-        console.error(error)
-
-        toast.add({
-            title: 'Failed to create changelog',
-            color: 'error',
-        })
-    }
+    await createChangelog(state)
 }
 
 const resetForm = () => {

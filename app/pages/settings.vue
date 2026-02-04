@@ -4,31 +4,13 @@ definePageMeta({
 })
 
 const { auth, signOut, getSessions } = useAuth()
+const { accountState, deleteUser: deleteUserAction } = useUserSettings()
+
 const sessions = await getSessions()
 const toast = useToast()
 
-const modalDeleteUser = ref(false)
-
 const deleteUser = async () => {
-    try {
-        await auth.deleteUser({ callbackURL: '/' })
-
-        toast.add({
-            icon: 'mingcute:check-line',
-            title: 'アカウントを削除しました',
-            description: 'ページをリロードしています...',
-            color: 'success',
-        })
-        navigateTo('/', { external: true })
-    } catch (error) {
-        console.error(error)
-        toast.add({
-            icon: 'mingcute:close-line',
-            title: 'アカウントを削除できませんでした',
-            description: '時間をおいて再度お試しください。',
-            color: 'error',
-        })
-    }
+    await deleteUserAction()
 }
 
 defineSeo({
@@ -99,7 +81,7 @@ defineSeo({
                         削除したアカウントは復元できません。
                     </p>
                 </div>
-                <UModal v-model:open="modalDeleteUser" title="アカウント削除">
+                <UModal v-model:open="accountState.modalDeleteUser" title="アカウント削除">
                     <UButton label="アカウント削除" color="error" variant="subtle" />
 
                     <template #body>
@@ -117,7 +99,7 @@ defineSeo({
                             <UButton
                                 label="キャンセル"
                                 variant="ghost"
-                                @click="modalDeleteUser = false"
+                                @click="accountState.modalDeleteUser = false"
                             />
                             <UButton
                                 label="削除"

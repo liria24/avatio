@@ -41,14 +41,18 @@ const inputShapekeyValue = ref(0)
                     <NuxtImg
                         v-slot="{ isLoaded, src, imgAttrs }"
                         :src="props.item.image || undefined"
-                        :alt="props.item.name"
                         :width="88"
                         :height="88"
-                        format="webp"
+                        format="avif"
                         custom
-                        class="aspect-square size-18 shrink-0 rounded-lg object-cover"
                     >
-                        <img v-if="isLoaded" v-bind="imgAttrs" :src="src" />
+                        <img
+                            v-if="isLoaded"
+                            v-bind="imgAttrs"
+                            :src
+                            :alt="props.item.name"
+                            class="aspect-square size-18 shrink-0 rounded-lg object-cover"
+                        />
                         <USkeleton v-else class="aspect-square size-18 shrink-0 rounded-lg" />
                     </NuxtImg>
                 </NuxtLink>
@@ -78,7 +82,7 @@ const inputShapekeyValue = ref(0)
                         <NuxtLink
                             :to="computeItemUrl(props.item.id, props.item.platform)"
                             target="_blank"
-                            class="text-toned line-clamp-2 py-1 text-sm"
+                            class="text-toned line-clamp-2 py-1 font-mono text-sm tracking-wider"
                         >
                             {{ props.item.name }}
                         </NuxtLink>

@@ -17,6 +17,16 @@ const refreshDraftImages = async (draftId: string, imageUrls: string[]) => {
     if (images.length) await db.insert(setupDraftImages).values(images)
 }
 
+const hasContent = (content: Record<string, any>): boolean => {
+    return Object.values(content).some((value) => {
+        if (value === null || value === undefined) return false
+        if (Array.isArray(value)) return value.length > 0
+        if (typeof value === 'object') return Object.keys(value).length > 0
+        if (typeof value === 'string') return value.length > 0
+        return true
+    })
+}
+
 export default authedSessionEventHandler(
     async ({ session }) => {
         const { id, setupId, content } = await validateBody(body, {
@@ -41,9 +51,9 @@ export default authedSessionEventHandler(
                 statusText: 'You have reached the maximum number of setup drafts allowed.',
             })
 
-        if (!id && !Object.keys(content).length) return null
+        if (!id && !hasContent(content)) return null
 
-        if (id && !Object.keys(content).length) {
+        if (id && !hasContent(content)) {
             await db.delete(setupDrafts).where(eq(setupDrafts.id, id))
             return null
         }

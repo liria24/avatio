@@ -1,5 +1,3 @@
-import type { Serialize } from 'nitropack/types'
-
 import {
     auditActionType,
     auditLogs,
@@ -82,6 +80,7 @@ export const userUpdateSchema = createUpdateSchema(user, {
 })
 export const userPublicSchema = userSelectSchema
     .pick({
+        id: true,
         username: true,
         createdAt: true,
         name: true,
@@ -94,7 +93,7 @@ export const userPublicSchema = userSelectSchema
         shops: userShopsPublicSchema.array().optional(),
     })
 export type User = z.infer<typeof userPublicSchema>
-export type SerializedUser = Serialize<User>
+export type SerializedUser = Serialized<User>
 
 export const itemsSelectSchema = createSelectSchema(items)
 export const itemsInsertSchema = createInsertSchema(items)
@@ -270,7 +269,6 @@ export const setupsClientFormSchema = createInsertSchema(setups, {
         coauthors: setupCoauthorsInsertSchema
             .omit({
                 setupId: true,
-                userId: true,
             })
             .extend({
                 user: userPublicSchema.pick({
@@ -336,7 +334,7 @@ export const setupsPublicSchema = setupsSelectSchema
         failedItemsCount: z.number().min(0).optional(),
     })
 export type Setup = z.infer<typeof setupsPublicSchema>
-export type SerializedSetup = Serialize<Setup>
+export type SerializedSetup = Serialized<Setup>
 
 export const setupDraftContentSchema = setupsInsertSchema
     .pick({
@@ -364,7 +362,7 @@ export const setupDraftsPublicSchema = setupDraftsSelectSchema
     })
 export type SetupDraftContent = z.infer<typeof setupDraftContentSchema>
 export type SetupDraft = z.infer<typeof setupDraftsPublicSchema>
-export type SerializedSetupDraft = Serialize<SetupDraft>
+export type SerializedSetupDraft = Serialized<SetupDraft>
 
 export const setupDraftImagesSelectSchema = createSelectSchema(setupDraftImages)
 export type SetupDraftImage = z.infer<typeof setupDraftImagesSelectSchema>
@@ -378,7 +376,7 @@ export const bookmarksPublicSchema = bookmarksSelectSchema
         setup: setupsPublicSchema,
     })
 export type Bookmark = z.infer<typeof bookmarksPublicSchema>
-export type SerializedBookmark = Serialize<Bookmark>
+export type SerializedBookmark = Serialized<Bookmark>
 
 export const feedbacksSelectSchema = createSelectSchema(feedbacks)
 export const feedbacksInsertSchema = createInsertSchema(feedbacks, {

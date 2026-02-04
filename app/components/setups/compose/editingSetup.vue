@@ -4,7 +4,9 @@ interface Props {
 }
 const props = defineProps<Props>()
 
-const { data: setup, status } = await useFetch(`/api/setups/${props.setupId}`)
+const { data: setup, status } = await useFetch(`/api/setups/${props.setupId}`, {
+    dedupe: 'defer',
+})
 </script>
 
 <template>

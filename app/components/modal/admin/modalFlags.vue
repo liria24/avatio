@@ -1,5 +1,8 @@
 <script lang="ts" setup>
-const toast = useToast()
+const {
+    toggleMaintenanceMode: toggleMaintenanceModeAction,
+    toggleForceUpdateItem: toggleForceUpdateItemAction,
+} = useAdminActions()
 
 const { data, status, refresh } = useFetch<EdgeConfig>('/api/edge-config', {
     dedupe: 'defer',
@@ -15,45 +18,15 @@ const loading = reactive({
 
 const toggleMaintenanceMode = async () => {
     loading.maintenance = true
-
-    try {
-        await $fetch('/api/edge-config', {
-            method: 'PUT',
-            body: { isMaintenance: maintenanceMode.value },
-        })
-    } catch (error) {
-        console.error('Failed to toggle maintenance mode:', error)
-        toast.add({
-            title: '切替えに失敗しました',
-            color: 'error',
-        })
-    } finally {
-        loading.maintenance = false
-        refresh()
-    }
+    const success = await toggleMaintenanceModeAction(maintenanceMode.value)
+    if (success) refresh()
+    loading.maintenance = false
 }
 
 const toggleForceUpdate = async () => {
     loading.forceUpdate = true
-
-    try {
-        await $fetch('/api/edge-config', {
-            method: 'PUT',
-            body: { forceUpdateItem: forceUpdateItem.value },
-        })
-        toast.add({
-            title: 'アイテム情報の強制更新を切り替えました',
-            color: 'success',
-        })
-    } catch (error) {
-        console.error('Failed to change "forceUpdateItem":', error)
-        toast.add({
-            title: '切換えに失敗しました',
-            color: 'error',
-        })
-    } finally {
-        loading.forceUpdate = false
-    }
+    await toggleForceUpdateItemAction(forceUpdateItem.value)
+    loading.forceUpdate = false
 }
 </script>
 

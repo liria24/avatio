@@ -1,5 +1,4 @@
 import { user } from '@@/database/schema'
-import { consola } from 'consola'
 import { eq } from 'drizzle-orm'
 import { StatusCodes, getReasonPhrase } from 'http-status-codes'
 import { z } from 'zod'
@@ -8,6 +7,8 @@ const params = z.object({
     username: z.string(),
 })
 const body = userUpdateSchema
+
+const log = logger('/api/users/[username]:PUT')
 
 export default authedSessionEventHandler(async ({ session }) => {
     const { username: oldUsername } = await validateParams(params)
@@ -61,7 +62,7 @@ export default authedSessionEventHandler(async ({ session }) => {
         })
         .where(eq(user.id, data.id))
 
-    consola.success(`User ${username} updated successfully`)
+    log.success(`User ${username} updated successfully`)
 
     await purgeUserCache(data.id)
 

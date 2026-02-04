@@ -9,6 +9,7 @@ const emit = defineEmits(['close'])
 const { getSession } = useAuth()
 const session = await getSession()
 const toast = useToast()
+const { hideSetup: hideSetupAction } = useAdminActions()
 
 const hideReason = ref('')
 
@@ -22,26 +23,10 @@ const hideSetup = async () => {
         return
     }
 
-    try {
-        await $fetch(`/api/admin/setup/${props.setupId}`, {
-            method: 'PATCH',
-            body: {
-                hide: true,
-                hideReason: hideReason.value.length ? hideReason.value : undefined,
-            },
-        })
-        toast.add({
-            title: 'セットアップが非表示になりました',
-            color: 'success',
-        })
+    const success = await hideSetupAction(props.setupId, hideReason.value)
+    if (success) {
         hideReason.value = ''
         emit('close')
-    } catch (error) {
-        console.error('セットアップの非表示に失敗:', error)
-        toast.add({
-            title: 'セットアップの非表示に失敗しました',
-            color: 'error',
-        })
     }
 }
 </script>

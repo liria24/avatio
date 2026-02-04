@@ -13,10 +13,10 @@ interface Props {
 }
 const props = defineProps<Props>()
 
-const toast = useToast()
 const overlay = useOverlay()
 const { getSession } = useAuth()
 const session = await getSession()
+const { toggle: toggleBookmarkAction, getBookmarkStatus } = useBookmarks()
 
 const modalLogin = overlay.create(LazyModalLogin)
 const modalHide = overlay.create(LazyModalSetupHide, {
@@ -30,42 +30,14 @@ const modalDelete = overlay.create(LazyModalSetupDelete, {
 })
 
 const {
-    data: bookmark,
+    isBookmarked,
     status: bookmarkStatus,
     refresh: bookmarkRefresh,
-} = await useFetch('/api/setups/bookmarks', {
-    query: { setupId: props.setup.id, limit: 1 },
-    transform: (data) => data.data.length > 0,
-    dedupe: 'defer',
-    default: () => false,
-    immediate: !!session.value,
-})
+} = await getBookmarkStatus(props.setup.id, !!session.value)
 
 const toggleBookmark = async () => {
-    try {
-        if (!bookmark.value)
-            await $fetch(`/api/setups/bookmarks/${props.setup.id}`, {
-                method: 'POST',
-            })
-        else
-            await $fetch(`/api/setups/bookmarks/${props.setup.id}`, {
-                method: 'DELETE',
-            })
-
-        await bookmarkRefresh()
-
-        toast.add({
-            title: bookmark.value ? 'ブックマークしました' : 'ブックマークを解除しました',
-            color: bookmark.value ? 'success' : 'info',
-        })
-    } catch (error) {
-        console.error('ブックマークの変更に失敗:', error)
-        toast.add({
-            title: 'ブックマークの変更に失敗しました',
-            color: 'error',
-        })
-        return
-    }
+    const success = await toggleBookmarkAction(props.setup.id, isBookmarked.value)
+    if (success) await bookmarkRefresh()
 }
 
 onBeforeRouteLeave(() => {
@@ -121,7 +93,7 @@ onBeforeRouteLeave(() => {
                         day="2-digit"
                         hour="2-digit"
                         minute="2-digit"
-                        class="font-[Geist] text-sm leading-none text-nowrap"
+                        class="font-mono text-sm leading-none text-nowrap"
                     />
                 </div>
 
@@ -146,7 +118,7 @@ onBeforeRouteLeave(() => {
                             day="2-digit"
                             hour="2-digit"
                             minute="2-digit"
-                            class="text-muted font-[Geist] text-xs leading-none text-nowrap"
+                            class="text-muted font-mono text-xs leading-none text-nowrap"
                         />
                         <span class="text-muted text-xs leading-none text-nowrap"> に編集 </span>
                     </template>
@@ -157,6 +129,7 @@ onBeforeRouteLeave(() => {
                 <UButton
                     v-if="session?.user.role === 'admin'"
                     :icon="props.setup.hidAt ? 'mingcute:eye-2-fill' : 'mingcute:eye-close-fill'"
+                    :aria-label="props.setup.hidAt ? 'セットアップを表示' : 'セットアップを非表示'"
                     variant="ghost"
                     size="sm"
                     class="p-2"
@@ -166,9 +139,9 @@ onBeforeRouteLeave(() => {
                 <UButton
                     loading-auto
                     :loading="bookmarkStatus === 'pending'"
-                    :icon="bookmark ? 'mingcute:bookmark-fill' : 'mingcute:bookmark-line'"
-                    :aria-label="bookmark ? 'ブックマークから削除' : 'ブックマーク'"
-                    :color="bookmark ? 'secondary' : 'primary'"
+                    :icon="isBookmarked ? 'mingcute:bookmark-fill' : 'mingcute:bookmark-line'"
+                    :aria-label="isBookmarked ? 'ブックマークから削除' : 'ブックマーク'"
+                    :color="isBookmarked ? 'secondary' : 'primary'"
                     variant="ghost"
                     size="sm"
                     class="p-2"

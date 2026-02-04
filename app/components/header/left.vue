@@ -15,7 +15,7 @@ const session = await getSession()
             label="admin"
             variant="subtle"
             size="xs"
-            class="font-[Geist]"
+            class="font-mono"
         />
     </div>
 </template>

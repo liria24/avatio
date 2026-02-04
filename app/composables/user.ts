@@ -8,9 +8,8 @@ export const useUser = (username: string, options?: UseFetchOptions<SerializedUs
         immediate: true,
     }
 
-    return useFetch<SerializedUser>(username, {
+    return useFetch<SerializedUser>(`/api/users/${username}`, {
         ...defaultOptions,
         ...options,
-        baseURL: '/api/users/',
     })
 }

@@ -9,16 +9,7 @@ const visible = ref(true)
 
 const onRead = async (id: string) => {
     visible.value = false
-
-    try {
-        await $fetch('/api/notifications/read', {
-            method: 'POST',
-            body: { id },
-        })
-        notificationsStore.fetch()
-    } catch (error) {
-        console.error('Error marking notification as read:', error)
-    }
+    await notificationsStore.markAsRead(id)
 }
 </script>
 

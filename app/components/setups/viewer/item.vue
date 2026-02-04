@@ -48,21 +48,26 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                 v-if="item.image"
                 :to="computeItemUrl(item.id, item.platform)"
                 target="_blank"
+                :aria-label="item.niceName || item.name"
                 class="flex shrink-0 items-center overflow-hidden rounded-lg object-cover select-none"
             >
                 <NuxtImg
                     v-slot="{ isLoaded, src, imgAttrs }"
                     :src="item.image || undefined"
-                    :alt="item.name"
                     :width="88"
                     :height="88"
-                    format="webp"
-                    loading="lazy"
-                    fetchpriority="low"
+                    format="avif"
                     custom
-                    class="aspect-square size-22 shrink-0 rounded-lg object-cover text-xs"
                 >
-                    <img v-if="isLoaded" v-bind="imgAttrs" :src />
+                    <img
+                        v-if="isLoaded"
+                        v-bind="imgAttrs"
+                        :src
+                        alt=""
+                        loading="lazy"
+                        fetchpriority="low"
+                        class="aspect-square size-22 shrink-0 rounded-lg object-cover text-xs"
+                    />
                     <USkeleton v-else class="aspect-square size-20 shrink-0 rounded-lg text-xs" />
                 </NuxtImg>
             </NuxtLink>
@@ -110,16 +115,20 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                             <NuxtImg
                                 v-slot="{ isLoaded, src, imgAttrs }"
                                 :src="item.shop.image || undefined"
-                                :alt="item.shop.name"
                                 :width="24"
                                 :height="24"
-                                format="webp"
-                                loading="lazy"
-                                fetchpriority="low"
+                                format="avif"
                                 custom
-                                class="ring-accented aspect-square size-5 shrink-0 rounded-sm object-cover ring-1"
                             >
-                                <img v-if="isLoaded" v-bind="imgAttrs" :src />
+                                <img
+                                    v-if="isLoaded"
+                                    v-bind="imgAttrs"
+                                    :src
+                                    alt=""
+                                    loading="lazy"
+                                    fetchpriority="low"
+                                    class="ring-accented aspect-square size-5 shrink-0 rounded-sm object-cover ring-1"
+                                />
                                 <USkeleton
                                     v-else
                                     class="aspect-square size-5 shrink-0 rounded-md"
@@ -145,16 +154,20 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                                 <NuxtImg
                                     v-slot="{ isLoaded, src, imgAttrs }"
                                     :src="item.shop.image || undefined"
-                                    :alt="item.shop.name"
                                     :width="48"
                                     :height="48"
                                     format="webp"
-                                    loading="lazy"
-                                    fetchpriority="low"
                                     custom
-                                    class="aspect-square size-10 shrink-0 rounded-md object-cover"
                                 >
-                                    <img v-if="isLoaded" v-bind="imgAttrs" :src="src" />
+                                    <img
+                                        v-if="isLoaded"
+                                        v-bind="imgAttrs"
+                                        :src
+                                        alt=""
+                                        loading="lazy"
+                                        fetchpriority="low"
+                                        class="aspect-square size-10 shrink-0 rounded-md object-cover"
+                                    />
                                     <USkeleton
                                         v-else
                                         class="aspect-square size-10 shrink-0 rounded-md"
@@ -179,7 +192,7 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                             class="text-muted shrink-0"
                         />
                         <span
-                            class="text-muted pt-px font-[Geist] text-xs leading-0 font-semibold text-nowrap"
+                            class="text-muted font-mono text-xs leading-0 font-semibold text-nowrap"
                         >
                             {{ item.price }}
                         </span>
@@ -199,7 +212,7 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                             class="text-muted shrink-0"
                         />
                         <span
-                            class="text-muted pt-px font-[Geist] text-xs leading-none font-semibold text-nowrap"
+                            class="text-muted font-mono text-xs leading-none font-semibold text-nowrap"
                         >
                             {{ item.likes.toLocaleString() }}
                         </span>
@@ -215,7 +228,7 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                             class="text-muted shrink-0"
                         />
                         <span
-                            class="text-muted pt-px font-[Geist] text-xs leading-none font-semibold text-nowrap"
+                            class="text-muted font-mono text-xs leading-none font-semibold text-nowrap"
                         >
                             {{ item.forks.toLocaleString() }}
                         </span>
@@ -224,7 +237,7 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                     <div v-if="item.version" class="flex w-fit items-center gap-1.5">
                         <Icon name="mingcute:tag-fill" :size="16" class="text-muted shrink-0" />
                         <span
-                            class="text-muted pt-px font-[Geist] text-xs leading-none font-semibold text-nowrap"
+                            class="text-muted font-mono text-xs leading-none font-semibold text-nowrap"
                         >
                             {{ item.version }}
                         </span>
@@ -250,7 +263,7 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                         icon="mingcute:forbid-circle-fill"
                         label="NSFW"
                         variant="soft"
-                        class="text-xs font-semibold"
+                        class="font-mono text-xs font-semibold"
                     />
                 </div>
             </div>

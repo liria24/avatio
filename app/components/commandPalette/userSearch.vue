@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { CommandPaletteItem } from '@nuxt/ui'
+
 const emit = defineEmits<{
     select: [user: SerializedUser]
 }>()
@@ -12,7 +14,7 @@ const toast = useToast()
 const searchTerm = ref('')
 
 const { data: users, status } = useFetch('/api/users', {
-    key: 'user-search',
+    dedupe: 'defer',
     default: () => [],
     getCachedData: (key, nuxtApp, ctx) =>
         ctx.cause === 'refresh:manual'
@@ -28,7 +30,7 @@ const existingUsersGroup = computed(() => ({
         label: user.name,
         avatar: { src: user.image || undefined },
         onSelect: () => onSelect(user.username),
-    })),
+    })) satisfies CommandPaletteItem[],
 }))
 
 const userFromIdGroup = computed(() => ({
@@ -40,7 +42,7 @@ const userFromIdGroup = computed(() => ({
             label: searchTerm.value,
             onSelect: () => onSelect(searchTerm.value),
         },
-    ],
+    ] satisfies CommandPaletteItem[],
 }))
 
 const groups = computed(() => {
@@ -64,6 +66,7 @@ const onSelect = async (username: string) => {
     try {
         const user = await $fetch<SerializedUser>(`/api/users/${username}`)
         emit('select', {
+            id: user.id,
             username: user.username,
             createdAt: user.createdAt,
             name: user.name,
@@ -90,6 +93,7 @@ const onSelect = async (username: string) => {
         v-model:open="open"
         v-model:search-term="searchTerm"
         virtualize
+        selection-behavior="replace"
         :loading="status === 'pending'"
         placeholder="ユーザーを検索 / ID を入力"
         :groups="groups"

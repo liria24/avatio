@@ -1,10 +1,10 @@
 import type { z } from 'zod'
 
-import { consola } from 'consola'
-
 type Body = z.infer<typeof auditLogsInsertSchema>
 
 export default async (body: Body): Promise<{ id: number } | null> => {
+    const log = logger('createAuditLog')
+
     try {
         const config = useRuntimeConfig()
 
@@ -17,7 +17,7 @@ export default async (body: Body): Promise<{ id: number } | null> => {
         })
         return response
     } catch (error) {
-        consola.error('Failed to create audit log:', error)
+        log.error('Failed to create audit log:', error)
         return null
     }
 }

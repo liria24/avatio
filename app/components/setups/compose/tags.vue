@@ -1,35 +1,12 @@
 <script lang="ts" setup>
-const tags = defineModel<string[]>({
-    default: () => [],
-})
-
-const toast = useToast()
-
-const addTag = (tag: string) => {
-    if (!tag.trim()) return
-
-    if (tags.value.includes(tag)) {
-        toast.add({
-            title: 'タグを重複して追加することはできません',
-            color: 'warning',
-        })
-        return
-    }
-
-    tags.value.push(tag)
-}
-
-const removeTag = (tag: string) => {
-    const index = tags.value.indexOf(tag)
-    if (index !== -1) tags.value.splice(index, 1)
-}
+const { state, addTag, removeTag } = useSetupCompose()
 </script>
 
 <template>
     <UFormField name="tags" label="タグ">
         <div class="flex flex-wrap items-center gap-2">
             <UBadge
-                v-for="tag in tags"
+                v-for="tag in state.tags"
                 :key="tag"
                 :label="tag"
                 variant="soft"
@@ -48,7 +25,7 @@ const removeTag = (tag: string) => {
             <UPopover :content="{ side: 'right', align: 'start' }">
                 <UButton
                     icon="mingcute:add-line"
-                    :label="tags.length ? undefined : 'タグを追加'"
+                    :label="state.tags.length ? undefined : 'タグを追加'"
                     variant="soft"
                 />
 

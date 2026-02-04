@@ -1,3 +1,4 @@
+import { head, remove } from '@tigrisdata/storage'
 import { z } from 'zod'
 
 const query = z.object({
@@ -11,10 +12,10 @@ export default adminSessionEventHandler(async () => {
     console.log('Deleting image on storage:', target)
 
     try {
-        await useStorage('r2').del(target)
+        await remove(path)
 
         // 削除後の検証
-        if (await useStorage('r2').has(target)) {
+        if ((await head(path)).data) {
             console.error('Failed to delete image on storage:', target)
             throw createError({
                 status: 500,

@@ -7,14 +7,6 @@ const setups = defineModel<SerializedSetup[]>('setups', {
 const loading = defineModel<boolean>('loading', {
     default: false,
 })
-
-const isInitialLoad = ref(true)
-
-const setLoaded = async () => {
-    await setTimeout(() => {
-        isInitialLoad.value = false
-    }, 100)
-}
 </script>
 
 <template>
@@ -37,7 +29,6 @@ const setLoaded = async () => {
         :min-columns="2"
         :max-columns="3"
         :ssr-columns="isMobile ? 2 : 3"
-        @vue:mounted="setLoaded"
     >
         <template #default="{ item, index }">
             <SetupsLink

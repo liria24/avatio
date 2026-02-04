@@ -1,27 +1,15 @@
 <script lang="ts" setup>
-import type { z } from 'zod'
-import type { Serialize } from 'nitropack/types'
-
 definePageMeta({
     middleware: 'session',
     layout: 'minimal',
 })
 
-const router = useRouter()
 const route = useRoute()
-const toast = useToast()
 
-const editingSetupId = ref<number | null>(null)
+const { state, publish, reset, changed, editingSetupId, publishing, draft, loadDraft, initialize } =
+    useSetupCompose()
 
-const publishing = ref(false)
 const publishedSetupId = ref<number | null>(null)
-
-const draftStatus = ref<
-    'new' | 'restoring' | 'restored' | 'unsaved' | 'saving' | 'saved' | 'error'
->('new')
-const referencedDraft = ref<string | null>(null)
-const skipDraftSave = ref(false)
-
 const modalPublishComplete = ref(false)
 const modalNewSetupConfirm = ref(false)
 
@@ -52,410 +40,26 @@ const draftStatusBadge = {
     },
 }
 
-type Schema = z.infer<typeof setupsClientFormSchema>
-const state = reactive<Schema>({
-    name: '',
-    description: '',
-    images: [],
-    tags: [],
-    coauthors: [],
-    items: {
-        avatar: [],
-        clothing: [],
-        accessory: [],
-        hair: [],
-        shader: [],
-        texture: [],
-        tool: [],
-        other: [],
-    },
-})
-
-const applyDraftData = async (content: SetupDraftContent) => {
-    // 復元中は自動保存を抑止
-    skipDraftSave.value = true
-
-    state.name = content.name || ''
-    state.description = content.description || ''
-    state.images = content.images || []
-    state.tags = content.tags ? content.tags.map((tag) => tag.tag) : []
-    state.coauthors = content.coauthors
-        ? await Promise.all(
-              content.coauthors.map(async (coauthor) => {
-                  const user = await $fetch<Serialize<User>>(`/api/users/${coauthor.userId}`)
-                  return {
-                      user: {
-                          ...user,
-                          createdAt: new Date(user.createdAt),
-                      },
-                      note: coauthor.note || '',
-                  }
-              })
-          )
-        : []
-
-    // ここで content.items を元に state.items を復元する
-    // state.items の各カテゴリに API から取得したアイテムデータを格納する
-    // content.items は itemId と追加データのみを持つので、itemId を元に /api/items/:id から情報を取得してマージする
-    // カテゴリキーは setupsClientFormSchema と一致させる
-    state.items = {
-        avatar: [],
-        clothing: [],
-        accessory: [],
-        hair: [],
-        shader: [],
-        texture: [],
-        tool: [],
-        other: [],
-    }
-
-    if (content.items && content.items.length) {
-        // 並行で取得して、失敗しても他は続行する
-        const fetches = content.items.map(async (draftItem) => {
-            try {
-                const itemData = await $fetch<Item>(
-                    `/api/items/${transformItemId(draftItem.itemId).encode()}`
-                )
-
-                return {
-                    ...itemData,
-                    id: itemData.id.toString(),
-                    category: draftItem.category,
-                    note: draftItem.note || '',
-                    unsupported: draftItem.unsupported || false,
-                    shapekeys: draftItem.shapekeys || [],
-                }
-            } catch (error) {
-                console.error(`Failed to load item ${draftItem.itemId}:`, error)
-                return null
-            }
-        })
-
-        const results = await Promise.all(fetches)
-        for (const res of results) {
-            if (!res) continue
-
-            // category が null/undefined の場合は "other" にフォールバック
-            const category = res.category || 'other'
-            const cat = category as keyof typeof state.items
-
-            // カテゴリが有効でない場合も "other" に振る
-            if (!state.items[cat]) {
-                state.items.other.push({
-                    ...res,
-                    category: 'other',
-                })
-            } else {
-                state.items[cat].push({
-                    ...res,
-                    category,
-                })
-            }
-        }
-    }
-
-    // DOM / watcher の余計な発火を避けるため少し待機してから解除
-    await nextTick()
-    await new Promise((r) => setTimeout(r, 0))
-    skipDraftSave.value = false
-}
-
-const loadDraft = async (draftId: string) => {
-    try {
-        draftStatus.value = 'restoring'
-
-        const { data: drafts } = await useFetch('/api/setups/drafts', {
-            query: { id: draftId },
-            default: () => [],
-        })
-
-        if (!drafts.value.length || !drafts.value[0]) throw new Error('Draft not found')
-
-        const draft = drafts.value[0]
-
-        await applyDraftData(draft.content)
-        referencedDraft.value = draft.id
-        router.replace({
-            query: {
-                ...route.query,
-                draftId: draft.id,
-            },
-        })
-        draftStatus.value = 'restored'
-
-        if (draft.setupId && editingSetupId.value !== draft.setupId) {
-            editingSetupId.value = draft.setupId
-            router.replace({
-                query: {
-                    ...route.query,
-                    edit: draft.setupId,
-                },
-            })
-        }
-    } catch (error) {
-        draftStatus.value = 'error'
-        console.error('Failed to load draft:', error)
-        toast.add({
-            title: '下書きの読み込みに失敗しました',
-            color: 'error',
-        })
-    }
-}
-
 const onSubmit = async () => {
-    if (publishing.value) return
-
-    try {
-        publishing.value = true
-
-        const body = {
-            name: state.name,
-            description: state.description,
-            items: Object.values(state.items)
-                .flat()
-                .map((item) => ({
-                    itemId: item.id,
-                    category: item.category,
-                    note: item.note || undefined,
-                    unsupported: item.unsupported || false,
-                    shapekeys: item.shapekeys?.length ? item.shapekeys : undefined,
-                })),
-            images: state.images.length ? state.images : undefined,
-            tags: state.tags.length ? state.tags.map((tag) => ({ tag })) : undefined,
-            coauthors: state.coauthors.length
-                ? state.coauthors.map((coauthor) => ({
-                      username: coauthor.user.username,
-                      note: coauthor.note || undefined,
-                  }))
-                : undefined,
-        }
-
-        const validationResult = setupsInsertSchema.safeParse(body)
-        if (!validationResult.success) {
-            console.error('Validation failed:', validationResult.error.issues)
-            toast.add({
-                title: 'セットアップの投稿に失敗しました',
-                description: 'ページを更新してもう一度お試しください。',
-                color: 'error',
-            })
-            return
-        }
-
-        // 編集モードか新規作成かで分岐
-        const isEditing = editingSetupId.value !== null
-        const url = isEditing ? `/api/setups/${editingSetupId.value}` : '/api/setups'
-        const method = isEditing ? 'PUT' : 'POST'
-
-        const response = await $fetch<Setup>(url, {
-            method,
-            body,
-        })
-
-        if (referencedDraft.value)
-            $fetch('/api/setups/drafts', {
-                method: 'DELETE',
-                query: { id: referencedDraft.value },
-            })
-
-        publishedSetupId.value = response.id
+    const setupId = await publish()
+    if (setupId) {
+        publishedSetupId.value = setupId
         modalPublishComplete.value = true
-    } catch (error) {
-        const isEditing = editingSetupId.value !== null
-        console.error(isEditing ? 'Failed to update setup:' : 'Failed to submit setup:', error)
-
-        toast.add({
-            title: isEditing
-                ? 'セットアップの更新に失敗しました'
-                : 'セットアップの投稿に失敗しました',
-            color: 'error',
-        })
-    } finally {
-        publishing.value = false
     }
 }
 
 const resetForm = () => {
     modalPublishComplete.value = false
-
-    skipDraftSave.value = false
-    state.name = ''
-    state.description = ''
-    state.images = []
-    state.tags = []
-    state.coauthors = []
-    state.items = {
-        avatar: [],
-        clothing: [],
-        accessory: [],
-        hair: [],
-        shader: [],
-        texture: [],
-        tool: [],
-        other: [],
-    }
-    skipDraftSave.value = true
-
-    router.replace({
-        query: {},
-    })
-
-    draftStatus.value = 'new'
-    editingSetupId.value = null
     publishedSetupId.value = null
+    reset()
 }
-
-const saveDraftDebounce = useDebounceFn(async () => {
-    if (skipDraftSave.value)
-        // 復元直後は保存しない
-        return (draftStatus.value = 'restored')
-
-    if (publishing.value) return
-
-    draftStatus.value = 'saving'
-
-    const items = Object.values(state.items)
-        .flat()
-        .map((item) => ({
-            itemId: item.id,
-            category: item.category,
-            note: item.note || undefined,
-            unsupported: item.unsupported || false,
-            shapekeys: item.shapekeys?.length ? item.shapekeys : undefined,
-        }))
-    const content = {
-        name: state.name.length ? state.name : undefined,
-        description: state.description?.length ? state.description : undefined,
-        images: state.images.length ? state.images : undefined,
-        tags: state.tags.length ? state.tags.map((tag) => ({ tag })) : undefined,
-        coauthors: state.coauthors.length
-            ? state.coauthors.map((coauthor) => ({
-                  userId: coauthor.user.username,
-                  note: coauthor.note || undefined,
-              }))
-            : undefined,
-        items: items.length ? items : undefined,
-    }
-
-    try {
-        const response = await $fetch('/api/setups/drafts', {
-            method: 'POST',
-            body: {
-                id: referencedDraft.value ?? undefined,
-                setupId: editingSetupId.value ?? undefined,
-                content,
-            },
-        })
-        referencedDraft.value = response?.draftId || null
-        router.replace({
-            query: {
-                ...route.query,
-                draftId: response?.draftId,
-            },
-        })
-
-        if (referencedDraft.value) draftStatus.value = 'saved'
-        else draftStatus.value = 'new'
-    } catch (error) {
-        console.error('Error saving draft:', error)
-        draftStatus.value = 'error'
-    }
-}, 2000)
-
-watch(
-    state,
-    () => {
-        if (!skipDraftSave.value) {
-            draftStatus.value = 'unsaved'
-            saveDraftDebounce()
-        }
-    },
-    { deep: true }
-)
-
-const enterEditModeAndRestoreDraft = async (args: { draftId?: string; edit?: number }) => {
-    if (args.draftId) {
-        await loadDraft(args.draftId)
-    } else if (args.edit) {
-        try {
-            const { data: drafts } = await useFetch('/api/setups/drafts', {
-                query: { setupId: args.edit },
-                default: () => [],
-            })
-
-            if (drafts.value.length && drafts.value[0]) {
-                draftStatus.value = 'restoring'
-
-                await applyDraftData(drafts.value[0].content)
-
-                editingSetupId.value = args.edit
-                referencedDraft.value = drafts.value[0].id
-                router.replace({
-                    query: {
-                        ...route.query,
-                        draftId: drafts.value[0].id,
-                    },
-                })
-                draftStatus.value = 'restored'
-
-                toast.add({
-                    title: '編集途中の下書きが見つかったため復元されました',
-                    color: 'secondary',
-                })
-                return
-            }
-        } catch (error) {
-            console.warn('Error loading drafts:', error)
-        }
-
-        try {
-            // 編集モードの場合、セットアップのデータを取得して状態に設定
-            const setup = await $fetch(`/api/setups/${args.edit}`)
-            if (setup) {
-                skipDraftSave.value = true
-
-                state.name = setup.name
-                state.description = setup.description || ''
-                state.images = setup.images?.map((image) => image.url) || []
-                state.tags = setup.tags || []
-                state.coauthors = setup.coauthors || []
-                for (const item of setup.items) state.items[item.category].push(item)
-
-                // 少し待ってから自動保存を再有効化
-                await nextTick()
-                await new Promise((r) => setTimeout(r, 0))
-                skipDraftSave.value = false
-                editingSetupId.value = setup.id
-            } else {
-                throw new Error()
-            }
-        } catch {
-            console.error('Setup not found:', args.edit)
-            toast.add({
-                title: '編集モードを開始できませんでした',
-                description: '指定されたセットアップが見つかりません。',
-                color: 'error',
-            })
-        }
-    }
-}
-
-const hasFormChanges = computed(() => {
-    return (
-        state.name.length ||
-        state.description?.length ||
-        state.images.length ||
-        state.tags.length ||
-        state.coauthors.length ||
-        Object.values(state.items).some((items) => items.length)
-    )
-})
 
 onBeforeRouteLeave((to, from, next) => {
     if (
-        hasFormChanges.value &&
+        changed.value &&
         !publishedSetupId.value &&
-        draftStatus.value !== 'saved' &&
-        draftStatus.value !== 'restored'
+        draft.value.status !== 'saved' &&
+        draft.value.status !== 'restored'
     ) {
         const answer = window.confirm('入力された内容が破棄されます。よろしいですか？')
         return next(answer)
@@ -473,7 +77,7 @@ defineSeo({
 const draftId = route.query.draftId
 const edit = route.query.edit
 
-await enterEditModeAndRestoreDraft({
+await initialize({
     draftId: Array.isArray(draftId)
         ? draftId[0]?.toString()
         : draftId
@@ -517,9 +121,11 @@ await enterEditModeAndRestoreDraft({
 
                     <UModal v-model:open="modalNewSetupConfirm" title="新規作成">
                         <UButton
-                            v-if="hasFormChanges"
+                            v-if="changed"
                             :disabled="
-                                draftStatus === 'unsaved' || draftStatus === 'saving' || publishing
+                                draft.status === 'unsaved' ||
+                                draft.status === 'saving' ||
+                                publishing
                             "
                             icon="mingcute:add-line"
                             variant="soft"
@@ -532,11 +138,11 @@ await enterEditModeAndRestoreDraft({
                             <UAlert
                                 title="新しいセットアップを作成しますか？"
                                 :description="
-                                    draftStatus === 'error'
+                                    draft.status === 'error'
                                         ? 'エラーにより下書きが保存されていません！'
                                         : '現在の状態は下書きに保存されています'
                                 "
-                                :color="draftStatus === 'error' ? 'error' : 'neutral'"
+                                :color="draft.status === 'error' ? 'error' : 'neutral'"
                                 variant="outline"
                             />
                         </template>
@@ -567,7 +173,7 @@ await enterEditModeAndRestoreDraft({
                     class="grid grid-flow-row gap-6 sm:grid-cols-2 lg:grid-flow-row lg:grid-cols-1"
                 >
                     <div class="flex flex-col gap-4">
-                        <SetupsComposeImages v-model="state.images" />
+                        <SetupsComposeImages />
 
                         <UFormField name="name" label="タイトル" required>
                             <UInput
@@ -591,9 +197,9 @@ await enterEditModeAndRestoreDraft({
                     </div>
 
                     <div class="flex flex-col gap-4">
-                        <SetupsComposeTags v-model="state.tags" />
+                        <SetupsComposeTags />
 
-                        <SetupsComposeCoauthors v-model="state.coauthors" />
+                        <SetupsComposeCoauthors />
                     </div>
                 </div>
             </div>
@@ -602,15 +208,15 @@ await enterEditModeAndRestoreDraft({
                 class="static mt-auto flex w-full items-center justify-end gap-2 p-3 lg:sticky lg:bottom-0 lg:backdrop-blur-lg"
             >
                 <UBadge
-                    v-if="draftStatus !== 'new'"
-                    :icon="draftStatusBadge[draftStatus].icon"
-                    :label="draftStatusBadge[draftStatus].label"
+                    v-if="draft.status !== 'new'"
+                    :icon="draftStatusBadge[draft.status].icon"
+                    :label="draftStatusBadge[draft.status].label"
                     variant="soft"
-                    :color="draftStatus === 'error' ? 'error' : 'primary'"
+                    :color="draft.status === 'error' ? 'error' : 'primary'"
                 />
 
                 <SetupsComposeDraftsModal
-                    :referenced-draft-id="referencedDraft || undefined"
+                    :referenced-draft-id="draft.id || undefined"
                     @load="loadDraft($event)"
                 >
                     <UButton

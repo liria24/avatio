@@ -142,27 +142,31 @@ if (data.value) {
                     v-if="data.images?.length && data.images[0]"
                     v-slot="{ src, imgAttrs, isLoaded }"
                     :src="data.images[0].url"
-                    :alt="data.name"
                     :width="
                         data.images[0].height > 720
                             ? Math.round((data.images[0].width * 720) / data.images[0].height)
                             : data.images[0].width
                     "
                     :height="Math.min(data.images[0].height, 720)"
-                    format="webp"
-                    loading="eager"
-                    fetchpriority="high"
+                    format="avif"
                     preload
                     custom
-                    class="max-h-180 w-fit shrink-0 grow-0 cursor-zoom-in overflow-hidden rounded-lg object-contain"
-                    @click="
-                        ImageViewer.open({
-                            src: data.images[0].url,
-                            alt: data.name,
-                        })
-                    "
                 >
-                    <img v-if="isLoaded" v-bind="imgAttrs" :src="src" />
+                    <img
+                        v-if="isLoaded"
+                        v-bind="imgAttrs"
+                        :src
+                        :alt="`${data.name}の画像`"
+                        loading="eager"
+                        fetchpriority="high"
+                        class="max-h-180 w-fit shrink-0 grow-0 cursor-zoom-in overflow-hidden rounded-lg object-contain"
+                        @click="
+                            ImageViewer.open({
+                                src: data.images[0].url,
+                                alt: data.name,
+                            })
+                        "
+                    />
                     <USkeleton
                         v-else
                         :style="{

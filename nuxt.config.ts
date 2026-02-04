@@ -3,15 +3,6 @@ import { defineOrganization } from 'nuxt-schema-org/schema'
 const baseUrl = import.meta.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 const title = 'Avatio'
 const description = 'あなたのアバター改変を共有しよう'
-const r2Domain = (() => {
-    try {
-        const url = new URL(import.meta.env.NUXT_PUBLIC_R2_DOMAIN || '')
-        return url.hostname
-    } catch (error) {
-        console.error('Error parsing R2 domain:', error)
-        return ''
-    }
-})()
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -41,6 +32,9 @@ export default defineNuxtConfig({
     css: ['~/assets/css/main.css'],
 
     vite: {
+        ssr: {
+            noExternal: ['zod', 'drizzle-zod'],
+        },
         vue: {
             features: {
                 optionsAPI: false,
@@ -83,41 +77,15 @@ export default defineNuxtConfig({
         preset: 'vercel',
         compressPublicAssets: true,
         storage: {
-            r2: {
-                driver: 's3',
-                accessKeyId: import.meta.env.NUXT_R2_ACCESS_KEY || '',
-                secretAccessKey: import.meta.env.NUXT_R2_SECRET_KEY || '',
-                endpoint: import.meta.env.NUXT_R2_ENDPOINT || '',
-                bucket: 'avatio',
-                region: 'auto',
-            },
             cache: {
-                driver: 'upstash',
-                url: import.meta.env.NUXT_UPSTASH_KV_REST_API_URL || '',
-                token: import.meta.env.NUXT_UPSTASH_KV_REST_API_TOKEN || '',
+                driver: 'vercel-runtime-cache',
+                base: 'avatio',
+                tags: ['cache'],
             },
         },
         devStorage: {
             cache: {
                 driver: 'null',
-            },
-        },
-        vercel: {
-            config: {
-                images: {
-                    minimumCacheTTL: 2678400, // 31 days
-                    sizes: [24, 32, 48, 88, 256, 320, 640, 1080, 2048, 3840],
-                },
-                crons: [
-                    {
-                        path: '/api/admin/job/report',
-                        schedule: '0 22 * * *',
-                    },
-                    {
-                        path: '/api/admin/job/cleanup',
-                        schedule: '0 22 * * *',
-                    },
-                ],
             },
         },
         typescript: {
@@ -133,43 +101,35 @@ export default defineNuxtConfig({
     },
 
     runtimeConfig: {
-        adminKey: import.meta.env.ADMIN_KEY || '',
+        adminKey: import.meta.env.ADMIN_KEY,
         ai: {
             gateway: {
-                apiKey: import.meta.env.AI_GATEWAY_API_KEY || '',
+                apiKey: import.meta.env.AI_GATEWAY_API_KEY,
             },
         },
         betterAuth: {
-            url: import.meta.env.NUXT_BETTER_AUTH_URL || baseUrl,
-            secret: import.meta.env.NUXT_BETTER_AUTH_SECRET || '',
-        },
-        liria: {
-            accessToken: import.meta.env.NUXT_LIRIA_ACCESS_TOKEN || '',
-            discordEndpoint: import.meta.env.NUXT_LIRIA_DISCORD_ENDPOINT || '',
+            url: import.meta.env.NUXT_BETTER_AUTH_URL,
+            secret: import.meta.env.NUXT_BETTER_AUTH_SECRET,
         },
         neon: {
-            databaseUrl: import.meta.env.NUXT_NEON_DATABASE_URL || '',
+            databaseUrl: import.meta.env.NUXT_NEON_DATABASE_URL,
         },
-        r2: {
-            endpoint: import.meta.env.NUXT_R2_ENDPOINT || '',
-            accessKey: import.meta.env.NUXT_R2_ACCESS_KEY || '',
-            secretKey: import.meta.env.NUXT_R2_SECRET_KEY || '',
-        },
-        upstash: {
-            redisRestUrl: import.meta.env.UPSTASH_REDIS_REST_URL || '',
-            redisRestToken: import.meta.env.UPSTASH_REDIS_REST_TOKEN || '',
+        tigris: {
+            storage: {
+                domain: import.meta.env.TIGRIS_STORAGE_DOMAIN,
+                accessKeyId: import.meta.env.TIGRIS_STORAGE_ACCESS_KEY_ID,
+                secretAccessKey: import.meta.env.TIGRIS_STORAGE_SECRET_ACCESS_KEY,
+                endpoint: import.meta.env.TIGRIS_STORAGE_ENDPOINT,
+            },
         },
         vercel: {
-            token: import.meta.env.NUXT_VERCEL_TOKEN || '',
+            token: import.meta.env.NUXT_VERCEL_TOKEN,
             edgeConfig: {
-                endpoint: import.meta.env.NUXT_VERCEL_EDGE_CONFIG || '',
+                endpoint: import.meta.env.NUXT_VERCEL_EDGE_CONFIG,
             },
         },
         public: {
             siteUrl: baseUrl,
-            r2: {
-                domain: r2Domain,
-            },
         },
     },
 
@@ -213,9 +173,12 @@ export default defineNuxtConfig({
     },
 
     fonts: {
-        families: [{ name: 'Geist', provider: 'google' }],
+        families: [
+            { name: 'Geist', provider: 'google' },
+            { name: 'Geist Mono', provider: 'google' },
+        ],
         defaults: {
-            weights: [100, 200, 300, 300, 400, 500, 600, 700, 800, 900],
+            weights: [200, 300, 300, 400, 500, 600, 700],
         },
     },
 
@@ -296,7 +259,7 @@ export default defineNuxtConfig({
         },
         densities: [1],
         domains: [
-            r2Domain, // R2
+            import.meta.env.TIGRIS_STORAGE_DOMAIN!,
             'booth.pximg.net', // booth
             's2.booth.pm', // booth
             'github.com', // GitHub

@@ -158,11 +158,9 @@ watch(colorMode, (newMode) => {
                 :width="imageSize.width"
                 :height="imageSize.height"
                 :placeholder="[placeholderSize.width, placeholderSize.height, 50, 5]"
-                format="webp"
+                format="avif"
                 fit="cover"
                 preload
-                loading="eager"
-                fetchpriority="high"
                 class="size-full max-h-105 rounded-lg object-cover"
             />
             <div
@@ -200,17 +198,20 @@ watch(colorMode, (newMode) => {
                 v-if="!hasImages && firstAvatar"
                 v-slot="{ isLoaded, src, imgAttrs }"
                 :src="firstAvatar.image || undefined"
-                :alt="firstAvatar.name"
                 :width="88"
                 :height="88"
-                format="webp"
-                loading="lazy"
-                fetchpriority="low"
+                format="avif"
                 custom
-                class="m-1 aspect-square size-14 shrink-0 rounded-lg object-cover md:size-20"
             >
                 <UTooltip v-if="isLoaded" :text="avatarName" :delay-duration="100">
-                    <img v-bind="imgAttrs" :src="src" />
+                    <img
+                        v-bind="imgAttrs"
+                        :src
+                        alt=""
+                        loading="lazy"
+                        fetchpriority="low"
+                        class="m-1 aspect-square size-14 shrink-0 rounded-lg object-cover md:size-20"
+                    />
                 </UTooltip>
 
                 <USkeleton
@@ -264,7 +265,7 @@ watch(colorMode, (newMode) => {
                                 :description="`@${setup.user.username}`"
                                 :ui="{
                                     name: 'flex gap-1 items-center',
-                                    description: 'line-clamp-1 break-all wrap-anywhere',
+                                    description: 'line-clamp-1 break-all wrap-anywhere font-mono',
                                 }"
                             >
                                 <template #name>
@@ -307,7 +308,8 @@ watch(colorMode, (newMode) => {
                                     :description="`@${setup.user.username}`"
                                     :ui="{
                                         name: 'flex gap-1 items-center',
-                                        description: 'line-clamp-1 break-all wrap-anywhere',
+                                        description:
+                                            'line-clamp-1 break-all wrap-anywhere font-mono',
                                     }"
                                 >
                                     <template #name>

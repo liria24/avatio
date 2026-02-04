@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const toast = useToast()
+const { resolveReport } = useAdminActions()
 
 const { data, refresh } = await useFetch('/api/reports/setup', {
     dedupe: 'defer',
@@ -17,25 +17,8 @@ const { data, refresh } = await useFetch('/api/reports/setup', {
 })
 
 const resolve = async (id: number, resolve?: boolean) => {
-    try {
-        const isResolved = resolve ?? true
-        await $fetch(`/api/reports/setup/${id}`, {
-            method: 'PATCH',
-            body: { isResolved },
-        })
-        toast.add({
-            title: isResolved ? 'Marked as Resolved' : 'Marked as Unresolved',
-            color: 'success',
-        })
-    } catch (error) {
-        console.error('Error:', error)
-        toast.add({
-            title: 'Error',
-            color: 'error',
-        })
-    } finally {
-        refresh()
-    }
+    const success = await resolveReport('setup', id, resolve ?? true)
+    if (success) refresh()
 }
 </script>
 

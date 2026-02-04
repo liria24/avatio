@@ -77,17 +77,19 @@ if (user.value) {
                         v-if="user.image"
                         v-slot="{ isLoaded, src, imgAttrs }"
                         :src="user.image"
-                        :alt="user.name"
                         :width="88"
                         :height="88"
-                        format="webp"
-                        loading="eager"
-                        fetchpriority="high"
+                        format="avif"
                         preload
                         custom
-                        class="aspect-square size-14 shrink-0 rounded-full object-cover sm:size-20"
                     >
-                        <img v-if="isLoaded" v-bind="imgAttrs" :src="src" />
+                        <img
+                            v-if="isLoaded"
+                            v-bind="imgAttrs"
+                            :src
+                            alt=""
+                            class="aspect-square size-14 shrink-0 rounded-full object-cover sm:size-20"
+                        />
                         <USkeleton
                             v-else
                             class="aspect-square size-14 shrink-0 rounded-full sm:size-20"
@@ -108,10 +110,13 @@ if (user.value) {
                             </p>
                             <UserBadges v-if="user.badges" :badges="user.badges" />
                         </div>
-                        <p class="text-dimmed text-sm">
-                            アカウント作成日:
-                            <NuxtTime :datetime="user.createdAt" class="text-muted font-[Geist]" />
-                        </p>
+
+                        <div class="text-muted flex items-center gap-1 font-mono text-sm">
+                            <span> @{{ user.username }} </span>
+
+                            <Icon name="mingcute:calendar-2-fill" size="18" class="ml-2" />
+                            <NuxtTime :datetime="user.createdAt" />
+                        </div>
                     </div>
                 </div>
                 <div class="flex items-center gap-1 self-end sm:self-auto">
@@ -143,6 +148,7 @@ if (user.value) {
                         :key="'link-' + index"
                         :to="link.to"
                         target="_blank"
+                        :aria-label="link.label || link.to"
                         :icon="link.icon"
                         variant="ghost"
                     />
@@ -152,7 +158,9 @@ if (user.value) {
                     v-if="user.bio?.length"
                     class="flex w-full flex-col gap-1 rounded-xl border border-zinc-400 px-4 py-3 dark:border-zinc-600"
                 >
-                    <span class="text-dimmed text-xs leading-none text-nowrap"> bio </span>
+                    <span class="text-dimmed font-mono text-xs leading-none text-nowrap">
+                        bio
+                    </span>
                     <p class="text-relaxed sentence text-sm whitespace-pre-wrap">
                         {{ user.bio }}
                     </p>

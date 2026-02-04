@@ -16,5 +16,7 @@ export default adminSessionEventHandler<{ id: number }>(async () => {
         })
         .returning({ id: auditLogs.id })
 
+    if (!data) throw createError({ status: 500, statusText: 'Failed to create audit log' })
+
     return data
 })

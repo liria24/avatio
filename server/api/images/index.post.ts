@@ -1,7 +1,9 @@
-import { consola } from 'consola'
+import { put } from '@tigrisdata/storage'
 import { nanoid } from 'nanoid'
 import sharp from 'sharp'
 import { z } from 'zod'
+
+const log = logger('/api/images:POST')
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // ファイルサイズ制限（10MB）
 const MAX_DIMENSION = 1920 // 最大長辺（px）
@@ -26,7 +28,7 @@ const formData = z.object({
 })
 
 const compressImage = async (buffer: Buffer) => {
-    consola.start('Compressing image...')
+    log.start('Compressing image...')
 
     const metadata = await sharp(buffer).metadata()
     const { width = 0, height = 0 } = metadata
@@ -45,7 +47,7 @@ const compressImage = async (buffer: Buffer) => {
             resizedHeight = MAX_DIMENSION
             resizedWidth = Math.round(MAX_DIMENSION * aspectRatio)
         }
-        consola.info(`Resizing image from ${width}x${height} to ${resizedWidth}x${resizedHeight}`)
+        log.info(`Resizing image from ${width}x${height} to ${resizedWidth}x${resizedHeight}`)
     }
 
     // 品質を段階的に下げて目標サイズに収める
@@ -64,7 +66,7 @@ const compressImage = async (buffer: Buffer) => {
 
         compressedImage = await sharpInstance.jpeg({ quality, progressive: true }).toBuffer()
 
-        consola.info(
+        log.info(
             `Compressed image with quality ${quality}: ${(
                 compressedImage.length /
                 1024 /
@@ -78,7 +80,7 @@ const compressImage = async (buffer: Buffer) => {
     } while (quality > 0)
 
     const finalMetadata = await sharp(compressedImage).metadata()
-    consola.success(
+    log.success(
         `Image compressed successfully: ${finalMetadata.width}x${finalMetadata.height}, ${(
             compressedImage.length /
             1024 /
@@ -97,9 +99,7 @@ export default authedSessionEventHandler(
     async () => {
         const { blob, path } = await validateFormData(formData)
 
-        const config = useRuntimeConfig()
-
-        consola.start('Processing and uploading image to Blob Storage...')
+        log.start('Processing and uploading image to Blob Storage...')
 
         const processedBuffer = Buffer.from(await blob.arrayBuffer())
 
@@ -110,13 +110,21 @@ export default authedSessionEventHandler(
 
         // パスの正規化
         const normalizedPath = path.replace(/\/+/g, '/').replace(/^\/|\/$/g, '')
-        const fullPath = `${normalizedPath.split('/').join(':')}:${jpgFilename}`
+        const fullPath = `${normalizedPath}/${jpgFilename}`
 
-        await useStorage('r2').setItemRaw(fullPath, compressedImage)
+        const result = await put(fullPath, compressedImage, {
+            contentType: 'image/jpeg',
+            contentDisposition: 'inline',
+        })
+        if (result.error)
+            throw createError({
+                status: 500,
+                statusText: 'Failed to upload image to storage',
+            })
 
-        consola.success('Image processed and uploaded successfully')
+        log.success('Image processed and uploaded successfully:', result.data.path)
         return {
-            url: `${config.public.r2.domain}/${normalizedPath}/${jpgFilename}`,
+            url: `https://${useRuntimeConfig().tigris.storage.domain}/${result.data.path}`,
             width,
             height,
         }

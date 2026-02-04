@@ -9,6 +9,7 @@ const emit = defineEmits(['close'])
 const { getSession } = useAuth()
 const session = await getSession()
 const toast = useToast()
+const { unhideSetup: unhideSetupAction } = useAdminActions()
 
 const unhideSetup = async () => {
     if (session.value?.user.role !== 'admin') {
@@ -20,23 +21,8 @@ const unhideSetup = async () => {
         return
     }
 
-    try {
-        await $fetch(`/api/admin/setup/${props.setupId}`, {
-            method: 'PATCH',
-            body: { hide: false },
-        })
-        toast.add({
-            title: 'セットアップが再表示されました',
-            color: 'success',
-        })
-        emit('close')
-    } catch (error) {
-        console.error('セットアップの再表示に失敗:', error)
-        toast.add({
-            title: 'セットアップの再表示に失敗しました',
-            color: 'error',
-        })
-    }
+    const success = await unhideSetupAction(props.setupId)
+    if (success) emit('close')
 }
 </script>
 

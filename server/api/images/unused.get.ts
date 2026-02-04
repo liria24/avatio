@@ -1,4 +1,4 @@
-import { AwsClient } from 'aws4fetch'
+import { list } from '@tigrisdata/storage'
 
 interface ImageInfo {
     url: string
@@ -7,59 +7,28 @@ interface ImageInfo {
 }
 
 interface UnusedImagesResponse {
-    setupImages: ImageInfo[]
-    userImages: ImageInfo[]
-    noNeedDeletingImages: ImageInfo[]
+    setup: ImageInfo[]
+    user: ImageInfo[]
+    noNeedDeleting: ImageInfo[]
 }
 
+const IMAGE_DELETION_THRESHOLD = 24 * 60 * 60 * 1000 // 1日
+const config = useRuntimeConfig()
+
 export default adminSessionEventHandler<UnusedImagesResponse>(async () => {
-    const config = useRuntimeConfig()
-    const IMAGE_DELETION_THRESHOLD = 24 * 60 * 60 * 1000 // 1日
     const thresholdDate = new Date(Date.now() - IMAGE_DELETION_THRESHOLD)
-
-    const aws = new AwsClient({
-        accessKeyId: config.r2.accessKey,
-        secretAccessKey: config.r2.secretKey,
-        service: 's3',
-        region: 'auto',
-    })
-
-    // XMLパースを最適化
-    const parseStorageObjects = (xmlText: string): ImageInfo[] => {
-        const contents = xmlText.match(/<Contents>[\s\S]*?<\/Contents>/g) || []
-
-        return contents.reduce<ImageInfo[]>((acc, content) => {
-            const keyMatch = content.match(/<Key>(.*?)<\/Key>/)
-            const lastModifiedMatch = content.match(/<LastModified>(.*?)<\/LastModified>/)
-
-            if (!keyMatch || !lastModifiedMatch) return acc
-
-            const key = keyMatch[1]
-            const filename = key.split('/').pop()
-
-            if (!filename?.trim()) return acc
-
-            acc.push({
-                url: `https://images.avatio.me/${key}`,
-                key,
-                lastModified: new Date(lastModifiedMatch[1]),
-            })
-
-            return acc
-        }, [])
-    }
 
     const getStorageObjects = async (prefix: string): Promise<ImageInfo[]> => {
         try {
-            const url = `${config.r2.endpoint}/avatio?list-type=2&prefix=${prefix}/`
-            const response = await aws.fetch(url)
+            const result = await list({ prefix: `${prefix}/` })
 
-            if (!response.ok) {
-                throw new Error(`Failed to list objects: ${response.status}`)
-            }
+            if (!result.data?.items) return []
 
-            const xmlText = await response.text()
-            return parseStorageObjects(xmlText)
+            return result.data.items.map((obj) => ({
+                url: `https://${config.tigris.storage.domain}/${obj.name}`,
+                key: obj.name,
+                lastModified: new Date(obj.lastModified!),
+            }))
         } catch (error) {
             console.error(`Failed to get storage objects for prefix ${prefix}:`, error)
             return []
@@ -73,15 +42,9 @@ export default adminSessionEventHandler<UnusedImagesResponse>(async () => {
     ] = await Promise.all([
         // DB クエリを並列実行
         Promise.all([
-            db.query.setupImages.findMany({
-                columns: { url: true },
-            }),
-            db.query.setupDraftImages.findMany({
-                columns: { url: true },
-            }),
-            db.query.user.findMany({
-                columns: { image: true },
-            }),
+            db.query.setupImages.findMany({ columns: { url: true } }),
+            db.query.setupDraftImages.findMany({ columns: { url: true } }),
+            db.query.user.findMany({ columns: { image: true } }),
         ]),
         // ストレージクエリを並列実行
         Promise.all([getStorageObjects('setup'), getStorageObjects('avatar')]),
@@ -107,23 +70,21 @@ export default adminSessionEventHandler<UnusedImagesResponse>(async () => {
     // 削除対象と保持対象を分離
     const { oldImages, recentImages } = allUnusedImages.reduce(
         (acc, img) => {
-            if (img.lastModified < thresholdDate) {
-                acc.oldImages.push(img)
-            } else {
-                acc.recentImages.push(img)
-            }
+            if (img.lastModified < thresholdDate) acc.oldImages.push(img)
+            else acc.recentImages.push(img)
+
             return acc
         },
         { oldImages: [] as ImageInfo[], recentImages: [] as ImageInfo[] }
     )
 
     // 最終的な分類
-    const setupImages = oldImages.filter((img) => img.key.startsWith('setup/'))
-    const userImages = oldImages.filter((img) => img.key.startsWith('avatar/'))
+    const setup = oldImages.filter((img) => img.key.startsWith('setup/'))
+    const user = oldImages.filter((img) => img.key.startsWith('avatar/'))
 
     return {
-        setupImages,
-        userImages,
-        noNeedDeletingImages: recentImages,
+        setup,
+        user,
+        noNeedDeleting: recentImages,
     }
 })
