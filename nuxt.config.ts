@@ -74,7 +74,7 @@ export default defineNuxtConfig({
     },
 
     nitro: {
-        preset: 'vercel',
+        preset: 'bun',
         compressPublicAssets: true,
         storage: {
             cache: {

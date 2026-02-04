@@ -1,4 +1,3 @@
-import { put } from '@tigrisdata/storage'
 import { nanoid } from 'nanoid'
 import sharp from 'sharp'
 import { z } from 'zod'
@@ -112,19 +111,11 @@ export default authedSessionEventHandler(
         const normalizedPath = path.replace(/\/+/g, '/').replace(/^\/|\/$/g, '')
         const fullPath = `${normalizedPath}/${jpgFilename}`
 
-        const result = await put(fullPath, compressedImage, {
-            contentType: 'image/jpeg',
-            contentDisposition: 'inline',
-        })
-        if (result.error)
-            throw createError({
-                status: 500,
-                statusText: 'Failed to upload image to storage',
-            })
+        await s3.write(fullPath, compressedImage)
 
-        log.success('Image processed and uploaded successfully:', result.data.path)
+        log.success('Image processed and uploaded successfully:', fullPath)
         return {
-            url: `https://${useRuntimeConfig().tigris.storage.domain}/${result.data.path}`,
+            url: `https://${useRuntimeConfig().tigris.storage.domain}/${fullPath}`,
             width,
             height,
         }

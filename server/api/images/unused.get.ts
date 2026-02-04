@@ -1,5 +1,3 @@
-import { list } from '@tigrisdata/storage'
-
 interface ImageInfo {
     url: string
     key: string
@@ -20,13 +18,13 @@ export default adminSessionEventHandler<UnusedImagesResponse>(async () => {
 
     const getStorageObjects = async (prefix: string): Promise<ImageInfo[]> => {
         try {
-            const result = await list({ prefix: `${prefix}/` })
+            const result = await s3.list({ prefix: `${prefix}/` })
 
-            if (!result.data?.items) return []
+            if (!result.contents) return []
 
-            return result.data.items.map((obj) => ({
-                url: `https://${config.tigris.storage.domain}/${obj.name}`,
-                key: obj.name,
+            return result.contents.map((obj) => ({
+                url: `https://${config.tigris.storage.domain}/${obj.key}`,
+                key: obj.key,
                 lastModified: new Date(obj.lastModified!),
             }))
         } catch (error) {
