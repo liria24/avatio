@@ -9,27 +9,21 @@ const open = defineModel<boolean>({
 
 const searchTerm = ref('')
 
-const { data: tags, status } = useFetch('/api/setups/tags', {
-    dedupe: 'defer',
-    default: () => [],
-    getCachedData: (key, nuxtApp, ctx) =>
-        ctx.cause === 'refresh:manual'
-            ? undefined
-            : nuxtApp.payload.data[key] || nuxtApp.static.data[key],
-})
+const { data: tags, status } = useSetupTags()
 
 const existingTagsGroup = computed(() => ({
     id: 'existing-tags',
     label: '既存タグ',
-    items: tags.value.map((tag, index) => ({
-        id: `existing-${index}`,
-        label: tag.tag,
-        onSelect: () => {
-            emit('select', tag.tag)
-            open.value = false
-            searchTerm.value = ''
-        },
-    })),
+    items:
+        tags.value?.map((tag, index) => ({
+            id: `existing-${index}`,
+            label: tag.tag,
+            onSelect: () => {
+                emit('select', tag.tag)
+                open.value = false
+                searchTerm.value = ''
+            },
+        })) ?? [],
 }))
 
 const newTagGroup = computed(() => ({

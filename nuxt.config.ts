@@ -32,9 +32,6 @@ export default defineNuxtConfig({
     css: ['~/assets/css/main.css'],
 
     vite: {
-        ssr: {
-            noExternal: ['zod', 'drizzle-zod'],
-        },
         vue: {
             features: {
                 optionsAPI: false,
@@ -67,6 +64,9 @@ export default defineNuxtConfig({
         },
         '/on-maintenance': {
             prerender: true,
+        },
+        '/setup': {
+            redirect: '/',
         },
         '/setup/edit': {
             redirect: '/setup/compose',

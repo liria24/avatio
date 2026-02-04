@@ -18,7 +18,7 @@ export default eventHandler(async () => {
     const data = await db
         .select({
             tag: setupTags.tag,
-            count: sql<number>`CAST(COUNT(*) OVER() AS INTEGER)`,
+            count: sql<number>`CAST(COUNT(*) AS INTEGER)`,
         })
         .from(setupTags)
         .groupBy(setupTags.tag)
