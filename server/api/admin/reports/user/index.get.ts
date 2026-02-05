@@ -12,12 +12,12 @@ const query = z.object({
         .optional(),
 })
 
-export default adminSessionEventHandler<PaginationResponse<ItemReport[]>>(async () => {
+export default adminSessionEventHandler<PaginationResponse<UserReport[]>>(async () => {
     const { sort, reporterId, page, limit, isResolved } = await validateQuery(query)
 
     const offset = (page - 1) * limit
 
-    const data = await db.query.itemReports.findMany({
+    const data = await db.query.userReports.findMany({
         extras: {
             count: sql<number>`CAST(COUNT(*) OVER() AS INTEGER)`,
         },
@@ -36,40 +36,54 @@ export default adminSessionEventHandler<PaginationResponse<ItemReport[]>>(async 
         columns: {
             id: true,
             createdAt: true,
-            nameError: true,
-            irrelevant: true,
+            spam: true,
+            hate: true,
+            infringe: true,
+            badImage: true,
             other: true,
             comment: true,
             isResolved: true,
         },
         with: {
-            item: {
+            reportee: {
                 columns: {
                     id: true,
-                    platform: true,
-                    category: true,
+                    username: true,
+                    createdAt: true,
                     name: true,
-                    niceName: true,
                     image: true,
-                    price: true,
-                    likes: true,
-                    nsfw: true,
-                    outdated: true,
+                    bio: true,
+                    links: true,
                 },
                 with: {
-                    shop: {
+                    badges: {
+                        columns: {
+                            badge: true,
+                            createdAt: true,
+                        },
+                    },
+                    shops: {
                         columns: {
                             id: true,
-                            platform: true,
-                            name: true,
-                            image: true,
-                            verified: true,
+                            createdAt: true,
+                        },
+                        with: {
+                            shop: {
+                                columns: {
+                                    id: true,
+                                    platform: true,
+                                    name: true,
+                                    image: true,
+                                    verified: true,
+                                },
+                            },
                         },
                     },
                 },
             },
             reporter: {
                 columns: {
+                    id: true,
                     username: true,
                     createdAt: true,
                     name: true,

@@ -1,9 +1,9 @@
 import { remove } from '@tigrisdata/storage'
 
-export default cronEventHandler(async ({ event }) => {
+export default cronEventHandler(async () => {
     const config = useRuntimeConfig()
 
-    const unusedImages = await event.$fetch('/api/images/unused')
+    const unusedImages = await listUnusedImages()
     const allImages = [...unusedImages.setup, ...unusedImages.user]
 
     // Execute deletion in parallel

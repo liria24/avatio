@@ -2,15 +2,8 @@ import { items, shops } from '@@/database/schema'
 import { getAll } from '@vercel/edge-config'
 import { waitUntil } from '@vercel/functions'
 import { eq } from 'drizzle-orm'
-import { z } from 'zod'
 
-const params = z.object({
-    id: z.string(),
-})
-
-const CACHE_DURATION_MS = 24 * 60 * 60 * 1000 // 24時間
-
-const log = logger('/api/items/booth/[id]:GET')
+const log = logger('getItem')
 
 const markItemAsOutdated = async (id: string): Promise<void> => {
     try {
@@ -23,7 +16,9 @@ const markItemAsOutdated = async (id: string): Promise<void> => {
     }
 }
 
-const updateDatabase = async (item: Item & { shop: NonNullable<Item['shop']> }): Promise<void> => {
+const updateBoothDatabase = async (
+    item: Item & { shop: NonNullable<Item['shop']> }
+): Promise<void> => {
     try {
         // ショップ情報更新
         await db
@@ -73,9 +68,8 @@ const updateDatabase = async (item: Item & { shop: NonNullable<Item['shop']> }):
     }
 }
 
-export default promiseEventHandler<Item>(async () => {
-    const { id } = await validateParams(params)
-
+const getBoothItem = async (id: string): Promise<Item> => {
+    const CACHE_DURATION_MS = 24 * 60 * 60 * 1000 // 24時間
     const { forceUpdateItem, allowedBoothCategoryId, specificItemCategories } =
         await getAll<EdgeConfig>()
 
@@ -128,7 +122,7 @@ export default promiseEventHandler<Item>(async () => {
     // アイテム情報の更新処理
     // DBに無いあるいはforceUpdateItemがtrueの場合はniceNameとcategoryをAI生成
     waitUntil(
-        updateDatabase(processedItem).then(async () => {
+        updateBoothDatabase(processedItem).then(async () => {
             if (!cachedItem)
                 try {
                     log.log(`Defining item info for item ${id}`)
@@ -147,4 +141,88 @@ export default promiseEventHandler<Item>(async () => {
     )
 
     return processedItem
-})
+}
+
+const getGithubItemFromRepo = async (repo: string): Promise<Item> => {
+    const CACHE_DURATION_MS = 1000 * 60 * 60 // 1時間
+
+    const { forceUpdateItem } = await getEdgeConfig()
+
+    const cachedItem = forceUpdateItem ? null : await getItemFromDatabase(repo)
+
+    const isCacheValid =
+        cachedItem && Date.now() - new Date(cachedItem.updatedAt).getTime() < CACHE_DURATION_MS
+
+    if (isCacheValid && !cachedItem.outdated) return cachedItem
+    if (isCacheValid && cachedItem.outdated) throw new Error('Item not found or not allowed')
+
+    const item = await getGithubItem(repo)
+
+    if (!item) {
+        if (cachedItem) markItemAsOutdated(cachedItem.id)
+        throw new Error('Repository not found')
+    }
+
+    // DBに無いあるいはforceUpdateItemがtrueの場合はniceNameとcategoryをAI生成
+    waitUntil(
+        (async () => {
+            if (cachedItem && cachedItem.id !== item.id)
+                await db.update(items).set({ id: item.id }).where(eq(items.id, cachedItem.id))
+
+            await db
+                .insert(items)
+                .values({
+                    id: item.id,
+                    platform: item.platform,
+                    name: item.name,
+                    niceName: cachedItem?.niceName || item.niceName,
+                    category: cachedItem?.category || item.category,
+                })
+                .onConflictDoUpdate({
+                    target: items.id,
+                    set: {
+                        ...item,
+                        updatedAt: new Date(),
+                        outdated: false,
+                    },
+                })
+
+            if (!cachedItem)
+                try {
+                    log.log(`Defining item info for item ${item.id}`)
+
+                    const repoData = await getGithubRepo(repo)
+                    const readme = await getGithubReadme(repo)
+                    const description = {
+                        description: repoData?.repo.description || '',
+                        readme: readme?.markdown || '',
+                    }
+
+                    const { niceName, category } = await generateItemAttr({
+                        name: item.name,
+                        description,
+                        category: item.category,
+                    })
+
+                    await db.update(items).set({ niceName, category }).where(eq(items.id, item.id))
+
+                    log.log(`Item info defined for item ${item.id}: ${niceName}, ${category}`)
+                } catch (error) {
+                    log.error(`Failed to define item info for item ${item.id}:`, error)
+                }
+        })()
+    )
+
+    return item
+}
+
+export default async (provider: 'booth' | 'github', id: string | number): Promise<Item> => {
+    if (provider === 'booth') {
+        return await getBoothItem(String(id))
+    } else if (provider === 'github') {
+        const repo = transformItemId(String(id)).decode()
+        return await getGithubItemFromRepo(repo)
+    } else {
+        throw new Error(`Unsupported provider: ${provider}`)
+    }
+}

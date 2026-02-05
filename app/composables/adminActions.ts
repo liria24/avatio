@@ -7,7 +7,7 @@ export const useAdminActions = () => {
         isResolved = true
     ) => {
         try {
-            await $fetch(`/api/reports/${type}/${id}`, {
+            await $fetch(`/api/admin/reports/${type}/${id}`, {
                 method: 'PATCH',
                 body: { isResolved },
             })
@@ -70,7 +70,7 @@ export const useAdminActions = () => {
 
     const closeFeedback = async (feedbackId: number) => {
         try {
-            await $fetch(`/api/feedbacks/${feedbackId}`, {
+            await $fetch(`/api/admin/feedbacks/${feedbackId}`, {
                 method: 'PATCH',
                 body: { isClosed: true },
             })
@@ -91,7 +91,7 @@ export const useAdminActions = () => {
 
     const openFeedback = async (feedbackId: number) => {
         try {
-            await $fetch(`/api/feedbacks/${feedbackId}`, {
+            await $fetch(`/api/admin/feedbacks/${feedbackId}`, {
                 method: 'PATCH',
                 body: { isClosed: false },
             })
@@ -203,7 +203,7 @@ export const useAdminActions = () => {
 
     const toggleMaintenanceMode = async (isMaintenance: boolean) => {
         try {
-            await $fetch('/api/edge-config', {
+            await $fetch('/api/admin/edge-config', {
                 method: 'PUT',
                 body: { isMaintenance },
             })
@@ -220,7 +220,7 @@ export const useAdminActions = () => {
 
     const toggleForceUpdateItem = async (forceUpdateItem: boolean) => {
         try {
-            await $fetch('/api/edge-config', {
+            await $fetch('/api/admin/edge-config', {
                 method: 'PUT',
                 body: { forceUpdateItem },
             })
@@ -241,7 +241,7 @@ export const useAdminActions = () => {
 
     const changeItemNiceName = async (itemId: string, niceName: string) => {
         try {
-            await $fetch<void>(`/api/items/${transformItemId(itemId).encode()}`, {
+            await $fetch<void>(`/api/admin/items/${transformItemId(itemId).encode()}`, {
                 method: 'PUT',
                 body: { niceName },
             })
@@ -292,7 +292,7 @@ export const useAdminActions = () => {
         authors: string[]
     }) => {
         try {
-            await $fetch('/api/changelogs', {
+            await $fetch('/api/admin/changelogs', {
                 method: 'POST',
                 body: data,
             })

@@ -7,7 +7,7 @@ const overlay = useOverlay()
 
 const modalChangeItemNiceName = overlay.create(LazyModalAdminChangeItemNiceName)
 
-const { data, refresh } = await useFetch('/api/reports/item', {
+const { data, refresh } = await useFetch('/api/admin/reports/item', {
     dedupe: 'defer',
     default: () => ({
         data: [],

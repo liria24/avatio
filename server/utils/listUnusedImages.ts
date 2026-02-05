@@ -6,34 +6,29 @@ interface ImageInfo {
     lastModified: Date
 }
 
-interface UnusedImagesResponse {
-    setup: ImageInfo[]
-    user: ImageInfo[]
-    noNeedDeleting: ImageInfo[]
+const IMAGE_DELETION_THRESHOLD = 24 * 60 * 60 * 1000 // 1日
+
+const getStorageObjects = async (prefix: string): Promise<ImageInfo[]> => {
+    try {
+        const config = useRuntimeConfig()
+
+        const result = await list({ prefix: `${prefix}/` })
+
+        if (!result.data?.items) return []
+
+        return result.data.items.map((obj) => ({
+            url: `https://${config.tigris.storage.domain}/${obj.name}`,
+            key: obj.name,
+            lastModified: new Date(obj.lastModified!),
+        }))
+    } catch (error) {
+        console.error(`Failed to get storage objects for prefix ${prefix}:`, error)
+        return []
+    }
 }
 
-const IMAGE_DELETION_THRESHOLD = 24 * 60 * 60 * 1000 // 1日
-const config = useRuntimeConfig()
-
-export default adminSessionEventHandler<UnusedImagesResponse>(async () => {
+export default async () => {
     const thresholdDate = new Date(Date.now() - IMAGE_DELETION_THRESHOLD)
-
-    const getStorageObjects = async (prefix: string): Promise<ImageInfo[]> => {
-        try {
-            const result = await list({ prefix: `${prefix}/` })
-
-            if (!result.data?.items) return []
-
-            return result.data.items.map((obj) => ({
-                url: `https://${config.tigris.storage.domain}/${obj.name}`,
-                key: obj.name,
-                lastModified: new Date(obj.lastModified!),
-            }))
-        } catch (error) {
-            console.error(`Failed to get storage objects for prefix ${prefix}:`, error)
-            return []
-        }
-    }
 
     // 並列実行で高速化
     const [
@@ -87,4 +82,4 @@ export default adminSessionEventHandler<UnusedImagesResponse>(async () => {
         user,
         noNeedDeleting: recentImages,
     }
-})
+}

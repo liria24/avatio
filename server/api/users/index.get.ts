@@ -5,6 +5,7 @@ export default promiseEventHandler<User[]>(async () => {
             setups: true,
         },
         columns: {
+            id: true,
             username: true,
             createdAt: true,
             name: true,

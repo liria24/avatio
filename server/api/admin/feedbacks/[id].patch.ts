@@ -19,7 +19,7 @@ export default adminSessionEventHandler<Feedback>(async () => {
     const { id } = await validateParams(params)
     const { isClosed } = await validateBody(body)
 
-    const data = await db
+    const [data] = await db
         .update(feedbacks)
         .set({
             isClosed,
@@ -27,5 +27,11 @@ export default adminSessionEventHandler<Feedback>(async () => {
         .where(eq(feedbacks.id, id))
         .returning()
 
-    return data[0]
+    if (!data)
+        throw createError({
+            statusCode: 404,
+            statusMessage: 'Feedback not found',
+        })
+
+    return data
 })
