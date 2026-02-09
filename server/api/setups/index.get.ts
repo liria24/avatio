@@ -51,6 +51,7 @@ export default promiseEventHandler<PaginationResponse<Setup[]>>(async () => {
         with: {
             user: {
                 columns: {
+                    id: true,
                     username: true,
                     createdAt: true,
                     name: true,
@@ -114,6 +115,7 @@ export default promiseEventHandler<PaginationResponse<Setup[]>>(async () => {
                 with: {
                     user: {
                         columns: {
+                            id: true,
                             username: true,
                             createdAt: true,
                             name: true,

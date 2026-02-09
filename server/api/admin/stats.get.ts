@@ -11,13 +11,13 @@ import { and, count, eq, exists, isNull, or, sql } from 'drizzle-orm'
 
 export default adminSessionEventHandler(async () => {
     const [
-        usersCount,
-        setupsCount,
-        itemsCount,
-        feedbacksCount,
-        itemReportsCount,
-        setupReportsCount,
-        userReportsCount,
+        [usersCount],
+        [setupsCount],
+        [itemsCount],
+        [feedbacksCount],
+        [itemReportsCount],
+        [setupReportsCount],
+        [userReportsCount],
     ] = await Promise.all([
         db
             .select({ total: count() })
@@ -51,12 +51,12 @@ export default adminSessionEventHandler(async () => {
     ])
 
     return {
-        users: usersCount[0].total,
-        setups: setupsCount[0].count,
-        items: itemsCount[0].count,
-        feedbacks: feedbacksCount[0].count,
-        itemReports: itemReportsCount[0].count,
-        setupReports: setupReportsCount[0].count,
-        userReports: userReportsCount[0].count,
+        users: usersCount?.total,
+        setups: setupsCount?.count,
+        items: itemsCount?.count,
+        feedbacks: feedbacksCount?.count,
+        itemReports: itemReportsCount?.count,
+        setupReports: setupReportsCount?.count,
+        userReports: userReportsCount?.count,
     }
 })

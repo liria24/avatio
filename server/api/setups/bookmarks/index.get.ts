@@ -68,6 +68,7 @@ export default authedSessionEventHandler<PaginationResponse<Bookmark[]>>(async (
                 with: {
                     user: {
                         columns: {
+                            id: true,
                             username: true,
                             createdAt: true,
                             name: true,
@@ -131,6 +132,7 @@ export default authedSessionEventHandler<PaginationResponse<Bookmark[]>>(async (
                         with: {
                             user: {
                                 columns: {
+                                    id: true,
                                     username: true,
                                     createdAt: true,
                                     name: true,

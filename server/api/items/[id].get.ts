@@ -24,9 +24,8 @@ export default promiseEventHandler<Item>(async () => {
     defineCacheControl({ cdnAge: 60 * 60 * 24, clientAge: 60 * 60 })
 
     try {
-        if (platform === 'booth') return await $fetch<Item>(`/api/items/booth/${id}`)
-        else if (platform === 'github') return await $fetch<Item>(`/api/items/github/${id}`)
-        else throw new Error()
+        if (!platform) throw new Error('Platform not specified')
+        return await getItem(platform, id)
     } catch {
         throw createError({
             status: 404,

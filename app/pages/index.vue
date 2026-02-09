@@ -1,15 +1,11 @@
 <script setup lang="ts">
-import { LazyModalLogin, LineBreak } from '#components'
 import { motion } from 'motion-v'
 
 const { getSession } = useAuth()
 const session = await getSession()
 const route = useRoute()
 const router = useRouter()
-const overlay = useOverlay()
-
-const modalLogin = overlay.create(LazyModalLogin)
-const MotionLineBreak = motion.create(LineBreak)
+const { login } = useAppOverlay()
 
 type Tab = 'latest' | 'me' | 'bookmarks'
 
@@ -47,8 +43,7 @@ useSchemaOrg([
             :ui="{ container: 'pt-18 sm:pt-24 lg:pt-32', title: 'sm:text-6xl' }"
         >
             <template #title>
-                <MotionLineBreak
-                    content="お気に入りの改変を記録して共有しよう"
+                <motion.h1
                     :initial="{
                         opacity: 0,
                         filter: 'blur(30px)',
@@ -60,12 +55,14 @@ useSchemaOrg([
                     :transition="{
                         duration: 0.5,
                     }"
-                />
+                    class="wrap-anywhere break-keep"
+                >
+                    お気に入りの<wbr />改変を<wbr />記録して<wbr />共有しよう
+                </motion.h1>
             </template>
 
             <template #description>
-                <MotionLineBreak
-                    content="あのアイテムってどれだっけ？ 記録しておけば、もう忘れません。"
+                <motion.p
                     :initial="{
                         opacity: 0,
                         filter: 'blur(20px)',
@@ -78,7 +75,11 @@ useSchemaOrg([
                         duration: 0.5,
                         delay: 0.3,
                     }"
-                />
+                    class="wrap-anywhere break-keep"
+                >
+                    あのアイテムって<wbr />どれだっけ？
+                    <wbr />記録しておけば、<wbr />もう忘れません。
+                </motion.p>
             </template>
 
             <template #links>
@@ -101,7 +102,7 @@ useSchemaOrg([
                         color="neutral"
                         variant="outline"
                         class="rounded-full px-6 pt-2.5 pb-2 hover:bg-zinc-700 hover:text-zinc-200 hover:dark:bg-zinc-300 hover:dark:text-zinc-800"
-                        @click="modalLogin.open()"
+                        @click="login.open()"
                     />
                 </motion.div>
             </template>

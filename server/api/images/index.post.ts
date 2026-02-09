@@ -57,12 +57,11 @@ const compressImage = async (buffer: Buffer) => {
     do {
         let sharpInstance = sharp(buffer)
 
-        if (needsResize) {
+        if (needsResize)
             sharpInstance = sharpInstance.resize(resizedWidth, resizedHeight, {
                 fit: 'inside',
                 withoutEnlargement: true,
             })
-        }
 
         compressedImage = await sharpInstance.jpeg({ quality, progressive: true }).toBuffer()
 

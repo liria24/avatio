@@ -25,6 +25,7 @@ const getSetup = defineCachedFunction(
             with: {
                 user: {
                     columns: {
+                        id: true,
                         username: true,
                         createdAt: true,
                         name: true,
@@ -123,6 +124,7 @@ const getSetup = defineCachedFunction(
                     with: {
                         user: {
                             columns: {
+                                id: true,
                                 username: true,
                                 createdAt: true,
                                 name: true,

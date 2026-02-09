@@ -6,7 +6,7 @@ import * as schema from '../../database/schema'
 
 neonConfig.webSocketConstructor = WebSocket
 
-const pool = new Pool({ connectionString: process.env.NUXT_NEON_DATABASE_URL! })
+const pool = new Pool({ connectionString: process.env.NEON_DATABASE_URL! })
 const db = drizzle({ client: pool, schema, relations })
 
 export default db

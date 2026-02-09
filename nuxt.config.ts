@@ -1,6 +1,6 @@
 import { defineOrganization } from 'nuxt-schema-org/schema'
 
-const baseUrl = import.meta.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+const baseUrl = import.meta.env.PUBLIC_SITE_URL || 'http://localhost:3000'
 const title = 'Avatio'
 const description = 'あなたのアバター改変を共有しよう'
 
@@ -108,11 +108,14 @@ export default defineNuxtConfig({
             },
         },
         betterAuth: {
-            url: import.meta.env.NUXT_BETTER_AUTH_URL,
-            secret: import.meta.env.NUXT_BETTER_AUTH_SECRET,
+            secret: import.meta.env.BETTER_AUTH_SECRET,
+        },
+        liria: {
+            discordEndpoint: import.meta.env.LIRIA_DISCORD_ENDPOINT,
+            accessToken: import.meta.env.LIRIA_ACCESS_TOKEN,
         },
         neon: {
-            databaseUrl: import.meta.env.NUXT_NEON_DATABASE_URL,
+            databaseUrl: import.meta.env.NEON_DATABASE_URL,
         },
         tigris: {
             storage: {
@@ -123,9 +126,9 @@ export default defineNuxtConfig({
             },
         },
         vercel: {
-            token: import.meta.env.NUXT_VERCEL_TOKEN,
+            token: import.meta.env.VERCEL_TOKEN,
             edgeConfig: {
-                endpoint: import.meta.env.NUXT_VERCEL_EDGE_CONFIG,
+                endpoint: import.meta.env.VERCEL_EDGE_CONFIG_ENDPOINT,
             },
         },
         public: {
@@ -314,6 +317,7 @@ export default defineNuxtConfig({
         extractAsyncDataHandlers: true,
         typescriptPlugin: true,
         inlineRouteRules: true,
+        componentIslands: true,
     },
 })
 

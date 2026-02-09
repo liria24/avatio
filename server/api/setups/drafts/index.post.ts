@@ -17,15 +17,14 @@ const refreshDraftImages = async (draftId: string, imageUrls: string[]) => {
     if (images.length) await db.insert(setupDraftImages).values(images)
 }
 
-const hasContent = (content: Record<string, any>): boolean => {
-    return Object.values(content).some((value) => {
+const hasContent = (content: Record<string, unknown>) =>
+    Object.values(content).some((value) => {
         if (value === null || value === undefined) return false
         if (Array.isArray(value)) return value.length > 0
         if (typeof value === 'object') return Object.keys(value).length > 0
         if (typeof value === 'string') return value.length > 0
         return true
     })
-}
 
 export default authedSessionEventHandler(
     async ({ session }) => {

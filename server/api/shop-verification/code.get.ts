@@ -13,7 +13,7 @@ export default authedSessionEventHandler<{ code: string }>(async ({ session }) =
 
     await db.delete(userShopVerification).where(eq(userShopVerification.userId, session!.user.id))
 
-    const result = await db
+    const [result] = await db
         .insert(userShopVerification)
         .values({
             code,
@@ -21,5 +21,11 @@ export default authedSessionEventHandler<{ code: string }>(async ({ session }) =
         })
         .returning({ code: userShopVerification.code })
 
-    return result[0]
+    if (!result)
+        throw createError({
+            status: 500,
+            statusText: 'Failed to create verification code',
+        })
+
+    return result
 })

@@ -3,12 +3,14 @@ interface Props {
     setup: SerializedSetup
     class?: string | string[] | null
 }
-const props = defineProps<Props>()
+const { setup, class: className } = defineProps<Props>()
+
 const emit = defineEmits(['click'])
-const colorMode = useColorMode()
+
+const dominantColor = ref('')
 
 // アバター情報の取得
-const firstAvatar = computed(() => props.setup.items.find((item) => item.category === 'avatar'))
+const firstAvatar = computed(() => setup.items.find((item) => item.category === 'avatar'))
 
 const avatarName = computed(() => {
     const avatar = firstAvatar.value
@@ -17,8 +19,8 @@ const avatarName = computed(() => {
 })
 
 // 画像関連の処理
-const firstImage = computed(() => props.setup.images?.[0])
-const hasImages = computed(() => !!props.setup.images?.length)
+const firstImage = computed(() => setup.images?.[0])
+const hasImages = computed(() => !!setup.images?.length)
 
 // 画像サイズの計算（幅360px以下に制限、アスペクト比維持）
 const imageSize = computed(() => {
@@ -37,117 +39,30 @@ const imageSize = computed(() => {
     }
 })
 
-// placeholderサイズ（imageSizeの10分の1程度、整数値）
-const placeholderSize = computed(() => {
-    const { width, height } = imageSize.value
-    return { width: Math.round(width / 10), height: Math.round(height / 10) }
-})
-
-// テーマカラー関連
-const dominantColor = ref('')
-const adjustedColor = ref('')
-
-// カラー調整のヘルパー関数
-const adjustColorForTheme = (hex: string, isDark: boolean): string => {
-    if (!hex) return ''
-
-    const luminance = getLuminance(hex)
-    const { r, g, b } = hexToRgb(hex)
-
-    const targetLuminance = isDark
-        ? Math.max(0.4, Math.min(0.65, luminance))
-        : Math.max(0.25, Math.min(0.6, luminance))
-
-    const factor = targetLuminance / (luminance || 0.1)
-
-    const clamp = (value: number, min: number, max: number) =>
-        Math.min(max, Math.max(min, value * factor))
-
-    return isDark
-        ? rgbToHex(clamp(r, 30, 255), clamp(g, 30, 255), clamp(b, 30, 255))
-        : rgbToHex(clamp(r, 20, 220), clamp(g, 20, 220), clamp(b, 20, 220))
-}
-
 // テーマカラーの初期化
 const initializeThemeColor = () => {
     const themeColors = firstImage.value?.themeColors
-
-    if (!themeColors?.length) {
-        dominantColor.value = ''
-        adjustedColor.value = ''
-        return
-    }
-
-    const themeColor = themeColors[0]
-    if (!themeColor) {
-        dominantColor.value = ''
-        adjustedColor.value = ''
-        return
-    }
-
-    dominantColor.value = themeColor
-    adjustedColor.value = adjustColorForTheme(themeColor, colorMode.value === 'dark')
+    dominantColor.value = themeColors?.[0] || ''
 }
-
-// グラデーション色の計算
-const gradientColor = computed(() => {
-    if (!adjustedColor.value) return 'rgba(0,0,0,0.8)'
-
-    const { r, g, b } = hexToRgb(adjustedColor.value)
-    const darkeningFactor = 0.2
-
-    return `rgba(${Math.round(r * darkeningFactor)}, ${Math.round(g * darkeningFactor)}, ${Math.round(b * darkeningFactor)}, 0.8)`
-})
-
-// CSS 変数のスタイル
-const elementStyle = computed(() =>
-    adjustedColor.value
-        ? {
-              '--dominant-color': adjustedColor.value,
-              '--gradient-color': gradientColor.value,
-          }
-        : {}
-)
-
-// グラデーションスタイル
-const gradientStyle = computed(() => {
-    const gradient = adjustedColor.value ? 'var(--gradient-color)' : 'rgba(0,0,0,0.8)'
-
-    return `background-image: linear-gradient(to top, ${gradient} 0%, transparent 80%)`
-})
-
-// リンクのクラス
-const linkClasses = computed(() => {
-    const baseClasses =
-        'group flex flex-col rounded-lg overflow-clip focus:outline-none hover:ring-2 focus:ring-2 hover:shadow-xl focus-visible:shadow-xl shadow-black/10 dark:shadow-white/10 transition duration-100 ease-in-out'
-
-    const colorClasses = adjustedColor.value
-        ? 'hover:ring-[var(--dominant-color)] hover:bg-[var(--dominant-color)]/20 focus:ring-[var(--dominant-color)] focus:bg-[var(--dominant-color)]/20'
-        : 'hover:ring-accented hover:bg-elevated focus:ring-accented focus:bg-elevated'
-
-    return cn(baseClasses, colorClasses, props.class)
-})
 
 // ライフサイクル
 onMounted(initializeThemeColor)
-
-// テーマ変更の監視
-watch(colorMode, (newMode) => {
-    if (dominantColor.value)
-        adjustedColor.value = adjustColorForTheme(
-            dominantColor.value,
-            newMode.preference === 'dark' ||
-                (newMode.preference === 'system' && newMode.value === 'dark')
-        )
-})
 </script>
 
 <template>
     <NuxtLink
         tabindex="0"
         :to="setup.id ? $localePath(`/setup/${setup.id}`) : undefined"
-        :class="linkClasses"
-        :style="elementStyle"
+        :class="
+            cn(
+                'group flex flex-col overflow-clip rounded-lg shadow-black/10 transition duration-100 ease-in-out hover:shadow-xl hover:ring-2 focus:ring-2 focus:outline-none focus-visible:shadow-xl dark:shadow-white/10',
+                dominantColor
+                    ? 'link-with-color'
+                    : 'hover:ring-accented hover:bg-elevated focus:ring-accented focus:bg-elevated',
+                className
+            )
+        "
+        :style="dominantColor ? { '--dominant-color': dominantColor } : undefined"
         @click="emit('click')"
     >
         <!-- 画像がある場合のレイアウト -->
@@ -157,7 +72,6 @@ watch(colorMode, (newMode) => {
                 :alt="setup.name"
                 :width="imageSize.width"
                 :height="imageSize.height"
-                :placeholder="[placeholderSize.width, placeholderSize.height, 50, 5]"
                 format="avif"
                 fit="cover"
                 preload
@@ -165,12 +79,12 @@ watch(colorMode, (newMode) => {
             />
             <div
                 :class="[
+                    'gradient-overlay',
                     'group absolute inset-1.5 rounded-lg p-2',
                     'flex flex-col items-start justify-end gap-1',
                     'opacity-0 group-hover:opacity-100',
                     'transition duration-100 ease-in-out',
                 ]"
-                :style="gradientStyle"
             >
                 <span
                     class="md:text-md line-clamp-2 translate-y-4 text-sm font-medium break-all text-white opacity-0 duration-200 group-hover:translate-y-0 group-hover:opacity-100"
@@ -285,7 +199,7 @@ watch(colorMode, (newMode) => {
             <!-- 画像がない場合のメタ情報 -->
             <div v-else class="flex w-full flex-col items-start justify-center gap-2 pr-2 pl-3">
                 <span class="md:text-md text-toned sentence line-clamp-2 text-sm font-medium">
-                    {{ props.setup.name }}
+                    {{ setup.name }}
                 </span>
 
                 <div class="flex items-center gap-2">
@@ -345,3 +259,37 @@ watch(colorMode, (newMode) => {
         </div>
     </NuxtLink>
 </template>
+
+<style scoped>
+.link-with-color {
+    --adjusted-color: color-mix(in oklch, var(--dominant-color), oklch(0.45 0 0) 40%);
+    --ring-color: var(--adjusted-color);
+    --bg-color: color-mix(in oklch, var(--adjusted-color), transparent 80%);
+    --gradient-color: color-mix(in oklch, var(--adjusted-color), black 80%);
+}
+
+/* ダークモード */
+@media (prefers-color-scheme: dark) {
+    .link-with-color {
+        --adjusted-color: color-mix(in oklch, var(--dominant-color), oklch(0.65 0 0) 40%);
+    }
+}
+
+:global(.dark) .link-with-color {
+    --adjusted-color: color-mix(in oklch, var(--dominant-color), oklch(0.65 0 0) 40%);
+}
+
+.link-with-color:hover,
+.link-with-color:focus {
+    box-shadow: 0 0 0 2px var(--ring-color);
+    background-color: var(--bg-color);
+}
+
+.gradient-overlay {
+    background-image: linear-gradient(
+        to top,
+        var(--gradient-color, rgba(0, 0, 0, 0.8)) 0%,
+        transparent 80%
+    );
+}
+</style>

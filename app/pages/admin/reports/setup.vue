@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const { resolveReport } = useAdminActions()
 
-const { data, refresh } = await useFetch('/api/reports/setup', {
+const { data, refresh } = await useFetch('/api/admin/reports/setup', {
     dedupe: 'defer',
     default: () => ({
         data: [],

@@ -1,11 +1,4 @@
 <script lang="ts" setup>
-import {
-    LazyModalSetupDelete,
-    LazyModalLogin,
-    LazyModalSetupHide,
-    LazyModalSetupUnhide,
-} from '#components'
-
 interface Props {
     setup: SerializedSetup
     sidebar?: boolean
@@ -13,21 +6,10 @@ interface Props {
 }
 const props = defineProps<Props>()
 
-const overlay = useOverlay()
 const { getSession } = useAuth()
 const session = await getSession()
 const { toggle: toggleBookmarkAction, getBookmarkStatus } = useBookmarks()
-
-const modalLogin = overlay.create(LazyModalLogin)
-const modalHide = overlay.create(LazyModalSetupHide, {
-    props: { setupId: props.setup.id },
-})
-const modalUnhide = overlay.create(LazyModalSetupUnhide, {
-    props: { setupId: props.setup.id },
-})
-const modalDelete = overlay.create(LazyModalSetupDelete, {
-    props: { setupId: props.setup.id },
-})
+const { login, setupDelete, setupHide, setupUnhide } = useAppOverlay()
 
 const {
     isBookmarked,
@@ -39,23 +21,13 @@ const toggleBookmark = async () => {
     const success = await toggleBookmarkAction(props.setup.id, isBookmarked.value)
     if (success) await bookmarkRefresh()
 }
-
-onBeforeRouteLeave(() => {
-    modalLogin.close()
-    modalHide.close()
-    modalUnhide.close()
-    modalDelete.close()
-})
 </script>
 
 <template>
     <div :class="['flex h-fit flex-col gap-6 empty:hidden', props.class]">
-        <LineBreak
-            v-if="!props.sidebar"
-            :content="props.setup.name"
-            as="h1"
-            class="text-highlighted text-3xl font-bold wrap-anywhere break-keep"
-        />
+        <h1 v-if="!props.sidebar" class="text-highlighted sentence text-3xl font-bold">
+            {{ props.setup.name }}
+        </h1>
 
         <div :class="cn('grid gap-4', !props.sidebar && 'flex items-center lg:hidden')">
             <NuxtLink :to="`/@${props.setup.user.username}`">
@@ -133,7 +105,11 @@ onBeforeRouteLeave(() => {
                     variant="ghost"
                     size="sm"
                     class="p-2"
-                    @click="props.setup.hidAt ? modalUnhide.open() : modalHide.open()"
+                    @click="
+                        props.setup.hidAt
+                            ? setupUnhide.open({ setupId: props.setup.id })
+                            : setupHide.open({ setupId: props.setup.id })
+                    "
                 />
 
                 <UButton
@@ -145,7 +121,7 @@ onBeforeRouteLeave(() => {
                     variant="ghost"
                     size="sm"
                     class="p-2"
-                    @click="session ? toggleBookmark() : modalLogin.open()"
+                    @click="session ? toggleBookmark() : login.open()"
                 />
 
                 <template v-if="session?.user.username === props.setup.user.username">
@@ -164,7 +140,7 @@ onBeforeRouteLeave(() => {
                         variant="ghost"
                         size="sm"
                         class="p-2"
-                        @click="modalDelete.open()"
+                        @click="setupDelete.open({ setupId: props.setup.id })"
                     />
                 </template>
 

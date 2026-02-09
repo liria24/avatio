@@ -1,10 +1,6 @@
 <script lang="ts" setup>
-import { LazyModalFeedback } from '#components'
-
 const { app } = useAppConfig()
-const overlay = useOverlay()
-
-const modalFeedback = overlay.create(LazyModalFeedback)
+const { feedback } = useAppOverlay()
 
 const { data: repo } = useFetch<GithubRepo>('https://ungh.cc/repos/liria24/avatio', {
     dedupe: 'defer',
@@ -107,7 +103,7 @@ const { data: repo } = useFetch<GithubRepo>('https://ungh.cc/repos/liria24/avati
                         label="フィードバック"
                         variant="link"
                         size="sm"
-                        @click="modalFeedback.open()"
+                        @click="feedback.open()"
                     />
                 </div>
             </div>

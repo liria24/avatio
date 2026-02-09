@@ -8,7 +8,7 @@ export default async (body: Body): Promise<{ id: string } | null> => {
     try {
         const config = useRuntimeConfig()
 
-        const response = await $fetch('/api/notifications', {
+        const response = await $fetch('/api/admin/notifications', {
             method: 'POST',
             headers: {
                 authorization: `Bearer ${config.adminKey}`,

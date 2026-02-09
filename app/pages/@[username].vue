@@ -1,19 +1,12 @@
 <script lang="ts" setup>
-import { LazyModalLogin, LazyModalReportUser } from '#components'
-
 const { getSession } = useAuth()
 const route = useRoute()
-const overlay = useOverlay()
+const { login, reportUser } = useAppOverlay()
 const session = await getSession()
 
 const username = route.params.username as string
 
 const { data: user, status: userStatus } = await useUser(username)
-
-const modalLogin = overlay.create(LazyModalLogin)
-const modalReport = overlay.create(LazyModalReportUser, {
-    props: { userId: user.value?.username || '' },
-})
 
 if (userStatus.value === 'success' && !user.value)
     showError({
@@ -33,8 +26,8 @@ const links = computed(() =>
 )
 
 onBeforeRouteLeave(() => {
-    modalLogin.close()
-    modalReport.close()
+    login.close()
+    reportUser.close()
 })
 
 if (user.value) {
@@ -136,7 +129,7 @@ if (user.value) {
                         variant="ghost"
                         size="sm"
                         class="self-end"
-                        @click="session ? modalReport.open() : modalLogin.open()"
+                        @click="session ? reportUser.open({ userId: user.username }) : login.open()"
                     />
                 </div>
             </div>

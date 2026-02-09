@@ -1,13 +1,9 @@
 <script lang="ts" setup>
-import { LazyModalLogin } from '#components'
-
 const { getSession, getSessions } = useAuth()
 const session = await getSession()
 const sessions = await getSessions()
 const route = useRoute()
-const overlay = useOverlay()
-
-const modalLogin = overlay.create(LazyModalLogin)
+const { login } = useAppOverlay()
 
 const notificationsStore = useNotificationsStore()
 if (session.value) await notificationsStore.fetch()
@@ -59,7 +55,7 @@ const notifications = computed(() =>
                             label="ログイン"
                             variant="outline"
                             class="rounded-lg px-4 py-2 text-xs"
-                            @click="modalLogin.open()"
+                            @click="login.open()"
                         />
                     </template>
                 </div>

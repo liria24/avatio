@@ -13,6 +13,7 @@ const getUser = defineCachedFunction(
                 banned: { OR: [{ eq: false }, { isNull: true }] },
             },
             columns: {
+                id: true,
                 username: true,
                 createdAt: true,
                 name: true,

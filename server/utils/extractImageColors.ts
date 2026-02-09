@@ -3,7 +3,6 @@ import sharp from 'sharp'
 
 interface ExtractImageColorsOptions {
     pixels?: number
-    distance?: number
     saturationDistance?: number
     lightnessDistance?: number
     hueDistance?: number
@@ -11,11 +10,10 @@ interface ExtractImageColorsOptions {
 
 export default async (imageUrl: string, options: ExtractImageColorsOptions = {}) => {
     const {
-        pixels = 64000,
-        distance = 0.22,
-        saturationDistance = 0.2,
-        lightnessDistance = 0.2,
-        hueDistance = 0.8,
+        pixels = 40,
+        saturationDistance = 0.5,
+        lightnessDistance = 0.65,
+        hueDistance = 0.3,
     } = options
 
     // 画像をフェッチしてバッファに変換
@@ -41,7 +39,6 @@ export default async (imageUrl: string, options: ExtractImageColorsOptions = {})
         },
         {
             pixels,
-            distance,
             saturationDistance,
             lightnessDistance,
             hueDistance,

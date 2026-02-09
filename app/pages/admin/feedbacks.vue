@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 const { closeFeedback: closeFeedbackAction, openFeedback: openFeedbackAction } = useAdminActions()
 
-const { data, refresh } = await useFetch('/api/feedbacks', {
+const { data, refresh } = await useFetch('/api/admin/feedbacks', {
     dedupe: 'defer',
 })
 

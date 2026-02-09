@@ -27,7 +27,7 @@ import {
     userReports,
     userShops,
 } from '@@/database/schema'
-import { createInsertSchema, createSelectSchema, createUpdateSchema } from 'drizzle-zod'
+import { createInsertSchema, createSelectSchema, createUpdateSchema } from 'drizzle-orm/zod'
 import { z } from 'zod'
 
 export const userBadgeSchema = z.enum(userBadge.enumValues)
