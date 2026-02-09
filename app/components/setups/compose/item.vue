@@ -195,6 +195,7 @@ const inputShapekeyValue = ref(0)
                     :ui="{ content: 'w-40' }"
                 >
                     <UButton
+                        aria-label="アイテムのカテゴリーを変更"
                         :icon="itemCategory[props.item.category]?.icon || 'mingcute:box-3-fill'"
                         variant="ghost"
                         size="sm"
@@ -202,6 +203,7 @@ const inputShapekeyValue = ref(0)
                 </UDropdownMenu>
 
                 <UButton
+                    aria-label="アイテムを削除"
                     icon="mingcute:close-line"
                     variant="ghost"
                     size="sm"

@@ -22,12 +22,12 @@ export const sessionEventHandler = <T = unknown>(
     handler: ({ event, session }: { event: H3Event; session: Session | null }) => Promise<T> | T,
     options?: SessionEventHandlerOptions
 ) =>
-    eventHandler(async (event) => {
+    promiseEventHandler(async ({ event }) => {
         const session = await auth.api.getSession({ headers: event.headers })
 
         if (options?.rejectBannedUser) rejectBannedUser(session)
 
-        return handler({ event, session })
+        return await handler({ event, session })
     })
 
 export const authedSessionEventHandler = <T = unknown>(
@@ -47,10 +47,8 @@ export const authedSessionEventHandler = <T = unknown>(
                 statusText: getReasonPhrase(StatusCodes.UNAUTHORIZED),
             })
 
-        if (options?.rejectBannedUser) rejectBannedUser(session)
-
-        return handler({ event, session })
-    })
+        return await handler({ event, session })
+    }, options)
 
 export const adminSessionEventHandler = <T = unknown>(
     handler: ({
@@ -74,10 +72,8 @@ export const adminSessionEventHandler = <T = unknown>(
                 statusText: getReasonPhrase(StatusCodes.FORBIDDEN),
             })
 
-        if (options?.rejectBannedUser) rejectBannedUser(session)
-
-        return handler({ event, session })
-    })
+        return await handler({ event, session })
+    }, options)
 
 export const cronEventHandler = <T = unknown>(
     handler: ({ event }: { event: H3Event }) => Promise<T> | T
@@ -95,5 +91,5 @@ export const cronEventHandler = <T = unknown>(
                 statusText: getReasonPhrase(StatusCodes.FORBIDDEN),
             })
 
-        return handler({ event })
+        return await handler({ event })
     })
