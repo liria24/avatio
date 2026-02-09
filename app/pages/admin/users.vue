@@ -1,10 +1,6 @@
 <script lang="ts" setup>
-import { LazyModalAdminBanUser } from '#components'
-
 const { unbanUser: unbanUserAction } = useAdminActions()
-const overlay = useOverlay()
-
-const modalBan = overlay.create(LazyModalAdminBanUser)
+const { banUser } = useAppOverlay()
 
 const { data, refresh } = await useFetch('/api/admin/user', {
     dedupe: 'defer',
@@ -136,7 +132,7 @@ const unbanUser = async (userId: string) => {
                                     onSelect: () => {
                                         if (user.banned) unbanUser(user.id)
                                         else
-                                            modalBan.open({
+                                            banUser.open({
                                                 userId: user.id,
                                                 name: user.name,
                                                 image: user.image,

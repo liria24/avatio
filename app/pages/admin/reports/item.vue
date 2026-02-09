@@ -1,11 +1,7 @@
 <script setup lang="ts">
-import { LazyModalAdminChangeItemNiceName } from '#components'
-
 const { itemCategory } = useAppConfig()
 const { resolveReport } = useAdminActions()
-const overlay = useOverlay()
-
-const modalChangeItemNiceName = overlay.create(LazyModalAdminChangeItemNiceName)
+const { changeItemNiceName } = useAppOverlay()
 
 const { data, refresh } = await useFetch('/api/admin/reports/item', {
     dedupe: 'defer',
@@ -112,7 +108,7 @@ const resolve = async (id: number, resolve?: boolean) => {
                                     color="neutral"
                                     size="sm"
                                     @click="
-                                        modalChangeItemNiceName.open({
+                                        changeItemNiceName.open({
                                             itemId: report.item.id,
                                             current: report.item.niceName || '',
                                         })

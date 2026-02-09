@@ -1,9 +1,5 @@
 <script lang="ts" setup>
-import { LazyModalAdminModalFlags } from '#components'
-
-const overlay = useOverlay()
-
-const modalFlags = overlay.create(LazyModalAdminModalFlags)
+const { modalFlags } = useAppOverlay()
 
 const { data } = await useFetch('/api/admin/stats', {
     dedupe: 'defer',

@@ -1,28 +1,21 @@
 <script lang="ts" setup>
 import { parseURL } from 'ufo'
-import { LazyModalReportItem } from '#components'
 
 interface Props {
     item: SetupItem
     actions?: boolean
     class?: string | string[] | null
 }
-const props = withDefaults(defineProps<Props>(), {
-    actions: true,
-    class: null,
-})
+const { item, actions = true, class: className = null } = defineProps<Props>()
 
-const overlay = useOverlay()
 const toast = useToast()
 const { copy } = useClipboard()
+const { reportItem } = useAppOverlay()
 
-const nsfwMask = ref(props.item.nsfw)
-const modalReport = overlay.create(LazyModalReportItem, {
-    props: { itemId: props.item.id },
-})
+const nsfwMask = ref(item.nsfw)
 
 const shopPath = computed(() => {
-    const url = parseURL(computeShopUrl(props.item.shop?.id, props.item.shop?.platform))
+    const url = parseURL(computeShopUrl(item.shop?.id, item.shop?.platform))
     const path = url.pathname === '/' ? '' : url.pathname
     return url.host + path
 })
@@ -31,7 +24,7 @@ const providerIcons = {
     booth: 'avatio:booth',
     github: 'mingcute:github-fill',
 }
-const providerIcon = computed(() => providerIcons[props.item.platform])
+const providerIcon = computed(() => providerIcons[item.platform])
 </script>
 
 <template>
@@ -39,7 +32,7 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
         :class="
             cn(
                 'ring-accented relative flex flex-col gap-2 overflow-clip rounded-xl p-2 ring-1',
-                props.class
+                className
             )
         "
     >
@@ -270,13 +263,13 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
 
             <div class="flex flex-col gap-1">
                 <UTooltip
-                    v-if="props.actions"
+                    v-if="actions"
                     text="アイテムからセットアップを検索"
                     :delay-duration="50"
                     :content="{ side: 'top' }"
                 >
                     <UButton
-                        :to="$localePath(`/search?itemId=${props.item.id}`)"
+                        :to="$localePath(`/search?itemId=${item.id}`)"
                         icon="mingcute:search-line"
                         aria-label="アイテムからセットアップを検索"
                         variant="ghost"
@@ -285,7 +278,7 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                     />
                 </UTooltip>
 
-                <UTooltip v-if="props.actions" text="アイテムを報告" :delay-duration="50">
+                <UTooltip v-if="actions" text="アイテムを報告" :delay-duration="50">
                     <UButton
                         icon="mingcute:flag-3-fill"
                         aria-label="アイテムを報告"
@@ -294,7 +287,7 @@ const providerIcon = computed(() => providerIcons[props.item.platform])
                             base: 'justify-center',
                             leadingIcon: 'size-4 text-dimmed',
                         }"
-                        @click="modalReport.open()"
+                        @click="reportItem.open({ itemId: item.id })"
                     />
                 </UTooltip>
             </div>

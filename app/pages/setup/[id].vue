@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { LazyModalReportSetup, LazyImageViewer, SetupsViewerItem } from '#components'
+import { SetupsViewerItem } from '#components'
 
 const { app } = useAppConfig()
 const route = useRoute()
-const overlay = useOverlay()
+const { reportSetup, imageViewer, login, setupDelete, setupHide, setupUnhide } = useAppOverlay()
 
 const id = Number(route.params.id)
 
@@ -13,11 +13,6 @@ if (!id || isNaN(id) || id <= 0)
         status: 400,
         statusText: 'IDが無効です',
     })
-
-const ImageViewer = overlay.create(LazyImageViewer)
-const modalReport = overlay.create(LazyModalReportSetup, {
-    props: { setupId: id },
-})
 
 const { data, status } = await useSetup(id)
 
@@ -64,8 +59,12 @@ onMounted(async () => {
 })
 
 onBeforeRouteLeave(() => {
-    modalReport.close()
-    ImageViewer.close()
+    reportSetup.close()
+    imageViewer.close()
+    login.close()
+    setupHide.close()
+    setupUnhide.close()
+    setupDelete.close()
 })
 
 if (data.value) {
@@ -161,7 +160,7 @@ if (data.value) {
                         fetchpriority="high"
                         class="max-h-180 w-fit shrink-0 grow-0 cursor-zoom-in overflow-hidden rounded-lg object-contain"
                         @click="
-                            ImageViewer.open({
+                            imageViewer.open({
                                 src: data.images[0].url,
                                 alt: data.name,
                             })
@@ -235,7 +234,7 @@ if (data.value) {
                     variant="ghost"
                     size="sm"
                     class="ml-auto"
-                    @click="modalReport.open()"
+                    @click="reportSetup.open({ setupId: id })"
                 />
             </div>
         </UPageBody>

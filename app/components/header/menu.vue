@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
-import { LazyModalFeedback, LazyModalLogin } from '#components'
 
 interface Props {
     session: Session
@@ -12,10 +11,7 @@ const { auth, revoke } = useAuth()
 const route = useRoute()
 const toast = useToast()
 const colorMode = useColorMode()
-const overlay = useOverlay()
-
-const modalLogin = overlay.create(LazyModalLogin)
-const modalFeedback = overlay.create(LazyModalFeedback)
+const { login, feedback } = useAppOverlay()
 
 const switchAccount = async (sessionToken: string) => {
     await auth.multiSession.setActive({ sessionToken })
@@ -74,7 +70,7 @@ const menuItems = ref<DropdownMenuItem[][]>([
         {
             label: 'フィードバック',
             icon: 'mingcute:chat-3-fill',
-            onSelect: () => modalFeedback.open(),
+            onSelect: () => feedback.open(),
         },
         {
             label: 'テーマ',
@@ -99,7 +95,7 @@ const menuItems = ref<DropdownMenuItem[][]>([
                 {
                     label: '新しいアカウント',
                     icon: 'mingcute:user-add-2-fill',
-                    onSelect: () => modalLogin.open(),
+                    onSelect: () => login.open(),
                 },
             ],
         },
