@@ -6,8 +6,31 @@ definePageMeta({
 
 const route = useRoute()
 
-const { state, publish, reset, changed, editingSetupId, publishing, draft, loadDraft, initialize } =
-    useSetupCompose()
+const {
+    state,
+    publish,
+    reset,
+    changed,
+    editingSetupId,
+    publishing,
+    draft,
+    loadDraft,
+    initialize,
+    skipDraftSave,
+    saveDraft,
+} = useSetupCompose()
+
+// Watch for state changes and save draft
+watch(
+    state,
+    () => {
+        if (!skipDraftSave.value) {
+            draft.value.status = 'unsaved'
+            saveDraft()
+        }
+    },
+    { deep: true, flush: 'post' }
+)
 
 const publishedSetupId = ref<number | null>(null)
 const modalPublishComplete = ref(false)
