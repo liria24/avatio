@@ -25,12 +25,9 @@ const toggleBookmark = async () => {
 
 <template>
     <div :class="['flex h-fit flex-col gap-6 empty:hidden', props.class]">
-        <LineBreak
-            v-if="!props.sidebar"
-            :content="props.setup.name"
-            as="h1"
-            class="text-highlighted text-3xl font-bold wrap-anywhere break-keep"
-        />
+        <h1 v-if="!props.sidebar" class="text-highlighted sentence text-3xl font-bold">
+            {{ props.setup.name }}
+        </h1>
 
         <div :class="cn('grid gap-4', !props.sidebar && 'flex items-center lg:hidden')">
             <NuxtLink :to="`/@${props.setup.user.username}`">
