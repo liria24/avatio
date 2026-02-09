@@ -19,8 +19,8 @@ const plugins = [
 export const auth = betterAuth({
     appName: 'Avatio',
 
-    baseURL: process.env.NUXT_BETTER_AUTH_URL as string,
-    secret: process.env.NUXT_BETTER_AUTH_SECRET as string,
+    baseURL: process.env.PUBLIC_SITE_URL as string,
+    secret: process.env.BETTER_AUTH_SECRET as string,
 
     trustedOrigins: ['http://localhost:3000', 'https://dev.avatio.me', 'https://avatio.me'],
 
@@ -168,12 +168,12 @@ export const auth = betterAuth({
             disableIpTracking: false,
         },
         // セキュアクッキーの強制（本番環境）
-        useSecureCookies: process.env.NUXT_ENV_VERCEL_ENV === 'production',
+        useSecureCookies: process.env.ENV_VERCEL_ENV === 'production',
         // CSRF保護を有効化
         disableCSRFCheck: false,
         defaultCookieAttributes: {
             httpOnly: true,
-            secure: process.env.NUXT_ENV_VERCEL_ENV === 'production',
+            secure: process.env.ENV_VERCEL_ENV === 'production',
             sameSite: 'lax',
         },
     },

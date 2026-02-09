@@ -40,6 +40,7 @@ export default promiseEventHandler<PaginationResponse<Changelog[]>>(async () => 
                 with: {
                     user: {
                         columns: {
+                            id: true,
                             username: true,
                             createdAt: true,
                             name: true,

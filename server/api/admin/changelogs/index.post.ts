@@ -20,7 +20,7 @@ export default adminSessionEventHandler(async () => {
         breaks: true,
     })
 
-    const data = await db
+    const [data] = await db
         .insert(changelogs)
         .values({
             slug,
@@ -32,13 +32,15 @@ export default adminSessionEventHandler(async () => {
             slug: changelogs.slug,
         })
 
+    if (!data) throw new Error('Changelog creation failed')
+
     if (authors?.length)
         await db.insert(changelogAuthors).values(
             authors.map((author) => ({
-                changelogSlug: data[0].slug,
+                changelogSlug: data?.slug,
                 userId: author,
             }))
         )
 
-    return data[0]
+    return data
 })

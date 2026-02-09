@@ -46,6 +46,7 @@ export default adminSessionEventHandler<PaginationResponse<AuditLog[]>>(async ()
         with: {
             user: {
                 columns: {
+                    id: true,
                     username: true,
                     createdAt: true,
                     name: true,
