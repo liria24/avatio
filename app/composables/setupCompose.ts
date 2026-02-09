@@ -129,6 +129,7 @@ export const useSetupCompose = () => {
             draft.value.status = 'error'
             console.error('Failed to load draft:', error)
             toast.add({ title: '下書きの読み込みに失敗しました', color: 'error' })
+            updateRouterQuery({ draftId: undefined })
         } finally {
             skipDraftSave.value = false
         }
@@ -359,17 +360,6 @@ export const useSetupCompose = () => {
         }
     }, 2000)
 
-    watch(
-        state,
-        () => {
-            if (!skipDraftSave.value) {
-                draft.value.status = 'unsaved'
-                saveDraft()
-            }
-        },
-        { deep: true }
-    )
-
     const changed = computed(() =>
         Boolean(
             state.value.name.length ||
@@ -570,6 +560,8 @@ export const useSetupCompose = () => {
         publishing,
         draft,
         loadDraft,
+        skipDraftSave,
+        saveDraft,
         // Tags
         addTag,
         removeTag,
