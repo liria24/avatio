@@ -150,6 +150,7 @@ await initialize({
                                 draft.status === 'saving' ||
                                 publishing
                             "
+                            aria-label="新しいセットアップを作成"
                             icon="mingcute:add-line"
                             variant="soft"
                             color="neutral"
