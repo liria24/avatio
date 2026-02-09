@@ -317,6 +317,7 @@ export default defineNuxtConfig({
         extractAsyncDataHandlers: true,
         typescriptPlugin: true,
         inlineRouteRules: true,
+        componentIslands: true,
     },
 })
 

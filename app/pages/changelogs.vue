@@ -1,32 +1,20 @@
 <script setup lang="ts">
 const { app } = useAppConfig()
 
-const { data } = await useFetch<PaginationResponse<Changelog[]>>('/api/changelogs', {
-    default: () => ({
-        data: [],
-        pagination: {
-            page: 1,
-            limit: 0,
-            total: 0,
-            totalPages: 0,
-            hasPrev: false,
-            hasNext: false,
-        },
-    }),
+const { data: versions } = await useFetch('/api/changelogs', {
     dedupe: 'defer',
     getCachedData: (key, nuxtApp, ctx) =>
         ctx.cause === 'refresh:manual'
             ? undefined
             : nuxtApp.payload.data[key] || nuxtApp.static.data[key],
-})
-
-const versions = computed(() => {
-    return data.value.data.map((item) => ({
-        title: item.title,
-        description: '',
-        date: item.createdAt,
-        content: item.markdown,
-    }))
+    transform: (response) =>
+        response.data.map((item) => ({
+            title: item.title,
+            description: '',
+            date: item.createdAt,
+            content: item.markdown,
+        })),
+    default: () => [],
 })
 
 defineSeo({
@@ -40,21 +28,6 @@ defineSeo({
     <div class="flex w-full flex-col gap-12 pt-8">
         <h1 class="text-5xl font-bold">変更履歴</h1>
 
-        <UChangelogVersions>
-            <UChangelogVersion
-                v-for="(version, index) in versions"
-                :key="index"
-                v-bind="version"
-                :ui="{ container: 'ml-40 mr-0 max-w-full', title: 'text-3xl sentence' }"
-            >
-                <template #description>
-                    <MDC
-                        v-if="version.content"
-                        :value="version.content"
-                        class="sentence w-full max-w-full"
-                    />
-                </template>
-            </UChangelogVersion>
-        </UChangelogVersions>
+        <ChangelogsView :versions />
     </div>
 </template>
