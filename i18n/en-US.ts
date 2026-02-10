@@ -25,6 +25,7 @@ export default defineI18nLocale(async () => ({
     view: 'View',
     report: 'Report',
     share: 'Share',
+    unknownAvatar: 'Unknown Base Avatar',
 
     shareButton: {
         copyLink: 'Copy Link',
@@ -163,7 +164,6 @@ export default defineI18nLocale(async () => ({
         },
         popularAvatars: 'Popular Avatars',
         popularAvatarsTitle: 'Search by Popular Avatars',
-        unknownAvatar: 'Unknown Base Avatar',
         listEmpty: 'No setups found',
     },
 

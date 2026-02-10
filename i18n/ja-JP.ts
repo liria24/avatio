@@ -25,6 +25,7 @@ export default defineI18nLocale(async () => ({
     view: '表示',
     report: '報告',
     share: 'シェア',
+    unknownAvatar: '不明なベースアバター',
 
     shareButton: {
         copyLink: 'リンクをコピー',
@@ -164,7 +165,6 @@ export default defineI18nLocale(async () => ({
         },
         popularAvatars: '人気のアバター',
         popularAvatarsTitle: '人気のアバターから検索',
-        unknownAvatar: '不明なベースアバター',
         listEmpty: 'セットアップが見つかりませんでした',
     },
 
