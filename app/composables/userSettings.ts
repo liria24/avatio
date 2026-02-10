@@ -1,257 +1,316 @@
-export const useUserSettings = () => {
-    const toast = useToast()
-    const { auth } = useAuth()
+interface ProfileState {
+    username: string
+    name: string
+    image: string | null
+    bio: string
+    links: string[]
+}
 
-    // Profile state - using useState for cross-component sharing
-    const profileState = useState<{
-        username: string
-        name: string
-        image: string | null
-        bio: string
-        links: string[]
-    }>('user-settings-profile', () => ({
+export const useUserSettingsProfile = () => {
+    const { t } = useI18n()
+    const toast = useToast()
+    const { session } = useAuth()
+    const username = computed(() => session.value?.user.username || '')
+
+    const state = useState<ProfileState>('user-settings-profile-state', () => ({
         username: '',
         name: '',
         image: null,
         bio: '',
         links: [],
     }))
+    const updating = useState<boolean>('user-settings-profile-updating', () => false)
+    const userData = useState<SerializedUser | null>('user-settings-data', () => null)
 
-    const profileUI = useState('user-settings-profile-ui', () => ({
-        newLink: '',
-        imageUploading: false,
-        profileUpdating: false,
-    }))
-
-    // Shop state
-    const shopState = useState('user-settings-shop', () => ({
-        itemUrl: '',
-        verifyCode: null as string | null,
-        verifying: false,
-        unverifying: false,
-        modalVerify: false,
-        modalUnverify: false,
-    }))
-
-    // Account state
-    const accountState = useState('user-settings-account', () => ({
-        modalDeleteUser: false,
-    }))
-
-    // Profile operations
-    const initializeProfile = async (username: string) => {
-        const { data } = await useUser(username)
-        if (!data.value) return
-
-        profileState.value = {
-            username: data.value.username || '',
-            name: data.value.name || '',
-            image: data.value.image || null,
-            bio: data.value.bio || '',
-            links: data.value.links || [],
-        }
-    }
-
-    const updateProfile = async (username: string, data: Record<string, unknown>) => {
+    const update = async (username: string, data: Partial<ProfileState>) => {
         try {
             await $fetch(`/api/users/${username}`, {
                 method: 'PUT',
                 body: data,
             })
             toast.add({
-                title: 'プロフィールが保存されました',
+                title: t('toast.userSettings.profileSaved'),
                 color: 'success',
             })
             return true
         } catch (error) {
             console.error('Error saving profile:', error)
             toast.add({
-                title: '保存に失敗しました',
-                description: 'プロフィールの保存中にエラーが発生しました。',
+                title: t('toast.userSettings.saveFailed'),
+                description: t('toast.userSettings.saveFailedDescription'),
                 color: 'error',
             })
             return false
         }
     }
 
-    const addLink = () => {
-        const trimmedLink = profileUI.value.newLink.trim()
-        if (!trimmedLink) return
+    const processImage = async (file: File) => {
+        if (!username.value) return
 
-        try {
-            new URL(trimmedLink)
-        } catch {
-            toast.add({
-                title: '無効なリンク',
-                description: '正しいURLを入力してください。',
-                color: 'error',
-            })
-            return
-        }
-
-        if (profileState.value.links.includes(trimmedLink)) {
-            toast.add({
-                title: 'リンクがすでに存在します',
-                description: '同じリンクは追加できません。',
-                color: 'warning',
-            })
-            return
-        }
-
-        profileState.value.links.push(trimmedLink)
-        profileUI.value.newLink = ''
-    }
-
-    const removeLink = (index: number) => {
-        if (index < 0 || index >= profileState.value.links.length) return
-        profileState.value.links.splice(index, 1)
-    }
-
-    const submitProfile = async (username: string) => {
-        profileUI.value.profileUpdating = true
-
-        try {
-            await updateProfile(username, profileState.value)
-        } catch (error) {
-            console.error('Error saving profile:', error)
-        } finally {
-            profileUI.value.profileUpdating = false
-        }
-    }
-
-    const removeUserImage = async (username: string) => {
-        try {
-            await updateProfile(username, { image: null })
-            profileState.value.image = null
-        } catch (error) {
-            console.error('Error removing user image:', error)
-        }
-    }
-
-    const uploadImage = async (file: File, path = 'avatar') => {
-        try {
-            const formData = new FormData()
-            formData.append('blob', file)
-            formData.append('path', path)
-
-            const response = await $fetch<{ url: string }>('/api/images', {
-                method: 'POST',
-                body: formData,
-            })
-            return response.url
-        } catch (error) {
-            console.error('Error uploading image:', error)
-            toast.add({
-                title: '画像のアップロードに失敗しました',
-                color: 'error',
-            })
-            return null
-        }
-    }
-
-    const processProfileImage = async (file: File, username: string) => {
-        profileUI.value.imageUploading = true
+        updating.value = true
 
         try {
             const imageUrl = await uploadImage(file, 'avatar')
             if (!imageUrl) return
 
-            await updateProfile(username, { image: imageUrl })
-            profileState.value.image = imageUrl
+            await update(username.value, { image: imageUrl })
+            state.value.image = imageUrl
         } catch (error) {
             console.error('Failed to upload image:', error)
         } finally {
-            profileUI.value.imageUploading = false
+            updating.value = false
         }
     }
 
-    const updateUsername = async (currentUsername: string, newUsername: string) => {
+    const save = async () => {
+        if (!username.value) return false
+
+        updating.value = true
+
         try {
-            await $fetch(`/api/users/${currentUsername}`, {
+            return await update(username.value, state.value)
+        } catch (error) {
+            console.error('Error saving profile:', error)
+            return false
+        } finally {
+            updating.value = false
+        }
+    }
+
+    const addLink = (link: string) => {
+        const trimmedLink = link.trim()
+        if (!trimmedLink) return false
+
+        try {
+            new URL(trimmedLink)
+        } catch {
+            toast.add({
+                title: t('toast.userSettings.invalidLink'),
+                description: t('toast.userSettings.invalidLinkDescription'),
+                color: 'error',
+            })
+            return false
+        }
+
+        if (state.value.links.includes(trimmedLink)) {
+            toast.add({
+                title: t('toast.userSettings.linkExists'),
+                description: t('toast.userSettings.linkExistsDescription'),
+                color: 'warning',
+            })
+            return false
+        }
+
+        state.value.links.push(trimmedLink)
+        return true
+    }
+
+    const removeLink = (index: number) => {
+        if (index < 0 || index >= state.value.links.length) return
+        state.value.links.splice(index, 1)
+    }
+
+    const selectImage = () => {
+        const { open, reset, onChange } = useFileDialog({
+            accept: 'image/png, image/jpg, image/jpeg, image/webp, image/tiff',
+            multiple: false,
+            directory: false,
+        })
+
+        onChange(async (files) => {
+            if (!files?.length || !files[0]) return
+            await processImage(files[0])
+            reset()
+        })
+
+        return open
+    }
+
+    const removeImage = async () => {
+        if (!username.value) return
+
+        try {
+            await update(username.value, { image: null })
+            state.value.image = null
+        } catch (error) {
+            console.error('Error removing user image:', error)
+        }
+    }
+
+    const syncProfileData = async (currentUsername: string | null) => {
+        if (!currentUsername) {
+            // Clear data when logged out
+            userData.value = null
+            state.value.username = ''
+            state.value.name = ''
+            state.value.image = null
+            state.value.bio = ''
+            state.value.links = []
+            return
+        }
+
+        try {
+            const data = await $fetch<SerializedUser>(`/api/users/${currentUsername}`)
+
+            // Update user data
+            userData.value = data
+
+            // Sync profile state
+            state.value.username = data.username || ''
+            state.value.name = data.name || ''
+            state.value.image = data.image || null
+            state.value.bio = data.bio || ''
+            state.value.links = data.links || []
+        } catch (error) {
+            console.error('Error fetching user data:', error)
+        }
+    }
+
+    const updateUsername = async (newUsername: string) => {
+        if (!username.value) return false
+
+        try {
+            await $fetch(`/api/users/${username.value}`, {
                 method: 'PUT',
                 body: { username: newUsername },
             })
             toast.add({
-                title: 'ユーザーIDが変更されました',
-                description: 'ページを更新しています...',
+                title: t('toast.userSettings.usernameChanged'),
+                description: t('toast.userSettings.usernameChangeDescription'),
                 progress: false,
             })
             return true
         } catch (error) {
             console.error('Error updating user ID:', error)
             toast.add({
-                title: 'ユーザーIDの変更に失敗しました',
-                description: 'ユーザーIDの変更中にエラーが発生しました。',
+                title: t('toast.userSettings.usernameChangeFailed'),
+                description: t('toast.userSettings.usernameChangeFailedDescription'),
                 color: 'error',
             })
             return false
         }
     }
 
-    // Shop operations
-    const {
-        verify: verifyShop,
-        unverify: unverifyShop,
-        generateVerificationCode,
-    } = useShopVerification()
+    return {
+        state,
+        updating,
+        userData,
+        save,
+        link: {
+            add: addLink,
+            remove: removeLink,
+        },
+        image: {
+            select: selectImage,
+            remove: removeImage,
+        },
+        updateUsername,
+        syncProfileData,
+    }
+}
+
+export const useUserSettingsShop = () => {
+    const { t } = useI18n()
+    const toast = useToast()
+    const { session } = useAuth()
+    const username = computed(() => session.value?.user.username || '')
+
+    const userData = useState<SerializedUser | null>('user-settings-data', () => null)
+
+    const state = useState('user-settings-shop-state', () => ({
+        itemUrl: '',
+        verifyCode: null as string | null,
+        verifying: false,
+        unverifying: false,
+    }))
+
+    const generateVerificationCode = async () => {
+        try {
+            const data = await $fetch<{ code: string }>('/api/shop-verification/code')
+            return data.code
+        } catch (error) {
+            console.error('Error generating verification code:', error)
+            return null
+        }
+    }
 
     const verifiable = computed(() => {
-        const result = extractItemId(shopState.value.itemUrl)
+        const result = extractItemId(state.value.itemUrl)
         return result?.platform === 'booth'
     })
 
-    const shopUrl = (shopId: string, platform: Platform) => {
-        if (platform === 'booth') return `https://${shopId}.booth.pm`
-        return undefined
+    const fetchUserData = async () => {
+        if (!username.value) return
+
+        try {
+            const data = await $fetch<SerializedUser>(`/api/users/${username.value}`)
+            userData.value = data
+        } catch (error) {
+            console.error('Error fetching user data:', error)
+        }
     }
 
     const verify = async () => {
-        if (!verifiable.value) return
+        if (!verifiable.value) return false
 
-        shopState.value.verifying = true
+        state.value.verifying = true
 
         try {
-            const success = await verifyShop(shopState.value.itemUrl)
-            if (success) {
-                shopState.value.modalVerify = false
-                return true
-            }
+            await $fetch('/api/shop-verification', {
+                method: 'POST',
+                body: { url: state.value.itemUrl },
+            })
+            toast.add({ title: t('toast.userSettings.shopVerified'), color: 'success' })
+            await fetchUserData()
+            return true
+        } catch (error) {
+            console.error('Error verifying shop:', error)
+            toast.add({ title: t('toast.userSettings.shopVerifyFailed'), color: 'error' })
             return false
         } finally {
-            shopState.value.verifying = false
+            state.value.verifying = false
         }
     }
 
     const unverify = async (shopId: string) => {
-        shopState.value.unverifying = true
+        state.value.unverifying = true
 
         try {
-            const success = await unverifyShop(shopId)
-            if (success) {
-                shopState.value.modalUnverify = false
-                return true
-            }
+            await $fetch('/api/shop-verification', {
+                method: 'DELETE',
+                body: { shopId },
+            })
+            toast.add({ title: t('toast.userSettings.shopUnverified'), color: 'success' })
+            await fetchUserData()
+            return true
+        } catch (error) {
+            console.error('Error unverifying shop:', error)
+            toast.add({ title: t('toast.userSettings.shopUnverifyFailed'), color: 'error' })
             return false
         } finally {
-            shopState.value.unverifying = false
+            state.value.unverifying = false
         }
     }
 
-    const initializeShopVerification = () => {
-        watch(
-            () => shopState.value.modalVerify,
-            async (value) => {
-                if (value) {
-                    const code = await generateVerificationCode()
-                    shopState.value.verifyCode = code
-                } else {
-                    shopState.value.verifyCode = null
-                }
-            }
-        )
+    return {
+        userData,
+        state,
+        verifiable,
+        url: (shopId: string, platform: Platform) => {
+            if (platform === 'booth') return `https://${shopId}.booth.pm`
+            return undefined
+        },
+        generateVerificationCode,
+        verify,
+        unverify,
     }
+}
 
-    // Account operations
+export const useUserSettingsAccount = () => {
+    const { t } = useI18n()
+    const toast = useToast()
+    const { auth } = useAuth()
+
     const deleteUser = async () => {
         const localePath = useLocalePath()
         try {
@@ -259,8 +318,8 @@ export const useUserSettings = () => {
 
             toast.add({
                 icon: 'mingcute:check-line',
-                title: 'アカウントを削除しました',
-                description: 'ページをリロードしています...',
+                title: t('toast.userSettings.accountDeleted'),
+                description: t('toast.userSettings.accountDeleteDescription'),
                 color: 'success',
             })
             navigateTo(localePath('/'), { external: true })
@@ -268,35 +327,12 @@ export const useUserSettings = () => {
             console.error('Error deleting user:', error)
             toast.add({
                 icon: 'mingcute:close-line',
-                title: 'アカウントを削除できませんでした',
-                description: '時間をおいて再度お試しください。',
+                title: t('toast.userSettings.accountDeleteFailed'),
+                description: t('toast.userSettings.accountDeleteFailedDescription'),
                 color: 'error',
             })
         }
     }
 
-    return {
-        // Profile
-        profileState,
-        profileUI,
-        initializeProfile,
-        updateProfile,
-        addLink,
-        removeLink,
-        submitProfile,
-        removeUserImage,
-        uploadImage,
-        processProfileImage,
-        updateUsername,
-        // Shop
-        shopState,
-        verifiable,
-        shopUrl,
-        verify,
-        unverify,
-        initializeShopVerification,
-        // Account
-        accountState,
-        deleteUser,
-    }
+    return { deleteUser }
 }

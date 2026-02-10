@@ -110,6 +110,8 @@ export const useAuth = () => {
 
     return {
         auth: client,
+        session: globalSession,
+        sessions: globalSessions,
         getSession,
         getSessions,
         refreshSession,

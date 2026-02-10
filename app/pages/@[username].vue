@@ -1,9 +1,8 @@
 <script lang="ts" setup>
-const { getSession } = useAuth()
+const { session } = useAuth()
 const { locale } = useI18n()
 const route = useRoute()
 const { login, reportUser } = useAppOverlay()
-const session = await getSession()
 
 const username = route.params.username as string
 
@@ -17,7 +16,7 @@ if (userStatus.value === 'success' && !user.value)
 
 const links = computed(() =>
     user.value?.links?.map((link) => {
-        const attributes = linkAttributes(link)
+        const attributes = useLinkAttributes(link)
         return {
             label: attributes.label,
             icon: attributes.icon,
@@ -221,7 +220,7 @@ if (user.value) {
                 </h2>
             </div>
 
-            <SetupsListUser :username="user.username" />
+            <SetupsList type="owned" :username="user.username" />
         </div>
     </div>
 </template>

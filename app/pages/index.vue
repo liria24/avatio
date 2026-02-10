@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { motion } from 'motion-v'
 
-const { getSession } = useAuth()
-const session = await getSession()
+const { session } = useAuth()
 const route = useRoute()
 const router = useRouter()
 const { login } = useAppOverlay()
 const { t } = useI18n()
 
-type Tab = 'latest' | 'me' | 'bookmarks'
+type Tab = 'latest' | 'owned' | 'bookmarked'
 
 const tab = ref<Tab>((route.query.tab as Tab) || 'latest')
 
@@ -120,28 +119,26 @@ useSchemaOrg([
                 />
                 <UButton
                     :label="$t('index.tabs.me')"
-                    :active="tab === 'me'"
+                    :active="tab === 'owned'"
                     variant="ghost"
                     active-variant="solid"
                     color="neutral"
                     class="px-4 py-2"
-                    @click="changeTab('me')"
+                    @click="changeTab('owned')"
                 />
                 <UButton
                     :label="$t('index.tabs.bookmarks')"
-                    :active="tab === 'bookmarks'"
+                    :active="tab === 'bookmarked'"
                     variant="ghost"
                     active-variant="solid"
                     color="neutral"
                     class="px-4 py-2"
-                    @click="changeTab('bookmarks')"
+                    @click="changeTab('bookmarked')"
                 />
             </div>
-            <SetupsListLatest v-if="tab === 'latest'" />
-            <SetupsListUser v-if="tab === 'me'" :username="session?.user.username!" />
-            <SetupsListBookmarks v-if="tab === 'bookmarks'" />
+            <SetupsList :type="tab" />
         </div>
 
-        <SetupsListLatest v-else />
+        <SetupsList v-else type="latest" />
     </div>
 </template>

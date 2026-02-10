@@ -3,30 +3,7 @@ definePageMeta({
     middleware: 'session',
 })
 
-const setupsPerPage: number = BOOKMARKS_PAGE_PER_PAGE
-const page = ref(1)
-
-const { bookmarks, status, refresh } = await useBookmarks({
-    query: computed(() => ({
-        page: page.value,
-        perPage: setupsPerPage,
-    })),
-})
 const { t } = useI18n()
-
-const setups = ref<SerializedSetup[]>([])
-
-const loadMoreSetups = () => {
-    if (bookmarks.value?.pagination.hasNext) {
-        page.value += 1
-        refresh()
-    }
-}
-
-watchEffect(() => {
-    if (bookmarks.value)
-        setups.value.push(...bookmarks.value.data.map((bookmark) => bookmark.setup))
-})
 
 defineSeo({
     title: t('bookmarks.title'),
@@ -43,14 +20,6 @@ defineSeo({
             </h1>
         </div>
 
-        <div class="flex w-full flex-col gap-3 self-center">
-            <SetupsList v-model:setups="setups" v-model:status="status" />
-            <UButton
-                v-if="bookmarks?.pagination.hasNext"
-                :loading="status === 'pending'"
-                :label="$t('more')"
-                @click="loadMoreSetups()"
-            />
-        </div>
+        <SetupsList type="bookmarked" />
     </div>
 </template>

@@ -24,8 +24,7 @@ const props = withDefaults(defineProps<Props>(), {
     ui: undefined,
 })
 
-const { getSession, auth } = useAuth()
-const session = await getSession()
+const { session, auth } = useAuth()
 const { t } = useI18n()
 
 const checkState = ref<'idle' | 'checking' | 'available' | 'unavailable' | 'error'>('idle')

@@ -1,4 +1,5 @@
 export const useAdminActions = () => {
+    const { t } = useI18n()
     const toast = useToast()
 
     const resolveReport = async (
@@ -12,14 +13,16 @@ export const useAdminActions = () => {
                 body: { isResolved },
             })
             toast.add({
-                title: isResolved ? 'Marked as Resolved' : 'Marked as Unresolved',
+                title: isResolved
+                    ? t('toast.admin.reportResolved')
+                    : t('toast.admin.reportUnresolved'),
                 color: 'success',
             })
             return true
         } catch (error) {
             console.error('Error resolving report:', error)
             toast.add({
-                title: 'Error',
+                title: t('toast.admin.error'),
                 color: 'error',
             })
             return false
@@ -33,14 +36,14 @@ export const useAdminActions = () => {
                 body: { ban: true },
             })
             toast.add({
-                title: 'ユーザーをBANしました',
+                title: t('toast.admin.userBanned'),
                 color: 'success',
             })
             return true
         } catch (error) {
             console.error('Error banning user:', error)
             toast.add({
-                title: 'ユーザーのBANに失敗しました',
+                title: t('toast.admin.userBanFailed'),
                 color: 'error',
             })
             return false
@@ -54,14 +57,14 @@ export const useAdminActions = () => {
                 body: { ban: false },
             })
             toast.add({
-                title: 'ユーザーのBANを解除しました',
+                title: t('toast.admin.userUnbanned'),
                 color: 'success',
             })
             return true
         } catch (error) {
             console.error('Error unbanning user:', error)
             toast.add({
-                title: 'ユーザーのBAN解除に失敗しました',
+                title: t('toast.admin.userUnbanFailed'),
                 color: 'error',
             })
             return false
@@ -75,14 +78,14 @@ export const useAdminActions = () => {
                 body: { isClosed: true },
             })
             toast.add({
-                title: 'フィードバックをクローズしました',
+                title: t('toast.admin.feedbackClosed'),
                 color: 'success',
             })
             return true
         } catch (error) {
             console.error('Error closing feedback:', error)
             toast.add({
-                title: 'フィードバックのクローズに失敗しました',
+                title: t('toast.admin.feedbackCloseFailed'),
                 color: 'error',
             })
             return false
@@ -96,14 +99,14 @@ export const useAdminActions = () => {
                 body: { isClosed: false },
             })
             toast.add({
-                title: 'フィードバックをオープンしました',
+                title: t('toast.admin.feedbackOpened'),
                 color: 'success',
             })
             return true
         } catch (error) {
             console.error('Error opening feedback:', error)
             toast.add({
-                title: 'フィードバックのオープンに失敗しました',
+                title: t('toast.admin.feedbackOpenFailed'),
                 color: 'error',
             })
             return false
@@ -120,14 +123,14 @@ export const useAdminActions = () => {
                 },
             })
             toast.add({
-                title: 'セットアップが非表示になりました',
+                title: t('toast.admin.setupHidden'),
                 color: 'success',
             })
             return true
         } catch (error) {
             console.error('Error hiding setup:', error)
             toast.add({
-                title: 'セットアップの非表示に失敗しました',
+                title: t('toast.admin.setupHideFailed'),
                 color: 'error',
             })
             return false
@@ -141,14 +144,14 @@ export const useAdminActions = () => {
                 body: { hide: false },
             })
             toast.add({
-                title: 'セットアップが再表示されました',
+                title: t('toast.admin.setupUnhidden'),
                 color: 'success',
             })
             return true
         } catch (error) {
             console.error('Error unhiding setup:', error)
             toast.add({
-                title: 'セットアップの再表示に失敗しました',
+                title: t('toast.admin.setupUnhideFailed'),
                 color: 'error',
             })
             return false
@@ -161,15 +164,16 @@ export const useAdminActions = () => {
                 method: 'DELETE',
             })
             toast.add({
-                title: 'セットアップが削除されました',
-                description: 'セットアップが正常に削除されました。',
+                title: t('toast.admin.setupDeleted'),
+                description: t('toast.admin.setupDeleteDescription'),
                 color: 'success',
             })
             return true
         } catch (error) {
             toast.add({
-                title: 'セットアップの削除に失敗しました',
-                description: error instanceof Error ? error.message : '不明なエラーが発生しました',
+                title: t('toast.admin.setupDeleteFailed'),
+                description:
+                    error instanceof Error ? error.message : t('toast.reports.unknownError'),
                 color: 'error',
             })
             return false
@@ -186,15 +190,15 @@ export const useAdminActions = () => {
                 },
             })
             toast.add({
-                title: 'フィードバックが送信されました',
-                description: 'ご協力ありがとうございます。',
+                title: t('toast.admin.feedbackSubmitted'),
+                description: t('toast.admin.feedbackSubmittedDescription'),
                 color: 'success',
             })
             return true
         } catch (error) {
             console.error('Error submitting feedback:', error)
             toast.add({
-                title: 'フィードバックの送信に失敗しました',
+                title: t('toast.admin.feedbackSubmitFailed'),
                 color: 'error',
             })
             return false
@@ -211,7 +215,7 @@ export const useAdminActions = () => {
         } catch (error) {
             console.error('Error toggling maintenance mode:', error)
             toast.add({
-                title: '切替えに失敗しました',
+                title: t('toast.admin.toggleFailed'),
                 color: 'error',
             })
             return false
@@ -225,14 +229,14 @@ export const useAdminActions = () => {
                 body: { forceUpdateItem },
             })
             toast.add({
-                title: 'アイテム情報の強制更新を切り替えました',
+                title: t('toast.admin.forceUpdateItemToggled'),
                 color: 'success',
             })
             return true
         } catch (error) {
             console.error('Error changing forceUpdateItem:', error)
             toast.add({
-                title: '切換えに失敗しました',
+                title: t('toast.admin.forceUpdateItemToggleFailed'),
                 color: 'error',
             })
             return false
@@ -246,14 +250,14 @@ export const useAdminActions = () => {
                 body: { niceName },
             })
             toast.add({
-                title: 'アイテムの名称を変更しました',
+                title: t('toast.admin.itemNiceNameChanged'),
                 color: 'success',
             })
             return true
         } catch (error) {
             console.error('Error changing item nice name:', error)
             toast.add({
-                title: 'アイテムの名称の変更に失敗しました',
+                title: t('toast.admin.itemNiceNameChangeFailed'),
                 color: 'error',
             })
             return false
@@ -271,14 +275,14 @@ export const useAdminActions = () => {
                 },
             })
             toast.add({
-                title: 'ユーザーをBANしました',
+                title: t('toast.admin.userBanned'),
                 color: 'success',
             })
             return true
         } catch (error) {
             console.error('Error banning user:', error)
             toast.add({
-                title: 'ユーザーのBANに失敗しました',
+                title: t('toast.admin.userBanFailed'),
                 color: 'error',
             })
             return false
@@ -297,14 +301,14 @@ export const useAdminActions = () => {
                 body: data,
             })
             toast.add({
-                title: 'Changelog created successfully',
+                title: t('toast.admin.changelogCreated'),
                 color: 'success',
             })
             return true
         } catch (error) {
             console.error('Error creating changelog:', error)
             toast.add({
-                title: 'Failed to create changelog',
+                title: t('toast.admin.changelogCreateFailed'),
                 color: 'error',
             })
             return false

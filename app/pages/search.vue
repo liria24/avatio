@@ -20,25 +20,23 @@ const query = computed(() => ({
     itemId: searchItemIds.value,
     tag: searchTags.value,
     page: 1,
-    perPage: SETUP_SEARCH_PER_PAGE,
+    limit: SETUP_SEARCH_PER_PAGE,
 }))
 
 const shouldShowDetails = computed(() => !!(searchItemIds.value.length || searchTags.value.length))
 const searchStatus = ref<'idle' | 'pending' | 'success'>('idle')
 const collapsibleSearchOptions = ref(shouldShowDetails.value)
 
-// ローカルの編集用state（URL更新前の一時的な値）
+// ローカルの編集用state(URL更新前の一時的な値)
 const localQ = ref(searchQuery.value)
 const localItemIds = ref([...searchItemIds.value])
 const localTags = ref([...searchTags.value])
 
-const { data, status, refresh } = await useSetups({
+const { setups, status, pagination, refresh } = useSetupsList(undefined, {
     query,
     immediate: false,
     watch: false,
 })
-
-const setups = ref<SerializedSetup[]>([])
 
 const search = async () => {
     const hasSearchParams =
@@ -52,14 +50,13 @@ const search = async () => {
 
     searchStatus.value = 'pending'
     await refresh()
-    setups.value = data.value?.data || []
     searchStatus.value = 'success'
 }
 
 const loadMoreSetups = async () => {
-    if (data.value?.pagination.hasNext) {
+    if (pagination.value?.hasNext) {
         query.value.page += 1
-        await search()
+        await refresh()
     }
 }
 
@@ -158,12 +155,20 @@ defineSeo({
         <div v-else-if="setups.length" class="flex flex-col gap-2 lg:grid lg:grid-cols-1">
             <SetupsList v-model:setups="setups" v-model:status="status" />
             <UButton
-                v-if="data?.pagination.hasNext"
+                v-if="pagination?.hasNext"
                 :loading="status === 'pending'"
                 :label="$t('more')"
                 @click="loadMoreSetups"
             />
         </div>
+
+        <!-- ロード中 -->
+        <Icon
+            v-else-if="searchStatus === 'pending'"
+            name="svg-spinners:ring-resize"
+            size="32"
+            class="text-muted self-center"
+        />
 
         <!-- 結果なし表示 -->
         <p v-else class="text-center text-zinc-700 dark:text-zinc-300">

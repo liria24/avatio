@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 const { app } = useAppConfig()
-const { getSession, revoke } = useAuth()
-const session = await getSession()
+const { session, revoke } = useAuth()
 
 const { data } = await useFetch('/api/admin/stats', {
     dedupe: 'defer',

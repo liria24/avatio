@@ -30,7 +30,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <UModal :title="$t('modal.login.title')">
+    <UModal :title="$t('modal.login.title')" :ui="{ content: 'max-w-xl' }">
         <slot />
 
         <template #body>
@@ -51,7 +51,7 @@ onBeforeUnmount(() => {
 
         <template #footer>
             <div class="flex w-full items-center justify-end gap-3">
-                <p class="text-muted text-xs">{{ $t('modal.login.agreement') }}</p>
+                <p class="text-muted text-right text-xs">{{ $t('modal.login.agreement') }}</p>
                 <UButton
                     :to="localePath('/terms')"
                     target="_blank"

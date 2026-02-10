@@ -1,25 +1,6 @@
-import type { UseFetchOptions } from 'nuxt/app'
-
-export const useBookmarks = (
-    options?: UseFetchOptions<PaginationResponse<SerializedBookmark[]>>
-) => {
+export const useBookmarks = () => {
+    const { t } = useI18n()
     const toast = useToast()
-
-    const defaultOptions: UseFetchOptions<PaginationResponse<SerializedBookmark[]>> = {
-        key: computed(() => `bookmarks-${JSON.stringify(unref(options?.query))}`),
-        dedupe: 'defer',
-        lazy: false,
-        immediate: true,
-    }
-
-    const {
-        data: bookmarks,
-        status,
-        refresh,
-    } = useFetch<PaginationResponse<SerializedBookmark[]>>('/api/setups/bookmarks', {
-        ...defaultOptions,
-        ...options,
-    })
 
     const toggle = async (setupId: number, isBookmarked: boolean) => {
         try {
@@ -34,7 +15,7 @@ export const useBookmarks = (
             }
 
             toast.add({
-                title: !isBookmarked ? 'ブックマークしました' : 'ブックマークを解除しました',
+                title: !isBookmarked ? t('toast.bookmarks.added') : t('toast.bookmarks.removed'),
                 color: !isBookmarked ? 'success' : 'info',
             })
 
@@ -42,7 +23,7 @@ export const useBookmarks = (
         } catch (error) {
             console.error('Error toggling bookmark:', error)
             toast.add({
-                title: 'ブックマークの変更に失敗しました',
+                title: t('toast.bookmarks.toggleFailed'),
                 color: 'error',
             })
             return false
@@ -66,9 +47,6 @@ export const useBookmarks = (
     }
 
     return {
-        bookmarks,
-        status,
-        refresh,
         toggle,
         getBookmarkStatus,
     }

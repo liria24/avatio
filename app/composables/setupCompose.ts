@@ -19,6 +19,7 @@ export const useSetupCompose = () => {
     const route = useRoute()
     const router = useRouter()
     const toast = useToast()
+    const { t } = useI18n()
 
     // State - using useState for cross-component sharing
     const publishing = useState('setup-compose-publishing', () => false)
@@ -128,7 +129,7 @@ export const useSetupCompose = () => {
         } catch (error) {
             draft.value.status = 'error'
             console.error('Failed to load draft:', error)
-            toast.add({ title: '下書きの読み込みに失敗しました', color: 'error' })
+            toast.add({ title: t('setup.compose.draftLoadFailed'), color: 'error' })
             updateRouterQuery({ draftId: undefined })
         } finally {
             skipDraftSave.value = false
@@ -194,7 +195,7 @@ export const useSetupCompose = () => {
                     skipDraftSave.value = false
 
                     toast.add({
-                        title: '編集途中の下書きが見つかったため復元されました',
+                        title: t('setup.compose.draftRestored'),
                         color: 'secondary',
                     })
                     return
@@ -209,8 +210,8 @@ export const useSetupCompose = () => {
             } catch (error) {
                 console.error('Setup not found:', args.edit, error)
                 toast.add({
-                    title: '編集モードを開始できませんでした',
-                    description: '指定されたセットアップが見つかりません。',
+                    title: t('setup.compose.editModeFailed'),
+                    description: t('setup.compose.setupNotFound'),
                     color: 'error',
                 })
             }
@@ -278,11 +279,11 @@ export const useSetupCompose = () => {
 
             toast.add({
                 title: isEditing
-                    ? 'セットアップの更新に失敗しました'
-                    : 'セットアップの投稿に失敗しました',
+                    ? t('setup.compose.updateFailed')
+                    : t('setup.compose.publishFailed'),
                 description:
                     error instanceof Error && error.message === 'Validation failed'
-                        ? 'ページを更新してもう一度お試しください。'
+                        ? t('setup.compose.refreshAndRetry')
                         : undefined,
                 color: 'error',
             })
@@ -376,7 +377,7 @@ export const useSetupCompose = () => {
         if (!tag.trim()) return
 
         if (state.value.tags.includes(tag)) {
-            toast.add({ title: 'タグを重複して追加することはできません', color: 'warning' })
+            toast.add({ title: t('setup.compose.tagDuplicate'), color: 'warning' })
             return
         }
 
@@ -393,7 +394,7 @@ export const useSetupCompose = () => {
         if (!user?.username) return
 
         if (state.value.coauthors.some((c) => c.user.username === user.username)) {
-            toast.add({ title: '共同作者を重複して追加することはできません', color: 'warning' })
+            toast.add({ title: t('setup.compose.coauthorDuplicate'), color: 'warning' })
             return
         }
 
@@ -414,9 +415,14 @@ export const useSetupCompose = () => {
 
         imageUploading.value = true
         try {
-            const { uploadImage } = useUserSettings()
             const imageUrl = await uploadImage(file, 'setup')
             if (imageUrl) state.value.images.push(imageUrl)
+        } catch (error) {
+            console.error('Error uploading image:', error)
+            toast.add({
+                title: t('errors.imageUploadFailed'),
+                color: 'error',
+            })
         } finally {
             imageUploading.value = false
         }
@@ -444,7 +450,7 @@ export const useSetupCompose = () => {
         }
 
         if (isItemAlreadyAdded(item.id)) {
-            toast.add({ title: 'アイテムはすでに追加されています', color: 'warning' })
+            toast.add({ title: t('setup.compose.itemAlreadyAdded'), color: 'warning' })
             return
         }
 

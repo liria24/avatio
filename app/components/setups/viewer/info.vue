@@ -7,8 +7,7 @@ interface Props {
 const props = defineProps<Props>()
 
 const { locale } = useI18n()
-const { getSession } = useAuth()
-const session = await getSession()
+const { session } = useAuth()
 const { toggle: toggleBookmarkAction, getBookmarkStatus } = useBookmarks()
 const { login, setupDelete, setupHide, setupUnhide } = useAppOverlay()
 

@@ -128,32 +128,14 @@ onMounted(initializeThemeColor)
                 :delay-duration="100"
             >
                 <div
-                    class="text-muted bg-muted my-1.5 ml-1.5 flex size-14 shrink-0 items-center justify-center rounded-lg"
+                    class="text-muted bg-muted m-1 flex size-14 shrink-0 items-center justify-center rounded-lg md:size-20"
                 >
-                    ?
+                    <Icon name="mingcute:question-fill" size="32" class="text-dimmed" />
                 </div>
             </UTooltip>
 
             <!-- 画像がある場合のメタ情報 -->
-            <div v-if="hasImages" class="flex w-full items-center justify-end gap-2 px-2 pb-2">
-                <UTooltip :delay-duration="0">
-                    <NuxtTime
-                        :datetime="setup.createdAt"
-                        relative
-                        :locale
-                        class="text-muted text-xs whitespace-nowrap"
-                    />
-
-                    <template #content>
-                        <NuxtTime
-                            :datetime="setup.createdAt"
-                            date-style="medium"
-                            time-style="short"
-                            :locale
-                        />
-                    </template>
-                </UTooltip>
-
+            <div v-if="hasImages" class="flex w-full items-center gap-2 px-2 pb-2">
                 <UPopover mode="hover">
                     <UAvatar
                         :src="setup.user.image || undefined"
@@ -188,6 +170,24 @@ onMounted(initializeThemeColor)
                         </NuxtLink>
                     </template>
                 </UPopover>
+
+                <UTooltip :delay-duration="0">
+                    <NuxtTime
+                        :datetime="setup.createdAt"
+                        relative
+                        :locale
+                        class="text-muted text-xs whitespace-nowrap"
+                    />
+
+                    <template #content>
+                        <NuxtTime
+                            :datetime="setup.createdAt"
+                            date-style="medium"
+                            time-style="short"
+                            :locale
+                        />
+                    </template>
+                </UTooltip>
             </div>
 
             <!-- 画像がない場合のメタ情報 -->

@@ -1,9 +1,9 @@
 import { z } from 'zod'
 
-const createReportSchema = () =>
+const createReportSchema = (t: (key: string) => string) =>
     z
         .object({
-            reportReason: z.string().array().min(1, '報告の理由を選択してください'),
+            reportReason: z.string().array().min(1, t('reports.validation.selectReason')),
             comment: z.string().optional(),
         })
         .refine(
@@ -13,7 +13,7 @@ const createReportSchema = () =>
                 return true
             },
             {
-                message: 'その他を選択した場合は詳細を入力してください',
+                message: t('reports.validation.otherRequiresComment'),
                 path: ['comment'],
             }
         )
@@ -24,8 +24,9 @@ type ReportState = {
 }
 
 export const useItemReport = (itemId: string) => {
+    const { t } = useI18n()
     const toast = useToast()
-    const schema = createReportSchema()
+    const schema = createReportSchema(t)
     const state = reactive<ReportState>({
         reportReason: [],
         comment: '',
@@ -47,8 +48,8 @@ export const useItemReport = (itemId: string) => {
             })
 
             toast.add({
-                title: '報告が送信されました',
-                description: 'ご協力ありがとうございます。',
+                title: t('toast.reports.submitted'),
+                description: t('toast.reports.submittedDescription'),
                 color: 'success',
             })
 
@@ -58,11 +59,11 @@ export const useItemReport = (itemId: string) => {
         } catch (error) {
             console.error('Error submitting item report:', error)
             toast.add({
-                title: '報告の送信に失敗しました',
+                title: t('toast.reports.submitFailed'),
                 description:
                     error instanceof z.ZodError
                         ? error.issues.map((e) => e.message).join(', ')
-                        : '不明なエラーが発生しました',
+                        : t('toast.reports.unknownError'),
                 color: 'error',
             })
             return false
@@ -77,8 +78,9 @@ export const useItemReport = (itemId: string) => {
 }
 
 export const useSetupReport = (setupId: number) => {
+    const { t } = useI18n()
     const toast = useToast()
-    const schema = createReportSchema()
+    const schema = createReportSchema(t)
     const state = reactive<ReportState>({
         reportReason: [],
         comment: '',
@@ -113,11 +115,11 @@ export const useSetupReport = (setupId: number) => {
         } catch (error) {
             console.error('Error submitting setup report:', error)
             toast.add({
-                title: '報告の送信に失敗しました',
+                title: t('toast.reports.submitFailed'),
                 description:
                     error instanceof z.ZodError
                         ? error.issues.map((e) => e.message).join(', ')
-                        : '不明なエラーが発生しました',
+                        : t('toast.reports.unknownError'),
                 color: 'error',
             })
             return false
@@ -132,8 +134,9 @@ export const useSetupReport = (setupId: number) => {
 }
 
 export const useUserReport = (userId: string) => {
+    const { t } = useI18n()
     const toast = useToast()
-    const schema = createReportSchema()
+    const schema = createReportSchema(t)
     const state = reactive<ReportState>({
         reportReason: [],
         comment: '',
@@ -157,8 +160,8 @@ export const useUserReport = (userId: string) => {
             })
 
             toast.add({
-                title: '報告が送信されました',
-                description: 'ご協力ありがとうございます。',
+                title: t('toast.reports.submitted'),
+                description: t('toast.reports.submittedDescription'),
                 color: 'success',
             })
 
@@ -168,11 +171,11 @@ export const useUserReport = (userId: string) => {
         } catch (error) {
             console.error('Error submitting user report:', error)
             toast.add({
-                title: '報告の送信に失敗しました',
+                title: t('toast.reports.submitFailed'),
                 description:
                     error instanceof z.ZodError
                         ? error.issues.map((e) => e.message).join(', ')
-                        : '不明なエラーが発生しました',
+                        : t('toast.reports.unknownError'),
                 color: 'error',
             })
             return false
