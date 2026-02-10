@@ -24,7 +24,7 @@ const onSelectItemSearch = async (item: Partial<Item> & Pick<Item, 'id'>) => {
         class="data-[state=open]:bg-elevated flex flex-col rounded-lg"
     >
         <UButton
-            label="詳細オプション"
+            :label="$t('search.options.title')"
             color="neutral"
             variant="ghost"
             size="sm"
@@ -44,7 +44,9 @@ const onSelectItemSearch = async (item: Partial<Item> & Pick<Item, 'id'>) => {
                 <div class="flex w-full flex-col gap-2">
                     <div class="flex items-center gap-1">
                         <Icon name="mingcute:package-2-fill" size="18" class="text-muted" />
-                        <h2 class="text-sm leading-none font-semibold text-nowrap">アイテム</h2>
+                        <h2 class="text-sm leading-none font-semibold text-nowrap">
+                            {{ $t('search.options.itemSection') }}
+                        </h2>
                     </div>
 
                     <div class="flex w-full flex-wrap items-center gap-2">
@@ -58,9 +60,9 @@ const onSelectItemSearch = async (item: Partial<Item> & Pick<Item, 'id'>) => {
 
                         <UPopover v-model:open="popoverItemSearch">
                             <UButton
-                                :label="items.length ? undefined : 'アイテムを選択'"
+                                :label="items.length ? undefined : $t('search.options.selectItem')"
                                 icon="mingcute:add-line"
-                                aria-label="Add item"
+                                :aria-label="$t('search.options.addItem')"
                                 variant="ghost"
                                 class="p-4"
                             />
@@ -76,12 +78,14 @@ const onSelectItemSearch = async (item: Partial<Item> & Pick<Item, 'id'>) => {
                 <div class="flex w-full flex-col gap-1.5">
                     <div class="flex items-center gap-1">
                         <Icon name="mingcute:tag-2-fill" size="18" class="text-muted" />
-                        <h2 class="text-sm leading-none font-semibold text-nowrap">タグ</h2>
+                        <h2 class="text-sm leading-none font-semibold text-nowrap">
+                            {{ $t('search.options.tagSection') }}
+                        </h2>
                     </div>
 
                     <UInputTags
                         v-model="tags"
-                        placeholder="タグを入力"
+                        :placeholder="$t('search.options.tagPlaceholder')"
                         @add-tag="tags = [...tags, $event as string]"
                         @remove-tag="tags = tags.filter((tag) => tag !== $event)"
                     />

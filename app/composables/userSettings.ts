@@ -253,8 +253,9 @@ export const useUserSettings = () => {
 
     // Account operations
     const deleteUser = async () => {
+        const localePath = useLocalePath()
         try {
-            await auth.deleteUser({ callbackURL: '/' })
+            await auth.deleteUser({ callbackURL: localePath('/') })
 
             toast.add({
                 icon: 'mingcute:check-line',
@@ -262,7 +263,7 @@ export const useUserSettings = () => {
                 description: 'ページをリロードしています...',
                 color: 'success',
             })
-            navigateTo('/', { external: true })
+            navigateTo(localePath('/'), { external: true })
         } catch (error) {
             console.error('Error deleting user:', error)
             toast.add({

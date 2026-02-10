@@ -12,12 +12,14 @@ const route = useRoute()
 const toast = useToast()
 const colorMode = useColorMode()
 const { login, feedback } = useAppOverlay()
+const { t } = useI18n()
+const localePath = useLocalePath()
 
 const switchAccount = async (sessionToken: string) => {
     await auth.multiSession.setActive({ sessionToken })
     toast.add({
-        title: 'アカウントを切り替えました',
-        description: 'ページを更新しています...',
+        title: t('header.menu.switchAccount'),
+        description: t('loading'),
         progress: false,
     })
     navigateTo(route.path, { external: true })
@@ -25,21 +27,21 @@ const switchAccount = async (sessionToken: string) => {
 
 const themeMenu = [
     {
-        label: 'システム',
+        label: t('system'),
         icon: 'mingcute:monitor-fill',
         onSelect: () => {
             colorMode.preference = 'system'
         },
     },
     {
-        label: 'ライト',
+        label: t('light'),
         icon: 'mingcute:sun-fill',
         onSelect: () => {
             colorMode.preference = 'light'
         },
     },
     {
-        label: 'ダーク',
+        label: t('dark'),
         icon: 'mingcute:moon-fill',
         onSelect: () => {
             colorMode.preference = 'dark'
@@ -50,37 +52,37 @@ const themeMenu = [
 const menuItems = ref<DropdownMenuItem[][]>([
     [
         {
-            to: `/@${props.session.user.username}`,
+            to: localePath(`/@${props.session.user.username}`),
             slot: 'user',
         },
     ],
     [
         {
-            label: 'ブックマーク',
+            label: t('header.menu.bookmarks'),
             icon: 'mingcute:bookmark-fill',
-            to: `/bookmarks`,
+            to: localePath('/bookmarks'),
         },
         {
-            label: '設定',
+            label: t('header.menu.settings'),
             icon: 'mingcute:settings-1-fill',
-            to: '/settings',
+            to: localePath('/settings'),
         },
     ],
     [
         {
-            label: 'フィードバック',
+            label: t('header.menu.feedback'),
             icon: 'mingcute:chat-3-fill',
             onSelect: () => feedback.open(),
         },
         {
-            label: 'テーマ',
+            label: t('theme'),
             icon: 'mingcute:moon-fill',
             children: themeMenu,
         },
     ],
     [
         {
-            label: 'アカウント切替',
+            label: t('header.menu.switchAccount'),
             icon: 'mingcute:group-2-fill',
             children: [
                 ...(props.sessions?.map((session) => ({
@@ -93,14 +95,14 @@ const menuItems = ref<DropdownMenuItem[][]>([
                     onSelect: () => switchAccount(session.session.token),
                 })) || []),
                 {
-                    label: '新しいアカウント',
+                    label: t('header.menu.newAccount'),
                     icon: 'mingcute:user-add-2-fill',
                     onSelect: () => login.open(),
                 },
             ],
         },
         {
-            label: 'ログアウト',
+            label: t('header.menu.logout'),
             icon: 'mingcute:open-door-fill',
             onSelect: revoke,
         },
@@ -112,7 +114,7 @@ const menuItems = ref<DropdownMenuItem[][]>([
     <UDropdownMenu :items="menuItems">
         <button
             type="button"
-            aria-label="ユーザーメニュー"
+            :aria-label="$t('header.userMenu')"
             class="ring-accented size-8 cursor-pointer rounded-full ring-0 transition-all select-none hover:ring-4"
         >
             <UAvatar

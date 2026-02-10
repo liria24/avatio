@@ -5,7 +5,7 @@ const { state, addCoauthor, removeCoauthor } = useSetupCompose()
 </script>
 
 <template>
-    <UFormField name="coauthors" label="共同作者">
+    <UFormField name="coauthors" :label="$t('setup.compose.coauthors.title')">
         <div class="flex flex-col gap-2">
             <VueDraggable
                 v-model="state.coauthors"
@@ -48,7 +48,11 @@ const { state, addCoauthor, removeCoauthor } = useSetupCompose()
                                 @click="removeCoauthor(coauthor.user.username)"
                             />
                         </div>
-                        <UInput v-model="coauthor.note" placeholder="ノート" size="sm" />
+                        <UInput
+                            v-model="coauthor.note"
+                            :placeholder="$t('setup.compose.coauthors.note')"
+                            size="sm"
+                        />
                     </div>
                 </div>
             </VueDraggable>
@@ -56,7 +60,11 @@ const { state, addCoauthor, removeCoauthor } = useSetupCompose()
             <UPopover :content="{ side: 'right', align: 'start' }">
                 <UButton
                     icon="mingcute:add-line"
-                    :label="state.coauthors.length ? undefined : '共同作者を追加'"
+                    :label="
+                        state.coauthors.length
+                            ? undefined
+                            : $t('setup.compose.coauthors.placeholder')
+                    "
                     variant="soft"
                     block
                 />

@@ -3,7 +3,7 @@ const { state, addTag, removeTag } = useSetupCompose()
 </script>
 
 <template>
-    <UFormField name="tags" label="タグ">
+    <UFormField name="tags" :label="$t('setup.compose.tags.title')">
         <div class="flex flex-wrap items-center gap-2">
             <UBadge
                 v-for="tag in state.tags"
@@ -25,7 +25,7 @@ const { state, addTag, removeTag } = useSetupCompose()
             <UPopover :content="{ side: 'right', align: 'start' }">
                 <UButton
                     icon="mingcute:add-line"
-                    :label="state.tags.length ? undefined : 'タグを追加'"
+                    :label="state.tags.length ? undefined : $t('setup.compose.tags.add')"
                     variant="soft"
                 />
 

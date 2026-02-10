@@ -19,29 +19,30 @@ interface Props {
     }
 }
 const props = withDefaults(defineProps<Props>(), {
-    label: 'ユーザーID',
-    placeholder: 'ユーザーIDを入力',
+    label: undefined,
+    placeholder: undefined,
     ui: undefined,
 })
 
 const { getSession, auth } = useAuth()
 const session = await getSession()
+const { t } = useI18n()
 
 const checkState = ref<'idle' | 'checking' | 'available' | 'unavailable' | 'error'>('idle')
 
-const stateMessages = {
+const stateMessages = computed(() => ({
     idle: { icon: '', message: '' },
-    checking: { icon: 'svg-spinners:ring-resize', message: '確認中...' },
-    available: { icon: 'mingcute:check-line', message: '使用可能' },
+    checking: { icon: 'svg-spinners:ring-resize', message: t('input.username.checking') },
+    available: { icon: 'mingcute:check-line', message: t('input.username.available') },
     unavailable: {
         icon: 'mingcute:close-line',
-        message: 'このユーザーIDはすでに使用されています。',
+        message: t('input.username.unavailable'),
     },
     error: {
         icon: 'mingcute:alert-fill',
-        message: 'ユーザーIDの確認中にエラーが発生しました。',
+        message: t('input.username.error'),
     },
-} as const
+}))
 
 const checkNewIdAvailability = useDebounceFn(async (username: string) => {
     if (!username?.length || username === session.value!.user.username) {
@@ -80,10 +81,10 @@ watch(
 </script>
 
 <template>
-    <UFormField :label="props.label" v-bind="props.ui?.field">
+    <UFormField :label="props.label || $t('input.username.label')" v-bind="props.ui?.field">
         <UInput
             v-model="input"
-            :placeholder="props.placeholder"
+            :placeholder="props.placeholder || $t('input.username.placeholder')"
             class="w-full"
             v-bind="props.ui?.input"
         />

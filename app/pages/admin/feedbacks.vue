@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+const { locale, t } = useI18n()
 const { closeFeedback: closeFeedbackAction, openFeedback: openFeedbackAction } = useAdminActions()
 
 const { data, refresh } = await useFetch('/api/admin/feedbacks', {
@@ -59,7 +60,7 @@ const openFeedback = async (feedbackId: number) => {
 
         <template #body>
             <div v-if="!data?.length">
-                <p class="text-muted text-center text-sm">フィードバックはありません。</p>
+                <p class="text-muted text-center text-sm">{{ $t('admin.feedbacks.empty') }}</p>
             </div>
 
             <div v-else class="flex max-h-96 flex-col gap-2 overflow-y-auto p-1">
@@ -81,6 +82,7 @@ const openFeedback = async (feedbackId: number) => {
                         <NuxtTime
                             :datetime="feedback.createdAt"
                             relative
+                            :locale
                             class="text-muted text-xs leading-none text-nowrap"
                         />
                         <UBadge
@@ -96,7 +98,9 @@ const openFeedback = async (feedbackId: number) => {
                                     icon: feedback.isClosed
                                         ? 'lucide:circle-dot'
                                         : 'lucide:circle-slash',
-                                    label: feedback.isClosed ? 'オープン' : 'クローズ',
+                                    label: feedback.isClosed
+                                        ? $t('admin.feedbacks.open')
+                                        : $t('admin.feedbacks.close'),
                                     onSelect: () => {
                                         if (feedback.isClosed) openFeedback(feedback.id)
                                         else closeFeedback(feedback.id)

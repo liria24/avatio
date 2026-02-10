@@ -88,7 +88,7 @@ const socialShareItems = ref<DropdownMenuItem[]>([
     <UButton
         v-if="isMobile && shareSupported"
         icon="mingcute:share-2-fill"
-        aria-label="シェア"
+        :aria-label="$t('share')"
         variant="ghost"
         size="sm"
         class="p-2"
@@ -115,7 +115,7 @@ const socialShareItems = ref<DropdownMenuItem[]>([
     >
         <UButton
             icon="mingcute:share-2-fill"
-            aria-label="シェア"
+            :aria-label="$t('share')"
             variant="ghost"
             size="sm"
             class="p-2"

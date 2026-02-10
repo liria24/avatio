@@ -6,6 +6,7 @@ interface Props {
 }
 const props = defineProps<Props>()
 
+const { locale } = useI18n()
 const { getSession } = useAuth()
 const session = await getSession()
 const { toggle: toggleBookmarkAction, getBookmarkStatus } = useBookmarks()
@@ -59,12 +60,9 @@ const toggleBookmark = async () => {
                     <Icon name="mingcute:calendar-2-fill" size="16" />
                     <NuxtTime
                         :datetime="props.setup.createdAt"
-                        locale="ja-JP"
-                        year="numeric"
-                        month="2-digit"
-                        day="2-digit"
-                        hour="2-digit"
-                        minute="2-digit"
+                        date-style="short"
+                        time-style="short"
+                        :locale
                         class="font-mono text-sm leading-none text-nowrap"
                     />
                 </div>
@@ -76,23 +74,22 @@ const toggleBookmark = async () => {
                     <div class="text-dimmed flex items-center gap-1.5">
                         <Icon name="mingcute:edit-3-fill" size="16" />
                         <span class="text-xs leading-none text-nowrap">
-                            <NuxtTime :datetime="props.setup.updatedAt" relative />
-                            に更新
+                            <NuxtTime :datetime="props.setup.updatedAt" relative :locale />
+                            {{ $t('setup.viewer.updatedAt') }}
                         </span>
                     </div>
 
                     <template #content>
                         <NuxtTime
                             :datetime="props.setup.updatedAt"
-                            locale="ja-JP"
-                            year="numeric"
-                            month="2-digit"
-                            day="2-digit"
-                            hour="2-digit"
-                            minute="2-digit"
+                            date-style="short"
+                            time-style="short"
+                            :locale
                             class="text-muted font-mono text-xs leading-none text-nowrap"
                         />
-                        <span class="text-muted text-xs leading-none text-nowrap"> に編集 </span>
+                        <span class="text-muted text-xs leading-none text-nowrap">
+                            {{ $t('setup.viewer.editedAt') }}
+                        </span>
                     </template>
                 </UTooltip>
             </div>
@@ -101,7 +98,9 @@ const toggleBookmark = async () => {
                 <UButton
                     v-if="session?.user.role === 'admin'"
                     :icon="props.setup.hidAt ? 'mingcute:eye-2-fill' : 'mingcute:eye-close-fill'"
-                    :aria-label="props.setup.hidAt ? 'セットアップを表示' : 'セットアップを非表示'"
+                    :aria-label="
+                        props.setup.hidAt ? $t('setup.viewer.show') : $t('setup.viewer.hide')
+                    "
                     variant="ghost"
                     size="sm"
                     class="p-2"
@@ -116,7 +115,9 @@ const toggleBookmark = async () => {
                     loading-auto
                     :loading="bookmarkStatus === 'pending'"
                     :icon="isBookmarked ? 'mingcute:bookmark-fill' : 'mingcute:bookmark-line'"
-                    :aria-label="isBookmarked ? 'ブックマークから削除' : 'ブックマーク'"
+                    :aria-label="
+                        isBookmarked ? $t('setup.viewer.unbookmark') : $t('setup.viewer.bookmark')
+                    "
                     :color="isBookmarked ? 'secondary' : 'primary'"
                     variant="ghost"
                     size="sm"
@@ -127,7 +128,7 @@ const toggleBookmark = async () => {
                 <template v-if="session?.user.username === props.setup.user.username">
                     <UButton
                         :to="`/setup/compose?edit=${props.setup.id}`"
-                        aria-label="編集"
+                        :aria-label="$t('edit')"
                         icon="mingcute:edit-3-fill"
                         variant="ghost"
                         size="sm"
@@ -135,7 +136,7 @@ const toggleBookmark = async () => {
                     />
 
                     <UButton
-                        aria-label="削除"
+                        :aria-label="$t('delete')"
                         icon="mingcute:delete-2-fill"
                         variant="ghost"
                         size="sm"
@@ -178,7 +179,7 @@ const toggleBookmark = async () => {
             v-if="props.setup.coauthors?.length"
             :class="cn('flex flex-col gap-3 self-stretch', !props.sidebar && 'lg:hidden')"
         >
-            <h2 class="text-toned text-sm leading-none">共同作者</h2>
+            <h2 class="text-toned text-sm leading-none">{{ $t('setup.viewer.coauthors') }}</h2>
             <ul class="grid gap-2 pl-1 md:grid-cols-2 lg:grid-cols-1">
                 <li
                     v-for="coAuthor in props.setup.coauthors"

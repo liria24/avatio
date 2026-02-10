@@ -39,7 +39,7 @@ await initialize()
         <UButton
             v-if="bookmarks?.pagination.hasNext"
             :loading="status === 'pending'"
-            label="もっと見る"
+            :label="$t('more')"
             variant="soft"
             size="lg"
             class="w-fit self-center"

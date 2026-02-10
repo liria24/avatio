@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const notificationsStore = useNotificationsStore()
 
+const { locale } = useI18n()
 const localePath = useLocalePath()
 
 const open = ref(false)
@@ -49,12 +50,14 @@ watch(open, (isOpen) => {
         <slot :unread="notificationsStore?.unread || 0" />
 
         <template #content>
-            <div class="flex w-xs max-w-md flex-col gap-4 p-4 sm:w-sm md:w-md">
+            <div class="flex w-full max-w-md flex-col gap-4 p-4 sm:w-sm md:w-md">
                 <div class="flex items-center justify-between gap-2">
-                    <span class="text-lg leading-none font-bold text-nowrap"> 通知 </span>
+                    <span class="text-lg leading-none font-bold text-nowrap">
+                        {{ $t('notifications.title') }}
+                    </span>
 
                     <UButton
-                        label="既読の通知"
+                        :label="$t('notifications.read')"
                         variant="soft"
                         size="sm"
                         :active="viewingReadNotifications"
@@ -74,7 +77,7 @@ watch(open, (isOpen) => {
                 />
 
                 <p v-else-if="!notifications.length" class="text-muted my-8 self-center text-sm">
-                    新しい通知はありません
+                    {{ $t('notifications.empty') }}
                 </p>
 
                 <div v-else class="flex flex-col gap-2">
@@ -95,6 +98,7 @@ watch(open, (isOpen) => {
                             <NuxtTime
                                 :datetime="notification.createdAt"
                                 relative
+                                :locale
                                 class="text-muted p-1 text-xs leading-none text-nowrap"
                             />
                         </div>
@@ -121,7 +125,7 @@ watch(open, (isOpen) => {
 
                             <UTooltip
                                 v-if="!notification.readAt"
-                                text="既読にする"
+                                :text="$t('notifications.markAsRead')"
                                 :delay-duration="100"
                             >
                                 <UButton
@@ -133,7 +137,11 @@ watch(open, (isOpen) => {
                                 />
                             </UTooltip>
 
-                            <UTooltip v-else text="未読にする" :delay-duration="100">
+                            <UTooltip
+                                v-else
+                                :text="$t('notifications.markAsUnread')"
+                                :delay-duration="100"
+                            >
                                 <UButton
                                     icon="mingcute:mail-fill"
                                     variant="ghost"

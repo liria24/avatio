@@ -11,6 +11,12 @@ const { locale } = useI18n()
         <NuxtRouteAnnouncer />
         <NuxtLoadingIndicator />
         <NuxtLayout>
+            <div
+                class="sentence bg-muted text-error ring-error hidden w-full items-center justify-center rounded-xl p-4 text-sm ring-2 noscript:flex"
+            >
+                {{ $t('jsWarning') }}
+            </div>
+
             <NuxtPage />
         </NuxtLayout>
     </UApp>

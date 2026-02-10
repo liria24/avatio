@@ -10,6 +10,7 @@ const open = defineModel<boolean>({
 })
 
 const toast = useToast()
+const { t } = useI18n()
 
 const searchTerm = ref('')
 
@@ -24,7 +25,7 @@ const { data: users, status } = useFetch('/api/users', {
 
 const existingUsersGroup = computed(() => ({
     id: 'existing-users',
-    label: 'ユーザー',
+    label: t('commandPalette.userSearch.users'),
     items: users.value.map((user, index) => ({
         id: `existing-${index}`,
         label: user.name,
@@ -35,7 +36,7 @@ const existingUsersGroup = computed(() => ({
 
 const userFromIdGroup = computed(() => ({
     id: 'user-from-id',
-    label: 'ID から追加',
+    label: t('commandPalette.userSearch.addFromId'),
     items: [
         {
             id: 'user-from-id-item',
@@ -79,8 +80,8 @@ const onSelect = async (username: string) => {
     } catch (error) {
         console.error('User not found:', error)
         toast.add({
-            title: 'ユーザーが見つかりません',
-            description: '入力したIDのユーザーが存在しないか、アクセスできません。',
+            title: t('commandPalette.userSearch.userNotFound'),
+            description: t('commandPalette.userSearch.userNotFoundDescription'),
             color: 'error',
         })
         return
@@ -95,7 +96,7 @@ const onSelect = async (username: string) => {
         virtualize
         selection-behavior="replace"
         :loading="status === 'pending'"
-        placeholder="ユーザーを検索 / ID を入力"
+        :placeholder="$t('commandPalette.userSearch.placeholder')"
         :groups="groups"
         :ui="{
             input: '[&>input]:text-sm',

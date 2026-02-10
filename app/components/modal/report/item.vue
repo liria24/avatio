@@ -3,7 +3,26 @@ const props = defineProps<{ itemId: string }>()
 
 const emit = defineEmits(['close'])
 
+const { t } = useI18n()
 const { schema, state, submit } = useItemReport(props.itemId)
+
+const reasonItems = computed(() => [
+    {
+        label: t('modal.report.item.reasons.nameError.label'),
+        description: t('modal.report.item.reasons.nameError.description'),
+        value: 'nameError',
+    },
+    {
+        label: t('modal.report.item.reasons.irrelevant.label'),
+        description: t('modal.report.item.reasons.irrelevant.description'),
+        value: 'irrelevant',
+    },
+    {
+        label: t('modal.report.item.reasons.other.label'),
+        description: t('modal.report.item.reasons.other.description'),
+        value: 'other',
+    },
+])
 
 const Submit = async () => {
     const success = await submit()
@@ -14,7 +33,7 @@ const Submit = async () => {
 </script>
 
 <template>
-    <UModal title="アイテムの報告">
+    <UModal :title="$t('modal.report.item.title')">
         <slot />
 
         <template #body>
@@ -24,43 +43,30 @@ const Submit = async () => {
                 class="flex w-full flex-col items-center gap-4 overflow-y-auto"
                 @submit="Submit"
             >
-                <UFormField name="reportReason" label="報告の理由" class="w-full">
+                <UFormField
+                    name="reportReason"
+                    :label="$t('modal.report.item.reason')"
+                    class="w-full"
+                >
                     <UCheckboxGroup
                         v-model="state.reportReason"
                         variant="table"
-                        :items="[
-                            {
-                                label: 'アイテム名称の誤り',
-                                description:
-                                    'アイテムの名称が誤っている、ニュアンスが異なっている、または不適切である。',
-                                value: 'nameError',
-                            },
-                            {
-                                label: '無関係なアイテム',
-                                description: 'アイテムが VR アバターに関連していない。',
-                                value: 'irrelevant',
-                            },
-                            {
-                                label: 'その他',
-                                description: 'その他の理由で報告',
-                                value: 'other',
-                            },
-                        ]"
+                        :items="reasonItems"
                         class="w-full"
                     />
                 </UFormField>
 
-                <UFormField name="comment" label="報告の詳細や背景情報" class="w-full">
+                <UFormField name="comment" :label="$t('modal.report.item.comment')" class="w-full">
                     <UTextarea
                         v-model="state.comment"
                         autoresize
-                        placeholder="その他の理由を入力"
+                        :placeholder="$t('modal.report.item.commentPlaceholder')"
                         class="w-full"
                     />
 
                     <template #hint>
                         <UTooltip
-                            text="Markdownをサポートしています"
+                            :text="$t('modal.markdownSupported')"
                             :content="{ side: 'top' }"
                             :delay-duration="50"
                         >
@@ -77,7 +83,13 @@ const Submit = async () => {
 
         <template #footer>
             <div class="flex w-full justify-end">
-                <UButton loading-auto label="報告" color="neutral" size="lg" @click="Submit()" />
+                <UButton
+                    loading-auto
+                    :label="$t('report')"
+                    color="neutral"
+                    size="lg"
+                    @click="Submit()"
+                />
             </div>
         </template>
     </UModal>

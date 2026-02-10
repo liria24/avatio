@@ -1,0 +1,590 @@
+export default defineI18nLocale(async () => ({
+    language: 'Language',
+    login: 'Login',
+    theme: 'Theme',
+    system: 'System',
+    light: 'Light',
+    dark: 'Dark',
+    save: 'Save',
+    delete: 'Delete',
+    cancel: 'Cancel',
+    edit: 'Edit',
+    loading: 'Loading...',
+    more: 'Load More',
+    submit: 'Submit',
+    back: 'Back',
+    confirm: 'Confirm',
+    close: 'Close',
+    add: 'Add',
+    remove: 'Remove',
+    update: 'Update',
+    publish: 'Publish',
+    continue: 'Continue',
+    view: 'View',
+    report: 'Report',
+    share: 'Share',
+
+    jsWarning:
+        'This website uses JavaScript. It may not display correctly if JavaScript is disabled.',
+
+    content: {
+        fallbackNotice: 'This content is currently not available in {locale}.',
+        fallbackDescription: 'Showing Japanese version as fallback.',
+    },
+
+    itemCategory: {
+        avatar: 'Base Avatar',
+        hair: 'Hair',
+        clothing: 'Clothing',
+        accessory: 'Accessory',
+        texture: 'Texture',
+        shader: 'Shader',
+        tool: 'Tool',
+        other: 'Other',
+    },
+
+    header: {
+        postSetup: 'Post Setup',
+        searchSetup: 'Search Setups',
+        notifications: 'Notifications',
+        userMenu: 'User Menu',
+        menu: {
+            bookmarks: 'Bookmarks',
+            settings: 'Settings',
+            feedback: 'Feedback',
+            switchAccount: 'Switch Account',
+            newAccount: 'New Account',
+            logout: 'Logout',
+        },
+    },
+
+    bookmarks: {
+        title: 'Bookmarks',
+        description: 'View your bookmarked setups.',
+        empty: 'No bookmarks yet',
+        added: 'Added to bookmarks',
+        removed: 'Removed from bookmarks',
+    },
+
+    settings: {
+        title: 'User Settings',
+        description: 'Edit your user profile and manage your account.',
+        profile: {
+            title: 'Profile',
+            selectImage: 'Select Image',
+            moreOptions: 'More Options',
+            name: 'Username',
+            bio: 'Bio',
+            links: 'Links',
+            addLink: 'Add Link',
+            removeLink: 'Remove Link',
+        },
+        shop: {
+            title: 'Shop Verification',
+            step1: '1. Select one item from your shop and enter its URL',
+            step2: '2. Add the following code to the item description',
+            stepDescription:
+                'Only items that can be registered in Avatio are eligible for verification. Private items and items from unsupported platforms cannot be used. GitHub shops are currently not supported.',
+            generatingCode: 'Generating code...',
+            verify: 'Verify Shop',
+            newShop: 'Verify New Shop',
+            unverify: 'Unverify Shop',
+            unverifyConfirm: 'Are you sure you want to unverify this shop?',
+            verified: 'Shop verified successfully',
+            unverified: 'Shop unverified',
+            deleteCodeNote:
+                'Please delete the code from the item description after verification is complete',
+            notVerifiable: 'This URL is not a verifiable item',
+            noVerifiedShops: 'No verified shops',
+        },
+        account: {
+            title: 'Account',
+            logoutOthers: 'Logout from other browsers',
+            logoutOthersDesc: 'Logout from all devices except this browser.',
+            logoutOthersButton: 'Logout from all devices',
+            logoutAll: 'Logout from all accounts',
+            logoutAllDesc: 'Logout from all currently logged in accounts.',
+            logoutAllButton: 'Logout All',
+        },
+        dangerZone: {
+            title: 'DANGER ZONE',
+            deleteAccount: 'Delete Account',
+            deleteAccountDesc:
+                'Delete your account and all associated data. Deleted accounts cannot be recovered.',
+        },
+    },
+
+    welcome: {
+        title: 'Welcome!',
+        description: 'Set your user ID to get started.',
+        changeUsername: 'Change User ID',
+    },
+
+    index: {
+        hero: {
+            title: 'Share Your Avatar Setups',
+            description: 'Record your setups and never forget which items.',
+            getStarted: 'Get Started',
+        },
+        tabs: {
+            latest: 'Latest',
+            me: 'My Posts',
+            bookmarks: 'Bookmarks',
+        },
+        seo: {
+            title: 'Avatio',
+            description: 'Share your avatar modifications',
+        },
+    },
+
+    search: {
+        title: 'Search Setups',
+        placeholder: 'Search setups...',
+        keyword: 'Search keyword',
+        description: 'Search for setups based on specific criteria.',
+        notFound: 'No setups found',
+        options: {
+            title: 'Advanced Options',
+            selectItem: 'Select Item',
+            addItem: 'Add Item',
+            tagPlaceholder: 'Enter tag',
+            itemSection: 'Items',
+            tagSection: 'Tags',
+            removeItem: 'Remove {name}',
+        },
+        popularAvatars: 'Popular Avatars',
+        popularAvatarsTitle: 'Search by Popular Avatars',
+        unknownAvatar: 'Unknown Base Avatar',
+        listEmpty: 'No setups found',
+    },
+
+    commandPalette: {
+        itemSearch: {
+            placeholder: 'Search items / Enter URL',
+            addFromUrl: 'Add from URL',
+            invalidUrl: 'Invalid URL',
+            invalidUrlDescription: 'Please enter a valid item URL.',
+            fetchError: 'Failed to fetch item',
+            fetchErrorDescription: 'The item may not exist or may be private.',
+        },
+        tagSearch: {
+            placeholder: 'Search / Enter tags',
+            existingTags: 'Existing Tags',
+            addNew: 'Add New',
+        },
+        userSearch: {
+            placeholder: 'Search users / Enter ID',
+            users: 'Users',
+            addFromId: 'Add from ID',
+            userNotFound: 'User not found',
+            userNotFoundDescription:
+                'The user with the entered ID does not exist or is not accessible.',
+        },
+    },
+
+    setup: {
+        compose: {
+            title: 'Post Setup',
+            editTitle: 'Edit Setup',
+            seoDescription: 'Post a new setup.',
+            seoEditDescription: 'Edit your setup.',
+            nameLabel: 'Title',
+            namePlaceholder: 'Setup name',
+            descriptionLabel: 'Description',
+            descriptionPlaceholder: 'Description',
+            draftButton: 'Draft',
+            publishButton: 'Publish',
+            updateButton: 'Update',
+            newSetupConfirm: 'Create a new setup?',
+            newSetupCreate: 'Create New',
+            confirmLeave: 'Your changes will be discarded. Are you sure?',
+            draftStatus: {
+                restoring: 'Restoring...',
+                restored: 'Restored',
+                unsaved: 'Unsaved changes',
+                saving: 'Saving...',
+                saved: 'Saved',
+                error: 'Failed to save',
+            },
+            draftAlert: {
+                errorNotSaved: 'Draft not saved due to an error!',
+                currentlySaved: 'Current state is saved as draft',
+            },
+            items: {
+                title: 'Items',
+                add: 'Add Item',
+                remove: 'Remove Item',
+                changeCategory: 'Change Item Category',
+                incompatible: 'Incompatible with base avatar',
+                shapekeys: 'Shape Keys',
+                shapekeysCount: '{count} shape keys',
+                shapekeyPlaceholder: 'Shape key name',
+                notePlaceholder: 'Add note',
+                empty: 'No items registered',
+                noShapekeys: 'No shapekeys',
+            },
+            images: {
+                title: 'Images',
+                add: 'Add Image',
+                dropAdd: 'Drop to Add',
+                uploading: 'Uploading image...',
+            },
+            tags: {
+                title: 'Tags',
+                add: 'Add Tag',
+            },
+            coauthors: {
+                title: 'Co-authors',
+                placeholder: 'Add co-author',
+                note: 'Note',
+            },
+            drafts: {
+                title: 'Drafts',
+                empty: 'No drafts',
+                loading: 'Loading...',
+                back: 'Back',
+                delete: 'Delete Draft',
+                deleteConfirm: 'Are you sure you want to delete this draft?',
+                limitReached: 'Draft limit reached',
+                limitReachedDescription: 'Please delete existing drafts to save new ones',
+            },
+            newSetup: 'Create New Setup',
+            newSetupModal: {
+                title: 'Create New',
+            },
+            draftsDescription: 'You can save up to 32 drafts',
+        },
+        viewer: {
+            show: 'Show Setup',
+            hide: 'Hide Setup',
+            hiddenNotice: 'This setup is currently hidden',
+            deleted: 'This setup may have been deleted or made private.',
+            bookmark: 'Bookmark',
+            unbookmark: 'Remove Bookmark',
+            report: 'Report this setup',
+            searchByItem: 'Search setups by item',
+            reportItem: 'Report Item',
+            showNsfw: 'Show NSFW Content',
+            reason: 'Reason',
+            reasonUnknown: 'Unknown',
+            objectToHiding: 'Object to Hiding',
+            objectToHidingSubject: 'Objection to Setup Hiding',
+            imageAlt: "'s image",
+            failedItemsCount: 'items could not be retrieved',
+            unavailableForAvatar: 'Incompatible with Avatar',
+            shapekeys: 'Shapekeys',
+            valueCopied: 'Copied value of {name}',
+            updatedAt: ' updated',
+            editedAt: ' edited',
+            coauthors: 'Co-authors',
+            editing: 'Editing',
+            untitled: 'Untitled',
+        },
+    },
+
+    changelogs: {
+        title: 'Changelogs',
+        description: 'View the changelog of Avatio.',
+    },
+
+    footer: {
+        social: {
+            x: 'X',
+            github: 'GitHub',
+        },
+        links: {
+            changelogs: 'Changelogs',
+            faq: 'FAQ',
+            feedback: 'Feedback',
+            feedbackDescription: "We'd love to hear from you. Feedback is sent anonymously.",
+        },
+        legal: {
+            terms: 'Terms of Service',
+            privacy: 'Privacy Policy',
+        },
+    },
+
+    modal: {
+        login: {
+            title: 'Login',
+            continueWith: 'Continue with {provider}',
+            agreement: 'By logging in, you agree to the following:',
+            footer: {
+                terms: 'Terms of Service',
+                privacy: 'Privacy Policy',
+            },
+        },
+        feedback: {
+            title: 'Feedback',
+            comment: 'Comment',
+            placeholder: 'Enter your comment',
+            submitted: 'Feedback submitted',
+        },
+        publishComplete: {
+            title: 'Setup Published!',
+            continuePosting: 'Continue Posting',
+            viewSetup: 'View Published Setup',
+        },
+        deleteSetup: {
+            title: 'Delete Setup',
+            confirm: 'Are you sure you want to delete this setup?',
+            description: 'Deleted setups cannot be recovered.',
+        },
+        deleteAccount: {
+            title: 'Delete Account',
+            confirm: 'Are you sure you want to delete your account?',
+            description: 'Deleted accounts cannot be recovered.',
+        },
+        report: {
+            setup: {
+                title: 'Report Setup',
+                reason: 'Reason for Report',
+                comment: 'Additional Details or Context',
+                commentPlaceholder: 'Enter other reason',
+                submitted: 'Report submitted',
+                reasons: {
+                    spam: {
+                        label: 'Spam, Personal Info, Inappropriate Content',
+                        description:
+                            'Posted multiple similar submissions for harassment, contains personal information of self or others, or includes other inappropriate content.',
+                    },
+                    hate: {
+                        label: 'Discrimination, Violence, Defamation',
+                        description:
+                            'Contains discriminatory expressions based on race, gender, religion, sexual orientation, disability, illness, age, or other attributes, or violent expressions.',
+                    },
+                    infringe: {
+                        label: 'Rights Infringement',
+                        description:
+                            'Expected to infringe copyright, trademark, portrait rights, or other rights of self or third parties.',
+                    },
+                    badImage: {
+                        label: 'Extreme Images',
+                        description:
+                            'Attached images containing excessive exposure, violent expressions, etc.\nEven with NSFW tags, attaching extreme images is prohibited.',
+                    },
+                    other: {
+                        label: 'Other',
+                        description: 'Report for other reasons',
+                    },
+                },
+            },
+            user: {
+                title: 'Report User',
+                reason: 'Reason for Report',
+                comment: 'Additional Details or Context',
+                commentPlaceholder: 'Enter other reason',
+                submitted: 'Report submitted',
+                reasons: {
+                    spam: {
+                        label: 'Spam',
+                        description: 'Contains spam posts.',
+                    },
+                    hate: {
+                        label: 'Malicious User',
+                        description:
+                            'Posting malicious content such as hate, discrimination, threats.',
+                    },
+                    infringe: {
+                        label: 'Rights Infringement',
+                        description:
+                            'Infringing on the rights of others or promoting rights infringement.',
+                    },
+                    badImage: {
+                        label: 'Inappropriate Images',
+                        description: 'Contains inappropriate icons, etc.',
+                    },
+                    other: {
+                        label: 'Other',
+                        description: 'Report for other reasons',
+                    },
+                },
+            },
+            item: {
+                title: 'Report Item',
+                reason: 'Reason for Report',
+                comment: 'Additional Details or Context',
+                commentPlaceholder: 'Enter other reason',
+                submitted: 'Report submitted',
+                reasons: {
+                    nameError: {
+                        label: 'Incorrect Item Name',
+                        description:
+                            'The item name is incorrect, has different nuances, or is inappropriate.',
+                    },
+                    irrelevant: {
+                        label: 'Unrelated Item',
+                        description: 'The item is not related to VR avatars.',
+                    },
+                    other: {
+                        label: 'Other',
+                        description: 'Report for other reasons',
+                    },
+                },
+            },
+        },
+        markdownSupported: 'Markdown supported',
+    },
+
+    notifications: {
+        title: 'Notifications',
+        read: 'Read',
+        empty: 'No notifications',
+        markAsRead: 'Mark as read',
+        markAsUnread: 'Mark as unread',
+    },
+
+    errors: {
+        generic: 'An error occurred',
+        notFound: 'Page not found',
+        backToHome: 'Back to Home',
+        invalidId: 'Invalid ID',
+        setupNotFound: 'Setup not found',
+        userDataFetchFailed: 'Failed to fetch user data',
+        unauthorized: 'Unauthorized',
+        adminRequired: 'Please login with an Admin account.',
+        reportBug: 'Report Bug',
+    },
+
+    user: {
+        editProfile: 'Edit Profile',
+        reportUser: 'Report User',
+        bio: 'bio',
+        shops: 'Shops',
+        setups: 'Setups',
+    },
+
+    nsfw: {
+        label: 'NSFW',
+    },
+
+    badges: {
+        developer: 'Developer',
+        contributor: 'Contributor',
+        translator: 'Translator',
+        alphaTester: 'Alpha Tester',
+        shopOwner: 'Shop Owner',
+        patrol: 'Patrol',
+        ideaMan: 'Idea Man',
+    },
+
+    input: {
+        username: {
+            label: 'User ID',
+            placeholder: 'Enter User ID',
+            checking: 'Checking...',
+            available: 'Available',
+            unavailable: 'This user ID is already taken.',
+            error: 'An error occurred while checking the user ID.',
+        },
+    },
+
+    banner: {
+        ownerWarning:
+            'If you are the creator of an avatar or item and wish to be removed from Avatio, please contact us here.',
+        ownerWarningSubject: 'Request to Remove from Avatio',
+    },
+
+    loginPage: {
+        continueWith: 'Continue with {provider}',
+    },
+
+    admin: {
+        label: 'admin',
+        users: {
+            profile: 'Profile',
+            role: 'Role',
+            roleUser: 'User',
+            roleAdmin: 'Admin',
+            ban: 'BAN',
+            unban: 'Unban',
+            updated: 'updated',
+        },
+        feedbacks: {
+            empty: 'No feedbacks.',
+            open: 'Open',
+            close: 'Close',
+        },
+        auditLogs: {
+            userBan: 'Banned User',
+            userUnban: 'Unbanned User',
+            userDelete: 'Deleted User',
+            userRoleChange: 'Changed User Role',
+            userShopVerify: 'Verified User Shop',
+            userShopUnverify: 'Unverified User Shop',
+            userBadgeGrant: 'Granted User Badge',
+            userBadgeRevoke: 'Revoked User Badge',
+            setupHide: 'Hidden Setup',
+            setupUnhide: 'Unhidden Setup',
+            setupDelete: 'Deleted Setup',
+            reportResolve: 'Resolved Report',
+            feedbackClose: 'Closed Feedback',
+            cleanup: 'Cleanup',
+        },
+        changelogsCompose: {
+            duplicateAuthor: 'Cannot add duplicate authors',
+        },
+        reports: {
+            user: {
+                reasons: {
+                    spam: 'Spam',
+                    malicious: 'Malicious User',
+                    infringement: 'Rights Infringement',
+                    inappropriate: 'Inappropriate Images',
+                    other: 'Other',
+                },
+            },
+            setup: {
+                reasons: {
+                    spam: 'Spam, Personal Info, Inappropriate Content',
+                    hate: 'Discrimination, Violence, Defamation',
+                    infringement: 'Rights Infringement',
+                    extreme: 'Extreme Images',
+                    other: 'Other',
+                },
+            },
+            item: {
+                reasons: {
+                    wrongName: 'Incorrect Item Name',
+                    unrelated: 'Unrelated Item',
+                    other: 'Other',
+                },
+            },
+        },
+        modal: {
+            banUser: {
+                title: 'Ban User',
+                reason: 'Reason',
+                reasonPlaceholder: 'Enter reason',
+                duration: 'Ban Duration (seconds)',
+                durationPlaceholder: '0 for permanent',
+                button: 'Ban',
+            },
+            changeItemNiceName: {
+                title: 'Change Item Name',
+                newName: 'New Name',
+                button: 'Change',
+            },
+            flags: {
+                title: 'Flags',
+                maintenanceMode: 'Maintenance Mode',
+                forceUpdateItem: 'Force Update Item Info',
+            },
+            hideSetup: {
+                title: 'Hide Setup',
+                reason: 'Reason',
+                button: 'Hide',
+                adminNote: 'This is an Admin action',
+                description:
+                    'The setup will be hidden and will not be visible to users until unhidden.',
+            },
+            unhideSetup: {
+                title: 'Unhide Setup',
+                confirm: 'Are you sure you want to unhide this setup?',
+                button: 'Unhide',
+                adminNote: 'This is an Admin action',
+                description: 'The setup will be unhidden and will be visible to users.',
+            },
+        },
+    },
+}))

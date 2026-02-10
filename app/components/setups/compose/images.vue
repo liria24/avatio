@@ -26,7 +26,9 @@ onChange(async (files) => {
     <div v-if="!state.images.length && !imageUploading" ref="dropZoneRef">
         <UButton
             :icon="isOverDropZone ? 'mingcute:download-fill' : 'mingcute:pic-fill'"
-            :label="isOverDropZone ? 'ドロップして追加' : '画像を追加'"
+            :label="
+                isOverDropZone ? $t('setup.compose.images.dropAdd') : $t('setup.compose.images.add')
+            "
             variant="soft"
             block
             active-color="neutral"
@@ -39,7 +41,7 @@ onChange(async (files) => {
 
     <div v-else-if="imageUploading" class="flex h-24 w-full items-center justify-center gap-2">
         <Icon name="svg-spinners:ring-resize" size="24" class="text-muted" />
-        <p class="text-muted text-sm">画像をアップロード中...</p>
+        <p class="text-muted text-sm">{{ $t('setup.compose.images.uploading') }}</p>
     </div>
 
     <div v-else class="grid grid-cols-3 gap-2">

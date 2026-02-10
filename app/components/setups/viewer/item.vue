@@ -87,6 +87,8 @@ const providerIcon = computed(() => providerIcons[item.platform])
 
                 <UButton
                     v-if="item.niceName"
+                    :to="computeItemUrl(item.id, item.platform)"
+                    target="_blank"
                     :icon="providerIcon"
                     :label="item.name"
                     variant="link"
@@ -264,24 +266,24 @@ const providerIcon = computed(() => providerIcons[item.platform])
             <div class="flex flex-col gap-1">
                 <UTooltip
                     v-if="actions"
-                    text="アイテムからセットアップを検索"
+                    :text="$t('setup.viewer.searchByItem')"
                     :delay-duration="50"
                     :content="{ side: 'top' }"
                 >
                     <UButton
                         :to="$localePath(`/search?itemId=${item.id}`)"
                         icon="mingcute:search-line"
-                        aria-label="アイテムからセットアップを検索"
+                        :aria-label="$t('setup.viewer.searchByItem')"
                         variant="ghost"
                         :ui="{ leadingIcon: 'size-4.5' }"
                         class="grow"
                     />
                 </UTooltip>
 
-                <UTooltip v-if="actions" text="アイテムを報告" :delay-duration="50">
+                <UTooltip v-if="actions" :text="$t('setup.viewer.reportItem')" :delay-duration="50">
                     <UButton
                         icon="mingcute:flag-3-fill"
-                        aria-label="アイテムを報告"
+                        :aria-label="$t('setup.viewer.reportItem')"
                         variant="ghost"
                         :ui="{
                             base: 'justify-center',
@@ -314,7 +316,7 @@ const providerIcon = computed(() => providerIcons[item.platform])
                 <div v-if="item.unsupported" class="flex items-center gap-2 px-3 py-2">
                     <Icon name="mingcute:user-x-fill" :size="15" class="text-muted shrink-0" />
                     <p class="text-muted text-left text-xs leading-none font-medium">
-                        アバター非対応
+                        {{ $t('setup.viewer.unavailableForAvatar') }}
                     </p>
                 </div>
                 <UPopover
@@ -327,7 +329,11 @@ const providerIcon = computed(() => providerIcons[item.platform])
                     <UButton
                         v-if="item.shapekeys?.length"
                         icon="mingcute:union-fill"
-                        :label="`${item.shapekeys.length} 個のシェイプキー`"
+                        :label="
+                            $t('setup.compose.items.shapekeysCount', {
+                                count: item.shapekeys.length,
+                            })
+                        "
                         variant="subtle"
                         size="sm"
                         class="rounded-lg px-3 py-2"
@@ -341,7 +347,9 @@ const providerIcon = computed(() => providerIcons[item.platform])
                                     :size="18"
                                     class="text-muted shrink-0"
                                 />
-                                <p class="text-sm font-medium">シェイプキー</p>
+                                <p class="text-sm font-medium">
+                                    {{ $t('setup.viewer.shapekeys') }}
+                                </p>
                             </div>
                             <div class="flex flex-col gap-3 rounded-lg">
                                 <div
@@ -364,7 +372,9 @@ const providerIcon = computed(() => providerIcons[item.platform])
                                         @click="
                                             copy(key.value.toString()).then(() => {
                                                 toast.add({
-                                                    title: `${key.name} の値をコピーしました`,
+                                                    title: $t('setup.viewer.valueCopied', {
+                                                        name: key.name,
+                                                    }),
                                                 })
                                             })
                                         "
@@ -383,7 +393,7 @@ const providerIcon = computed(() => providerIcons[item.platform])
         >
             <UButton
                 icon="mingcute:eye-2-fill"
-                label="NSFW コンテンツを表示"
+                :label="$t('setup.viewer.showNsfw')"
                 variant="soft"
                 @click="nsfwMask = false"
             />

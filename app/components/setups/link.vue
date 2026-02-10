@@ -7,6 +7,8 @@ const { setup, class: className } = defineProps<Props>()
 
 const emit = defineEmits(['click'])
 
+const { locale, t } = useI18n()
+
 const dominantColor = ref('')
 
 // アバター情報の取得
@@ -14,7 +16,7 @@ const firstAvatar = computed(() => setup.items.find((item) => item.category === 
 
 const avatarName = computed(() => {
     const avatar = firstAvatar.value
-    if (!avatar) return '不明なベースアバター'
+    if (!avatar) return t('search.unknownAvatar')
     return avatar.niceName || avatarShortName(avatar.name)
 })
 
@@ -148,6 +150,7 @@ onMounted(initializeThemeColor)
                     <NuxtTime
                         :datetime="setup.createdAt"
                         relative
+                        :locale
                         class="text-muted text-xs whitespace-nowrap"
                     />
 
@@ -156,6 +159,7 @@ onMounted(initializeThemeColor)
                             :datetime="setup.createdAt"
                             date-style="medium"
                             time-style="short"
+                            :locale
                         />
                     </template>
                 </UTooltip>
@@ -243,6 +247,7 @@ onMounted(initializeThemeColor)
                         <NuxtTime
                             :datetime="setup.createdAt"
                             relative
+                            :locale
                             class="text-muted text-xs whitespace-nowrap"
                         />
 
@@ -251,6 +256,7 @@ onMounted(initializeThemeColor)
                                 :datetime="setup.createdAt"
                                 date-style="medium"
                                 time-style="short"
+                                :locale
                             />
                         </template>
                     </UTooltip>

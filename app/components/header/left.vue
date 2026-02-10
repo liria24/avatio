@@ -12,7 +12,7 @@ const session = await getSession()
         <UButton
             v-if="session?.user.role === 'admin'"
             :to="$localePath('/admin')"
-            label="admin"
+            :label="$t('admin.label')"
             variant="subtle"
             size="xs"
             class="font-mono"

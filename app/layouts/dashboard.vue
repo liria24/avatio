@@ -23,7 +23,7 @@ const { data } = await useFetch('/api/admin/stats', {
                 <template #header="{ collapsed }">
                     <div :data-collapsed="collapsed" class="flex items-center gap-2 pl-2">
                         <UButton
-                            to="/admin"
+                            :to="$localePath('/admin')"
                             icon="avatio:avatio"
                             label="Admin"
                             variant="link"

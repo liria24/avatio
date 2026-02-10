@@ -1,5 +1,6 @@
 <script setup lang="ts">
-const { itemCategory } = useAppConfig()
+const { locale } = useI18n()
+const itemCategory = useItemCategory()
 const { resolveReport } = useAdminActions()
 const { changeItemNiceName } = useAppOverlay()
 
@@ -87,6 +88,7 @@ const resolve = async (id: number, resolve?: boolean) => {
                             <NuxtTime
                                 :datetime="report.createdAt"
                                 relative
+                                :locale
                                 class="text-muted text-xs"
                             />
 
@@ -184,19 +186,19 @@ const resolve = async (id: number, resolve?: boolean) => {
                             <div class="flex flex-wrap items-center gap-1">
                                 <UBadge
                                     v-if="report.nameError"
-                                    label="アイテム名称の誤り"
+                                    :label="$t('admin.reports.item.reasons.wrongName')"
                                     variant="outline"
                                     class="rounded-full px-2"
                                 />
                                 <UBadge
                                     v-if="report.irrelevant"
-                                    label="無関係なアイテム"
+                                    :label="$t('admin.reports.item.reasons.unrelated')"
                                     variant="outline"
                                     class="rounded-full px-2"
                                 />
                                 <UBadge
                                     v-if="report.other"
-                                    label="その他"
+                                    :label="$t('admin.reports.item.reasons.other')"
                                     variant="outline"
                                     class="rounded-full px-2"
                                 />

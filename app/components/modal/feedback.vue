@@ -5,6 +5,7 @@ const emit = defineEmits(['close'])
 
 const route = useRoute()
 const { submitFeedback } = useAdminActions()
+const { t } = useI18n()
 
 const schema = z.object({
     comment: z.string(),
@@ -26,11 +27,11 @@ const Submit = async () => {
     } catch (error) {
         const toast = useToast()
         toast.add({
-            title: 'フィードバックの送信に失敗しました',
+            title: t('modal.feedback.submitted'),
             description:
                 error instanceof z.ZodError
                     ? error.issues.map((e) => e.message).join(', ')
-                    : '不明なエラーが発生しました',
+                    : t('errors.generic'),
             color: 'error',
         })
     }
@@ -39,8 +40,8 @@ const Submit = async () => {
 
 <template>
     <UModal
-        title="フィードバック"
-        description="ご意見をお聞かせください。フィードバックは匿名で送信されます。"
+        :title="$t('modal.feedback.title')"
+        :description="$t('footer.links.feedbackDescription')"
     >
         <slot />
 
@@ -51,17 +52,17 @@ const Submit = async () => {
                 class="flex w-full flex-col items-center gap-4 overflow-y-auto"
                 @submit="Submit"
             >
-                <UFormField name="comment" label="コメント" class="w-full">
+                <UFormField name="comment" :label="$t('modal.feedback.comment')" class="w-full">
                     <UTextarea
                         v-model="state.comment"
                         autoresize
-                        placeholder="ご意見・ご要望・不具合報告など、ご自由にお書きください。"
+                        :placeholder="$t('modal.feedback.placeholder')"
                         class="w-full"
                     />
 
                     <template #hint>
                         <UTooltip
-                            text="Markdownをサポートしています"
+                            :text="$t('modal.markdownSupported')"
                             :content="{ side: 'top' }"
                             :delay-duration="50"
                         >
@@ -78,7 +79,7 @@ const Submit = async () => {
 
         <template #footer>
             <div class="flex w-full justify-end">
-                <UButton loading-auto label="送信" color="neutral" @click="Submit()" />
+                <UButton loading-auto :label="$t('submit')" color="neutral" @click="Submit()" />
             </div>
         </template>
     </UModal>

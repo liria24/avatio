@@ -5,6 +5,7 @@ definePageMeta({
 
 const { auth, signOut, getSessions } = useAuth()
 const { accountState, deleteUser: deleteUserAction } = useUserSettings()
+const { t } = useI18n()
 
 const sessions = await getSessions()
 const toast = useToast()
@@ -14,14 +15,14 @@ const deleteUser = async () => {
 }
 
 defineSeo({
-    title: 'ユーザー設定',
-    description: 'ユーザープロフィールの編集や、アカウントに関する操作を行うことができます。',
+    title: t('settings.title'),
+    description: t('settings.description'),
 })
 </script>
 
 <template>
     <div class="flex flex-col gap-6">
-        <h1 class="text-lg font-medium text-nowrap">ユーザー設定</h1>
+        <h1 class="text-lg font-medium text-nowrap">{{ $t('settings.title') }}</h1>
 
         <SettingProfile />
 
@@ -29,19 +30,23 @@ defineSeo({
 
         <UCard>
             <template #header>
-                <h2 class="text-lg leading-none font-semibold text-nowrap">アカウント</h2>
+                <h2 class="text-lg leading-none font-semibold text-nowrap">
+                    {{ $t('settings.account.title') }}
+                </h2>
             </template>
 
             <div class="flex w-full flex-col gap-6">
                 <div class="flex w-full items-center justify-between gap-2">
                     <div class="flex flex-col gap-1">
-                        <h3 class="text-sm font-semibold">このブラウザ以外からログアウト</h3>
+                        <h3 class="text-sm font-semibold">
+                            {{ $t('settings.account.logoutOthers') }}
+                        </h3>
                         <p class="text-muted text-xs">
-                            現在使用しているブラウザ以外のすべてのデバイスからログアウトします。
+                            {{ $t('settings.account.logoutOthersDesc') }}
                         </p>
                     </div>
                     <UButton
-                        label="すべてのデバイスからログアウト"
+                        :label="$t('settings.account.logoutOthersButton')"
                         color="neutral"
                         variant="subtle"
                         @click="auth.revokeOtherSessions()"
@@ -53,13 +58,15 @@ defineSeo({
                     class="flex w-full items-center justify-between gap-2"
                 >
                     <div class="flex flex-col gap-1">
-                        <h3 class="text-sm font-semibold">すべてのアカウントからログアウト</h3>
+                        <h3 class="text-sm font-semibold">
+                            {{ $t('settings.account.logoutAll') }}
+                        </h3>
                         <p class="text-muted text-xs">
-                            同時にログインしているすべてのアカウントからログアウトします。
+                            {{ $t('settings.account.logoutAllDesc') }}
                         </p>
                     </div>
                     <UButton
-                        label="すべてログアウト"
+                        :label="$t('settings.account.logoutAllButton')"
                         color="neutral"
                         variant="subtle"
                         @click="signOut()"
@@ -70,25 +77,35 @@ defineSeo({
 
         <UCard variant="soft">
             <template #header>
-                <h2 class="text-lg leading-none font-semibold text-nowrap">DANGER ZONE</h2>
+                <h2 class="text-lg leading-none font-semibold text-nowrap">
+                    {{ $t('settings.dangerZone.title') }}
+                </h2>
             </template>
 
             <div class="flex w-full items-center justify-between gap-2">
                 <div class="flex flex-col gap-1">
-                    <h3 class="text-sm font-semibold">アカウント削除</h3>
+                    <h3 class="text-sm font-semibold">
+                        {{ $t('settings.dangerZone.deleteAccount') }}
+                    </h3>
                     <p class="text-muted text-xs">
-                        アカウントおよびアカウントに紐づくデータをすべて削除します。<br />
-                        削除したアカウントは復元できません。
+                        {{ $t('settings.dangerZone.deleteAccountDesc') }}
                     </p>
                 </div>
-                <UModal v-model:open="accountState.modalDeleteUser" title="アカウント削除">
-                    <UButton label="アカウント削除" color="error" variant="subtle" />
+                <UModal
+                    v-model:open="accountState.modalDeleteUser"
+                    :title="$t('modal.deleteAccount.title')"
+                >
+                    <UButton
+                        :label="$t('settings.dangerZone.deleteAccount')"
+                        color="error"
+                        variant="subtle"
+                    />
 
                     <template #body>
                         <UAlert
                             icon="mingcute:delete-2-fill"
-                            title="本当にアカウントを削除しますか？"
-                            description="削除したアカウントは復元できません。"
+                            :title="$t('modal.deleteAccount.confirm')"
+                            :description="$t('modal.deleteAccount.description')"
                             color="error"
                             variant="subtle"
                         />
@@ -97,12 +114,12 @@ defineSeo({
                     <template #footer>
                         <div class="flex w-full items-center justify-end gap-2">
                             <UButton
-                                label="キャンセル"
+                                :label="$t('cancel')"
                                 variant="ghost"
                                 @click="accountState.modalDeleteUser = false"
                             />
                             <UButton
-                                label="削除"
+                                :label="$t('delete')"
                                 color="error"
                                 variant="solid"
                                 loading-auto

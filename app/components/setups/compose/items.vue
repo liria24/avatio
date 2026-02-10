@@ -1,8 +1,7 @@
 <script lang="ts" setup>
 import { VueDraggable } from 'vue-draggable-plus'
 
-const { itemCategory } = useAppConfig()
-
+const itemCategory = useItemCategory()
 const {
     state,
     totalItemsCount,
@@ -58,7 +57,7 @@ const addItem = async (item: Item) => {
                 >
                     <UButton
                         icon="mingcute:add-line"
-                        label="アイテムを追加"
+                        :label="$t('setup.compose.items.add')"
                         variant="soft"
                         color="neutral"
                     />
@@ -72,7 +71,7 @@ const addItem = async (item: Item) => {
 
         <UEmpty
             v-if="!totalItemsCount"
-            title="アイテムが登録されていません"
+            :title="$t('setup.compose.items.empty')"
             variant="naked"
             :actions="
                 ownedAvatars.map((ownedAvatar) => ({

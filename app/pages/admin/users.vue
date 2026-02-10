@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+const { locale, t } = useI18n()
 const { unbanUser: unbanUserAction } = useAdminActions()
 const { banUser } = useAppOverlay()
 
@@ -89,6 +90,7 @@ const unbanUser = async (userId: string) => {
                     <NuxtTime
                         :datetime="user.createdAt"
                         relative
+                        :locale
                         class="text-muted text-xs leading-none text-nowrap"
                     />
                     <p
@@ -96,36 +98,38 @@ const unbanUser = async (userId: string) => {
                         class="text-muted text-xs leading-none text-nowrap"
                     >
                         (
-                        <NuxtTime :datetime="user.updatedAt" relative />
-                        に更新)
+                        <NuxtTime :datetime="user.updatedAt" relative :locale />
+                        {{ $t('admin.users.updated') }})
                     </p>
 
                     <UDropdownMenu
                         :items="[
                             [
                                 {
-                                    label: 'プロフィール',
+                                    label: $t('admin.users.profile'),
                                     icon: 'mingcute:user-3-fill',
                                     onSelect: () => navigateTo(`/@${user.id}`),
                                 },
                             ],
                             [
                                 {
-                                    label: 'ロール',
+                                    label: $t('admin.users.role'),
                                     icon: 'mingcute:shield-shape-fill',
                                     children: [
                                         {
-                                            label: 'ユーザー',
+                                            label: $t('admin.users.roleUser'),
                                             icon: 'mingcute:user-3-fill',
                                         },
                                         {
-                                            label: '管理者',
+                                            label: $t('admin.users.roleAdmin'),
                                             icon: 'mingcute:shield-shape-fill',
                                         },
                                     ],
                                 },
                                 {
-                                    label: user.banned ? 'BAN 解除' : 'BAN',
+                                    label: user.banned
+                                        ? $t('admin.users.unban')
+                                        : $t('admin.users.ban'),
                                     icon: user.banned
                                         ? 'mingcute:back-fill'
                                         : 'mingcute:forbid-circle-fill',

@@ -6,6 +6,7 @@ const props = defineProps<Props>()
 
 const emit = defineEmits(['close'])
 
+const { t } = useI18n()
 const { getSession } = useAuth()
 const session = await getSession()
 const toast = useToast()
@@ -14,8 +15,8 @@ const { unhideSetup: unhideSetupAction } = useAdminActions()
 const unhideSetup = async () => {
     if (session.value?.user.role !== 'admin') {
         toast.add({
-            title: '権限がありません',
-            description: 'Admin アカウントでログインしてください。',
+            title: t('errors.unauthorized'),
+            description: t('errors.adminRequired'),
             color: 'error',
         })
         return
@@ -27,18 +28,24 @@ const unhideSetup = async () => {
 </script>
 
 <template>
-    <UModal title="セットアップを再表示">
+    <UModal :title="$t('admin.modal.unhideSetup.title')">
         <template #body>
             <UAlert
                 icon="mingcute:eye-2-fill"
-                title="これは Admin アクションです"
-                description="セットアップは再表示され、ユーザーに見えるようになります。"
+                :title="$t('admin.modal.unhideSetup.adminNote')"
+                :description="$t('admin.modal.unhideSetup.description')"
                 color="info"
                 variant="subtle"
             />
         </template>
         <template #footer>
-            <UButton label="再表示する" color="neutral" size="lg" block @click="unhideSetup" />
+            <UButton
+                :label="$t('admin.modal.unhideSetup.button')"
+                color="neutral"
+                size="lg"
+                block
+                @click="unhideSetup"
+            />
         </template>
     </UModal>
 </template>

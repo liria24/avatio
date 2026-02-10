@@ -41,7 +41,9 @@ onChange(async (files) => {
     <UForm :state :schema="userUpdateSchema" @submit="onSubmit">
         <UCard>
             <template #header>
-                <h2 class="text-lg leading-none font-semibold text-nowrap">プロフィール</h2>
+                <h2 class="text-lg leading-none font-semibold text-nowrap">
+                    {{ $t('settings.profile.title') }}
+                </h2>
             </template>
 
             <div class="flex w-full flex-col items-start gap-8 md:flex-row">
@@ -81,7 +83,7 @@ onChange(async (files) => {
                     <UFieldGroup class="w-full">
                         <UButton
                             icon="mingcute:folder-fill"
-                            label="画像を選択"
+                            :label="$t('settings.profile.selectImage')"
                             color="neutral"
                             variant="subtle"
                             block
@@ -97,14 +99,14 @@ onChange(async (files) => {
                             :items="[
                                 {
                                     icon: 'mingcute:delete-2-fill',
-                                    label: 'アイコンを削除',
+                                    label: $t('delete'),
                                     color: 'error',
                                     onSelect: removeUserImage,
                                 },
                             ]"
                         >
                             <UButton
-                                aria-label="その他のオプション"
+                                :aria-label="$t('settings.profile.moreOptions')"
                                 color="neutral"
                                 variant="outline"
                                 icon="mingcute:down-small-fill"
@@ -115,29 +117,32 @@ onChange(async (files) => {
                 </div>
 
                 <div class="flex w-full flex-col gap-4">
-                    <InputUsername v-model="state.username" placeholder="新しいユーザーIDを入力" />
+                    <InputUsername
+                        v-model="state.username"
+                        :placeholder="$t('settings.profile.name')"
+                    />
 
-                    <UFormField name="name" label="ユーザー名" class="w-full">
+                    <UFormField name="name" :label="$t('settings.profile.name')" class="w-full">
                         <UInput
                             v-model="state.name"
-                            placeholder="ユーザー名を入力"
+                            :placeholder="$t('settings.profile.name')"
                             size="lg"
                             variant="subtle"
                             class="w-full"
                         />
                     </UFormField>
 
-                    <UFormField name="bio" label="bio" class="w-full">
+                    <UFormField name="bio" :label="$t('settings.profile.bio')" class="w-full">
                         <UTextarea
                             v-model="state.bio"
-                            placeholder="自己紹介を入力"
+                            :placeholder="$t('settings.profile.bio')"
                             autoresize
                             variant="soft"
                             class="w-full"
                         />
                     </UFormField>
 
-                    <UFormField name="links" label="リンク" class="w-full">
+                    <UFormField name="links" :label="$t('settings.profile.links')" class="w-full">
                         <ReorderGroup
                             v-model:values="state.links"
                             as="div"
@@ -170,7 +175,7 @@ onChange(async (files) => {
                                 </p>
 
                                 <UButton
-                                    aria-label="リンクを削除"
+                                    :aria-label="$t('settings.profile.removeLink')"
                                     icon="mingcute:close-line"
                                     variant="ghost"
                                     size="sm"
@@ -186,7 +191,7 @@ onChange(async (files) => {
                             <UButton
                                 v-if="state.links.length < 8"
                                 icon="mingcute:add-line"
-                                label="リンクを追加"
+                                :label="$t('settings.profile.addLink')"
                                 variant="ghost"
                                 block
                                 class="p-2"
@@ -196,12 +201,12 @@ onChange(async (files) => {
                                 <div class="flex max-w-96 items-center gap-2 p-2">
                                     <UInput
                                         v-model="ui.newLink"
-                                        placeholder="リンクを追加"
+                                        :placeholder="$t('settings.profile.addLink')"
                                         class="w-full"
                                         @keyup.enter="addLink"
                                     />
                                     <UButton
-                                        label="追加"
+                                        :label="$t('add')"
                                         variant="soft"
                                         :disabled="!ui.newLink.trim()"
                                         @click="addLink"
@@ -218,7 +223,7 @@ onChange(async (files) => {
                     <UButton
                         :loading="ui.profileUpdating"
                         type="submit"
-                        label="保存"
+                        :label="$t('save')"
                         color="neutral"
                         block
                         class="w-full max-w-32"

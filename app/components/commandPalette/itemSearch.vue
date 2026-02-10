@@ -9,8 +9,9 @@ const props = defineProps<{
 
 const searchTerm = ref('')
 const loadingRef = ref(false)
+const { t } = useI18n()
 
-const { itemCategory } = useAppConfig()
+const itemCategory = useItemCategory()
 const toast = useToast()
 
 const { data, status } = useFetch('/api/items', {
@@ -47,7 +48,7 @@ const groups = computed(() => {
             return [
                 {
                     id: 'search',
-                    label: 'URLから追加',
+                    label: t('commandPalette.itemSearch.addFromUrl'),
                     items: [
                         {
                             id: 'url',
@@ -58,8 +59,10 @@ const groups = computed(() => {
                                 if (result) onSelected(result.id, result.platform)
                                 else
                                     toast.add({
-                                        title: '無効なURL',
-                                        description: '正しいアイテムのURLを入力してください。',
+                                        title: t('commandPalette.itemSearch.invalidUrl'),
+                                        description: t(
+                                            'commandPalette.itemSearch.invalidUrlDescription'
+                                        ),
                                         color: 'error',
                                     })
                             },
@@ -116,8 +119,8 @@ const onSelected = async (id: string, platform?: Platform) => {
     } catch (error) {
         console.error('Failed to fetch item:', error)
         toast.add({
-            title: 'アイテムの取得に失敗しました',
-            description: 'アイテムが存在しないか、非公開になっている可能性があります。',
+            title: t('commandPalette.itemSearch.fetchError'),
+            description: t('commandPalette.itemSearch.fetchErrorDescription'),
             color: 'error',
         })
         return
@@ -132,7 +135,7 @@ const onSelected = async (id: string, platform?: Platform) => {
         v-model:search-term="searchTerm"
         virtualize
         :loading="loadingComputed"
-        placeholder="アイテムを検索 / URLを入力"
+        :placeholder="$t('commandPalette.itemSearch.placeholder')"
         :groups="groups"
         :ui="{
             root: 'min-w-72 md:min-w-96',

@@ -45,7 +45,7 @@ const { data: item } = useFetch<Item>(`/api/items/${transformItemId(props.itemId
                 icon="mingcute:close-line"
                 variant="ghost"
                 size="sm"
-                :aria-label="`${item.name} を削除`"
+                :aria-label="$t('search.options.removeItem', { name: item.name })"
                 @click="emit('remove', props.itemId)"
             />
         </template>

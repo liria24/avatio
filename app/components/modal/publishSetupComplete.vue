@@ -35,7 +35,12 @@ onMounted(() => {
 </script>
 
 <template>
-    <UModal v-model:open="open" title="投稿が完了しました！" :close="false" :dismissible="false">
+    <UModal
+        v-model:open="open"
+        :title="$t('modal.publishComplete.title')"
+        :close="false"
+        :dismissible="false"
+    >
         <template #body>
             <div v-if="data" class="flex flex-col items-center gap-3">
                 <div
@@ -75,7 +80,7 @@ onMounted(() => {
             <div class="flex w-full gap-1">
                 <UButton
                     icon="mingcute:add-line"
-                    label="続けて投稿"
+                    :label="$t('modal.publishComplete.continuePosting')"
                     variant="soft"
                     color="neutral"
                     size="lg"
@@ -86,7 +91,7 @@ onMounted(() => {
                     :to="props.setupId ? `/setup/${props.setupId}` : undefined"
                     :disabled="!props.setupId"
                     trailing-icon="mingcute:arrow-right-line"
-                    label="投稿したセットアップを見る"
+                    :label="$t('modal.publishComplete.viewSetup')"
                     color="neutral"
                     size="lg"
                     block
