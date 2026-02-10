@@ -1,4 +1,6 @@
 <script setup lang="ts">
+const { locale } = useI18n()
+
 const { data, status, refresh } = await useFetch('/api/changelogs', {
     dedupe: 'defer',
     default: () => ({
@@ -21,7 +23,7 @@ const { data, status, refresh } = await useFetch('/api/changelogs', {
             <UDashboardNavbar title="Changelogs">
                 <template #right>
                     <UButton
-                        to="/admin/changelogs/compose"
+                        :to="$localePath('/admin/changelogs/compose')"
                         icon="mingcute:add-line"
                         label="New Changelog"
                         color="neutral"
@@ -50,6 +52,7 @@ const { data, status, refresh } = await useFetch('/api/changelogs', {
                             <NuxtTime
                                 :datetime="changelog.createdAt"
                                 relative
+                                :locale
                                 class="text-muted text-sm"
                             />
                         </div>

@@ -14,7 +14,9 @@ const { data: popularAvatars } = await useFetch('/api/items/popular-avatars', {
     <div class="flex flex-col gap-6">
         <div class="flex items-center gap-2">
             <Icon name="mingcute:baby-fill" size="22" class="text-muted" />
-            <h2 class="text-xl leading-none font-semibold text-nowrap">人気のアバターから検索</h2>
+            <h2 class="text-xl leading-none font-semibold text-nowrap">
+                {{ $t('search.popularAvatarsTitle') }}
+            </h2>
         </div>
 
         <div class="flex flex-wrap items-center justify-center gap-5">

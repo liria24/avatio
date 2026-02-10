@@ -298,7 +298,7 @@ export const setupsClientFormSchema = createInsertSchema(setups, {
             return totalItems > 0
         },
         {
-            message: 'アイテムは 1 個以上必要です。',
+            message: 'アイテムは1個以上必要です。',
             path: ['items'],
         }
     )
@@ -308,10 +308,10 @@ export const setupsClientFormSchema = createInsertSchema(setups, {
                 (total, category) => total + category.length,
                 0
             )
-            return totalItems <= 32
+            return totalItems <= MAX_ITEMS_PER_SETUP
         },
         {
-            message: 'アイテムは最大 32 個です。',
+            message: `アイテムは最大${MAX_ITEMS_PER_SETUP}個です。`,
             path: ['items'],
         }
     )

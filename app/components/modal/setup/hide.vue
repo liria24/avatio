@@ -6,6 +6,7 @@ const props = defineProps<Props>()
 
 const emit = defineEmits(['close'])
 
+const { t } = useI18n()
 const { getSession } = useAuth()
 const session = await getSession()
 const toast = useToast()
@@ -16,8 +17,8 @@ const hideReason = ref('')
 const hideSetup = async () => {
     if (session.value?.user.role !== 'admin') {
         toast.add({
-            title: '権限がありません',
-            description: 'Admin アカウントでログインしてください。',
+            title: t('errors.unauthorized'),
+            description: t('errors.adminRequired'),
             color: 'error',
         })
         return
@@ -32,17 +33,17 @@ const hideSetup = async () => {
 </script>
 
 <template>
-    <UModal title="セットアップを非表示">
+    <UModal :title="$t('admin.modal.hideSetup.title')">
         <template #body>
             <div class="flex flex-col gap-2">
                 <UAlert
                     icon="mingcute:eye-close-fill"
-                    title="これは Admin アクションです"
-                    description="セットアップは非表示になり、再度表示するまでユーザーには見えなくなります。"
+                    :title="$t('admin.modal.hideSetup.adminNote')"
+                    :description="$t('admin.modal.hideSetup.description')"
                     color="warning"
                     variant="subtle"
                 />
-                <UFormField label="理由" required>
+                <UFormField :label="$t('admin.modal.hideSetup.reason')" required>
                     <UTextarea v-model="hideReason" autoresize class="w-full" />
                 </UFormField>
             </div>
@@ -51,7 +52,7 @@ const hideSetup = async () => {
         <template #footer>
             <UButton
                 :disabled="!hideReason.length"
-                label="非表示にする"
+                :label="$t('admin.modal.hideSetup.button')"
                 color="neutral"
                 size="lg"
                 block

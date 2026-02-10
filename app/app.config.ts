@@ -1,7 +1,7 @@
 export default defineAppConfig({
     app: {
         name: 'Avatio',
-        version: '1.5.1',
+        version: '1.6.0',
         site: 'https://avatio.me',
         repo: 'https://github.com/liria24/avatio',
         githubIssue: 'https://github.com/liria24/avatio/issues/new/choose',
@@ -10,40 +10,6 @@ export default defineAppConfig({
             website: 'https://liria.me',
             twitter: 'https://x.com/liria_24',
             avatar: 'https://github.com/liria24.png',
-        },
-    },
-    itemCategory: {
-        avatar: {
-            label: 'ベースアバター',
-            icon: 'mingcute:baby-fill',
-        },
-        hair: {
-            label: 'ヘア',
-            icon: 'mingcute:hair-fill',
-        },
-        clothing: {
-            label: '衣装',
-            icon: 'mingcute:dress-fill',
-        },
-        accessory: {
-            label: 'アクセサリー',
-            icon: 'mingcute:bowknot-fill',
-        },
-        texture: {
-            label: 'テクスチャ',
-            icon: 'mingcute:pic-fill',
-        },
-        shader: {
-            label: 'シェーダー',
-            icon: 'mingcute:shadow-fill',
-        },
-        tool: {
-            label: 'ツール',
-            icon: 'mingcute:tool-fill',
-        },
-        other: {
-            label: 'その他',
-            icon: 'mingcute:package-2-fill',
         },
     },
     links: [

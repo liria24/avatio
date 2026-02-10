@@ -186,7 +186,7 @@ const getSetup = defineCachedFunction(
 
         const expiredFilter = (date: string | Date) => {
             if (forceUpdateItem) return true
-            return new Date().getTime() - new Date(date).getTime() >= 24 * 60 * 60 * 1000
+            return new Date().getTime() - new Date(date).getTime() >= ITEM_CACHE_DURATION_MS
         }
 
         const expiredItems = data.items.filter((item) => expiredFilter(item.item.updatedAt))
@@ -273,7 +273,7 @@ const getSetup = defineCachedFunction(
         }
     },
     {
-        maxAge: 60 * 60, // 1 hour
+        maxAge: SETUP_CACHE_TTL,
         name: 'setup',
         getKey: (id: number, session: Session | undefined) =>
             `${id}${session ? `:${session.user.id}` : ''}`,

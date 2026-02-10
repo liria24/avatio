@@ -21,10 +21,10 @@ const changeItemNiceName = async () => {
 </script>
 
 <template>
-    <UModal title="Nice Name を変更">
+    <UModal :title="$t('admin.modal.changeItemNiceName.title')">
         <template #body>
             <div class="flex flex-col gap-4">
-                <UFormField label="新しい名称">
+                <UFormField :label="$t('admin.modal.changeItemNiceName.newName')">
                     <UInput v-model="input" class="w-full" />
                 </UFormField>
             </div>
@@ -32,7 +32,12 @@ const changeItemNiceName = async () => {
 
         <template #footer>
             <div class="flex w-full justify-end">
-                <UButton loading-auto label="変更" color="neutral" @click="changeItemNiceName()" />
+                <UButton
+                    loading-auto
+                    :label="$t('admin.modal.changeItemNiceName.button')"
+                    color="neutral"
+                    @click="changeItemNiceName()"
+                />
             </div>
         </template>
     </UModal>

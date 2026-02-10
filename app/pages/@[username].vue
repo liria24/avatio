@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 const { getSession } = useAuth()
+const { locale } = useI18n()
 const route = useRoute()
 const { login, reportUser } = useAppOverlay()
 const session = await getSession()
@@ -57,7 +58,7 @@ if (user.value) {
         v-if="(userStatus === 'success' && !user) || userStatus === 'error'"
         class="flex w-full flex-col items-center"
     >
-        <p class="mt-5 text-zinc-400">ユーザーデータの取得に失敗しました</p>
+        <p class="mt-5 text-zinc-400">{{ $t('errors.userDataFetchFailed') }}</p>
     </div>
 
     <div v-else-if="user" class="flex w-full flex-col gap-6 px-2">
@@ -108,7 +109,7 @@ if (user.value) {
                             <span> @{{ user.username }} </span>
 
                             <Icon name="mingcute:calendar-2-fill" size="18" class="ml-2" />
-                            <NuxtTime :datetime="user.createdAt" />
+                            <NuxtTime :datetime="user.createdAt" date-style="short" :locale />
                         </div>
                     </div>
                 </div>
@@ -116,7 +117,7 @@ if (user.value) {
                     <UButton
                         v-if="session?.user.username === user.username"
                         :to="$localePath('/settings')"
-                        label="プロフィールを編集"
+                        :label="$t('user.editProfile')"
                         icon="mingcute:edit-3-fill"
                         variant="ghost"
                         size="sm"
@@ -124,7 +125,7 @@ if (user.value) {
                     />
 
                     <UButton
-                        label="ユーザーを報告"
+                        :label="$t('user.reportUser')"
                         icon="mingcute:flag-3-fill"
                         variant="ghost"
                         size="sm"
@@ -164,7 +165,9 @@ if (user.value) {
         <div v-if="user.shops?.length" class="mb-4 flex w-full flex-col gap-5 px-2">
             <div class="flex items-center gap-2">
                 <Icon name="mingcute:store-fill" size="22" class="text-muted" />
-                <h2 class="text-xl leading-none font-semibold text-nowrap">ショップ</h2>
+                <h2 class="text-xl leading-none font-semibold text-nowrap">
+                    {{ $t('user.shops') }}
+                </h2>
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
@@ -213,7 +216,9 @@ if (user.value) {
         <div class="flex w-full flex-col gap-5 px-2">
             <div class="flex items-center gap-2">
                 <Icon name="mingcute:dress-fill" size="22" class="text-muted" />
-                <h2 class="text-xl leading-none font-semibold text-nowrap">セットアップ</h2>
+                <h2 class="text-xl leading-none font-semibold text-nowrap">
+                    {{ $t('user.setups') }}
+                </h2>
             </div>
 
             <SetupsListUser :username="user.username" />

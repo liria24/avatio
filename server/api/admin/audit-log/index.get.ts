@@ -9,7 +9,12 @@ const query = z.object({
     targetType: auditTargetTypeSchema.optional(),
     targetId: z.string().optional(),
     page: z.coerce.number().min(1).optional().default(1),
-    limit: z.coerce.number().min(1).max(1000).optional().default(24),
+    limit: z.coerce
+        .number()
+        .min(1)
+        .max(API_LIMIT_MAX)
+        .optional()
+        .default(ADMIN_AUDIT_LOG_API_DEFAULT_LIMIT),
 })
 
 export default adminSessionEventHandler<PaginationResponse<AuditLog[]>>(async () => {

@@ -20,28 +20,29 @@ const notifications = computed(() =>
             <header class="flex w-full items-center justify-between gap-6">
                 <HeaderLeft />
 
-                <div class="flex items-center gap-1">
+                <div class="flex items-center gap-1.5">
                     <div class="flex items-center gap-1">
                         <UButton
                             v-if="session"
                             :to="$localePath('/setup/compose')"
                             icon="mingcute:add-line"
-                            label="セットアップを投稿"
+                            :label="$t('header.postSetup')"
                             color="neutral"
                             variant="soft"
                             class="mr-1 hidden rounded-full py-2 pr-6 pl-5 sm:flex"
                         />
 
-                        <UTooltip text="セットアップを検索" :delay-duration="50">
+                        <UTooltip :text="$t('header.searchSetup')" :delay-duration="50">
                             <UButton
                                 :to="$localePath('/search')"
-                                aria-label="セットアップを検索"
+                                :aria-label="$t('header.searchSetup')"
                                 icon="mingcute:search-line"
                                 variant="ghost"
                             />
                         </UTooltip>
 
                         <HeaderThemeButton v-if="!session" />
+                        <HeaderLanguageButton v-if="!session" />
                     </div>
 
                     <template v-if="route.path !== '/login'">
@@ -52,7 +53,7 @@ const notifications = computed(() =>
 
                         <UButton
                             v-else
-                            label="ログイン"
+                            :label="$t('login')"
                             variant="outline"
                             class="rounded-lg px-4 py-2 text-xs"
                             @click="login.open()"
@@ -60,13 +61,6 @@ const notifications = computed(() =>
                     </template>
                 </div>
             </header>
-
-            <div
-                class="hidden w-full items-center justify-center rounded-xl bg-red-100 p-4 text-sm text-red-800 ring-2 ring-red-500 noscript:flex"
-            >
-                この Web サイトは JavaScript を使用しています。<br />
-                JavaScript が無効の場合、正しく表示されません。
-            </div>
 
             <div v-if="notifications.length" class="flex w-full flex-col gap-2">
                 <BannerNotification
@@ -85,7 +79,7 @@ const notifications = computed(() =>
                 v-if="session"
                 :to="$localePath('/setup/compose')"
                 icon="mingcute:add-line"
-                aria-label="セットアップを投稿"
+                :aria-label="$t('header.postSetup')"
                 color="neutral"
                 variant="solid"
                 class="fixed right-4 bottom-4 rounded-full p-4 shadow-lg sm:hidden"

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const { signIn } = useAuth()
+const { t } = useI18n()
 
 definePageMeta({
     middleware: defineNuxtRouteMiddleware(async () => {
@@ -10,8 +11,8 @@ definePageMeta({
     }),
 })
 defineSeo({
-    title: 'ログイン',
-    description: 'ユーザーアカウントにログインします。',
+    title: t('login'),
+    description: t('modal.login.title'),
     image: 'https://avatio.me/ogp.png',
 })
 </script>
@@ -20,13 +21,13 @@ defineSeo({
     <div class="flex h-full w-full flex-col items-center justify-center gap-10">
         <UCard variant="soft" class="w-full max-w-md">
             <template #header>
-                <h1 class="text-lg font-bold">ログイン</h1>
+                <h1 class="text-lg font-bold">{{ $t('login') }}</h1>
             </template>
 
             <div class="flex flex-col gap-2">
                 <UButton
                     loading-auto
-                    label="X (Twitter) で続行"
+                    :label="$t('loginPage.continueWith', { provider: 'X (Twitter)' })"
                     icon="mingcute:social-x-fill"
                     block
                     size="lg"
@@ -40,14 +41,14 @@ defineSeo({
                 <div class="flex items-center gap-3">
                     <UButton
                         :to="$localePath('/terms')"
-                        label="利用規約"
+                        :label="$t('modal.login.footer.terms')"
                         variant="link"
                         size="sm"
                         class="p-0"
                     />
                     <UButton
                         :to="$localePath('/privacy-policy')"
-                        label="プライバシーポリシー"
+                        :label="$t('modal.login.footer.privacy')"
                         variant="link"
                         size="sm"
                         class="p-0"

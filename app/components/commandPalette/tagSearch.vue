@@ -8,12 +8,13 @@ const open = defineModel<boolean>({
 })
 
 const searchTerm = ref('')
+const { t } = useI18n()
 
 const { data: tags, status } = useSetupTags()
 
 const existingTagsGroup = computed(() => ({
     id: 'existing-tags',
-    label: '既存タグ',
+    label: t('commandPalette.tagSearch.existingTags'),
     items:
         tags.value?.map((tag, index) => ({
             id: `existing-${index}`,
@@ -28,7 +29,7 @@ const existingTagsGroup = computed(() => ({
 
 const newTagGroup = computed(() => ({
     id: 'new-tag',
-    label: '新しく追加',
+    label: t('commandPalette.tagSearch.addNew'),
     items: [
         {
             id: 'new-tag-item',
@@ -66,7 +67,7 @@ const groups = computed(() => {
         v-model:search-term="searchTerm"
         virtualize
         :loading="status === 'pending'"
-        placeholder="タグを検索 / 入力"
+        :placeholder="$t('commandPalette.tagSearch.placeholder')"
         :groups="groups"
         :ui="{
             input: '[&>input]:text-sm',

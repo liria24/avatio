@@ -5,6 +5,7 @@ const { getSession } = useAuth()
 const session = await getSession()
 const { createChangelog } = useAdminActions()
 const toast = useToast()
+const { t } = useI18n()
 
 const me = await $fetch<SerializedUser>(`/api/users/${session.value!.user.username!}`)
 
@@ -21,7 +22,7 @@ const addAuthor = (user: SerializedUser) => {
 
     if (authors.value.some((author) => author.username === user.username)) {
         toast.add({
-            title: '著者を重複して追加することはできません',
+            title: t('admin.changelogsCompose.duplicateAuthor'),
             color: 'warning',
         })
         return

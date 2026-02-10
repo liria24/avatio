@@ -29,66 +29,13 @@ const shareLine = useSocialShare({
     title: props.title,
     image: props.image || undefined,
 })
-
-const socialShareItems = ref<DropdownMenuItem[]>([
-    [
-        {
-            label: copied.value ? 'コピーしました' : 'リンクをコピー',
-            icon: copied.value ? 'mingcute:check-fill' : 'mingcute:link-fill',
-            onSelect: () => {
-                copy(location.value.href)
-                    .then(() => {
-                        toast.add({ title: 'リンクがコピーされました' })
-                    })
-                    .catch(() => {
-                        toast.add({
-                            title: 'リンクのコピーに失敗しました',
-                            color: 'error',
-                        })
-                    })
-            },
-        },
-    ],
-    [
-        {
-            label: 'X',
-            icon: 'mingcute:social-x-fill',
-            onSelect: () => {
-                navigateTo(shareX.value?.shareUrl, {
-                    external: true,
-                    open: { target: '_blank' },
-                })
-            },
-        },
-        {
-            label: 'Bluesky',
-            icon: 'mingcute:bluesky-social-fill',
-            onSelect: () => {
-                navigateTo(shareBluesky.value?.shareUrl, {
-                    external: true,
-                    open: { target: '_blank' },
-                })
-            },
-        },
-        {
-            label: 'LINE',
-            icon: 'mingcute:line-app-fill',
-            onSelect: () => {
-                navigateTo(shareLine.value?.shareUrl, {
-                    external: true,
-                    open: { target: '_blank' },
-                })
-            },
-        },
-    ],
-])
 </script>
 
 <template>
     <UButton
         v-if="isMobile && shareSupported"
         icon="mingcute:share-2-fill"
-        aria-label="シェア"
+        :aria-label="$t('share')"
         variant="ghost"
         size="sm"
         class="p-2"
@@ -103,7 +50,58 @@ const socialShareItems = ref<DropdownMenuItem[]>([
 
     <UDropdownMenu
         v-else
-        :items="socialShareItems"
+        :items="[
+            [
+                {
+                    label: copied ? $t('shareButton.copied') : $t('shareButton.copyLink'),
+                    icon: copied ? 'mingcute:check-fill' : 'mingcute:link-fill',
+                    onSelect: () => {
+                        copy(location.href)
+                            .then(() => {
+                                toast.add({ title: $t('shareButton.linkCopied') })
+                            })
+                            .catch(() => {
+                                toast.add({
+                                    title: $t('shareButton.linkCopyFailed'),
+                                    color: 'error',
+                                })
+                            })
+                    },
+                },
+            ],
+            [
+                {
+                    label: 'X',
+                    icon: 'mingcute:social-x-fill',
+                    onSelect: () => {
+                        navigateTo(shareX?.shareUrl, {
+                            external: true,
+                            open: { target: '_blank' },
+                        })
+                    },
+                },
+                {
+                    label: 'Bluesky',
+                    icon: 'mingcute:bluesky-social-fill',
+                    onSelect: () => {
+                        navigateTo(shareBluesky?.shareUrl, {
+                            external: true,
+                            open: { target: '_blank' },
+                        })
+                    },
+                },
+                {
+                    label: 'LINE',
+                    icon: 'mingcute:line-app-fill',
+                    onSelect: () => {
+                        navigateTo(shareLine?.shareUrl, {
+                            external: true,
+                            open: { target: '_blank' },
+                        })
+                    },
+                },
+            ],
+        ]"
         :content="{
             align: 'center',
             side: 'bottom',
@@ -115,7 +113,7 @@ const socialShareItems = ref<DropdownMenuItem[]>([
     >
         <UButton
             icon="mingcute:share-2-fill"
-            aria-label="シェア"
+            :aria-label="$t('share')"
             variant="ghost"
             size="sm"
             class="p-2"

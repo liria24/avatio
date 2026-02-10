@@ -20,7 +20,7 @@ const query = computed(() => ({
     itemId: searchItemIds.value,
     tag: searchTags.value,
     page: 1,
-    perPage: 50,
+    perPage: SETUP_SEARCH_PER_PAGE,
 }))
 
 const shouldShowDetails = computed(() => !!(searchItemIds.value.length || searchTags.value.length))
@@ -109,9 +109,11 @@ watch(
 // 初期検索の実行
 await search()
 
+const { t } = useI18n()
+
 defineSeo({
-    title: 'セットアップ検索',
-    description: '条件を指定してセットアップを検索できます。',
+    title: t('search.title'),
+    description: t('search.description'),
     image: 'https://avatio.me/ogp.png',
 })
 </script>
@@ -119,15 +121,15 @@ defineSeo({
 <template>
     <div class="flex w-full flex-col items-stretch gap-8">
         <h1 class="text-highlighted text-2xl leading-none font-semibold text-nowrap">
-            セットアップ検索
+            {{ $t('search.title') }}
         </h1>
 
         <div class="flex w-full flex-col gap-3">
             <UInput
                 v-model="localQ"
                 icon="mingcute:search-line"
-                placeholder="検索キーワード"
-                aria-label="検索キーワード"
+                :placeholder="$t('search.keyword')"
+                :aria-label="$t('search.keyword')"
                 size="xl"
                 @input="updateRouteQuery"
             />
@@ -158,14 +160,14 @@ defineSeo({
             <UButton
                 v-if="data?.pagination.hasNext"
                 :loading="status === 'pending'"
-                label="もっと見る"
+                :label="$t('more')"
                 @click="loadMoreSetups"
             />
         </div>
 
         <!-- 結果なし表示 -->
         <p v-else class="text-center text-zinc-700 dark:text-zinc-300">
-            セットアップが見つかりませんでした
+            {{ $t('search.notFound') }}
         </p>
     </div>
 </template>

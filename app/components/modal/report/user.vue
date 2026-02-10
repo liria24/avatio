@@ -3,7 +3,36 @@ const props = defineProps<{ userId: string }>()
 
 const emit = defineEmits(['close'])
 
+const { t } = useI18n()
 const { schema, state, submit } = useUserReport(props.userId)
+
+const reasonItems = computed(() => [
+    {
+        label: t('modal.report.user.reasons.spam.label'),
+        description: t('modal.report.user.reasons.spam.description'),
+        value: 'spam',
+    },
+    {
+        label: t('modal.report.user.reasons.hate.label'),
+        description: t('modal.report.user.reasons.hate.description'),
+        value: 'hate',
+    },
+    {
+        label: t('modal.report.user.reasons.infringe.label'),
+        description: t('modal.report.user.reasons.infringe.description'),
+        value: 'infringe',
+    },
+    {
+        label: t('modal.report.user.reasons.badImage.label'),
+        description: t('modal.report.user.reasons.badImage.description'),
+        value: 'badImage',
+    },
+    {
+        label: t('modal.report.user.reasons.other.label'),
+        description: t('modal.report.user.reasons.other.description'),
+        value: 'other',
+    },
+])
 
 const Submit = async () => {
     const success = await submit()
@@ -14,7 +43,7 @@ const Submit = async () => {
 </script>
 
 <template>
-    <UModal title="ユーザーの報告">
+    <UModal :title="$t('modal.report.user.title')">
         <slot />
 
         <template #body>
@@ -24,53 +53,30 @@ const Submit = async () => {
                 class="flex w-full flex-col items-center gap-4 overflow-y-auto"
                 @submit="Submit"
             >
-                <UFormField name="reportReason" label="報告の理由" class="w-full">
+                <UFormField
+                    name="reportReason"
+                    :label="$t('modal.report.user.reason')"
+                    class="w-full"
+                >
                     <UCheckboxGroup
                         v-model="state.reportReason"
                         variant="table"
-                        :items="[
-                            {
-                                label: 'スパム',
-                                description: 'スパムの投稿を含む。',
-                                value: 'spam',
-                            },
-                            {
-                                label: '悪意のあるユーザー',
-                                description: 'ヘイト、差別、脅迫など悪意のある内容を投稿している。',
-                                value: 'hate',
-                            },
-                            {
-                                label: '権利侵害',
-                                description:
-                                    '他者の権利を侵している、または権利侵害を助長している。',
-                                value: 'infringe',
-                            },
-                            {
-                                label: '不適切な画像',
-                                description: '不適切なアイコンなどを含む。',
-                                value: 'badImage',
-                            },
-                            {
-                                label: 'その他',
-                                description: 'その他の理由で報告',
-                                value: 'other',
-                            },
-                        ]"
+                        :items="reasonItems"
                         class="w-full"
                     />
                 </UFormField>
 
-                <UFormField name="comment" label="報告の詳細や背景情報" class="w-full">
+                <UFormField name="comment" :label="$t('modal.report.user.comment')" class="w-full">
                     <UTextarea
                         v-model="state.comment"
                         autoresize
-                        placeholder="その他の理由を入力"
+                        :placeholder="$t('modal.report.user.commentPlaceholder')"
                         class="w-full"
                     />
 
                     <template #hint>
                         <UTooltip
-                            text="Markdownをサポートしています"
+                            :text="$t('modal.markdownSupported')"
                             :content="{ side: 'top' }"
                             :delay-duration="50"
                         >
@@ -87,7 +93,13 @@ const Submit = async () => {
 
         <template #footer>
             <div class="flex w-full justify-end">
-                <UButton loading-auto label="報告" color="neutral" size="lg" @click="Submit()" />
+                <UButton
+                    loading-auto
+                    :label="$t('report')"
+                    color="neutral"
+                    size="lg"
+                    @click="Submit()"
+                />
             </div>
         </template>
     </UModal>

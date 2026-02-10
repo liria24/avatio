@@ -8,6 +8,7 @@ const props = defineProps<Props>()
 
 const emit = defineEmits(['load'])
 
+const { locale } = useI18n()
 const { drafts, draftsStatus, refreshDrafts, deleteDrafts: deleteDraftsApi } = useSetupCompose()
 
 const deleteMode = ref(false)
@@ -40,7 +41,11 @@ watch(deleteMode, (value) => {
 </script>
 
 <template>
-    <UModal v-model:open="open" title="下書き" description="最大で 32 件まで保存できます">
+    <UModal
+        v-model:open="open"
+        :title="$t('setup.compose.drafts.title')"
+        :description="$t('setup.compose.draftsDescription')"
+    >
         <slot />
 
         <template #body>
@@ -49,7 +54,7 @@ watch(deleteMode, (value) => {
                     <UBadge
                         v-if="draftsStatus === 'pending'"
                         icon="svg-spinners:ring-resize"
-                        label="取得中..."
+                        :label="$t('setup.compose.drafts.loading')"
                         variant="soft"
                     />
 
@@ -62,8 +67,8 @@ watch(deleteMode, (value) => {
 
                 <UAlert
                     v-if="drafts.length >= 32"
-                    title="保存できる下書きの上限に達しています"
-                    description="新しい下書きを保存するには、既存の下書きを削除してください"
+                    :title="$t('setup.compose.drafts.limitReached')"
+                    :description="$t('setup.compose.drafts.limitReachedDescription')"
                     variant="subtle"
                     color="neutral"
                 />
@@ -106,6 +111,7 @@ watch(deleteMode, (value) => {
                                 <NuxtTime
                                     :datetime="item.updatedAt"
                                     relative
+                                    :locale
                                     class="text-muted text-xs text-nowrap"
                                 />
                                 <div class="text-muted flex items-center gap-1">
@@ -140,14 +146,14 @@ watch(deleteMode, (value) => {
                                         v-if="draft.id === props.referencedDraftId"
                                         class="ring-muted text-muted flex rounded-full px-2.5 pt-1 pb-1.5 text-xs leading-none ring-1"
                                     >
-                                        編集中
+                                        {{ $t('setup.viewer.editing') }}
                                     </span>
 
                                     <span
                                         :data-notitle="!draft.content.name"
                                         class="data-[notitle=true]:text-dimmed text-left"
                                     >
-                                        {{ draft.content.name || '無題' }}
+                                        {{ draft.content.name || $t('setup.viewer.untitled') }}
                                     </span>
                                 </div>
 
@@ -163,6 +169,7 @@ watch(deleteMode, (value) => {
                                 <NuxtTime
                                     :datetime="draft.updatedAt"
                                     relative
+                                    :locale
                                     class="text-muted text-xs text-nowrap"
                                 />
                                 <div class="text-muted flex items-center gap-1">
@@ -176,7 +183,9 @@ watch(deleteMode, (value) => {
                     </UButton>
                 </UFieldGroup>
 
-                <p v-else class="text-muted py-8 text-center text-sm">下書きがありません</p>
+                <p v-else class="text-muted py-8 text-center text-sm">
+                    {{ $t('setup.compose.drafts.empty') }}
+                </p>
             </div>
         </template>
 
@@ -184,7 +193,7 @@ watch(deleteMode, (value) => {
             <div v-if="deleteMode" class="flex w-full justify-between">
                 <UButton
                     icon="mingcute:arrow-left-line"
-                    label="戻る"
+                    :label="$t('setup.compose.drafts.back')"
                     variant="ghost"
                     size="lg"
                     @click="deleteMode = false"
@@ -194,7 +203,7 @@ watch(deleteMode, (value) => {
                     :disabled="!selectedDrafts.length"
                     :loading="deleting"
                     icon="mingcute:delete-2-fill"
-                    label="削除"
+                    :label="$t('delete')"
                     variant="subtle"
                     color="neutral"
                     size="lg"
@@ -204,7 +213,7 @@ watch(deleteMode, (value) => {
 
             <div v-else class="flex w-full justify-end">
                 <UButton
-                    label="下書きを削除"
+                    :label="$t('setup.compose.drafts.delete')"
                     variant="ghost"
                     color="neutral"
                     size="lg"

@@ -1,7 +1,12 @@
 import { z } from 'zod'
 
 const query = z.object({
-    limit: z.coerce.number().min(1).max(1000).optional().default(24),
+    limit: z.coerce
+        .number()
+        .min(1)
+        .max(API_LIMIT_MAX)
+        .optional()
+        .default(OWNED_AVATARS_API_DEFAULT_LIMIT),
 })
 
 export default authedSessionEventHandler<Item[]>(async ({ session }) => {

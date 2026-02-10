@@ -23,7 +23,7 @@ const { login } = useAppOverlay()
 
                         <UButton
                             v-else
-                            label="ログイン"
+                            :label="$t('login')"
                             variant="outline"
                             class="rounded-lg px-4 py-2 text-xs"
                             @click="login.open()"
@@ -31,13 +31,6 @@ const { login } = useAppOverlay()
                     </template>
                 </div>
             </header>
-
-            <div
-                class="hidden w-full items-center justify-center rounded-xl bg-red-100 p-4 text-sm text-red-800 ring-2 ring-red-500 noscript:flex"
-            >
-                この Web サイトは JavaScript を使用しています。<br />
-                JavaScript が無効の場合、正しく表示されません。
-            </div>
 
             <main class="grid w-full grow">
                 <slot />

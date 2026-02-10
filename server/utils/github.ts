@@ -26,7 +26,7 @@ export const getGithubRepo = defineCachedFunction(
         return response
     },
     {
-        maxAge: 60 * 60,
+        maxAge: GITHUB_API_CACHE_TTL,
         name: 'ghRepo',
     }
 )
@@ -41,7 +41,7 @@ export const getGithubContributors = defineCachedFunction(
         return response
     },
     {
-        maxAge: 60 * 60,
+        maxAge: GITHUB_API_CACHE_TTL,
         name: 'ghContributors',
     }
 )
@@ -56,7 +56,7 @@ export const getGithubLatestRelease = defineCachedFunction(
         return response
     },
     {
-        maxAge: 60 * 60,
+        maxAge: GITHUB_API_CACHE_TTL,
         name: 'ghLatestRelease',
     }
 )
@@ -80,7 +80,7 @@ export const getGithubUser = defineCachedFunction(
         return response
     },
     {
-        maxAge: 60 * 60,
+        maxAge: GITHUB_API_CACHE_TTL,
         name: 'ghUser',
     }
 )
@@ -139,7 +139,7 @@ export const getGithubItem = defineCachedFunction(
         }
     },
     {
-        maxAge: 60 * 60,
+        maxAge: GITHUB_API_CACHE_TTL,
         name: 'ghItem',
     }
 )

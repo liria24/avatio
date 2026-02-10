@@ -1,8 +1,5 @@
 <script lang="ts" setup>
-const {
-    toggleMaintenanceMode: toggleMaintenanceModeAction,
-    toggleForceUpdateItem: toggleForceUpdateItemAction,
-} = useAdminActions()
+const { toggleMaintenanceMode, toggleForceUpdateItem } = useAdminActions()
 
 const { data, status, refresh } = useFetch<EdgeConfig>('/api/edge-config', {
     dedupe: 'defer',
@@ -16,38 +13,38 @@ const loading = reactive({
     forceUpdate: false,
 })
 
-const toggleMaintenanceMode = async () => {
+const toggleMaintenanceModeAction = async () => {
     loading.maintenance = true
-    const success = await toggleMaintenanceModeAction(maintenanceMode.value)
+    const success = await toggleMaintenanceMode(maintenanceMode.value)
     if (success) refresh()
     loading.maintenance = false
 }
 
-const toggleForceUpdate = async () => {
+const toggleForceUpdateItemAction = async () => {
     loading.forceUpdate = true
-    await toggleForceUpdateItemAction(forceUpdateItem.value)
+    await toggleForceUpdateItem(forceUpdateItem.value)
     loading.forceUpdate = false
 }
 </script>
 
 <template>
-    <UModal title="Flags">
+    <UModal :title="$t('admin.modal.flags.title')">
         <template #body>
             <div class="flex flex-col gap-4">
                 <USwitch
                     v-model="maintenanceMode"
                     :loading="loading.maintenance || status === 'pending'"
-                    label="メンテナンスモード"
+                    :label="$t('admin.modal.flags.maintenanceMode')"
                     color="neutral"
-                    @change="toggleMaintenanceMode()"
+                    @change="toggleMaintenanceModeAction()"
                 />
 
                 <USwitch
                     v-model="forceUpdateItem"
                     :loading="loading.forceUpdate || status === 'pending'"
-                    label="アイテム情報の強制更新"
+                    :label="$t('admin.modal.flags.forceUpdateItem')"
                     color="neutral"
-                    @change="toggleForceUpdate()"
+                    @change="toggleForceUpdateItemAction()"
                 />
             </div>
         </template>

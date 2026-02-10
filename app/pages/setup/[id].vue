@@ -4,6 +4,7 @@ import { SetupsViewerItem } from '#components'
 const { app } = useAppConfig()
 const route = useRoute()
 const { reportSetup, imageViewer, login, setupDelete, setupHide, setupUnhide } = useAppOverlay()
+const { t } = useI18n()
 
 const id = Number(route.params.id)
 
@@ -11,7 +12,7 @@ const id = Number(route.params.id)
 if (!id || isNaN(id) || id <= 0)
     throw showError({
         status: 400,
-        statusText: 'IDが無効です',
+        statusText: t('errors.invalidId'),
     })
 
 const { data, status } = await useSetup(id)
@@ -19,10 +20,10 @@ const { data, status } = await useSetup(id)
 if (status.value === 'error' || (status.value === 'success' && !data.value))
     throw showError({
         status: 404,
-        statusText: 'セットアップが見つかりません',
+        statusText: t('errors.setupNotFound'),
     })
 
-const { itemCategory } = useAppConfig()
+const itemCategory = useItemCategory()
 
 const categorizedItems = computed(() => {
     const itemsByCategory = data.value?.items.reduce(
@@ -116,16 +117,16 @@ if (data.value) {
                 <UAlert
                     v-if="data.hidAt"
                     icon="mingcute:eye-close-fill"
-                    title="このセットアップは現在非表示です"
-                    :description="`理由: ${data.hidReason || '不明'}`"
+                    :title="$t('setup.viewer.hiddenNotice')"
+                    :description="`${$t('setup.viewer.reason')}: ${data.hidReason || $t('setup.viewer.reasonUnknown')}`"
                     variant="subtle"
                     :actions="[
                         {
-                            label: '異議申し立て',
+                            label: $t('setup.viewer.objectToHiding'),
                             variant: 'soft',
                             onClick: () => {
                                 navigateTo(
-                                    `mailto:${app.mailaddress}?subject=セットアップ非表示に対する異議申し立て%20(ID: ${data?.id})`,
+                                    `mailto:${app.mailaddress}?subject=${$t('setup.viewer.objectToHidingSubject')}%20(ID: ${data?.id})`,
                                     {
                                         external: true,
                                         open: { target: '_blank' },
@@ -155,7 +156,7 @@ if (data.value) {
                         v-if="isLoaded"
                         v-bind="imgAttrs"
                         :src
-                        :alt="`${data.name}の画像`"
+                        :alt="`${data.name}${$t('setup.viewer.imageAlt')}`"
                         loading="eager"
                         fetchpriority="high"
                         class="max-h-180 w-fit shrink-0 grow-0 cursor-zoom-in overflow-hidden rounded-lg object-contain"
@@ -212,13 +213,13 @@ if (data.value) {
 
                         <UAlert
                             icon="mingcute:question-fill"
-                            :title="`${data.failedItemsCount} 個のアイテムが取得できませんでした`"
-                            description="削除されたか、非公開になっている可能性があります。"
+                            :title="`${data.failedItemsCount} ${$t('setup.viewer.failedItemsCount')}`"
+                            :description="$t('setup.viewer.deleted')"
                             variant="subtle"
                             orientation="horizontal"
                             :actions="[
                                 {
-                                    label: '不具合を報告',
+                                    label: $t('errors.reportBug'),
                                     to: 'https://github.com/liria24/avatio/issues/new?template=%F0%9F%9A%A7-bug-report.md',
                                     target: '_blank',
                                     variant: 'soft',
@@ -230,7 +231,7 @@ if (data.value) {
 
                 <UButton
                     icon="mingcute:flag-3-fill"
-                    label="このセットアップを報告"
+                    :label="$t('setup.viewer.report')"
                     variant="ghost"
                     size="sm"
                     class="ml-auto"

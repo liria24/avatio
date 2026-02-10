@@ -36,32 +36,34 @@ const publishedSetupId = ref<number | null>(null)
 const modalPublishComplete = ref(false)
 const modalNewSetupConfirm = ref(false)
 
-const draftStatusBadge = {
+const { t } = useI18n()
+
+const draftStatusBadge = computed(() => ({
     restoring: {
         icon: 'svg-spinners:ring-resize',
-        label: '復元中...',
+        label: t('setup.compose.draftStatus.restoring'),
     },
     restored: {
         icon: 'mingcute:refresh-2-fill',
-        label: '復元しました',
+        label: t('setup.compose.draftStatus.restored'),
     },
     unsaved: {
         icon: 'mingcute:edit-3-fill',
-        label: '未保存の変更',
+        label: t('setup.compose.draftStatus.unsaved'),
     },
     saving: {
         icon: 'svg-spinners:ring-resize',
-        label: '保存中...',
+        label: t('setup.compose.draftStatus.saving'),
     },
     saved: {
         icon: 'mingcute:check-line',
-        label: '保存しました',
+        label: t('setup.compose.draftStatus.saved'),
     },
     error: {
         icon: 'mingcute:close-line',
-        label: '保存に失敗',
+        label: t('setup.compose.draftStatus.error'),
     },
-}
+}))
 
 const onSubmit = async () => {
     const setupId = await publish()
@@ -84,17 +86,17 @@ onBeforeRouteLeave((to, from, next) => {
         draft.value.status !== 'saved' &&
         draft.value.status !== 'restored'
     ) {
-        const answer = window.confirm('入力された内容が破棄されます。よろしいですか？')
+        const answer = window.confirm(t('setup.compose.confirmLeave'))
         return next(answer)
     }
     return next(true)
 })
 
 defineSeo({
-    title: editingSetupId.value ? 'セットアップを編集' : 'セットアップを投稿',
+    title: editingSetupId.value ? t('setup.compose.editTitle') : t('setup.compose.title'),
     description: editingSetupId.value
-        ? 'セットアップの編集を行います。'
-        : '新しいセットアップを投稿します。',
+        ? t('setup.compose.seoEditDescription')
+        : t('setup.compose.seoDescription'),
 })
 
 const draftId = route.query.draftId
@@ -133,7 +135,11 @@ await initialize({
                 <div class="flex items-center gap-2">
                     <UButton
                         type="submit"
-                        :label="editingSetupId ? '更新' : '公開'"
+                        :label="
+                            editingSetupId
+                                ? $t('setup.compose.updateButton')
+                                : $t('setup.compose.publishButton')
+                        "
                         icon="mingcute:upload-fill"
                         color="neutral"
                         block
@@ -142,7 +148,10 @@ await initialize({
                         class="rounded-full p-3"
                     />
 
-                    <UModal v-model:open="modalNewSetupConfirm" title="新規作成">
+                    <UModal
+                        v-model:open="modalNewSetupConfirm"
+                        :title="$t('setup.compose.newSetupModal.title')"
+                    >
                         <UButton
                             v-if="changed"
                             :disabled="
@@ -150,7 +159,7 @@ await initialize({
                                 draft.status === 'saving' ||
                                 publishing
                             "
-                            aria-label="新しいセットアップを作成"
+                            :aria-label="$t('setup.compose.newSetup')"
                             icon="mingcute:add-line"
                             variant="soft"
                             color="neutral"
@@ -160,11 +169,11 @@ await initialize({
 
                         <template #body>
                             <UAlert
-                                title="新しいセットアップを作成しますか？"
+                                :title="$t('setup.compose.newSetupConfirm')"
                                 :description="
                                     draft.status === 'error'
-                                        ? 'エラーにより下書きが保存されていません！'
-                                        : '現在の状態は下書きに保存されています'
+                                        ? $t('setup.compose.draftAlert.errorNotSaved')
+                                        : $t('setup.compose.draftAlert.currentlySaved')
                                 "
                                 :color="draft.status === 'error' ? 'error' : 'neutral'"
                                 variant="outline"
@@ -174,7 +183,7 @@ await initialize({
                         <template #footer>
                             <div class="flex w-full justify-end gap-2">
                                 <UButton
-                                    label="新規作成"
+                                    :label="$t('setup.compose.newSetupCreate')"
                                     variant="soft"
                                     size="lg"
                                     @click="
@@ -199,20 +208,23 @@ await initialize({
                     <div class="flex flex-col gap-4">
                         <SetupsComposeImages />
 
-                        <UFormField name="name" label="タイトル" required>
+                        <UFormField name="name" :label="$t('setup.compose.nameLabel')" required>
                             <UInput
                                 v-model="state.name"
-                                placeholder="セットアップ名"
+                                :placeholder="$t('setup.compose.namePlaceholder')"
                                 variant="subtle"
                                 class="w-full"
                                 @keydown.enter.prevent
                             />
                         </UFormField>
 
-                        <UFormField name="description" label="説明">
+                        <UFormField
+                            name="description"
+                            :label="$t('setup.compose.descriptionLabel')"
+                        >
                             <UTextarea
                                 v-model="state.description"
-                                placeholder="説明"
+                                :placeholder="$t('setup.compose.descriptionPlaceholder')"
                                 autoresize
                                 variant="soft"
                                 class="w-full"
@@ -244,7 +256,7 @@ await initialize({
                     @load="loadDraft($event)"
                 >
                     <UButton
-                        label="下書き"
+                        :label="$t('setup.compose.draftButton')"
                         icon="mingcute:circle-dash-fill"
                         variant="subtle"
                         size="sm"
@@ -262,7 +274,7 @@ await initialize({
         <UButton
             type="submit"
             icon="mingcute:upload-fill"
-            aria-label="セットアップを投稿"
+            :aria-label="$t('setup.compose.publishButton')"
             :loading="publishing"
             variant="solid"
             color="neutral"

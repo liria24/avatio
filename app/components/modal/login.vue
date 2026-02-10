@@ -30,7 +30,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <UModal title="ログイン">
+    <UModal :title="$t('modal.login.title')">
         <slot />
 
         <template #body>
@@ -51,11 +51,11 @@ onBeforeUnmount(() => {
 
         <template #footer>
             <div class="flex w-full items-center justify-end gap-3">
-                <p class="text-muted text-xs">ログインすることで以下に同意したことになります:</p>
+                <p class="text-muted text-xs">{{ $t('modal.login.agreement') }}</p>
                 <UButton
                     :to="localePath('/terms')"
                     target="_blank"
-                    label="利用規約"
+                    :label="$t('modal.login.footer.terms')"
                     variant="link"
                     size="sm"
                     color="neutral"
@@ -64,7 +64,7 @@ onBeforeUnmount(() => {
                 <UButton
                     :to="localePath('/privacy-policy')"
                     target="_blank"
-                    label="プライバシー"
+                    :label="$t('modal.login.footer.privacy')"
                     variant="link"
                     size="sm"
                     color="neutral"

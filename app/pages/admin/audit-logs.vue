@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+const { locale, t } = useI18n()
+
 const auditLogAttributes: Record<
     AuditActionType,
     {
@@ -9,72 +11,72 @@ const auditLogAttributes: Record<
 > = {
     user_ban: {
         icon: 'mingcute:forbid-circle-fill',
-        label: 'ユーザーをBAN',
+        label: t('admin.auditLogs.userBan'),
         color: 'error',
     },
     user_unban: {
         icon: 'mingcute:back-fill',
-        label: 'ユーザーのBAN解除',
+        label: t('admin.auditLogs.userUnban'),
         color: 'info',
     },
     user_delete: {
         icon: 'mingcute:user-x-fill',
-        label: 'ユーザーを削除',
+        label: t('admin.auditLogs.userDelete'),
         color: 'error',
     },
     user_role_change: {
         icon: 'mingcute:user-security-fill',
-        label: 'ユーザーロールの変更',
+        label: t('admin.auditLogs.userRoleChange'),
         color: 'info',
     },
     user_shop_verify: {
         icon: 'mingcute:store-fill',
-        label: 'ユーザーのショップを承認',
+        label: t('admin.auditLogs.userShopVerify'),
         color: 'success',
     },
     user_shop_unverify: {
         icon: 'mingcute:close-circle-fill',
-        label: 'ユーザーのショップを非承認',
+        label: t('admin.auditLogs.userShopUnverify'),
         color: 'error',
     },
     user_badge_grant: {
         icon: 'mingcute:award-fill',
-        label: 'ユーザーにバッジを付与',
+        label: t('admin.auditLogs.userBadgeGrant'),
         color: 'success',
     },
     user_badge_revoke: {
         icon: 'mingcute:award-fill',
-        label: 'ユーザーのバッジを剥奪',
+        label: t('admin.auditLogs.userBadgeRevoke'),
         color: 'error',
     },
     setup_hide: {
         icon: 'mingcute:eye-close-fill',
-        label: 'セットアップを非表示',
+        label: t('admin.auditLogs.setupHide'),
         color: 'secondary',
     },
     setup_unhide: {
         icon: 'mingcute:eye-2-fill',
-        label: 'セットアップを表示',
+        label: t('admin.auditLogs.setupUnhide'),
         color: 'secondary',
     },
     setup_delete: {
         icon: 'mingcute:delete-2-fill',
-        label: 'セットアップを削除',
+        label: t('admin.auditLogs.setupDelete'),
         color: 'error',
     },
     report_resolve: {
         icon: 'mingcute:check-circle-fill',
-        label: '報告を解決',
+        label: t('admin.auditLogs.reportResolve'),
         color: 'success',
     },
     feedback_close: {
         icon: 'mingcute:forbid-circle-fill',
-        label: 'フィードバックをクローズ',
+        label: t('admin.auditLogs.feedbackClose'),
         color: 'success',
     },
     cleanup: {
         icon: 'mingcute:delete-2-fill',
-        label: 'クリーンアップ',
+        label: t('admin.auditLogs.cleanup'),
         color: 'info',
     },
 }
@@ -132,6 +134,7 @@ const { data, status, refresh } = await useFetch('/api/admin/audit-log', {
                             <NuxtTime
                                 :datetime="log.createdAt"
                                 relative
+                                :locale
                                 class="text-muted text-xs"
                             />
                         </div>

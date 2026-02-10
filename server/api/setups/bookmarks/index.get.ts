@@ -16,7 +16,12 @@ const query = z.object({
         .optional(),
     tag: z.union([z.string(), z.array(z.string())]).optional(),
     page: z.coerce.number().min(1).optional().default(1),
-    limit: z.coerce.number().min(1).max(1000).optional().default(24),
+    limit: z.coerce
+        .number()
+        .min(1)
+        .max(API_LIMIT_MAX)
+        .optional()
+        .default(SETUPS_BOOKMARKS_API_DEFAULT_LIMIT),
 })
 
 export default authedSessionEventHandler<PaginationResponse<Bookmark[]>>(async ({ session }) => {

@@ -1,6 +1,6 @@
 {
     "name": "avatio",
-    "version": "1.5.1",
+    "version": "1.6.0",
     "private": true,
     "author": "Liria",
     "repository": {
@@ -46,7 +46,7 @@
         "@vercel/functions": "3.4.1",
         "@vueuse/nuxt": "14.2.0",
         "@yeger/vue-masonry-wall": "5.1.5",
-        "ai": "6.0.77",
+        "ai": "6.0.78",
         "aws4fetch": "^1.0.20",
         "better-auth": "1.4.18",
         "canvas-confetti": "1.9.4",

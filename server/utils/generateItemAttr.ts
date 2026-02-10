@@ -59,7 +59,7 @@ export default async (params: GenerateItemAttrParams) => {
             niceName: true,
             category: true,
         },
-        limit: 32,
+        limit: MAX_ITEMS_PER_SETUP,
     })
 
     const messages = [

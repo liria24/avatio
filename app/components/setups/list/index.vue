@@ -18,7 +18,7 @@ const loading = defineModel<boolean>('loading', {
     />
 
     <p v-else-if="!setups?.length" class="text-muted mt-4 self-center text-center text-sm">
-        セットアップが見つかりませんでした
+        {{ $t('search.listEmpty') }}
     </p>
 
     <MasonryWall

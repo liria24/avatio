@@ -28,7 +28,7 @@ const banUser = async () => {
 </script>
 
 <template>
-    <UModal title="BAN">
+    <UModal :title="$t('admin.modal.banUser.title')">
         <template #body>
             <div class="flex flex-col gap-4">
                 <UUser
@@ -40,18 +40,18 @@ const banUser = async () => {
                     }"
                 />
 
-                <UFormField label="理由">
+                <UFormField :label="$t('admin.modal.banUser.reason')">
                     <UTextarea
                         v-model="banReasonInput"
-                        placeholder="理由を入力してください"
+                        :placeholder="$t('admin.modal.banUser.reasonPlaceholder')"
                         autoresize
                         class="w-full"
                     />
                 </UFormField>
-                <UFormField label="BAN 期間 (秒)">
+                <UFormField :label="$t('admin.modal.banUser.duration')">
                     <UInputNumber
                         v-model="banExpiresInInput"
-                        placeholder="0 で無期限"
+                        :placeholder="$t('admin.modal.banUser.durationPlaceholder')"
                         class="w-full"
                     />
                 </UFormField>
@@ -62,7 +62,7 @@ const banUser = async () => {
             <div class="flex w-full justify-end">
                 <UButton
                     loading-auto
-                    label="BAN"
+                    :label="$t('admin.modal.banUser.button')"
                     color="error"
                     variant="subtle"
                     @click="banUser()"

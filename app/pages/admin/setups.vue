@@ -1,4 +1,6 @@
 <script setup lang="ts">
+const { locale } = useI18n()
+
 const { data: setups, refresh } = await useFetch('/api/setups', {
     query: {
         limit: 1000,
@@ -39,6 +41,7 @@ const { data: setups, refresh } = await useFetch('/api/setups', {
                     <NuxtTime
                         :datetime="setup.createdAt"
                         relative
+                        :locale
                         class="text-muted text-xs leading-none text-nowrap"
                     />
                     <p
@@ -46,8 +49,8 @@ const { data: setups, refresh } = await useFetch('/api/setups', {
                         class="text-muted text-xs leading-none text-nowrap"
                     >
                         (
-                        <NuxtTime :datetime="setup.updatedAt" relative />
-                        に更新)
+                        <NuxtTime :datetime="setup.updatedAt" relative :locale />
+                        {{ $t('admin.users.updated') }})
                     </p>
                 </div>
             </UPageList>

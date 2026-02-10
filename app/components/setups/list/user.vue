@@ -4,7 +4,7 @@ interface Props {
 }
 const props = defineProps<Props>()
 
-const setupsPerPage: number = 50
+const setupsPerPage: number = USER_SETUPS_LIST_PER_PAGE
 const page = ref(1)
 const loading = ref(true)
 
@@ -42,7 +42,7 @@ await initialize()
         <UButton
             v-if="data?.pagination.hasNext"
             :loading="status === 'pending'"
-            label="もっと見る"
+            :label="$t('more')"
             variant="soft"
             size="lg"
             class="w-fit self-center"

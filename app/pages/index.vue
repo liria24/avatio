@@ -6,6 +6,7 @@ const session = await getSession()
 const route = useRoute()
 const router = useRouter()
 const { login } = useAppOverlay()
+const { t } = useI18n()
 
 type Tab = 'latest' | 'me' | 'bookmarks'
 
@@ -18,16 +19,16 @@ const changeTab = (newTab: Tab) => {
 
 defineSeo({
     type: 'website',
-    title: 'Avatio',
+    title: t('index.seo.title'),
     titleTemplate: '%s',
-    description: 'あなたのアバター改変を共有しよう',
+    description: t('index.seo.description'),
     image: 'https://avatio.me/ogp_2.png',
     twitterCard: 'summary_large_image',
 })
 useSchemaOrg([
     defineWebSite({
-        name: 'Avatio',
-        description: 'あなたのアバター改変を共有しよう',
+        name: t('index.seo.title'),
+        description: t('index.seo.description'),
         inLanguage: 'ja-JP',
         potentialAction: defineSearchAction({
             target: '/search?q={search_term_string}',
@@ -56,9 +57,8 @@ useSchemaOrg([
                         duration: 0.5,
                     }"
                     class="wrap-anywhere break-keep"
-                >
-                    お気に入りの<wbr />改変を<wbr />記録して<wbr />共有しよう
-                </motion.h1>
+                    v-html="$t('index.hero.title')"
+                />
             </template>
 
             <template #description>
@@ -76,10 +76,8 @@ useSchemaOrg([
                         delay: 0.3,
                     }"
                     class="wrap-anywhere break-keep"
-                >
-                    あのアイテムって<wbr />どれだっけ？
-                    <wbr />記録しておけば、<wbr />もう忘れません。
-                </motion.p>
+                    v-html="$t('index.hero.description')"
+                />
             </template>
 
             <template #links>
@@ -98,10 +96,10 @@ useSchemaOrg([
                     }"
                 >
                     <UButton
-                        label="ログイン"
+                        :label="$t('login')"
                         color="neutral"
                         variant="outline"
-                        class="rounded-full px-6 pt-2.5 pb-2 hover:bg-zinc-700 hover:text-zinc-200 hover:dark:bg-zinc-300 hover:dark:text-zinc-800"
+                        class="hover:bg-inverted hover:text-inverted rounded-full px-6 py-2"
                         @click="login.open()"
                     />
                 </motion.div>
@@ -109,10 +107,10 @@ useSchemaOrg([
         </UPageHero>
 
         <div v-if="session" class="flex w-full flex-col items-start gap-5">
-            <h1 class="text-lg font-medium text-nowrap">ホーム</h1>
+            <h1 class="text-lg font-medium text-nowrap">{{ $t('index.tabs.latest') }}</h1>
             <div class="flex flex-wrap items-center gap-1">
                 <UButton
-                    label="最新"
+                    :label="$t('index.tabs.latest')"
                     :active="tab === 'latest'"
                     variant="ghost"
                     active-variant="solid"
@@ -121,7 +119,7 @@ useSchemaOrg([
                     @click="changeTab('latest')"
                 />
                 <UButton
-                    label="自分の投稿"
+                    :label="$t('index.tabs.me')"
                     :active="tab === 'me'"
                     variant="ghost"
                     active-variant="solid"
@@ -130,7 +128,7 @@ useSchemaOrg([
                     @click="changeTab('me')"
                 />
                 <UButton
-                    label="ブックマーク"
+                    :label="$t('index.tabs.bookmarks')"
                     :active="tab === 'bookmarks'"
                     variant="ghost"
                     active-variant="solid"

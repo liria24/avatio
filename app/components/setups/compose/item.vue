@@ -16,7 +16,7 @@ const props = defineProps<Props>()
 
 const emit = defineEmits(['change-category', 'remove-item', 'shapekey-add', 'shapekey-remove'])
 
-const { itemCategory } = useAppConfig()
+const itemCategory = useItemCategory()
 
 const inputShapekeyName = ref('')
 const inputShapekeyValue = ref(0)
@@ -96,7 +96,7 @@ const inputShapekeyValue = ref(0)
                             "
                         >
                             <UButton
-                                :label="`シェイプキー: ${shapekeys?.length || 0}`"
+                                :label="`${$t('setup.compose.items.shapekeys')}: ${shapekeys?.length || 0}`"
                                 variant="subtle"
                                 size="sm"
                             />
@@ -104,7 +104,7 @@ const inputShapekeyValue = ref(0)
                             <template #content>
                                 <div class="flex flex-col items-center gap-2 p-2">
                                     <p v-if="!shapekeys?.length" class="text-muted p-3 text-sm">
-                                        シェイプキーがありません
+                                        {{ $t('setup.compose.items.noShapekeys') }}
                                     </p>
                                     <template v-else>
                                         <div
@@ -135,7 +135,9 @@ const inputShapekeyValue = ref(0)
                                     <div class="flex items-center gap-1">
                                         <UInput
                                             v-model="inputShapekeyName"
-                                            placeholder="シェイプキー名称"
+                                            :placeholder="
+                                                $t('setup.compose.items.shapekeyPlaceholder')
+                                            "
                                             size="sm"
                                             class="max-w-48"
                                         />
@@ -171,7 +173,7 @@ const inputShapekeyValue = ref(0)
                         <UCheckbox
                             v-if="props.item.category !== 'avatar'"
                             v-model="unsupported"
-                            label="ベースアバターに非対応"
+                            :label="$t('setup.compose.items.incompatible')"
                             size="sm"
                             :ui="{ label: 'text-muted' }"
                         />
@@ -195,7 +197,7 @@ const inputShapekeyValue = ref(0)
                     :ui="{ content: 'w-40' }"
                 >
                     <UButton
-                        aria-label="アイテムのカテゴリーを変更"
+                        :aria-label="$t('setup.compose.items.changeCategory')"
                         :icon="itemCategory[props.item.category]?.icon || 'mingcute:box-3-fill'"
                         variant="ghost"
                         size="sm"
@@ -203,7 +205,7 @@ const inputShapekeyValue = ref(0)
                 </UDropdownMenu>
 
                 <UButton
-                    aria-label="アイテムを削除"
+                    :aria-label="$t('setup.compose.items.remove')"
                     icon="mingcute:close-line"
                     variant="ghost"
                     size="sm"
@@ -213,7 +215,7 @@ const inputShapekeyValue = ref(0)
 
             <UTextarea
                 v-model="note"
-                placeholder="ノートの追加"
+                :placeholder="$t('setup.compose.items.notePlaceholder')"
                 autoresize
                 size="sm"
                 :rows="1"

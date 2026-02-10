@@ -6,7 +6,12 @@ const query = z.object({
     q: z.string().optional(),
     orderBy: z.enum(['name', 'count']).optional().default('count'),
     sort: z.enum(['asc', 'desc']).optional().default('desc'),
-    limit: z.coerce.number().min(1).max(1000).optional().default(24),
+    limit: z.coerce
+        .number()
+        .min(1)
+        .max(API_LIMIT_MAX)
+        .optional()
+        .default(SETUP_TAGS_API_DEFAULT_LIMIT),
 })
 
 export default eventHandler(async () => {

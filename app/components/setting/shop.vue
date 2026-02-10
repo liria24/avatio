@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+const { locale, t } = useI18n()
 const { getSession } = useAuth()
 const session = await getSession()
 const {
@@ -33,14 +34,18 @@ initializeShopVerification()
 </script>
 
 <template>
-    <UModal v-model:open="shopState.modalVerify" :dismissible="false" title="新規ショップ認証">
+    <UModal
+        v-model:open="shopState.modalVerify"
+        :dismissible="false"
+        :title="$t('settings.shop.newShop')"
+    >
         <template #body>
             <div class="flex flex-col gap-6">
                 <UFormField
-                    label="1. 認証するショップで販売しているアイテムを 1 つ選定し、URL を入力してください"
+                    :label="$t('settings.shop.step1')"
                     :error="
                         shopState.itemUrl.length && !verifiable
-                            ? 'この URL は認証可能なアイテムではありません'
+                            ? $t('settings.shop.notVerifiable')
                             : undefined
                     "
                 >
@@ -52,7 +57,7 @@ initializeShopVerification()
                         />
                         <UAlert
                             icon="mingcute:information-fill"
-                            description="認証に使用できるアイテムは、Avatio に登録できるアイテムのみです。非公開アイテムや、非対応プラットフォームのアイテムは使用できません。また、現在 GitHub はショップ認証に対応していません。"
+                            :description="$t('settings.shop.stepDescription')"
                             variant="outline"
                             :ui="{
                                 icon: 'size-4',
@@ -62,11 +67,11 @@ initializeShopVerification()
                     </div>
                 </UFormField>
 
-                <UFormField label="2. 選定したアイテムの説明文に以下のコードを追記してください">
+                <UFormField :label="$t('settings.shop.step2')">
                     <div class="flex flex-col gap-2 pt-2">
                         <UButton
                             :trailing-icon="copied ? 'mingcute:check-line' : 'mingcute:copy-2-fill'"
-                            :label="shopState.verifyCode || 'コードを生成中...'"
+                            :label="shopState.verifyCode || t('settings.shop.generatingCode')"
                             variant="outline"
                             color="neutral"
                             block
@@ -75,7 +80,7 @@ initializeShopVerification()
                         />
                         <UAlert
                             icon="mingcute:information-fill"
-                            title="認証が完了した後、追記したコードは削除してください"
+                            :title="$t('settings.shop.deleteCodeNote')"
                             variant="subtle"
                             color="secondary"
                             :ui="{
@@ -91,7 +96,7 @@ initializeShopVerification()
                 <UButton
                     :disabled="!verifiable"
                     :loading="shopState.verifying"
-                    label="ショップを認証"
+                    :label="$t('settings.shop.verify')"
                     color="neutral"
                     size="lg"
                     block
@@ -104,11 +109,13 @@ initializeShopVerification()
     <UCard>
         <template #header>
             <div class="flex w-full items-center justify-between">
-                <h2 class="text-lg leading-none font-semibold text-nowrap">ショップ</h2>
+                <h2 class="text-lg leading-none font-semibold text-nowrap">
+                    {{ $t('settings.shop.title') }}
+                </h2>
 
                 <UButton
                     icon="mingcute:add-line"
-                    label="新しくショップを認証"
+                    :label="$t('settings.shop.newShop')"
                     color="neutral"
                     variant="soft"
                     @click="shopState.modalVerify = true"
@@ -118,7 +125,7 @@ initializeShopVerification()
 
         <div class="flex flex-col gap-2">
             <p v-if="!data?.shops?.length" class="text-muted self-center py-2 text-sm leading-none">
-                認証済みのショップはありません
+                {{ $t('settings.shop.noVerifiedShops') }}
             </p>
 
             <div
@@ -157,14 +164,18 @@ initializeShopVerification()
                     :datetime="shop.createdAt"
                     date-style="medium"
                     time-style="short"
+                    :locale
                     class="text-muted text-sm leading-none"
                 />
 
-                <UModal v-model:open="shopState.modalUnverify" title="認証解除">
-                    <UTooltip text="ショップの認証を解除" :delay-duration="100">
+                <UModal
+                    v-model:open="shopState.modalUnverify"
+                    :title="$t('settings.shop.unverify')"
+                >
+                    <UTooltip :text="$t('settings.shop.unverify')" :delay-duration="100">
                         <UButton
                             icon="mingcute:close-line"
-                            aria-label="ショップの認証を解除"
+                            :aria-label="$t('settings.shop.unverify')"
                             variant="ghost"
                             size="sm"
                         />
@@ -173,7 +184,7 @@ initializeShopVerification()
                     <template #body>
                         <UAlert
                             icon="mingcute:delete-2-fill"
-                            title="ショップの認証を解除しますか？"
+                            :title="$t('settings.shop.unverifyConfirm')"
                             color="warning"
                             variant="subtle"
                         />
@@ -183,13 +194,13 @@ initializeShopVerification()
                         <div class="flex w-full items-center justify-end gap-2">
                             <UButton
                                 :disabled="shopState.unverifying"
-                                label="キャンセル"
+                                :label="$t('cancel')"
                                 variant="ghost"
                                 @click="shopState.modalUnverify = false"
                             />
                             <UButton
                                 :loading="shopState.unverifying"
-                                label="認証解除"
+                                :label="$t('settings.shop.unverify')"
                                 color="error"
                                 variant="solid"
                                 @click="unverify(shop.shop.id)"

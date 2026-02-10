@@ -44,7 +44,7 @@ export default authedSessionEventHandler(
             },
         })
 
-        if ((userSetupDraftsCount[0]?.count || 0) >= 32)
+        if ((userSetupDraftsCount[0]?.count || 0) >= MAX_SETUP_DRAFTS)
             throw createError({
                 status: 429,
                 statusText: 'You have reached the maximum number of setup drafts allowed.',

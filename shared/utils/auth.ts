@@ -5,6 +5,16 @@ import { admin, customSession, multiSession, username } from 'better-auth/plugin
 import { nanoid } from 'nanoid'
 
 import { db, schema } from '../../server/utils/database'
+import {
+    RATE_LIMIT_DEFAULT,
+    RATE_LIMIT_SESSION,
+    RATE_LIMIT_SIGNIN,
+    RATE_LIMIT_WINDOW,
+    SESSION_COOKIE_CACHE_MAX_AGE,
+    SESSION_EXPIRES_IN,
+    SESSION_FRESH_AGE,
+    SESSION_UPDATE_AGE,
+} from './constants'
 
 const JPG_FILENAME_LENGTH = 16
 
@@ -43,12 +53,12 @@ export const auth = betterAuth({
     },
 
     session: {
-        expiresIn: 60 * 60 * 24 * 30, // 30日間
-        updateAge: 60 * 60 * 24, // 1日ごとに更新
-        freshAge: 60 * 15, // 15分間はフレッシュとみなす
+        expiresIn: SESSION_EXPIRES_IN,
+        updateAge: SESSION_UPDATE_AGE,
+        freshAge: SESSION_FRESH_AGE,
         cookieCache: {
             enabled: true,
-            maxAge: 5 * 60, // 5分間のキャッシュ
+            maxAge: SESSION_COOKIE_CACHE_MAX_AGE,
         },
     },
 
@@ -85,16 +95,16 @@ export const auth = betterAuth({
 
     rateLimit: {
         enabled: true,
-        window: 60,
-        max: 100,
+        window: RATE_LIMIT_WINDOW,
+        max: RATE_LIMIT_DEFAULT,
         customRules: {
             '/sign-in/social': {
-                window: 60,
-                max: 10,
+                window: RATE_LIMIT_WINDOW,
+                max: RATE_LIMIT_SIGNIN,
             },
             '/get-session': {
-                window: 60,
-                max: 200,
+                window: RATE_LIMIT_WINDOW,
+                max: RATE_LIMIT_SESSION,
             },
         },
         customStorage: {

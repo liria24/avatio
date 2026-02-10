@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 const { app } = useAppConfig()
+const { locale } = useI18n()
 const { feedback } = useAppOverlay()
 
 const { data: repo } = useFetch<GithubRepo>('https://ungh.cc/repos/liria24/avatio', {
@@ -22,7 +23,7 @@ const { data: repo } = useFetch<GithubRepo>('https://ungh.cc/repos/liria24/avati
                         :to="app.liria.twitter"
                         target="_blank"
                         icon="mingcute:social-x-fill"
-                        aria-label="X"
+                        :aria-label="$t('footer.social.x')"
                         variant="ghost"
                     />
 
@@ -31,7 +32,7 @@ const { data: repo } = useFetch<GithubRepo>('https://ungh.cc/repos/liria24/avati
                             :to="app.repo"
                             target="_blank"
                             icon="mingcute:github-fill"
-                            aria-label="GitHub"
+                            :aria-label="$t('footer.social.github')"
                             variant="ghost"
                         />
 
@@ -80,6 +81,7 @@ const { data: repo } = useFetch<GithubRepo>('https://ungh.cc/repos/liria24/avati
                                             :datetime="repo.repo.updatedAt"
                                             date-style="short"
                                             time-style="short"
+                                            :locale
                                             class="text-muted text-xs leading-none text-nowrap"
                                         />
                                     </div>
@@ -92,15 +94,20 @@ const { data: repo } = useFetch<GithubRepo>('https://ungh.cc/repos/liria24/avati
                 <div class="flex items-center gap-0.5">
                     <UButton
                         :to="$localePath('/changelogs')"
-                        label="変更履歴"
+                        :label="$t('footer.links.changelogs')"
                         variant="link"
                         size="sm"
                     />
 
-                    <UButton :to="$localePath('/faq')" label="FAQ" variant="link" size="sm" />
+                    <UButton
+                        :to="$localePath('/faq')"
+                        :label="$t('footer.links.faq')"
+                        variant="link"
+                        size="sm"
+                    />
 
                     <UButton
-                        label="フィードバック"
+                        :label="$t('footer.links.feedback')"
                         variant="link"
                         size="sm"
                         @click="feedback.open()"
@@ -112,14 +119,14 @@ const { data: repo } = useFetch<GithubRepo>('https://ungh.cc/repos/liria24/avati
                 <div class="flex items-center gap-0.5">
                     <UButton
                         :to="$localePath('/terms')"
-                        label="利用規約"
+                        :label="$t('footer.legal.terms')"
                         variant="link"
                         size="sm"
                     />
 
                     <UButton
                         :to="$localePath('/privacy-policy')"
-                        label="プライバシー"
+                        :label="$t('footer.legal.privacy')"
                         variant="link"
                         size="sm"
                     />

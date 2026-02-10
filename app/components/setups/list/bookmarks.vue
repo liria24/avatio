@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const setupsPerPage: number = 50
+const setupsPerPage: number = BOOKMARKS_LIST_PER_PAGE
 const page = ref(1)
 const loading = ref(true)
 
@@ -39,7 +39,7 @@ await initialize()
         <UButton
             v-if="bookmarks?.pagination.hasNext"
             :loading="status === 'pending'"
-            label="もっと見る"
+            :label="$t('more')"
             variant="soft"
             size="lg"
             class="w-fit self-center"

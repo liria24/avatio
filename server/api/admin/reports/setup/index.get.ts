@@ -5,7 +5,12 @@ const query = z.object({
     sort: z.enum(['asc', 'desc']).optional().default('desc'),
     reporterId: z.string().nullable().optional(),
     page: z.coerce.number().min(1).optional().default(1),
-    limit: z.coerce.number().min(1).max(1000).optional().default(100),
+    limit: z.coerce
+        .number()
+        .min(1)
+        .max(API_LIMIT_MAX)
+        .optional()
+        .default(ADMIN_REPORTS_API_DEFAULT_LIMIT),
     isResolved: z
         .union([z.union([z.boolean(), z.stringbool()]).array(), z.boolean(), z.stringbool()])
         .transform((val) => (Array.isArray(val) ? val : [val]))

@@ -5,6 +5,7 @@ interface Props {
 const props = defineProps<Props>()
 
 const emit = defineEmits(['close'])
+const localePath = useLocalePath()
 
 const { deleteSetup: deleteSetupAction } = useAdminActions()
 
@@ -12,25 +13,32 @@ const deleteSetup = async () => {
     const success = await deleteSetupAction(props.setupId)
     if (success) {
         emit('close')
-        navigateTo('/')
+        navigateTo(localePath('/'))
     }
 }
 </script>
 
 <template>
-    <UModal title="セットアップを削除">
+    <UModal :title="$t('modal.deleteSetup.title')">
         <template #body>
             <UAlert
                 icon="mingcute:delete-2-fill"
-                title="本当に削除しますか？"
-                description="この操作は取り消すことができません。"
+                :title="$t('modal.deleteSetup.confirm')"
+                :description="$t('modal.deleteSetup.description')"
                 color="warning"
                 variant="subtle"
             />
         </template>
 
         <template #footer>
-            <UButton loading-auto label="削除" color="error" size="lg" block @click="deleteSetup" />
+            <UButton
+                loading-auto
+                :label="$t('delete')"
+                color="error"
+                size="lg"
+                block
+                @click="deleteSetup"
+            />
         </template>
     </UModal>
 </template>

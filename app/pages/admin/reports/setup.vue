@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { locale } = useI18n()
 const { resolveReport } = useAdminActions()
 
 const { data, refresh } = await useFetch('/api/admin/reports/setup', {
@@ -85,6 +86,7 @@ const resolve = async (id: number, resolve?: boolean) => {
                             <NuxtTime
                                 :datetime="report.createdAt"
                                 relative
+                                :locale
                                 class="text-muted text-xs"
                             />
 
@@ -146,31 +148,31 @@ const resolve = async (id: number, resolve?: boolean) => {
                             <div class="flex flex-wrap items-center gap-1">
                                 <UBadge
                                     v-if="report.spam"
-                                    label="スパム、個人情報、不適切な内容"
+                                    :label="$t('admin.reports.setup.reasons.spam')"
                                     variant="outline"
                                     class="rounded-full px-2"
                                 />
                                 <UBadge
                                     v-if="report.hate"
-                                    label="差別、暴力、誹謗中傷"
+                                    :label="$t('admin.reports.setup.reasons.hate')"
                                     variant="outline"
                                     class="rounded-full px-2"
                                 />
                                 <UBadge
                                     v-if="report.infringe"
-                                    label="他者への権利侵害"
+                                    :label="$t('admin.reports.setup.reasons.infringement')"
                                     variant="outline"
                                     class="rounded-full px-2"
                                 />
                                 <UBadge
                                     v-if="report.badImage"
-                                    label="過激な画像"
+                                    :label="$t('admin.reports.setup.reasons.extreme')"
                                     variant="outline"
                                     class="rounded-full px-2"
                                 />
                                 <UBadge
                                     v-if="report.other"
-                                    label="その他"
+                                    :label="$t('admin.reports.setup.reasons.other')"
                                     variant="outline"
                                     class="rounded-full px-2"
                                 />

@@ -6,7 +6,12 @@ const query = z.object({
     sort: z.enum(['asc', 'desc']).optional().default('desc'),
     userId: z.string().nullable().optional(),
     page: z.coerce.number().min(1).optional().default(1),
-    limit: z.coerce.number().min(1).max(1000).optional().default(24),
+    limit: z.coerce
+        .number()
+        .min(1)
+        .max(API_LIMIT_MAX)
+        .optional()
+        .default(CHANGELOGS_API_DEFAULT_LIMIT),
 })
 
 export default promiseEventHandler<PaginationResponse<Changelog[]>>(async () => {
