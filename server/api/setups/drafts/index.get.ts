@@ -21,7 +21,7 @@ export default authedSessionEventHandler<SetupDraft[]>(
             orderBy: {
                 updatedAt: 'desc',
             },
-            limit: 32,
+            limit: MAX_SETUP_DRAFTS,
             columns: {
                 id: true,
                 createdAt: true,

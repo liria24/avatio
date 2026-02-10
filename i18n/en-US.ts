@@ -1,3 +1,5 @@
+import { MAX_SETUP_DRAFTS } from '../shared/utils/constants'
+
 export default defineI18nLocale(async () => ({
     language: 'Language',
     login: 'Login',
@@ -252,7 +254,7 @@ export default defineI18nLocale(async () => ({
             newSetupModal: {
                 title: 'Create New',
             },
-            draftsDescription: 'You can save up to 32 drafts',
+            draftsDescription: `You can save up to ${MAX_SETUP_DRAFTS} drafts`,
         },
         viewer: {
             show: 'Show Setup',

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const setupsPerPage: number = 64
+const setupsPerPage: number = LATEST_SETUPS_LIST_PER_PAGE
 const page = ref(1)
 const loading = ref(true)
 

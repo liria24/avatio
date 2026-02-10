@@ -57,7 +57,7 @@ const getUser = defineCachedFunction(
         return data
     },
     {
-        maxAge: 60 * 60, // 1 hour
+        maxAge: USER_CACHE_TTL,
         name: 'user',
         getKey: (id: string) => id,
         swr: false,

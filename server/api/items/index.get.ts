@@ -10,7 +10,7 @@ const query = z.object({
         .transform((val) => (Array.isArray(val) ? val : [val]))
         .optional(),
     page: z.coerce.number().min(1).optional().default(1),
-    limit: z.coerce.number().min(1).max(1000).optional().default(64),
+    limit: z.coerce.number().min(1).max(API_LIMIT_MAX).optional().default(ITEMS_API_DEFAULT_LIMIT),
 })
 
 export default promiseEventHandler<PaginationResponse<Item[]>>(async () => {

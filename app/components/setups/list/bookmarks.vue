@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const setupsPerPage: number = 50
+const setupsPerPage: number = BOOKMARKS_LIST_PER_PAGE
 const page = ref(1)
 const loading = ref(true)
 

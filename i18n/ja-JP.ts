@@ -1,3 +1,5 @@
+import { MAX_SETUP_DRAFTS } from '../shared/utils/constants'
+
 export default defineI18nLocale(async () => ({
     language: '言語',
     login: 'ログイン',
@@ -253,7 +255,7 @@ export default defineI18nLocale(async () => ({
             newSetupModal: {
                 title: '新規作成',
             },
-            draftsDescription: '最大で32件まで保存できます',
+            draftsDescription: `最大で${MAX_SETUP_DRAFTS}件まで保存できます`,
         },
         viewer: {
             show: 'セットアップを表示',

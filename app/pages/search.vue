@@ -20,7 +20,7 @@ const query = computed(() => ({
     itemId: searchItemIds.value,
     tag: searchTags.value,
     page: 1,
-    perPage: 50,
+    perPage: SETUP_SEARCH_PER_PAGE,
 }))
 
 const shouldShowDetails = computed(() => !!(searchItemIds.value.length || searchTags.value.length))

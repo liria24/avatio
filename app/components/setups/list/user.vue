@@ -4,7 +4,7 @@ interface Props {
 }
 const props = defineProps<Props>()
 
-const setupsPerPage: number = 50
+const setupsPerPage: number = USER_SETUPS_LIST_PER_PAGE
 const page = ref(1)
 const loading = ref(true)
 

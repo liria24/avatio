@@ -3,7 +3,7 @@ definePageMeta({
     middleware: 'session',
 })
 
-const setupsPerPage: number = 50
+const setupsPerPage: number = BOOKMARKS_PAGE_PER_PAGE
 const page = ref(1)
 
 const { bookmarks, status, refresh } = await useBookmarks({
