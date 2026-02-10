@@ -26,6 +26,13 @@ export default defineI18nLocale(async () => ({
     report: 'Report',
     share: 'Share',
 
+    shareButton: {
+        copyLink: 'Copy Link',
+        copied: 'Copied',
+        linkCopied: 'Link copied to clipboard',
+        linkCopyFailed: 'Failed to copy link',
+    },
+
     jsWarning:
         'This website uses JavaScript. It may not display correctly if JavaScript is disabled.',
 

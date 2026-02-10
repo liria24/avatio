@@ -1,36 +1,34 @@
 <script setup lang="ts">
 const { t } = useI18n()
 const colorMode = useColorMode()
-
-const themeMenu = [
-    {
-        label: t('system'),
-        icon: 'mingcute:monitor-fill',
-        onSelect: () => {
-            colorMode.preference = 'system'
-        },
-    },
-    {
-        label: t('light'),
-        icon: 'mingcute:sun-fill',
-        onSelect: () => {
-            colorMode.preference = 'light'
-        },
-    },
-    {
-        label: t('dark'),
-        icon: 'mingcute:moon-fill',
-        onSelect: () => {
-            colorMode.preference = 'dark'
-        },
-    },
-]
 </script>
 
 <template>
     <ClientOnly>
         <UDropdownMenu
-            :items="themeMenu"
+            :items="[
+                {
+                    label: t('system'),
+                    icon: 'mingcute:monitor-fill',
+                    onSelect: () => {
+                        colorMode.preference = 'system'
+                    },
+                },
+                {
+                    label: t('light'),
+                    icon: 'mingcute:sun-fill',
+                    onSelect: () => {
+                        colorMode.preference = 'light'
+                    },
+                },
+                {
+                    label: t('dark'),
+                    icon: 'mingcute:moon-fill',
+                    onSelect: () => {
+                        colorMode.preference = 'dark'
+                    },
+                },
+            ]"
             :content="{
                 align: 'center',
                 side: 'bottom',

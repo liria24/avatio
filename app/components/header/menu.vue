@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import type { DropdownMenuItem } from '@nuxt/ui'
-
 interface Props {
     session: Session
     sessions?: Sessions
@@ -12,7 +10,7 @@ const route = useRoute()
 const toast = useToast()
 const colorMode = useColorMode()
 const { login, feedback } = useAppOverlay()
-const { t } = useI18n()
+const { t, locales, setLocale } = useI18n()
 const localePath = useLocalePath()
 
 const switchAccount = async (sessionToken: string) => {
@@ -24,94 +22,103 @@ const switchAccount = async (sessionToken: string) => {
     })
     navigateTo(route.path, { external: true })
 }
-
-const themeMenu = [
-    {
-        label: t('system'),
-        icon: 'mingcute:monitor-fill',
-        onSelect: () => {
-            colorMode.preference = 'system'
-        },
-    },
-    {
-        label: t('light'),
-        icon: 'mingcute:sun-fill',
-        onSelect: () => {
-            colorMode.preference = 'light'
-        },
-    },
-    {
-        label: t('dark'),
-        icon: 'mingcute:moon-fill',
-        onSelect: () => {
-            colorMode.preference = 'dark'
-        },
-    },
-]
-
-const menuItems = ref<DropdownMenuItem[][]>([
-    [
-        {
-            to: localePath(`/@${props.session.user.username}`),
-            slot: 'user',
-        },
-    ],
-    [
-        {
-            label: t('header.menu.bookmarks'),
-            icon: 'mingcute:bookmark-fill',
-            to: localePath('/bookmarks'),
-        },
-        {
-            label: t('header.menu.settings'),
-            icon: 'mingcute:settings-1-fill',
-            to: localePath('/settings'),
-        },
-    ],
-    [
-        {
-            label: t('header.menu.feedback'),
-            icon: 'mingcute:chat-3-fill',
-            onSelect: () => feedback.open(),
-        },
-        {
-            label: t('theme'),
-            icon: 'mingcute:moon-fill',
-            children: themeMenu,
-        },
-    ],
-    [
-        {
-            label: t('header.menu.switchAccount'),
-            icon: 'mingcute:group-2-fill',
-            children: [
-                ...(props.sessions?.map((session) => ({
-                    label: session.user.name,
-                    avatar: {
-                        src: session.user.image || undefined,
-                        alt: session.user.name,
-                        icon: 'mingcute:user-3-fill',
-                    },
-                    onSelect: () => switchAccount(session.session.token),
-                })) || []),
-                {
-                    label: t('header.menu.newAccount'),
-                    icon: 'mingcute:user-add-2-fill',
-                    onSelect: () => login.open(),
-                },
-            ],
-        },
-        {
-            label: t('header.menu.logout'),
-            icon: 'mingcute:open-door-fill',
-            onSelect: revoke,
-        },
-    ],
-])
 </script>
 
 <template>
-    <UDropdownMenu :items="menuItems">
+    <UDropdownMenu
+        :items="[
+            [
+                {
+                    to: localePath(`/@${props.session.user.username}`),
+                    slot: 'user',
+                },
+            ],
+            [
+                {
+                    label: t('header.menu.bookmarks'),
+                    icon: 'mingcute:bookmark-fill',
+                    to: localePath('/bookmarks'),
+                },
+                {
+                    label: t('header.menu.settings'),
+                    icon: 'mingcute:settings-1-fill',
+                    to: localePath('/settings'),
+                },
+            ],
+            [
+                {
+                    label: t('header.menu.feedback'),
+                    icon: 'mingcute:chat-3-fill',
+                    onSelect: () => feedback.open(),
+                },
+                {
+                    label: t('theme'),
+                    icon: 'mingcute:moon-fill',
+                    children: [
+                        {
+                            label: t('system'),
+                            icon: 'mingcute:monitor-fill',
+                            onSelect: () => {
+                                colorMode.preference = 'system'
+                            },
+                        },
+                        {
+                            label: t('light'),
+                            icon: 'mingcute:sun-fill',
+                            onSelect: () => {
+                                colorMode.preference = 'light'
+                            },
+                        },
+                        {
+                            label: t('dark'),
+                            icon: 'mingcute:moon-fill',
+                            onSelect: () => {
+                                colorMode.preference = 'dark'
+                            },
+                        },
+                    ],
+                },
+                {
+                    label: t('language'),
+                    icon: 'mingcute:translate-2-line',
+                    children: locales.map((locale) => ({
+                        label: locale.name,
+                        icon: locale.icon,
+                        onSelect: () => {
+                            setLocale(locale.code)
+                        },
+                    })),
+                },
+            ],
+            [
+                {
+                    label: t('header.menu.switchAccount'),
+                    icon: 'mingcute:group-2-fill',
+                    children: [
+                        ...(props.sessions?.map((session) => ({
+                            label: session.user.name,
+                            avatar: {
+                                src: session.user.image || undefined,
+                                alt: session.user.name,
+                                icon: 'mingcute:user-3-fill',
+                            },
+                            onSelect: () => switchAccount(session.session.token),
+                        })) || []),
+                        {
+                            label: t('header.menu.newAccount'),
+                            icon: 'mingcute:user-add-2-fill',
+                            onSelect: () => login.open(),
+                        },
+                    ],
+                },
+                {
+                    label: t('header.menu.logout'),
+                    icon: 'mingcute:open-door-fill',
+                    onSelect: revoke,
+                },
+            ],
+        ]"
+    >
         <button
             type="button"
             :aria-label="$t('header.userMenu')"

@@ -26,6 +26,13 @@ export default defineI18nLocale(async () => ({
     report: '報告',
     share: 'シェア',
 
+    shareButton: {
+        copyLink: 'リンクをコピー',
+        copied: 'コピーしました',
+        linkCopied: 'リンクがコピーされました',
+        linkCopyFailed: 'リンクのコピーに失敗しました',
+    },
+
     jsWarning:
         'このWebサイトはJavaScriptを使用しています。JavaScriptが無効の場合、正しく表示されません。',
 
