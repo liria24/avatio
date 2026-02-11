@@ -5,6 +5,7 @@ interface Props {
 const { sectionId } = defineProps<Props>()
 
 const { state, save, image, link, updating, syncProfileData } = useUserSettingsProfile()
+const { open } = image.select()
 const { session } = useAuth()
 const username = computed(() => session.value?.user.username || '')
 
@@ -32,12 +33,6 @@ const addLink = () => {
         </h2>
         <UForm :state="state" :schema="userUpdateSchema" @submit="save()">
             <UCard>
-                <template #header>
-                    <h2 class="text-lg leading-none font-semibold text-nowrap">
-                        {{ $t('settings.profile.title') }}
-                    </h2>
-                </template>
-
                 <div class="flex w-full flex-col items-start gap-8 md:flex-row">
                     <div
                         class="flex w-full shrink-0 items-center gap-4 md:w-fit md:flex-col md:items-stretch"
@@ -80,7 +75,7 @@ const addLink = () => {
                                 variant="subtle"
                                 block
                                 :loading="updating"
-                                @click="image.select()"
+                                @click="open()"
                             />
 
                             <UDropdownMenu

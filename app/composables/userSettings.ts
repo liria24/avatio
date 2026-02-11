@@ -123,7 +123,7 @@ export const useUserSettingsProfile = () => {
             reset()
         })
 
-        return open
+        return { open }
     }
 
     const removeImage = async () => {
