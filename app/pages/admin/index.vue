@@ -3,36 +3,30 @@ const { modalFlags } = useAppOverlay()
 
 const { data } = await useFetch('/api/admin/stats', {
     dedupe: 'defer',
-    default: () => ({
-        users: 0,
-        setups: 0,
-        items: 0,
-        feedbacks: 0,
-    }),
 })
 
 const stats = ref([
     {
         title: 'Total Users',
-        value: data.value.users,
+        value: data.value?.users,
         icon: 'mingcute:group-2-fill',
         to: '/admin/users',
     },
     {
         title: 'Active Setups',
-        value: data.value.setups,
+        value: data.value?.setups,
         icon: 'mingcute:sparkles-fill',
         to: '/admin/setups',
     },
     {
         title: 'Total Items',
-        value: data.value.items,
+        value: data.value?.items,
         icon: 'mingcute:package-2-fill',
         to: '/admin/items',
     },
     {
         title: 'Feedbacks',
-        value: data.value.feedbacks,
+        value: data.value?.feedbacks,
         icon: 'mingcute:chat-3-fill',
         to: '/admin/feedbacks',
     },
