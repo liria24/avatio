@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { motion } from 'motion-v'
-
 const { session } = useAuth()
 const route = useRoute()
 const router = useRouter()
@@ -40,60 +38,29 @@ useSchemaOrg([
     <div class="flex w-full flex-col gap-6">
         <UPageHero
             v-if="!session"
-            :ui="{ container: 'pt-18 sm:pt-24 lg:pt-32', title: 'sm:text-6xl' }"
+            :ui="{
+                container: 'pt-18 sm:pt-24 lg:pt-32',
+                title: 'sm:text-6xl wrap-anywhere break-keep',
+            }"
         >
             <template #title>
-                <motion.h1
-                    :initial="{
-                        opacity: 0,
-                        filter: 'blur(30px)',
-                    }"
-                    :animate="{
-                        opacity: 1,
-                        filter: 'blur(0px)',
-                    }"
-                    :transition="{
-                        duration: 0.5,
-                    }"
-                    class="wrap-anywhere break-keep"
+                <span
+                    style="animation-delay: 0.3s"
+                    class="fade-in-blur"
                     v-html="$t('index.hero.title')"
                 />
             </template>
 
             <template #description>
-                <motion.p
-                    :initial="{
-                        opacity: 0,
-                        filter: 'blur(20px)',
-                    }"
-                    :animate="{
-                        opacity: 1,
-                        filter: 'blur(0px)',
-                    }"
-                    :transition="{
-                        duration: 0.5,
-                        delay: 0.3,
-                    }"
-                    class="wrap-anywhere break-keep"
+                <p
+                    style="animation-delay: 0.5s"
+                    class="fade-in-blur wrap-anywhere break-keep"
                     v-html="$t('index.hero.description')"
                 />
             </template>
 
             <template #links>
-                <motion.div
-                    :initial="{
-                        opacity: 0,
-                        filter: 'blur(20px)',
-                    }"
-                    :animate="{
-                        opacity: 1,
-                        filter: 'blur(0px)',
-                    }"
-                    :transition="{
-                        duration: 0.5,
-                        delay: 0.5,
-                    }"
-                >
+                <div style="animation-delay: 0.7s" class="fade-in-blur">
                     <UButton
                         :label="$t('login')"
                         color="neutral"
@@ -101,7 +68,7 @@ useSchemaOrg([
                         class="hover:bg-inverted hover:text-inverted rounded-full px-6 py-2"
                         @click="login.open()"
                     />
-                </motion.div>
+                </div>
             </template>
         </UPageHero>
 
@@ -142,3 +109,21 @@ useSchemaOrg([
         <SetupsList v-else type="latest" />
     </div>
 </template>
+
+<style scoped>
+@keyframes fadeInBlur {
+    from {
+        opacity: 0;
+        filter: blur(30px);
+    }
+    to {
+        opacity: 1;
+        filter: blur(0);
+    }
+}
+
+.fade-in-blur {
+    opacity: 0;
+    animation: fadeInBlur 0.7s ease-out forwards;
+}
+</style>
