@@ -133,6 +133,11 @@ const { data } = await useFetch('/api/admin/stats', {
                                 to: app.repo,
                                 target: '_blank',
                             },
+                            {
+                                to: $localePath('/'),
+                                label: 'Back to Site',
+                                icon: 'mingcute:arrow-left-line',
+                            },
                         ]"
                         orientation="vertical"
                         tooltip
