@@ -3,16 +3,7 @@ definePageMeta({
     middleware: 'session',
 })
 
-const { auth, signOut, getSessions } = useAuth()
-const { accountState, deleteUser: deleteUserAction } = useUserSettings()
 const { t } = useI18n()
-
-const sessions = await getSessions()
-const toast = useToast()
-
-const deleteUser = async () => {
-    await deleteUserAction()
-}
 
 defineSeo({
     title: t('settings.title'),
@@ -21,114 +12,40 @@ defineSeo({
 </script>
 
 <template>
-    <div class="flex flex-col gap-6">
-        <h1 class="text-lg font-medium text-nowrap">{{ $t('settings.title') }}</h1>
+    <UPage :ui="{ center: 'flex flex-col gap-12' }" class="mt-6">
+        <template #right>
+            <UPageAside :ui="{ container: 'flex flex-col gap-6' }" class="h-fit">
+                <UPageLinks
+                    :links="[
+                        {
+                            to: '#profile',
+                            label: $t('settings.profile.title'),
+                        },
+                        {
+                            to: '#shop',
+                            label: $t('settings.shop.title'),
+                        },
+                        {
+                            to: '#account',
+                            label: $t('settings.account.title'),
+                        },
+                        {
+                            to: '#site',
+                            label: $t('settings.site.title'),
+                        },
+                    ]"
+                />
+            </UPageAside>
+        </template>
 
-        <SettingProfile />
+        <SettingProfile section-id="profile" />
 
-        <SettingShop />
+        <SettingShop section-id="shop" />
 
-        <UCard>
-            <template #header>
-                <h2 class="text-lg leading-none font-semibold text-nowrap">
-                    {{ $t('settings.account.title') }}
-                </h2>
-            </template>
+        <SettingAccount section-id="account" />
 
-            <div class="flex w-full flex-col gap-6">
-                <div class="flex w-full items-center justify-between gap-2">
-                    <div class="flex flex-col gap-1">
-                        <h3 class="text-sm font-semibold">
-                            {{ $t('settings.account.logoutOthers') }}
-                        </h3>
-                        <p class="text-muted text-xs">
-                            {{ $t('settings.account.logoutOthersDesc') }}
-                        </p>
-                    </div>
-                    <UButton
-                        :label="$t('settings.account.logoutOthersButton')"
-                        color="neutral"
-                        variant="subtle"
-                        @click="auth.revokeOtherSessions()"
-                    />
-                </div>
+        <USeparator />
 
-                <div
-                    v-if="(sessions?.length || 0) > 1"
-                    class="flex w-full items-center justify-between gap-2"
-                >
-                    <div class="flex flex-col gap-1">
-                        <h3 class="text-sm font-semibold">
-                            {{ $t('settings.account.logoutAll') }}
-                        </h3>
-                        <p class="text-muted text-xs">
-                            {{ $t('settings.account.logoutAllDesc') }}
-                        </p>
-                    </div>
-                    <UButton
-                        :label="$t('settings.account.logoutAllButton')"
-                        color="neutral"
-                        variant="subtle"
-                        @click="signOut()"
-                    />
-                </div>
-            </div>
-        </UCard>
-
-        <UCard variant="soft">
-            <template #header>
-                <h2 class="text-lg leading-none font-semibold text-nowrap">
-                    {{ $t('settings.dangerZone.title') }}
-                </h2>
-            </template>
-
-            <div class="flex w-full items-center justify-between gap-2">
-                <div class="flex flex-col gap-1">
-                    <h3 class="text-sm font-semibold">
-                        {{ $t('settings.dangerZone.deleteAccount') }}
-                    </h3>
-                    <p class="text-muted text-xs">
-                        {{ $t('settings.dangerZone.deleteAccountDesc') }}
-                    </p>
-                </div>
-                <UModal
-                    v-model:open="accountState.modalDeleteUser"
-                    :title="$t('modal.deleteAccount.title')"
-                >
-                    <UButton
-                        :label="$t('settings.dangerZone.deleteAccount')"
-                        color="error"
-                        variant="subtle"
-                    />
-
-                    <template #body>
-                        <UAlert
-                            icon="mingcute:delete-2-fill"
-                            :title="$t('modal.deleteAccount.confirm')"
-                            :description="$t('modal.deleteAccount.description')"
-                            color="error"
-                            variant="subtle"
-                        />
-                    </template>
-
-                    <template #footer>
-                        <div class="flex w-full items-center justify-end gap-2">
-                            <UButton
-                                :label="$t('cancel')"
-                                variant="ghost"
-                                @click="accountState.modalDeleteUser = false"
-                            />
-                            <UButton
-                                :label="$t('delete')"
-                                color="error"
-                                variant="solid"
-                                loading-auto
-                                @click="deleteUser"
-                            />
-                        </div>
-                    </template>
-                </UModal>
-            </div>
-        </UCard>
-    </div>
+        <SettingSite section-id="site" />
+    </UPage>
 </template>

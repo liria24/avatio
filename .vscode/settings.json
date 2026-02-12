@@ -21,5 +21,9 @@
     },
     "[jsonc]": {
         "editor.defaultFormatter": "oxc.oxc-vscode"
-    }
+    },
+    "i18n-ally.enabledParsers": ["json", "json5"],
+    "i18n-ally.localesPaths": ["./i18n/locales"],
+    "i18n-ally.annotations": true,
+    "i18n-ally.keystyle": "nested"
 }

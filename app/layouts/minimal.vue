@@ -1,7 +1,5 @@
 <script lang="ts" setup>
-const { getSession, getSessions } = useAuth()
-const session = await getSession()
-const sessions = await getSessions()
+const { session, sessions } = useAuth()
 const route = useRoute()
 const { login } = useAppOverlay()
 </script>

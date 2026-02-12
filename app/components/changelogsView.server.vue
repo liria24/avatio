@@ -1,27 +1,19 @@
 <script setup lang="ts">
-interface Props {
-    versions: {
-        title: string
-        description: string
-        date: string
-        content?: string
-    }[]
-}
-const { versions } = defineProps<Props>()
+const { changelogs } = useChangelogs()
 </script>
 
 <template>
     <UChangelogVersions>
         <UChangelogVersion
-            v-for="(version, index) in versions"
+            v-for="(changelog, index) in changelogs"
             :key="index"
-            v-bind="version"
+            v-bind="changelog"
             :ui="{ container: 'ml-40 mr-0 max-w-full', title: 'text-3xl sentence' }"
         >
             <template #description>
                 <MDC
-                    v-if="version.content"
-                    :value="version.content"
+                    v-if="changelog.content"
+                    :value="changelog.content"
                     class="sentence w-full max-w-full"
                 />
             </template>

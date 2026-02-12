@@ -187,21 +187,20 @@ export default defineNuxtConfig({
 
     i18n: {
         baseUrl,
-        langDir: './',
         defaultLocale: 'ja',
         locales: [
             {
                 code: 'en',
                 language: 'en-US',
                 name: 'English (US)',
-                file: 'en-US.ts',
+                file: 'en-US.json',
                 icon: 'twemoji:flag-united-states',
             },
             {
                 code: 'ja',
                 language: 'ja-JP',
                 name: '日本語',
-                file: 'ja-JP.ts',
+                file: 'ja-JP.json',
                 icon: 'twemoji:flag-japan',
             },
         ],
@@ -209,6 +208,9 @@ export default defineNuxtConfig({
             redirectOn: 'root',
             useCookie: true,
             cookieKey: 'i18n_redirected',
+        },
+        compilation: {
+            strictMessage: false,
         },
     },
 

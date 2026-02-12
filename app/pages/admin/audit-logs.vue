@@ -119,18 +119,30 @@ const { data, status, refresh } = await useFetch('/api/admin/audit-log', {
                     v-for="log in data.data"
                     :key="`log-${log.id}`"
                     :icon="auditLogAttributes[log.action].icon"
-                    :color="auditLogAttributes[log.action].color"
+                    color="neutral"
                     variant="subtle"
                     :ui="{
                         wrapper: 'gap-2',
                     }"
                 >
                     <template #title>
-                        <div class="flex w-full items-center justify-between gap-2">
+                        <div class="flex w-full items-center gap-2">
                             <span class="font-medium">
                                 {{ auditLogAttributes[log.action].label }}
                             </span>
 
+                            <NuxtLink
+                                v-if="log.user"
+                                :to="`/@${log.user.username}`"
+                                class="ml-auto"
+                            >
+                                <UAvatar
+                                    :src="log.user.image || undefined"
+                                    :alt="log.user.name"
+                                    icon="mingcute:user-3-fill"
+                                    size="2xs"
+                                />
+                            </NuxtLink>
                             <NuxtTime
                                 :datetime="log.createdAt"
                                 relative
@@ -143,22 +155,6 @@ const { data, status, refresh } = await useFetch('/api/admin/audit-log', {
                     <template #description>
                         <div class="flex flex-col gap-3">
                             <p class="text-toned">{{ log.details }}</p>
-
-                            <NuxtLink
-                                v-if="log.user"
-                                :to="`/@${log.user.username}`"
-                                class="text-muted flex items-center gap-2"
-                            >
-                                <UAvatar
-                                    :src="log.user.image || undefined"
-                                    :alt="log.user.name"
-                                    icon="mingcute:user-3-fill"
-                                    size="2xs"
-                                />
-                                <span class="text-xs font-medium">
-                                    {{ log.user.name }}
-                                </span>
-                            </NuxtLink>
                         </div>
                     </template>
                 </UAlert>

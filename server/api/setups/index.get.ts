@@ -1,19 +1,32 @@
+import { bookmarks } from '@@/database/schema'
 import { sql } from 'drizzle-orm'
 import { z } from 'zod'
 
 const query = z.object({
     q: z.string().optional(),
-    orderBy: z.enum(['createdAt', 'name']).optional().default('createdAt'),
+    orderBy: z.enum(['createdAt', 'name']).optional(),
     sort: z.enum(['asc', 'desc']).optional().default('desc'),
     username: z.string().optional(),
     itemId: z.union([z.string(), z.array(z.string())]).optional(),
     tag: z.union([z.string(), z.array(z.string())]).optional(),
+    bookmarked: z.union([z.boolean(), z.stringbool()]).optional(),
     page: z.coerce.number().min(1).optional().default(1),
     limit: z.coerce.number().min(1).max(API_LIMIT_MAX).optional().default(SETUPS_API_DEFAULT_LIMIT),
 })
 
-export default promiseEventHandler<PaginationResponse<Setup[]>>(async () => {
-    const { q, orderBy, sort, username, itemId, tag, page, limit } = await validateQuery(query)
+export default sessionEventHandler<PaginationResponse<Setup[]>>(async ({ session }) => {
+    const { q, orderBy, sort, username, itemId, tag, bookmarked, page, limit } =
+        await validateQuery(query)
+
+    if (bookmarked && !session)
+        throw createError({
+            status: 401,
+            statusText: 'Unauthorized',
+        })
+
+    // bookmarked === true かつ orderByが未指定の場合、bookmarks.createdAtでソート
+    const effectiveOrderBy = bookmarked && !orderBy ? 'bookmarkCreatedAt' : orderBy || 'createdAt'
+    const effectiveSort = sort
 
     const offset = (page - 1) * limit
 
@@ -34,10 +47,19 @@ export default promiseEventHandler<PaginationResponse<Setup[]>>(async () => {
                 itemId: itemId ? { in: Array.isArray(itemId) ? itemId : [itemId] } : undefined,
             },
             tags: tag ? { tag: { in: Array.isArray(tag) ? tag : [tag] } } : undefined,
+            bookmarks: bookmarked && session ? { userId: { eq: session.user.id } } : undefined,
         },
-        orderBy: {
-            [orderBy]: sort,
-        },
+        orderBy:
+            effectiveOrderBy === 'bookmarkCreatedAt'
+                ? (table) => sql`(
+                    SELECT ${bookmarks.createdAt}
+                    FROM ${bookmarks}
+                    WHERE ${bookmarks.setupId} = ${table.id}
+                    AND ${bookmarks.userId} = ${session!.user.id}
+                ) ${effectiveSort === 'asc' ? sql`ASC` : sql`DESC`}`
+                : {
+                      [effectiveOrderBy]: effectiveSort,
+                  },
         columns: {
             id: true,
             createdAt: true,

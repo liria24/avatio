@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { VueDraggable } from 'vue-draggable-plus'
 
-const { getSession } = useAuth()
-const session = await getSession()
+const { session } = useAuth()
 const { createChangelog } = useAdminActions()
 const toast = useToast()
 const { t } = useI18n()

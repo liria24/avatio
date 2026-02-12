@@ -16,7 +16,7 @@ const firstAvatar = computed(() => setup.items.find((item) => item.category === 
 
 const avatarName = computed(() => {
     const avatar = firstAvatar.value
-    if (!avatar) return t('search.unknownAvatar')
+    if (!avatar) return t('unknownAvatar')
     return avatar.niceName || avatarShortName(avatar.name)
 })
 
@@ -47,8 +47,7 @@ const initializeThemeColor = () => {
     dominantColor.value = themeColors?.[0] || ''
 }
 
-// ライフサイクル
-onMounted(initializeThemeColor)
+initializeThemeColor()
 </script>
 
 <template>
@@ -61,7 +60,7 @@ onMounted(initializeThemeColor)
                 dominantColor
                     ? 'link-with-color'
                     : 'hover:ring-accented hover:bg-elevated focus:ring-accented focus:bg-elevated',
-                className
+                className,
             )
         "
         :style="dominantColor ? { '--dominant-color': dominantColor } : undefined"
@@ -109,61 +108,33 @@ onMounted(initializeThemeColor)
 
         <!-- フッター部分（共通） -->
         <div class="flex w-full items-center">
-            <!-- 画像がない場合のアバター表示 -->
-            <NuxtImg
-                v-if="!hasImages && firstAvatar"
-                v-slot="{ isLoaded, src, imgAttrs }"
-                :src="firstAvatar.image || undefined"
-                :width="88"
-                :height="88"
-                format="avif"
-                custom
-            >
-                <UTooltip v-if="isLoaded" :text="avatarName" :delay-duration="100">
-                    <img
-                        v-bind="imgAttrs"
-                        :src
-                        alt=""
-                        loading="lazy"
-                        fetchpriority="low"
-                        class="m-1 aspect-square size-14 shrink-0 rounded-lg object-cover md:size-20"
-                    />
-                </UTooltip>
-
-                <USkeleton
-                    v-else
-                    class="my-1.5 ml-1.5 aspect-square h-14 shrink-0 rounded-lg md:h-20"
+            <UTooltip v-if="!hasImages && firstAvatar" :text="avatarName" :delay-duration="100">
+                <!-- 画像がない場合のアバター表示 -->
+                <NuxtImg
+                    :src="firstAvatar.image || undefined"
+                    alt=""
+                    :width="88"
+                    :height="88"
+                    format="avif"
+                    class="m-1 aspect-square size-14 shrink-0 rounded-lg object-cover md:size-20"
                 />
-            </NuxtImg>
+            </UTooltip>
 
             <!-- アバターがない場合のプレースホルダー -->
-            <div
+            <UTooltip
                 v-else-if="!firstAvatar && !hasImages"
-                class="text-muted bg-accented my-1.5 ml-1.5 flex size-14 shrink-0 items-center justify-center rounded-lg"
+                :text="t('unknownAvatar')"
+                :delay-duration="100"
             >
-                ?
-            </div>
+                <div
+                    class="text-muted bg-muted m-1 flex size-14 shrink-0 items-center justify-center rounded-lg md:size-20"
+                >
+                    <Icon name="mingcute:question-fill" size="32" class="text-dimmed" />
+                </div>
+            </UTooltip>
 
             <!-- 画像がある場合のメタ情報 -->
-            <div v-if="hasImages" class="flex w-full items-center justify-end gap-2 px-2 pb-2">
-                <UTooltip :delay-duration="0">
-                    <NuxtTime
-                        :datetime="setup.createdAt"
-                        relative
-                        :locale
-                        class="text-muted text-xs whitespace-nowrap"
-                    />
-
-                    <template #content>
-                        <NuxtTime
-                            :datetime="setup.createdAt"
-                            date-style="medium"
-                            time-style="short"
-                            :locale
-                        />
-                    </template>
-                </UTooltip>
-
+            <div v-if="hasImages" class="flex w-full items-center gap-2 px-2 pb-2">
                 <UPopover mode="hover">
                     <UAvatar
                         :src="setup.user.image || undefined"
@@ -198,6 +169,24 @@ onMounted(initializeThemeColor)
                         </NuxtLink>
                     </template>
                 </UPopover>
+
+                <UTooltip :delay-duration="0">
+                    <NuxtTime
+                        :datetime="setup.createdAt"
+                        relative
+                        :locale
+                        class="text-muted text-xs whitespace-nowrap"
+                    />
+
+                    <template #content>
+                        <NuxtTime
+                            :datetime="setup.createdAt"
+                            date-style="medium"
+                            time-style="short"
+                            :locale
+                        />
+                    </template>
+                </UTooltip>
             </div>
 
             <!-- 画像がない場合のメタ情報 -->

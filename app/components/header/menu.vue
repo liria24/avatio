@@ -11,7 +11,6 @@ const toast = useToast()
 const colorMode = useColorMode()
 const { login, feedback } = useAppOverlay()
 const { t, locales, setLocale } = useI18n()
-const localePath = useLocalePath()
 
 const switchAccount = async (sessionToken: string) => {
     await auth.multiSession.setActive({ sessionToken })
@@ -29,7 +28,7 @@ const switchAccount = async (sessionToken: string) => {
         :items="[
             [
                 {
-                    to: localePath(`/@${props.session.user.username}`),
+                    to: $localePath(`/@${props.session.user.username}`),
                     slot: 'user',
                 },
             ],
@@ -37,12 +36,12 @@ const switchAccount = async (sessionToken: string) => {
                 {
                     label: t('header.menu.bookmarks'),
                     icon: 'mingcute:bookmark-fill',
-                    to: localePath('/bookmarks'),
+                    to: $localePath('/bookmarks'),
                 },
                 {
                     label: t('header.menu.settings'),
                     icon: 'mingcute:settings-1-fill',
-                    to: localePath('/settings'),
+                    to: $localePath('/settings'),
                 },
             ],
             [
@@ -140,7 +139,7 @@ const switchAccount = async (sessionToken: string) => {
                     alt: session.user.name,
                     icon: 'mingcute:user-3-fill',
                 }"
-                :ui="{ description: 'font-mono' }"
+                :ui="{ description: 'font-mono max-w-32 break-all line-clamp-1' }"
             />
         </template>
     </UDropdownMenu>

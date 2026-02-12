@@ -7,8 +7,7 @@ const props = defineProps<Props>()
 const emit = defineEmits(['close'])
 
 const { t } = useI18n()
-const { getSession } = useAuth()
-const session = await getSession()
+const { session } = useAuth()
 const toast = useToast()
 const { hideSetup: hideSetupAction } = useAdminActions()
 

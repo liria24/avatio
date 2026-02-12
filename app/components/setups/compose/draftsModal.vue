@@ -44,7 +44,7 @@ watch(deleteMode, (value) => {
     <UModal
         v-model:open="open"
         :title="$t('setup.compose.drafts.title')"
-        :description="$t('setup.compose.draftsDescription')"
+        :description="$t('setup.compose.draftsDescription', { maxSetupDrafts: MAX_SETUP_DRAFTS })"
     >
         <slot />
 

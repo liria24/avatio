@@ -1,9 +1,8 @@
 <script lang="ts" setup>
-const { getSession } = useAuth()
+const { session } = useAuth()
 const { locale } = useI18n()
 const route = useRoute()
 const { login, reportUser } = useAppOverlay()
-const session = await getSession()
 
 const username = route.params.username as string
 
@@ -17,13 +16,13 @@ if (userStatus.value === 'success' && !user.value)
 
 const links = computed(() =>
     user.value?.links?.map((link) => {
-        const attributes = linkAttributes(link)
+        const attributes = useLinkAttributes(link)
         return {
             label: attributes.label,
             icon: attributes.icon,
             to: link,
         }
-    })
+    }),
 )
 
 onBeforeRouteLeave(() => {
@@ -99,9 +98,9 @@ if (user.value) {
 
                     <div class="flex flex-col gap-1">
                         <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
-                            <p class="text-2xl font-bold">
+                            <h1 class="text-2xl font-bold">
                                 {{ user.name }}
-                            </p>
+                            </h1>
                             <UserBadges v-if="user.badges" :badges="user.badges" />
                         </div>
 
@@ -182,17 +181,21 @@ if (user.value) {
                     <NuxtImg
                         v-slot="{ isLoaded, src, imgAttrs }"
                         :src="shop.shop.image || undefined"
-                        :alt="shop.shop.name"
                         :width="32"
                         :height="32"
-                        format="webp"
+                        format="avif"
                         fit="cover"
-                        loading="lazy"
-                        fetchpriority="low"
                         custom
-                        class="aspect-square size-8 shrink-0 rounded-lg object-cover"
                     >
-                        <img v-if="isLoaded" v-bind="imgAttrs" :src="src" />
+                        <img
+                            v-if="isLoaded"
+                            v-bind="imgAttrs"
+                            :src
+                            alt=""
+                            loading="lazy"
+                            fetchpriority="low"
+                            class="aspect-square size-8 shrink-0 rounded-lg object-cover"
+                        />
                         <USkeleton v-else class="aspect-square size-8 shrink-0 rounded-lg" />
                     </NuxtImg>
                     <div class="flex flex-col items-start gap-1">
@@ -221,7 +224,7 @@ if (user.value) {
                 </h2>
             </div>
 
-            <SetupsListUser :username="user.username" />
+            <SetupsList type="owned" :username="user.username" />
         </div>
     </div>
 </template>

@@ -1,6 +1,6 @@
 import { parseURL } from 'ufo'
 
-export default (url: string) => {
+export const useLinkAttributes = (url: string) => {
     const { links } = useAppConfig()
 
     const parsed = parseURL(url)

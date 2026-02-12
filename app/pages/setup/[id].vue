@@ -194,7 +194,7 @@ if (data.value) {
                                     :size="22"
                                     class="text-muted shrink-0"
                                 />
-                                <h2 class="pb-0.5 text-lg leading-none font-semibold text-nowrap">
+                                <h2 class="text-lg leading-none font-semibold text-nowrap">
                                     {{
                                         itemCategory[key as keyof typeof itemCategory]?.label || key
                                     }}

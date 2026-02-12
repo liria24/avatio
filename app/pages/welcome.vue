@@ -4,9 +4,8 @@ definePageMeta({
     layout: 'minimal',
 })
 
-const { getSession } = useAuth()
-const session = await getSession()
-const { updateUsername } = useUserSettings()
+const { session } = useAuth()
+const { updateUsername } = useUserSettingsProfile()
 const localePath = useLocalePath()
 const { t } = useI18n()
 
@@ -14,7 +13,7 @@ const input = ref<string>(session.value?.user.username || '')
 const available = ref<boolean>(false)
 
 const updateId = async (username: string) => {
-    const success = await updateUsername(session.value!.user.username!, username)
+    const success = await updateUsername(username)
     if (success) {
         await navigateTo(localePath('/'), { external: true })
     }

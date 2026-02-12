@@ -1,7 +1,5 @@
 <script lang="ts" setup>
-const { getSession } = useAuth()
-const session = await getSession()
-const colorMode = useColorMode()
+const { session } = useAuth()
 </script>
 
 <template>
