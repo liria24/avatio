@@ -36,7 +36,7 @@ const switchAccount = async (sessionToken: string) => {
                 {
                     label: t('header.menu.bookmarks'),
                     icon: 'mingcute:bookmark-fill',
-                    to: $localePath('/bookmarks'),
+                    to: $localePath('/?tab=bookmarked'),
                 },
                 {
                     label: t('header.menu.settings'),

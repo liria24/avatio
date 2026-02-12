@@ -1,8 +1,60 @@
+import type { NitroRouteConfig } from 'nitropack'
+
 import { defineOrganization } from 'nuxt-schema-org/schema'
+import { withLeadingSlash } from 'ufo'
 
 const baseUrl = import.meta.env.PUBLIC_SITE_URL || 'http://localhost:3000'
 const title = 'Avatio'
 const description = 'あなたのアバター改変を共有しよう'
+
+const availableI18nLocales = ['en']
+
+const baseRouteRules: { [path: string]: NitroRouteConfig } = {
+    '/admin/**': {
+        appLayout: 'dashboard',
+        appMiddleware: 'admin',
+    },
+    '/faq': {
+        prerender: true,
+    },
+    '/terms': {
+        prerender: true,
+    },
+    '/privacy-policy': {
+        prerender: true,
+    },
+    '/on-maintenance': {
+        prerender: true,
+    },
+    '/setup': {
+        redirect: '/',
+    },
+    '/setup/edit': {
+        redirect: '/setup/compose',
+    },
+    '/bookmarks': {
+        redirect: '/?tab=bookmarked',
+    },
+}
+
+const routeRules: { [path: string]: NitroRouteConfig } = {
+    ...baseRouteRules,
+    ...Object.fromEntries(
+        availableI18nLocales.flatMap((locale) =>
+            Object.entries(baseRouteRules).map(([path, config]) => {
+                const localizedPath = withLeadingSlash(`${locale}${path}`)
+                const localizedConfig = { ...config }
+
+                if (localizedConfig.redirect && typeof localizedConfig.redirect === 'string')
+                    localizedConfig.redirect = withLeadingSlash(
+                        `${locale}${localizedConfig.redirect}`,
+                    )
+
+                return [localizedPath, localizedConfig]
+            }),
+        ),
+    ),
+}
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -48,30 +100,7 @@ export default defineNuxtConfig({
         },
     },
 
-    routeRules: {
-        '/admin/**': {
-            appLayout: 'dashboard',
-            appMiddleware: 'admin',
-        },
-        '/faq': {
-            prerender: true,
-        },
-        '/terms': {
-            prerender: true,
-        },
-        '/privacy-policy': {
-            prerender: true,
-        },
-        '/on-maintenance': {
-            prerender: true,
-        },
-        '/setup': {
-            redirect: '/',
-        },
-        '/setup/edit': {
-            redirect: '/setup/compose',
-        },
-    },
+    routeRules,
 
     nitro: {
         preset: 'vercel',

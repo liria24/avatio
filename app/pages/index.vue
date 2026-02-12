@@ -14,6 +14,14 @@ const changeTab = (newTab: Tab) => {
     router.replace({ query: { tab: newTab !== 'latest' ? newTab : undefined } })
 }
 
+watch(
+    () => route.query.tab,
+    (newTab) => {
+        if (newTab === 'latest' || newTab === 'owned' || newTab === 'bookmarked') tab.value = newTab
+        else tab.value = 'latest'
+    },
+)
+
 defineSeo({
     type: 'website',
     title: t('index.seo.title'),
@@ -73,7 +81,6 @@ useSchemaOrg([
         </UPageHero>
 
         <div v-if="session" class="flex w-full flex-col items-start gap-5">
-            <h1 class="text-lg font-medium text-nowrap">{{ $t('index.tabs.latest') }}</h1>
             <div class="flex flex-wrap items-center gap-1">
                 <UButton
                     :label="$t('index.tabs.latest')"
@@ -106,7 +113,10 @@ useSchemaOrg([
             <SetupsList :type="tab" />
         </div>
 
-        <SetupsList v-else type="latest" />
+        <template v-else>
+            <h1 class="text-lg font-medium text-nowrap">{{ $t('index.tabs.latest') }}</h1>
+            <SetupsList type="latest" />
+        </template>
     </div>
 </template>
 

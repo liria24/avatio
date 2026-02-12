@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 definePageMeta({
-    middleware: 'session',
+    middleware: 'authed',
     layout: 'minimal',
 })
 
@@ -29,7 +29,7 @@ watch(
             saveDraft()
         }
     },
-    { deep: true, flush: 'post' }
+    { deep: true, flush: 'post' },
 )
 
 const publishedSetupId = ref<number | null>(null)
@@ -125,7 +125,7 @@ await initialize({
             :class="
                 cn(
                     'ring-accented static top-0 bottom-4 left-0 flex flex-col overflow-y-auto rounded-lg',
-                    'lg:absolute lg:w-88 lg:ring-2'
+                    'lg:absolute lg:w-88 lg:ring-2',
                 )
             "
         >

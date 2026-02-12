@@ -8,10 +8,10 @@ const { localeProperties } = useI18n()
 const slug = computed(() =>
     Array.isArray(route.params.slug)
         ? withLeadingSlash(String(route.params.slug.join('/')))
-        : withLeadingSlash(String(route.params.slug))
+        : withLeadingSlash(String(route.params.slug)),
 )
 
-const { page, isFallback } = await useContentPage(slug.value)
+const { page, isFallback } = await useContentPage(slug)
 if (!page.value)
     showError({
         status: 404,

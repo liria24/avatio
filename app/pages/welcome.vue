@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 definePageMeta({
-    middleware: 'session',
+    middleware: 'authed',
     layout: 'minimal',
 })
 
