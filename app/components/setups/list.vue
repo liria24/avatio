@@ -3,14 +3,14 @@ interface Props {
     type?: 'latest' | 'owned' | 'bookmarked'
     username?: string
 }
-const props = defineProps<Props>()
+const { type, username } = defineProps<Props>()
 
 const { session } = useAuth()
 const { isMobile } = useDevice()
 
 // Props Mode: typeプロップがある場合、内部でuseSetupsListを使用
 // Model Mode: typeプロップがない場合、外部からsetups/loadingモデルを受け取る
-const isPropsMode = computed(() => !!props.type)
+const isPropsMode = computed(() => !!type)
 
 const modelSetups = defineModel<SerializedSetup[]>('setups', {
     default: [],
@@ -24,16 +24,14 @@ const propsResult = ref<ReturnType<typeof useSetupsList> | null>(null)
 
 // Props Modeの初期化関数
 const initializePropsMode = async () => {
-    if (!props.type) return
+    if (!type) return
 
     // ownedタイプでusernameが未指定の場合、自動的にセッションから取得
-    const username =
-        props.type === 'owned' && !props.username
-            ? (session.value?.user.username ?? undefined)
-            : props.username
+    const effectiveUsername =
+        type === 'owned' && !username ? (session.value?.user.username ?? undefined) : username
 
-    const result = useSetupsList(props.type, {
-        username,
+    const result = useSetupsList(type, {
+        username: effectiveUsername,
         immediate: false,
     })
 
@@ -43,14 +41,14 @@ const initializePropsMode = async () => {
 }
 
 // 初回実行
-if (props.type) await initializePropsMode()
+if (type) await initializePropsMode()
 
-// props.typeまたはprops.usernameが変更されたら再初期化
+// typeまたはusernameが変更されたら再初期化
 watch(
-    () => [props.type, props.username] as const,
+    () => [type, username] as const,
     async () => {
-        if (props.type) await initializePropsMode()
-    }
+        if (type) await initializePropsMode()
+    },
 )
 
 const setups = computed<SerializedSetup[]>(() => {

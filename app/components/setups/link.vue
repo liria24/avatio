@@ -47,8 +47,7 @@ const initializeThemeColor = () => {
     dominantColor.value = themeColors?.[0] || ''
 }
 
-// ライフサイクル
-onMounted(initializeThemeColor)
+initializeThemeColor()
 </script>
 
 <template>
@@ -61,7 +60,7 @@ onMounted(initializeThemeColor)
                 dominantColor
                     ? 'link-with-color'
                     : 'hover:ring-accented hover:bg-elevated focus:ring-accented focus:bg-elevated',
-                className
+                className,
             )
         "
         :style="dominantColor ? { '--dominant-color': dominantColor } : undefined"
