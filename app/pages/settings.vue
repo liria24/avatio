@@ -18,10 +18,6 @@ defineSeo({
                 <UPageLinks
                     :links="[
                         {
-                            to: '#site',
-                            label: $t('settings.site.title'),
-                        },
-                        {
                             to: '#profile',
                             label: $t('settings.profile.title'),
                         },
@@ -33,19 +29,23 @@ defineSeo({
                             to: '#account',
                             label: $t('settings.account.title'),
                         },
+                        {
+                            to: '#site',
+                            label: $t('settings.site.title'),
+                        },
                     ]"
                 />
             </UPageAside>
         </template>
-
-        <SettingSite section-id="site" />
-
-        <USeparator />
 
         <SettingProfile section-id="profile" />
 
         <SettingShop section-id="shop" />
 
         <SettingAccount section-id="account" />
+
+        <USeparator />
+
+        <SettingSite section-id="site" />
     </UPage>
 </template>

@@ -6,11 +6,23 @@ interface ProfileState {
     links: string[]
 }
 
+const useCurrentUser = () => {
+    const { session } = useAuth()
+    const {
+        data: userData,
+        refresh: refreshUserData,
+        status: userDataStatus,
+    } = useUser(session.value?.user.username || '')
+
+    return { userData, refreshUserData, userDataStatus }
+}
+
 export const useUserSettingsProfile = () => {
     const { t } = useI18n()
     const toast = useToast()
     const { session } = useAuth()
     const username = computed(() => session.value?.user.username || '')
+    const { userData, refreshUserData } = useCurrentUser()
 
     const state = useState<ProfileState>('user-settings-profile-state', () => ({
         username: '',
@@ -20,7 +32,6 @@ export const useUserSettingsProfile = () => {
         links: [],
     }))
     const updating = useState<boolean>('user-settings-profile-updating', () => false)
-    const userData = useState<SerializedUser | null>('user-settings-data', () => null)
 
     const update = async (username: string, data: Partial<ProfileState>) => {
         try {
@@ -137,30 +148,16 @@ export const useUserSettingsProfile = () => {
         }
     }
 
-    const syncProfileData = async (currentUsername: string | null) => {
-        if (!currentUsername) {
-            // Clear data when logged out
-            userData.value = null
-            state.value.username = ''
-            state.value.name = ''
-            state.value.image = null
-            state.value.bio = ''
-            state.value.links = []
-            return
-        }
-
+    const syncProfileData = async () => {
         try {
-            const data = await $fetch<SerializedUser>(`/api/users/${currentUsername}`)
-
-            // Update user data
-            userData.value = data
+            await refreshUserData()
 
             // Sync profile state
-            state.value.username = data.username || ''
-            state.value.name = data.name || ''
-            state.value.image = data.image || null
-            state.value.bio = data.bio || ''
-            state.value.links = data.links || []
+            state.value.username = userData.value?.username || ''
+            state.value.name = userData.value?.name || ''
+            state.value.image = userData.value?.image || null
+            state.value.bio = userData.value?.bio || ''
+            state.value.links = userData.value?.links || []
         } catch (error) {
             console.error('Error fetching user data:', error)
         }
@@ -212,10 +209,7 @@ export const useUserSettingsProfile = () => {
 export const useUserSettingsShop = () => {
     const { t } = useI18n()
     const toast = useToast()
-    const { session } = useAuth()
-    const username = computed(() => session.value?.user.username || '')
-
-    const userData = useState<SerializedUser | null>('user-settings-data', () => null)
+    const { userData, refreshUserData } = useCurrentUser()
 
     const state = useState('user-settings-shop-state', () => ({
         itemUrl: '',
@@ -239,17 +233,6 @@ export const useUserSettingsShop = () => {
         return result?.platform === 'booth'
     })
 
-    const fetchUserData = async () => {
-        if (!username.value) return
-
-        try {
-            const data = await $fetch<SerializedUser>(`/api/users/${username.value}`)
-            userData.value = data
-        } catch (error) {
-            console.error('Error fetching user data:', error)
-        }
-    }
-
     const verify = async () => {
         if (!verifiable.value) return false
 
@@ -261,7 +244,7 @@ export const useUserSettingsShop = () => {
                 body: { url: state.value.itemUrl },
             })
             toast.add({ title: t('toast.userSettings.shopVerified'), color: 'success' })
-            await fetchUserData()
+            await refreshUserData()
             return true
         } catch (error) {
             console.error('Error verifying shop:', error)
@@ -281,7 +264,7 @@ export const useUserSettingsShop = () => {
                 body: { shopId },
             })
             toast.add({ title: t('toast.userSettings.shopUnverified'), color: 'success' })
-            await fetchUserData()
+            await refreshUserData()
             return true
         } catch (error) {
             console.error('Error unverifying shop:', error)

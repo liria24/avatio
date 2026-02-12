@@ -12,9 +12,9 @@ const modalDeleteUser = ref(false)
 
 <template>
     <section :id="sectionId" class="flex flex-col gap-4">
-        <h2 class="text-muted text-sm leading-none font-semibold text-nowrap">
+        <h1 class="text-muted text-sm leading-none font-semibold text-nowrap">
             {{ $t('settings.account.title') }}
-        </h2>
+        </h1>
 
         <UCard>
             <div class="flex w-full flex-col gap-6">

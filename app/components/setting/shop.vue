@@ -104,19 +104,9 @@ watch(modalVerify, async (value) => {
     </UModal>
 
     <section :id="sectionId" class="flex flex-col gap-4">
-        <div class="flex w-full items-center justify-between">
-            <h2 class="text-muted text-sm leading-none font-semibold text-nowrap">
-                {{ $t('settings.shop.title') }}
-            </h2>
-
-            <UButton
-                icon="mingcute:add-line"
-                :label="$t('settings.shop.newShop')"
-                color="neutral"
-                variant="soft"
-                @click="modalVerify = true"
-            />
-        </div>
+        <h1 class="text-muted text-sm leading-none font-semibold text-nowrap">
+            {{ $t('settings.shop.title') }}
+        </h1>
 
         <UCard>
             <div class="flex flex-col gap-2">
@@ -130,7 +120,7 @@ watch(modalVerify, async (value) => {
                 <div
                     v-for="shopItem in userData?.shops"
                     :key="shopItem.shop.id"
-                    class="bg-muted flex items-center gap-3 rounded-xl p-3"
+                    class="bg-muted flex items-center gap-3 rounded-lg p-3"
                 >
                     <ULink
                         :to="url(shopItem.shop.id, shopItem.shop.platform)"
@@ -138,7 +128,7 @@ watch(modalVerify, async (value) => {
                     >
                         <NuxtImg
                             :src="shopItem.shop.image || undefined"
-                            :alt="shopItem.shop.name"
+                            alt=""
                             :width="32"
                             :height="32"
                             format="webp"
@@ -205,6 +195,15 @@ watch(modalVerify, async (value) => {
                         </template>
                     </UModal>
                 </div>
+
+                <UButton
+                    icon="mingcute:add-line"
+                    :label="$t('settings.shop.newShop')"
+                    variant="ghost"
+                    block
+                    class="rounded-lg"
+                    @click="modalVerify = true"
+                />
             </div>
         </UCard>
     </section>

@@ -14,10 +14,9 @@ const newLink = ref('')
 watch(
     username,
     async (currentUsername, oldUsername) => {
-        if (!currentUsername || currentUsername !== oldUsername)
-            await syncProfileData(currentUsername || null)
+        if (!currentUsername || currentUsername !== oldUsername) await syncProfileData()
     },
-    { immediate: true }
+    { immediate: true },
 )
 
 const addLink = () => {
@@ -28,9 +27,9 @@ const addLink = () => {
 
 <template>
     <section :id="sectionId" class="flex flex-col gap-4">
-        <h2 class="text-muted text-sm leading-none font-semibold text-nowrap">
+        <h1 class="text-muted text-sm leading-none font-semibold text-nowrap">
             {{ $t('settings.profile.title') }}
-        </h2>
+        </h1>
         <UForm :state="state" :schema="userUpdateSchema" @submit="save()">
             <UCard>
                 <div class="flex w-full flex-col items-start gap-8 md:flex-row">
@@ -50,7 +49,7 @@ const addLink = () => {
                                 v-if="isLoaded"
                                 v-bind="imgAttrs"
                                 :src
-                                :alt="state.name"
+                                :alt="$t('settings.profile.avatarAlt')"
                                 loading="eager"
                                 fetchpriority="high"
                                 class="aspect-square size-24 shrink-0 rounded-full object-cover md:size-48"
