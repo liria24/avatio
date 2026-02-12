@@ -11,7 +11,12 @@ const slug = computed(() =>
         : withLeadingSlash(String(route.params.slug)),
 )
 
-const { page, isFallback } = await useContentPage(slug)
+const { page, isFallback, refresh } = await useContentPage(slug.value)
+
+watch(slug, async () => {
+    await refresh()
+})
+
 if (!page.value)
     showError({
         status: 404,

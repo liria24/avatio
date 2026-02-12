@@ -2,21 +2,18 @@ import type { Collections } from '@nuxt/content'
 
 import { withLeadingSlash, withoutLeadingSlash } from 'ufo'
 
-export const useContentPage = async (path: MaybeRefOrGetter<string>) => {
+export const useContentPage = async (path: string) => {
     const { locale } = useI18n()
-    const pathRef = toRef(path)
 
     const { data, refresh, status } = await useAsyncData(
-        () => `page-${locale.value}-${withoutLeadingSlash(pathRef.value)}`,
+        `page-${withoutLeadingSlash(path)}`,
         async () => {
             const collection = ('content_' + locale.value) as keyof Collections
-            const content = await queryCollection(collection)
-                .path(withLeadingSlash(pathRef.value))
-                .first()
+            const content = await queryCollection(collection).path(withLeadingSlash(path)).first()
 
             if (!content && locale.value !== 'ja') {
                 const fallbackContent = await queryCollection('content_ja')
-                    .path(withLeadingSlash(pathRef.value))
+                    .path(withLeadingSlash(path))
                     .first()
                 return { content: fallbackContent, isFallback: true }
             }
@@ -24,7 +21,7 @@ export const useContentPage = async (path: MaybeRefOrGetter<string>) => {
             return { content, isFallback: false }
         },
         {
-            watch: [locale, pathRef],
+            watch: [locale],
         },
     )
 
