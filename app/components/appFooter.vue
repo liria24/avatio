@@ -133,7 +133,7 @@ const { data: repo } = useFetch<GithubRepo>('https://ungh.cc/repos/liria24/avati
                 </div>
 
                 <div class="flex items-center gap-1.5">
-                    <p class="text-dimmed text-sm leading-none text-nowrap">© 2025</p>
+                    <p class="text-muted text-sm leading-none text-nowrap">© 2025</p>
                     <UButton
                         :to="app.liria.website"
                         target="_blank"
@@ -142,7 +142,7 @@ const { data: repo } = useFetch<GithubRepo>('https://ungh.cc/repos/liria24/avati
                         variant="link"
                         size="sm"
                         :ui="{ trailingIcon: 'size-3.5' }"
-                        class="text-dimmed gap-1 p-0 text-sm font-bold"
+                        class="text-muted gap-1 p-0 text-sm font-bold"
                     />
                 </div>
             </div>
