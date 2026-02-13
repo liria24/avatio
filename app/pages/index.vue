@@ -60,7 +60,8 @@ useSchemaOrg([
                     :label="titles[0]"
                     variant="soft"
                     color="neutral"
-                    class="rounded-full px-3"
+                    style="animation-delay: 0.5s"
+                    class="fade-in-blur rounded-full px-3"
                 />
             </template>
 
