@@ -1,11 +1,21 @@
 <script setup lang="ts">
 const { changelogs } = useChangelogs()
+console.log(changelogs.value)
+
+const formattedChangelogs = computed(() =>
+    changelogs.value.map((changelog) => ({
+        title: changelog.title,
+        description: '',
+        date: changelog.createdAt,
+        content: changelog.markdown,
+    })),
+)
 </script>
 
 <template>
     <UChangelogVersions>
         <UChangelogVersion
-            v-for="(changelog, index) in changelogs"
+            v-for="(changelog, index) in formattedChangelogs"
             :key="index"
             v-bind="changelog"
             :ui="{ container: 'ml-40 mr-0 max-w-full', title: 'text-3xl sentence' }"
