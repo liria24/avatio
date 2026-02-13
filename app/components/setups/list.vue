@@ -57,7 +57,7 @@ const setups = computed<SerializedSetup[]>(() => {
     return modelSetups.value
 })
 const loading = computed<boolean>(() => {
-    if (isPropsMode.value && propsResult.value) return propsResult.value.loading
+    if (isPropsMode.value && propsResult.value) return propsResult.value.status === 'pending'
 
     return modelLoading.value
 })

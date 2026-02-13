@@ -22,11 +22,14 @@ export const useSetupsList = (
         query?: MaybeRef<Record<string, unknown>>
         immediate?: boolean
         watch?: UseFetchOptions<unknown>['watch']
-    }
+    },
 ) => {
     const page = ref(1)
-    const loading = ref(true)
-    const setups = ref<SerializedSetup[]>([])
+    const cacheKey = computed(
+        () =>
+            `setups-state-${type || 'custom'}-${options?.username || ''}-${JSON.stringify(unref(options?.query) || {})}`,
+    )
+    const setups = useState<SerializedSetup[]>(cacheKey.value, () => [])
 
     // Build query parameters
     const queryParams = computed(() => {
@@ -62,21 +65,26 @@ export const useSetupsList = (
         '/api/setups',
         {
             key: computed(
-                () => `setups-list-${type || 'custom'}-${JSON.stringify(queryParams.value)}`
+                () => `setups-fetch-${type || 'custom'}-${JSON.stringify(queryParams.value)}`,
             ),
             query: queryParams,
             dedupe: 'defer',
             lazy: false,
             immediate: options?.immediate !== false,
             ...(options?.watch !== undefined ? { watch: options.watch } : {}),
-        }
+            onResponse({ response }) {
+                if (response._data?.data) {
+                    if (page.value === 1) setups.value = response._data.data
+                    else setups.value = [...setups.value, ...response._data.data]
+                }
+            },
+        },
     )
 
     // Initialize: Load initial data
     const initialize = async () => {
+        page.value = 1
         await refresh()
-        setups.value = data.value?.data || []
-        loading.value = false
     }
 
     // Load more: Append next page data
@@ -84,21 +92,17 @@ export const useSetupsList = (
         if (data.value?.pagination.hasNext) {
             page.value += 1
             await refresh()
-            const newData = data.value?.data || []
-            setups.value = [...setups.value, ...newData]
         }
     }
 
     // Refresh: Reset to first page
     const refreshData = async () => {
         page.value = 1
-        loading.value = true
-        await initialize()
+        await refresh()
     }
 
     return {
         setups,
-        loading,
         status,
         pagination: computed(() => data.value?.pagination),
         initialize,
