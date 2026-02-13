@@ -11,38 +11,38 @@ const slug = computed(() =>
         : withLeadingSlash(String(route.params.slug)),
 )
 
-const { page, isFallback, refresh } = await useContentPage(slug.value)
+const { data, refresh } = await useContentPage(slug.value)
 
 watch(slug, async () => {
     await refresh()
 })
 
-if (!page.value)
+if (!data.value)
     showError({
         status: 404,
         statusText: 'Page not found.',
     })
 
 defineSeo({
-    title: page.value?.title,
-    description: page.value?.description,
-    image: `${app.site}${withLeadingSlash(page.value?.image)}`,
+    title: data.value?.content?.title,
+    description: data.value?.content?.description,
+    image: `${app.site}${withLeadingSlash(data.value?.content?.image)}`,
 })
 </script>
 
 <template>
-    <UPage v-if="page" :ui="{ center: 'flex flex-col gap-6' }">
+    <UPage v-if="data && data.content" :ui="{ center: 'flex flex-col gap-6' }">
         <UAlert
-            v-if="isFallback"
+            v-if="data.isFallback"
             :title="$t('content.fallbackNotice', { locale: localeProperties.name })"
             :description="$t('content.fallbackDescription')"
             variant="subtle"
         />
 
-        <ContentRenderer :value="page" class="sentence" />
+        <ContentRenderer :value="data.content" class="sentence" />
 
         <template #right>
-            <UContentToc :links="page.body?.toc?.links" />
+            <UContentToc :links="data.content?.body?.toc?.links" />
         </template>
     </UPage>
 </template>

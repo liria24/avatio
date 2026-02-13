@@ -2,18 +2,24 @@ import type { Collections } from '@nuxt/content'
 
 import { withLeadingSlash, withoutLeadingSlash } from 'ufo'
 
-export const useContentPage = async (path: string) => {
+export const useContentPage = (path: MaybeRefOrGetter<string>) => {
     const { locale } = useI18n()
 
-    const { data, refresh, status } = await useAsyncData(
-        `page-${withoutLeadingSlash(path)}`,
+    const _path = computed(() => toValue(path))
+
+    const key = computed(() => `page-${locale.value}-${withoutLeadingSlash(_path.value)}`)
+
+    const asyncData = useAsyncData(
+        key,
         async () => {
             const collection = ('content_' + locale.value) as keyof Collections
-            const content = await queryCollection(collection).path(withLeadingSlash(path)).first()
+            const content = await queryCollection(collection)
+                .path(withLeadingSlash(_path.value))
+                .first()
 
             if (!content && locale.value !== 'ja') {
                 const fallbackContent = await queryCollection('content_ja')
-                    .path(withLeadingSlash(path))
+                    .path(withLeadingSlash(_path.value))
                     .first()
                 return { content: fallbackContent, isFallback: true }
             }
@@ -21,12 +27,9 @@ export const useContentPage = async (path: string) => {
             return { content, isFallback: false }
         },
         {
-            watch: [locale],
+            watch: [locale, _path],
         },
     )
 
-    const page = computed(() => data.value?.content)
-    const isFallback = computed(() => data.value?.isFallback ?? false)
-
-    return { page, refresh, status, isFallback }
+    return asyncData
 }
