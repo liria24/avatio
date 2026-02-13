@@ -4,6 +4,7 @@ interface UseNotificationsOptions {
 }
 
 export const useNotifications = (options?: MaybeRefOrGetter<UseNotificationsOptions>) => {
+    const { session } = useAuth()
     const localePath = useLocalePath()
 
     const opts = computed(() => {
@@ -16,6 +17,7 @@ export const useNotifications = (options?: MaybeRefOrGetter<UseNotificationsOpti
 
     const { data, refresh, status } = useFetch('/api/notifications', {
         dedupe: 'defer',
+        immediate: !!session.value,
         default: () => ({
             unread: 0,
             data: [],
