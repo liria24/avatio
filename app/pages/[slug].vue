@@ -11,11 +11,7 @@ const slug = computed(() =>
         : withLeadingSlash(String(route.params.slug)),
 )
 
-const { data, refresh } = await useContentPage(slug.value)
-
-watch(slug, async () => {
-    await refresh()
-})
+const { data } = await useContentPage(slug.value)
 
 if (!data.value)
     showError({
