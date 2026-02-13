@@ -17,7 +17,7 @@ const banUser = async () => {
     const success = await banUserWithReason(
         props.userId,
         banReasonInput.value,
-        banExpiresInInput.value || undefined
+        banExpiresInInput.value || undefined,
     )
     if (success) {
         emit('close')

@@ -344,7 +344,9 @@
     },
     "changelogs": {
         "title": "Changelogs",
-        "description": "View the changelog of Avatio."
+        "description": "View the changelog of Avatio.",
+        "translatedByAi": "Translated by AI",
+        "fallbacked": "This content is currently not available in {locale}, showing Japanese as fallback."
     },
     "footer": {
         "social": {

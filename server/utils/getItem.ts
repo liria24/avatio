@@ -17,7 +17,7 @@ const markItemAsOutdated = async (id: string): Promise<void> => {
 }
 
 const updateBoothDatabase = async (
-    item: Item & { shop: NonNullable<Item['shop']> }
+    item: Item & { shop: NonNullable<Item['shop']> },
 ): Promise<void> => {
     try {
         // ショップ情報更新
@@ -137,7 +137,7 @@ const getBoothItem = async (id: string): Promise<Item> => {
                 } catch (error) {
                     log.error(`Failed to define item info for item ${id}:`, error)
                 }
-        })
+        }),
     )
 
     return processedItem
@@ -210,7 +210,7 @@ const getGithubItemFromRepo = async (repo: string): Promise<Item> => {
                 } catch (error) {
                     log.error(`Failed to define item info for item ${item.id}:`, error)
                 }
-        })()
+        })(),
     )
 
     return item

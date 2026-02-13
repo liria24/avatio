@@ -70,7 +70,7 @@ const compressImage = async (buffer: Buffer) => {
                 compressedImage.length /
                 1024 /
                 1024
-            ).toFixed(2)}MB`
+            ).toFixed(2)}MB`,
         )
 
         if (compressedImage.length <= TARGET_MAX_FILE_SIZE || quality <= 30) break
@@ -84,7 +84,7 @@ const compressImage = async (buffer: Buffer) => {
             compressedImage.length /
             1024 /
             1024
-        ).toFixed(2)}MB`
+        ).toFixed(2)}MB`,
     )
 
     return {
@@ -130,5 +130,5 @@ export default authedSessionEventHandler(
     },
     {
         rejectBannedUser: true,
-    }
+    },
 )

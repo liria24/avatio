@@ -5,7 +5,7 @@ export const useAdminActions = () => {
     const resolveReport = async (
         type: 'setup' | 'user' | 'item',
         id: number,
-        isResolved = true
+        isResolved = true,
     ) => {
         try {
             await $fetch(`/api/admin/reports/${type}/${id}`, {
@@ -289,12 +289,7 @@ export const useAdminActions = () => {
         }
     }
 
-    const createChangelog = async (data: {
-        slug: string
-        title: string
-        markdown: string
-        authors: string[]
-    }) => {
+    const createChangelog = async (data: { title: string; markdown: string }) => {
         try {
             await $fetch('/api/admin/changelogs', {
                 method: 'POST',

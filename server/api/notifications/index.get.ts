@@ -22,7 +22,7 @@ export default authedSessionEventHandler<{
     const [unreadCount, data] = await Promise.all([
         db.$count(
             notifications,
-            and(eq(notifications.userId, userId), isNull(notifications.readAt))
+            and(eq(notifications.userId, userId), isNull(notifications.readAt)),
         ),
         db.query.notifications.findMany({
             orderBy: {

@@ -61,7 +61,7 @@ const groups = computed(() => {
                                     toast.add({
                                         title: t('commandPalette.itemSearch.invalidUrl'),
                                         description: t(
-                                            'commandPalette.itemSearch.invalidUrlDescription'
+                                            'commandPalette.itemSearch.invalidUrlDescription',
                                         ),
                                         color: 'error',
                                     })
@@ -101,7 +101,7 @@ const groups = computed(() => {
 })
 
 const loadingComputed = computed(
-    () => props.loading || loadingRef.value || status.value === 'pending'
+    () => props.loading || loadingRef.value || status.value === 'pending',
 )
 
 const onSelected = async (id: string, platform?: Platform) => {
@@ -112,7 +112,7 @@ const onSelected = async (id: string, platform?: Platform) => {
             `/api/items/${transformItemId(id.toString()).encode()}`,
             {
                 query: { platform },
-            }
+            },
         )
         emit('select', response)
         searchTerm.value = ''

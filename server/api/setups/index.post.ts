@@ -24,7 +24,7 @@ export default authedSessionEventHandler(
                     height,
                     themeColors: colors.length ? colors : null,
                 }
-            })
+            }),
         )
 
         const setupId = await db.transaction(async (tx) => {
@@ -51,7 +51,7 @@ export default authedSessionEventHandler(
                         category: item.category,
                         note: item.note,
                         unsupported: item.category === 'avatar' ? false : item.unsupported,
-                    }))
+                    })),
                 )
                 .returning({ id: setupItems.id })
 
@@ -59,7 +59,7 @@ export default authedSessionEventHandler(
                 (item.shapekeys || []).map((s) => ({
                     setupItemId: insertedItems[i]!.id,
                     ...s,
-                }))
+                })),
             )
 
             await Promise.all(
@@ -73,7 +73,7 @@ export default authedSessionEventHandler(
                         tx.insert(setupTags).values(tags.map((t) => ({ setupId, tag: t.tag }))),
                     coauthors?.length &&
                         tx.insert(setupCoauthors).values(coauthors.map((c) => ({ setupId, ...c }))),
-                ].filter(Boolean)
+                ].filter(Boolean),
             )
 
             return setupId
@@ -85,5 +85,5 @@ export default authedSessionEventHandler(
     },
     {
         rejectBannedUser: true,
-    }
+    },
 )

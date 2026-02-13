@@ -53,7 +53,7 @@ export default async () => {
     const usedUserUrls = new Set(
         userImagesFromDB
             .map((user) => user.image)
-            .filter((image): image is string => Boolean(image?.trim()))
+            .filter((image): image is string => Boolean(image?.trim())),
     )
 
     // 未使用画像を抽出
@@ -70,7 +70,7 @@ export default async () => {
 
             return acc
         },
-        { oldImages: [] as ImageInfo[], recentImages: [] as ImageInfo[] }
+        { oldImages: [] as ImageInfo[], recentImages: [] as ImageInfo[] },
     )
 
     // 最終的な分類

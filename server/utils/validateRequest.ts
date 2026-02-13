@@ -4,7 +4,7 @@ import { destr } from 'destr'
 
 export const validateBody = async <T extends z.ZodTypeAny>(
     schema: T,
-    options?: { sanitize?: boolean }
+    options?: { sanitize?: boolean },
 ): Promise<z.infer<T>> => {
     const result = await readValidatedBody(useEvent(), (body) => {
         if (options?.sanitize) body = sanitizeObject(body)

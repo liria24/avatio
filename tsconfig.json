@@ -6,5 +6,5 @@
         "noFallthroughCasesInSwitch": true,
         "types": ["node"],
         "rootDir": "./"
-    },
+    }
 }

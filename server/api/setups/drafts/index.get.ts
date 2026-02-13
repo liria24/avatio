@@ -39,5 +39,5 @@ export default authedSessionEventHandler<SetupDraft[]>(
     },
     {
         rejectBannedUser: true,
-    }
+    },
 )

@@ -15,7 +15,7 @@ const createReportSchema = (t: (key: string) => string) =>
             {
                 message: t('reports.validation.otherRequiresComment'),
                 path: ['comment'],
-            }
+            },
         )
 
 type ReportState = {

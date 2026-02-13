@@ -344,7 +344,9 @@
     },
     "changelogs": {
         "title": "変更履歴",
-        "description": "Avatioの変更履歴を確認できます。"
+        "description": "Avatioの変更履歴を確認できます。",
+        "translatedByAi": "AIにより翻訳されました",
+        "fallbacked": "このコンテンツは現在{locale}に非対応のため、日本語にフォールバックされました。"
     },
     "footer": {
         "social": {

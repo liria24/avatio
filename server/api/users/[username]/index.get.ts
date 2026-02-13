@@ -61,7 +61,7 @@ const getUser = defineCachedFunction(
         name: 'user',
         getKey: (id: string) => id,
         swr: false,
-    }
+    },
 )
 
 export default promiseEventHandler<User>(async () => {

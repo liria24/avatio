@@ -1,12 +1,17 @@
 <script setup lang="ts">
-const { app } = useAppConfig()
 const { session } = useAuth()
 const route = useRoute()
 const router = useRouter()
 const { login } = useAppOverlay()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
-const { titles } = useChangelogTitles()
+const { data: titles } = useFetch('/api/changelogs', {
+    dedupe: 'defer',
+    query: { lang: locale.value },
+    watch: [locale],
+    transform: (response) => response.data.map((item) => item.title),
+    default: () => [],
+})
 
 type Tab = 'latest' | 'owned' | 'bookmarked'
 
@@ -61,7 +66,7 @@ useSchemaOrg([
                     variant="soft"
                     color="neutral"
                     style="animation-delay: 0.5s"
-                    class="fade-in-blur rounded-full px-3"
+                    class="fade-in-blur rounded-full px-4"
                 />
             </template>
 

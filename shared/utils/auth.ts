@@ -89,7 +89,7 @@ export const auth = betterAuth({
                     session,
                 }
             },
-            { plugins }
+            { plugins },
         ),
     ],
 
@@ -124,7 +124,7 @@ export const auth = betterAuth({
             },
             set: async (
                 key: string,
-                value: { key: string; count: number; lastRequest: number }
+                value: { key: string; count: number; lastRequest: number },
             ) => {
                 try {
                     const storage = useStorage('cache')

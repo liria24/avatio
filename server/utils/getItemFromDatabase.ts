@@ -37,5 +37,5 @@ export default defineCachedFunction(
     {
         maxAge: ITEM_DATABASE_CACHE_TTL,
         name: 'itemFromDatabase',
-    }
+    },
 )

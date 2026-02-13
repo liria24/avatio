@@ -15,12 +15,12 @@ const rejectBannedUser = (session: Session | null) => {
 }
 
 export const promiseEventHandler = <T = unknown>(
-    handler: ({ event }: { event: H3Event }) => Promise<T> | T
+    handler: ({ event }: { event: H3Event }) => Promise<T> | T,
 ) => eventHandler(async (event) => handler({ event }))
 
 export const sessionEventHandler = <T = unknown>(
     handler: ({ event, session }: { event: H3Event; session: Session | null }) => Promise<T> | T,
-    options?: SessionEventHandlerOptions
+    options?: SessionEventHandlerOptions,
 ) =>
     promiseEventHandler(async ({ event }) => {
         const session = await auth.api.getSession({ headers: event.headers })
@@ -38,7 +38,7 @@ export const authedSessionEventHandler = <T = unknown>(
         event: H3Event
         session: NonNullable<Session>
     }) => Promise<T> | T,
-    options?: SessionEventHandlerOptions
+    options?: SessionEventHandlerOptions,
 ) =>
     sessionEventHandler(async ({ event, session }) => {
         if (!session)
@@ -58,7 +58,7 @@ export const adminSessionEventHandler = <T = unknown>(
         event: H3Event
         session: NonNullable<Session>
     }) => Promise<T> | T,
-    options?: SessionEventHandlerOptions
+    options?: SessionEventHandlerOptions,
 ) =>
     sessionEventHandler(async ({ event, session }) => {
         const config = useRuntimeConfig()
@@ -76,7 +76,7 @@ export const adminSessionEventHandler = <T = unknown>(
     }, options)
 
 export const cronEventHandler = <T = unknown>(
-    handler: ({ event }: { event: H3Event }) => Promise<T> | T
+    handler: ({ event }: { event: H3Event }) => Promise<T> | T,
 ) =>
     sessionEventHandler(async ({ event, session }) => {
         const config = useRuntimeConfig()
