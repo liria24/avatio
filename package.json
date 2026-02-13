@@ -41,12 +41,12 @@
         "@stefanobartoletti/nuxt-social-share": "2.3.1",
         "@tigrisdata/storage": "^2.12.2",
         "@vercel/analytics": "1.6.1",
-        "@vercel/config": "^0.0.29",
+        "@vercel/config": "^0.0.30",
         "@vercel/edge-config": "1.4.3",
         "@vercel/functions": "3.4.2",
         "@vueuse/nuxt": "14.2.1",
         "@yeger/vue-masonry-wall": "5.1.5",
-        "ai": "6.0.81",
+        "ai": "6.0.84",
         "aws4fetch": "^1.0.20",
         "better-auth": "1.4.18",
         "canvas-confetti": "1.9.4",
@@ -75,13 +75,13 @@
         "@types/sanitize-html": "2.16.0",
         "bumpp": "10.4.1",
         "drizzle-kit": "1.0.0-beta.15-859cf75",
-        "oxfmt": "^0.31.0",
-        "oxlint": "^1.46.0",
+        "oxfmt": "^0.32.0",
+        "oxlint": "^1.47.0",
         "taze": "^19.9.2",
-        "typescript": "^6.0.0-beta"
+        "typescript": "^6.0.0-dev.20260212"
     },
     "overrides": {
-        "vite": "8.0.0-beta.10",
+        "vite": "8.0.0-beta.14",
         "vue": "latest"
     },
     "engines": {
