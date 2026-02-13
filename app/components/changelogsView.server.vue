@@ -1,6 +1,5 @@
 <script setup lang="ts">
 const { changelogs } = useChangelogs()
-console.log(changelogs.value)
 
 const formattedChangelogs = computed(() =>
     changelogs.value.map((changelog) => ({
@@ -18,13 +17,31 @@ const formattedChangelogs = computed(() =>
             v-for="(changelog, index) in formattedChangelogs"
             :key="index"
             v-bind="changelog"
-            :ui="{ container: 'ml-40 mr-0 max-w-full', title: 'text-3xl sentence' }"
+            :ui="{ container: 'ml-40 mr-0 max-w-full' }"
         >
+            <template #title>
+                <h2
+                    :class="
+                        cn(
+                            'sentence text-3xl font-bold',
+                            'before:text-muted before:font-[Geist] before:font-light before:content-[\'//_\']',
+                        )
+                    "
+                >
+                    {{ changelog.title }}
+                </h2>
+            </template>
+
             <template #description>
+                <USeparator class="mt-5" />
                 <MDC
                     v-if="changelog.content"
                     :value="changelog.content"
-                    class="sentence w-full max-w-full"
+                    :parser-options="{
+                        toc: false,
+                        contentHeading: false,
+                    }"
+                    class="sentence w-full max-w-full *:first:mt-6"
                 />
             </template>
         </UChangelogVersion>

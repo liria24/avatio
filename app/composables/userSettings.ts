@@ -6,17 +6,6 @@ interface ProfileState {
     links: string[]
 }
 
-const useCurrentUser = () => {
-    const { session } = useAuth()
-    const {
-        data: userData,
-        refresh: refreshUserData,
-        status: userDataStatus,
-    } = useUser(session.value?.user.username || '')
-
-    return { userData, refreshUserData, userDataStatus }
-}
-
 export const useUserSettingsProfile = () => {
     const { t } = useI18n()
     const toast = useToast()

@@ -86,9 +86,20 @@ export const relations = defineRelations(schema, (r) => ({
         }),
     },
     changelogs: {
+        i18n: r.many.changelogsI18n({
+            from: r.changelogs.slug,
+            to: r.changelogsI18n.changelogSlug,
+        }),
         authors: r.many.changelogAuthors({
             from: r.changelogs.slug,
             to: r.changelogAuthors.changelogSlug,
+        }),
+    },
+    changelogsI18n: {
+        changelog: r.one.changelogs({
+            from: r.changelogsI18n.changelogSlug,
+            to: r.changelogs.slug,
+            optional: false,
         }),
     },
     changelogAuthors: {

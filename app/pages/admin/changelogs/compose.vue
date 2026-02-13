@@ -1,20 +1,18 @@
 <script setup lang="ts">
 import { VueDraggable } from 'vue-draggable-plus'
 
-const { session } = useAuth()
 const { createChangelog } = useAdminActions()
 const toast = useToast()
 const { t } = useI18n()
 
-const me = await $fetch<SerializedUser>(`/api/users/${session.value!.user.username!}`)
+const { userData: me } = useCurrentUser()
 
 const state = reactive({
-    slug: '',
     title: '',
     markdown: '',
-    authors: [me.username],
+    authors: [me.value?.username || ''],
 })
-const authors = ref<SerializedUser[]>([me])
+const authors = ref<SerializedUser[]>([])
 
 const addAuthor = (user: SerializedUser) => {
     if (!user?.username) return
@@ -44,37 +42,57 @@ const onSubmit = async () => {
 }
 
 const resetForm = () => {
-    state.slug = ''
     state.title = ''
     state.markdown = ''
-    state.authors = [me.username]
-    authors.value = [me]
+    state.authors = [me.value?.username || '']
+    authors.value = []
+    addAuthor(me.value!)
 }
+
+addAuthor(me.value!)
 </script>
 
 <template>
     <UDashboardPanel id="changelogs-compose">
         <template #header>
-            <UDashboardNavbar title="Changelogs | Compose" />
+            <UDashboardNavbar title="Changelogs | Compose">
+                <template #right>
+                    <UButton
+                        icon="mingcute:refresh-1-line"
+                        label="Reset"
+                        variant="soft"
+                        @click="resetForm"
+                    />
+                    <UButton
+                        icon="mingcute:upload-fill"
+                        label="Submit"
+                        color="neutral"
+                        loading-auto
+                        @click="onSubmit"
+                    />
+                </template>
+            </UDashboardNavbar>
         </template>
 
         <template #body>
-            <UForm :state class="flex flex-col gap-4" @submit="onSubmit">
-                <UButton
-                    icon="mingcute:refresh-1-fill"
-                    label="Reset"
-                    variant="soft"
-                    @click="resetForm"
-                />
-
-                <UFormField name="slug" label="Slug" required>
-                    <UInput v-model="state.slug" placeholder="Enter slug" class="w-full" />
+            <UForm :state class="flex grow flex-col gap-4" @submit="onSubmit">
+                <UFormField name="title" label="Title" required class="border-muted border-b-2">
+                    <UInput
+                        v-model="state.title"
+                        placeholder="Enter title"
+                        size="xl"
+                        variant="none"
+                        class="w-full"
+                    />
                 </UFormField>
-                <UFormField name="title" label="Title" required>
-                    <UInput v-model="state.title" placeholder="Enter title" class="w-full" />
-                </UFormField>
-                <UFormField name="markdown" label="Markdown" required>
-                    <UTextarea v-model="state.markdown" autoresize :rows="10" class="w-full" />
+                <UFormField
+                    name="markdown"
+                    label="Markdown"
+                    required
+                    :ui="{ container: 'grow flex flex-col' }"
+                    class="flex grow flex-col"
+                >
+                    <TextEditor v-model="state.markdown" class="grow" />
                 </UFormField>
 
                 <UFormField name="authors" label="Authors">
@@ -135,8 +153,6 @@ const resetForm = () => {
                         </UPopover>
                     </div>
                 </UFormField>
-
-                <UButton type="submit" label="Submit" color="neutral" size="lg" block />
             </UForm>
         </template>
     </UDashboardPanel>

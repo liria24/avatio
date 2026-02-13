@@ -1,46 +1,68 @@
 import { changelogAuthors, changelogs } from '@@/database/schema'
-import { marked } from 'marked'
+import { generateText } from 'ai'
 import { z } from 'zod'
 
 const body = changelogsInsertSchema
     .pick({
-        slug: true,
         title: true,
         markdown: true,
     })
     .extend({
+        slug: z.string().optional(),
         authors: z.string().array().optional(),
+        i18n: changelogsI18nInsertSchema.array().optional(),
     })
 
 export default adminSessionEventHandler(async () => {
-    const { slug, title, markdown, authors } = await validateBody(body)
+    const { slug, title, markdown, authors, i18n } = await validateBody(body)
+    let generatedSlug: string = ''
 
-    const html = await marked.parse(markdown, {
-        gfm: true,
-        breaks: true,
+    const exists = await db.query.changelogs.findMany({
+        columns: {
+            slug: true,
+        },
     })
 
-    const [data] = await db
-        .insert(changelogs)
-        .values({
-            slug,
-            title,
-            markdown,
-            html,
-        })
-        .returning({
-            slug: changelogs.slug,
+    if (!slug) {
+        const messages: { role: 'system' | 'user'; content: string }[] = []
+        if (exists.length > 0)
+            messages.push({
+                role: 'system',
+                content: `The short slug must not overlap with any of the existing slugs: ${exists.map((b) => b.slug).join(', ')}`,
+            })
+
+        const result = await generateText({
+            model: 'google/gemini-3-flash',
+            messages: [
+                ...messages,
+                {
+                    role: 'user',
+                    content: `Create a short slug for the blog with the title: ${title}`,
+                },
+            ],
+            system: 'Please return only the slug as your answer.',
         })
 
-    if (!data) throw new Error('Changelog creation failed')
+        generatedSlug = result.text.trim()
+    }
+
+    // TODO: Handle i18n
+
+    await db.insert(changelogs).values({
+        slug: slug || generatedSlug,
+        title,
+        markdown,
+    })
 
     if (authors?.length)
         await db.insert(changelogAuthors).values(
             authors.map((author) => ({
-                changelogSlug: data?.slug,
+                changelogSlug: slug || generatedSlug,
                 userId: author,
-            }))
+            })),
         )
 
-    return data
+    return {
+        slug: slug || generatedSlug,
+    }
 })

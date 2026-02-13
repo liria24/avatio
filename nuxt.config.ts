@@ -193,8 +193,12 @@ export default defineNuxtConfig({
     },
 
     content: {
+        renderer: {
+            anchorLinks: false,
+        },
         build: {
             markdown: {
+                contentHeading: false,
                 remarkPlugins: {
                     'remark-breaks': {},
                 },
