@@ -1,15 +1,15 @@
 <script lang="ts" setup>
 import type { Notification } from '#imports'
 
-const props = defineProps<{ data: Notification }>()
+const props = defineProps<{ data: Serialized<Notification> }>()
 
-const notificationsStore = useNotificationsStore()
+const { markAsRead } = useNotifications()
 
 const visible = ref(true)
 
 const onRead = async (id: string) => {
     visible.value = false
-    await notificationsStore.markAsRead(id)
+    await markAsRead(id)
 }
 </script>
 

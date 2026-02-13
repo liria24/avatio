@@ -71,7 +71,6 @@ export default defineNuxtConfig({
         '@nuxtjs/i18n',
         '@nuxtjs/robots',
         '@nuxtjs/sitemap',
-        '@pinia/nuxt',
         '@vueuse/nuxt',
         'motion-v/nuxt',
         '@stefanobartoletti/nuxt-social-share',

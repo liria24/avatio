@@ -10,7 +10,6 @@ type Tab = 'latest' | 'owned' | 'bookmarked'
 const tab = ref<Tab>((route.query.tab as Tab) || 'latest')
 
 const changeTab = (newTab: Tab) => {
-    tab.value = newTab
     router.replace({ query: { tab: newTab !== 'latest' ? newTab : undefined } })
 }
 

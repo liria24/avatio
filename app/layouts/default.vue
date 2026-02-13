@@ -3,13 +3,8 @@ const { session, sessions } = useAuth()
 const route = useRoute()
 const { login } = useAppOverlay()
 
-const notificationsStore = useNotificationsStore()
-if (session.value) await notificationsStore.fetch()
-const notifications = computed(() =>
-    notificationsStore.notifications.filter(
-        (notification) => !notification.readAt && notification.banner
-    )
-)
+const { notifications } = useNotifications()
+const filteredNotifications = computed(() => notifications.value.filter((n) => n.banner))
 </script>
 
 <template>
@@ -60,9 +55,9 @@ const notifications = computed(() =>
                 </div>
             </header>
 
-            <div v-if="notifications.length" class="flex w-full flex-col gap-2">
+            <div v-if="filteredNotifications.length" class="flex w-full flex-col gap-2">
                 <BannerNotification
-                    v-for="notification in notifications"
+                    v-for="notification in filteredNotifications"
                     :key="notification.id"
                     :data="notification"
                     class="w-full"
