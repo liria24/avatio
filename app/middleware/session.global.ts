@@ -1,4 +1,4 @@
 export default defineNuxtRouteMiddleware(async () => {
-    const { getSession } = useAuth()
-    await getSession()
+    const { getSession, getSessions } = useAuth()
+    await Promise.all([getSession(), getSessions()])
 })

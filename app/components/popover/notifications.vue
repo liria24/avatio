@@ -1,39 +1,42 @@
 <script setup lang="ts">
-const notificationsStore = useNotificationsStore()
-
 const { locale } = useI18n()
-const localePath = useLocalePath()
 
 const open = ref(false)
 const viewingReadNotifications = ref(false)
 
-const notifications = computed(() =>
-    notificationsStore.notifications.filter((notification) => {
-        if (viewingReadNotifications.value) return !!notification.readAt
-        return !notification.readAt
-    })
-)
+const filterOptions = computed(() => ({
+    read: viewingReadNotifications.value,
+    unread: !viewingReadNotifications.value,
+}))
+
+const {
+    notifications,
+    status,
+    refresh,
+    markAsRead,
+    markAsUnread,
+    open: openNotification,
+} = useNotifications(filterOptions)
 
 const onRead = async (event: Event, id: string) => {
     event.stopPropagation()
-    await notificationsStore.markAsRead(id)
+    await markAsRead(id)
 }
 
 const onUnread = async (event: Event, id: string) => {
     event.stopPropagation()
-    await notificationsStore.markAsUnread(id)
+    await markAsUnread(id)
 }
 
-const onClick = (event: Event, id: string, actionUrl: string | null) => {
-    onRead(event, id)
+const onClick = (id: string, actionUrl: string | null) => {
     open.value = false
-    if (actionUrl) navigateTo(localePath(actionUrl))
+    openNotification(id, actionUrl)
 }
 
 watch(open, (isOpen) => {
     if (!isOpen && viewingReadNotifications.value) {
         viewingReadNotifications.value = false
-        notificationsStore.fetch()
+        refresh()
     }
 })
 </script>
@@ -47,7 +50,7 @@ watch(open, (isOpen) => {
         }"
         modal
     >
-        <slot :unread="notificationsStore?.unread || 0" />
+        <slot />
 
         <template #content>
             <div class="flex w-full max-w-md flex-col gap-4 p-4 sm:w-sm md:w-md">
@@ -62,6 +65,7 @@ watch(open, (isOpen) => {
                         size="sm"
                         :active="viewingReadNotifications"
                         active-variant="subtle"
+                        active-color="neutral"
                         class="rounded-full"
                         @click="viewingReadNotifications = !viewingReadNotifications"
                     />
@@ -70,7 +74,7 @@ watch(open, (isOpen) => {
                 <USeparator />
 
                 <Icon
-                    v-if="notificationsStore.fetching"
+                    v-if="status === 'pending'"
                     name="svg-spinners:ring-resize"
                     size="24"
                     class="text-muted m-8 self-center"
@@ -86,7 +90,7 @@ watch(open, (isOpen) => {
                         :key="notification.id"
                         variant="ghost"
                         class="flex flex-col items-start gap-2 rounded-lg p-2"
-                        @click="onClick($event, notification.id, notification.actionUrl)"
+                        @click="onClick(notification.id, notification.actionUrl)"
                     >
                         <div class="flex w-full items-start gap-2">
                             <p
@@ -120,7 +124,7 @@ watch(open, (isOpen) => {
                                 icon="mingcute:arrow-right-line"
                                 variant="outline"
                                 size="xs"
-                                @click="onClick($event, notification.id, notification.actionUrl)"
+                                @click="onClick(notification.id, notification.actionUrl)"
                             />
 
                             <UTooltip
