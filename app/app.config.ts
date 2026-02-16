@@ -222,7 +222,7 @@ export default defineAppConfig({
             chevronLeft: 'mingcute:left-line',
             chevronRight: 'mingcute:right-line',
             chevronUp: 'mingcute:up-line',
-            close: 'mingcute:close-fill',
+            close: 'mingcute:close-line',
             copy: 'mingcute:copy-2-line',
             copyCheck: 'mingcute:copy-2-fill',
             dark: 'mingcute:moon-fill',
