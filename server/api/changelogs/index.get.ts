@@ -114,7 +114,7 @@ export default promiseEventHandler<PaginationResponse<I18nChangelog[]>>(async ()
                 html: i18nData?.html || changelog.html,
                 authors: changelog.authors.map((author) => author.user),
                 aiGenerated: i18nData?.aiGenerated || false,
-                fallbacked: !i18nData,
+                fallbacked: lang !== 'ja' && !i18nData,
             }
         }),
         pagination: {

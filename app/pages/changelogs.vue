@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const { app } = useAppConfig()
-const { t, locale } = useI18n()
+const { t, locale, localeProperties } = useI18n()
 const { data: changelogs } = useFetch('/api/changelogs', {
     query: { lang: locale.value },
     dedupe: 'defer',
@@ -25,7 +25,7 @@ defineSeo({
                 :title="changelog.title"
                 :date="changelog.createdAt"
                 :ui="{
-                    container: 'ml-40 mr-0 max-w-full',
+                    container: 'lg:ml-40 mr-0 max-w-full',
                     title: 'sentence text-3xl font-bold before:text-muted before:font-[Geist] before:tracking-tight before:font-light before:content-[\'//_\']',
                     description: 'flex flex-col items-start gap-5 mt-5',
                 }"
@@ -34,7 +34,7 @@ defineSeo({
                     <USeparator />
                     <UBadge
                         v-if="changelog.fallbacked"
-                        :label="$t('changelogs.fallbacked', { locale })"
+                        :label="$t('changelogs.fallbacked', { locale: localeProperties.name })"
                         variant="soft"
                     />
                     <ServerMarkdown :content="changelog.markdown" />
