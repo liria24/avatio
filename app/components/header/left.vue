@@ -11,7 +11,7 @@ const { session } = useAuth()
 
         <UButton
             :to="$localePath('/changelogs')"
-            :label="app.version"
+            :label="`v${app.version}`"
             variant="soft"
             color="neutral"
             size="xs"
