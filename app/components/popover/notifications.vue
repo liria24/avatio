@@ -10,7 +10,7 @@ const filterOptions = computed(() => ({
 }))
 
 const {
-    notifications,
+    data,
     status,
     refresh,
     markAsRead,
@@ -80,13 +80,16 @@ watch(open, (isOpen) => {
                     class="text-muted m-8 self-center"
                 />
 
-                <p v-else-if="!notifications.length" class="text-muted my-8 self-center text-sm">
+                <p
+                    v-else-if="!data.notifications.length"
+                    class="text-muted my-8 self-center text-sm"
+                >
                     {{ $t('notifications.empty') }}
                 </p>
 
                 <div v-else class="flex flex-col gap-2">
                     <UButton
-                        v-for="notification in notifications"
+                        v-for="notification in data.notifications"
                         :key="notification.id"
                         variant="ghost"
                         class="flex flex-col items-start gap-2 rounded-lg p-2"

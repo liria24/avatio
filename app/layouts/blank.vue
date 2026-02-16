@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-const { session } = useAuth()
+const { session } = await useAuth()
 </script>
 
 <template>

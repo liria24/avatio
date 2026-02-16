@@ -16,11 +16,5 @@ export const useUser = (username: string, options?: UseFetchOptions<SerializedUs
 
 export const useCurrentUser = () => {
     const { session } = useAuth()
-    const {
-        data: userData,
-        refresh: refreshUserData,
-        status: userDataStatus,
-    } = useUser(session.value?.user.username || '')
-
-    return { userData, refreshUserData, userDataStatus }
+    return useUser(session.value?.user.username || '')
 }

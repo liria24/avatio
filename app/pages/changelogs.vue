@@ -2,6 +2,7 @@
 const { app } = useAppConfig()
 const { t, locale, localeProperties } = useI18n()
 const { data: changelogs } = useFetch('/api/changelogs', {
+    key: computed(() => `changelogs-${locale.value}`),
     query: { lang: locale.value },
     dedupe: 'defer',
     watch: [locale],

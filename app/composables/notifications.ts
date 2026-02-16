@@ -15,27 +15,30 @@ export const useNotifications = (options?: MaybeRefOrGetter<UseNotificationsOpti
         }
     })
 
-    const { data, refresh, status } = useFetch('/api/notifications', {
+    const _asyncData = useFetch('/api/notifications', {
+        key: 'notifications',
         dedupe: 'defer',
         immediate: !!session.value,
+        transform: (response) => {
+            const allNotifications = response.data
+            const { read, unread } = opts.value
+            return {
+                notifications: allNotifications.filter((n) => {
+                    const isRead = !!n.readAt
+                    if (isRead && !read) return false
+                    if (!isRead && !unread) return false
+                    return true
+                }),
+                unreadCount: response.unread,
+            }
+        },
         default: () => ({
-            unread: 0,
-            data: [],
+            notifications: [],
+            unreadCount: 0,
         }),
+        getCachedData: (key, n, ctx) =>
+            ctx.cause !== 'refresh:manual' ? n.payload.data[key] : n.static.data[key],
     })
-
-    const notifications = computed(() => {
-        const allNotifications = data.value?.data || []
-        const { read, unread } = opts.value
-        return allNotifications.filter((n) => {
-            const isRead = !!n.readAt
-            if (isRead && !read) return false
-            if (!isRead && !unread) return false
-            return true
-        })
-    })
-
-    const unreadCount = computed(() => data.value?.unread || 0)
 
     const markAsRead = async (id: string) => {
         try {
@@ -43,7 +46,7 @@ export const useNotifications = (options?: MaybeRefOrGetter<UseNotificationsOpti
                 method: 'POST',
                 body: { id },
             })
-            await refresh()
+            await _asyncData.refresh()
         } catch (error) {
             console.error('Error marking notification as read:', error)
             throw error
@@ -56,7 +59,7 @@ export const useNotifications = (options?: MaybeRefOrGetter<UseNotificationsOpti
                 method: 'POST',
                 body: { id },
             })
-            await refresh()
+            await _asyncData.refresh()
         } catch (error) {
             console.error('Error marking notification as unread:', error)
             throw error
@@ -68,13 +71,9 @@ export const useNotifications = (options?: MaybeRefOrGetter<UseNotificationsOpti
         if (actionUrl) navigateTo(localePath(actionUrl))
     }
 
-    return {
-        notifications,
-        refresh,
-        status,
-        unreadCount,
+    return Object.assign(_asyncData, {
         markAsRead,
         markAsUnread,
         open,
-    }
+    })
 }

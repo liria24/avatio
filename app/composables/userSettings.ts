@@ -6,12 +6,30 @@ interface ProfileState {
     links: string[]
 }
 
-export const useUserSettingsProfile = () => {
+interface UserSettingsProfileReturn {
+    state: Ref<ProfileState>
+    updating: Ref<boolean>
+    save: () => Promise<boolean>
+    link: {
+        add: (link: string) => boolean
+        remove: (index: number) => void
+    }
+    image: {
+        select: () => { open: () => void }
+        remove: () => Promise<void>
+    }
+    updateUsername: (newUsername: string) => Promise<boolean>
+    syncProfileData: () => Promise<void>
+}
+
+type AwaitableUserSettingsProfile = UserSettingsProfileReturn & Promise<UserSettingsProfileReturn>
+
+export const useUserSettingsProfile = (): AwaitableUserSettingsProfile => {
     const { t } = useI18n()
     const toast = useToast()
-    const { session } = useAuth()
+    const { session, getSession } = useAuth()
     const username = computed(() => session.value?.user.username || '')
-    const { userData, refreshUserData } = useCurrentUser()
+    const { data: currentUser, refresh: refreshCurrentUser } = useCurrentUser()
 
     const state = useState<ProfileState>('user-settings-profile-state', () => ({
         username: '',
@@ -139,14 +157,14 @@ export const useUserSettingsProfile = () => {
 
     const syncProfileData = async () => {
         try {
-            await refreshUserData()
+            await refreshCurrentUser()
 
             // Sync profile state
-            state.value.username = userData.value?.username || ''
-            state.value.name = userData.value?.name || ''
-            state.value.image = userData.value?.image || null
-            state.value.bio = userData.value?.bio || ''
-            state.value.links = userData.value?.links || []
+            state.value.username = currentUser.value?.username || ''
+            state.value.name = currentUser.value?.name || ''
+            state.value.image = currentUser.value?.image || null
+            state.value.bio = currentUser.value?.bio || ''
+            state.value.links = currentUser.value?.links || []
         } catch (error) {
             console.error('Error fetching user data:', error)
         }
@@ -177,10 +195,10 @@ export const useUserSettingsProfile = () => {
         }
     }
 
-    return {
+    // Create return object
+    const returnObject: UserSettingsProfileReturn = {
         state,
         updating,
-        userData,
         save,
         link: {
             add: addLink,
@@ -193,12 +211,46 @@ export const useUserSettingsProfile = () => {
         updateUsername,
         syncProfileData,
     }
+
+    // Create initialization promise that waits for session and user data
+    const initPromise = Promise.resolve()
+        .then(() => getSession())
+        .then(() => syncProfileData())
+        .then(() => returnObject)
+
+    // Merge promise with return object (same pattern as Nuxt's useFetch/useAsyncData)
+    const awaitableResult = Object.assign(initPromise, returnObject) as AwaitableUserSettingsProfile
+
+    // Make Promise methods enumerable
+    Object.defineProperties(awaitableResult, {
+        then: { enumerable: true, value: initPromise.then.bind(initPromise) },
+        catch: { enumerable: true, value: initPromise.catch.bind(initPromise) },
+        finally: { enumerable: true, value: initPromise.finally.bind(initPromise) },
+    })
+
+    return awaitableResult
 }
 
-export const useUserSettingsShop = () => {
+interface UserSettingsShopReturn {
+    state: Ref<{
+        itemUrl: string
+        verifyCode: string | null
+        verifying: boolean
+        unverifying: boolean
+    }>
+    verifiable: ComputedRef<boolean>
+    url: (shopId: string, platform: Platform) => string | undefined
+    generateVerificationCode: () => Promise<string | null>
+    verify: () => Promise<boolean>
+    unverify: (shopId: string) => Promise<boolean>
+}
+
+type AwaitableUserSettingsShop = UserSettingsShopReturn & Promise<UserSettingsShopReturn>
+
+export const useUserSettingsShop = (): AwaitableUserSettingsShop => {
     const { t } = useI18n()
     const toast = useToast()
-    const { userData, refreshUserData } = useCurrentUser()
+    const { refresh: refreshCurrentUser } = useCurrentUser()
 
     const state = useState('user-settings-shop-state', () => ({
         itemUrl: '',
@@ -233,7 +285,7 @@ export const useUserSettingsShop = () => {
                 body: { url: state.value.itemUrl },
             })
             toast.add({ title: t('toast.userSettings.shopVerified'), color: 'success' })
-            await refreshUserData()
+            await refreshCurrentUser()
             return true
         } catch (error) {
             console.error('Error verifying shop:', error)
@@ -253,7 +305,7 @@ export const useUserSettingsShop = () => {
                 body: { shopId },
             })
             toast.add({ title: t('toast.userSettings.shopUnverified'), color: 'success' })
-            await refreshUserData()
+            await refreshCurrentUser()
             return true
         } catch (error) {
             console.error('Error unverifying shop:', error)
@@ -264,8 +316,8 @@ export const useUserSettingsShop = () => {
         }
     }
 
-    return {
-        userData,
+    // Create return object
+    const returnObject: UserSettingsShopReturn = {
         state,
         verifiable,
         url: (shopId: string, platform: Platform) => {
@@ -276,6 +328,23 @@ export const useUserSettingsShop = () => {
         verify,
         unverify,
     }
+
+    // Create initialization promise that waits for currentUser data
+    const initPromise = Promise.resolve()
+        .then(() => refreshCurrentUser())
+        .then(() => returnObject)
+
+    // Merge promise with return object (same pattern as Nuxt's useFetch/useAsyncData)
+    const awaitableResult = Object.assign(initPromise, returnObject) as AwaitableUserSettingsShop
+
+    // Make Promise methods enumerable
+    Object.defineProperties(awaitableResult, {
+        then: { enumerable: true, value: initPromise.then.bind(initPromise) },
+        catch: { enumerable: true, value: initPromise.catch.bind(initPromise) },
+        finally: { enumerable: true, value: initPromise.finally.bind(initPromise) },
+    })
+
+    return awaitableResult
 }
 
 export const useUserSettingsAccount = () => {

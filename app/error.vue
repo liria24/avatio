@@ -4,7 +4,6 @@ import type { NuxtError } from '#app'
 import * as locales from '@nuxt/ui/locale'
 
 const { locale } = useI18n()
-const { getSession, getSessions } = useAuth()
 
 const props = defineProps({
     error: {
@@ -15,8 +14,6 @@ const props = defineProps({
         }),
     },
 })
-
-await Promise.all([getSession(), getSessions()])
 </script>
 
 <template>

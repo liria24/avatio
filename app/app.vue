@@ -3,9 +3,6 @@ import { Analytics } from '@vercel/analytics/nuxt'
 import * as locales from '@nuxt/ui/locale'
 
 const { locale } = useI18n()
-const { getSession, getSessions } = useAuth()
-
-await Promise.all([getSession(), getSessions()])
 </script>
 
 <template>

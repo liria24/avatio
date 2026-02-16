@@ -1,10 +1,10 @@
 <script lang="ts" setup>
-const { session, sessions } = useAuth()
+const { session } = await useAuth()
 const route = useRoute()
 const { login } = useAppOverlay()
 
-const { notifications } = useNotifications()
-const filteredNotifications = computed(() => notifications.value.filter((n) => n.banner))
+const { data } = useNotifications()
+const filteredNotifications = computed(() => data.value.notifications.filter((n) => n.banner))
 </script>
 
 <template>
@@ -41,7 +41,7 @@ const filteredNotifications = computed(() => notifications.value.filter((n) => n
                     <template v-if="route.path !== '/login'">
                         <div v-if="session" class="flex items-center gap-2">
                             <HeaderNotificationButton />
-                            <HeaderMenu :session :sessions />
+                            <HeaderMenu />
                         </div>
 
                         <UButton
