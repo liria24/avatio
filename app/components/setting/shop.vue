@@ -6,8 +6,9 @@ const { sectionId } = defineProps<Props>()
 
 const { locale } = useI18n()
 
-const { userData, state, verifiable, url, generateVerificationCode, verify, unverify } =
-    useUserSettingsShop()
+const { data: currentUser } = await useCurrentUser()
+const { state, verifiable, url, generateVerificationCode, verify, unverify } =
+    await useUserSettingsShop()
 
 const modalVerify = ref(false)
 const modalUnverify = ref(false)
@@ -111,14 +112,14 @@ watch(modalVerify, async (value) => {
         <UCard>
             <div class="flex flex-col gap-2">
                 <p
-                    v-if="!userData?.shops?.length"
+                    v-if="!currentUser?.shops?.length"
                     class="text-muted self-center py-2 text-sm leading-none"
                 >
                     {{ $t('settings.shop.noVerifiedShops') }}
                 </p>
 
                 <div
-                    v-for="shopItem in userData?.shops"
+                    v-for="shopItem in currentUser?.shops"
                     :key="shopItem.shop.id"
                     class="bg-muted flex items-center gap-3 rounded-lg p-3"
                 >

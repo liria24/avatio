@@ -4,20 +4,10 @@ interface Props {
 }
 const { sectionId } = defineProps<Props>()
 
-const { state, save, image, link, updating, syncProfileData } = useUserSettingsProfile()
+const { state, save, image, link, updating } = await useUserSettingsProfile()
 const { open } = image.select()
-const { session } = useAuth()
-const username = computed(() => session.value?.user.username || '')
 
 const newLink = ref('')
-
-watch(
-    username,
-    async (currentUsername, oldUsername) => {
-        if (!currentUsername || currentUsername !== oldUsername) await syncProfileData()
-    },
-    { immediate: true },
-)
 
 const addLink = () => {
     const success = link.add(newLink.value)
