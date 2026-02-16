@@ -18,7 +18,24 @@ const client = createAuthClient({
     ],
 })
 
-export const useAuth = () => {
+interface UseAuthReturn {
+    auth: typeof client
+    session: Ref<Session | null | undefined>
+    sessions: Ref<Sessions | undefined>
+    getSession: () => Promise<Ref<Session | null | undefined>>
+    getSessions: () => Promise<Ref<Sessions | undefined>>
+    refreshSession: () => Promise<Ref<Session | null | undefined>>
+    refreshSessions: () => Promise<Ref<Sessions | undefined>>
+    signIn: {
+        twitter: () => ReturnType<typeof client.signIn.social>
+    }
+    signOut: () => Promise<void>
+    revoke: () => Promise<void>
+}
+
+type AwaitableUseAuth = UseAuthReturn & Promise<UseAuthReturn>
+
+export const useAuth = (): AwaitableUseAuth => {
     const localePath = useLocalePath()
 
     const globalSession = useState<Session | null | undefined>('auth:session', () => undefined)
@@ -108,7 +125,8 @@ export const useAuth = () => {
         }
     }
 
-    return {
+    // Create return object
+    const returnObject: UseAuthReturn = {
         auth: client,
         session: globalSession,
         sessions: globalSessions,
@@ -120,4 +138,19 @@ export const useAuth = () => {
         signOut,
         revoke,
     }
+
+    // Create initialization promise that waits for session and sessions data
+    const initPromise = Promise.all([getSession(), getSessions()]).then(() => returnObject)
+
+    // Merge promise with return object (same pattern as Nuxt's useFetch/useAsyncData)
+    const awaitableResult = Object.assign(initPromise, returnObject) as AwaitableUseAuth
+
+    // Make Promise methods enumerable
+    Object.defineProperties(awaitableResult, {
+        then: { enumerable: true, value: initPromise.then.bind(initPromise) },
+        catch: { enumerable: true, value: initPromise.catch.bind(initPromise) },
+        finally: { enumerable: true, value: initPromise.finally.bind(initPromise) },
+    })
+
+    return awaitableResult
 }

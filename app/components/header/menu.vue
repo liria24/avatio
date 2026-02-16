@@ -1,11 +1,5 @@
 <script setup lang="ts">
-interface Props {
-    session: Session
-    sessions?: Sessions
-}
-const props = defineProps<Props>()
-
-const { auth, revoke } = useAuth()
+const { auth, session, sessions, revoke } = useAuth()
 const route = useRoute()
 const toast = useToast()
 const colorMode = useColorMode()
@@ -28,7 +22,7 @@ const switchAccount = async (sessionToken: string) => {
         :items="[
             [
                 {
-                    to: $localePath(`/@${props.session.user.username}`),
+                    to: $localePath(`/@${session?.user.username}`),
                     slot: 'user',
                 },
             ],
@@ -94,14 +88,14 @@ const switchAccount = async (sessionToken: string) => {
                     label: t('header.menu.switchAccount'),
                     icon: 'mingcute:group-2-fill',
                     children: [
-                        ...(props.sessions?.map((session) => ({
-                            label: session.user.name,
+                        ...(sessions?.map((s) => ({
+                            label: s.user.name,
                             avatar: {
-                                src: session.user.image || undefined,
-                                alt: session.user.name,
+                                src: s.user.image || undefined,
+                                alt: s.user.name,
                                 icon: 'mingcute:user-3-fill',
                             },
-                            onSelect: () => switchAccount(session.session.token),
+                            onSelect: () => switchAccount(s.session.token),
                         })) || []),
                         {
                             label: t('header.menu.newAccount'),
@@ -124,19 +118,19 @@ const switchAccount = async (sessionToken: string) => {
             class="ring-accented size-8 cursor-pointer rounded-full ring-0 transition-all select-none hover:ring-4"
         >
             <UAvatar
-                :src="session.user.image || undefined"
-                :alt="session.user.name"
+                :src="session?.user.image || undefined"
+                :alt="session?.user.name"
                 icon="mingcute:user-3-fill"
             />
         </button>
 
         <template #user>
             <UUser
-                :name="session.user.name"
-                :description="`@${session.user.username}`"
+                :name="session?.user.name"
+                :description="`@${session?.user.username}`"
                 :avatar="{
-                    src: session.user.image || undefined,
-                    alt: session.user.name,
+                    src: session?.user.image || undefined,
+                    alt: session?.user.name,
                     icon: 'mingcute:user-3-fill',
                 }"
                 :ui="{ description: 'font-mono max-w-32 break-all line-clamp-1' }"
