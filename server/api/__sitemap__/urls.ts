@@ -49,14 +49,14 @@ export default defineSitemapEventHandler(async () => {
                           loc: image.url,
                       }))
                     : undefined,
-            })
+            }),
         ),
         ...users.map(
             (user): SitemapUrlInput => ({
                 loc: `/@${user.username}`,
                 lastmod: user.updatedAt,
                 images: user.image ? [{ loc: user.image }] : undefined,
-            })
+            }),
         ),
     ]
 })

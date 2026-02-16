@@ -91,7 +91,7 @@ const inputShapekeyValue = ref(0)
                         <UPopover
                             v-if="
                                 ['avatar', 'hair', 'clothing', 'accessory'].includes(
-                                    props.item.category
+                                    props.item.category,
                                 )
                             "
                         >

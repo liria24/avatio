@@ -73,7 +73,7 @@ export const useAppOverlay = () => {
 
                 instance = overlay.create(
                     LazyComponent as unknown as Parameters<typeof overlay.create>[0],
-                    props && typeof props === 'object' ? { props } : undefined
+                    props && typeof props === 'object' ? { props } : undefined,
                 )
                 instance.open()
             },
@@ -98,7 +98,7 @@ export const useAppOverlay = () => {
         reportUser: createModalWrapper<ModalReportUser>(LazyModalReportUser),
         banUser: createModalWrapper<ModalBanUser>(LazyModalAdminBanUser),
         changeItemNiceName: createModalWrapper<ModalChangeItemNiceName>(
-            LazyModalAdminChangeItemNiceName
+            LazyModalAdminChangeItemNiceName,
         ),
         modalFlags: createModalWrapper<void>(LazyModalAdminModalFlags),
         imageViewer: createModalWrapper<ModalImageViewer>(LazyImageViewer),

@@ -33,7 +33,7 @@ const categorizedItems = computed(() => {
             acc[category].push(item)
             return acc
         },
-        {} as Record<string, SetupItem[]>
+        {} as Record<string, SetupItem[]>,
     )
 
     const orderedCategories: Record<string, SetupItem[]> = {}
@@ -130,7 +130,7 @@ if (data.value) {
                                     {
                                         external: true,
                                         open: { target: '_blank' },
-                                    }
+                                    },
                                 )
                             },
                         },

@@ -228,7 +228,7 @@ const getSetup = defineCachedFunction(
             try {
                 const response = await $fetch<Item>(
                     `/api/items/${transformItemId(item.item.id).encode()}`,
-                    { query: { platform: item.item.platform } }
+                    { query: { platform: item.item.platform } },
                 )
                 return {
                     success: true,
@@ -278,7 +278,7 @@ const getSetup = defineCachedFunction(
         getKey: (id: number, session: Session | undefined) =>
             `${id}${session ? `:${session.user.id}` : ''}`,
         swr: false,
-    }
+    },
 )
 
 export default sessionEventHandler<Setup>(async ({ session }) => {

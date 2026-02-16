@@ -6,7 +6,7 @@ export default authedSessionEventHandler(
     async ({ session }) => {
         const { setupId, spam, hate, infringe, badImage, other, comment } = await validateBody(
             body,
-            { sanitize: true }
+            { sanitize: true },
         )
 
         await db.insert(setupReports).values({
@@ -24,5 +24,5 @@ export default authedSessionEventHandler(
     },
     {
         rejectBannedUser: true,
-    }
+    },
 )

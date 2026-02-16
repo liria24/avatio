@@ -28,7 +28,7 @@ export const getGithubRepo = defineCachedFunction(
     {
         maxAge: GITHUB_API_CACHE_TTL,
         name: 'ghRepo',
-    }
+    },
 )
 
 export const getGithubContributors = defineCachedFunction(
@@ -36,14 +36,14 @@ export const getGithubContributors = defineCachedFunction(
         if (!validateRepo(repo)) return null
 
         const response = await $fetch<GithubContributors>(
-            `https://ungh.cc/repos/${repo}/contributors`
+            `https://ungh.cc/repos/${repo}/contributors`,
         ).catch(() => null)
         return response
     },
     {
         maxAge: GITHUB_API_CACHE_TTL,
         name: 'ghContributors',
-    }
+    },
 )
 
 export const getGithubLatestRelease = defineCachedFunction(
@@ -51,21 +51,21 @@ export const getGithubLatestRelease = defineCachedFunction(
         if (!validateRepo(repo)) return null
 
         const response = await $fetch<GithubLatestRelease>(
-            `https://ungh.cc/repos/${repo}/releases/latest`
+            `https://ungh.cc/repos/${repo}/releases/latest`,
         ).catch(() => null)
         return response
     },
     {
         maxAge: GITHUB_API_CACHE_TTL,
         name: 'ghLatestRelease',
-    }
+    },
 )
 
 export const getGithubReadme = async (repo: string) => {
     if (!validateRepo(repo)) return null
 
     const response = await $fetch<GithubReadme>(`https://ungh.cc/repos/${repo}/readme`).catch(
-        () => null
+        () => null,
     )
     return response
 }
@@ -75,14 +75,14 @@ export const getGithubUser = defineCachedFunction(
         if (!validateUser(username)) return null
 
         const response = await $fetch<GithubUser>(`https://ungh.cc/users/${username}`).catch(
-            () => null
+            () => null,
         )
         return response
     },
     {
         maxAge: GITHUB_API_CACHE_TTL,
         name: 'ghUser',
-    }
+    },
 )
 
 type GithubItem = Omit<Item, 'outdated' | 'image' | 'niceName' | 'price' | 'nsfw'> & {
@@ -141,5 +141,5 @@ export const getGithubItem = defineCachedFunction(
     {
         maxAge: GITHUB_API_CACHE_TTL,
         name: 'ghItem',
-    }
+    },
 )

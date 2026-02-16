@@ -344,7 +344,9 @@
     },
     "changelogs": {
         "title": "Changelogs",
-        "description": "View the changelog of Avatio."
+        "description": "View the changelog of Avatio.",
+        "translatedByAi": "Translated by AI",
+        "fallbacked": "This content is currently not available in {locale}, showing Japanese as fallback."
     },
     "footer": {
         "social": {
@@ -365,7 +367,9 @@
     "modal": {
         "login": {
             "title": "Login",
+            "description": "Log in to post your setup",
             "agreement": "By logging in, you agree to the following:",
+            "firstTimeNotice": "A new account will be automatically created for first-time users.",
             "footer": {
                 "terms": "Terms of Service",
                 "privacy": "Privacy Policy"

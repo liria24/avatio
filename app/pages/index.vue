@@ -3,7 +3,15 @@ const { session } = useAuth()
 const route = useRoute()
 const router = useRouter()
 const { login } = useAppOverlay()
-const { t } = useI18n()
+const { t, locale } = useI18n()
+
+const { data: titles } = useFetch('/api/changelogs', {
+    dedupe: 'defer',
+    query: { lang: locale.value },
+    watch: [locale],
+    transform: (response) => response.data.map((item) => item.title),
+    default: () => [],
+})
 
 type Tab = 'latest' | 'owned' | 'bookmarked'
 
@@ -46,10 +54,22 @@ useSchemaOrg([
         <UPageHero
             v-if="!session"
             :ui="{
-                container: 'pt-18 sm:pt-24 lg:pt-32',
+                container: 'py-12 sm:py-18 lg:py-26',
                 title: 'sm:text-6xl wrap-anywhere break-keep',
+                headline: 'mb-6',
             }"
         >
+            <template v-if="titles.length" #headline>
+                <UButton
+                    :to="$localePath('/changelogs')"
+                    :label="titles[0]"
+                    variant="soft"
+                    color="neutral"
+                    style="animation-delay: 0.5s"
+                    class="fade-in-blur rounded-full px-4"
+                />
+            </template>
+
             <template #title>
                 <span
                     style="animation-delay: 0.3s"

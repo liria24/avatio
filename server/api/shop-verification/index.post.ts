@@ -95,5 +95,5 @@ export default authedSessionEventHandler(
     },
     {
         rejectBannedUser: true,
-    }
+    },
 )

@@ -12,7 +12,7 @@ export default cronEventHandler(async () => {
             console.log('Deleting image from storage:', image.key)
             await remove(image.key)
             return image.key
-        })
+        }),
     )
 
     // Categorize results
@@ -36,7 +36,7 @@ export default cronEventHandler(async () => {
         {
             successful: [] as string[],
             failed: [] as Array<{ key: string; error: string }>,
-        }
+        },
     )
 
     const message = 'Cleanup completed.'

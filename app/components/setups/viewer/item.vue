@@ -32,7 +32,7 @@ const providerIcon = computed(() => providerIcons[item.platform])
         :class="
             cn(
                 'ring-accented relative flex flex-col gap-2 overflow-clip rounded-xl p-2 ring-1',
-                className
+                className,
             )
         "
     >

@@ -67,7 +67,7 @@ watch(
     (id) => {
         if (id && id.length > 2) checkNewIdAvailability(id)
         else checkState.value = 'idle'
-    }
+    },
 )
 
 watch(
@@ -75,7 +75,7 @@ watch(
     (state) => {
         if (state === 'available') available.value = true
         else available.value = false
-    }
+    },
 )
 </script>
 

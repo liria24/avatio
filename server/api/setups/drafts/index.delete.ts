@@ -28,8 +28,8 @@ export default authedSessionEventHandler(
             .where(
                 inArray(
                     setupDrafts.id,
-                    data.map((draft) => draft.id)
-                )
+                    data.map((draft) => draft.id),
+                ),
             )
             .returning()
 
@@ -39,5 +39,5 @@ export default authedSessionEventHandler(
     },
     {
         rejectBannedUser: true,
-    }
+    },
 )

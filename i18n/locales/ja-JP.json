@@ -344,7 +344,9 @@
     },
     "changelogs": {
         "title": "変更履歴",
-        "description": "Avatioの変更履歴を確認できます。"
+        "description": "Avatioの変更履歴を確認できます。",
+        "translatedByAi": "AIにより翻訳されました",
+        "fallbacked": "このコンテンツは現在{locale}に非対応のため、日本語にフォールバックされました。"
     },
     "footer": {
         "social": {
@@ -365,7 +367,9 @@
     "modal": {
         "login": {
             "title": "ログイン",
+            "description": "ログインしてセットアップを投稿しよう",
             "agreement": "ログインすることで以下に同意したことになります:",
+            "firstTimeNotice": "初めての方は自動的にアカウントが作成されます。",
             "footer": {
                 "terms": "利用規約",
                 "privacy": "プライバシーポリシー"

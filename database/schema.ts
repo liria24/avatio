@@ -14,6 +14,8 @@ import {
     uuid,
 } from 'drizzle-orm/pg-core'
 
+export const locales = pgEnum('locales', ['en', 'ja'])
+
 export const userBadge = pgEnum('user_badge', [
     'developer',
     'contributor',
@@ -59,7 +61,7 @@ export const user = authSchema.table(
         links: text().array(),
         isInitialized: boolean('is_initialized').notNull().default(false),
     },
-    (table) => [index('user_email_index').on(table.email)]
+    (table) => [index('user_email_index').on(table.email)],
 )
 
 export const session = authSchema.table(
@@ -84,7 +86,7 @@ export const session = authSchema.table(
         index('session_user_id_index').on(table.userId),
         index('session_expires_at_index').on(table.expiresAt),
         index('session_token_index').on(table.token),
-    ]
+    ],
 )
 
 export const account = authSchema.table(
@@ -109,7 +111,7 @@ export const account = authSchema.table(
         createdAt: timestamp('created_at').notNull(),
         updatedAt: timestamp('updated_at').notNull(),
     },
-    (table) => [index('account_user_id_index').on(table.userId)]
+    (table) => [index('account_user_id_index').on(table.userId)],
 )
 
 export const verification = authSchema.table(
@@ -122,7 +124,7 @@ export const verification = authSchema.table(
         createdAt: timestamp('created_at').defaultNow().notNull(),
         updatedAt: timestamp('updated_at').defaultNow().notNull(),
     },
-    (table) => [index('verification_identifier_index').on(table.identifier)]
+    (table) => [index('verification_identifier_index').on(table.identifier)],
 )
 
 export const userShops = authSchema.table(
@@ -150,7 +152,7 @@ export const userShops = authSchema.table(
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
-    ]
+    ],
 )
 
 export const userShopVerification = authSchema.table(
@@ -170,7 +172,7 @@ export const userShopVerification = authSchema.table(
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
-    ]
+    ],
 )
 
 export const userBadges = authSchema.table(
@@ -190,7 +192,7 @@ export const userBadges = authSchema.table(
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
-    ]
+    ],
 )
 
 export const changelogs = pgTable(
@@ -201,9 +203,33 @@ export const changelogs = pgTable(
         updatedAt: timestamp('updated_at').defaultNow().notNull(),
         title: text().notNull(),
         markdown: text().notNull(),
-        html: text().notNull(),
+        html: text(),
     },
-    (table) => [index('changelogs_slug_index').on(table.slug)]
+    (table) => [index('changelogs_slug_index').on(table.slug)],
+)
+
+export const changelogsI18n = pgTable(
+    'changelogs_i18n',
+    {
+        id: uuid().primaryKey().defaultRandom(),
+        changelogSlug: text('changelog_slug').notNull(),
+        locale: locales().notNull(),
+        title: text().notNull(),
+        markdown: text().notNull(),
+        html: text(),
+        aiGenerated: boolean('ai_generated').default(false).notNull(),
+    },
+    (table) => [
+        index('changelogs_i18n_changelog_slug_index').on(table.changelogSlug),
+        index('changelogs_i18n_locale_index').on(table.locale),
+        foreignKey({
+            name: 'changelogs_i18n_changelog_slug_fkey',
+            columns: [table.changelogSlug],
+            foreignColumns: [changelogs.slug],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+    ],
 )
 
 export const changelogAuthors = pgTable(
@@ -230,7 +256,7 @@ export const changelogAuthors = pgTable(
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
-    ]
+    ],
 )
 
 export const shops = pgTable(
@@ -244,7 +270,7 @@ export const shops = pgTable(
         image: text(),
         verified: boolean().default(false).notNull(),
     },
-    (table) => [index('shops_id_index').on(table.id), index('shops_name_index').on(table.name)]
+    (table) => [index('shops_id_index').on(table.id), index('shops_name_index').on(table.name)],
 )
 
 export const items = pgTable(
@@ -274,7 +300,7 @@ export const items = pgTable(
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
-    ]
+    ],
 )
 
 export const setups = pgTable(
@@ -300,7 +326,7 @@ export const setups = pgTable(
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
-    ]
+    ],
 )
 
 export const setupItems = pgTable(
@@ -330,7 +356,7 @@ export const setupItems = pgTable(
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
-    ]
+    ],
 )
 
 export const setupItemShapekeys = pgTable(
@@ -351,7 +377,7 @@ export const setupItemShapekeys = pgTable(
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
-    ]
+    ],
 )
 
 export const setupTags = pgTable(
@@ -372,7 +398,7 @@ export const setupTags = pgTable(
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
-    ]
+    ],
 )
 
 export const setupImages = pgTable(
@@ -395,7 +421,7 @@ export const setupImages = pgTable(
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
-    ]
+    ],
 )
 
 export const setupCoauthors = pgTable(
@@ -424,7 +450,7 @@ export const setupCoauthors = pgTable(
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
-    ]
+    ],
 )
 
 export const personalSchema = pgSchema('personal')
@@ -455,7 +481,7 @@ export const followUsers = personalSchema.table(
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
-    ]
+    ],
 )
 
 export const setupDrafts = personalSchema.table(
@@ -486,7 +512,7 @@ export const setupDrafts = personalSchema.table(
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
-    ]
+    ],
 )
 
 export const setupDraftImages = personalSchema.table(
@@ -507,7 +533,7 @@ export const setupDraftImages = personalSchema.table(
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
-    ]
+    ],
 )
 
 export const bookmarks = personalSchema.table(
@@ -536,7 +562,7 @@ export const bookmarks = personalSchema.table(
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
-    ]
+    ],
 )
 
 export const notificationType = pgEnum('notification_type', [
@@ -575,7 +601,7 @@ export const notifications = personalSchema.table(
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
-    ]
+    ],
 )
 
 export const feedbackSchema = pgSchema('feedback')
@@ -593,7 +619,7 @@ export const feedbacks = feedbackSchema.table(
     (table) => [
         index('feedbacks_id_index').on(table.id),
         index('feedbacks_fingerprint_index').on(table.fingerprint),
-    ]
+    ],
 )
 
 export const itemReports = feedbackSchema.table(
@@ -627,7 +653,7 @@ export const itemReports = feedbackSchema.table(
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
-    ]
+    ],
 )
 
 export const setupReports = feedbackSchema.table(
@@ -663,7 +689,7 @@ export const setupReports = feedbackSchema.table(
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
-    ]
+    ],
 )
 
 export const userReports = feedbackSchema.table(
@@ -699,7 +725,7 @@ export const userReports = feedbackSchema.table(
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
-    ]
+    ],
 )
 
 export const adminSchema = pgSchema('admin')
@@ -754,5 +780,5 @@ export const auditLogs = adminSchema.table(
         })
             .onDelete('set null')
             .onUpdate('cascade'),
-    ]
+    ],
 )

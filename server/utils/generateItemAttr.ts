@@ -29,7 +29,7 @@ EC サイトや GitHub で配布されているデジタル商品の情報から
 `
 
 const previousItemsMessage = (
-    previousItems: { name: string; niceName: string | null; category: string }[]
+    previousItems: { name: string; niceName: string | null; category: string }[],
 ) => `
 以下のアイテムが既に存在します。
 

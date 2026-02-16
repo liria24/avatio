@@ -82,7 +82,7 @@ watch(
         if (localTags.value.length) collapsibleSearchOptions.value = true
         updateRouteQuery()
     },
-    { deep: true }
+    { deep: true },
 )
 
 // route.queryの変更を監視して検索を実行（戻る・進む対応）
@@ -100,7 +100,7 @@ watch(
         // 検索実行
         search()
     },
-    { deep: true }
+    { deep: true },
 )
 
 // 初期検索の実行

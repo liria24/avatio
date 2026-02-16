@@ -32,7 +32,7 @@ export const useSetupCompose = () => {
         () => ({
             id: null,
             status: 'new',
-        })
+        }),
     )
 
     const state = useState<Schema>('setup-compose-state', () => ({
@@ -64,7 +64,7 @@ export const useSetupCompose = () => {
                           user: { ...user, createdAt: new Date(user.createdAt) },
                           note: coauthor.note || '',
                       }
-                  })
+                  }),
               )
             : []
 
@@ -75,7 +75,7 @@ export const useSetupCompose = () => {
                 content.items.map(async (draftItem) => {
                     try {
                         const itemData = await $fetch<Item>(
-                            `/api/items/${transformItemId(draftItem.itemId).encode()}`
+                            `/api/items/${transformItemId(draftItem.itemId).encode()}`,
                         )
                         return {
                             ...itemData,
@@ -89,7 +89,7 @@ export const useSetupCompose = () => {
                         console.error('Failed to load item:', draftItem.itemId, error)
                         return null
                     }
-                })
+                }),
             )
 
             for (const item of items) {
@@ -262,7 +262,7 @@ export const useSetupCompose = () => {
             const isEditing = editingSetupId.value !== null
             const response = await $fetch<Setup>(
                 isEditing ? `/api/setups/${editingSetupId.value}` : '/api/setups',
-                { method: isEditing ? 'PUT' : 'POST', body }
+                { method: isEditing ? 'PUT' : 'POST', body },
             )
 
             if (draft.value.id) {
@@ -368,8 +368,8 @@ export const useSetupCompose = () => {
             state.value.images.length ||
             state.value.tags.length ||
             state.value.coauthors.length ||
-            Object.values(state.value.items).some((items) => items.length)
-        )
+            Object.values(state.value.items).some((items) => items.length),
+        ),
     )
 
     // Tags
@@ -435,12 +435,12 @@ export const useSetupCompose = () => {
 
     // Items
     const totalItemsCount = computed(() =>
-        Object.values(state.value.items).reduce((total, category) => total + category.length, 0)
+        Object.values(state.value.items).reduce((total, category) => total + category.length, 0),
     )
 
     const isItemAlreadyAdded = (itemId: string): boolean =>
         Object.values(state.value.items).some((category) =>
-            category.some((item) => item.id === itemId)
+            category.some((item) => item.id === itemId),
         )
 
     const addItem = (item: Item) => {
@@ -493,7 +493,7 @@ export const useSetupCompose = () => {
         }
 
         for (const category of Object.keys(
-            state.value.items
+            state.value.items,
         ) as (keyof typeof state.value.items)[]) {
             const index = state.value.items[category].findIndex((item) => item.id === id)
             if (index !== -1) {

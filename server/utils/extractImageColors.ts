@@ -42,7 +42,7 @@ export default async (imageUrl: string, options: ExtractImageColorsOptions = {})
             saturationDistance,
             lightnessDistance,
             hueDistance,
-        }
+        },
     )
 
     const colors = extractedColors.sort((a, b) => b.area - a.area).map((color) => color.hex)

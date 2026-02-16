@@ -63,8 +63,8 @@ export default authedSessionEventHandler<Serialized<Setup>>(
                     db
                         .select({ id: setupItems.id })
                         .from(setupItems)
-                        .where(eq(setupItems.setupId, id))
-                )
+                        .where(eq(setupItems.setupId, id)),
+                ),
             )
 
         await db.delete(setupItems).where(eq(setupItems.setupId, id))
@@ -80,7 +80,7 @@ export default authedSessionEventHandler<Serialized<Setup>>(
                         category: item.category,
                         note: item.note,
                         unsupported: item.category === 'avatar' ? false : item.unsupported,
-                    }))
+                    })),
                 )
                 .returning({
                     id: setupItems.id,
@@ -120,7 +120,7 @@ export default authedSessionEventHandler<Serialized<Setup>>(
                             height,
                             themeColors: colors.length ? colors : null,
                         }
-                    })
+                    }),
                 )
 
                 await db.insert(setupImages).values(imageData)
@@ -136,7 +136,7 @@ export default authedSessionEventHandler<Serialized<Setup>>(
                     tags.map((tag) => ({
                         setupId: id,
                         tag: tag.tag,
-                    }))
+                    })),
                 )
         }
 
@@ -150,7 +150,7 @@ export default authedSessionEventHandler<Serialized<Setup>>(
                         setupId: id,
                         userId: coauthor.userId,
                         note: coauthor.note,
-                    }))
+                    })),
                 )
         }
 
@@ -162,5 +162,5 @@ export default authedSessionEventHandler<Serialized<Setup>>(
     },
     {
         rejectBannedUser: true,
-    }
+    },
 )

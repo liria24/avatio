@@ -1,9 +1,8 @@
 <script lang="ts" setup>
-const emit = defineEmits(['close'])
+const open = defineModel<boolean>('open', { default: false })
 
 const route = useRoute()
 const localePath = useLocalePath()
-const { signIn } = useAuth()
 
 const isInternalUpdate = ref(false)
 
@@ -11,7 +10,7 @@ const isInternalUpdate = ref(false)
 const handlePopState = () => {
     if (route.path === localePath('/login')) {
         isInternalUpdate.value = true
-        emit('close')
+        open.value = false
         nextTick(() => {
             isInternalUpdate.value = false
         })
@@ -30,47 +29,19 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <UModal :title="$t('modal.login.title')" :ui="{ content: 'max-w-xl' }">
+    <UModal v-model:open="open" :ui="{ content: 'max-w-xl p-10 rounded-2xl divide-y-0' }">
         <slot />
 
-        <template #body>
-            <div class="flex flex-col gap-2">
-                <UButton
-                    loading-auto
-                    label="X (Twitter)"
-                    icon="mingcute:social-x-fill"
-                    block
-                    size="lg"
-                    variant="subtle"
-                    color="neutral"
-                    class="py-4"
-                    @click="signIn.twitter()"
-                />
-            </div>
-        </template>
+        <template #content>
+            <UButton
+                :aria-label="$t('close')"
+                icon="mingcute:close-line"
+                variant="ghost"
+                class="absolute top-4 right-4"
+                @click="open = false"
+            />
 
-        <template #footer>
-            <div class="flex w-full items-center justify-end gap-3">
-                <p class="text-muted text-right text-xs">{{ $t('modal.login.agreement') }}</p>
-                <UButton
-                    :to="localePath('/terms')"
-                    target="_blank"
-                    :label="$t('modal.login.footer.terms')"
-                    variant="link"
-                    size="sm"
-                    color="neutral"
-                    class="p-0"
-                />
-                <UButton
-                    :to="localePath('/privacy-policy')"
-                    target="_blank"
-                    :label="$t('modal.login.footer.privacy')"
-                    variant="link"
-                    size="sm"
-                    color="neutral"
-                    class="p-0"
-                />
-            </div>
+            <UserLogin />
         </template>
     </UModal>
 </template>

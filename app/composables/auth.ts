@@ -29,7 +29,7 @@ export const useAuth = () => {
 
         const headers = useRequestHeaders()
         const { data } = await client.useSession((url, options) =>
-            useFetch(url, { ...options, dedupe: 'defer', headers })
+            useFetch(url, { ...options, dedupe: 'defer', headers }),
         )
 
         globalSession.value = data.value
@@ -44,7 +44,7 @@ export const useAuth = () => {
                 dedupe: 'defer',
                 credentials: 'include',
                 headers,
-            })
+            }),
         )
 
         globalSession.value = data.value

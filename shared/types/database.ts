@@ -4,6 +4,7 @@ import {
     auditTargetType,
     bookmarks,
     changelogs,
+    changelogsI18n,
     feedbacks,
     itemCategory,
     itemReports,
@@ -155,7 +156,7 @@ export const setupItemsPublicSchema = z.intersection(
         })
         .extend({
             shapekeys: setupItemShapekeysPublicSchema.array().optional(),
-        })
+        }),
 )
 export type SetupItem = z.infer<typeof setupItemsPublicSchema> & {
     forks?: number
@@ -286,34 +287,34 @@ export const setupsClientFormSchema = createInsertSchema(setups, {
                     ...item,
                     id: item.id.toString(),
                 }))
-                .array()
+                .array(),
         ),
     })
     .refine(
         (val) => {
             const totalItems = Object.values(val.items).reduce(
                 (total, category) => total + category.length,
-                0
+                0,
             )
             return totalItems > 0
         },
         {
             message: 'アイテムは1個以上必要です。',
             path: ['items'],
-        }
+        },
     )
     .refine(
         (val) => {
             const totalItems = Object.values(val.items).reduce(
                 (total, category) => total + category.length,
-                0
+                0,
             )
             return totalItems <= MAX_ITEMS_PER_SETUP
         },
         {
             message: `アイテムは最大${MAX_ITEMS_PER_SETUP}個です。`,
             path: ['items'],
-        }
+        },
     )
 export const setupsPublicSchema = setupsSelectSchema
     .pick({
@@ -500,6 +501,12 @@ export const auditLogsPublicSchema = auditLogsSelectSchema
     })
 export type AuditLog = z.infer<typeof auditLogsPublicSchema>
 
+export const changelogsI18nSelectSchema = createSelectSchema(changelogsI18n)
+export const changelogsI18nInsertSchema = createInsertSchema(changelogsI18n).omit({
+    id: true,
+    changelogSlug: true,
+})
+
 export const changelogsSelectSchema = createSelectSchema(changelogs)
 export const changelogsInsertSchema = createInsertSchema(changelogs)
 export const changelogsPublicSchema = changelogsSelectSchema
@@ -509,10 +516,10 @@ export const changelogsPublicSchema = changelogsSelectSchema
         updatedAt: true,
         title: true,
         markdown: true,
-        html: true,
     })
     .extend({
         authors: userPublicSchema.array().optional(),
+        aiGenerated: z.boolean().optional(),
     })
 export type Changelog = z.infer<typeof changelogsPublicSchema>
 
