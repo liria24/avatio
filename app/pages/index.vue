@@ -6,6 +6,7 @@ const { login } = useAppOverlay()
 const { t, locale } = useI18n()
 
 const { data: titles } = useFetch('/api/changelogs', {
+    key: computed(() => `changelog-titles-${locale.value}`),
     dedupe: 'defer',
     query: { lang: locale.value },
     watch: [locale],
