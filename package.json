@@ -72,10 +72,10 @@
         "@types/sanitize-html": "2.16.0",
         "bumpp": "10.4.1",
         "drizzle-kit": "1.0.0-beta.15-859cf75",
-        "oxfmt": "^0.32.0",
-        "oxlint": "^1.47.0",
+        "oxfmt": "^0.33.0",
+        "oxlint": "^1.48.0",
         "taze": "^19.9.2",
-        "typescript": "^6.0.0-dev.20260214"
+        "typescript": "^6.0.0-dev.20260216"
     },
     "overrides": {
         "vite": "8.0.0-beta.14",
