@@ -366,8 +366,9 @@
     },
     "modal": {
         "login": {
-            "title": "Login",
+            "title": "Welcome to Avatio",
             "description": "Log in to post your setup",
+            "loginWith": "Login with {provider}",
             "agreement": "By logging in, you agree to the following:",
             "firstTimeNotice": "A new account will be automatically created for first-time users.",
             "footer": {
