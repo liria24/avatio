@@ -7,6 +7,7 @@ const { locale } = useI18n()
 
 <template>
     <UApp :locale="locales[locale]">
+        <NuxtPwaManifest />
         <Analytics />
         <NuxtRouteAnnouncer />
         <NuxtLoadingIndicator />
