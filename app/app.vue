@@ -3,6 +3,12 @@ import { Analytics } from '@vercel/analytics/nuxt'
 import * as locales from '@nuxt/ui/locale'
 
 const { locale } = useI18n()
+
+useHead({
+    htmlAttrs: {
+        lang: () => locale.value,
+    },
+})
 </script>
 
 <template>
