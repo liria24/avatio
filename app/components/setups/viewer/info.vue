@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 interface Props {
-    setup: SerializedSetup
+    setup: Serialized<Setup>
     sidebar?: boolean
     class?: string | string[]
 }

@@ -94,7 +94,6 @@ export const userPublicSchema = userSelectSchema
         shops: userShopsPublicSchema.array().optional(),
     })
 export type User = z.infer<typeof userPublicSchema>
-export type SerializedUser = Serialized<User>
 
 export const itemsSelectSchema = createSelectSchema(items)
 export const itemsInsertSchema = createInsertSchema(items)
@@ -335,7 +334,6 @@ export const setupsPublicSchema = setupsSelectSchema
         failedItemsCount: z.number().min(0).optional(),
     })
 export type Setup = z.infer<typeof setupsPublicSchema>
-export type SerializedSetup = Serialized<Setup>
 
 export const setupDraftContentSchema = setupsInsertSchema
     .pick({
@@ -363,7 +361,6 @@ export const setupDraftsPublicSchema = setupDraftsSelectSchema
     })
 export type SetupDraftContent = z.infer<typeof setupDraftContentSchema>
 export type SetupDraft = z.infer<typeof setupDraftsPublicSchema>
-export type SerializedSetupDraft = Serialized<SetupDraft>
 
 export const setupDraftImagesSelectSchema = createSelectSchema(setupDraftImages)
 export type SetupDraftImage = z.infer<typeof setupDraftImagesSelectSchema>
@@ -377,7 +374,6 @@ export const bookmarksPublicSchema = bookmarksSelectSchema
         setup: setupsPublicSchema,
     })
 export type Bookmark = z.infer<typeof bookmarksPublicSchema>
-export type SerializedBookmark = Serialized<Bookmark>
 
 export const feedbacksSelectSchema = createSelectSchema(feedbacks)
 export const feedbacksInsertSchema = createInsertSchema(feedbacks, {

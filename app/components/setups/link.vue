@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 interface Props {
-    setup: SerializedSetup
+    setup: Serialized<Setup>
     class?: string | string[] | null
 }
 const { setup, class: className } = defineProps<Props>()
