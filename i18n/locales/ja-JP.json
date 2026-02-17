@@ -366,8 +366,9 @@
     },
     "modal": {
         "login": {
-            "title": "ログイン",
+            "title": "Avatioへようこそ",
             "description": "ログインしてセットアップを投稿しよう",
+            "loginWith": "{provider} でログイン",
             "agreement": "ログインすることで以下に同意したことになります:",
             "firstTimeNotice": "初めての方は自動的にアカウントが作成されます。",
             "footer": {

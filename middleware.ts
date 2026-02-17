@@ -1,7 +1,9 @@
 import { get } from '@vercel/edge-config'
 
 export const config = {
-    matcher: ['/((?!api|_nuxt(?:/.*)?|favicon.ico|favicon.svg|ogp.png|ogp_2.png).*)'],
+    matcher: [
+        '/((?!api|_nuxt(?:/.*)?|favicon.ico|favicon.svg|ogp.png|ogp_2.png|sw\\.js|manifest\\.webmanifest|workbox-.*\\.js).*)',
+    ],
 }
 
 export default async function middleware(request: Request) {

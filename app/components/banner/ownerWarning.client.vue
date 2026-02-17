@@ -4,12 +4,13 @@ const { dismissed, dismissBanner } = useOwnerWarningBanner()
 </script>
 
 <template>
-    <div
-        v-if="!dismissed"
-        class="ring-muted flex items-center justify-between gap-3 rounded-lg px-3 py-2 ring-1"
-    >
-        <ULink :to="`mailto:${app.mailaddress}?subject=${$t('banner.ownerWarningSubject')}`">
-            <p class="text-toned w-fit text-xs wrap-anywhere break-keep">
+    <div v-if="!dismissed" class="ring-muted flex items-start gap-3 rounded-lg px-3 py-2 ring-1">
+        <ULink
+            :to="`mailto:${app.mailaddress}?subject=${$t('banner.ownerWarningSubject')}`"
+            class="my-auto flex items-start gap-2"
+        >
+            <Icon name="mingcute:mail-fill" size="18" />
+            <p class="text-toned sentence w-fit text-xs">
                 {{ $t('banner.ownerWarning') }}
             </p>
         </ULink>
@@ -19,7 +20,7 @@ const { dismissed, dismissBanner } = useOwnerWarningBanner()
             icon="mingcute:close-line"
             variant="ghost"
             size="sm"
-            class="place-self-end"
+            class="ml-auto"
             @click="dismissBanner"
         />
     </div>

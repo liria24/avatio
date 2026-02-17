@@ -1,11 +1,10 @@
 import type { NitroRouteConfig } from 'nitropack'
-
 import { defineOrganization } from 'nuxt-schema-org/schema'
 import { withLeadingSlash } from 'ufo'
 
 const baseUrl = import.meta.env.PUBLIC_SITE_URL || 'http://localhost:3000'
 const title = 'Avatio'
-const description = 'あなたのアバター改変を共有しよう'
+const description = 'アバター改変レシピの共有プラットフォーム'
 
 const availableI18nLocales = ['en']
 
@@ -78,6 +77,7 @@ export default defineNuxtConfig({
         'nuxt-schema-org',
         'nuxt-seo-utils',
         '@nuxt/a11y',
+        '@vite-pwa/nuxt',
     ],
 
     css: ['~/assets/css/main.css'],
@@ -178,16 +178,19 @@ export default defineNuxtConfig({
             meta: [
                 { charset: 'utf-8' },
                 { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-                { name: 'icon', content: '/favicon.svg' },
                 { property: 'og:site_name', content: title },
                 { property: 'og:type', content: 'website' },
-                { property: 'og:url', content: 'https://avatio.me' },
+                { property: 'og:url', content: baseUrl },
                 { property: 'og:title', content: title },
-                { property: 'og:image', content: 'https://avatio.me/ogp.png' },
+                { property: 'og:image', content: `${baseUrl}/ogp.png` },
                 { name: 'description', content: description },
                 { property: 'og:description', content: description },
                 { name: 'twitter:site', content: '@liria_24' },
                 { name: 'twitter:card', content: 'summary_large_image' },
+            ],
+            link: [
+                { rel: 'icon', href: `/favicon.ico`, sizes: '48x48' },
+                { rel: 'apple-touch-icon', href: `/apple-touch-icon-180x180.png` },
             ],
         },
     },
@@ -247,12 +250,7 @@ export default defineNuxtConfig({
     },
 
     icon: {
-        customCollections: [
-            {
-                prefix: 'avatio',
-                dir: './app/assets/icons',
-            },
-        ],
+        customCollections: [{ prefix: 'avatio', dir: './app/assets/icons' }],
         clientBundle: {
             icons: [
                 'svg-spinners:ring-resize',
@@ -312,6 +310,51 @@ export default defineNuxtConfig({
     mdc: {
         remarkPlugins: {
             'remark-breaks': {},
+        },
+    },
+
+    pwa: {
+        registerWebManifestInRouteRules: true,
+        registerType: 'autoUpdate',
+        manifest: {
+            id: 'liria.avatio',
+            name: title,
+            short_name: title,
+            description,
+            theme_color: '#18181b',
+            background_color: '#18181b',
+            icons: [
+                { src: 'pwa-64x64.png', sizes: '64x64', type: 'image/png' },
+                { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
+                { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+                {
+                    src: 'maskable-icon-512x512.png',
+                    sizes: '512x512',
+                    type: 'image/png',
+                    purpose: 'maskable',
+                },
+            ],
+        },
+        workbox: {
+            runtimeCaching: [
+                {
+                    urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+                    handler: 'CacheFirst',
+                    options: {
+                        cacheName: 'google-fonts-cache',
+                        expiration: {
+                            maxEntries: 10,
+                            maxAgeSeconds: 60 * 60 * 24 * 365, // 365 days
+                        },
+                        cacheableResponse: {
+                            statuses: [0, 200],
+                        },
+                    },
+                },
+            ],
+        },
+        devOptions: {
+            enabled: true,
         },
     },
 

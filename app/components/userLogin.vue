@@ -12,13 +12,13 @@ const { signIn } = useAuth()
 
         <UButton
             loading-auto
-            label="X (Twitter)"
+            :label="$t('modal.login.loginWith', { provider: 'X (Twitter)' })"
             icon="mingcute:social-x-fill"
             block
             size="lg"
             variant="outline"
             color="neutral"
-            class="my-6 rounded-xl py-4"
+            class="mt-5 mb-6 rounded-xl py-4"
             @click="signIn.twitter()"
         />
 
