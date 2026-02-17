@@ -318,7 +318,6 @@ export default defineNuxtConfig({
         registerType: 'autoUpdate',
         manifest: {
             id: 'liria.avatio',
-            start_url: '/',
             name: title,
             short_name: title,
             description,
