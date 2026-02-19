@@ -135,7 +135,7 @@ initializeThemeColor()
 
             <!-- 画像がある場合のメタ情報 -->
             <div v-if="hasImages" class="flex w-full items-center gap-2 px-2 pb-2">
-                <UPopover mode="hover">
+                <PopoverUser :user="setup.user">
                     <UAvatar
                         :src="setup.user.image || undefined"
                         :alt="setup.user.name"
@@ -143,32 +143,7 @@ initializeThemeColor()
                         aria-hidden="true"
                         size="2xs"
                     />
-
-                    <template #content>
-                        <NuxtLink :to="`/@${setup.user.username}`" class="flex py-2 pr-3 pl-2">
-                            <UUser
-                                :avatar="{
-                                    src: setup.user.image || undefined,
-                                    icon: 'mingcute:user-3-fill',
-                                }"
-                                :description="`@${setup.user.username}`"
-                                :ui="{
-                                    name: 'flex gap-1 items-center',
-                                    description: 'line-clamp-1 break-all wrap-anywhere font-mono',
-                                }"
-                            >
-                                <template #name>
-                                    <span>{{ setup.user.name }}</span>
-                                    <UserBadges
-                                        v-if="setup.user.badges?.length"
-                                        :badges="setup.user.badges"
-                                        size="sm"
-                                    />
-                                </template>
-                            </UUser>
-                        </NuxtLink>
-                    </template>
-                </UPopover>
+                </PopoverUser>
 
                 <UTooltip :delay-duration="0">
                     <NuxtTime
@@ -196,7 +171,7 @@ initializeThemeColor()
                 </span>
 
                 <div class="flex items-center gap-2">
-                    <UPopover mode="hover">
+                    <PopoverUser :user="setup.user">
                         <UAvatar
                             :src="setup.user.image || undefined"
                             :alt="setup.user.name"
@@ -204,33 +179,7 @@ initializeThemeColor()
                             aria-hidden="true"
                             size="2xs"
                         />
-
-                        <template #content>
-                            <NuxtLink :to="`/@${setup.user.username}`" class="flex py-2 pr-3 pl-2">
-                                <UUser
-                                    :avatar="{
-                                        src: setup.user.image || undefined,
-                                        icon: 'mingcute:user-3-fill',
-                                    }"
-                                    :description="`@${setup.user.username}`"
-                                    :ui="{
-                                        name: 'flex gap-1 items-center',
-                                        description:
-                                            'line-clamp-1 break-all wrap-anywhere font-mono',
-                                    }"
-                                >
-                                    <template #name>
-                                        <span>{{ setup.user.name }}</span>
-                                        <UserBadges
-                                            v-if="setup.user.badges?.length"
-                                            :badges="setup.user.badges"
-                                            size="sm"
-                                        />
-                                    </template>
-                                </UUser>
-                            </NuxtLink>
-                        </template>
-                    </UPopover>
+                    </PopoverUser>
 
                     <UTooltip :delay-duration="0">
                         <NuxtTime
