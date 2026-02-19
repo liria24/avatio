@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 interface Props {
-    type?: 'latest' | 'owned' | 'bookmarked'
+    type?: 'latest' | 'following' | 'owned' | 'bookmarked'
     username?: string
 }
 const { type, username } = defineProps<Props>()

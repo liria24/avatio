@@ -52,12 +52,8 @@
             "logout": "Logout"
         }
     },
-    "bookmarks": {
-        "title": "Bookmarks",
-        "description": "View your bookmarked setups."
-    },
     "settings": {
-        "title": "User Settings",
+        "title": "Settings",
         "description": "Edit your user profile and manage your account.",
         "profile": {
             "title": "Profile",
@@ -104,8 +100,7 @@
             "theme": "Theme",
             "themeDescription": "Change the site appearance.",
             "improveTranslation": "Help us improve translations",
-            "editOnGitHub": "Edit on GitHub",
-            "translationGuideline": "Translation Guidelines"
+            "editOnGitHub": "Edit on GitHub"
         }
     },
     "toast": {
@@ -134,6 +129,10 @@
             "added": "Added to bookmarks",
             "removed": "Removed from bookmarks",
             "toggleFailed": "Failed to toggle bookmark"
+        },
+        "follow": {
+            "followFailed": "Failed to follow user",
+            "unfollowFailed": "Failed to unfollow user"
         },
         "reports": {
             "submitted": "Report submitted",
@@ -524,9 +523,6 @@
         "ownerWarning": "If you are the creator of an avatar or item and wish to be removed from Avatio, please contact us here.",
         "ownerWarningSubject": "Request to Remove from Avatio"
     },
-    "loginPage": {
-        "continueWith": "Continue with {provider}"
-    },
     "admin": {
         "label": "admin",
         "users": {
@@ -558,9 +554,6 @@
             "reportResolve": "Resolved Report",
             "feedbackClose": "Closed Feedback",
             "cleanup": "Cleanup"
-        },
-        "changelogsCompose": {
-            "duplicateAuthor": "Cannot add duplicate authors"
         },
         "reports": {
             "user": {

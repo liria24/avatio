@@ -2,7 +2,7 @@
 const { session } = useAuth()
 const { locale } = useI18n()
 const route = useRoute()
-const { login, reportUser } = useAppOverlay()
+const { login, reportUser, muteUser } = useAppOverlay()
 
 const username = route.params.username as string
 
@@ -11,7 +11,7 @@ const { data: user, status: userStatus } = await useUser(username)
 if (userStatus.value === 'success' && !user.value)
     showError({
         status: 404,
-        statusText: 'IDが無効です',
+        statusText: 'User Not Found',
     })
 
 const links = computed(() =>
@@ -28,6 +28,7 @@ const links = computed(() =>
 onBeforeRouteLeave(() => {
     login.close()
     reportUser.close()
+    muteUser.close()
 })
 
 if (user.value) {
@@ -62,32 +63,18 @@ if (user.value) {
 
     <div v-else-if="user" class="flex w-full flex-col gap-6 px-2">
         <div class="flex w-full flex-col items-start gap-3">
-            <div
-                class="flex w-full flex-col items-start justify-between gap-3 sm:flex-row sm:items-center"
-            >
-                <div class="flex items-center gap-6">
+            <div class="grid w-full items-center gap-3 sm:flex">
+                <div class="flex items-center gap-4 sm:gap-6">
                     <NuxtImg
                         v-if="user.image"
-                        v-slot="{ isLoaded, src, imgAttrs }"
                         :src="user.image"
+                        alt=""
                         :width="88"
                         :height="88"
                         format="avif"
                         preload
-                        custom
-                    >
-                        <img
-                            v-if="isLoaded"
-                            v-bind="imgAttrs"
-                            :src
-                            alt=""
-                            class="aspect-square size-14 shrink-0 rounded-full object-cover sm:size-20"
-                        />
-                        <USkeleton
-                            v-else
-                            class="aspect-square size-14 shrink-0 rounded-full sm:size-20"
-                        />
-                    </NuxtImg>
+                        class="aspect-square size-20 shrink-0 rounded-full object-cover"
+                    />
 
                     <div
                         v-else
@@ -104,34 +91,40 @@ if (user.value) {
                             <UserBadges v-if="user.badges" :badges="user.badges" />
                         </div>
 
-                        <div class="text-muted flex items-center gap-1 font-mono text-sm">
-                            <span> @{{ user.username }} </span>
-
-                            <Icon name="mingcute:calendar-2-fill" size="18" class="ml-2" />
-                            <NuxtTime :datetime="user.createdAt" date-style="short" :locale />
-                        </div>
+                        <span
+                            class="text-muted flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-sm break-all"
+                        >
+                            @{{ user.username }}
+                        </span>
                     </div>
                 </div>
-                <div class="flex items-center gap-1 self-end sm:self-auto">
-                    <UButton
-                        v-if="session?.user.username === user.username"
-                        :to="$localePath('/settings')"
-                        :label="$t('user.editProfile')"
-                        icon="mingcute:edit-3-fill"
-                        variant="ghost"
-                        size="sm"
-                        class="self-end"
-                    />
 
-                    <UButton
-                        :label="$t('user.reportUser')"
-                        icon="mingcute:flag-3-fill"
-                        variant="ghost"
-                        size="sm"
-                        class="self-end"
-                        @click="session ? reportUser.open({ userId: user.username }) : login.open()"
-                    />
+                <div
+                    v-if="session?.user.username !== username"
+                    class="mt-3 flex w-full items-center gap-2 sm:mt-0 sm:ml-auto sm:w-fit"
+                >
+                    <ButtonUserFollow :username class="w-full px-5 sm:w-fit" />
+                    <UTooltip text="ミュート">
+                        <UButton
+                            aria-label="ミュート"
+                            icon="mingcute:volume-mute-fill"
+                            variant="ghost"
+                            class="rounded-full"
+                            @click="session ? muteUser.open({ username }) : login.open()"
+                        />
+                    </UTooltip>
                 </div>
+            </div>
+
+            <div class="text-muted my-2 flex w-full items-center gap-1 px-3 text-sm empty:hidden">
+                <template v-if="user.followersCount">
+                    <span>{{ user.followersCount }} フォロワー</span>
+                    <Icon name="lucide:dot" size="16" class="text-dimmed" />
+                </template>
+                <span>
+                    <NuxtTime :datetime="user.createdAt" date-style="short" :locale />
+                    に登録
+                </span>
             </div>
 
             <div class="flex w-full flex-col gap-3 px-2 empty:hidden">
@@ -158,6 +151,24 @@ if (user.value) {
                         {{ user.bio }}
                     </p>
                 </div>
+            </div>
+
+            <div class="ml-auto flex items-center gap-1 px-2">
+                <UButton
+                    v-if="session?.user.username === user.username"
+                    :to="$localePath('/settings/profile')"
+                    :label="$t('user.editProfile')"
+                    icon="mingcute:edit-3-fill"
+                    variant="ghost"
+                    size="sm"
+                />
+                <UButton
+                    :label="$t('user.reportUser')"
+                    icon="mingcute:flag-3-fill"
+                    variant="ghost"
+                    size="sm"
+                    @click="session ? reportUser.open({ userId: user.username }) : login.open()"
+                />
             </div>
         </div>
 

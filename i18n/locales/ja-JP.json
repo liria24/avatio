@@ -52,12 +52,8 @@
             "logout": "ログアウト"
         }
     },
-    "bookmarks": {
-        "title": "ブックマーク",
-        "description": "あなたがブックマークしたセットアップを確認できます。"
-    },
     "settings": {
-        "title": "ユーザー設定",
+        "title": "設定",
         "description": "ユーザープロフィールの編集や、アカウントに関する操作を行うことができます。",
         "profile": {
             "title": "プロフィール",
@@ -104,8 +100,7 @@
             "theme": "テーマ",
             "themeDescription": "サイトの外観を変更します。",
             "improveTranslation": "翻訳の改善にぜひご協力ください",
-            "editOnGitHub": "GitHubで編集",
-            "translationGuideline": "翻訳ガイドライン"
+            "editOnGitHub": "GitHubで編集"
         }
     },
     "toast": {
@@ -134,6 +129,10 @@
             "added": "ブックマークしました",
             "removed": "ブックマークを解除しました",
             "toggleFailed": "ブックマークの変更に失敗しました"
+        },
+        "follow": {
+            "followFailed": "フォローに失敗しました",
+            "unfollowFailed": "フォロー解除に失敗しました"
         },
         "reports": {
             "submitted": "報告が送信されました",
@@ -524,9 +523,6 @@
         "ownerWarning": "あなたがアバター・アイテムの制作者であり、Avatioに掲載されることを拒否したい場合は、お手数ですがこちらよりご連絡をお願いします。",
         "ownerWarningSubject": "Avatioへの掲載拒否"
     },
-    "loginPage": {
-        "continueWith": "{provider} でログイン"
-    },
     "admin": {
         "label": "admin",
         "users": {
@@ -558,9 +554,6 @@
             "reportResolve": "報告を解決",
             "feedbackClose": "フィードバックをクローズ",
             "cleanup": "クリーンアップ"
-        },
-        "changelogsCompose": {
-            "duplicateAuthor": "著者を重複して追加することはできません"
         },
         "reports": {
             "user": {

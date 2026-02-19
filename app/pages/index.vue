@@ -14,7 +14,7 @@ const { data: titles } = useFetch('/api/changelogs', {
     default: () => [],
 })
 
-type Tab = 'latest' | 'owned' | 'bookmarked'
+type Tab = 'latest' | 'following' | 'owned' | 'bookmarked'
 
 const tab = ref<Tab>((route.query.tab as Tab) || 'latest')
 
@@ -25,7 +25,13 @@ const changeTab = (newTab: Tab) => {
 watch(
     () => route.query.tab,
     (newTab) => {
-        if (newTab === 'latest' || newTab === 'owned' || newTab === 'bookmarked') tab.value = newTab
+        if (
+            newTab === 'latest' ||
+            newTab === 'following' ||
+            newTab === 'owned' ||
+            newTab === 'bookmarked'
+        )
+            tab.value = newTab
         else tab.value = 'latest'
     },
 )
@@ -110,6 +116,15 @@ useSchemaOrg([
                     color="neutral"
                     class="px-4 py-2"
                     @click="changeTab('latest')"
+                />
+                <UButton
+                    label="フォロー中"
+                    :active="tab === 'following'"
+                    variant="ghost"
+                    active-variant="solid"
+                    color="neutral"
+                    class="px-4 py-2"
+                    @click="changeTab('following')"
                 />
                 <UButton
                     :label="$t('index.tabs.me')"

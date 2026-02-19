@@ -32,6 +32,13 @@ const { session } = useAuth()
                     </template>
                 </UUser>
             </NuxtLink>
+
+            <ButtonUserFollow
+                v-if="session?.user.username !== user.username"
+                :username="user.username"
+                size="sm"
+                class="px-3 py-1.5"
+            />
         </template>
     </UPopover>
 </template>

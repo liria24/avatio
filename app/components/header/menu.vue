@@ -28,42 +28,47 @@ const switchAccount = async (sessionToken: string) => {
             ],
             [
                 {
-                    label: t('header.menu.bookmarks'),
-                    icon: 'mingcute:bookmark-fill',
-                    to: $localePath('/?tab=bookmarked'),
+                    label: 'フォロー中',
+                    icon: 'mingcute:group-2-fill',
+                    to: $localePath(`/@${session?.user.username}/following`),
                 },
                 {
-                    label: t('header.menu.settings'),
+                    label: $t('header.menu.bookmarks'),
+                    icon: 'mingcute:bookmark-fill',
+                    to: $localePath('/bookmarks'),
+                },
+                {
+                    label: $t('header.menu.settings'),
                     icon: 'mingcute:settings-1-fill',
                     to: $localePath('/settings'),
                 },
             ],
             [
                 {
-                    label: t('header.menu.feedback'),
+                    label: $t('header.menu.feedback'),
                     icon: 'mingcute:chat-3-fill',
                     onSelect: () => feedback.open(),
                 },
                 {
-                    label: t('theme'),
+                    label: $t('theme'),
                     icon: 'mingcute:moon-fill',
                     children: [
                         {
-                            label: t('system'),
+                            label: $t('system'),
                             icon: 'mingcute:monitor-fill',
                             onSelect: () => {
                                 colorMode.preference = 'system'
                             },
                         },
                         {
-                            label: t('light'),
+                            label: $t('light'),
                             icon: 'mingcute:sun-fill',
                             onSelect: () => {
                                 colorMode.preference = 'light'
                             },
                         },
                         {
-                            label: t('dark'),
+                            label: $t('dark'),
                             icon: 'mingcute:moon-fill',
                             onSelect: () => {
                                 colorMode.preference = 'dark'
@@ -72,7 +77,7 @@ const switchAccount = async (sessionToken: string) => {
                     ],
                 },
                 {
-                    label: t('language'),
+                    label: $t('language'),
                     icon: 'mingcute:translate-2-line',
                     children: locales.map((locale) => ({
                         label: locale.name,
@@ -85,7 +90,7 @@ const switchAccount = async (sessionToken: string) => {
             ],
             [
                 {
-                    label: t('header.menu.switchAccount'),
+                    label: $t('header.menu.switchAccount'),
                     icon: 'mingcute:group-2-fill',
                     children: [
                         ...(sessions?.map((s) => ({
@@ -98,14 +103,14 @@ const switchAccount = async (sessionToken: string) => {
                             onSelect: () => switchAccount(s.session.token),
                         })) || []),
                         {
-                            label: t('header.menu.newAccount'),
+                            label: $t('header.menu.newAccount'),
                             icon: 'mingcute:user-add-2-fill',
                             onSelect: () => login.open(),
                         },
                     ],
                 },
                 {
-                    label: t('header.menu.logout'),
+                    label: $t('header.menu.logout'),
                     icon: 'mingcute:open-door-fill',
                     onSelect: revoke,
                 },

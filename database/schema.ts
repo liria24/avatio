@@ -455,28 +455,91 @@ export const setupCoauthors = pgTable(
 
 export const personalSchema = pgSchema('personal')
 
-export const followUsers = personalSchema.table(
-    'follow_users',
+export const userSettings = personalSchema.table(
+    'user_settings',
     {
-        id: integer().primaryKey().generatedAlwaysAsIdentity(),
+        id: uuid().primaryKey().defaultRandom(),
         createdAt: timestamp('created_at').defaultNow().notNull(),
+        updatedAt: timestamp('updated_at').defaultNow().notNull(),
         userId: text('user_id').notNull(),
-        targetUserId: text('target_user_id').notNull(),
+        publicFollows: boolean('public_follows').default(true).notNull(),
+        publicBookmark: boolean('public_bookmark').default(false).notNull(),
+        notifSiteEnabled: boolean('notif_site_enabled').default(true).notNull(),
+        notifSiteFollowed: boolean('notif_site_followed').default(true).notNull(),
+        notifSiteFolloweePost: boolean('notif_site_followee_post').default(true).notNull(),
+        notifSiteCoauthorAdded: boolean('notif_site_coauthor_added').default(true).notNull(),
+        notifPushEnabled: boolean('notif_push_enabled').default(true).notNull(),
+        notifPushFollowed: boolean('notif_push_followed').default(true).notNull(),
+        notifPushFolloweePost: boolean('notif_push_followee_post').default(true).notNull(),
+        notifPushCoauthorAdded: boolean('notif_push_coauthor_added').default(true).notNull(),
+        notifWebhookEnabled: boolean('notif_webhook_enabled').default(false).notNull(),
+        notifWebhookUrl: text('notif_webhook_url'),
+        notifWebhookFollowed: boolean('notif_webhook_followed').default(true).notNull(),
+        notifWebhookFolloweePost: boolean('notif_webhook_followee_post').default(true).notNull(),
+        notifWebhookCoauthorAdded: boolean('notif_webhook_coauthor_added').default(true).notNull(),
+        showNSFW: boolean('show_nsfw').default(false).notNull(),
     },
     (table) => [
-        index('follow_users_id_index').on(table.id),
-        index('follow_users_user_id_index').on(table.userId),
-        index('follow_users_target_user_id_index').on(table.targetUserId),
+        index('user_settings_user_id_index').on(table.userId),
         foreignKey({
-            name: 'follow_users_user_id_fkey',
+            name: 'user_settings_user_id_fkey',
+            columns: [table.userId],
+            foreignColumns: [user.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+    ],
+)
+
+export const userFollows = personalSchema.table(
+    'user_follows',
+    {
+        id: uuid().primaryKey().defaultRandom(),
+        createdAt: timestamp('created_at').defaultNow().notNull(),
+        userId: text('user_id').notNull(),
+        followeeId: text('followee_id').notNull(),
+    },
+    (table) => [
+        index('user_follows_user_id_index').on(table.userId),
+        index('user_follows_followee_id_index').on(table.followeeId),
+        foreignKey({
+            name: 'user_follows_user_id_fkey',
             columns: [table.userId],
             foreignColumns: [user.id],
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
         foreignKey({
-            name: 'follow_users_target_user_id_fkey',
-            columns: [table.targetUserId],
+            name: 'user_follows_followee_id_fkey',
+            columns: [table.followeeId],
+            foreignColumns: [user.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+    ],
+)
+
+export const userMutes = personalSchema.table(
+    'user_mutes',
+    {
+        id: uuid().primaryKey().defaultRandom(),
+        createdAt: timestamp('created_at').defaultNow().notNull(),
+        userId: text('user_id').notNull(),
+        muteeId: text('mutee_id').notNull(),
+    },
+    (table) => [
+        index('user_mutes_user_id_index').on(table.userId),
+        index('user_mutes_mutee_id_index').on(table.muteeId),
+        foreignKey({
+            name: 'user_mutes_user_id_fkey',
+            columns: [table.userId],
+            foreignColumns: [user.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+        foreignKey({
+            name: 'user_mutes_mutee_id_fkey',
+            columns: [table.muteeId],
             foreignColumns: [user.id],
         })
             .onDelete('cascade')

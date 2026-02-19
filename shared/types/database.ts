@@ -92,6 +92,9 @@ export const userPublicSchema = userSelectSchema
     .extend({
         badges: userBadgesPublicSchema.array().optional(),
         shops: userShopsPublicSchema.array().optional(),
+        followersCount: z.number().optional(),
+        followeesCount: z.number().optional(),
+        isFollowing: z.boolean().optional(),
     })
 export type User = z.infer<typeof userPublicSchema>
 

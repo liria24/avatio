@@ -16,7 +16,7 @@ export const useSetup = (id: number, options?: UseFetchOptions<Serialized<Setup>
 }
 
 export const useSetupsList = (
-    type?: 'latest' | 'owned' | 'bookmarked',
+    type?: 'latest' | 'following' | 'owned' | 'bookmarked',
     options?: {
         username?: string
         query?: MaybeRef<Record<string, unknown>>
