@@ -8,7 +8,6 @@ VRSNSユーザー向けのアバターセットアップ共有サービス。<br
 「セットアップ」を作成し、ユーザーが使用しているアバター・衣装・装飾品・ツールなどをリストできます。
 
 [![Vercel badge][badge-vercel]][vercel]
-[![Cloudflare badge][badge-cloudflare]][cloudflare]
 [![Nuxt badge][badge-nuxt]][nuxt]
 [![Tailwind badge][badge-tailwind]][tailwind]
 [![Better Auth badge][badge-better-auth]][better-auth]
@@ -67,11 +66,9 @@ Avatio は、ピクシブ株式会社 および BOOTH とは関係ありませ�
 [avatio-privacy]: https://avatio.me/privacy-policy
 [liria]: https://liria.me
 [vercel]: https://vercel.com
-[cloudflare]: https://cloudflare.com
 [nuxt]: https://nuxt.com
 [tailwind]: https://tailwindcss.com
 [badge-vercel]: https://svgl-badge.vercel.app/api/Hosting/Vercel?theme=dark
-[badge-cloudflare]: https://svgl-badge.vercel.app/api/Software/Cloudflare?theme=dark
 [badge-nuxt]: https://svgl-badge.vercel.app/api/Framework/Nuxt?theme=dark
 [badge-tailwind]: https://svgl-badge.vercel.app/api/Framework/Tailwind%20CSS?theme=dark
 [contributors]: https://github.com/liria24/avatio/graphs/contributors
