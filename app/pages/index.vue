@@ -14,14 +14,14 @@ const { data: titles } = useFetch('/api/changelogs', {
     default: () => [],
 })
 
-type Tab = 'latest' | 'owned' | 'bookmarked'
+type Tab = 'latest' | 'following' | 'owned' | 'bookmarked'
 
 const _tab = useRouteQuery<Tab | null>('tab', null, { mode: 'push' })
 
 const tab = computed<Tab>({
     get() {
         const val = _tab.value
-        if (val === 'owned' || val === 'bookmarked') return val
+        if (val === 'following' || val === 'owned' || val === 'bookmarked') return val
         return 'latest'
     },
     set(newTab: Tab) {
@@ -102,6 +102,15 @@ useSeo({
                     color="neutral"
                     class="px-4 py-2"
                     @click="tab = 'latest'"
+                />
+                <UButton
+                    label="フォロー中"
+                    :active="tab === 'following'"
+                    variant="ghost"
+                    active-variant="solid"
+                    color="neutral"
+                    class="px-4 py-2"
+                    @click="tab = 'following'"
                 />
                 <UButton
                     :label="$t('index.tabs.me')"

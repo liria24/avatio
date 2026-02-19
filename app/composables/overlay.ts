@@ -15,6 +15,7 @@ import {
     LazyModalAdminModalFlags,
     LazyImageViewer,
     LazyModalAgreeTerms,
+    LazyModalMuteUser,
 } from '#components'
 
 interface ModalSetupDelete {
@@ -62,12 +63,16 @@ interface ModalImageViewer {
     alt?: string
 }
 
+interface ModalMuteUser {
+    username: string
+}
+
 interface ModalWrapper<T = void> {
     open: T extends void ? () => void : (props: T) => void
     close: () => void
 }
 
-export const useAppOverlay = () => {
+const _useAppOverlay = () => {
     const overlay = useOverlay()
 
     const createModalWrapper = <T = void>(LazyComponent: Component): ModalWrapper<T> => {
@@ -109,5 +114,8 @@ export const useAppOverlay = () => {
         ),
         modalFlags: createModalWrapper<void>(LazyModalAdminModalFlags),
         imageViewer: createModalWrapper<ModalImageViewer>(LazyImageViewer),
+        muteUser: createModalWrapper<ModalMuteUser>(LazyModalMuteUser),
     }
 }
+
+export const useAppOverlay = createSharedComposable(_useAppOverlay)

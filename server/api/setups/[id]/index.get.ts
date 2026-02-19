@@ -41,23 +41,12 @@ const getSetup = defineCachedFunction(
                                 createdAt: true,
                             },
                         },
-                        shops: {
-                            columns: {
-                                id: true,
-                                createdAt: true,
-                            },
-                            with: {
-                                shop: {
-                                    columns: {
-                                        id: true,
-                                        platform: true,
-                                        name: true,
-                                        image: true,
-                                        verified: true,
-                                    },
-                                },
-                            },
-                        },
+                        followers: session
+                            ? {
+                                  where: { userId: { eq: session.user.id } },
+                                  columns: { id: true },
+                              }
+                            : undefined,
                     },
                 },
                 items: {
@@ -140,23 +129,12 @@ const getSetup = defineCachedFunction(
                                         createdAt: true,
                                     },
                                 },
-                                shops: {
-                                    columns: {
-                                        id: true,
-                                        createdAt: true,
-                                    },
-                                    with: {
-                                        shop: {
-                                            columns: {
-                                                id: true,
-                                                platform: true,
-                                                name: true,
-                                                image: true,
-                                                verified: true,
-                                            },
-                                        },
-                                    },
-                                },
+                                followers: session
+                                    ? {
+                                          where: { userId: { eq: session.user.id } },
+                                          columns: { id: true },
+                                      }
+                                    : undefined,
                             },
                         },
                     },
@@ -267,6 +245,19 @@ const getSetup = defineCachedFunction(
 
         return {
             ...data,
+            user: {
+                ...data.user,
+                isFollowing: !!data.user.followers.length,
+                followers: undefined,
+            },
+            coauthors: data.coauthors.map((coauthor) => ({
+                ...coauthor,
+                user: {
+                    ...coauthor.user,
+                    isFollowing: !!coauthor.user.followers.length,
+                    followers: undefined,
+                },
+            })),
             items,
             tags: data.tags.map((tag) => tag.tag),
             failedItemsCount,

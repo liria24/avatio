@@ -55,7 +55,7 @@
         }
     },
     "settings": {
-        "title": "ユーザー設定",
+        "title": "設定",
         "description": "ユーザープロフィールの編集や、アカウントに関する操作を行うことができます。",
         "general": {
             "title": "全般",
@@ -136,6 +136,10 @@
             "added": "ブックマークしました",
             "removed": "ブックマークを解除しました",
             "toggleFailed": "ブックマークの変更に失敗しました"
+        },
+        "follow": {
+            "followFailed": "フォローに失敗しました",
+            "unfollowFailed": "フォロー解除に失敗しました"
         },
         "reports": {
             "submitted": "報告が送信されました",
@@ -536,7 +540,6 @@
     },
     "user": {
         "editProfile": "プロフィールを編集",
-        "reportUser": "ユーザーを報告",
         "shops": "ショップ",
         "setups": "セットアップ"
     },
