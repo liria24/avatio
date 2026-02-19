@@ -41,6 +41,7 @@ export default sessionEventHandler<PaginationResponse<Setup[]>>(async ({ session
             user: {
                 OR: [{ banned: { eq: false } }, { banned: { isNull: true } }],
                 username: username ? { eq: username } : undefined,
+                NOT: session ? { mutees: { userId: { eq: session.user.id } } } : undefined,
             },
             name: q ? { ilike: `%${q}%` } : undefined,
             items: {
@@ -82,6 +83,7 @@ export default sessionEventHandler<PaginationResponse<Setup[]>>(async ({ session
                     links: true,
                 },
                 with: {
+                    mutees: true,
                     badges: {
                         columns: {
                             badge: true,

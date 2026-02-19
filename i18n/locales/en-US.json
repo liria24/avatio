@@ -53,7 +53,7 @@
         }
     },
     "settings": {
-        "title": "User Settings",
+        "title": "Settings",
         "description": "Edit your user profile and manage your account.",
         "profile": {
             "title": "Profile",
@@ -129,6 +129,10 @@
             "added": "Added to bookmarks",
             "removed": "Removed from bookmarks",
             "toggleFailed": "Failed to toggle bookmark"
+        },
+        "follow": {
+            "followFailed": "Failed to follow user",
+            "unfollowFailed": "Failed to unfollow user"
         },
         "reports": {
             "submitted": "Report submitted",
@@ -512,7 +516,6 @@
     },
     "user": {
         "editProfile": "Edit Profile",
-        "reportUser": "Report User",
         "shops": "Shops",
         "setups": "Setups"
     },

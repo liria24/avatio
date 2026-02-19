@@ -6,6 +6,7 @@ import {
     setups,
     setupTags,
 } from '@@/database/schema'
+import { waitUntil } from '@vercel/functions'
 
 const body = setupsInsertSchema
 
@@ -78,6 +79,30 @@ export default authedSessionEventHandler(
 
             return setupId
         })
+
+        waitUntil(
+            (async () => {
+                const followers = await db.query.userFollows.findMany({
+                    where: {
+                        followeeId: session.user.id,
+                    },
+                    columns: {
+                        userId: true,
+                    },
+                })
+                await Promise.all(
+                    followers.map((f) =>
+                        createNotification({
+                            userId: f.userId,
+                            type: 'setup_created',
+                            payload: {
+                                setup: { id: setupId, name },
+                            },
+                        }),
+                    ),
+                )
+            })(),
+        )
 
         const data = await useEvent().$fetch(`/api/setups/${setupId}`)
 

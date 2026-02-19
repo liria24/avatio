@@ -2,11 +2,11 @@
 const { session } = useAuth()
 const { locale } = useI18n()
 const route = useRoute()
-const { login, reportUser } = useAppOverlay()
+const { login, reportUser, muteUser } = useAppOverlay()
 
-const username = route.params.username as string
-
-const { data: user, status: userStatus } = await useUser(username)
+const username = computed(() => route.params.username as string)
+const { data: user, status: userStatus } = await useUser(username.value)
+const { isMuted, unmute } = useUserMute(username.value)
 
 if (userStatus.value === 'success' && !user.value)
     showError({
@@ -28,6 +28,7 @@ const links = computed(() =>
 onBeforeRouteLeave(() => {
     login.close()
     reportUser.close()
+    muteUser.close()
 })
 
 if (user.value) {
@@ -62,76 +63,68 @@ if (user.value) {
 
     <div v-else-if="user" class="flex w-full flex-col gap-6 px-2">
         <div class="flex w-full flex-col items-start gap-3">
-            <div
-                class="flex w-full flex-col items-start justify-between gap-3 sm:flex-row sm:items-center"
-            >
-                <div class="flex items-center gap-6">
-                    <NuxtImg
-                        v-if="user.image"
-                        v-slot="{ isLoaded, src, imgAttrs }"
-                        :src="user.image"
-                        :width="88"
-                        :height="88"
-                        format="avif"
-                        preload
-                        custom
-                    >
-                        <img
-                            v-if="isLoaded"
-                            v-bind="imgAttrs"
-                            :src
-                            alt=""
-                            class="aspect-square size-14 shrink-0 rounded-full object-cover sm:size-20"
-                        />
-                        <USkeleton
-                            v-else
-                            class="aspect-square size-14 shrink-0 rounded-full sm:size-20"
-                        />
-                    </NuxtImg>
+            <div class="flex w-full items-center gap-6">
+                <NuxtImg
+                    v-if="user.image"
+                    :src="user.image"
+                    alt=""
+                    :width="88"
+                    :height="88"
+                    format="avif"
+                    preload
+                    class="aspect-square size-14 shrink-0 rounded-full object-cover sm:size-20"
+                />
 
-                    <div
-                        v-else
-                        class="bg-muted flex size-14 shrink-0 items-center justify-center rounded-full md:size-20"
-                    >
-                        <Icon name="mingcute:user-3-fill" size="32" class="text-muted" />
+                <div
+                    v-else
+                    class="bg-muted flex size-14 shrink-0 items-center justify-center rounded-full md:size-20"
+                >
+                    <Icon name="mingcute:user-3-fill" size="32" class="text-muted" />
+                </div>
+
+                <div class="flex flex-col gap-1">
+                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <h1 class="text-2xl font-bold">
+                            {{ user.name }}
+                        </h1>
+                        <UserBadges v-if="user.badges" :badges="user.badges" />
                     </div>
 
-                    <div class="flex flex-col gap-1">
-                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
-                            <h1 class="text-2xl font-bold">
-                                {{ user.name }}
-                            </h1>
-                            <UserBadges v-if="user.badges" :badges="user.badges" />
-                        </div>
-
-                        <div class="text-muted flex items-center gap-1 font-mono text-sm">
-                            <span> @{{ user.username }} </span>
-
-                            <Icon name="mingcute:calendar-2-fill" size="18" class="ml-2" />
-                            <NuxtTime :datetime="user.createdAt" date-style="short" :locale />
-                        </div>
-                    </div>
+                    <span class="text-muted flex items-center gap-1 font-mono text-sm">
+                        @{{ user.username }}
+                    </span>
                 </div>
-                <div class="flex items-center gap-1 self-end sm:self-auto">
-                    <UButton
-                        v-if="session?.user.username === user.username"
-                        :to="$localePath('/settings')"
-                        :label="$t('user.editProfile')"
-                        icon="mingcute:edit-3-fill"
-                        variant="ghost"
-                        size="sm"
-                        class="self-end"
-                    />
 
-                    <UButton
-                        :label="$t('user.reportUser')"
-                        icon="mingcute:flag-3-fill"
-                        variant="ghost"
-                        size="sm"
-                        class="self-end"
-                        @click="session ? reportUser.open({ userId: user.username }) : login.open()"
+                <div class="ml-auto">
+                    <ButtonUserFollow
+                        v-if="session?.user.username !== username"
+                        :username
+                        class="px-5"
                     />
                 </div>
+            </div>
+
+            <div class="text-muted flex items-center gap-1 px-3 text-sm">
+                <template v-if="user.followeesCount || session?.user.username === user.username">
+                    <ULink :to="$localePath(`/@${user.username}/following`)">
+                        <span class="text-toned font-bold">{{ user.followeesCount }}</span>
+                        フォロー
+                    </ULink>
+                    <Icon name="lucide:dot" size="14" />
+                </template>
+
+                <template v-if="user.followersCount || session?.user.username === user.username">
+                    <ULink :to="$localePath(`/@${user.username}/followers`)">
+                        <span class="text-toned font-bold">{{ user.followersCount }}</span>
+                        フォロワー
+                    </ULink>
+                    <Icon name="lucide:dot" size="14" />
+                </template>
+
+                <span>
+                    <NuxtTime :datetime="user.createdAt" date-style="short" :locale />
+                    に登録
+                </span>
             </div>
 
             <div class="flex w-full flex-col gap-3 px-2 empty:hidden">
@@ -157,6 +150,43 @@ if (user.value) {
                     <p class="text-relaxed sentence text-sm whitespace-pre-wrap">
                         {{ user.bio }}
                     </p>
+                </div>
+
+                <div class="ml-auto flex items-center gap-1">
+                    <UButton
+                        v-if="session?.user.username === user.username"
+                        :to="$localePath('/settings/profile')"
+                        :label="$t('user.editProfile')"
+                        icon="mingcute:edit-3-fill"
+                        variant="ghost"
+                        size="sm"
+                    />
+
+                    <template v-else>
+                        <UButton
+                            :label="isMuted ? 'ミュート解除' : 'ミュート'"
+                            icon="mingcute:eye-close-fill"
+                            variant="ghost"
+                            size="sm"
+                            :color="isMuted ? 'error' : undefined"
+                            @click="
+                                session
+                                    ? isMuted
+                                        ? unmute()
+                                        : muteUser.open({ username: user.username })
+                                    : login.open()
+                            "
+                        />
+                        <UButton
+                            :label="$t('report')"
+                            icon="mingcute:flag-3-fill"
+                            variant="ghost"
+                            size="sm"
+                            @click="
+                                session ? reportUser.open({ userId: user.username }) : login.open()
+                            "
+                        />
+                    </template>
                 </div>
             </div>
         </div>
