@@ -144,7 +144,7 @@ const toggleBookmark = async () => {
                     />
                 </template>
 
-                <ShareButton
+                <ButtonShare
                     :title="props.setup.name"
                     :description="props.setup.description"
                     :image="props.setup.images?.[0]?.url"
