@@ -18,7 +18,7 @@ const client = createAuthClient({
     ],
 })
 
-export const useAuth = () => {
+const _useAuth = () => {
     const localePath = useLocalePath()
 
     const globalSession = useState<Session | null | undefined>('auth:session', () => undefined)
@@ -137,3 +137,5 @@ export const useAuth = () => {
 
     return awaitableResult
 }
+
+export const useAuth = createSharedComposable(_useAuth)
