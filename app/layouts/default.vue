@@ -3,7 +3,10 @@ const { session } = await useAuth()
 const route = useRoute()
 const { login } = useAppOverlay()
 
-const { data } = useNotifications()
+const { data } = useNotifications({
+    read: false,
+    unread: true,
+})
 const filteredNotifications = computed(() => data.value.notifications.filter((n) => n.banner))
 </script>
 
