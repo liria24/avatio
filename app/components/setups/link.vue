@@ -54,9 +54,11 @@ initializeThemeColor()
     <NuxtLink
         tabindex="0"
         :to="setup.id ? $localePath(`/setup/${setup.id}`) : undefined"
+        :aria-label="setup.name"
+        :data-has-images="hasImages"
         :class="
             cn(
-                'group flex flex-col overflow-clip rounded-lg shadow-black/10 transition duration-100 ease-in-out hover:shadow-xl hover:ring-2 focus:ring-2 focus:outline-none focus-visible:shadow-xl dark:shadow-white/10',
+                'group flex flex-col gap-1.5 overflow-clip rounded-lg p-1.5 shadow-black/10 transition delay-0 duration-100 ease-in-out hover:shadow-xl hover:ring-2 focus:ring-2 focus:outline-none focus-visible:shadow-xl dark:shadow-white/10',
                 dominantColor
                     ? 'link-with-color'
                     : 'hover:ring-accented hover:bg-elevated focus:ring-accented focus:bg-elevated',
@@ -66,8 +68,7 @@ initializeThemeColor()
         :style="dominantColor ? { '--dominant-color': dominantColor } : undefined"
         @click="emit('click')"
     >
-        <!-- 画像がある場合のレイアウト -->
-        <div v-if="hasImages" class="relative w-full p-1.5">
+        <div v-if="hasImages" class="relative w-full">
             <NuxtImg
                 :src="firstImage!.url"
                 :alt="setup.name"
@@ -81,9 +82,9 @@ initializeThemeColor()
             <div
                 :class="[
                     'gradient-overlay',
-                    'group absolute inset-1.5 rounded-lg p-2',
+                    'absolute inset-0 rounded-lg p-2',
                     'flex flex-col items-start justify-end gap-1',
-                    'opacity-0 group-hover:opacity-100',
+                    'opacity-0 group-hover:opacity-100 group-hover:delay-0 group-focus:delay-0',
                     'transition duration-100 ease-in-out',
                 ]"
             >
@@ -106,67 +107,29 @@ initializeThemeColor()
             </div>
         </div>
 
-        <!-- フッター部分（共通） -->
-        <div class="flex w-full items-center">
-            <UTooltip v-if="!hasImages && firstAvatar" :text="avatarName" :delay-duration="100">
-                <!-- 画像がない場合のアバター表示 -->
+        <div class="flex w-full items-center gap-2">
+            <UTooltip v-if="!hasImages" :text="avatarName" :delay-duration="100">
                 <NuxtImg
+                    v-if="firstAvatar"
                     :src="firstAvatar.image || undefined"
                     alt=""
                     :width="88"
                     :height="88"
                     format="avif"
-                    class="m-1 aspect-square size-14 shrink-0 rounded-lg object-cover md:size-20"
+                    class="aspect-square size-14 shrink-0 rounded-lg object-cover md:size-20"
                 />
-            </UTooltip>
-
-            <!-- アバターがない場合のプレースホルダー -->
-            <UTooltip
-                v-else-if="!firstAvatar && !hasImages"
-                :text="t('unknownAvatar')"
-                :delay-duration="100"
-            >
                 <div
-                    class="text-muted bg-muted m-1 flex size-14 shrink-0 items-center justify-center rounded-lg md:size-20"
+                    v-else
+                    class="text-muted bg-muted group-hover:bg-default flex size-14 shrink-0 items-center justify-center rounded-lg transition-colors duration-100 md:size-20"
                 >
                     <Icon name="mingcute:question-fill" size="32" class="text-dimmed" />
                 </div>
             </UTooltip>
 
-            <!-- 画像がある場合のメタ情報 -->
-            <div v-if="hasImages" class="flex w-full items-center gap-2 px-2 pb-2">
-                <PopoverUser :user="setup.user">
-                    <UAvatar
-                        :src="setup.user.image || undefined"
-                        :alt="setup.user.name"
-                        icon="mingcute:user-3-fill"
-                        aria-hidden="true"
-                        size="2xs"
-                    />
-                </PopoverUser>
-
-                <UTooltip :delay-duration="0">
-                    <NuxtTime
-                        :datetime="setup.createdAt"
-                        relative
-                        :locale
-                        class="text-muted text-xs whitespace-nowrap"
-                    />
-
-                    <template #content>
-                        <NuxtTime
-                            :datetime="setup.createdAt"
-                            date-style="medium"
-                            time-style="short"
-                            :locale
-                        />
-                    </template>
-                </UTooltip>
-            </div>
-
-            <!-- 画像がない場合のメタ情報 -->
-            <div v-else class="flex w-full flex-col items-start justify-center gap-2 pr-2 pl-3">
-                <span class="md:text-md text-toned sentence line-clamp-2 text-sm font-medium">
+            <div class="flex w-full flex-col items-start justify-center gap-2 pl-0.5">
+                <span
+                    class="md:text-md text-toned sentence line-clamp-2 hidden text-sm font-medium group-data-[has-images=false]:inline"
+                >
                     {{ setup.name }}
                 </span>
 

@@ -89,11 +89,12 @@ const loading = computed<boolean>(() => {
         >
             <template #default="{ item, index }">
                 <SetupsLink
-                    :aria-label="item.name"
-                    :image-size="{ width: 16, height: 9 }"
                     :setup="item"
-                    :style="`animation-delay: ${50 * index}ms`"
-                    class="fade-in"
+                    :style="{
+                        'transition-property': 'translate, opacity, filter',
+                        'transition-delay': `${50 * index}ms, ${50 * index}ms, ${50 * index}ms`,
+                    }"
+                    class="transition-discrete duration-400 starting:translate-y-3 starting:opacity-0 starting:blur-sm"
                 />
             </template>
         </MasonryWall>
@@ -110,23 +111,3 @@ const loading = computed<boolean>(() => {
         />
     </div>
 </template>
-
-<style scoped>
-.fade-in {
-    opacity: 0;
-    animation: fadeIn 400ms ease-in-out forwards;
-}
-
-@keyframes fadeIn {
-    0% {
-        opacity: 0;
-        transform: translateY(10px);
-        filter: blur(4px);
-    }
-    100% {
-        opacity: 1;
-        transform: translateY(0);
-        filter: blur(0);
-    }
-}
-</style>
