@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import { MasonryWall } from '@yeger/vue-masonry-wall'
+
 interface Props {
     type?: 'latest' | 'owned' | 'bookmarked'
     username?: string
