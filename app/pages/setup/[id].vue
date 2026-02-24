@@ -114,7 +114,7 @@ if (data.value) {
 
         <UPageBody>
             <div class="flex w-full flex-col items-start gap-10">
-                <UAlert
+                <LazyUAlert
                     v-if="data.hidAt"
                     icon="mingcute:eye-close-fill"
                     :title="$t('setup.viewer.hiddenNotice')"

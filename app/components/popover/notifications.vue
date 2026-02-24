@@ -1,44 +1,7 @@
 <script setup lang="ts">
-const { locale } = useI18n()
-
 const open = ref(false)
-const viewingReadNotifications = ref(false)
 
-const filterOptions = computed(() => ({
-    read: viewingReadNotifications.value,
-    unread: !viewingReadNotifications.value,
-}))
-
-const {
-    data,
-    status,
-    refresh,
-    markAsRead,
-    markAsUnread,
-    open: openNotification,
-} = useNotifications(filterOptions)
-
-const onRead = async (event: Event, id: string) => {
-    event.stopPropagation()
-    await markAsRead(id)
-}
-
-const onUnread = async (event: Event, id: string) => {
-    event.stopPropagation()
-    await markAsUnread(id)
-}
-
-const onClick = (id: string, actionUrl: string | null) => {
-    open.value = false
-    openNotification(id, actionUrl)
-}
-
-watch(open, (isOpen) => {
-    if (!isOpen && viewingReadNotifications.value) {
-        viewingReadNotifications.value = false
-        refresh()
-    }
-})
+const { data, status } = useNotifications()
 </script>
 
 <template>
@@ -58,17 +21,6 @@ watch(open, (isOpen) => {
                     <span class="text-lg leading-none font-bold text-nowrap">
                         {{ $t('notifications.title') }}
                     </span>
-
-                    <UButton
-                        :label="$t('notifications.read')"
-                        variant="soft"
-                        size="sm"
-                        :active="viewingReadNotifications"
-                        active-variant="subtle"
-                        active-color="neutral"
-                        class="rounded-full"
-                        @click="viewingReadNotifications = !viewingReadNotifications"
-                    />
                 </div>
 
                 <USeparator />
@@ -88,77 +40,11 @@ watch(open, (isOpen) => {
                 </p>
 
                 <div v-else class="flex flex-col gap-2">
-                    <UButton
+                    <UserNotification
                         v-for="notification in data.notifications"
                         :key="notification.id"
-                        variant="ghost"
-                        class="flex flex-col items-start gap-2 rounded-lg p-2"
-                        @click="onClick(notification.id, notification.actionUrl)"
-                    >
-                        <div class="flex w-full items-start gap-2">
-                            <p
-                                :data-unread="!notification.readAt"
-                                class="text-muted data-[unread=true]:text-toned sentence grow px-1 text-left text-sm"
-                            >
-                                {{ notification.title }}
-                            </p>
-                            <NuxtTime
-                                :datetime="notification.createdAt"
-                                relative
-                                :locale
-                                class="text-muted p-1 text-xs leading-none text-nowrap"
-                            />
-                        </div>
-
-                        <div v-if="notification.message?.length">
-                            <p
-                                :data-unread="!notification.readAt"
-                                class="text-dimmed data-[unread=true]:text-muted sentence grow px-1 text-left text-xs"
-                            >
-                                {{ notification.message }}
-                            </p>
-                        </div>
-
-                        <div class="flex w-full items-center justify-end-safe gap-2 empty:hidden">
-                            <UButton
-                                v-if="notification.actionUrl && notification.actionLabel"
-                                :to="$localePath(notification.actionUrl)"
-                                :label="notification.actionLabel"
-                                icon="mingcute:arrow-right-line"
-                                variant="outline"
-                                size="xs"
-                                @click="onClick(notification.id, notification.actionUrl)"
-                            />
-
-                            <UTooltip
-                                v-if="!notification.readAt"
-                                :text="$t('notifications.markAsRead')"
-                                :delay-duration="100"
-                            >
-                                <UButton
-                                    icon="mingcute:mail-open-fill"
-                                    variant="ghost"
-                                    size="xs"
-                                    class="self-end"
-                                    @click="onRead($event, notification.id)"
-                                />
-                            </UTooltip>
-
-                            <UTooltip
-                                v-else
-                                :text="$t('notifications.markAsUnread')"
-                                :delay-duration="100"
-                            >
-                                <UButton
-                                    icon="mingcute:mail-fill"
-                                    variant="ghost"
-                                    size="xs"
-                                    class="self-end"
-                                    @click="onUnread($event, notification.id)"
-                                />
-                            </UTooltip>
-                        </div>
-                    </UButton>
+                        :notification
+                    />
                 </div>
             </div>
         </template>

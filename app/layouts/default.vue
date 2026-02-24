@@ -40,8 +40,8 @@ const filteredNotifications = computed(() => data.value.notifications.filter((n)
 
                     <template v-if="route.path !== '/login'">
                         <div v-if="session" class="flex items-center gap-2">
-                            <HeaderNotificationButton />
-                            <HeaderMenu />
+                            <LazyHeaderNotificationButton />
+                            <LazyHeaderMenu />
                         </div>
 
                         <UButton
@@ -56,10 +56,10 @@ const filteredNotifications = computed(() => data.value.notifications.filter((n)
             </header>
 
             <div v-if="filteredNotifications.length" class="flex w-full flex-col gap-2">
-                <BannerNotification
+                <LazyBannerNotification
                     v-for="notification in filteredNotifications"
                     :key="notification.id"
-                    :data="notification"
+                    :notification
                     class="w-full"
                 />
             </div>

@@ -3,14 +3,14 @@ interface UseNotificationsOptions {
     unread?: boolean
 }
 
-export const useNotifications = (options?: MaybeRefOrGetter<UseNotificationsOptions>) => {
+const _useNotifications = (options?: MaybeRefOrGetter<UseNotificationsOptions>) => {
     const { session } = useAuth()
     const localePath = useLocalePath()
 
     const opts = computed(() => {
         const value = toValue(options) || {}
         return {
-            read: value.read ?? false,
+            read: value.read ?? true,
             unread: value.unread ?? true,
         }
     })
@@ -77,3 +77,5 @@ export const useNotifications = (options?: MaybeRefOrGetter<UseNotificationsOpti
         open,
     })
 }
+
+export const useNotifications = createSharedComposable(_useNotifications)

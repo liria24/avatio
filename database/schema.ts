@@ -576,6 +576,25 @@ export const notificationType = pgEnum('notification_type', [
     'setup_created',
 ])
 
+export interface NotificationPayload {
+    user?: {
+        username: string | null | undefined
+        name: string
+    }
+    setup?: {
+        id: number
+        name: string
+    }
+    content?: string
+    customTranslations?: {
+        [locale: string]: {
+            title: string
+            message?: string
+            actionLabel?: string
+        }
+    }
+}
+
 export const notifications = personalSchema.table(
     'notifications',
     {
@@ -584,11 +603,8 @@ export const notifications = personalSchema.table(
         userId: text('user_id').notNull(),
         type: notificationType().notNull(),
         readAt: timestamp('read_at'),
-        title: text().notNull(),
-        message: text(),
-        data: text(),
+        payload: jsonb('payload').$type<NotificationPayload>().notNull(),
         actionUrl: text('action_url'),
-        actionLabel: text('action_label'),
         banner: boolean().default(false).notNull(),
     },
     (table) => [

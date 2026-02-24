@@ -15,8 +15,8 @@ const { login } = useAppOverlay()
 
                     <template v-if="route.path !== '/login'">
                         <div v-if="session" class="flex items-center gap-2">
-                            <HeaderNotificationButton />
-                            <HeaderMenu />
+                            <LazyHeaderNotificationButton />
+                            <LazyHeaderMenu />
                         </div>
 
                         <UButton

@@ -1,14 +1,14 @@
 import type { UseFetchOptions } from 'nuxt/app'
 
-export const useSetup = (id: number, options?: UseFetchOptions<SerializedSetup>) => {
-    const defaultOptions: UseFetchOptions<SerializedSetup> = {
+export const useSetup = (id: number, options?: UseFetchOptions<Serialized<Setup>>) => {
+    const defaultOptions: UseFetchOptions<Serialized<Setup>> = {
         key: computed(() => `setup-${id}-${JSON.stringify(unref(options?.query))}`),
         dedupe: 'defer',
         lazy: false,
         immediate: true,
     }
 
-    return useFetch<SerializedSetup>(id.toString(), {
+    return useFetch<Serialized<Setup>>(id.toString(), {
         ...defaultOptions,
         ...options,
         baseURL: '/api/setups/',
@@ -29,7 +29,7 @@ export const useSetupsList = (
         () =>
             `setups-state-${type || 'custom'}-${options?.username || ''}-${JSON.stringify(unref(options?.query) || {})}`,
     )
-    const setups = useState<SerializedSetup[]>(cacheKey.value, () => [])
+    const setups = useState<Serialized<Setup>[]>(cacheKey.value, () => [])
 
     // Build query parameters
     const queryParams = computed(() => {
@@ -61,7 +61,7 @@ export const useSetupsList = (
     })
 
     // Fetch data - 常に /api/setups を使用
-    const { data, status, refresh } = useFetch<PaginationResponse<SerializedSetup[]>>(
+    const { data, status, refresh } = useFetch<PaginationResponse<Serialized<Setup>[]>>(
         '/api/setups',
         {
             key: computed(

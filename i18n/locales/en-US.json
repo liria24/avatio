@@ -482,7 +482,30 @@
         "read": "Read",
         "empty": "No notifications",
         "markAsRead": "Mark as read",
-        "markAsUnread": "Mark as unread"
+        "markAsUnread": "Mark as unread",
+        "types": {
+            "user_badge_granted": {
+                "title": "You have been granted a badge"
+            },
+            "setup_coauthor_added": {
+                "title": "You have been added as a co-author"
+            },
+            "user_role_changed": {
+                "title": "Your user role has been changed to \u201c{role}\u201d"
+            },
+            "user_banned": {
+                "title": "You have been banned"
+            },
+            "user_unbanned": {
+                "title": "Your ban has been lifted"
+            },
+            "user_followed": {
+                "title": "{name} followed you"
+            },
+            "setup_created": {
+                "title": "{name} posted a setup"
+            }
+        }
     },
     "errors": {
         "generic": "An error occurred",

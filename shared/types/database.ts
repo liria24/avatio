@@ -27,6 +27,7 @@ import {
     userBadges,
     userReports,
     userShops,
+    type NotificationPayload,
 } from '@@/database/schema'
 import { createInsertSchema, createSelectSchema, createUpdateSchema } from 'drizzle-orm/zod'
 import { z } from 'zod'
@@ -94,7 +95,6 @@ export const userPublicSchema = userSelectSchema
         shops: userShopsPublicSchema.array().optional(),
     })
 export type User = z.infer<typeof userPublicSchema>
-export type SerializedUser = Serialized<User>
 
 export const itemsSelectSchema = createSelectSchema(items)
 export const itemsInsertSchema = createInsertSchema(items)
@@ -335,7 +335,6 @@ export const setupsPublicSchema = setupsSelectSchema
         failedItemsCount: z.number().min(0).optional(),
     })
 export type Setup = z.infer<typeof setupsPublicSchema>
-export type SerializedSetup = Serialized<Setup>
 
 export const setupDraftContentSchema = setupsInsertSchema
     .pick({
@@ -363,7 +362,6 @@ export const setupDraftsPublicSchema = setupDraftsSelectSchema
     })
 export type SetupDraftContent = z.infer<typeof setupDraftContentSchema>
 export type SetupDraft = z.infer<typeof setupDraftsPublicSchema>
-export type SerializedSetupDraft = Serialized<SetupDraft>
 
 export const setupDraftImagesSelectSchema = createSelectSchema(setupDraftImages)
 export type SetupDraftImage = z.infer<typeof setupDraftImagesSelectSchema>
@@ -377,7 +375,6 @@ export const bookmarksPublicSchema = bookmarksSelectSchema
         setup: setupsPublicSchema,
     })
 export type Bookmark = z.infer<typeof bookmarksPublicSchema>
-export type SerializedBookmark = Serialized<Bookmark>
 
 export const feedbacksSelectSchema = createSelectSchema(feedbacks)
 export const feedbacksInsertSchema = createInsertSchema(feedbacks, {
@@ -524,6 +521,7 @@ export const changelogsPublicSchema = changelogsSelectSchema
 export type Changelog = z.infer<typeof changelogsPublicSchema>
 
 export const notificationTypeSchema = z.enum(notificationType.enumValues)
+export type NotificationType = z.infer<typeof notificationTypeSchema>
 
 export const notificationsSelectSchema = createSelectSchema(notifications)
 export const notificationsInsertSchema = createInsertSchema(notifications)
@@ -532,11 +530,10 @@ export const notificationsPublicSchema = notificationsSelectSchema.pick({
     createdAt: true,
     type: true,
     readAt: true,
-    title: true,
-    message: true,
-    data: true,
+    payload: true,
     actionUrl: true,
-    actionLabel: true,
     banner: true,
 })
-export type Notification = z.infer<typeof notificationsPublicSchema>
+export type Notification = Omit<z.infer<typeof notificationsPublicSchema>, 'payload'> & {
+    payload: NotificationPayload
+}

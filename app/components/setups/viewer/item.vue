@@ -238,7 +238,7 @@ const providerIcon = computed(() => providerIcons[item.platform])
                         </span>
                     </div>
 
-                    <UAvatarGroup v-if="item.contributors?.length" :max="3" size="2xs" class="">
+                    <LazyUAvatarGroup v-if="item.contributors?.length" :max="3" size="2xs" class="">
                         <UTooltip
                             v-for="contributor in item.contributors"
                             :key="encodeURIComponent(contributor.name)"
@@ -251,7 +251,7 @@ const providerIcon = computed(() => providerIcons[item.platform])
                                 icon="mingcute:user-3-fill"
                             />
                         </UTooltip>
-                    </UAvatarGroup>
+                    </LazyUAvatarGroup>
 
                     <UBadge
                         v-if="item.nsfw"

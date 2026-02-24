@@ -390,7 +390,7 @@ export const useSetupCompose = () => {
     }
 
     // Coauthors
-    const addCoauthor = (user: SerializedUser) => {
+    const addCoauthor = (user: Serialized<User>) => {
         if (!user?.username) return
 
         if (state.value.coauthors.some((c) => c.user.username === user.username)) {

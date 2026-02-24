@@ -2,7 +2,7 @@
 import type { CommandPaletteItem } from '@nuxt/ui'
 
 const emit = defineEmits<{
-    select: [user: SerializedUser]
+    select: [user: Serialized<User>]
 }>()
 
 const open = defineModel<boolean>({
@@ -65,7 +65,7 @@ const groups = computed(() => {
 
 const onSelect = async (username: string) => {
     try {
-        const user = await $fetch<SerializedUser>(`/api/users/${username}`)
+        const user = await $fetch<Serialized<User>>(`/api/users/${username}`)
         emit('select', {
             id: user.id,
             username: user.username,

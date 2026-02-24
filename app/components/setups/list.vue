@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import { MasonryWall } from '@yeger/vue-masonry-wall'
+
 interface Props {
     type?: 'latest' | 'owned' | 'bookmarked'
     username?: string
@@ -12,7 +14,7 @@ const { isMobile } = useDevice()
 // Model Mode: typeプロップがない場合、外部からsetups/loadingモデルを受け取る
 const isPropsMode = computed(() => !!type)
 
-const modelSetups = defineModel<SerializedSetup[]>('setups', {
+const modelSetups = defineModel<Serialized<Setup>[]>('setups', {
     default: [],
 })
 const modelLoading = defineModel<boolean>('loading', {
@@ -51,7 +53,7 @@ watch(
     },
 )
 
-const setups = computed<SerializedSetup[]>(() => {
+const setups = computed<Serialized<Setup>[]>(() => {
     if (isPropsMode.value && propsResult.value) return propsResult.value.setups
 
     return modelSetups.value
@@ -87,11 +89,12 @@ const loading = computed<boolean>(() => {
         >
             <template #default="{ item, index }">
                 <SetupsLink
-                    :aria-label="item.name"
-                    :image-size="{ width: 16, height: 9 }"
                     :setup="item"
-                    :style="`animation-delay: ${50 * index}ms`"
-                    class="fade-in"
+                    :style="{
+                        'transition-property': 'translate, opacity, filter',
+                        'transition-delay': `${50 * index}ms, ${50 * index}ms, ${50 * index}ms`,
+                    }"
+                    class="transition-discrete duration-400 starting:translate-y-3 starting:opacity-0 starting:blur-sm"
                 />
             </template>
         </MasonryWall>
@@ -108,23 +111,3 @@ const loading = computed<boolean>(() => {
         />
     </div>
 </template>
-
-<style scoped>
-.fade-in {
-    opacity: 0;
-    animation: fadeIn 400ms ease-in-out forwards;
-}
-
-@keyframes fadeIn {
-    0% {
-        opacity: 0;
-        transform: translateY(10px);
-        filter: blur(4px);
-    }
-    100% {
-        opacity: 1;
-        transform: translateY(0);
-        filter: blur(0);
-    }
-}
-</style>

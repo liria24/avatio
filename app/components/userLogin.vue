@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 const { signIn } = useAuth()
+const route = useRoute()
 </script>
 
 <template>
@@ -19,7 +20,7 @@ const { signIn } = useAuth()
             variant="outline"
             color="neutral"
             class="mt-5 mb-6 rounded-xl py-4"
-            @click="signIn.twitter()"
+            @click="signIn.twitter({ callbackURL: route.path })"
         />
 
         <div class="flex w-full items-center justify-end gap-3">
