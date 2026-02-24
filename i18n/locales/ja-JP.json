@@ -482,7 +482,30 @@
         "read": "既読の通知",
         "empty": "通知がありません",
         "markAsRead": "既読にする",
-        "markAsUnread": "未読にする"
+        "markAsUnread": "未読にする",
+        "types": {
+            "user_badge_granted": {
+                "title": "バッジが付与されました"
+            },
+            "setup_coauthor_added": {
+                "title": "あなたが共同編集者に追加されました"
+            },
+            "user_role_changed": {
+                "title": "あなたのユーザーロールが「{role}」に変更されました"
+            },
+            "user_banned": {
+                "title": "あなたはBANされました"
+            },
+            "user_unbanned": {
+                "title": "あなたのBANが解除されました"
+            },
+            "user_followed": {
+                "title": "{name}さんがあなたをフォローしました"
+            },
+            "setup_created": {
+                "title": "{name}さんがセットアップを投稿しました"
+            }
+        }
     },
     "errors": {
         "generic": "エラーが発生しました",

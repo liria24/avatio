@@ -59,7 +59,7 @@ const filteredNotifications = computed(() => data.value.notifications.filter((n)
                 <LazyBannerNotification
                     v-for="notification in filteredNotifications"
                     :key="notification.id"
-                    :data="notification"
+                    :notification
                     class="w-full"
                 />
             </div>

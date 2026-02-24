@@ -10,7 +10,7 @@ const _useNotifications = (options?: MaybeRefOrGetter<UseNotificationsOptions>) 
     const opts = computed(() => {
         const value = toValue(options) || {}
         return {
-            read: value.read ?? false,
+            read: value.read ?? true,
             unread: value.unread ?? true,
         }
     })

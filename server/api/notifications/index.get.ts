@@ -1,6 +1,5 @@
-import type { Notification } from '@@/shared/types/database'
-
 import { notifications } from '@@/database/schema'
+import type { Notification } from '@@/shared/types/database'
 import { and, eq, isNull } from 'drizzle-orm'
 import { z } from 'zod'
 
@@ -46,21 +45,15 @@ export default authedSessionEventHandler<{
                 createdAt: true,
                 type: true,
                 readAt: true,
-                title: true,
-                message: true,
-                data: true,
+                payload: true,
                 actionUrl: true,
-                actionLabel: true,
                 banner: true,
             },
         }),
     ])
 
     return {
-        data: data.map((notification) => ({
-            ...notification,
-            data: notification.data ? JSON.parse(notification.data) : null,
-        })),
+        data,
         unread: Number(unreadCount),
     }
 })

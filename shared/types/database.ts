@@ -27,6 +27,7 @@ import {
     userBadges,
     userReports,
     userShops,
+    type NotificationPayload,
 } from '@@/database/schema'
 import { createInsertSchema, createSelectSchema, createUpdateSchema } from 'drizzle-orm/zod'
 import { z } from 'zod'
@@ -520,6 +521,7 @@ export const changelogsPublicSchema = changelogsSelectSchema
 export type Changelog = z.infer<typeof changelogsPublicSchema>
 
 export const notificationTypeSchema = z.enum(notificationType.enumValues)
+export type NotificationType = z.infer<typeof notificationTypeSchema>
 
 export const notificationsSelectSchema = createSelectSchema(notifications)
 export const notificationsInsertSchema = createInsertSchema(notifications)
@@ -528,11 +530,10 @@ export const notificationsPublicSchema = notificationsSelectSchema.pick({
     createdAt: true,
     type: true,
     readAt: true,
-    title: true,
-    message: true,
-    data: true,
+    payload: true,
     actionUrl: true,
-    actionLabel: true,
     banner: true,
 })
-export type Notification = z.infer<typeof notificationsPublicSchema>
+export type Notification = Omit<z.infer<typeof notificationsPublicSchema>, 'payload'> & {
+    payload: NotificationPayload
+}
