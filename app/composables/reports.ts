@@ -48,6 +48,7 @@ export const useItemReport = (itemId: string) => {
             })
 
             toast.add({
+                icon: 'mingcute:check-line',
                 title: t('toast.reports.submitted'),
                 description: t('toast.reports.submittedDescription'),
                 color: 'success',
@@ -59,6 +60,7 @@ export const useItemReport = (itemId: string) => {
         } catch (error) {
             console.error('Error submitting item report:', error)
             toast.add({
+                icon: 'mingcute:close-line',
                 title: t('toast.reports.submitFailed'),
                 description:
                     error instanceof z.ZodError
@@ -104,6 +106,7 @@ export const useSetupReport = (setupId: number) => {
             })
 
             toast.add({
+                icon: 'mingcute:check-line',
                 title: '報告が送信されました',
                 description: 'ご協力ありがとうございます。',
                 color: 'success',
@@ -115,6 +118,7 @@ export const useSetupReport = (setupId: number) => {
         } catch (error) {
             console.error('Error submitting setup report:', error)
             toast.add({
+                icon: 'mingcute:close-line',
                 title: t('toast.reports.submitFailed'),
                 description:
                     error instanceof z.ZodError
@@ -160,6 +164,7 @@ export const useUserReport = (userId: string) => {
             })
 
             toast.add({
+                icon: 'mingcute:check-line',
                 title: t('toast.reports.submitted'),
                 description: t('toast.reports.submittedDescription'),
                 color: 'success',
@@ -171,6 +176,7 @@ export const useUserReport = (userId: string) => {
         } catch (error) {
             console.error('Error submitting user report:', error)
             toast.add({
+                icon: 'mingcute:close-line',
                 title: t('toast.reports.submitFailed'),
                 description:
                     error instanceof z.ZodError

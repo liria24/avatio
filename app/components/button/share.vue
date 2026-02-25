@@ -58,10 +58,16 @@ const shareLine = useSocialShare({
                     onSelect: () => {
                         copy(location.href)
                             .then(() => {
-                                toast.add({ title: $t('shareButton.linkCopied') })
+                                toast.add({
+                                    id: 'link-copied',
+                                    icon: 'mingcute:check-line',
+                                    title: $t('shareButton.linkCopied'),
+                                })
                             })
                             .catch(() => {
                                 toast.add({
+                                    id: 'link-copy-failed',
+                                    icon: 'mingcute:close-line',
                                     title: $t('shareButton.linkCopyFailed'),
                                     color: 'error',
                                 })

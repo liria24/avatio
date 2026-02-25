@@ -15,6 +15,8 @@ export const useBookmarks = () => {
             }
 
             toast.add({
+                id: !isBookmarked ? `bookmark-added-${setupId}` : `bookmark-removed-${setupId}`,
+                icon: 'mingcute:check-line',
                 title: !isBookmarked ? t('toast.bookmarks.added') : t('toast.bookmarks.removed'),
                 color: !isBookmarked ? 'success' : 'info',
             })
@@ -23,6 +25,8 @@ export const useBookmarks = () => {
         } catch (error) {
             console.error('Error toggling bookmark:', error)
             toast.add({
+                id: `bookmark-toggle-failed`,
+                icon: 'mingcute:close-line',
                 title: t('toast.bookmarks.toggleFailed'),
                 color: 'error',
             })

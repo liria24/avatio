@@ -25,6 +25,7 @@ export const useFeedback = () => {
                 },
             })
             toast.add({
+                icon: 'mingcute:check-line',
                 title: t('toast.admin.feedbackSubmitted'),
                 description: t('toast.admin.feedbackSubmittedDescription'),
                 color: 'success',
@@ -34,6 +35,7 @@ export const useFeedback = () => {
         } catch (error) {
             console.error('Error submitting feedback:', error)
             toast.add({
+                icon: 'mingcute:close-line',
                 title: t('toast.admin.feedbackSubmitFailed'),
                 color: 'error',
             })

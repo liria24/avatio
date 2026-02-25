@@ -47,6 +47,7 @@ export const useUserSettingsProfile = (): AwaitableUserSettingsProfile => {
                 body: data,
             })
             toast.add({
+                icon: 'mingcute:check-line',
                 title: t('toast.userSettings.profileSaved'),
                 color: 'success',
             })
@@ -54,6 +55,7 @@ export const useUserSettingsProfile = (): AwaitableUserSettingsProfile => {
         } catch (error) {
             console.error('Error saving profile:', error)
             toast.add({
+                icon: 'mingcute:close-line',
                 title: t('toast.userSettings.saveFailed'),
                 description: t('toast.userSettings.saveFailedDescription'),
                 color: 'error',
@@ -103,6 +105,8 @@ export const useUserSettingsProfile = (): AwaitableUserSettingsProfile => {
             new URL(trimmedLink)
         } catch {
             toast.add({
+                id: 'link-invalid',
+                icon: 'mingcute:close-line',
                 title: t('toast.userSettings.invalidLink'),
                 description: t('toast.userSettings.invalidLinkDescription'),
                 color: 'error',
@@ -112,6 +116,8 @@ export const useUserSettingsProfile = (): AwaitableUserSettingsProfile => {
 
         if (state.value.links.includes(trimmedLink)) {
             toast.add({
+                id: 'link-duplicate',
+                icon: 'mingcute:warning-line',
                 title: t('toast.userSettings.linkExists'),
                 description: t('toast.userSettings.linkExistsDescription'),
                 color: 'warning',
@@ -179,6 +185,7 @@ export const useUserSettingsProfile = (): AwaitableUserSettingsProfile => {
                 body: { username: newUsername },
             })
             toast.add({
+                icon: 'mingcute:check-line',
                 title: t('toast.userSettings.usernameChanged'),
                 description: t('toast.userSettings.usernameChangeDescription'),
                 progress: false,
@@ -187,6 +194,8 @@ export const useUserSettingsProfile = (): AwaitableUserSettingsProfile => {
         } catch (error) {
             console.error('Error updating user ID:', error)
             toast.add({
+                id: 'username-change-failed',
+                icon: 'mingcute:close-line',
                 title: t('toast.userSettings.usernameChangeFailed'),
                 description: t('toast.userSettings.usernameChangeFailedDescription'),
                 color: 'error',
@@ -284,12 +293,20 @@ export const useUserSettingsShop = (): AwaitableUserSettingsShop => {
                 method: 'POST',
                 body: { url: state.value.itemUrl },
             })
-            toast.add({ title: t('toast.userSettings.shopVerified'), color: 'success' })
+            toast.add({
+                icon: 'mingcute:check-line',
+                title: t('toast.userSettings.shopVerified'),
+                color: 'success',
+            })
             await refreshCurrentUser()
             return true
         } catch (error) {
             console.error('Error verifying shop:', error)
-            toast.add({ title: t('toast.userSettings.shopVerifyFailed'), color: 'error' })
+            toast.add({
+                icon: 'mingcute:close-line',
+                title: t('toast.userSettings.shopVerifyFailed'),
+                color: 'error',
+            })
             return false
         } finally {
             state.value.verifying = false
@@ -304,12 +321,20 @@ export const useUserSettingsShop = (): AwaitableUserSettingsShop => {
                 method: 'DELETE',
                 body: { shopId },
             })
-            toast.add({ title: t('toast.userSettings.shopUnverified'), color: 'success' })
+            toast.add({
+                icon: 'mingcute:check-line',
+                title: t('toast.userSettings.shopUnverified'),
+                color: 'success',
+            })
             await refreshCurrentUser()
             return true
         } catch (error) {
             console.error('Error unverifying shop:', error)
-            toast.add({ title: t('toast.userSettings.shopUnverifyFailed'), color: 'error' })
+            toast.add({
+                icon: 'mingcute:close-line',
+                title: t('toast.userSettings.shopUnverifyFailed'),
+                color: 'error',
+            })
             return false
         } finally {
             state.value.unverifying = false

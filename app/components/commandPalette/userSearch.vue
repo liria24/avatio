@@ -80,6 +80,8 @@ const onSelect = async (username: string) => {
     } catch (error) {
         console.error('User not found:', error)
         toast.add({
+            id: 'user-not-found',
+            icon: 'mingcute:close-line',
             title: t('commandPalette.userSearch.userNotFound'),
             description: t('commandPalette.userSearch.userNotFoundDescription'),
             color: 'error',
