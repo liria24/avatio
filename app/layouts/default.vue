@@ -3,11 +3,8 @@ const { session } = await useAuth()
 const route = useRoute()
 const { login } = useAppOverlay()
 
-const { data } = useNotifications({
-    read: false,
-    unread: true,
-})
-const filteredNotifications = computed(() => data.value.notifications.filter((n) => n.banner))
+const { unread } = useNotifications()
+const filteredNotifications = computed(() => unread.value.filter((n) => n.banner))
 </script>
 
 <template>
@@ -37,8 +34,8 @@ const filteredNotifications = computed(() => data.value.notifications.filter((n)
                             />
                         </UTooltip>
 
-                        <HeaderThemeButton v-if="!session" />
-                        <HeaderLanguageButton v-if="!session" />
+                        <LazyHeaderThemeButton v-if="!session" />
+                        <LazyHeaderLanguageButton v-if="!session" />
                     </div>
 
                     <template v-if="route.path !== '/login'">

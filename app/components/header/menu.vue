@@ -9,6 +9,8 @@ const { t, locales, setLocale } = useI18n()
 const switchAccount = async (sessionToken: string) => {
     await auth.multiSession.setActive({ sessionToken })
     toast.add({
+        id: 'switching-account',
+        icon: 'svg-spinners:ring-resize',
         title: t('header.menu.switchAccount'),
         description: t('loading'),
         progress: false,
@@ -30,7 +32,7 @@ const switchAccount = async (sessionToken: string) => {
                 {
                     label: t('header.menu.bookmarks'),
                     icon: 'mingcute:bookmark-fill',
-                    to: $localePath('/?tab=bookmarked'),
+                    to: $localePath('/bookmarks'),
                 },
                 {
                     label: t('header.menu.settings'),

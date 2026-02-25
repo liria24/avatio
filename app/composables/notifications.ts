@@ -1,44 +1,21 @@
-interface UseNotificationsOptions {
-    read?: boolean
-    unread?: boolean
-}
-
-const _useNotifications = (options?: MaybeRefOrGetter<UseNotificationsOptions>) => {
+const _useNotifications = () => {
     const { session } = useAuth()
     const localePath = useLocalePath()
-
-    const opts = computed(() => {
-        const value = toValue(options) || {}
-        return {
-            read: value.read ?? true,
-            unread: value.unread ?? true,
-        }
-    })
 
     const _asyncData = useFetch('/api/notifications', {
         key: 'notifications',
         dedupe: 'defer',
         immediate: !!session.value,
-        transform: (response) => {
-            const allNotifications = response.data
-            const { read, unread } = opts.value
-            return {
-                notifications: allNotifications.filter((n) => {
-                    const isRead = !!n.readAt
-                    if (isRead && !read) return false
-                    if (!isRead && !unread) return false
-                    return true
-                }),
-                unreadCount: response.unread,
-            }
-        },
-        default: () => ({
-            notifications: [],
-            unreadCount: 0,
-        }),
+        transform: (response) => response,
+        default: () => ({ data: [], unread: 0 }),
         getCachedData: (key, n, ctx) =>
             ctx.cause !== 'refresh:manual' ? n.payload.data[key] : n.static.data[key],
     })
+
+    const all = computed(() => _asyncData.data.value.data)
+    const read = computed(() => all.value.filter((n) => !!n.readAt))
+    const unread = computed(() => all.value.filter((n) => !n.readAt))
+    const unreadCount = computed(() => _asyncData.data.value.unread)
 
     const markAsRead = async (id: string) => {
         try {
@@ -71,11 +48,16 @@ const _useNotifications = (options?: MaybeRefOrGetter<UseNotificationsOptions>) 
         if (actionUrl) navigateTo(localePath(actionUrl))
     }
 
-    return Object.assign(_asyncData, {
+    return {
+        ..._asyncData,
+        all,
+        read,
+        unread,
+        unreadCount,
         markAsRead,
         markAsUnread,
         open,
-    })
+    }
 }
 
 export const useNotifications = createSharedComposable(_useNotifications)

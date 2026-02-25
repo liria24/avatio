@@ -372,6 +372,7 @@ const providerIcon = computed(() => providerIcons[item.platform])
                                         @click="
                                             copy(key.value.toString()).then(() => {
                                                 toast.add({
+                                                    id: `copy-shapekey-${index}`,
                                                     title: $t('setup.viewer.valueCopied', {
                                                         name: key.name,
                                                     }),

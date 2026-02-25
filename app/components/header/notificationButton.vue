@@ -1,12 +1,13 @@
 <script setup lang="ts">
-const { data } = useNotifications()
+const { unreadCount } = useNotifications()
 </script>
 
 <template>
     <PopoverNotifications>
         <UTooltip :text="$t('header.notifications')" :delay-duration="50">
-            <UChip :show="!!data.unreadCount" color="neutral" inset>
+            <UChip :show="!!unreadCount" color="neutral" inset>
                 <UButton
+                    id="notification-button"
                     :aria-label="$t('header.notifications')"
                     icon="mingcute:notification-fill"
                     variant="ghost"

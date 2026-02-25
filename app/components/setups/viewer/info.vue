@@ -34,6 +34,7 @@ const toggleBookmark = async () => {
                 <UUser
                     :avatar="{
                         src: setup.user.image || undefined,
+                        alt: '',
                         icon: 'mingcute:user-3-fill',
                     }"
                     :description="`@${setup.user.username}`"
@@ -45,7 +46,7 @@ const toggleBookmark = async () => {
                 >
                     <template #name>
                         <span>{{ setup.user.name }}</span>
-                        <UserBadges
+                        <LazyUserBadges
                             v-if="setup.user.badges?.length"
                             :badges="setup.user.badges"
                             size="sm"
@@ -145,6 +146,7 @@ const toggleBookmark = async () => {
                 </template>
 
                 <ButtonShare
+                    id="setup-info-share"
                     :title="props.setup.name"
                     :description="props.setup.description"
                     :image="props.setup.images?.[0]?.url"
@@ -191,14 +193,14 @@ const toggleBookmark = async () => {
                     >
                         <UAvatar
                             :src="coAuthor.user.image || undefined"
-                            :alt="coAuthor.user.name"
+                            alt=""
                             icon="mingcute:user-3-fill"
                             size="sm"
                         />
                         <p class="text-left text-sm">
                             {{ coAuthor.user.name }}
                         </p>
-                        <UserBadges
+                        <LazyUserBadges
                             v-if="coAuthor.user.badges?.length"
                             :badges="coAuthor.user.badges"
                             size="sm"

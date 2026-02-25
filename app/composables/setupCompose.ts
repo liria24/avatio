@@ -129,7 +129,11 @@ export const useSetupCompose = () => {
         } catch (error) {
             draft.value.status = 'error'
             console.error('Failed to load draft:', error)
-            toast.add({ title: t('setup.compose.draftLoadFailed'), color: 'error' })
+            toast.add({
+                icon: 'mingcute:close-line',
+                title: t('setup.compose.draftLoadFailed'),
+                color: 'error',
+            })
             updateRouterQuery({ draftId: undefined })
         } finally {
             skipDraftSave.value = false
@@ -195,6 +199,7 @@ export const useSetupCompose = () => {
                     skipDraftSave.value = false
 
                     toast.add({
+                        icon: 'mingcute:back-line',
                         title: t('setup.compose.draftRestored'),
                         color: 'secondary',
                     })
@@ -210,6 +215,7 @@ export const useSetupCompose = () => {
             } catch (error) {
                 console.error('Setup not found:', args.edit, error)
                 toast.add({
+                    icon: 'mingcute:close-line',
                     title: t('setup.compose.editModeFailed'),
                     description: t('setup.compose.setupNotFound'),
                     color: 'error',
@@ -278,6 +284,7 @@ export const useSetupCompose = () => {
             console.error(isEditing ? 'Failed to update setup:' : 'Failed to submit setup:', error)
 
             toast.add({
+                icon: 'mingcute:close-line',
                 title: isEditing
                     ? t('setup.compose.updateFailed')
                     : t('setup.compose.publishFailed'),
@@ -377,7 +384,12 @@ export const useSetupCompose = () => {
         if (!tag.trim()) return
 
         if (state.value.tags.includes(tag)) {
-            toast.add({ title: t('setup.compose.tagDuplicate'), color: 'warning' })
+            toast.add({
+                id: 'tag-duplicate',
+                icon: 'mingcute:close-line',
+                title: t('setup.compose.tagDuplicate'),
+                color: 'warning',
+            })
             return
         }
 
@@ -394,7 +406,12 @@ export const useSetupCompose = () => {
         if (!user?.username) return
 
         if (state.value.coauthors.some((c) => c.user.username === user.username)) {
-            toast.add({ title: t('setup.compose.coauthorDuplicate'), color: 'warning' })
+            toast.add({
+                id: 'coauthor-duplicate',
+                icon: 'mingcute:close-line',
+                title: t('setup.compose.coauthorDuplicate'),
+                color: 'warning',
+            })
             return
         }
 
@@ -420,6 +437,7 @@ export const useSetupCompose = () => {
         } catch (error) {
             console.error('Error uploading image:', error)
             toast.add({
+                icon: 'mingcute:close-line',
                 title: t('errors.imageUploadFailed'),
                 color: 'error',
             })
@@ -450,7 +468,12 @@ export const useSetupCompose = () => {
         }
 
         if (isItemAlreadyAdded(item.id)) {
-            toast.add({ title: t('setup.compose.itemAlreadyAdded'), color: 'warning' })
+            toast.add({
+                id: 'item-duplicate',
+                icon: 'mingcute:warning-line',
+                title: t('setup.compose.itemAlreadyAdded'),
+                color: 'warning',
+            })
             return
         }
 

@@ -59,6 +59,8 @@ const groups = computed(() => {
                                 if (result) onSelected(result.id, result.platform)
                                 else
                                     toast.add({
+                                        id: 'invalid-item-url',
+                                        icon: 'mingcute:close-line',
                                         title: t('commandPalette.itemSearch.invalidUrl'),
                                         description: t(
                                             'commandPalette.itemSearch.invalidUrlDescription',

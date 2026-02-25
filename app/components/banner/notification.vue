@@ -51,6 +51,7 @@ const to = computed(() => href || notification.actionUrl)
         />
 
         <UButton
+            :aria-label="$t('close')"
             icon="mingcute:close-line"
             variant="ghost"
             size="sm"
