@@ -34,8 +34,8 @@ const filteredNotifications = computed(() => unread.value.filter((n) => n.banner
                             />
                         </UTooltip>
 
-                        <HeaderThemeButton v-if="!session" />
-                        <HeaderLanguageButton v-if="!session" />
+                        <LazyHeaderThemeButton v-if="!session" />
+                        <LazyHeaderLanguageButton v-if="!session" />
                     </div>
 
                     <template v-if="route.path !== '/login'">
