@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const open = ref(false)
 
-const { data, status } = useNotifications()
+const { all, status } = useNotifications()
 </script>
 
 <template>
@@ -32,16 +32,13 @@ const { data, status } = useNotifications()
                     class="text-muted m-8 self-center"
                 />
 
-                <p
-                    v-else-if="!data.notifications.length"
-                    class="text-muted my-8 self-center text-sm"
-                >
+                <p v-else-if="!all.length" class="text-muted my-8 self-center text-sm">
                     {{ $t('notifications.empty') }}
                 </p>
 
                 <div v-else class="flex flex-col gap-2">
-                    <UserNotification
-                        v-for="notification in data.notifications"
+                    <LazyUserNotification
+                        v-for="notification in all"
                         :key="notification.id"
                         :notification
                     />
