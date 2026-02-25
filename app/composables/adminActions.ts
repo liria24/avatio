@@ -180,31 +180,6 @@ export const useAdminActions = () => {
         }
     }
 
-    const submitFeedback = async (comment: string, contextPath: string) => {
-        try {
-            await $fetch('/api/feedbacks', {
-                method: 'POST',
-                body: {
-                    comment,
-                    contextPath,
-                },
-            })
-            toast.add({
-                title: t('toast.admin.feedbackSubmitted'),
-                description: t('toast.admin.feedbackSubmittedDescription'),
-                color: 'success',
-            })
-            return true
-        } catch (error) {
-            console.error('Error submitting feedback:', error)
-            toast.add({
-                title: t('toast.admin.feedbackSubmitFailed'),
-                color: 'error',
-            })
-            return false
-        }
-    }
-
     const toggleMaintenanceMode = async (isMaintenance: boolean) => {
         try {
             await $fetch('/api/admin/edge-config', {
@@ -319,7 +294,6 @@ export const useAdminActions = () => {
         hideSetup,
         unhideSetup,
         deleteSetup,
-        submitFeedback,
         toggleMaintenanceMode,
         toggleForceUpdateItem,
         changeItemNiceName,
