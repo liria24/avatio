@@ -5,6 +5,7 @@ const { app } = useAppConfig()
 const route = useRoute()
 const { reportSetup, imageViewer, login, setupDelete, setupHide, setupUnhide } = useAppOverlay()
 const { t } = useI18n()
+const { session } = useAuth()
 
 const id = Number(route.params.id)
 
@@ -235,7 +236,7 @@ if (data.value) {
                     variant="ghost"
                     size="sm"
                     class="ml-auto"
-                    @click="reportSetup.open({ setupId: id })"
+                    @click="session ? reportSetup.open({ setupId: id }) : login.open()"
                 />
             </div>
         </UPageBody>
