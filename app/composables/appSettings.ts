@@ -1,10 +1,12 @@
 import type { RemovableRef } from '@vueuse/core'
 
 export interface AppSettings {
+    cookiesConsent: boolean
     ownerWarningBannerDismissed?: boolean
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
+    cookiesConsent: false,
     ownerWarningBannerDismissed: false,
 }
 
@@ -20,6 +22,19 @@ export const useAppSettings = () => {
 
     return {
         settings: settingsRef,
+    }
+}
+
+export const useCookiesConsent = () => {
+    const { settings } = useAppSettings()
+
+    const giveConsent = () => {
+        settings.value.cookiesConsent = true
+    }
+
+    return {
+        consented: computed(() => settings.value.cookiesConsent),
+        giveConsent,
     }
 }
 

@@ -543,6 +543,11 @@
             "error": "An error occurred while checking the user ID."
         }
     },
+    "cookie": {
+        "title": "This site uses cookies",
+        "description": "By continuing to browse this site, you consent to the use of cookies.",
+        "accept": "Accept"
+    },
     "banner": {
         "ownerWarning": "If you are the creator of an avatar or item and wish to be removed from Avatio, please contact us here.",
         "ownerWarningSubject": "Request to Remove from Avatio"

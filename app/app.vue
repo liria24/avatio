@@ -2,12 +2,36 @@
 import { Analytics } from '@vercel/analytics/nuxt'
 import * as locales from '@nuxt/ui/locale'
 
-const { locale } = useI18n()
+const { locale, t } = useI18n()
+const toast = useToast()
+const { consented, giveConsent } = useCookiesConsent()
 
 useHead({
     htmlAttrs: {
         lang: () => locale.value,
     },
+})
+
+onMounted(() => {
+    if (!consented.value)
+        toast.add({
+            id: 'cookies-consent',
+            icon: 'mingcute:cookie-fill',
+            title: t('cookie.title'),
+            description: t('cookie.description'),
+            progress: false,
+            duration: 0,
+            actions: [
+                {
+                    label: t('cookie.accept'),
+                    variant: 'outline',
+                    onClick: giveConsent,
+                },
+            ],
+            close: {
+                onClick: giveConsent,
+            },
+        })
 })
 </script>
 

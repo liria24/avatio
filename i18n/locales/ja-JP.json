@@ -543,6 +543,11 @@
             "error": "ユーザーIDの確認中にエラーが発生しました。"
         }
     },
+    "cookie": {
+        "title": "このサイトではCookieを使用します",
+        "description": "サイトの閲覧を続けることで、Cookieの利用を許可したことになります。",
+        "accept": "同意する"
+    },
     "banner": {
         "ownerWarning": "あなたがアバター・アイテムの制作者であり、Avatioに掲載されることを拒否したい場合は、お手数ですがこちらよりご連絡をお願いします。",
         "ownerWarningSubject": "Avatioへの掲載拒否"
