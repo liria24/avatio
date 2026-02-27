@@ -11,7 +11,7 @@ const { data: user, status: userStatus } = await useUser(username)
 if (userStatus.value === 'success' && !user.value)
     showError({
         status: 404,
-        statusText: 'IDが無効です',
+        statusText: 'User Not Found',
     })
 
 const links = computed(() =>

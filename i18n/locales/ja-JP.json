@@ -52,10 +52,6 @@
             "logout": "ログアウト"
         }
     },
-    "bookmarks": {
-        "title": "ブックマーク",
-        "description": "あなたがブックマークしたセットアップを確認できます。"
-    },
     "settings": {
         "title": "ユーザー設定",
         "description": "ユーザープロフィールの編集や、アカウントに関する操作を行うことができます。",
@@ -104,8 +100,7 @@
             "theme": "テーマ",
             "themeDescription": "サイトの外観を変更します。",
             "improveTranslation": "翻訳の改善にぜひご協力ください",
-            "editOnGitHub": "GitHubで編集",
-            "translationGuideline": "翻訳ガイドライン"
+            "editOnGitHub": "GitHubで編集"
         }
     },
     "toast": {
@@ -379,8 +374,7 @@
         "feedback": {
             "title": "フィードバック",
             "comment": "コメント",
-            "placeholder": "コメントを入力",
-            "submitted": "フィードバックを送信しました"
+            "placeholder": "コメントを入力"
         },
         "publishComplete": {
             "title": "セットアップを公開しました！",
@@ -479,7 +473,6 @@
     },
     "notifications": {
         "title": "通知",
-        "read": "既読の通知",
         "empty": "通知がありません",
         "markAsRead": "既読にする",
         "markAsUnread": "未読にする",
@@ -508,7 +501,6 @@
         }
     },
     "errors": {
-        "generic": "エラーが発生しました",
         "backToHome": "ホームに戻る",
         "invalidId": "IDが無効です",
         "setupNotFound": "セットアップが見つかりません",
@@ -543,12 +535,14 @@
             "error": "ユーザーIDの確認中にエラーが発生しました。"
         }
     },
+    "cookie": {
+        "title": "このサイトではCookieを使用します",
+        "description": "サイトの閲覧を続けることで、Cookieの利用を許可したことになります。",
+        "accept": "同意する"
+    },
     "banner": {
         "ownerWarning": "あなたがアバター・アイテムの制作者であり、Avatioに掲載されることを拒否したい場合は、お手数ですがこちらよりご連絡をお願いします。",
         "ownerWarningSubject": "Avatioへの掲載拒否"
-    },
-    "loginPage": {
-        "continueWith": "{provider} でログイン"
     },
     "admin": {
         "label": "admin",
@@ -581,9 +575,6 @@
             "reportResolve": "報告を解決",
             "feedbackClose": "フィードバックをクローズ",
             "cleanup": "クリーンアップ"
-        },
-        "changelogsCompose": {
-            "duplicateAuthor": "著者を重複して追加することはできません"
         },
         "reports": {
             "user": {

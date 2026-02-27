@@ -52,10 +52,6 @@
             "logout": "Logout"
         }
     },
-    "bookmarks": {
-        "title": "Bookmarks",
-        "description": "View your bookmarked setups."
-    },
     "settings": {
         "title": "User Settings",
         "description": "Edit your user profile and manage your account.",
@@ -104,8 +100,7 @@
             "theme": "Theme",
             "themeDescription": "Change the site appearance.",
             "improveTranslation": "Help us improve translations",
-            "editOnGitHub": "Edit on GitHub",
-            "translationGuideline": "Translation Guidelines"
+            "editOnGitHub": "Edit on GitHub"
         }
     },
     "toast": {
@@ -379,8 +374,7 @@
         "feedback": {
             "title": "Feedback",
             "comment": "Comment",
-            "placeholder": "Enter your comment",
-            "submitted": "Feedback submitted"
+            "placeholder": "Enter your comment"
         },
         "publishComplete": {
             "title": "Setup Published!",
@@ -479,7 +473,6 @@
     },
     "notifications": {
         "title": "Notifications",
-        "read": "Read",
         "empty": "No notifications",
         "markAsRead": "Mark as read",
         "markAsUnread": "Mark as unread",
@@ -508,7 +501,6 @@
         }
     },
     "errors": {
-        "generic": "An error occurred",
         "backToHome": "Back to Home",
         "invalidId": "Invalid ID",
         "setupNotFound": "Setup not found",
@@ -543,12 +535,14 @@
             "error": "An error occurred while checking the user ID."
         }
     },
+    "cookie": {
+        "title": "This site uses cookies",
+        "description": "By continuing to browse this site, you consent to the use of cookies.",
+        "accept": "Accept"
+    },
     "banner": {
         "ownerWarning": "If you are the creator of an avatar or item and wish to be removed from Avatio, please contact us here.",
         "ownerWarningSubject": "Request to Remove from Avatio"
-    },
-    "loginPage": {
-        "continueWith": "Continue with {provider}"
     },
     "admin": {
         "label": "admin",
@@ -581,9 +575,6 @@
             "reportResolve": "Resolved Report",
             "feedbackClose": "Closed Feedback",
             "cleanup": "Cleanup"
-        },
-        "changelogsCompose": {
-            "duplicateAuthor": "Cannot add duplicate authors"
         },
         "reports": {
             "user": {
