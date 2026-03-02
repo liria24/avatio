@@ -13,16 +13,15 @@ const available = defineModel<boolean>('available', {
 interface Props {
     label?: string
     placeholder?: string
+    variant?: InputProps['variant']
+    color?: InputProps['color']
+    size?: InputProps['size']
     ui?: {
-        input?: InputProps
-        field?: FormFieldProps
+        input?: InputProps['ui']
+        field?: FormFieldProps['ui']
     }
 }
-const props = withDefaults(defineProps<Props>(), {
-    label: undefined,
-    placeholder: undefined,
-    ui: undefined,
-})
+const { label, placeholder, ui } = defineProps<Props>()
 
 const { session, auth } = useAuth()
 const { t } = useI18n()
@@ -52,10 +51,8 @@ const checkNewIdAvailability = useDebounceFn(async (username: string) => {
     checkState.value = 'checking'
 
     try {
-        const available = await auth.isUsernameAvailable({
-            username: username,
-        })
-        checkState.value = available ? 'available' : 'unavailable'
+        const available = await auth.isUsernameAvailable({ username })
+        checkState.value = available.data?.available ? 'available' : 'unavailable'
     } catch (error) {
         console.error('Error checking profile ID availability:', error)
         checkState.value = 'error'
@@ -80,12 +77,12 @@ watch(
 </script>
 
 <template>
-    <UFormField :label="props.label || $t('input.username.label')" v-bind="props.ui?.field">
+    <UFormField :label="label || $t('input.username.label')" :ui="ui?.field">
         <UInput
             v-model="input"
-            :placeholder="props.placeholder || $t('input.username.placeholder')"
+            :placeholder="placeholder || $t('input.username.placeholder')"
             class="w-full"
-            v-bind="props.ui?.input"
+            :ui="ui?.input"
         />
         <template #hint>
             <div v-if="checkState !== 'idle'" class="flex items-center gap-1">

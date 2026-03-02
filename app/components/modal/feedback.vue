@@ -8,6 +8,13 @@ const { state, schema, submit } = useFeedback()
     <UModal
         :title="$t('modal.feedback.title')"
         :description="$t('footer.links.feedbackDescription')"
+        :ui="{
+            header: 'p-4 sm:p-4 min-h-0',
+            body: 'p-4 sm:p-4',
+            footer: 'p-4 sm:p-4',
+            content: 'max-w-xl p-4 sm:p-8 rounded-2xl divide-y-0',
+            close: 'sm:top-6 sm:right-6',
+        }"
     >
         <slot />
 
@@ -45,7 +52,13 @@ const { state, schema, submit } = useFeedback()
 
         <template #footer>
             <div class="flex w-full justify-end">
-                <UButton loading-auto :label="$t('submit')" color="neutral" @click="submit()" />
+                <UButton
+                    loading-auto
+                    :label="$t('submit')"
+                    color="neutral"
+                    size="lg"
+                    @click="submit()"
+                />
             </div>
         </template>
     </UModal>

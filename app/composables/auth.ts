@@ -1,6 +1,5 @@
 import {
     adminClient,
-    customSessionClient,
     inferAdditionalFields,
     multiSessionClient,
     usernameClient,
@@ -13,7 +12,6 @@ const client = createAuthClient({
         usernameClient(),
         adminClient(),
         multiSessionClient(),
-        customSessionClient<typeof auth>(),
         inferAdditionalFields<typeof auth>(),
     ],
 })

@@ -29,7 +29,13 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <UModal v-model:open="open" :ui="{ content: 'max-w-xl p-10 rounded-2xl divide-y-0' }">
+    <UModal
+        v-model:open="open"
+        :ui="{
+            content: 'max-w-xl px-4 py-8 sm:p-10 rounded-2xl divide-y-0',
+            close: 'sm:top-6 sm:right-6',
+        }"
+    >
         <slot />
 
         <template #content>

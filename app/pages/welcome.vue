@@ -31,7 +31,8 @@ defineSeo({
         <InputUsername
             v-model="input"
             v-model:available="available"
-            :ui="{ input: { variant: 'soft', size: 'lg' } }"
+            variant="soft"
+            size="lg"
             class="w-full"
         />
 

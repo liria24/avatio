@@ -7,17 +7,69 @@
         'Meiryo', system-ui, -apple-system, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial,
         sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji';
     --font-mono: 'Geist Mono', monospace;
+
+    --scroll-mask-stop-end: 12%;
+}
+
+@keyframes scroll-mask-v {
+    0% {
+        mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+    }
+    10%,
+    90% {
+        mask-image: linear-gradient(
+            to bottom,
+            transparent 0%,
+            black var(--scroll-mask-stop-end),
+            black 88%,
+            transparent 100%
+        );
+    }
+    100% {
+        mask-image: linear-gradient(to bottom, transparent 0%, black var(--scroll-mask-stop-end));
+    }
+}
+
+@keyframes scroll-mask-h {
+    0% {
+        mask-image: linear-gradient(to right, black 85%, transparent 100%);
+    }
+    10%,
+    90% {
+        mask-image: linear-gradient(
+            to right,
+            transparent 0%,
+            black var(--scroll-mask-stop-end),
+            black 88%,
+            transparent 100%
+        );
+    }
+    100% {
+        mask-image: linear-gradient(to right, transparent 0%, black var(--scroll-mask-stop-end));
+    }
+}
+
+@utility scroll-mask-y {
+    mask-repeat: no-repeat;
+    animation: scroll-mask-v linear;
+    animation-timeline: scroll(self);
+}
+
+@utility scroll-mask-x {
+    mask-repeat: no-repeat;
+    animation: scroll-mask-h linear;
+    animation-timeline: scroll(self);
+}
+
+@utility sentence {
+    font-family: 'Noto Sans JP', var(--font-sans);
+    text-autospace: normal;
+    text-spacing-trim: trim-start;
+    line-break: strict;
+    overflow-wrap: anywhere;
 }
 
 @layer utilities {
-    .sentence {
-        font-family: 'Noto Sans JP', var(--font-sans);
-        text-autospace: normal;
-        text-spacing-trim: trim-start;
-        line-break: strict;
-        overflow-wrap: anywhere;
-    }
-
     .rounded-xs {
         border-radius: var(--radius-xs);
         @supports (-webkit-appearance: none) and (not (-moz-appearance: none)) {

@@ -23,28 +23,16 @@ const route = useRoute()
             @click="signIn.twitter({ callbackURL: route.path })"
         />
 
-        <div class="flex w-full items-center justify-end gap-3">
-            <p class="text-muted text-right text-xs">{{ $t('modal.login.agreement') }}</p>
-            <UButton
-                :to="$localePath('/terms')"
-                target="_blank"
-                :label="$t('modal.login.footer.terms')"
-                variant="link"
-                size="sm"
-                color="neutral"
-                class="p-0"
-            />
-            <UButton
-                :to="$localePath('/privacy-policy')"
-                target="_blank"
-                :label="$t('modal.login.footer.privacy')"
-                variant="link"
-                size="sm"
-                color="neutral"
-                class="p-0"
-            />
-        </div>
-
+        <p class="text-muted text-right text-xs">
+            {{ $t('modal.login.agreement') }}
+            <br class="sm:hidden" />
+            <ULink :to="$localePath('/terms')" target="_blank" class="ml-2 font-bold">
+                {{ $t('modal.login.footer.terms') }}
+            </ULink>
+            <ULink :to="$localePath('/privacy-policy')" target="_blank" class="ml-2 font-bold">
+                {{ $t('modal.login.footer.privacy') }}
+            </ULink>
+        </p>
         <p class="text-muted text-right text-xs">{{ $t('modal.login.firstTimeNotice') }}</p>
     </div>
 </template>
