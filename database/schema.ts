@@ -59,7 +59,6 @@ export const user = authSchema.table(
         banExpires: timestamp('ban_expires'),
         bio: text(),
         links: text().array(),
-        isInitialized: boolean('is_initialized').notNull().default(false),
     },
     (table) => [index('user_email_index').on(table.email)],
 )
