@@ -33,16 +33,20 @@ const Submit = async () => {
 </script>
 
 <template>
-    <UModal :title="$t('modal.report.item.title')">
+    <UModal
+        :title="$t('modal.report.item.title')"
+        :ui="{
+            header: 'p-4 sm:p-4 min-h-0',
+            body: 'p-4 sm:p-4 scroll-mask-y',
+            footer: 'p-4 sm:p-4',
+            content: 'max-w-xl p-4 sm:p-8 rounded-2xl divide-y-0',
+            close: 'sm:top-6 sm:right-6',
+        }"
+    >
         <slot />
 
         <template #body>
-            <UForm
-                :state
-                :schema
-                class="flex w-full flex-col items-center gap-4 overflow-y-auto"
-                @submit="Submit"
-            >
+            <UForm :state :schema class="flex w-full flex-col items-center gap-4" @submit="Submit">
                 <UFormField
                     name="reportReason"
                     :label="$t('modal.report.item.reason')"
