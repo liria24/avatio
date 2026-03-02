@@ -8,10 +8,6 @@ export const relations = defineRelations(schema, (r) => ({
             from: r.user.id,
             to: r.account.userId,
         }),
-        sessions: r.many.session({
-            from: r.user.id,
-            to: r.session.userId,
-        }),
         shops: r.many.userShops({
             from: r.user.id,
             to: r.userShops.userId,
@@ -77,12 +73,6 @@ export const relations = defineRelations(schema, (r) => ({
         user: r.one.user({
             from: r.account.userId,
             to: r.user.id,
-        }),
-    },
-    verification: {
-        user: r.one.user({
-            from: r.verification.identifier,
-            to: r.user.email,
         }),
     },
     changelogs: {

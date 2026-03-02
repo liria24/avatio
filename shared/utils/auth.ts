@@ -1,7 +1,7 @@
+import { drizzleAdapter } from '@better-auth/drizzle-adapter'
 import { put } from '@tigrisdata/storage'
 import { betterAuth } from 'better-auth'
-import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import { admin, customSession, multiSession, username } from 'better-auth/plugins'
+import { admin, multiSession, username } from 'better-auth/plugins'
 import { nanoid } from 'nanoid'
 
 import { db, schema } from '../../server/utils/database'
@@ -17,24 +17,38 @@ import {
 } from './constants'
 
 const JPG_FILENAME_LENGTH = 16
-
-const plugins = [
-    username({
-        minUsernameLength: 3,
-    }),
-    admin(),
-    multiSession(),
-]
+const minUsernameLength = 3
 
 export const auth = betterAuth({
     appName: 'Avatio',
-
-    baseURL: process.env.PUBLIC_SITE_URL as string,
     secret: process.env.BETTER_AUTH_SECRET as string,
 
-    trustedOrigins: ['http://localhost:3000', 'https://dev.avatio.me', 'https://avatio.me'],
+    baseURL: {
+        allowedHosts: ['localhost:3000', 'dev.avatio.me', 'avatio.me', '*.vercel.app'],
+        protocol: 'http',
+    },
 
     database: drizzleAdapter(db, { provider: 'pg', schema }),
+
+    secondaryStorage: {
+        get: async (key) => await useStorage('auth').get(key),
+        set: async (key, value, ttl) => {
+            if (ttl) await useStorage('auth').set(key, value, { ttl })
+            else await useStorage('auth').set(key, value)
+        },
+        delete: async (key) => {
+            await useStorage('auth').del(key)
+        },
+    },
+
+    account: {
+        storeStateStrategy: 'cookie',
+    },
+
+    verification: {
+        storeIdentifier: 'hashed',
+        storeInDatabase: false,
+    },
 
     user: {
         additionalFields: {
@@ -80,18 +94,7 @@ export const auth = betterAuth({
         },
     },
 
-    plugins: [
-        ...plugins,
-        customSession(
-            async ({ user, session }) => {
-                return {
-                    user,
-                    session,
-                }
-            },
-            { plugins },
-        ),
-    ],
+    plugins: [username({ minUsernameLength }), admin(), multiSession()],
 
     rateLimit: {
         enabled: true,
@@ -107,33 +110,7 @@ export const auth = betterAuth({
                 max: RATE_LIMIT_SESSION,
             },
         },
-        customStorage: {
-            get: async (key: string) => {
-                try {
-                    const storage = useStorage('cache')
-                    const result = await storage.getItem<{
-                        key: string
-                        count: number
-                        lastRequest: number
-                    }>(`rate-limit:${key}`)
-                    return result || undefined
-                } catch (error) {
-                    console.error('Rate limit storage get error:', error)
-                    return undefined
-                }
-            },
-            set: async (
-                key: string,
-                value: { key: string; count: number; lastRequest: number },
-            ) => {
-                try {
-                    const storage = useStorage('cache')
-                    await storage.setItem(`rate-limit:${key}`, value)
-                } catch (error) {
-                    console.error('Rate limit storage set error:', error)
-                }
-            },
-        },
+        storage: 'secondary-storage',
     },
 
     databaseHooks: {

@@ -105,13 +105,19 @@ export default defineNuxtConfig({
         preset: 'vercel',
         compressPublicAssets: true,
         storage: {
+            auth: {
+                driver: 'vercel-runtime-cache',
+                tags: ['auth'],
+            },
             cache: {
                 driver: 'vercel-runtime-cache',
-                base: 'avatio',
                 tags: ['cache'],
             },
         },
         devStorage: {
+            auth: {
+                driver: 'memory',
+            },
             cache: {
                 driver: 'null',
             },

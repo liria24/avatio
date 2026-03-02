@@ -63,31 +63,6 @@ export const user = authSchema.table(
     (table) => [index('user_email_index').on(table.email)],
 )
 
-export const session = authSchema.table(
-    'session',
-    {
-        id: text().primaryKey(),
-        expiresAt: timestamp('expires_at').notNull(),
-        token: text().notNull().unique(),
-        createdAt: timestamp('created_at').notNull(),
-        updatedAt: timestamp('updated_at').notNull(),
-        ipAddress: text('ip_address'),
-        userAgent: text('user_agent'),
-        userId: text('user_id')
-            .notNull()
-            .references(() => user.id, {
-                onUpdate: 'cascade',
-                onDelete: 'cascade',
-            }),
-        impersonatedBy: text('impersonated_by'),
-    },
-    (table) => [
-        index('session_user_id_index').on(table.userId),
-        index('session_expires_at_index').on(table.expiresAt),
-        index('session_token_index').on(table.token),
-    ],
-)
-
 export const account = authSchema.table(
     'account',
     {
@@ -111,19 +86,6 @@ export const account = authSchema.table(
         updatedAt: timestamp('updated_at').notNull(),
     },
     (table) => [index('account_user_id_index').on(table.userId)],
-)
-
-export const verification = authSchema.table(
-    'verification',
-    {
-        id: text().primaryKey(),
-        identifier: text().notNull(),
-        value: text().notNull(),
-        expiresAt: timestamp('expires_at').notNull(),
-        createdAt: timestamp('created_at').defaultNow().notNull(),
-        updatedAt: timestamp('updated_at').defaultNow().notNull(),
-    },
-    (table) => [index('verification_identifier_index').on(table.identifier)],
 )
 
 export const userShops = authSchema.table(
