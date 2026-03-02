@@ -31,13 +31,13 @@ export const auth = betterAuth({
     database: drizzleAdapter(db, { provider: 'pg', schema }),
 
     secondaryStorage: {
-        get: async (key) => await useStorage('auth').get(key),
+        get: async (key) => await useStorage('auth').get(encodeURIComponent(key)),
         set: async (key, value, ttl) => {
-            if (ttl) await useStorage('auth').set(key, value, { ttl })
-            else await useStorage('auth').set(key, value)
+            if (ttl) await useStorage('auth').set(encodeURIComponent(key), value, { ttl })
+            else await useStorage('auth').set(encodeURIComponent(key), value)
         },
         delete: async (key) => {
-            await useStorage('auth').del(key)
+            await useStorage('auth').del(encodeURIComponent(key))
         },
     },
 

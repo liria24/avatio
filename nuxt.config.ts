@@ -116,7 +116,8 @@ export default defineNuxtConfig({
         },
         devStorage: {
             auth: {
-                driver: 'memory',
+                driver: 'fs-lite',
+                base: './.data/storage/auth',
             },
             cache: {
                 driver: 'null',
