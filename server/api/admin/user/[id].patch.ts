@@ -32,11 +32,11 @@ export default adminSessionEventHandler(async () => {
         })
         await createNotification({
             userId,
-            title: 'あなたのアカウントの権限が変更されました',
             type: 'user_role_changed',
-            message: `あなたのアカウントの権限が ${Array.isArray(body.role) ? body.role.join(', ') : body.role} に変更されました`,
+            payload: {
+                content: Array.isArray(body.role) ? body.role.join(', ') : body.role,
+            },
             actionUrl: `/@${userId}`,
-            actionLabel: 'アカウントを確認する',
         })
     }
 
@@ -52,14 +52,12 @@ export default adminSessionEventHandler(async () => {
             })
             await createNotification({
                 userId,
-                title: 'あなたのアカウントは BAN されました',
                 type: 'user_banned',
-                message: body.banReason || undefined,
-                data: JSON.stringify({
+                payload: {
+                    content: body.banReason || undefined,
                     banExpiresIn: body.banExpiresIn,
-                }),
+                },
                 actionUrl: `/@${userId}`,
-                actionLabel: 'アカウントを確認する',
             })
         } else {
             await auth.api.unbanUser({
@@ -70,10 +68,9 @@ export default adminSessionEventHandler(async () => {
             })
             await createNotification({
                 userId,
-                title: 'あなたのアカウントは BAN 解除されました',
                 type: 'user_unbanned',
+                payload: {},
                 actionUrl: `/@${userId}`,
-                actionLabel: 'アカウントを確認する',
             })
         }
 
