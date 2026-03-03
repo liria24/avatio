@@ -3,91 +3,91 @@ import { defineRelations } from 'drizzle-orm'
 import * as schema from './schema'
 
 export const relations = defineRelations(schema, (r) => ({
-    user: {
-        accounts: r.many.account({
-            from: r.user.id,
-            to: r.account.userId,
+    users: {
+        accounts: r.many.accounts({
+            from: r.users.id,
+            to: r.accounts.userId,
         }),
         shops: r.many.userShops({
-            from: r.user.id,
+            from: r.users.id,
             to: r.userShops.userId,
         }),
-        shopVerifications: r.many.userShopVerification({
-            from: r.user.id,
-            to: r.userShopVerification.userId,
+        shopVerifications: r.many.userShopVerifications({
+            from: r.users.id,
+            to: r.userShopVerifications.userId,
         }),
         badges: r.many.userBadges({
-            from: r.user.id,
+            from: r.users.id,
             to: r.userBadges.userId,
         }),
         setupCoauthors: r.many.setupCoauthors({
-            from: r.user.id,
+            from: r.users.id,
             to: r.setupCoauthors.userId,
         }),
         setups: r.many.setups({
-            from: r.user.id,
+            from: r.users.id,
             to: r.setups.userId,
         }),
         bookmarks: r.many.bookmarks({
-            from: r.user.id,
+            from: r.users.id,
             to: r.bookmarks.userId,
         }),
         notifications: r.many.notifications({
-            from: r.user.id,
+            from: r.users.id,
             to: r.notifications.userId,
         }),
         itemReports: r.many.itemReports({
-            from: r.user.id,
+            from: r.users.id,
             to: r.itemReports.reporterId,
         }),
         setupReports: r.many.setupReports({
-            from: r.user.id,
+            from: r.users.id,
             to: r.setupReports.reporterId,
         }),
         userReports: r.many.userReports({
-            from: r.user.id,
+            from: r.users.id,
             to: r.userReports.reporterId,
         }),
         auditLogs: r.many.auditLogs({
-            from: r.user.id,
+            from: r.users.id,
             to: r.auditLogs.userId,
         }),
         changelogs: r.many.changelogAuthors({
-            from: r.user.id,
+            from: r.users.id,
             to: r.changelogAuthors.userId,
         }),
         drafts: r.many.setupDrafts({
-            from: r.user.id,
+            from: r.users.id,
             to: r.setupDrafts.userId,
         }),
         follows: r.many.followUsers({
-            from: r.user.id,
+            from: r.users.id,
             to: r.followUsers.userId,
         }),
         followers: r.many.followUsers({
-            from: r.user.id,
+            from: r.users.id,
             to: r.followUsers.targetUserId,
         }),
     },
-    account: {
-        user: r.one.user({
-            from: r.account.userId,
-            to: r.user.id,
+    accounts: {
+        user: r.one.users({
+            from: r.accounts.userId,
+            to: r.users.id,
         }),
     },
     changelogs: {
-        i18n: r.many.changelogsI18n({
+        i18n: r.many.changelogI18ns({
             from: r.changelogs.slug,
-            to: r.changelogsI18n.changelogSlug,
+            to: r.changelogI18ns.changelogSlug,
         }),
         authors: r.many.changelogAuthors({
             from: r.changelogs.slug,
             to: r.changelogAuthors.changelogSlug,
         }),
     },
-    changelogsI18n: {
+    changelogI18ns: {
         changelog: r.one.changelogs({
-            from: r.changelogsI18n.changelogSlug,
+            from: r.changelogI18ns.changelogSlug,
             to: r.changelogs.slug,
             optional: false,
         }),
@@ -98,16 +98,16 @@ export const relations = defineRelations(schema, (r) => ({
             to: r.changelogs.slug,
             optional: false,
         }),
-        user: r.one.user({
+        user: r.one.users({
             from: r.changelogAuthors.userId,
-            to: r.user.id,
+            to: r.users.id,
             optional: false,
         }),
     },
     userShops: {
-        user: r.one.user({
+        user: r.one.users({
             from: r.userShops.userId,
-            to: r.user.id,
+            to: r.users.id,
             optional: false,
         }),
         shop: r.one.shops({
@@ -116,17 +116,17 @@ export const relations = defineRelations(schema, (r) => ({
             optional: false,
         }),
     },
-    userShopVerification: {
-        user: r.one.user({
-            from: r.userShopVerification.userId,
-            to: r.user.id,
+    userShopVerifications: {
+        user: r.one.users({
+            from: r.userShopVerifications.userId,
+            to: r.users.id,
             optional: false,
         }),
     },
     userBadges: {
-        user: r.one.user({
+        user: r.one.users({
             from: r.userBadges.userId,
-            to: r.user.id,
+            to: r.users.id,
             optional: false,
         }),
     },
@@ -152,9 +152,9 @@ export const relations = defineRelations(schema, (r) => ({
         }),
     },
     setups: {
-        user: r.one.user({
+        user: r.one.users({
             from: r.setups.userId,
-            to: r.user.id,
+            to: r.users.id,
             optional: false,
         }),
         items: r.many.setupItems({
@@ -225,28 +225,28 @@ export const relations = defineRelations(schema, (r) => ({
             to: r.setups.id,
             optional: false,
         }),
-        user: r.one.user({
+        user: r.one.users({
             from: r.setupCoauthors.userId,
-            to: r.user.id,
+            to: r.users.id,
             optional: false,
         }),
     },
     followUsers: {
-        user: r.one.user({
+        user: r.one.users({
             from: r.followUsers.userId,
-            to: r.user.id,
+            to: r.users.id,
             optional: false,
         }),
-        targetUser: r.one.user({
+        targetUser: r.one.users({
             from: r.followUsers.targetUserId,
-            to: r.user.id,
+            to: r.users.id,
             optional: false,
         }),
     },
     setupDrafts: {
-        user: r.one.user({
+        user: r.one.users({
             from: r.setupDrafts.userId,
-            to: r.user.id,
+            to: r.users.id,
             optional: false,
         }),
         setup: r.one.setups({
@@ -255,9 +255,9 @@ export const relations = defineRelations(schema, (r) => ({
         }),
     },
     bookmarks: {
-        user: r.one.user({
+        user: r.one.users({
             from: r.bookmarks.userId,
-            to: r.user.id,
+            to: r.users.id,
             optional: false,
         }),
         setup: r.one.setups({
@@ -267,16 +267,16 @@ export const relations = defineRelations(schema, (r) => ({
         }),
     },
     notifications: {
-        user: r.one.user({
+        user: r.one.users({
             from: r.notifications.userId,
-            to: r.user.id,
+            to: r.users.id,
             optional: false,
         }),
     },
     itemReports: {
-        reporter: r.one.user({
+        reporter: r.one.users({
             from: r.itemReports.reporterId,
-            to: r.user.id,
+            to: r.users.id,
             optional: false,
         }),
         item: r.one.items({
@@ -286,9 +286,9 @@ export const relations = defineRelations(schema, (r) => ({
         }),
     },
     setupReports: {
-        reporter: r.one.user({
+        reporter: r.one.users({
             from: r.setupReports.reporterId,
-            to: r.user.id,
+            to: r.users.id,
             optional: false,
         }),
         setup: r.one.setups({
@@ -298,21 +298,21 @@ export const relations = defineRelations(schema, (r) => ({
         }),
     },
     userReports: {
-        reporter: r.one.user({
+        reporter: r.one.users({
             from: r.userReports.reporterId,
-            to: r.user.id,
+            to: r.users.id,
             optional: false,
         }),
-        reportee: r.one.user({
+        reportee: r.one.users({
             from: r.userReports.reporteeId,
-            to: r.user.id,
+            to: r.users.id,
             optional: false,
         }),
     },
     auditLogs: {
-        user: r.one.user({
+        user: r.one.users({
             from: r.auditLogs.userId,
-            to: r.user.id,
+            to: r.users.id,
             optional: false,
         }),
     },

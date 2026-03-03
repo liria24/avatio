@@ -7,7 +7,7 @@ const params = z.object({
 
 const getUser = defineCachedFunction(
     async (username: string) => {
-        const data = await db.query.user.findFirst({
+        const data = await db.query.users.findFirst({
             where: {
                 username: { eq: username },
                 banned: { OR: [{ eq: false }, { isNull: true }] },

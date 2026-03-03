@@ -39,7 +39,7 @@ export default async () => {
         Promise.all([
             db.query.setupImages.findMany({ columns: { url: true } }),
             db.query.setupDraftImages.findMany({ columns: { url: true } }),
-            db.query.user.findMany({ columns: { image: true } }),
+            db.query.users.findMany({ columns: { image: true } }),
         ]),
         // ストレージクエリを並列実行
         Promise.all([getStorageObjects('setup'), getStorageObjects('avatar')]),

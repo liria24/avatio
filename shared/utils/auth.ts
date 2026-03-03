@@ -27,7 +27,11 @@ export const auth = betterAuth({
         allowedHosts: ['localhost:3000', 'dev.avatio.me', 'avatio.me', '*.vercel.app'],
     },
 
-    database: drizzleAdapter(db, { provider: 'pg', schema }),
+    database: drizzleAdapter(db, {
+        provider: 'pg',
+        schema,
+        usePlural: true,
+    }),
 
     secondaryStorage: {
         get: async (key) => await useStorage('auth').get(encodeURIComponent(key)),

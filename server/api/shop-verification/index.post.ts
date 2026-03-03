@@ -1,4 +1,4 @@
-import { userBadges, userShops, userShopVerification } from '@@/database/schema'
+import { userBadges, userShops, userShopVerifications } from '@@/database/schema'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 
@@ -44,7 +44,7 @@ export default authedSessionEventHandler(
             })
 
         // ユーザーの検証コードを取得
-        const verificationCode = await db.query.userShopVerification.findFirst({
+        const verificationCode = await db.query.userShopVerifications.findFirst({
             where: {
                 userId: { eq: session.user.id },
             },
@@ -88,8 +88,8 @@ export default authedSessionEventHandler(
 
         // 検証コードの削除
         await db
-            .delete(userShopVerification)
-            .where(eq(userShopVerification.userId, session.user.id))
+            .delete(userShopVerifications)
+            .where(eq(userShopVerifications.userId, session.user.id))
 
         return { success: true, shopId: itemData.shop?.id }
     },

@@ -1,5 +1,6 @@
-import { userShopVerification } from '@@/database/schema'
 import crypto from 'crypto'
+
+import { userShopVerifications } from '@@/database/schema'
 import { eq } from 'drizzle-orm'
 
 const generateSecureRandomString = (length: number): string =>
@@ -11,15 +12,15 @@ const generateSecureRandomString = (length: number): string =>
 export default authedSessionEventHandler<{ code: string }>(async ({ session }) => {
     const code = generateSecureRandomString(32)
 
-    await db.delete(userShopVerification).where(eq(userShopVerification.userId, session!.user.id))
+    await db.delete(userShopVerifications).where(eq(userShopVerifications.userId, session!.user.id))
 
     const [result] = await db
-        .insert(userShopVerification)
+        .insert(userShopVerifications)
         .values({
             code,
             userId: session!.user.id,
         })
-        .returning({ code: userShopVerification.code })
+        .returning({ code: userShopVerifications.code })
 
     if (!result)
         throw createError({
