@@ -39,9 +39,9 @@ export const itemCategory = pgEnum('item_category', [
     'other',
 ])
 
-export const authSchema = pgSchema('auth')
+export const userSchema = pgSchema('user')
 
-export const user = authSchema.table(
+export const user = userSchema.table(
     'user',
     {
         id: text().primaryKey(),
@@ -63,7 +63,7 @@ export const user = authSchema.table(
     (table) => [index('user_email_index').on(table.email)],
 )
 
-export const session = pgTable(
+export const session = userSchema.table(
     'session',
     {
         id: text().primaryKey(),
@@ -88,7 +88,7 @@ export const session = pgTable(
     ],
 )
 
-export const account = authSchema.table(
+export const account = userSchema.table(
     'account',
     {
         id: text().primaryKey(),
@@ -113,7 +113,7 @@ export const account = authSchema.table(
     (table) => [index('account_user_id_index').on(table.userId)],
 )
 
-export const verification = pgTable(
+export const verification = userSchema.table(
     'verification',
     {
         id: text().primaryKey(),
@@ -129,7 +129,7 @@ export const verification = pgTable(
     (table) => [index('verification_identifier_idx').on(table.identifier)],
 )
 
-export const userShops = authSchema.table(
+export const userShops = userSchema.table(
     'user_shops',
     {
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -157,7 +157,7 @@ export const userShops = authSchema.table(
     ],
 )
 
-export const userShopVerification = authSchema.table(
+export const userShopVerification = userSchema.table(
     'user_shop_verification',
     {
         id: uuid().primaryKey().defaultRandom(),
@@ -177,7 +177,7 @@ export const userShopVerification = authSchema.table(
     ],
 )
 
-export const userBadges = authSchema.table(
+export const userBadges = userSchema.table(
     'user_badges',
     {
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -455,9 +455,7 @@ export const setupCoauthors = pgTable(
     ],
 )
 
-export const personalSchema = pgSchema('personal')
-
-export const followUsers = personalSchema.table(
+export const followUsers = userSchema.table(
     'follow_users',
     {
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -486,7 +484,7 @@ export const followUsers = personalSchema.table(
     ],
 )
 
-export const setupDrafts = personalSchema.table(
+export const setupDrafts = userSchema.table(
     'setup_drafts',
     {
         id: uuid().primaryKey().defaultRandom(),
@@ -517,7 +515,7 @@ export const setupDrafts = personalSchema.table(
     ],
 )
 
-export const setupDraftImages = personalSchema.table(
+export const setupDraftImages = userSchema.table(
     'setup_draft_images',
     {
         id: uuid().primaryKey().defaultRandom(),
@@ -538,7 +536,7 @@ export const setupDraftImages = personalSchema.table(
     ],
 )
 
-export const bookmarks = personalSchema.table(
+export const bookmarks = userSchema.table(
     'bookmarks',
     {
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -597,7 +595,7 @@ export interface NotificationPayload {
     }
 }
 
-export const notifications = personalSchema.table(
+export const notifications = userSchema.table(
     'notifications',
     {
         id: uuid().primaryKey().defaultRandom(),
