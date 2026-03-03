@@ -7,6 +7,6 @@ export default defineConfig({
     dbCredentials: {
         url: process?.env?.NEON_DATABASE_URL || '',
     },
-    schemaFilter: ['public', 'auth', 'personal', 'feedback', 'admin'],
+    schemaFilter: ['public', 'user', 'feedback', 'admin'],
     tablesFilter: ['*'],
 })
