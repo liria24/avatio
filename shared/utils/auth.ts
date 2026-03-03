@@ -33,16 +33,16 @@ export const auth = betterAuth({
         usePlural: true,
     }),
 
-    secondaryStorage: {
-        get: async (key) => await useStorage('auth').get(encodeURIComponent(key)),
-        set: async (key, value, ttl) => {
-            if (ttl) await useStorage('auth').set(encodeURIComponent(key), value, { ttl })
-            else await useStorage('auth').set(encodeURIComponent(key), value)
-        },
-        delete: async (key) => {
-            await useStorage('auth').del(encodeURIComponent(key))
-        },
-    },
+    // secondaryStorage: {
+    //     get: async (key) => await useStorage('auth').get(encodeURIComponent(key)),
+    //     set: async (key, value, ttl) => {
+    //         if (ttl) await useStorage('auth').set(encodeURIComponent(key), value, { ttl })
+    //         else await useStorage('auth').set(encodeURIComponent(key), value)
+    //     },
+    //     delete: async (key) => {
+    //         await useStorage('auth').del(encodeURIComponent(key))
+    //     },
+    // },
 
     user: {
         additionalFields: {
@@ -113,7 +113,6 @@ export const auth = betterAuth({
                 max: RATE_LIMIT_SESSION,
             },
         },
-        storage: 'secondary-storage',
     },
 
     databaseHooks: {
