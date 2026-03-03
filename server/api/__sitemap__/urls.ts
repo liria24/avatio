@@ -28,7 +28,7 @@ export default defineSitemapEventHandler(async () => {
         },
     })
 
-    const users = await db.query.user.findMany({
+    const users = await db.query.users.findMany({
         columns: {
             updatedAt: true,
             image: true,

@@ -1,4 +1,4 @@
-import { user } from '@@/database/schema'
+import { users } from '@@/database/schema'
 import { eq } from 'drizzle-orm'
 import { StatusCodes, getReasonPhrase } from 'http-status-codes'
 import { z } from 'zod'
@@ -6,7 +6,7 @@ import { z } from 'zod'
 const params = z.object({
     username: z.string(),
 })
-const body = userUpdateSchema
+const body = usersUpdateSchema
 
 const log = logger('/api/users/[username]:PUT')
 
@@ -16,7 +16,7 @@ export default authedSessionEventHandler(async ({ session }) => {
         sanitize: true,
     })
 
-    const data = await db.query.user.findFirst({
+    const data = await db.query.users.findFirst({
         where: {
             username: { eq: oldUsername },
             banned: { OR: [{ eq: false }, { isNull: true }] },
@@ -51,7 +51,7 @@ export default authedSessionEventHandler(async ({ session }) => {
     }
 
     await db
-        .update(user)
+        .update(users)
         .set({
             updatedAt: new Date(),
             username,
@@ -60,7 +60,7 @@ export default authedSessionEventHandler(async ({ session }) => {
             bio,
             links,
         })
-        .where(eq(user.id, data.id))
+        .where(eq(users.id, data.id))
 
     log.success(`User ${username} updated successfully`)
 

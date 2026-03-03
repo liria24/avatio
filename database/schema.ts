@@ -41,8 +41,8 @@ export const itemCategory = pgEnum('item_category', [
 
 export const userSchema = pgSchema('user')
 
-export const user = userSchema.table(
-    'user',
+export const users = userSchema.table(
+    'users',
     {
         id: text().primaryKey(),
         name: text().notNull(),
@@ -63,8 +63,8 @@ export const user = userSchema.table(
     (table) => [index('user_email_index').on(table.email)],
 )
 
-export const session = userSchema.table(
-    'session',
+export const sessions = userSchema.table(
+    'sessions',
     {
         id: text().primaryKey(),
         expiresAt: timestamp('expires_at').notNull(),
@@ -83,20 +83,20 @@ export const session = userSchema.table(
         foreignKey({
             name: 'session_user_id_fkey',
             columns: [table.userId],
-            foreignColumns: [user.id],
+            foreignColumns: [users.id],
         }).onDelete('cascade'),
     ],
 )
 
-export const account = userSchema.table(
-    'account',
+export const accounts = userSchema.table(
+    'accounts',
     {
         id: text().primaryKey(),
         accountId: text('account_id').notNull(),
         providerId: text('provider_id').notNull(),
         userId: text('user_id')
             .notNull()
-            .references(() => user.id, {
+            .references(() => users.id, {
                 onUpdate: 'cascade',
                 onDelete: 'cascade',
             }),
@@ -113,8 +113,8 @@ export const account = userSchema.table(
     (table) => [index('account_user_id_index').on(table.userId)],
 )
 
-export const verification = userSchema.table(
-    'verification',
+export const verifications = userSchema.table(
+    'verifications',
     {
         id: text().primaryKey(),
         identifier: text().notNull(),
@@ -143,7 +143,7 @@ export const userShops = userSchema.table(
         foreignKey({
             name: 'user_shops_user_id_fkey',
             columns: [table.userId],
-            foreignColumns: [user.id],
+            foreignColumns: [users.id],
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
@@ -157,8 +157,8 @@ export const userShops = userSchema.table(
     ],
 )
 
-export const userShopVerification = userSchema.table(
-    'user_shop_verification',
+export const userShopVerifications = userSchema.table(
+    'user_shop_verifications',
     {
         id: uuid().primaryKey().defaultRandom(),
         code: text().notNull(),
@@ -166,11 +166,11 @@ export const userShopVerification = userSchema.table(
         userId: text('user_id').notNull(),
     },
     (table) => [
-        index('user_shop_verification_user_id_index').on(table.userId),
+        index('user_shop_verifications_user_id_index').on(table.userId),
         foreignKey({
-            name: 'user_shop_verification_user_id_fkey',
+            name: 'user_shop_verifications_user_id_fkey',
             columns: [table.userId],
-            foreignColumns: [user.id],
+            foreignColumns: [users.id],
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
@@ -190,7 +190,7 @@ export const userBadges = userSchema.table(
         foreignKey({
             name: 'user_badges_user_id_fkey',
             columns: [table.userId],
-            foreignColumns: [user.id],
+            foreignColumns: [users.id],
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
@@ -210,8 +210,8 @@ export const changelogs = pgTable(
     (table) => [index('changelogs_slug_index').on(table.slug)],
 )
 
-export const changelogsI18n = pgTable(
-    'changelogs_i18n',
+export const changelogI18ns = pgTable(
+    'changelog_i18ns',
     {
         id: uuid().primaryKey().defaultRandom(),
         changelogSlug: text('changelog_slug').notNull(),
@@ -222,10 +222,10 @@ export const changelogsI18n = pgTable(
         aiGenerated: boolean('ai_generated').default(false).notNull(),
     },
     (table) => [
-        index('changelogs_i18n_changelog_slug_index').on(table.changelogSlug),
-        index('changelogs_i18n_locale_index').on(table.locale),
+        index('changelog_i18ns_changelog_slug_index').on(table.changelogSlug),
+        index('changelog_i18ns_locale_index').on(table.locale),
         foreignKey({
-            name: 'changelogs_i18n_changelog_slug_fkey',
+            name: 'changelog_i18ns_changelog_slug_fkey',
             columns: [table.changelogSlug],
             foreignColumns: [changelogs.slug],
         })
@@ -254,7 +254,7 @@ export const changelogAuthors = pgTable(
         foreignKey({
             name: 'changelog_authors_user_id_fkey',
             columns: [table.userId],
-            foreignColumns: [user.id],
+            foreignColumns: [users.id],
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
@@ -324,7 +324,7 @@ export const setups = pgTable(
         foreignKey({
             name: 'setups_user_id_fkey',
             columns: [table.userId],
-            foreignColumns: [user.id],
+            foreignColumns: [users.id],
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
@@ -448,7 +448,7 @@ export const setupCoauthors = pgTable(
         foreignKey({
             name: 'setup_coauthors_user_id_fkey',
             columns: [table.userId],
-            foreignColumns: [user.id],
+            foreignColumns: [users.id],
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
@@ -470,14 +470,14 @@ export const followUsers = userSchema.table(
         foreignKey({
             name: 'follow_users_user_id_fkey',
             columns: [table.userId],
-            foreignColumns: [user.id],
+            foreignColumns: [users.id],
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
         foreignKey({
             name: 'follow_users_target_user_id_fkey',
             columns: [table.targetUserId],
-            foreignColumns: [user.id],
+            foreignColumns: [users.id],
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
@@ -508,7 +508,7 @@ export const setupDrafts = userSchema.table(
         foreignKey({
             name: 'setup_drafts_user_id_fkey',
             columns: [table.userId],
-            foreignColumns: [user.id],
+            foreignColumns: [users.id],
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
@@ -551,7 +551,7 @@ export const bookmarks = userSchema.table(
         foreignKey({
             name: 'bookmarks_user_id_fkey',
             columns: [table.userId],
-            foreignColumns: [user.id],
+            foreignColumns: [users.id],
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
@@ -585,6 +585,7 @@ export interface NotificationPayload {
         id: number
         name: string
     }
+    banExpiresIn?: number
     content?: string
     customTranslations?: {
         [locale: string]: {
@@ -613,7 +614,7 @@ export const notifications = userSchema.table(
         foreignKey({
             name: 'notifications_user_id_fkey',
             columns: [table.userId],
-            foreignColumns: [user.id],
+            foreignColumns: [users.id],
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
@@ -658,7 +659,7 @@ export const itemReports = feedbackSchema.table(
         foreignKey({
             name: 'item_reports_reporter_id_fkey',
             columns: [table.reporterId],
-            foreignColumns: [user.id],
+            foreignColumns: [users.id],
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
@@ -694,7 +695,7 @@ export const setupReports = feedbackSchema.table(
         foreignKey({
             name: 'setup_reports_reporter_id_fkey',
             columns: [table.reporterId],
-            foreignColumns: [user.id],
+            foreignColumns: [users.id],
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
@@ -730,14 +731,14 @@ export const userReports = feedbackSchema.table(
         foreignKey({
             name: 'user_reports_reporter_id_fkey',
             columns: [table.reporterId],
-            foreignColumns: [user.id],
+            foreignColumns: [users.id],
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
         foreignKey({
             name: 'user_reports_reportee_id_fkey',
             columns: [table.reporteeId],
-            foreignColumns: [user.id],
+            foreignColumns: [users.id],
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
@@ -792,7 +793,7 @@ export const auditLogs = adminSchema.table(
         foreignKey({
             name: 'audit_logs_user_id_fkey',
             columns: [table.userId],
-            foreignColumns: [user.id],
+            foreignColumns: [users.id],
         })
             .onDelete('set null')
             .onUpdate('cascade'),

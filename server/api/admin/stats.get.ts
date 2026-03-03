@@ -4,7 +4,7 @@ import {
     items,
     setupReports,
     setups,
-    user,
+    users,
     userReports,
 } from '@@/database/schema'
 import { and, count, eq, exists, isNull, or, sql } from 'drizzle-orm'
@@ -21,23 +21,23 @@ export default adminSessionEventHandler(async () => {
     ] = await Promise.all([
         db
             .select({ total: count() })
-            .from(user)
-            .where(or(eq(user.banned, false), isNull(user.banned))),
+            .from(users)
+            .where(or(eq(users.banned, false), isNull(users.banned))),
         db
             .select({ count: count() })
             .from(setups)
-            .leftJoin(user, sql`${user.id} = ${setups.userId}`)
+            .leftJoin(users, sql`${users.id} = ${setups.userId}`)
             .where(
                 and(
                     isNull(setups.hidAt),
                     exists(
-                        database
+                        db
                             .select()
-                            .from(user)
+                            .from(users)
                             .where(
                                 and(
-                                    eq(user.id, setups.userId),
-                                    or(eq(user.banned, false), isNull(user.banned)),
+                                    eq(users.id, setups.userId),
+                                    or(eq(users.banned, false), isNull(users.banned)),
                                 ),
                             ),
                     ),

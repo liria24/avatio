@@ -1,4 +1,4 @@
-import { changelogAuthors, changelogs, changelogsI18n } from '@@/database/schema'
+import { changelogAuthors, changelogs, changelogI18ns } from '@@/database/schema'
 import { generateText } from 'ai'
 import { z } from 'zod'
 
@@ -10,7 +10,7 @@ const body = changelogsInsertSchema
     .extend({
         slug: z.string().optional(),
         authors: z.string().array().optional(),
-        i18n: changelogsI18nInsertSchema.array().optional(),
+        i18n: changelogI18nsInsertSchema.array().optional(),
     })
 
 export default adminSessionEventHandler(async () => {
@@ -95,7 +95,7 @@ Please return the translation in the following JSON format:
             try {
                 const translated = JSON.parse(translationResult.text.trim())
 
-                await db.insert(changelogsI18n).values({
+                await db.insert(changelogI18ns).values({
                     changelogSlug: finalSlug,
                     locale,
                     title: translated.title,
@@ -108,7 +108,7 @@ Please return the translation in the following JSON format:
         }
     } else {
         // Use provided i18n translations
-        await db.insert(changelogsI18n).values(
+        await db.insert(changelogI18ns).values(
             i18n.map((translation) => ({
                 changelogSlug: finalSlug,
                 locale: translation.locale,
