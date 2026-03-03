@@ -7,7 +7,6 @@ import {
 import { createAuthClient } from 'better-auth/vue'
 
 const client = createAuthClient({
-    baseURL: import.meta.env.PUBLIC_SITE_URL as string,
     plugins: [
         usernameClient(),
         adminClient(),
