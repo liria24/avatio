@@ -63,6 +63,31 @@ export const user = authSchema.table(
     (table) => [index('user_email_index').on(table.email)],
 )
 
+export const session = pgTable(
+    'session',
+    {
+        id: text().primaryKey(),
+        expiresAt: timestamp('expires_at').notNull(),
+        token: text().notNull().unique(),
+        createdAt: timestamp('created_at').defaultNow().notNull(),
+        updatedAt: timestamp('updated_at')
+            .$onUpdate(() => /* @__PURE__ */ new Date())
+            .notNull(),
+        ipAddress: text('ip_address'),
+        userAgent: text('user_agent'),
+        userId: text('user_id').notNull(),
+        impersonatedBy: text('impersonated_by'),
+    },
+    (table) => [
+        index('session_userId_idx').on(table.userId),
+        foreignKey({
+            name: 'session_user_id_fkey',
+            columns: [table.userId],
+            foreignColumns: [user.id],
+        }).onDelete('cascade'),
+    ],
+)
+
 export const account = authSchema.table(
     'account',
     {
@@ -86,6 +111,22 @@ export const account = authSchema.table(
         updatedAt: timestamp('updated_at').notNull(),
     },
     (table) => [index('account_user_id_index').on(table.userId)],
+)
+
+export const verification = pgTable(
+    'verification',
+    {
+        id: text().primaryKey(),
+        identifier: text().notNull(),
+        value: text().notNull(),
+        expiresAt: timestamp('expires_at').notNull(),
+        createdAt: timestamp('created_at').defaultNow().notNull(),
+        updatedAt: timestamp('updated_at')
+            .defaultNow()
+            .$onUpdate(() => /* @__PURE__ */ new Date())
+            .notNull(),
+    },
+    (table) => [index('verification_identifier_idx').on(table.identifier)],
 )
 
 export const userShops = authSchema.table(

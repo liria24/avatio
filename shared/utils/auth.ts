@@ -40,15 +40,6 @@ export const auth = betterAuth({
         },
     },
 
-    account: {
-        storeStateStrategy: 'cookie',
-    },
-
-    verification: {
-        storeIdentifier: 'hashed',
-        storeInDatabase: false,
-    },
-
     user: {
         additionalFields: {
             bio: {
@@ -65,7 +56,16 @@ export const auth = betterAuth({
         },
     },
 
+    account: {
+        storeStateStrategy: 'database',
+    },
+
+    verification: {
+        storeInDatabase: true,
+    },
+
     session: {
+        storeSessionInDatabase: true,
         expiresIn: SESSION_EXPIRES_IN,
         updateAge: SESSION_UPDATE_AGE,
         freshAge: SESSION_FRESH_AGE,
