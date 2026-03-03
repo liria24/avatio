@@ -1,6 +1,6 @@
+import { drizzleAdapter } from '@better-auth/drizzle-adapter'
 import { put } from '@tigrisdata/storage'
 import { betterAuth } from 'better-auth'
-import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { admin, multiSession, username } from 'better-auth/plugins'
 import { nanoid } from 'nanoid'
 
@@ -23,8 +23,9 @@ export const auth = betterAuth({
     appName: 'Avatio',
     secret: process.env.BETTER_AUTH_SECRET as string,
 
-    baseURL: process.env.PUBLIC_SITE_URL as string,
-    trustedOrigins: ['http://localhost:3000', 'https://dev.avatio.me', 'https://avatio.me'],
+    baseURL: {
+        allowedHosts: ['localhost:3000', 'dev.avatio.me', 'avatio.me', '*.vercel.app'],
+    },
 
     database: drizzleAdapter(db, {
         provider: 'pg',
@@ -57,6 +58,14 @@ export const auth = betterAuth({
         deleteUser: {
             enabled: true,
         },
+    },
+
+    account: {
+        storeStateStrategy: 'database',
+    },
+
+    verification: {
+        storeInDatabase: true,
     },
 
     session: {
@@ -104,6 +113,7 @@ export const auth = betterAuth({
                 max: RATE_LIMIT_SESSION,
             },
         },
+        storage: 'secondary-storage',
     },
 
     databaseHooks: {

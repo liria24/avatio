@@ -23,6 +23,7 @@
         "changelogen": "npx changelogen --hideAuthorEmail"
     },
     "dependencies": {
+        "@better-auth/drizzle-adapter": "1.5.1",
         "@iconify-json/fluent-color": "1.2.21",
         "@iconify-json/lucide": "1.2.95",
         "@iconify-json/mingcute": "1.2.7",
@@ -48,7 +49,7 @@
         "@yeger/vue-masonry-wall": "6.1.0",
         "ai": "6.0.107",
         "aws4fetch": "^1.0.20",
-        "better-auth": "1.4.21",
+        "better-auth": "1.5.1",
         "canvas-confetti": "1.9.4",
         "clsx": "2.1.1",
         "consola": "^3.4.2",
