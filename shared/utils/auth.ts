@@ -1,6 +1,6 @@
-import { drizzleAdapter } from '@better-auth/drizzle-adapter'
 import { put } from '@tigrisdata/storage'
 import { betterAuth } from 'better-auth'
+import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { admin, multiSession, username } from 'better-auth/plugins'
 import { nanoid } from 'nanoid'
 
@@ -23,31 +23,14 @@ export const auth = betterAuth({
     appName: 'Avatio',
     secret: process.env.BETTER_AUTH_SECRET as string,
 
-    baseURL: {
-        allowedHosts: ['localhost:3000', 'dev.avatio.me', 'avatio.me', '*.vercel.app'],
-    },
+    baseURL: process.env.PUBLIC_SITE_URL as string,
+    trustedOrigins: ['http://localhost:3000', 'https://dev.avatio.me', 'https://avatio.me'],
 
-    database: drizzleAdapter(db, { provider: 'pg', schema }),
-
-    secondaryStorage: {
-        get: async (key) => await useStorage('auth').get(encodeURIComponent(key)),
-        set: async (key, value, ttl) => {
-            if (ttl) await useStorage('auth').set(encodeURIComponent(key), value, { ttl })
-            else await useStorage('auth').set(encodeURIComponent(key), value)
-        },
-        delete: async (key) => {
-            await useStorage('auth').del(encodeURIComponent(key))
-        },
-    },
-
-    account: {
-        storeStateStrategy: 'cookie',
-    },
-
-    verification: {
-        storeIdentifier: 'hashed',
-        storeInDatabase: false,
-    },
+    database: drizzleAdapter(db, {
+        provider: 'pg',
+        schema,
+        usePlural: true,
+    }),
 
     user: {
         additionalFields: {
@@ -66,6 +49,7 @@ export const auth = betterAuth({
     },
 
     session: {
+        storeSessionInDatabase: true,
         expiresIn: SESSION_EXPIRES_IN,
         updateAge: SESSION_UPDATE_AGE,
         freshAge: SESSION_FRESH_AGE,
@@ -109,7 +93,6 @@ export const auth = betterAuth({
                 max: RATE_LIMIT_SESSION,
             },
         },
-        storage: 'secondary-storage',
     },
 
     databaseHooks: {

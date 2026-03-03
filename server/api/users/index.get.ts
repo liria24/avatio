@@ -1,5 +1,5 @@
 export default promiseEventHandler<User[]>(async () => {
-    const data = await db.query.user.findMany({
+    const data = await db.query.users.findMany({
         where: {
             banned: { OR: [{ eq: false }, { isNull: true }] },
             setups: true,
