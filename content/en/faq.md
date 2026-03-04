@@ -1,6 +1,34 @@
 ---
 title: FAQ
 description: Frequently asked questions about Avatio
+schemaOrg:
+    type: FaqPage
+    mainEntity:
+        - '@type': 'Question'
+          name: 'What is Avatio?'
+          acceptedAnswer:
+              '@type': 'Answer'
+              text: 'Avatio is a service that allows you to list and share items used for modifying avatars in VR social platforms.'
+        - '@type': 'Question'
+          name: 'Are there any restrictions on items that can be registered to a setup?'
+          acceptedAnswer:
+              '@type': 'Answer'
+              text: |
+                  <p>Basically, items unrelated to VR avatars cannot be registered.</p>
+                  <p>Currently, the following items can be registered:</p>
+                  <ul>
+                    <li>BOOTH
+                      <ul>
+                        <li><strong>3D Models</strong> and <strong>Material Data</strong> categories</li>
+                        <li>Items with the <strong>VRChat</strong> tag</li>
+                      </ul>
+                    </li>
+                    <li>GitHub
+                      <ul>
+                        <li>Public repositories</li>
+                      </ul>
+                    </li>
+                  </ul>
 ---
 
 # FAQ
