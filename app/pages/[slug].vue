@@ -29,10 +29,10 @@ useSeo({
         },
     },
     twitterCard: 'summary_large_image',
-    schemaOrg: {
-        webPage: {},
-    },
 })
+// @ts-expect-error - `useHead` is not typed to accept the content of `data.value?.content?.head`, but it should work as expected.
+useHead(data.value?.content?.head || {})
+useSeoMeta(data.value?.content?.seo || {})
 </script>
 
 <template>
