@@ -190,7 +190,7 @@ export default defineNuxtConfig({
                 { property: 'og:type', content: 'website' },
                 { property: 'og:url', content: baseUrl },
                 { property: 'og:title', content: title },
-                { property: 'og:image', content: `${baseUrl}/ogp.png` },
+                { property: 'og:image', content: `${baseUrl}/ogp_2.png` },
                 { name: 'description', content: description },
                 { property: 'og:description', content: description },
                 { name: 'twitter:site', content: '@liria_24' },

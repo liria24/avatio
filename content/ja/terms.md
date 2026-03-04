@@ -1,7 +1,6 @@
 ---
 title: 利用規約
 description: Avatioでの利用規約
-image: /ogp.png
 ---
 
 # 利用規約

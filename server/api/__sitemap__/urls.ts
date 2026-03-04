@@ -4,7 +4,7 @@ export default defineSitemapEventHandler(async () => {
     const permanent = [
         {
             loc: '/',
-            images: [{ loc: '/ogp.png' }],
+            images: [{ loc: '/ogp_2.png' }],
         },
         { loc: '/faq' },
         { loc: '/terms' },

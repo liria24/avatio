@@ -1,7 +1,6 @@
 ---
 title: FAQ
 description: Frequently asked questions about Avatio
-image: /ogp.png
 ---
 
 # FAQ
