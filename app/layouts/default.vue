@@ -2,6 +2,8 @@
 const { session } = await useAuth()
 const route = useRoute()
 const { login } = useAppOverlay()
+const routeBaseName = useRouteBaseName()
+const baseRouteName = computed(() => routeBaseName(route))
 
 const { unread } = useNotifications()
 const filteredNotifications = computed(() => unread.value.filter((n) => n.banner))
@@ -38,7 +40,7 @@ const filteredNotifications = computed(() => unread.value.filter((n) => n.banner
                         <LazyHeaderLanguageButton v-if="!session" />
                     </div>
 
-                    <template v-if="route.path !== '/login'">
+                    <template v-if="baseRouteName !== 'login'">
                         <div v-if="session" class="flex items-center gap-2">
                             <LazyHeaderNotificationButton />
                             <LazyHeaderMenu />
