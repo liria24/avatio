@@ -69,38 +69,28 @@ onBeforeRouteLeave(() => {
     setupDelete.close()
 })
 
-if (data.value) {
-    defineSeo({
-        title: `${data.value.name} @${data.value.user.name}`,
-        description: data.value.description || undefined,
-        image:
-            data.value.images?.length && data.value.images[0]
-                ? data.value.images[0].url
-                : 'https://avatio.me/ogp.png',
-        twitterCard: 'summary_large_image',
-    })
-    useSchemaOrg([
-        defineWebPage({
-            name: data.value.name,
-            description: data.value.description,
-            datePublished: data.value.createdAt,
+useSeo({
+    title: `${data.value?.name} @${data.value?.user.name}`,
+    description: data.value?.description || undefined,
+    image: data.value?.images?.[0]?.url || undefined,
+    twitterCard: 'summary_large_image',
+    schemaOrg: {
+        webPage: {
+            datePublished: data.value?.createdAt,
+            dateModified: data.value?.updatedAt,
             author: {
-                '@type': 'Person',
-                name: data.value.user.name,
-                url: `/@${data.value.user.username}`,
+                username: data.value?.user.username || '',
+                name: data.value?.user.name || '',
+                description: data.value?.user.bio || undefined,
+                image: data.value?.user.image || undefined,
             },
-            primaryImageOfPage: data.value.images?.[0]?.url,
-            breadcrumb: defineBreadcrumb({
-                itemListElement: [
-                    { name: 'ホーム', item: '/' },
-                    { name: 'セットアップ', item: '/setup' },
-                    { name: data.value.name, item: `/setup/${id}` },
-                ],
-            }),
-            inLanguage: 'ja-JP',
-        }),
-    ])
-}
+            breadcrumb: [
+                { name: data.value?.user.name || '', item: `/@${data.value?.user.username}` },
+                { name: data.value?.name || '', item: `/setup/${id}` },
+            ],
+        },
+    },
+})
 </script>
 
 <template>

@@ -92,7 +92,7 @@ onBeforeRouteLeave((to, from, next) => {
     return next(true)
 })
 
-defineSeo({
+useSeo({
     title: editingSetupId.value ? t('setup.compose.editTitle') : t('setup.compose.title'),
     description: editingSetupId.value
         ? t('setup.compose.seoEditDescription')

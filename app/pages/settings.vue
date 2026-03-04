@@ -5,7 +5,7 @@ definePageMeta({
 
 const { t } = useI18n()
 
-defineSeo({
+useSeo({
     title: t('settings.title'),
     description: t('settings.description'),
 })

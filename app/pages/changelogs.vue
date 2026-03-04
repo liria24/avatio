@@ -8,10 +8,17 @@ const { data: changelogs } = useFetch('/api/changelogs', {
     watch: [locale],
 })
 
-defineSeo({
+useSeo({
     title: t('changelogs.title'),
     description: t('changelogs.description'),
-    image: `${app.site}/ogp.png`,
+    image: {
+        component: 'General.takumi',
+        props: {
+            title: t('changelogs.title'),
+            description: t('changelogs.description'),
+        },
+    },
+    twitterCard: 'summary_large_image',
 })
 </script>
 
