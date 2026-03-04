@@ -219,12 +219,25 @@ export default defineNuxtConfig({
 
     fonts: {
         families: [
-            { name: 'Geist', provider: 'google' },
-            { name: 'Geist Mono', provider: 'google' },
+            {
+                name: 'Geist',
+                provider: 'google',
+                global: true,
+                weights: [200, 300, 400, 500, 600, 700],
+            },
+            {
+                name: 'Geist Mono',
+                provider: 'google',
+                global: true,
+                weights: [200, 400, 600],
+            },
+            {
+                name: 'Noto Sans JP',
+                provider: 'google',
+                global: true,
+                weights: [400, 500],
+            },
         ],
-        defaults: {
-            weights: [200, 300, 400, 500, 600, 700],
-        },
     },
 
     i18n: {
