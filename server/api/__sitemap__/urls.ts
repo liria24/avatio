@@ -49,6 +49,7 @@ export default defineSitemapEventHandler(async () => {
                           loc: image.url,
                       }))
                     : undefined,
+                _i18nTransform: true,
             }),
         ),
         ...users.map(
@@ -56,6 +57,7 @@ export default defineSitemapEventHandler(async () => {
                 loc: `/@${user.username}`,
                 lastmod: user.updatedAt,
                 images: user.image ? [{ loc: user.image }] : undefined,
+                _i18nTransform: true,
             }),
         ),
     ]
