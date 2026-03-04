@@ -52,6 +52,7 @@ export const useSeo = ({
     twitterCard,
     schemaOrg,
 }: Args) => {
+    const config = useRuntimeConfig()
     const route = useRoute()
     const { localeProperties } = useI18n()
     const routeBaseName = useRouteBaseName()
@@ -80,10 +81,10 @@ export const useSeo = ({
     let ogImage: string | undefined = undefined
 
     if (image && typeof image === 'string') {
-        ogImage = image
+        ogImage = image.startsWith('/') ? `${config.public.siteUrl}${image}` : image
         useSeoMeta({
-            ogImage: image,
-            twitterImage: image,
+            ogImage: ogImage,
+            twitterImage: ogImage,
         })
     } else if (typeof image === 'object') {
         const ogImageResult = defineOgImage(image.component, image.props, image.options)

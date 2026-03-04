@@ -1,7 +1,6 @@
 ---
 title: プライバシーポリシー
 description: Avatioのプライバシーポリシー
-image: /ogp.png
 ---
 
 # プライバシーポリシー
