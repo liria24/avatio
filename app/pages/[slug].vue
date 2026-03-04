@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import { withLeadingSlash } from 'ufo'
 
-const { app } = useAppConfig()
 const route = useRoute()
 const { localeProperties } = useI18n()
 
@@ -19,10 +18,20 @@ if (!data.value)
         statusText: 'Page not found.',
     })
 
-defineSeo({
+useSeo({
     title: data.value?.content?.title,
     description: data.value?.content?.description,
-    image: `${app.site}${withLeadingSlash(data.value?.content?.image)}`,
+    image: {
+        component: 'General.takumi',
+        props: {
+            title: data.value?.content?.title,
+            description: data.value?.content?.description,
+        },
+    },
+    twitterCard: 'summary_large_image',
+    schemaOrg: {
+        webPage: {},
+    },
 })
 </script>
 

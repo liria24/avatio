@@ -32,7 +32,7 @@ export default adminSessionEventHandler(async () => {
             })
 
         const result = await generateText({
-            model: 'google/gemini-3-flash',
+            model: 'google/gemini-3.1-flash-lite-preview',
             messages: [
                 ...messages,
                 {
@@ -41,6 +41,14 @@ export default adminSessionEventHandler(async () => {
                 },
             ],
             system: 'Please return only the slug as your answer.',
+            providerOptions: {
+                google: {
+                    thinkingConfig: {
+                        thinkingLevel: 'low',
+                        includeThoughts: false,
+                    },
+                },
+            },
         })
 
         generatedSlug = result.text.trim()
@@ -71,7 +79,7 @@ export default adminSessionEventHandler(async () => {
             const targetLanguage = 'English'
 
             const translationResult = await generateText({
-                model: 'google/gemini-3-flash',
+                model: 'google/gemini-3.1-flash-lite-preview',
                 messages: [
                     {
                         role: 'user',
@@ -90,6 +98,14 @@ Please return the translation in the following JSON format:
                     },
                 ],
                 system: `You are a professional translator. Translate the content to ${targetLanguage} while maintaining the markdown formatting. Return only valid JSON without any additional text or code block markers.`,
+                providerOptions: {
+                    google: {
+                        thinkingConfig: {
+                            thinkingLevel: 'medium',
+                            includeThoughts: false,
+                        },
+                    },
+                },
             })
 
             try {

@@ -30,24 +30,16 @@ watch(
     },
 )
 
-defineSeo({
-    type: 'website',
+useSeo({
     title: t('index.seo.title'),
     titleTemplate: '%s',
     description: t('index.seo.description'),
-    image: 'https://avatio.me/ogp_2.png',
+    image: '/ogp_2.png',
     twitterCard: 'summary_large_image',
+    schemaOrg: {
+        webSite: true,
+    },
 })
-useSchemaOrg([
-    defineWebSite({
-        name: t('index.seo.title'),
-        description: t('index.seo.description'),
-        inLanguage: 'ja-JP',
-        potentialAction: defineSearchAction({
-            target: '/search?q={search_term_string}',
-        }),
-    }),
-])
 </script>
 
 <template>

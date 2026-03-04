@@ -1,5 +1,4 @@
 import type { UserWithRole } from 'better-auth/plugins'
-
 import { z } from 'zod'
 
 const querySchema = z.object({

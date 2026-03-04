@@ -108,10 +108,11 @@ await search()
 
 const { t } = useI18n()
 
-defineSeo({
+useSeo({
     title: t('search.title'),
     description: t('search.description'),
-    image: 'https://avatio.me/ogp.png',
+    image: '/ogp_2.png',
+    twitterCard: 'summary_large_image',
 })
 </script>
 

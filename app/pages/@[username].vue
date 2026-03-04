@@ -30,26 +30,19 @@ onBeforeRouteLeave(() => {
     reportUser.close()
 })
 
-if (user.value) {
-    defineSeo({
-        title: user.value.name,
-        description: user.value.bio || undefined,
-        image: user.value.image || undefined,
-    })
-    useSchemaOrg([
-        defineWebPage({
-            name: user.value.name,
-            description: user.value.bio,
-            datePublished: user.value.createdAt,
-        }),
-        definePerson({
-            name: user.value.name,
-            description: user.value.bio,
-            image: user.value.image || undefined,
-            sameAs: user.value.links || undefined,
-        }),
-    ])
-}
+useSeo({
+    title: user.value?.name,
+    description: user.value?.bio || undefined,
+    image: user.value?.image || undefined,
+    schemaOrg: {
+        webPage: {
+            datePublished: user.value?.createdAt,
+        },
+        person: {
+            sameAs: user.value?.links || undefined,
+        },
+    },
+})
 </script>
 
 <template>

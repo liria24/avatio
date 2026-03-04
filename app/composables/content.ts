@@ -1,5 +1,4 @@
 import type { Collections } from '@nuxt/content'
-
 import { withLeadingSlash, withoutLeadingSlash } from 'ufo'
 
 export const useContentPage = (path: MaybeRefOrGetter<string>) => {

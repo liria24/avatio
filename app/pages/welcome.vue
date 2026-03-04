@@ -19,8 +19,10 @@ const updateId = async (username: string) => {
     }
 }
 
-defineSeo({
+useSeo({
     title: t('welcome.title'),
+    image: '/ogp_2.png',
+    twitterCard: 'summary_large_image',
 })
 </script>
 

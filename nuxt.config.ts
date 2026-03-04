@@ -76,6 +76,7 @@ export default defineNuxtConfig({
         'nuxt-link-checker',
         'nuxt-schema-org',
         'nuxt-seo-utils',
+        'nuxt-og-image',
         '@nuxt/a11y',
         '@vite-pwa/nuxt',
     ],
@@ -219,12 +220,25 @@ export default defineNuxtConfig({
 
     fonts: {
         families: [
-            { name: 'Geist', provider: 'google' },
-            { name: 'Geist Mono', provider: 'google' },
+            {
+                name: 'Geist',
+                provider: 'google',
+                global: true,
+                weights: [200, 300, 400, 500, 600, 700],
+            },
+            {
+                name: 'Geist Mono',
+                provider: 'google',
+                global: true,
+                weights: [200, 400, 600],
+            },
+            {
+                name: 'Noto Sans JP',
+                provider: 'google',
+                global: true,
+                weights: [400, 500],
+            },
         ],
-        defaults: {
-            weights: [200, 300, 300, 400, 500, 600, 700],
-        },
     },
 
     i18n: {
@@ -320,6 +334,10 @@ export default defineNuxtConfig({
         },
     },
 
+    ogImage: {
+        defaults: { renderer: 'takumi' },
+    },
+
     pwa: {
         registerWebManifestInRouteRules: true,
         registerType: 'autoUpdate',
@@ -376,19 +394,20 @@ export default defineNuxtConfig({
 
     sitemap: {
         sitemaps: true,
-        exclude: ['/confirm'],
+        exclude: ['/welcome', '/on-maintenance', '/admin/**'],
         sources: ['/api/__sitemap__/urls'],
     },
 
     schemaOrg: {
         identity: defineOrganization({
             name: 'Liria',
-            description: 'Small Circle by Liry24',
+            description: 'Creation Circle by Liry24',
             logo: {
-                url: '/logo-liria.png',
+                url: 'https://liria.me/avatar.png?s=460',
                 width: 460,
                 height: 460,
             },
+            url: 'https://liria.me',
             email: 'hello@liria.me',
             sameAs: ['https://x.com/liria_24', 'https://github.com/liria24'],
         }),

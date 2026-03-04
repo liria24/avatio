@@ -8,10 +8,11 @@ definePageMeta({
         if (session.value) return navigateTo(localePath('/'))
     }),
 })
-defineSeo({
+useSeo({
     title: t('login'),
     description: t('modal.login.title'),
-    image: 'https://avatio.me/ogp.png',
+    image: '/ogp_2.png',
+    twitterCard: 'summary_large_image',
 })
 </script>
 
