@@ -29,6 +29,10 @@ export default defineSitemapEventHandler(async () => {
     })
 
     const users = await db.query.users.findMany({
+        where: {
+            banned: { OR: [{ eq: false }, { isNull: true }] },
+            setups: true,
+        },
         columns: {
             updatedAt: true,
             image: true,
