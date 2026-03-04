@@ -78,7 +78,7 @@ export default async (params: GenerateItemAttrParams) => {
     ]
 
     const { output } = await generateText({
-        model: 'google/gemini-3-flash',
+        model: 'google/gemini-3.1-flash-lite-preview',
         system,
         messages,
         output: Output.object({
@@ -87,6 +87,14 @@ export default async (params: GenerateItemAttrParams) => {
                 category: itemCategorySchema,
             }),
         }),
+        providerOptions: {
+            google: {
+                thinkingConfig: {
+                    thinkingLevel: 'low',
+                    includeThoughts: false,
+                },
+            },
+        },
     })
 
     return {
