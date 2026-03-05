@@ -37,7 +37,7 @@ const { all, status } = useNotifications()
                 </p>
 
                 <div v-else class="flex flex-col gap-2">
-                    <LazyUserNotification
+                    <LazyNotificationItem
                         v-for="notification in all"
                         :key="notification.id"
                         :notification
