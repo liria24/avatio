@@ -1,19 +1,19 @@
-import type { UseFetchOptions } from 'nuxt/app'
+import type { UseFetchOptions, FetchResult } from 'nuxt/app'
 
-interface TagResponse {
-    tag: string
-    count: number
-}
+import type { KeysOf } from '#app/composables/asyncData'
 
-export const useSetupTags = (options?: UseFetchOptions<TagResponse[]>) => {
-    const defaultOptions: UseFetchOptions<TagResponse[]> = {
+type SetupTagsRes = FetchResult<'/api/setups/tags', 'get'>
+
+export const useSetupTags = <
+    DataT = SetupTagsRes,
+    PickKeys extends KeysOf<DataT> = KeysOf<DataT>,
+    DefaultT = undefined,
+>(
+    options?: UseFetchOptions<SetupTagsRes, DataT, PickKeys, DefaultT, '/api/setups/tags', 'get'>,
+) =>
+    useFetch('/api/setups/tags', {
         dedupe: 'defer',
         lazy: false,
         immediate: true,
-    }
-
-    return useFetch<TagResponse[]>('/api/setups/tags', {
-        ...defaultOptions,
         ...options,
     })
-}

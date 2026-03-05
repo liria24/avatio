@@ -1,19 +1,24 @@
-import type { UseFetchOptions } from 'nuxt/app'
+import type { UseFetchOptions, FetchResult } from 'nuxt/app'
 
-export const useSetup = (id: number, options?: UseFetchOptions<Serialized<Setup>>) => {
-    const defaultOptions: UseFetchOptions<Serialized<Setup>> = {
+import type { KeysOf } from '#app/composables/asyncData'
+
+type SetupRes = FetchResult<'/api/setups/:id', 'get'>
+
+export const useSetup = <
+    DataT = SetupRes,
+    PickKeys extends KeysOf<DataT> = KeysOf<DataT>,
+    DefaultT = undefined,
+>(
+    id: number,
+    options?: UseFetchOptions<SetupRes, DataT, PickKeys, DefaultT, '/api/setups/:id', 'get'>,
+) =>
+    useFetch(`/api/setups/${id}` as '/api/setups/:id', {
         key: computed(() => `setup-${id}-${JSON.stringify(unref(options?.query))}`),
         dedupe: 'defer',
         lazy: false,
         immediate: true,
-    }
-
-    return useFetch<Serialized<Setup>>(id.toString(), {
-        ...defaultOptions,
         ...options,
-        baseURL: '/api/setups/',
     })
-}
 
 export const useSetupsList = (
     type?: 'latest' | 'owned' | 'bookmarked',
