@@ -34,6 +34,9 @@ const baseRouteRules: { [path: string]: NitroRouteConfig } = {
     '/bookmarks': {
         redirect: '/?tab=bookmarked',
     },
+    '/api/**': {
+        cors: true,
+    },
 }
 
 const routeRules: { [path: string]: NitroRouteConfig } = {
