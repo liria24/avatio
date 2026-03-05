@@ -38,8 +38,8 @@
         "@nuxtjs/robots": "5.7.1",
         "@nuxtjs/sitemap": "7.6.0",
         "@stefanobartoletti/nuxt-social-share": "2.3.1",
-        "@takumi-rs/core": "^0.70.3",
-        "@tigrisdata/storage": "^2.15.1",
+        "@takumi-rs/core": "^0.70.4",
+        "@tigrisdata/storage": "^2.15.2",
         "@vercel/analytics": "1.6.1",
         "@vercel/config": "^0.0.37",
         "@vercel/edge-config": "1.4.3",
@@ -47,7 +47,7 @@
         "@vite-pwa/nuxt": "1.1.1",
         "@vueuse/nuxt": "14.2.1",
         "@yeger/vue-masonry-wall": "6.1.0",
-        "ai": "6.0.111",
+        "ai": "6.0.115",
         "aws4fetch": "^1.0.20",
         "better-auth": "1.4.21",
         "canvas-confetti": "1.9.4",
@@ -59,7 +59,7 @@
         "motion-v": "^2.0.0",
         "nuxt": "4.3.1",
         "nuxt-link-checker": "4.3.9",
-        "nuxt-og-image": "^6.0.0-beta.46",
+        "nuxt-og-image": "^6.0.0-beta.47",
         "nuxt-schema-org": "5.0.10",
         "nuxt-seo-utils": "7.0.19",
         "remark-breaks": "4.0.0",
@@ -78,7 +78,7 @@
         "oxfmt": "^0.36.0",
         "oxlint": "^1.51.0",
         "taze": "^19.10.0",
-        "typescript": "6.0.0-dev.20260303"
+        "typescript": "6.0.0-dev.20260304"
     },
     "overrides": {
         "unimport": "5.6.0",

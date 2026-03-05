@@ -334,10 +334,6 @@ export default defineNuxtConfig({
         },
     },
 
-    ogImage: {
-        defaults: { renderer: 'takumi' },
-    },
-
     pwa: {
         registerWebManifestInRouteRules: true,
         registerType: 'autoUpdate',
