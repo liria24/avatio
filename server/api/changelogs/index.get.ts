@@ -14,6 +14,7 @@ const query = z.object({
         .optional()
         .default(CHANGELOGS_API_DEFAULT_LIMIT),
     lang: z.enum(locales.enumValues).optional().default('ja'),
+    content: z.union([z.boolean(), z.stringbool()]).optional().default(false),
 })
 
 interface I18nChangelog extends Changelog {
@@ -21,7 +22,7 @@ interface I18nChangelog extends Changelog {
 }
 
 export default promiseEventHandler<PaginationResponse<I18nChangelog[]>>(async () => {
-    const { q, sort, userId, page, limit, lang } = await validateQuery(query)
+    const { q, sort, userId, page, limit, lang, content } = await validateQuery(query)
 
     const offset = (page - 1) * limit
 
@@ -44,7 +45,6 @@ export default promiseEventHandler<PaginationResponse<I18nChangelog[]>>(async ()
             updatedAt: true,
             title: true,
             markdown: true,
-            html: true,
         },
         with: {
             i18n: {
@@ -52,7 +52,6 @@ export default promiseEventHandler<PaginationResponse<I18nChangelog[]>>(async ()
                     locale: true,
                     title: true,
                     markdown: true,
-                    html: true,
                     aiGenerated: true,
                 },
             },
@@ -75,23 +74,6 @@ export default promiseEventHandler<PaginationResponse<I18nChangelog[]>>(async ()
                                     createdAt: true,
                                 },
                             },
-                            shops: {
-                                columns: {
-                                    id: true,
-                                    createdAt: true,
-                                },
-                                with: {
-                                    shop: {
-                                        columns: {
-                                            id: true,
-                                            platform: true,
-                                            name: true,
-                                            image: true,
-                                            verified: true,
-                                        },
-                                    },
-                                },
-                            },
                         },
                     },
                 },
@@ -110,8 +92,7 @@ export default promiseEventHandler<PaginationResponse<I18nChangelog[]>>(async ()
                 createdAt: changelog.createdAt,
                 updatedAt: changelog.updatedAt,
                 title: i18nData?.title || changelog.title,
-                markdown: i18nData?.markdown || changelog.markdown,
-                html: i18nData?.html || changelog.html,
+                markdown: content ? i18nData?.markdown || changelog.markdown : undefined,
                 authors: changelog.authors.map((author) => author.user),
                 aiGenerated: i18nData?.aiGenerated || false,
                 fallbacked: lang !== 'ja' && !i18nData,

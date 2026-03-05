@@ -13,6 +13,9 @@ const baseRouteRules: { [path: string]: NitroRouteConfig } = {
         appLayout: 'dashboard',
         appMiddleware: 'admin',
     },
+    '/changelogs': {
+        isr: 60 * 60, // 1 hour
+    },
     '/faq': {
         prerender: true,
     },

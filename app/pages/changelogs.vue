@@ -1,6 +1,5 @@
 <script setup lang="ts">
-const { app } = useAppConfig()
-const { t, locale, localeProperties } = useI18n()
+const { t, locale } = useI18n()
 const { data: changelogs } = useFetch('/api/changelogs', {
     key: computed(() => `changelogs-${locale.value}`),
     query: { lang: locale.value },
@@ -27,33 +26,11 @@ useSeo({
         <h1 class="text-5xl font-bold">{{ $t('changelogs.title') }}</h1>
 
         <UChangelogVersions>
-            <UChangelogVersion
+            <IslandChangelog
                 v-for="(changelog, index) in changelogs?.data"
                 :key="index"
-                :title="changelog.title"
-                :date="changelog.createdAt"
-                :ui="{
-                    container: 'lg:ml-40 mr-0 max-w-full',
-                    title: 'sentence text-3xl font-bold before:text-muted before:font-[Geist] before:tracking-tight before:font-light before:content-[\'//_\']',
-                    description: 'flex flex-col items-start gap-5 mt-5',
-                }"
-            >
-                <template #description>
-                    <USeparator />
-                    <UBadge
-                        v-if="changelog.fallbacked"
-                        :label="$t('changelogs.fallbacked', { locale: localeProperties.name })"
-                        variant="soft"
-                    />
-                    <ServerMarkdown :content="changelog.markdown" />
-                    <UBadge
-                        v-if="changelog.aiGenerated"
-                        icon="mingcute:translate-2-ai-line"
-                        :label="$t('changelogs.translatedByAi')"
-                        variant="soft"
-                    />
-                </template>
-            </UChangelogVersion>
+                :slug="changelog.slug"
+            />
         </UChangelogVersions>
     </div>
 </template>

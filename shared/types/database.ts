@@ -518,6 +518,9 @@ export const changelogsPublicSchema = changelogsSelectSchema
         authors: usersPublicSchema.array().optional(),
         aiGenerated: z.boolean().optional(),
     })
+    .partial({
+        markdown: true,
+    })
 export type Changelog = z.infer<typeof changelogsPublicSchema>
 
 export const notificationTypeSchema = z.enum(notificationType.enumValues)
