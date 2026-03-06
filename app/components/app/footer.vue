@@ -5,13 +5,15 @@ const { dismissed, dismissBanner } = useOwnerWarningBanner()
 </script>
 
 <template>
-    <footer class="flex flex-col gap-4 self-stretch pb-6">
+    <footer class="flex flex-col self-stretch pb-6">
         <USeparator icon="avatio:avatio" />
 
-        <LazyBannerOwnerWarning v-if="!dismissed" @close="dismissBanner" />
+        <ClientOnly>
+            <LazyBannerOwnerWarning v-if="!dismissed" @close="dismissBanner" />
+        </ClientOnly>
 
         <div
-            class="flex w-full flex-col items-center justify-between gap-x-4 gap-y-2 pb-0 sm:flex-row"
+            class="mt-4 flex w-full flex-col items-center justify-between gap-x-4 gap-y-2 pb-0 sm:flex-row"
         >
             <div class="flex flex-col items-center justify-center gap-x-4 gap-y-2 sm:flex-row">
                 <div class="flex items-center gap-0.5">
