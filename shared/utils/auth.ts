@@ -59,6 +59,10 @@ export const auth = betterAuth({
         },
     },
 
+    emailAndPassword: {
+        enabled: import.meta.dev,
+    },
+
     socialProviders: {
         twitter: {
             clientId: process.env.TWITTER_CLIENT_ID as string,

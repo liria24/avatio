@@ -1,6 +1,13 @@
 <script lang="ts" setup>
+import { z } from 'zod'
+
 const { signIn } = useAuth()
 const route = useRoute()
+
+const emailLoginSchema = z.object({
+    email: z.email('Invalid email'),
+    password: z.string('Password is required').min(8, 'Must be at least 8 characters'),
+})
 </script>
 
 <template>
@@ -22,6 +29,44 @@ const route = useRoute()
             class="mt-5 mb-6 rounded-xl py-4"
             @click="signIn.twitter({ callbackURL: route.path })"
         />
+
+        <DevOnly>
+            <div class="relative">
+                <UAuthForm
+                    :schema="emailLoginSchema"
+                    :fields="[
+                        {
+                            name: 'email',
+                            type: 'email',
+                            icon: 'mingcute:mail-fill',
+                            placeholder: 'user@example.com',
+                            required: true,
+                        },
+                        {
+                            name: 'password',
+                            type: 'password',
+                            icon: 'mingcute:key-2-fill',
+                            placeholder: 'password',
+                            required: true,
+                        },
+                    ]"
+                    :submit="{
+                        label: 'Login with Email and Password',
+                        color: 'neutral',
+                        variant: 'subtle',
+                    }"
+                    class="ring-muted mb-4 rounded-xl p-4 ring-1"
+                    @submit="signIn.email($event.data.email, $event.data.password)"
+                />
+
+                <UBadge
+                    label="// Dev Only"
+                    variant="subtle"
+                    color="neutral"
+                    class="absolute -top-4 left-4"
+                />
+            </div>
+        </DevOnly>
 
         <p class="text-muted text-right text-xs">
             {{ $t('modal.login.agreement') }}
