@@ -1,10 +1,9 @@
 <script lang="ts" setup>
 const { app } = useAppConfig()
-const { dismissed, dismissBanner } = useOwnerWarningBanner()
 </script>
 
 <template>
-    <div v-if="!dismissed" class="ring-muted flex items-start gap-3 rounded-lg px-3 py-2 ring-1">
+    <div class="ring-muted flex items-start gap-3 rounded-lg px-3 py-2 ring-1">
         <ULink
             :to="`mailto:${app.mailaddress}?subject=${$t('banner.ownerWarningSubject')}`"
             class="my-auto flex items-start gap-2"
@@ -21,7 +20,7 @@ const { dismissed, dismissBanner } = useOwnerWarningBanner()
             variant="ghost"
             size="sm"
             class="ml-auto"
-            @click="dismissBanner"
+            @click="$emit('close')"
         />
     </div>
 </template>

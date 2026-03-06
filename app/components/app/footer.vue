@@ -1,18 +1,14 @@
 <script lang="ts" setup>
 const { app } = useAppConfig()
-const { locale } = useI18n()
 const { feedback } = useAppOverlay()
-
-const { data: repo } = useFetch<GithubRepo>('https://ungh.cc/repos/liria24/avatio', {
-    dedupe: 'defer',
-})
+const { dismissed, dismissBanner } = useOwnerWarningBanner()
 </script>
 
 <template>
     <footer class="flex flex-col gap-4 self-stretch pb-6">
         <USeparator icon="avatio:avatio" />
 
-        <LazyBannerOwnerWarning />
+        <LazyBannerOwnerWarning v-if="!dismissed" @close="dismissBanner" />
 
         <div
             class="flex w-full flex-col items-center justify-between gap-x-4 gap-y-2 pb-0 sm:flex-row"
@@ -27,68 +23,13 @@ const { data: repo } = useFetch<GithubRepo>('https://ungh.cc/repos/liria24/avati
                         variant="ghost"
                     />
 
-                    <LazyUPopover hydrate-on-visible mode="hover" :open-delay="100">
-                        <UButton
-                            :to="app.repo"
-                            target="_blank"
-                            icon="mingcute:github-fill"
-                            :aria-label="$t('footer.social.github')"
-                            variant="ghost"
-                        />
-
-                        <template #content>
-                            <div v-if="repo" class="flex items-center gap-3 p-2">
-                                <NuxtImg
-                                    v-slot="{ src, imgAttrs, isLoaded }"
-                                    :src="app.liria.avatar"
-                                    :width="48"
-                                    :height="48"
-                                    format="webp"
-                                    custom
-                                >
-                                    <img
-                                        v-if="isLoaded"
-                                        v-bind="imgAttrs"
-                                        :src
-                                        alt=""
-                                        loading="lazy"
-                                        fetchpriority="low"
-                                        class="aspect-square size-12 rounded-lg object-cover"
-                                    />
-                                    <USkeleton v-else class="aspect-square size-12 rounded-lg" />
-                                </NuxtImg>
-
-                                <div class="flex flex-col gap-2 font-mono">
-                                    <span class="text-sm leading-none font-semibold text-nowrap">
-                                        {{ repo.repo.repo }}
-                                    </span>
-                                    <div class="flex items-center gap-1">
-                                        <Icon
-                                            name="mingcute:star-fill"
-                                            size="14"
-                                            class="text-muted"
-                                        />
-                                        <span class="text-muted text-xs leading-none text-nowrap">
-                                            {{ repo.repo.stars }}
-                                        </span>
-
-                                        <Icon
-                                            name="mingcute:git-pull-request-fill"
-                                            size="14"
-                                            class="text-muted ml-2"
-                                        />
-                                        <NuxtTime
-                                            :datetime="repo.repo.updatedAt"
-                                            date-style="short"
-                                            time-style="short"
-                                            :locale
-                                            class="text-muted text-xs leading-none text-nowrap"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        </template>
-                    </LazyUPopover>
+                    <UButton
+                        :to="app.repo"
+                        target="_blank"
+                        icon="mingcute:github-fill"
+                        :aria-label="$t('footer.social.github')"
+                        variant="ghost"
+                    />
                 </div>
 
                 <div class="flex items-center gap-0.5">
