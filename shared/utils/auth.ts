@@ -11,9 +11,6 @@ import {
     RATE_LIMIT_SIGNIN,
     RATE_LIMIT_WINDOW,
     SESSION_COOKIE_CACHE_MAX_AGE,
-    SESSION_EXPIRES_IN,
-    SESSION_FRESH_AGE,
-    SESSION_UPDATE_AGE,
 } from './constants'
 
 const JPG_FILENAME_LENGTH = 16
@@ -70,9 +67,8 @@ export const auth = betterAuth({
 
     session: {
         storeSessionInDatabase: false,
-        expiresIn: SESSION_EXPIRES_IN,
-        updateAge: SESSION_UPDATE_AGE,
-        freshAge: SESSION_FRESH_AGE,
+        disableSessionRefresh: true,
+        deferSessionRefresh: true,
         cookieCache: {
             enabled: true,
             maxAge: SESSION_COOKIE_CACHE_MAX_AGE,
