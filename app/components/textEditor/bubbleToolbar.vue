@@ -5,7 +5,7 @@ import type { Editor } from '@tiptap/vue-3'
 interface Props {
     editor: Editor
 }
-const props = defineProps<Props>()
+const { editor } = defineProps<Props>()
 
 const bubbleToolbarItems = computed<EditorToolbarItem[][]>(() => [
     [
@@ -75,9 +75,19 @@ const bubbleToolbarItems = computed<EditorToolbarItem[][]>(() => [
             tooltip: { text: 'Code' },
         },
     ],
+    [
+        {
+            slot: 'link' as const,
+            icon: 'lucide:link',
+        },
+    ],
 ])
 </script>
 
 <template>
-    <UEditorToolbar :editor="props.editor" :items="bubbleToolbarItems" layout="bubble" />
+    <UEditorToolbar :editor :items="bubbleToolbarItems" layout="bubble">
+        <template #link>
+            <TextEditorLinkPopover :editor />
+        </template>
+    </UEditorToolbar>
 </template>
