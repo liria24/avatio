@@ -34,11 +34,6 @@ export const ITEM_DATABASE_CACHE_TTL = 5 // 5 seconds
 export const EDGE_CONFIG_CACHE_TTL = 5 // 5 seconds
 export const SESSION_COOKIE_CACHE_MAX_AGE = 5 * 60 // 5 minutes
 
-// Session settings
-export const SESSION_EXPIRES_IN = 60 * 60 * 24 * 30 // 30 days
-export const SESSION_UPDATE_AGE = 60 * 60 * 24 // 1 day
-export const SESSION_FRESH_AGE = 60 * 15 // 15 minutes
-
 // Rate limiting
 export const RATE_LIMIT_WINDOW = 60 // seconds
 export const RATE_LIMIT_DEFAULT = 100
