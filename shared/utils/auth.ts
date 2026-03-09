@@ -1,6 +1,6 @@
 import { drizzleAdapter } from '@better-auth/drizzle-adapter'
 import { put } from '@tigrisdata/storage'
-import { betterAuth } from 'better-auth'
+import { betterAuth } from 'better-auth/minimal'
 import { admin, multiSession, username } from 'better-auth/plugins'
 import { nanoid } from 'nanoid'
 
