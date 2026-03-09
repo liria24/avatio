@@ -21,7 +21,7 @@ export const auth = betterAuth({
     secret: process.env.BETTER_AUTH_SECRET as string,
 
     baseURL: {
-        allowedHosts: ['localhost:3000', 'dev.avatio.me', 'avatio.me', '*.vercel.app'],
+        allowedHosts: ['localhost', 'localhost:*', 'dev.avatio.me', 'avatio.me', '*.vercel.app'],
     },
 
     database: drizzleAdapter(db, {
