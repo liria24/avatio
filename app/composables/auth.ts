@@ -5,6 +5,7 @@ import {
     usernameClient,
 } from 'better-auth/client/plugins'
 import { createAuthClient } from 'better-auth/vue'
+import { withoutHost } from 'ufo'
 
 const client = createAuthClient({
     plugins: [
@@ -26,7 +27,7 @@ const _useAuth = () => {
 
         const headers = useRequestHeaders()
         const { data } = await client.useSession((url, options) =>
-            useFetch(url, { ...options, dedupe: 'defer', headers }),
+            useFetch(withoutHost(url), { ...options, dedupe: 'defer', headers }),
         )
 
         globalSession.value = data.value
@@ -36,7 +37,7 @@ const _useAuth = () => {
     const refreshSession = async () => {
         const headers = useRequestHeaders()
         const { data } = await client.useSession((url, options) =>
-            useFetch(url, {
+            useFetch(withoutHost(url), {
                 ...options,
                 dedupe: 'defer',
                 credentials: 'include',
