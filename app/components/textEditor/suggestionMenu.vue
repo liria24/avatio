@@ -5,7 +5,7 @@ import type { Editor } from '@tiptap/vue-3'
 interface Props {
     editor: Editor
 }
-const props = defineProps<Props>()
+const { editor } = defineProps<Props>()
 
 const suggestionItems = computed<EditorSuggestionMenuItem[][]>(() => [
     [
@@ -81,9 +81,5 @@ const appendToBody = false ? () => document.body : undefined
 </script>
 
 <template>
-    <UEditorSuggestionMenu
-        :editor="props.editor"
-        :items="suggestionItems"
-        :append-to="appendToBody"
-    />
+    <UEditorSuggestionMenu :editor :items="suggestionItems" :append-to="appendToBody" />
 </template>

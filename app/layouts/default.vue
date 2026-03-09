@@ -4,9 +4,6 @@ const route = useRoute()
 const { login } = useAppOverlay()
 const routeBaseName = useRouteBaseName()
 const baseRouteName = computed(() => routeBaseName(route))
-
-const { unread } = useNotifications()
-const filteredNotifications = computed(() => unread.value.filter((n) => n.banner))
 </script>
 
 <template>
@@ -42,7 +39,7 @@ const filteredNotifications = computed(() => unread.value.filter((n) => n.banner
 
                     <template v-if="baseRouteName !== 'login'">
                         <div v-if="session" class="flex items-center gap-2">
-                            <LazyHeaderNotificationButton />
+                            <LazyNotificationButton />
                             <LazyHeaderMenu />
                         </div>
 
@@ -57,14 +54,7 @@ const filteredNotifications = computed(() => unread.value.filter((n) => n.banner
                 </div>
             </header>
 
-            <div v-if="filteredNotifications.length" class="flex w-full flex-col gap-2">
-                <LazyBannerNotification
-                    v-for="notification in filteredNotifications"
-                    :key="notification.id"
-                    :notification
-                    class="w-full"
-                />
-            </div>
+            <NotificationBanners v-if="session" />
 
             <main class="grid w-full grow">
                 <slot />

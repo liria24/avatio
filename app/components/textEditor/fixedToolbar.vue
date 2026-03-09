@@ -6,7 +6,7 @@ import type { Editor } from '@tiptap/vue-3'
 interface Props {
     editor: Editor
 }
-const props = defineProps<Props>()
+const { editor } = defineProps<Props>()
 
 // const editorRef = useTemplateRef('editorRef')
 
@@ -196,12 +196,12 @@ const fixedToolbarItems = computed<EditorToolbarItem[][]>(() => [
 
 <template>
     <UEditorToolbar
-        :editor="props.editor"
+        :editor
         :items="fixedToolbarItems"
         class="bg-muted sticky inset-x-0 top-0 z-50 overflow-x-auto rounded-lg p-2"
     >
         <template #link>
-            <TextEditorLinkPopover :editor="props.editor" />
+            <TextEditorLinkPopover :editor />
         </template>
     </UEditorToolbar>
 </template>

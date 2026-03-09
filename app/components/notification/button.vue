@@ -3,7 +3,7 @@ const { unreadCount } = useNotifications()
 </script>
 
 <template>
-    <PopoverNotifications>
+    <NotificationPopover>
         <UTooltip :text="$t('header.notifications')" :delay-duration="50">
             <UChip :show="!!unreadCount" color="neutral" inset>
                 <UButton
@@ -14,5 +14,5 @@ const { unreadCount } = useNotifications()
                 />
             </UChip>
         </UTooltip>
-    </PopoverNotifications>
+    </NotificationPopover>
 </template>

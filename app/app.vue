@@ -13,7 +13,7 @@ useHead({
 })
 
 onMounted(() => {
-    if (!consented.value)
+    if (import.meta.client && !consented.value)
         toast.add({
             id: 'cookies-consent',
             icon: 'mingcute:cookie-fill',

@@ -1,11 +1,8 @@
 <script lang="ts" setup>
 interface Props {
     setup: Serialized<Setup>
-    class?: string | string[] | null
 }
-const { setup, class: className } = defineProps<Props>()
-
-const emit = defineEmits(['click'])
+const { setup } = defineProps<Props>()
 
 const { locale, t } = useI18n()
 
@@ -14,11 +11,11 @@ const dominantColor = ref('')
 // アバター情報の取得
 const firstAvatar = computed(() => setup.items.find((item) => item.category === 'avatar'))
 
-const avatarName = computed(() => {
-    const avatar = firstAvatar.value
-    if (!avatar) return t('unknownAvatar')
-    return avatar.niceName || avatarShortName(avatar.name)
-})
+const avatarName = computed(() =>
+    firstAvatar.value
+        ? firstAvatar.value.niceName || avatarShortName(firstAvatar.value.name)
+        : t('unknownAvatar'),
+)
 
 // 画像関連の処理
 const firstImage = computed(() => setup.images?.[0])
@@ -62,11 +59,9 @@ initializeThemeColor()
                 dominantColor
                     ? 'link-with-color'
                     : 'hover:ring-accented hover:bg-elevated focus:ring-accented focus:bg-elevated',
-                className,
             )
         "
         :style="dominantColor ? { '--dominant-color': dominantColor } : undefined"
-        @click="emit('click')"
     >
         <div v-if="hasImages" class="relative w-full">
             <NuxtImg

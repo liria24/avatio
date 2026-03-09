@@ -10,7 +10,8 @@ const { item, actions = true, class: className = null } = defineProps<Props>()
 
 const toast = useToast()
 const { copy } = useClipboard()
-const { reportItem } = useAppOverlay()
+const { reportItem, login } = useAppOverlay()
+const { session } = useAuth()
 
 const nsfwMask = ref(item.nsfw)
 
@@ -264,34 +265,28 @@ const providerIcon = computed(() => providerIcons[item.platform])
             </div>
 
             <div class="flex flex-col gap-1">
-                <UTooltip
+                <UDropdownMenu
                     v-if="actions"
-                    :text="$t('setup.viewer.searchByItem')"
-                    :delay-duration="50"
-                    :content="{ side: 'top' }"
+                    :items="[
+                        {
+                            to: $localePath(`/search?itemId=${item.id}`),
+                            icon: 'mingcute:search-line',
+                            label: $t('setup.viewer.searchByItem'),
+                        },
+                        {
+                            icon: 'mingcute:flag-3-fill',
+                            label: $t('setup.viewer.reportItem'),
+                            onClick: () =>
+                                session ? reportItem.open({ itemId: item.id }) : login.open(),
+                        },
+                    ]"
                 >
                     <UButton
-                        :to="$localePath(`/search?itemId=${item.id}`)"
-                        icon="mingcute:search-line"
-                        :aria-label="$t('setup.viewer.searchByItem')"
+                        aria-label="Show actions"
+                        icon="mingcute:more-2-line"
                         variant="ghost"
-                        :ui="{ leadingIcon: 'size-4.5' }"
-                        class="grow"
                     />
-                </UTooltip>
-
-                <UTooltip v-if="actions" :text="$t('setup.viewer.reportItem')" :delay-duration="50">
-                    <UButton
-                        icon="mingcute:flag-3-fill"
-                        :aria-label="$t('setup.viewer.reportItem')"
-                        variant="ghost"
-                        :ui="{
-                            base: 'justify-center',
-                            leadingIcon: 'size-4 text-dimmed',
-                        }"
-                        @click="reportItem.open({ itemId: item.id })"
-                    />
-                </UTooltip>
+                </UDropdownMenu>
             </div>
         </div>
 

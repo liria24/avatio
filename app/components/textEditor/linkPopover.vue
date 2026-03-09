@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Editor } from '@tiptap/vue-3'
 
-const props = defineProps<{
+const { editor, autoOpen } = defineProps<{
     editor: Editor
     autoOpen?: boolean
 }>()
@@ -9,15 +9,15 @@ const props = defineProps<{
 const open = ref(false)
 const url = ref('')
 
-const active = computed(() => props.editor.isActive('link'))
+const active = computed(() => editor.isActive('link'))
 const disabled = computed(() => {
-    if (!props.editor.isEditable) return true
-    const { selection } = props.editor.state
-    return selection.empty && !props.editor.isActive('link')
+    if (!editor.isEditable) return true
+    const { selection } = editor.state
+    return selection.empty && !editor.isActive('link')
 })
 
 watch(
-    () => props.editor,
+    () => editor,
     (editor, _, onCleanup) => {
         if (!editor) return
 
@@ -37,7 +37,7 @@ watch(
 )
 
 watch(active, (isActive) => {
-    if (isActive && props.autoOpen) {
+    if (isActive && autoOpen) {
         open.value = true
     }
 })
@@ -45,10 +45,10 @@ watch(active, (isActive) => {
 const setLink = () => {
     if (!url.value) return
 
-    const { selection } = props.editor.state
+    const { selection } = editor.state
     const isEmpty = selection.empty
 
-    let chain = props.editor.chain().focus()
+    let chain = editor.chain().focus()
     chain = chain.extendMarkRange('link').setLink({ href: url.value })
 
     if (isEmpty) chain = chain.insertContent({ type: 'text', text: url.value })
@@ -58,7 +58,7 @@ const setLink = () => {
 }
 
 const removeLink = () => {
-    props.editor
+    editor
         .chain()
         .focus()
         .extendMarkRange('link')

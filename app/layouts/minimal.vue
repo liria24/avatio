@@ -17,7 +17,7 @@ const baseRouteName = computed(() => routeBaseName(route))
 
                     <template v-if="baseRouteName !== 'login'">
                         <div v-if="session" class="flex items-center gap-2">
-                            <LazyHeaderNotificationButton />
+                            <LazyNotificationButton />
                             <LazyHeaderMenu />
                         </div>
 

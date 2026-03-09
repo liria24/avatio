@@ -13,6 +13,9 @@ const baseRouteRules: { [path: string]: NitroRouteConfig } = {
         appLayout: 'dashboard',
         appMiddleware: 'admin',
     },
+    '/changelogs': {
+        isr: 60 * 60, // 1 hour
+    },
     '/faq': {
         prerender: true,
     },
@@ -33,6 +36,9 @@ const baseRouteRules: { [path: string]: NitroRouteConfig } = {
     },
     '/bookmarks': {
         redirect: '/?tab=bookmarked',
+    },
+    '/api/**': {
+        cors: true,
     },
 }
 
@@ -332,10 +338,6 @@ export default defineNuxtConfig({
         remarkPlugins: {
             'remark-breaks': {},
         },
-    },
-
-    ogImage: {
-        defaults: { renderer: 'takumi' },
     },
 
     pwa: {
