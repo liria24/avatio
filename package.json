@@ -39,10 +39,10 @@
         "@nuxtjs/robots": "5.7.1",
         "@nuxtjs/sitemap": "7.6.0",
         "@stefanobartoletti/nuxt-social-share": "2.3.1",
-        "@takumi-rs/core": "^0.71.3",
+        "@takumi-rs/core": "^0.71.7",
         "@tigrisdata/storage": "^2.15.2",
         "@vercel/analytics": "1.6.1",
-        "@vercel/config": "^0.0.37",
+        "@vercel/config": "^0.0.38",
         "@vercel/edge-config": "1.4.3",
         "@vercel/functions": "3.4.3",
         "@vite-pwa/nuxt": "1.1.1",
@@ -72,7 +72,7 @@
         "@nuxt/a11y": "1.0.0-alpha.1",
         "@nuxt/hints": "1.0.0-alpha.10",
         "@types/canvas-confetti": "1.9.0",
-        "@types/node": "25.3.5",
+        "@types/node": "25.4.0",
         "@types/sanitize-html": "2.16.1",
         "bumpp": "10.4.1",
         "drizzle-kit": "1.0.0-beta.16-ea816b6",
@@ -82,8 +82,7 @@
         "typescript": "6.0.0-dev.20260309"
     },
     "overrides": {
-        "unimport": "5.6.0",
-        "vite": "8.0.0-beta.16",
+        "vite": "8.0.0-beta.18",
         "vue": "latest"
     },
     "engines": {
