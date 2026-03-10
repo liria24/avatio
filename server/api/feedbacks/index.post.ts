@@ -5,20 +5,25 @@ const body = feedbacksInsertSchema.pick({
     contextPath: true,
 })
 
-export default defineEventHandler(async () => {
-    const { comment, contextPath } = await validateBody(body, {
-        sanitize: true,
-    })
+export default promiseEventHandler(
+    async () => {
+        const { comment, contextPath } = await validateBody(body, {
+            sanitize: true,
+        })
 
-    const fingerprint = await getFingerprint()
+        const fingerprint = await getFingerprint()
 
-    await db.insert(feedbacks).values({
-        fingerprint,
-        comment,
-        contextPath,
-    })
+        await db.insert(feedbacks).values({
+            fingerprint,
+            comment,
+            contextPath,
+        })
 
-    logger('feedback').log(`Feedback created: ${fingerprint}`)
+        logger('feedback').log(`Feedback created: ${fingerprint}`)
 
-    return null
-})
+        return null
+    },
+    {
+        rejectBots: true,
+    },
+)

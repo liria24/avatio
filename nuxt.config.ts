@@ -85,6 +85,7 @@ export default defineNuxtConfig({
         'nuxt-og-image',
         '@nuxt/a11y',
         '@vite-pwa/nuxt',
+        'botid/nuxt',
     ],
 
     css: ['~/assets/css/main.css'],

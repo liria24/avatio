@@ -1,7 +1,11 @@
+import { checkBotId } from 'botid/server'
 import type { H3Event } from 'h3'
 import { getReasonPhrase, StatusCodes } from 'http-status-codes'
 
-interface SessionEventHandlerOptions {
+interface PromiseEventHandlerOptions {
+    rejectBots?: boolean
+}
+interface SessionEventHandlerOptions extends PromiseEventHandlerOptions {
     rejectBannedUser?: boolean
 }
 
@@ -13,9 +17,23 @@ const rejectBannedUser = (session: Session | null) => {
         })
 }
 
-export const promiseEventHandler = <T = unknown>(
+const rejectBots = async () => {
+    const verification = await checkBotId()
+
+    if (verification.isBot)
+        throw createError({
+            statusCode: StatusCodes.FORBIDDEN,
+            message: getReasonPhrase(StatusCodes.FORBIDDEN),
+        })
+}
+
+export const promiseEventHandler = async <T = unknown>(
     handler: ({ event }: { event: H3Event }) => Promise<T> | T,
-) => eventHandler(async (event) => handler({ event }))
+    options?: PromiseEventHandlerOptions,
+) => {
+    if (options?.rejectBots) await rejectBots()
+    return await eventHandler(async (event) => await handler({ event }))
+}
 
 export const sessionEventHandler = <T = unknown>(
     handler: ({ event, session }: { event: H3Event; session: Session | null }) => Promise<T> | T,
