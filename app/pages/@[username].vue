@@ -134,6 +134,7 @@ useSeo({
                         :key="'link-' + index"
                         :to="link.to"
                         target="_blank"
+                        external
                         :aria-label="link.label || link.to"
                         :icon="link.icon"
                         variant="ghost"
@@ -168,6 +169,7 @@ useSeo({
                     :key="'shop-' + index"
                     :to="`https://${shop.shop.id}.booth.pm`"
                     target="_blank"
+                    external
                     variant="soft"
                     class="gap-3 p-3"
                 >

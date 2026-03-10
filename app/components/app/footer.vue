@@ -20,6 +20,7 @@ const { dismissed, dismissBanner } = useOwnerWarningBanner()
                     <UButton
                         :to="app.liria.twitter"
                         target="_blank"
+                        external
                         icon="mingcute:social-x-fill"
                         :aria-label="$t('footer.social.x')"
                         variant="ghost"
@@ -28,6 +29,7 @@ const { dismissed, dismissBanner } = useOwnerWarningBanner()
                     <UButton
                         :to="app.repo"
                         target="_blank"
+                        external
                         icon="mingcute:github-fill"
                         :aria-label="$t('footer.social.github')"
                         variant="ghost"

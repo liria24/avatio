@@ -42,6 +42,7 @@ const providerIcon = computed(() => providerIcons[item.platform])
                 v-if="item.image"
                 :to="computeItemUrl(item.id, item.platform)"
                 target="_blank"
+                external
                 :aria-label="item.niceName || item.name"
                 class="flex shrink-0 items-center overflow-hidden rounded-lg object-cover select-none"
             >
@@ -78,6 +79,7 @@ const providerIcon = computed(() => providerIcons[item.platform])
                     <NuxtLink
                         :to="computeItemUrl(item.id, item.platform)"
                         target="_blank"
+                        external
                         class="flex items-center gap-3"
                     >
                         <span class="text-left text-sm/relaxed font-semibold sm:text-base/relaxed">
@@ -90,6 +92,7 @@ const providerIcon = computed(() => providerIcons[item.platform])
                     v-if="item.niceName"
                     :to="computeItemUrl(item.id, item.platform)"
                     target="_blank"
+                    external
                     :icon="providerIcon"
                     :label="item.name"
                     variant="link"
@@ -106,6 +109,7 @@ const providerIcon = computed(() => providerIcons[item.platform])
                         <NuxtLink
                             :to="computeShopUrl(item.shop.id, item.shop.platform)"
                             target="_blank"
+                            external
                             class="flex w-fit items-center gap-1.5"
                         >
                             <NuxtImg
@@ -145,6 +149,7 @@ const providerIcon = computed(() => providerIcons[item.platform])
                             <NuxtLink
                                 :to="computeShopUrl(item.shop.id, item.shop.platform)"
                                 target="_blank"
+                                external
                                 class="flex items-center gap-3 py-2 pr-3 pl-2"
                             >
                                 <NuxtImg

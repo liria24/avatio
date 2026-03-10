@@ -52,6 +52,7 @@ const guidelineLink = `${app.repo}/blob/main/CONTRIBUTING.md`
                         <UButton
                             :to="i18nFileLinks[locale]"
                             target="_blank"
+                            external
                             icon="mingcute:github-fill"
                             :label="$t('settings.site.editOnGitHub')"
                             variant="outline"
