@@ -9,7 +9,7 @@ const { dismissed, dismissBanner } = useOwnerWarningBanner()
         <USeparator icon="avatio:avatio" />
 
         <ClientOnly>
-            <LazyBannerOwnerWarning v-if="!dismissed" @close="dismissBanner" />
+            <LazyBannerOwnerWarning v-if="!dismissed" class="mt-4" @close="dismissBanner" />
         </ClientOnly>
 
         <div
