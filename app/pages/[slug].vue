@@ -1,6 +1,7 @@
 <script lang="ts" setup>
-import { withLeadingSlash } from 'ufo'
+import { withLeadingSlash, joinURL } from 'ufo'
 
+const { app } = useAppConfig()
 const route = useRoute()
 const { localeProperties } = useI18n()
 
@@ -17,6 +18,11 @@ if (!data.value)
         status: 404,
         statusText: 'Page not found.',
     })
+
+const commitLogUrl = computed(() => {
+    if (!data.value?.content?.commitLogPath) return null
+    return joinURL(app.repo, 'commits/main', data.value.content.commitLogPath)
+})
 
 useSeo({
     title: data.value?.content?.title,
@@ -44,7 +50,37 @@ useSeoMeta(data.value?.content?.seo || {})
             variant="subtle"
         />
 
-        <ContentRenderer :value="data.content" class="sentence" />
+        <h1 class="text-highlighted text-5xl font-bold">
+            {{ data.content.title }}
+        </h1>
+
+        <div class="flex items-center gap-2 empty:hidden">
+            <UBadge
+                v-if="data.content.updatedAt"
+                :label="$t('content.updatedAt', { date: data.content.updatedAt })"
+                variant="soft"
+                color="neutral"
+            />
+            <UBadge
+                v-if="data.content.effectiveDate"
+                :label="$t('content.effectiveDate', { date: data.content.effectiveDate })"
+                variant="soft"
+                color="neutral"
+            />
+            <UButton
+                v-if="commitLogUrl"
+                :to="commitLogUrl"
+                target="_blank"
+                external
+                :label="$t('content.changeLog')"
+                trailing-icon="mingcute:arrow-right-up-line"
+                variant="ghost"
+                color="neutral"
+                size="xs"
+            />
+        </div>
+
+        <ContentRenderer :value="data.content" class="sentence mt-4 *:first:mt-0 *:last:mb-0" />
 
         <template #right>
             <UContentToc :links="data.content?.body?.toc?.links" />

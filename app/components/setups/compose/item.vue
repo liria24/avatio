@@ -36,6 +36,7 @@ const inputShapekeyValue = ref(0)
                     v-if="props.item.image"
                     :to="computeItemUrl(props.item.id, props.item.platform)"
                     target="_blank"
+                    external
                     class="shrink-0"
                 >
                     <NuxtImg
@@ -82,6 +83,7 @@ const inputShapekeyValue = ref(0)
                         <NuxtLink
                             :to="computeItemUrl(props.item.id, props.item.platform)"
                             target="_blank"
+                            external
                             class="text-toned line-clamp-2 py-1 font-mono text-sm tracking-wider"
                         >
                             {{ props.item.name }}

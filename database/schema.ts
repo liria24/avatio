@@ -59,6 +59,7 @@ export const users = userSchema.table(
         banExpires: timestamp('ban_expires'),
         bio: text(),
         links: text().array(),
+        lastAgreedToTerms: timestamp('last_agreed_to_terms'),
     },
     (table) => [index('user_email_index').on(table.email)],
 )

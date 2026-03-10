@@ -9,7 +9,7 @@ const { dismissed, dismissBanner } = useOwnerWarningBanner()
         <USeparator icon="avatio:avatio" />
 
         <ClientOnly>
-            <LazyBannerOwnerWarning v-if="!dismissed" @close="dismissBanner" />
+            <LazyBannerOwnerWarning v-if="!dismissed" class="mt-4" @close="dismissBanner" />
         </ClientOnly>
 
         <div
@@ -20,6 +20,7 @@ const { dismissed, dismissBanner } = useOwnerWarningBanner()
                     <UButton
                         :to="app.liria.twitter"
                         target="_blank"
+                        external
                         icon="mingcute:social-x-fill"
                         :aria-label="$t('footer.social.x')"
                         variant="ghost"
@@ -28,6 +29,7 @@ const { dismissed, dismissBanner } = useOwnerWarningBanner()
                     <UButton
                         :to="app.repo"
                         target="_blank"
+                        external
                         icon="mingcute:github-fill"
                         :aria-label="$t('footer.social.github')"
                         variant="ghost"
