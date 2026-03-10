@@ -51,6 +51,10 @@ export const auth = betterAuth({
                 type: 'string[]',
                 required: false,
             },
+            lastAgreedToTerms: {
+                type: 'date',
+                required: false,
+            },
         },
         deleteUser: {
             enabled: true,

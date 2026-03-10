@@ -31,8 +31,6 @@ schemaOrg:
                   </ul>
 ---
 
-# FAQ
-
 ## What is Avatio?
 
 Avatio is a service that allows you to list and share items used for modifying avatars in VR social platforms.

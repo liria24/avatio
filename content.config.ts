@@ -12,7 +12,10 @@ export default defineContentConfig({
                 },
                 type: 'page',
                 schema: z.object({
-                    image: z.string(),
+                    image: z.string().optional(),
+                    updatedAt: z.string().optional(),
+                    effectiveDate: z.string().optional(),
+                    commitLogPath: z.string().optional(),
                 }),
             }),
         ),
@@ -24,7 +27,10 @@ export default defineContentConfig({
                 },
                 type: 'page',
                 schema: z.object({
-                    image: z.string(),
+                    image: z.string().optional(),
+                    updatedAt: z.string().optional(),
+                    effectiveDate: z.string().optional(),
+                    commitLogPath: z.string().optional(),
                 }),
             }),
         ),

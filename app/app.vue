@@ -5,6 +5,7 @@ import { Analytics } from '@vercel/analytics/nuxt'
 const { locale, t } = useI18n()
 const toast = useToast()
 const { consented, giveConsent } = useCookiesConsent()
+const { needsAgreement, open: openTermsAgreement } = useTermsAgreement()
 
 useHead({
     htmlAttrs: {
@@ -32,6 +33,8 @@ onMounted(() => {
                 onClick: giveConsent,
             },
         })
+
+    if (needsAgreement.value) openTermsAgreement()
 })
 </script>
 

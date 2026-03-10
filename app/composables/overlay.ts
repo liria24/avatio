@@ -14,6 +14,7 @@ import {
     LazyModalAdminChangeItemNiceName,
     LazyModalAdminModalFlags,
     LazyImageViewer,
+    LazyModalAgreeTerms,
 } from '#components'
 
 interface ModalSetupDelete {
@@ -49,6 +50,11 @@ interface ModalBanUser {
 interface ModalChangeItemNiceName {
     itemId: string
     current: string
+}
+
+interface ModalAgreeTerms {
+    needsTerms: boolean
+    needsPrivacyPolicy: boolean
 }
 
 interface ModalImageViewer {
@@ -87,6 +93,7 @@ export const useAppOverlay = () => {
     }
 
     return {
+        agreeTerms: createModalWrapper<ModalAgreeTerms>(LazyModalAgreeTerms),
         login: createModalWrapper<void>(LazyModalLogin),
         feedback: createModalWrapper<void>(LazyModalFeedback),
         publishSetupComplete: createModalWrapper<void>(LazyModalPublishSetupComplete),

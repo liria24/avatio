@@ -26,7 +26,10 @@
     },
     "content": {
         "fallbackNotice": "This content is currently not available in {locale}.",
-        "fallbackDescription": "Showing Japanese version as fallback."
+        "fallbackDescription": "Showing Japanese version as fallback.",
+        "updatedAt": "Last updated: {date}",
+        "effectiveDate": "Effective date: {date}",
+        "changeLog": "Changelog"
     },
     "itemCategory": {
         "avatar": "Base Avatar",
@@ -370,6 +373,22 @@
                 "terms": "Terms of Service",
                 "privacy": "Privacy Policy"
             }
+        },
+        "agreeTerms": {
+            "title": {
+                "terms": "Terms of Service Updated",
+                "privacy": "Privacy Policy Updated",
+                "both": "Terms of Service and Privacy Policy Updated"
+            },
+            "intro": "Thank you for using Avatio.",
+            "description": {
+                "terms": "Please review the updated Terms of Service via the link below and indicate your agreement.",
+                "privacy": "Please review the updated Privacy Policy via the link below and indicate your agreement.",
+                "both": "Please review the updated Terms of Service and Privacy Policy via the links below and indicate your agreement."
+            },
+            "reviewTerms": "Review Terms",
+            "reviewPrivacy": "Review Privacy Policy",
+            "agree": "I Agree"
         },
         "feedback": {
             "title": "Feedback",
