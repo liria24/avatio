@@ -85,6 +85,7 @@ export default defineNuxtConfig({
         'nuxt-og-image',
         '@nuxt/a11y',
         '@vite-pwa/nuxt',
+        '@vercel/analytics',
     ],
 
     css: ['~/assets/css/main.css'],

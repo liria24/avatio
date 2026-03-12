@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import * as locales from '@nuxt/ui/locale'
-import { Analytics } from '@vercel/analytics/nuxt'
 
 import type { NuxtError } from '#app'
 
@@ -19,7 +18,6 @@ const props = defineProps({
 
 <template>
     <UApp :locale="locales[locale]">
-        <Analytics />
         <NuxtRouteAnnouncer />
         <NuxtLoadingIndicator />
         <NuxtLayout>
