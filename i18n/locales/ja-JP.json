@@ -58,16 +58,37 @@
     "settings": {
         "title": "ユーザー設定",
         "description": "ユーザープロフィールの編集や、アカウントに関する操作を行うことができます。",
-        "profile": {
-            "title": "プロフィール",
-            "selectImage": "画像を選択",
-            "moreOptions": "その他のオプション",
-            "name": "ユーザー名",
-            "bio": "bio",
-            "links": "リンク",
-            "addLink": "リンクを追加",
-            "removeLink": "リンクを削除",
-            "avatarAlt": "あなたのアバター画像"
+        "general": {
+            "title": "全般",
+            "profile": {
+                "title": "プロフィール",
+                "selectImage": "画像を選択",
+                "moreOptions": "その他のオプション",
+                "name": "ユーザー名",
+                "bio": "bio",
+                "links": "リンク",
+                "addLink": "リンクを追加",
+                "removeLink": "リンクを削除",
+                "avatarAlt": "あなたのアバター画像"
+            },
+            "site": {
+                "title": "サイト設定",
+                "language": "言語",
+                "languageDescription": "表示言語を変更します。",
+                "theme": "テーマ",
+                "themeDescription": "サイトの外観を変更します。",
+                "improveTranslation": "翻訳の改善にぜひご協力ください",
+                "editOnGitHub": "GitHubで編集"
+            },
+            "toast": {
+                "profileSaved": "プロフィールが保存されました",
+                "saveFailed": "保存に失敗しました",
+                "saveFailedDescription": "プロフィールの保存中にエラーが発生しました。",
+                "invalidLink": "無効なリンク",
+                "invalidLinkDescription": "正しいURLを入力してください。",
+                "linkExists": "リンクがすでに存在します",
+                "linkExistsDescription": "同じリンクは追加できません。"
+            }
         },
         "shop": {
             "title": "ショップ認証",
@@ -81,53 +102,37 @@
             "unverifyConfirm": "本当にショップの認証を解除しますか？",
             "deleteCodeNote": "認証が完了した後、追記したコードは削除してください",
             "notVerifiable": "このURLは認証可能なアイテムではありません",
-            "noVerifiedShops": "認証済みのショップはありません"
+            "noVerifiedShops": "認証済みのショップはありません",
+            "toast": {
+                "verified": "ショップを認証しました",
+                "verifyFailed": "ショップの認証に失敗しました",
+                "unverified": "ショップの認証を解除しました",
+                "unverifyFailed": "ショップの認証解除に失敗しました"
+            }
         },
         "account": {
             "title": "アカウント",
+            "adminBanner": "Adminアカウントでログイン中です",
+            "linkedAccounts": "連携アカウント",
+            "linked": "{date}に連携済み",
+            "manage": "管理",
             "logoutOthers": "このブラウザ以外からログアウト",
             "logoutOthersDesc": "現在使用しているブラウザ以外のすべてのデバイスからログアウトします。",
             "logoutOthersButton": "すべてのデバイスからログアウト",
             "logoutAll": "すべてのアカウントからログアウト",
             "logoutAllDesc": "同時にログインしているすべてのアカウントからログアウトします。",
-            "logoutAllButton": "すべてログアウト"
-        },
-        "dangerZone": {
+            "logoutAllButton": "すべてログアウト",
             "deleteAccount": "アカウント削除",
-            "deleteAccountDesc": "アカウントおよびアカウントに紐づくデータをすべて削除します。削除したアカウントは復元できません。"
-        },
-        "site": {
-            "title": "サイト設定",
-            "language": "言語",
-            "languageDescription": "表示言語を変更します。",
-            "theme": "テーマ",
-            "themeDescription": "サイトの外観を変更します。",
-            "improveTranslation": "翻訳の改善にぜひご協力ください",
-            "editOnGitHub": "GitHubで編集"
+            "deleteAccountDesc": "アカウントおよびアカウントに紐づくデータをすべて削除します。削除したアカウントは復元できません。",
+            "toast": {
+                "deleted": "アカウントを削除しました",
+                "deleteDescription": "ページをリロードしています...",
+                "deleteFailed": "アカウントを削除できませんでした",
+                "deleteFailedDescription": "時間をおいて再度お試しください。"
+            }
         }
     },
     "toast": {
-        "userSettings": {
-            "profileSaved": "プロフィールが保存されました",
-            "saveFailed": "保存に失敗しました",
-            "saveFailedDescription": "プロフィールの保存中にエラーが発生しました。",
-            "invalidLink": "無効なリンク",
-            "invalidLinkDescription": "正しいURLを入力してください。",
-            "linkExists": "リンクがすでに存在します",
-            "linkExistsDescription": "同じリンクは追加できません。",
-            "usernameChanged": "ユーザーIDが変更されました",
-            "usernameChangeDescription": "ページを更新しています...",
-            "usernameChangeFailed": "ユーザーIDの変更に失敗しました",
-            "usernameChangeFailedDescription": "ユーザーIDの変更中にエラーが発生しました。",
-            "shopVerified": "ショップを認証しました",
-            "shopVerifyFailed": "ショップの認証に失敗しました",
-            "shopUnverified": "ショップの認証を解除しました",
-            "shopUnverifyFailed": "ショップの認証解除に失敗しました",
-            "accountDeleted": "アカウントを削除しました",
-            "accountDeleteDescription": "ページをリロードしています...",
-            "accountDeleteFailed": "アカウントを削除できませんでした",
-            "accountDeleteFailedDescription": "時間をおいて再度お試しください。"
-        },
         "bookmarks": {
             "added": "ブックマークしました",
             "removed": "ブックマークを解除しました",
