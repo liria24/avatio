@@ -11,14 +11,16 @@ const { t } = useI18n()
 const { agree } = useTermsAgreement()
 const isAgreeing = ref(false)
 
-const variant = computed(() => {
-    if (needsTerms && needsPrivacyPolicy) return 'both'
-    if (needsPrivacyPolicy) return 'privacy'
-    return 'terms'
+const title = computed(() => {
+    if (needsTerms && needsPrivacyPolicy) return t('modal.agreeTerms.title.both')
+    if (needsPrivacyPolicy) return t('modal.agreeTerms.title.privacy')
+    return t('modal.agreeTerms.title.terms')
 })
-
-const title = computed(() => t(`modal.agreeTerms.title.${variant.value}`))
-const description = computed(() => t(`modal.agreeTerms.description.${variant.value}`))
+const description = computed(() => {
+    if (needsTerms && needsPrivacyPolicy) return t('modal.agreeTerms.description.both')
+    if (needsPrivacyPolicy) return t('modal.agreeTerms.description.privacy')
+    return t('modal.agreeTerms.description.terms')
+})
 
 const agreeAndClose = async () => {
     isAgreeing.value = true

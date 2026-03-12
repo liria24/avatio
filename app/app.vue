@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import * as locales from '@nuxt/ui/locale'
-import { Analytics } from '@vercel/analytics/nuxt'
 
 const { locale, t } = useI18n()
 const toast = useToast()
@@ -41,7 +40,6 @@ onMounted(() => {
 <template>
     <UApp :locale="locales[locale]">
         <NuxtPwaManifest />
-        <Analytics />
         <NuxtRouteAnnouncer />
         <NuxtLoadingIndicator />
         <NuxtLayout>

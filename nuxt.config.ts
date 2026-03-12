@@ -85,6 +85,7 @@ export default defineNuxtConfig({
         'nuxt-og-image',
         '@nuxt/a11y',
         '@vite-pwa/nuxt',
+        '@vercel/analytics',
     ],
 
     css: ['~/assets/css/main.css'],
@@ -229,12 +230,14 @@ export default defineNuxtConfig({
             {
                 name: 'Geist',
                 provider: 'google',
+                preload: true,
                 global: true,
                 weights: [200, 300, 400, 500, 600, 700],
             },
             {
                 name: 'Geist Mono',
                 provider: 'google',
+                preload: true,
                 global: true,
                 weights: [200, 400, 600],
             },

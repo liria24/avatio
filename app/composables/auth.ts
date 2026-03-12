@@ -35,29 +35,35 @@ const _useAuth = () => {
     }
 
     const refreshSession = async () => {
-        const headers = useRequestHeaders()
-        const { data } = await client.useSession((url, options) =>
-            useFetch(withoutHost(url), {
-                ...options,
-                dedupe: 'defer',
-                credentials: 'include',
-                headers,
-            }),
-        )
-
-        globalSession.value = data.value
+        const { data } = await client.getSession({ fetchOptions: { credentials: 'include' } })
+        globalSession.value = data
         return globalSession
     }
 
     const getSessions = async () => {
         if (globalSessions.value !== undefined) return globalSessions
 
-        try {
-            const { data } = await client.multiSession.listDeviceSessions()
-            globalSessions.value = data || []
-        } catch {
-            globalSessions.value = undefined
-        }
+        const headers = useRequestHeaders()
+        const { data } = await useFetch('/api/users/me/sessions', {
+            dedupe: 'defer',
+            headers,
+            transform: (res) =>
+                res?.map((r) => ({
+                    ...r,
+                    session: {
+                        ...r.session,
+                        createdAt: new Date(r.session.createdAt),
+                        updatedAt: new Date(r.session.updatedAt),
+                        expiresAt: new Date(r.session.expiresAt),
+                    },
+                    user: {
+                        ...r.user,
+                        createdAt: new Date(r.user.createdAt),
+                        updatedAt: new Date(r.user.updatedAt),
+                    },
+                })) || [],
+        })
+        globalSessions.value = data.value
 
         return globalSessions
     }
