@@ -6,15 +6,9 @@ definePageMeta({
 })
 
 const { app } = useAppConfig()
-const { locale, setLocale } = useI18n()
-const { t } = useI18n()
+const { t, locale, localeProperties, setLocale } = useI18n()
 const toast = useToast()
 const { auth, session, refreshSession } = useAuth()
-
-const i18nFileLinks = {
-    en: `${app.repo}/blob/main/i18n/en-US.ts`,
-    ja: `${app.repo}/blob/main/i18n/ja-JP.ts`,
-}
 
 const updating = ref(false)
 const username = ref(session.value!.user.username || '')
@@ -375,7 +369,7 @@ useSeo({
                             </p>
 
                             <UButton
-                                :to="i18nFileLinks[locale]"
+                                :to="`${app.repo}/blob/main/i18n/locales/${localeProperties.language}.json`"
                                 target="_blank"
                                 icon="mingcute:github-fill"
                                 :label="$t('settings.general.site.editOnGitHub')"

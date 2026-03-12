@@ -65,6 +65,10 @@ const routeRules: { [path: string]: NitroRouteConfig } = {
 export default defineNuxtConfig({
     compatibilityDate: 'latest',
 
+    future: {
+        compatibilityVersion: 5,
+    },
+
     devtools: { enabled: true, timeline: { enabled: true } },
 
     modules: [
@@ -431,6 +435,7 @@ export default defineNuxtConfig({
         typescriptPlugin: true,
         inlineRouteRules: true,
         componentIslands: true,
+        nitroAutoImports: true,
     },
 })
 
