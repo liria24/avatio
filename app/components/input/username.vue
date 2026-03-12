@@ -21,7 +21,11 @@ interface Props {
         field?: FormFieldProps['ui']
     }
 }
-const { label, placeholder, ui } = defineProps<Props>()
+const {
+    label,
+    placeholder,
+    ui = { field: { container: 'flex items-center gap-1' } },
+} = defineProps<Props>()
 
 const { session, auth } = useAuth()
 const { t } = useI18n()
@@ -45,45 +49,46 @@ const stateMessages = computed(() => ({
 const checkNewIdAvailability = useDebounceFn(async (username: string) => {
     if (!username?.length || username === session.value!.user.username) {
         checkState.value = 'idle'
+        available.value = false
         return
     }
 
     checkState.value = 'checking'
+    available.value = false
 
     try {
-        const available = await auth.isUsernameAvailable({ username })
-        checkState.value = available.data?.available ? 'available' : 'unavailable'
+        const result = await auth.isUsernameAvailable({ username })
+        checkState.value = result.data?.available ? 'available' : 'unavailable'
+        available.value = result.data?.available ?? false
     } catch (error) {
         console.error('Error checking profile ID availability:', error)
         checkState.value = 'error'
+        available.value = false
     }
 }, 500)
 
-watch(
-    () => input.value,
-    (id) => {
-        if (id && id.length > 2) checkNewIdAvailability(id)
-        else checkState.value = 'idle'
-    },
-)
-
-watch(
-    () => checkState.value,
-    (state) => {
-        if (state === 'available') available.value = true
-        else available.value = false
-    },
-)
+watch(input, (id) => {
+    if (id && id.length > 2) checkNewIdAvailability(id)
+    else {
+        checkState.value = 'idle'
+        available.value = false
+    }
+})
 </script>
 
 <template>
     <UFormField :label="label || $t('input.username.label')" :ui="ui?.field">
+        <slot name="leading" :available />
+
         <UInput
             v-model="input"
             :placeholder="placeholder || $t('input.username.placeholder')"
             class="w-full"
             :ui="ui?.input"
         />
+
+        <slot name="trailing" :available />
+
         <template #hint>
             <div v-if="checkState !== 'idle'" class="flex items-center gap-1">
                 <Icon :name="stateMessages[checkState].icon" size="16" class="text-toned" />
