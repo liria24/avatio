@@ -62,15 +62,15 @@ export const auth = betterAuth({
     },
 
     account: {
-        storeStateStrategy: 'cookie',
+        storeStateStrategy: 'database',
     },
 
     verification: {
-        storeInDatabase: false,
+        storeInDatabase: true,
     },
 
     session: {
-        storeSessionInDatabase: false,
+        storeSessionInDatabase: true,
         disableSessionRefresh: true,
         deferSessionRefresh: true,
         cookieCache: {
