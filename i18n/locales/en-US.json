@@ -58,16 +58,37 @@
     "settings": {
         "title": "User Settings",
         "description": "Edit your user profile and manage your account.",
-        "profile": {
-            "title": "Profile",
-            "selectImage": "Select Image",
-            "moreOptions": "More Options",
-            "name": "Username",
-            "bio": "Bio",
-            "links": "Links",
-            "addLink": "Add Link",
-            "removeLink": "Remove Link",
-            "avatarAlt": "Your avatar image"
+        "general": {
+            "title": "General",
+            "profile": {
+                "title": "Profile",
+                "selectImage": "Select Image",
+                "moreOptions": "More Options",
+                "name": "Username",
+                "bio": "Bio",
+                "links": "Links",
+                "addLink": "Add Link",
+                "removeLink": "Remove Link",
+                "avatarAlt": "Your avatar image"
+            },
+            "site": {
+                "title": "Site Settings",
+                "language": "Language",
+                "languageDescription": "Change the display language.",
+                "theme": "Theme",
+                "themeDescription": "Change the site appearance.",
+                "improveTranslation": "Help us improve translations",
+                "editOnGitHub": "Edit on GitHub"
+            },
+            "toast": {
+                "profileSaved": "Profile saved",
+                "saveFailed": "Failed to save",
+                "saveFailedDescription": "An error occurred while saving your profile.",
+                "invalidLink": "Invalid link",
+                "invalidLinkDescription": "Please enter a valid URL.",
+                "linkExists": "Link already exists",
+                "linkExistsDescription": "Cannot add the same link."
+            }
         },
         "shop": {
             "title": "Shop Verification",
@@ -81,53 +102,37 @@
             "unverifyConfirm": "Are you sure you want to unverify this shop?",
             "deleteCodeNote": "Please delete the code from the item description after verification is complete",
             "notVerifiable": "This URL is not a verifiable item",
-            "noVerifiedShops": "No verified shops"
+            "noVerifiedShops": "No verified shops",
+            "toast": {
+                "verified": "Shop verified",
+                "verifyFailed": "Failed to verify shop",
+                "unverified": "Shop unverified",
+                "unverifyFailed": "Failed to unverify shop"
+            }
         },
         "account": {
             "title": "Account",
+            "adminBanner": "You are logged in as an Admin account",
+            "linkedAccounts": "Linked Accounts",
+            "linked": "Linked on {date}",
+            "manage": "Manage",
             "logoutOthers": "Logout from other browsers",
             "logoutOthersDesc": "Logout from all devices except this browser.",
             "logoutOthersButton": "Logout from all devices",
             "logoutAll": "Logout from all accounts",
             "logoutAllDesc": "Logout from all currently logged in accounts.",
-            "logoutAllButton": "Logout All"
-        },
-        "dangerZone": {
+            "logoutAllButton": "Logout All",
             "deleteAccount": "Delete Account",
-            "deleteAccountDesc": "Delete your account and all associated data. Deleted accounts cannot be recovered."
-        },
-        "site": {
-            "title": "Site Settings",
-            "language": "Language",
-            "languageDescription": "Change the display language.",
-            "theme": "Theme",
-            "themeDescription": "Change the site appearance.",
-            "improveTranslation": "Help us improve translations",
-            "editOnGitHub": "Edit on GitHub"
+            "deleteAccountDesc": "Delete your account and all associated data. Deleted accounts cannot be recovered.",
+            "toast": {
+                "deleted": "Account deleted",
+                "deleteDescription": "Reloading page...",
+                "deleteFailed": "Failed to delete account",
+                "deleteFailedDescription": "Please try again later."
+            }
         }
     },
     "toast": {
-        "userSettings": {
-            "profileSaved": "Profile saved",
-            "saveFailed": "Failed to save",
-            "saveFailedDescription": "An error occurred while saving your profile.",
-            "invalidLink": "Invalid link",
-            "invalidLinkDescription": "Please enter a valid URL.",
-            "linkExists": "Link already exists",
-            "linkExistsDescription": "Cannot add the same link.",
-            "usernameChanged": "User ID changed",
-            "usernameChangeDescription": "Refreshing page...",
-            "usernameChangeFailed": "Failed to change user ID",
-            "usernameChangeFailedDescription": "An error occurred while changing your user ID.",
-            "shopVerified": "Shop verified",
-            "shopVerifyFailed": "Failed to verify shop",
-            "shopUnverified": "Shop unverified",
-            "shopUnverifyFailed": "Failed to unverify shop",
-            "accountDeleted": "Account deleted",
-            "accountDeleteDescription": "Reloading page...",
-            "accountDeleteFailed": "Failed to delete account",
-            "accountDeleteFailedDescription": "Please try again later."
-        },
         "bookmarks": {
             "added": "Added to bookmarks",
             "removed": "Removed from bookmarks",

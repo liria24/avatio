@@ -1,6 +1,6 @@
 {
     "name": "avatio",
-    "version": "1.8.0",
+    "version": "1.8.1",
     "private": true,
     "author": "Liria",
     "repository": {
@@ -25,7 +25,7 @@
     "dependencies": {
         "@better-auth/drizzle-adapter": "1.5.5",
         "@iconify-json/fluent-color": "1.2.21",
-        "@iconify-json/lucide": "1.2.96",
+        "@iconify-json/lucide": "1.2.97",
         "@iconify-json/mingcute": "1.2.7",
         "@iconify-json/simple-icons": "1.2.73",
         "@iconify-json/svg-spinners": "1.2.4",
@@ -33,7 +33,7 @@
         "@neondatabase/serverless": "1.0.2",
         "@nuxt/content": "3.12.0",
         "@nuxt/image": "2.0.0",
-        "@nuxt/ui": "4.5.1",
+        "@nuxt/ui": "https://pkg.pr.new/@nuxt/ui@6db594e",
         "@nuxtjs/device": "4.0.0",
         "@nuxtjs/i18n": "10.2.3",
         "@nuxtjs/robots": "5.7.1",
@@ -60,7 +60,7 @@
         "motion-v": "^2.0.0",
         "nuxt": "4.3.1",
         "nuxt-link-checker": "4.3.9",
-        "nuxt-og-image": "^6.0.0-beta.48",
+        "nuxt-og-image": "^6.0.0",
         "nuxt-schema-org": "5.0.10",
         "nuxt-seo-utils": "7.0.19",
         "remark-breaks": "4.0.0",
@@ -76,10 +76,10 @@
         "@types/sanitize-html": "2.16.1",
         "bumpp": "10.4.1",
         "drizzle-kit": "1.0.0-beta.17-67b1795",
-        "oxfmt": "^0.38.0",
-        "oxlint": "^1.53.0",
+        "oxfmt": "^0.39.0",
+        "oxlint": "^1.54.0",
         "taze": "^19.10.0",
-        "typescript": "6.0.0-dev.20260311"
+        "typescript": "6.0.0-dev.20260312"
     },
     "overrides": {
         "vite": "8.0.0-beta.18",
