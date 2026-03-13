@@ -15,7 +15,7 @@ const { session } = useAuth()
             variant="soft"
             color="neutral"
             size="xs"
-            class="rounded-full px-3"
+            class="hidden rounded-full px-3 sm:inline-flex"
         />
 
         <UButton
@@ -24,7 +24,7 @@ const { session } = useAuth()
             :label="$t('admin.label')"
             variant="subtle"
             size="xs"
-            class="font-mono"
+            class="hidden font-mono sm:inline-flex"
         />
     </div>
 </template>
