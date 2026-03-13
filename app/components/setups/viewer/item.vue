@@ -134,7 +134,7 @@ const providerIcon = computed(() => providerIcons[item.platform])
                                     class="aspect-square size-5 shrink-0 rounded-md"
                                 />
                             </NuxtImg>
-                            <span class="text-muted text-xs font-semibold text-nowrap">
+                            <span class="text-muted line-clamp-1 text-xs font-semibold break-all">
                                 {{ item.shop.name }}
                             </span>
                             <Icon
