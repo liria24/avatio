@@ -556,7 +556,9 @@
             "checking": "Checking...",
             "available": "Available",
             "unavailable": "This user ID is already taken.",
-            "error": "An error occurred while checking the user ID."
+            "error": "An error occurred while checking the user ID.",
+            "changeWarning": "Note on Changing User ID",
+            "changeWarningDescription": "Changing your user ID will change your profile URL. Please note that the old URL will no longer be accessible."
         }
     },
     "cookie": {

@@ -21,11 +21,7 @@ interface Props {
         field?: FormFieldProps['ui']
     }
 }
-const {
-    label,
-    placeholder,
-    ui = { field: { container: 'flex items-center gap-1' } },
-} = defineProps<Props>()
+const { label, placeholder, variant, color, size, ui } = defineProps<Props>()
 
 const { session, auth } = useAuth()
 const { t } = useI18n()
@@ -78,16 +74,44 @@ watch(input, (id) => {
 
 <template>
     <UFormField :label="label || $t('input.username.label')" :ui="ui?.field">
-        <slot name="leading" :available />
+        <div class="flex w-full items-center gap-1">
+            <slot name="leading" :available />
 
-        <UInput
-            v-model="input"
-            :placeholder="placeholder || $t('input.username.placeholder')"
-            class="w-full"
-            :ui="ui?.input"
-        />
+            <UInput
+                v-model="input"
+                :placeholder="placeholder || $t('input.username.placeholder')"
+                :variant
+                :color
+                :size
+                class="w-full"
+                :ui="ui?.input"
+            />
 
-        <slot name="trailing" :available />
+            <slot name="trailing" :available />
+        </div>
+
+        <template #help>
+            <UPopover
+                :content="{ align: 'start' }"
+                :ui="{ content: 'p-4 max-w-md w-[90dvw] bg-accented' }"
+                class="min-w-0"
+            >
+                <UButton
+                    icon="mingcute:alert-fill"
+                    :label="$t('input.username.changeWarning')"
+                    variant="link"
+                    size="sm"
+                    class="p-0"
+                />
+
+                <template #content>
+                    <span class="font-medium">{{ $t('input.username.changeWarning') }}</span>
+                    <p class="text-toned mt-2 text-xs">
+                        {{ $t('input.username.changeWarningDescription') }}
+                    </p>
+                </template>
+            </UPopover>
+        </template>
 
         <template #hint>
             <div v-if="checkState !== 'idle'" class="flex items-center gap-1">

@@ -556,7 +556,9 @@
             "checking": "確認中...",
             "available": "使用可能",
             "unavailable": "このユーザーIDはすでに使用されています。",
-            "error": "ユーザーIDの確認中にエラーが発生しました。"
+            "error": "ユーザーIDの確認中にエラーが発生しました。",
+            "changeWarning": "ユーザーID変更時の注意",
+            "changeWarningDescription": "ユーザーIDを変更すると、プロフィールのURLが変更されます。古いURLは使用できなくなりますのでご注意ください。"
         }
     },
     "cookie": {
