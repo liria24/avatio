@@ -45,7 +45,7 @@ const addItem = async (item: Item) => {
                         <Icon name="mingcute:box-3-fill" size="16" class="text-muted shrink-0" />
                         <span class="font-mono text-xs leading-none text-nowrap">
                             <span>{{ totalItemsCount }}</span>
-                            <span v-if="totalItemsCount > 32"> / 32</span>
+                            <span v-if="totalItemsCount > 32">/ 32</span>
                         </span>
                     </div>
                 </div>
