@@ -5,6 +5,8 @@ const router = useRouter()
 const { login } = useAppOverlay()
 const { t, locale } = useI18n()
 
+const dev = import.meta.dev
+
 const { data: titles } = useFetch('/api/changelogs', {
     key: computed(() => `changelog-titles-${locale.value}`),
     dedupe: 'defer',
@@ -55,6 +57,7 @@ useSeo({
             <template v-if="titles.length" #headline>
                 <UButton
                     :to="$localePath('/changelogs')"
+                    :prefetch="!dev"
                     :label="titles[0]"
                     variant="soft"
                     color="neutral"
