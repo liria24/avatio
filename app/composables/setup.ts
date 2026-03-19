@@ -1,3 +1,4 @@
+import type { TypedInternalResponse } from 'nitropack/types'
 import type { UseFetchOptions, FetchResult } from 'nuxt/app'
 
 import type { KeysOf } from '#app/composables/asyncData'
@@ -34,7 +35,9 @@ export const useSetupsList = (
         () =>
             `setups-state-${type || 'custom'}-${options?.username || ''}-${JSON.stringify(unref(options?.query) || {})}`,
     )
-    const setups = useState<Serialized<Setup>[]>(cacheKey.value, () => [])
+    const setups = useState<
+        Extract<TypedInternalResponse<'/api/setups'>, { data: unknown }>['data']
+    >(cacheKey.value, () => [])
 
     // Build query parameters
     const queryParams = computed(() => {
@@ -66,25 +69,22 @@ export const useSetupsList = (
     })
 
     // Fetch data - 常に /api/setups を使用
-    const { data, status, refresh } = useFetch<PaginationResponse<Serialized<Setup>[]>>(
-        '/api/setups',
-        {
-            key: computed(
-                () => `setups-fetch-${type || 'custom'}-${JSON.stringify(queryParams.value)}`,
-            ),
-            query: queryParams,
-            dedupe: 'defer',
-            lazy: false,
-            immediate: options?.immediate !== false,
-            ...(options?.watch !== undefined ? { watch: options.watch } : {}),
-            onResponse({ response }) {
-                if (response._data?.data) {
-                    if (page.value === 1) setups.value = response._data.data
-                    else setups.value = [...setups.value, ...response._data.data]
-                }
-            },
+    const { data, status, refresh } = useFetch('/api/setups', {
+        key: computed(
+            () => `setups-fetch-${type || 'custom'}-${JSON.stringify(queryParams.value)}`,
+        ),
+        query: queryParams,
+        dedupe: 'defer',
+        lazy: false,
+        immediate: options?.immediate !== false,
+        ...(options?.watch !== undefined ? { watch: options.watch } : {}),
+        onResponse({ response }) {
+            if (response._data?.data) {
+                if (page.value === 1) setups.value = response._data.data
+                else setups.value = [...setups.value, ...response._data.data]
+            }
         },
-    )
+    })
 
     // Initialize: Load initial data
     const initialize = async () => {
