@@ -90,6 +90,10 @@ export const usersPublicSchema = usersSelectSchema
         bio: true,
         links: true,
     })
+    .partial({
+        bio: true,
+        links: true,
+    })
     .extend({
         badges: userBadgesPublicSchema.array().optional(),
         shops: userShopsPublicSchema.array().optional(),
@@ -198,6 +202,7 @@ export const setupCoauthorsPublicSchema = setupCoauthorsSelectSchema
     .pick({
         note: true,
     })
+    .partial()
     .extend({
         user: usersPublicSchema,
     })
@@ -322,6 +327,11 @@ export const setupsPublicSchema = setupsSelectSchema
         createdAt: true,
         updatedAt: true,
         name: true,
+        description: true,
+        hidAt: true,
+        hidReason: true,
+    })
+    .partial({
         description: true,
         hidAt: true,
         hidReason: true,
