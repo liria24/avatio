@@ -40,6 +40,12 @@ onMounted(() => {
         :title="$t('modal.publishComplete.title')"
         :close="false"
         :dismissible="false"
+        :ui="{
+            header: 'p-4 sm:p-4 min-h-0',
+            body: 'p-4 sm:p-4',
+            footer: 'p-4 sm:p-4',
+            content: 'max-w-xl p-4 sm:p-8 rounded-2xl divide-y-0',
+        }"
     >
         <template #body>
             <div v-if="data" class="flex flex-col items-center gap-3">
@@ -69,15 +75,12 @@ onMounted(() => {
                         size="sm"
                         @click="copy(link)"
                     />
-                    <DropdownMenuShareSetup :setup="data">
-                        <UButton icon="mingcute:share-2-fill" variant="ghost" size="sm" />
-                    </DropdownMenuShareSetup>
                 </div>
             </div>
         </template>
 
         <template #footer>
-            <div class="flex w-full gap-1">
+            <div class="grid w-full gap-1 sm:flex">
                 <UButton
                     icon="mingcute:add-line"
                     :label="$t('modal.publishComplete.continuePosting')"

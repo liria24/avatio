@@ -129,9 +129,7 @@ await initialize({
                 )
             "
         >
-            <div
-                class="sticky top-0 right-0 left-0 z-1 hidden flex-col gap-2 p-5 backdrop-blur-lg lg:flex"
-            >
+            <div class="sticky inset-x-0 top-0 z-1 flex flex-col gap-2 p-2 backdrop-blur-lg lg:p-5">
                 <div class="flex items-center gap-2">
                     <UButton
                         type="submit"
@@ -201,7 +199,7 @@ await initialize({
                 <SetupsComposeEditingSetup v-if="editingSetupId" :setup-id="editingSetupId" />
             </div>
 
-            <div class="flex flex-col gap-8 p-5 pt-2">
+            <div class="flex flex-col gap-8 p-2 pt-2 lg:p-5">
                 <div
                     class="grid grid-flow-row gap-6 sm:grid-cols-2 lg:grid-flow-row lg:grid-cols-1"
                 >
@@ -270,15 +268,5 @@ await initialize({
         <USeparator class="my-8 lg:hidden" />
 
         <SetupsComposeItems v-model="state.items" />
-
-        <UButton
-            type="submit"
-            icon="mingcute:upload-fill"
-            :aria-label="$t('setup.compose.publishButton')"
-            :loading="publishing"
-            variant="solid"
-            color="neutral"
-            class="fixed right-4 bottom-4 rounded-full p-4 lg:hidden"
-        />
     </UForm>
 </template>
