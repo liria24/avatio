@@ -225,11 +225,11 @@ const providerIcon = computed(() => providerIcons[item.platform])
             :data-noted="!!item.note?.length"
             class="border-muted/60 col-span-2 flex items-end justify-end gap-1.5 border-t pt-2 empty:hidden sm:col-span-1 sm:mt-auto"
         >
-            <div v-if="item.note?.length" class="flex grow items-start gap-2">
+            <div v-if="item.note?.length" class="my-auto flex grow items-start gap-2">
                 <Icon
                     name="mingcute:edit-3-fill"
                     :size="15"
-                    class="text-muted mt-[0.2rem] shrink-0"
+                    class="text-muted/60 mt-[0.2rem] shrink-0"
                 />
                 <p class="sentence text-xs/relaxed whitespace-pre-wrap">
                     {{ item.note }}
