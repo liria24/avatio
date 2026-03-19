@@ -58,7 +58,7 @@
         "motion-v": "^2.0.1",
         "nuxt": "4.4.2",
         "nuxt-link-checker": "4.3.9",
-        "nuxt-og-image": "^6.0.3",
+        "nuxt-og-image": "^6.0.5",
         "nuxt-schema-org": "5.0.10",
         "nuxt-seo-utils": "7.0.19",
         "remark-breaks": "4.0.0",
@@ -75,7 +75,7 @@
         "bumpp": "11.0.1",
         "drizzle-kit": "1.0.0-beta.18-7eb39f0",
         "taze": "^19.10.0",
-        "typescript": "6.0.0-dev.20260318",
+        "typescript": "6.0.0-dev.20260319",
         "vite-plus": "^0.1.12"
     },
     "overrides": {
