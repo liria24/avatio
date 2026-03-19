@@ -27,7 +27,7 @@ const { data: setup, status } = await useFetch(`/api/setups/${props.setupId}`, {
             class="line-clamp-1 flex w-full items-center gap-1.5 pl-0.5 break-all"
         >
             <Icon name="mingcute:edit-3-fill" size="13" />
-            <span class="text-muted text-left text-xs font-semibold">
+            <span class="text-muted text-left text-xs leading-none font-medium">
                 {{ $t('setup.viewer.editing') }}
             </span>
             <span class="text-toned ml-1 grow text-left text-xs">

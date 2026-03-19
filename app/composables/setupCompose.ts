@@ -1,6 +1,10 @@
 import type { z } from 'zod'
 
-type Schema = z.infer<typeof setupsClientFormSchema>
+type Schema = {
+    [K in keyof z.infer<typeof setupsClientFormSchema>]: NonNullable<
+        z.infer<typeof setupsClientFormSchema>[K]
+    >
+}
 
 type DraftStatus = 'new' | 'restoring' | 'restored' | 'unsaved' | 'saving' | 'saved' | 'error'
 

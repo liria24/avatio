@@ -6,6 +6,6 @@
             <UDashboardNavbar title="Items" />
         </template>
 
-        <template #body> </template>
+        <template #body></template>
     </UDashboardPanel>
 </template>

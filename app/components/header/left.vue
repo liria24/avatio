@@ -1,6 +1,8 @@
 <script setup lang="ts">
 const { app } = useAppConfig()
 const { session } = useAuth()
+
+const dev = import.meta.dev
 </script>
 
 <template>
@@ -11,6 +13,7 @@ const { session } = useAuth()
 
         <UButton
             :to="$localePath('/changelogs')"
+            :prefetch="!dev"
             :label="`v${app.version}`"
             variant="soft"
             color="neutral"

@@ -326,6 +326,7 @@
             "bookmark": "ブックマーク",
             "unbookmark": "ブックマークから削除",
             "report": "このセットアップを報告",
+            "showActions": "アクションを表示",
             "searchByItem": "アイテムからセットアップを検索",
             "reportItem": "アイテムを報告",
             "showNsfw": "NSFW コンテンツを表示",

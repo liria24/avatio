@@ -88,15 +88,15 @@ const loading = computed<boolean>(() => {
             :ssr-columns="isMobile ? 2 : 3"
         >
             <template #default="{ item, index }">
-                <SetupsLink
-                    :setup="item"
+                <div
                     :style="{
                         'transition-property': 'translate, opacity, filter',
                         'transition-delay': `${50 * index}ms, ${50 * index}ms, ${50 * index}ms`,
-                        'content-visibility': 'auto',
                     }"
                     class="transition-discrete duration-400 starting:translate-y-3 starting:opacity-0 starting:blur-sm"
-                />
+                >
+                    <SetupsLink :setup="item" />
+                </div>
             </template>
         </MasonryWall>
 

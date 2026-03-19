@@ -326,6 +326,7 @@
             "bookmark": "Bookmark",
             "unbookmark": "Remove Bookmark",
             "report": "Report this setup",
+            "showActions": "Show actions",
             "searchByItem": "Search setups by item",
             "reportItem": "Report Item",
             "showNsfw": "Show NSFW Content",

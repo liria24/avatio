@@ -50,7 +50,8 @@ const agreeAndClose = async () => {
     >
         <template #body>
             <p class="text-toned text-sm">
-                {{ $t('modal.agreeTerms.intro') }}<br />
+                {{ $t('modal.agreeTerms.intro') }}
+                <br />
                 {{ description }}
             </p>
             <UButton

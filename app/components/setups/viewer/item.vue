@@ -1,12 +1,11 @@
 <script lang="ts" setup>
-import { parseURL } from 'ufo'
+import { withoutProtocol, withoutTrailingSlash } from 'ufo'
 
 interface Props {
     item: SetupItem
     actions?: boolean
-    class?: string | string[] | null
 }
-const { item, actions = true, class: className = null } = defineProps<Props>()
+const { item, actions = true } = defineProps<Props>()
 
 const toast = useToast()
 const { copy } = useClipboard()
@@ -15,11 +14,9 @@ const { session } = useAuth()
 
 const nsfwMask = ref(item.nsfw)
 
-const shopPath = computed(() => {
-    const url = parseURL(computeShopUrl(item.shop?.id, item.shop?.platform))
-    const path = url.pathname === '/' ? '' : url.pathname
-    return url.host + path
-})
+const shopPath = computed(() =>
+    withoutTrailingSlash(withoutProtocol(computeShopUrl(item.shop?.id, item.shop?.platform) || '')),
+)
 
 const providerIcons = {
     booth: 'avatio:booth',
@@ -30,276 +27,205 @@ const providerIcon = computed(() => providerIcons[item.platform])
 
 <template>
     <div
-        :class="
-            cn(
-                'ring-accented relative flex flex-col gap-2 overflow-clip rounded-xl p-2 ring-1',
-                className,
-            )
-        "
+        class="bg-muted/30 ring-accented relative grid grid-flow-col grid-cols-[88px_auto] grid-rows-[auto_auto] gap-4 overflow-clip rounded-xl p-3 ring-1 sm:grid-cols-[max-content_auto] sm:p-4"
     >
-        <div class="flex items-stretch gap-1">
+        <UDropdownMenu
+            v-if="actions"
+            :items="[
+                {
+                    to: $localePath(`/search?itemId=${item.id}`),
+                    icon: 'mingcute:search-line',
+                    label: $t('setup.viewer.searchByItem'),
+                },
+                {
+                    icon: 'mingcute:flag-3-fill',
+                    label: $t('setup.viewer.reportItem'),
+                    onClick: () => (session ? reportItem.open({ itemId: item.id }) : login.open()),
+                },
+            ]"
+        >
+            <UButton
+                :aria-label="$t('setup.viewer.showActions')"
+                icon="mingcute:more-2-line"
+                variant="ghost"
+                class="absolute top-2 right-2"
+            />
+        </UDropdownMenu>
+
+        <NuxtLink
+            :to="computeItemUrl(item.id, item.platform)"
+            target="_blank"
+            external
+            :aria-label="item.name"
+            :class="
+                cn(
+                    'relative row-span-2 size-fit shrink-0 select-none',
+                    (item.note?.length || item.unsupported || item.shapekeys?.length) &&
+                        'row-span-1 sm:row-span-2',
+                )
+            "
+        >
+            <template v-if="item.image">
+                <NuxtImg
+                    :src="item.image || undefined"
+                    :width="256"
+                    :height="256"
+                    format="avif"
+                    alt=""
+                    loading="lazy"
+                    fetchpriority="low"
+                    class="aspect-square size-22 overflow-hidden rounded-lg object-cover text-xs sm:size-28"
+                />
+                <div
+                    class="inset-ring-inverted/15 pointer-events-none absolute inset-0 rounded-md inset-ring-2"
+                />
+            </template>
+            <div
+                v-else
+                class="bg-muted flex aspect-square size-22 items-center justify-center rounded-lg sm:size-28"
+            >
+                <Icon :name="providerIcon" size="24" class="text-muted" />
+            </div>
+        </NuxtLink>
+
+        <div
+            :class="
+                cn(
+                    'order-last row-span-2 flex flex-col justify-center gap-2 sm:order-0',
+                    (item.note?.length || item.unsupported || item.shapekeys?.length) &&
+                        'row-span-1 sm:pt-1',
+                )
+            "
+        >
             <NuxtLink
-                v-if="item.image"
                 :to="computeItemUrl(item.id, item.platform)"
                 target="_blank"
                 external
-                :aria-label="item.niceName || item.name"
-                class="flex shrink-0 items-center overflow-hidden rounded-lg object-cover select-none"
+                class="line-clamp-2 pr-8 text-left text-sm/relaxed font-semibold sm:text-base/relaxed"
             >
-                <NuxtImg
-                    v-slot="{ isLoaded, src, imgAttrs }"
-                    :src="item.image || undefined"
-                    :width="88"
-                    :height="88"
-                    format="avif"
-                    custom
-                >
-                    <img
-                        v-if="isLoaded"
-                        v-bind="imgAttrs"
-                        :src
-                        alt=""
-                        loading="lazy"
-                        fetchpriority="low"
-                        class="aspect-square size-22 shrink-0 rounded-lg object-cover text-xs"
-                    />
-                    <USkeleton v-else class="aspect-square size-20 shrink-0 rounded-lg text-xs" />
-                </NuxtImg>
+                {{ item.name }}
             </NuxtLink>
 
-            <div class="ml-2 flex grow flex-col gap-1 self-center py-1.5">
-                <div class="flex items-center gap-2">
-                    <Icon
-                        v-if="!item.niceName"
-                        :name="providerIcon"
-                        size="16"
-                        class="text-muted shrink-0"
-                    />
-
+            <div
+                :class="
+                    cn(
+                        'flex flex-wrap items-center gap-y-2',
+                        '[&>*:not(:first-child)]:before:bg-accented [&>*:not(:first-child)]:relative [&>*:not(:first-child)]:before:absolute [&>*:not(:first-child)]:before:top-1/2 [&>*:not(:first-child)]:before:left-0 [&>*:not(:first-child)]:before:h-3 [&>*:not(:first-child)]:before:w-px [&>*:not(:first-child)]:before:-translate-y-1/2 [&>*:not(:first-child)]:before:content-[\'\']',
+                    )
+                "
+            >
+                <UTooltip
+                    v-if="item.shop"
+                    :delay-duration="100"
+                    :content="{ side: 'top' }"
+                    :ui="{ content: 'flex flex-col items-start h-fit px-4 py-3 rounded-lg' }"
+                >
                     <NuxtLink
-                        :to="computeItemUrl(item.id, item.platform)"
+                        :to="computeShopUrl(item.shop.id, item.shop.platform)"
                         target="_blank"
                         external
-                        class="flex items-center gap-3"
+                        class="flex shrink-0 items-center justify-center pr-2"
                     >
-                        <span class="text-left text-sm/relaxed font-semibold sm:text-base/relaxed">
-                            {{ item.niceName || item.name }}
-                        </span>
-                    </NuxtLink>
-                </div>
-
-                <UButton
-                    v-if="item.niceName"
-                    :to="computeItemUrl(item.id, item.platform)"
-                    target="_blank"
-                    external
-                    :icon="providerIcon"
-                    :label="item.name"
-                    variant="link"
-                    size="xs"
-                    :ui="{
-                        leadingIcon: 'size-3',
-                        label: 'break-all line-clamp-1 whitespace-normal text-[10px]',
-                    }"
-                    class="p-0"
-                />
-
-                <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 pl-0.5">
-                    <UPopover v-if="item.shop" mode="hover">
-                        <NuxtLink
-                            :to="computeShopUrl(item.shop.id, item.shop.platform)"
-                            target="_blank"
-                            external
-                            class="flex w-fit items-center gap-1.5"
-                        >
+                        <div v-if="item.shop.image" class="relative">
                             <NuxtImg
-                                v-slot="{ isLoaded, src, imgAttrs }"
-                                :src="item.shop.image || undefined"
+                                :src="item.shop.image"
+                                :alt="item.shop.name || ''"
                                 :width="24"
                                 :height="24"
                                 format="avif"
-                                custom
-                            >
-                                <img
-                                    v-if="isLoaded"
-                                    v-bind="imgAttrs"
-                                    :src
-                                    alt=""
-                                    loading="lazy"
-                                    fetchpriority="low"
-                                    class="ring-accented aspect-square size-5 shrink-0 rounded-sm object-cover ring-1"
-                                />
-                                <USkeleton
-                                    v-else
-                                    class="aspect-square size-5 shrink-0 rounded-md"
-                                />
-                            </NuxtImg>
-                            <span class="text-muted line-clamp-1 text-xs font-semibold break-all">
-                                {{ item.shop.name }}
-                            </span>
-                            <Icon
-                                v-if="item.shop.verified"
-                                name="mingcute:check-line"
-                                :size="16"
-                                class="text-muted size-3 shrink-0"
+                                loading="lazy"
+                                fetchpriority="low"
+                                class="aspect-square size-6 rounded-md object-cover"
                             />
-                        </NuxtLink>
-
-                        <template #content>
-                            <NuxtLink
-                                :to="computeShopUrl(item.shop.id, item.shop.platform)"
-                                target="_blank"
-                                external
-                                class="flex items-center gap-3 py-2 pr-3 pl-2"
-                            >
-                                <NuxtImg
-                                    v-slot="{ isLoaded, src, imgAttrs }"
-                                    :src="item.shop.image || undefined"
-                                    :width="48"
-                                    :height="48"
-                                    format="webp"
-                                    custom
-                                >
-                                    <img
-                                        v-if="isLoaded"
-                                        v-bind="imgAttrs"
-                                        :src
-                                        alt=""
-                                        loading="lazy"
-                                        fetchpriority="low"
-                                        class="aspect-square size-10 shrink-0 rounded-md object-cover"
-                                    />
-                                    <USkeleton
-                                        v-else
-                                        class="aspect-square size-10 shrink-0 rounded-md"
-                                    />
-                                </NuxtImg>
-                                <div class="flex flex-col gap-1.5">
-                                    <span class="text-toned text-sm leading-none font-semibold">
-                                        {{ item.shop.name }}
-                                    </span>
-                                    <span class="text-muted text-xs leading-none font-semibold">
-                                        {{ shopPath }}
-                                    </span>
-                                </div>
-                            </NuxtLink>
-                        </template>
-                    </UPopover>
-
-                    <div v-if="item.price" class="flex w-fit items-center gap-1.5">
-                        <Icon
-                            name="mingcute:currency-cny-fill"
-                            :size="18"
-                            class="text-muted shrink-0"
-                        />
-                        <span
-                            class="text-muted font-mono text-xs leading-0 font-semibold text-nowrap"
-                        >
-                            {{ item.price }}
-                        </span>
-                    </div>
-
-                    <div v-if="item.likes !== null" class="flex w-fit items-center gap-1.5">
-                        <Icon
-                            v-if="item.platform === 'github'"
-                            name="mingcute:star-fill"
-                            :size="18"
-                            class="text-muted shrink-0"
-                        />
-                        <Icon
-                            v-else
-                            name="mingcute:heart-fill"
-                            :size="18"
-                            class="text-muted shrink-0"
-                        />
-                        <span
-                            class="text-muted font-mono text-xs leading-none font-semibold text-nowrap"
-                        >
-                            {{ item.likes.toLocaleString() }}
-                        </span>
-                    </div>
-
-                    <div
-                        v-if="item.forks !== null && item.forks !== undefined"
-                        class="flex w-fit items-center gap-1.5"
-                    >
-                        <Icon
-                            name="mingcute:git-branch-fill"
-                            :size="17"
-                            class="text-muted shrink-0"
-                        />
-                        <span
-                            class="text-muted font-mono text-xs leading-none font-semibold text-nowrap"
-                        >
-                            {{ item.forks.toLocaleString() }}
-                        </span>
-                    </div>
-
-                    <div v-if="item.version" class="flex w-fit items-center gap-1.5">
-                        <Icon name="mingcute:tag-fill" :size="16" class="text-muted shrink-0" />
-                        <span
-                            class="text-muted font-mono text-xs leading-none font-semibold text-nowrap"
-                        >
-                            {{ item.version }}
-                        </span>
-                    </div>
-
-                    <LazyUAvatarGroup v-if="item.contributors?.length" :max="3" size="2xs" class="">
-                        <UTooltip
-                            v-for="contributor in item.contributors"
-                            :key="encodeURIComponent(contributor.name)"
-                            :text="contributor.name"
-                            :delay-duration="100"
-                        >
-                            <UAvatar
-                                :src="`https://github.com/${contributor.name}.png`"
-                                :alt="contributor.name"
-                                icon="mingcute:user-3-fill"
+                            <div
+                                class="inset-ring-inverted/10 pointer-events-none absolute inset-0 rounded-md inset-ring-1"
                             />
-                        </UTooltip>
-                    </LazyUAvatarGroup>
+                        </div>
+                        <Icon v-else :name="providerIcon" size="16" class="text-muted mt-1" />
+                    </NuxtLink>
 
-                    <UBadge
-                        v-if="item.nsfw"
-                        icon="mingcute:forbid-circle-fill"
-                        label="NSFW"
-                        variant="soft"
-                        class="font-mono text-xs font-semibold"
-                    />
-                </div>
-            </div>
+                    <template #content>
+                        <p class="text-sm">
+                            {{ item.shop.name }}
+                        </p>
+                        <p class="text-muted">
+                            {{ shopPath }}
+                        </p>
+                    </template>
+                </UTooltip>
 
-            <div class="flex flex-col gap-1">
-                <UDropdownMenu
-                    v-if="actions"
-                    :items="[
-                        {
-                            to: $localePath(`/search?itemId=${item.id}`),
-                            icon: 'mingcute:search-line',
-                            label: $t('setup.viewer.searchByItem'),
-                        },
-                        {
-                            icon: 'mingcute:flag-3-fill',
-                            label: $t('setup.viewer.reportItem'),
-                            onClick: () =>
-                                session ? reportItem.open({ itemId: item.id }) : login.open(),
-                        },
-                    ]"
+                <span
+                    v-if="item.price"
+                    class="text-muted px-2 font-mono text-xs leading-none text-nowrap"
                 >
-                    <UButton
-                        aria-label="Show actions"
-                        icon="mingcute:more-2-line"
-                        variant="ghost"
+                    {{ item.price }}
+                </span>
+
+                <div v-if="item.likes !== null" class="flex w-fit items-center gap-1.5 px-2">
+                    <Icon
+                        v-if="item.platform === 'github'"
+                        name="mingcute:star-line"
+                        :size="15"
+                        class="text-muted shrink-0"
                     />
-                </UDropdownMenu>
+                    <Icon
+                        v-else
+                        name="mingcute:heart-line"
+                        :size="15"
+                        class="text-muted shrink-0"
+                    />
+                    <span class="text-muted font-mono text-xs leading-none text-nowrap">
+                        {{ item.likes.toLocaleString() }}
+                    </span>
+                </div>
+
+                <div
+                    v-if="item.forks !== null && item.forks !== undefined"
+                    class="flex w-fit items-center gap-1.5 px-2"
+                >
+                    <Icon name="mingcute:git-branch-line" :size="15" class="text-muted shrink-0" />
+                    <span class="text-muted font-mono text-xs leading-none text-nowrap">
+                        {{ item.forks.toLocaleString() }}
+                    </span>
+                </div>
+
+                <div v-if="item.version" class="flex w-fit items-center gap-1.5 px-2">
+                    <Icon name="mingcute:tag-line" :size="15" class="text-muted shrink-0" />
+                    <span class="text-muted font-mono text-xs leading-none text-nowrap">
+                        {{ item.version }}
+                    </span>
+                </div>
+
+                <LazyUAvatarGroup v-if="item.contributors?.length" :max="3" size="2xs" class="px-2">
+                    <UTooltip
+                        v-for="contributor in item.contributors"
+                        :key="encodeURIComponent(contributor.name)"
+                        :text="contributor.name"
+                        :delay-duration="100"
+                    >
+                        <UAvatar
+                            :src="`https://github.com/${contributor.name}.png`"
+                            :alt="contributor.name"
+                            icon="mingcute:user-3-fill"
+                        />
+                    </UTooltip>
+                </LazyUAvatarGroup>
+
+                <LazyUBadge
+                    v-if="item.nsfw"
+                    icon="mingcute:forbid-circle-fill"
+                    label="NSFW"
+                    variant="soft"
+                    class="px-2 font-mono text-xs font-semibold"
+                />
             </div>
         </div>
 
         <div
             :data-noted="!!item.note?.length"
-            class="ring-accented flex w-full flex-col gap-1.5 rounded-lg p-2 ring-1 ring-inset empty:hidden data-[noted=false]:p-0 data-[noted=false]:ring-0"
+            class="border-muted/60 col-span-2 flex items-end justify-end gap-1.5 border-t pt-2 empty:hidden sm:col-span-1 sm:mt-auto"
         >
-            <div v-if="item.note?.length" class="flex items-start gap-2 px-1">
+            <div v-if="item.note?.length" class="flex grow items-start gap-2">
                 <Icon
                     name="mingcute:edit-3-fill"
                     :size="15"
@@ -309,83 +235,79 @@ const providerIcon = computed(() => providerIcons[item.platform])
                     {{ item.note }}
                 </p>
             </div>
-            <div
-                v-if="item.shapekeys?.length || item.unsupported"
-                class="flex flex-wrap items-center justify-end gap-3"
-            >
-                <div v-if="item.unsupported" class="flex items-center gap-2 px-3 py-2">
-                    <Icon name="mingcute:user-x-fill" :size="15" class="text-muted shrink-0" />
-                    <p class="text-muted text-left text-xs leading-none font-medium">
-                        {{ $t('setup.viewer.unavailableForAvatar') }}
-                    </p>
-                </div>
-                <UPopover
-                    :content="{
-                        align: 'center',
-                        side: 'right',
-                        sideOffset: 8,
-                    }"
-                >
-                    <UButton
-                        v-if="item.shapekeys?.length"
-                        icon="mingcute:union-fill"
-                        :label="
-                            $t('setup.compose.items.shapekeysCount', {
-                                count: item.shapekeys.length,
-                            })
-                        "
-                        variant="subtle"
-                        size="sm"
-                        class="rounded-lg px-3 py-2"
-                    />
 
-                    <template #content>
-                        <div class="flex min-w-48 flex-col gap-3 p-3">
-                            <div class="flex w-full items-center gap-2">
-                                <Icon
-                                    name="mingcute:union-fill"
-                                    :size="18"
-                                    class="text-muted shrink-0"
-                                />
-                                <p class="text-sm font-medium">
-                                    {{ $t('setup.viewer.shapekeys') }}
+            <UTooltip
+                v-if="item.unsupported"
+                :text="$t('setup.viewer.unavailableForAvatar')"
+                :delay-duration="100"
+            >
+                <div class="bg-muted flex items-center justify-center gap-2 rounded-lg p-2">
+                    <Icon name="mingcute:user-x-fill" :size="15" class="text-muted shrink-0" />
+                </div>
+            </UTooltip>
+
+            <UPopover
+                :content="{
+                    align: 'center',
+                    side: 'right',
+                    sideOffset: 8,
+                }"
+            >
+                <UButton
+                    v-if="item.shapekeys?.length"
+                    icon="mingcute:union-fill"
+                    :label="item.shapekeys.length.toString()"
+                    variant="soft"
+                    size="sm"
+                    class="rounded-lg p-2"
+                />
+
+                <template #content>
+                    <div class="flex min-w-48 flex-col gap-3 p-3">
+                        <div class="flex w-full items-center gap-2">
+                            <Icon
+                                name="mingcute:union-fill"
+                                :size="18"
+                                class="text-muted shrink-0"
+                            />
+                            <p class="text-sm font-medium">
+                                {{ $t('setup.viewer.shapekeys') }}
+                            </p>
+                        </div>
+                        <div class="flex flex-col gap-3 rounded-lg">
+                            <div
+                                v-for="(key, index) in item.shapekeys"
+                                :key="'shapekey-' + index"
+                                class="flex items-center justify-between gap-3"
+                            >
+                                <p class="text-toned text-sm leading-none text-nowrap">
+                                    {{ key.name }}
                                 </p>
-                            </div>
-                            <div class="flex flex-col gap-3 rounded-lg">
-                                <div
-                                    v-for="(key, index) in item.shapekeys"
-                                    :key="'shapekey-' + index"
-                                    class="flex items-center justify-between gap-3"
-                                >
-                                    <p class="text-toned text-sm leading-none text-nowrap">
-                                        {{ key.name }}
-                                    </p>
-                                    <UButton
-                                        :label="
-                                            key.value.toLocaleString(undefined, {
-                                                minimumFractionDigits: 1,
-                                                maximumFractionDigits: 4,
+                                <UButton
+                                    :label="
+                                        key.value.toLocaleString(undefined, {
+                                            minimumFractionDigits: 1,
+                                            maximumFractionDigits: 4,
+                                        })
+                                    "
+                                    variant="soft"
+                                    size="sm"
+                                    @click="
+                                        copy(key.value.toString()).then(() => {
+                                            toast.add({
+                                                id: `copy-shapekey-${index}`,
+                                                title: $t('setup.viewer.valueCopied', {
+                                                    name: key.name,
+                                                }),
                                             })
-                                        "
-                                        variant="soft"
-                                        size="sm"
-                                        @click="
-                                            copy(key.value.toString()).then(() => {
-                                                toast.add({
-                                                    id: `copy-shapekey-${index}`,
-                                                    title: $t('setup.viewer.valueCopied', {
-                                                        name: key.name,
-                                                    }),
-                                                })
-                                            })
-                                        "
-                                    />
-                                </div>
+                                        })
+                                    "
+                                />
                             </div>
                         </div>
-                    </template>
-                </UPopover>
-            </div>
+                    </div>
+                </template>
+            </UPopover>
         </div>
 
         <div
