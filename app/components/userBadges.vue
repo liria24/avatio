@@ -17,9 +17,13 @@ const getBaseSize = () => {
 
 const getIconSize = (multiplier: number) => Math.round(getBaseSize() * multiplier)
 
-const badgeEntries = Object.entries(BADGE_DEFINITIONS) as Array<
-    [UserBadge, (typeof BADGE_DEFINITIONS)[UserBadge]]
->
+const { badgeDefinitions } = useBadges()
+const badgeEntries = computed(
+    () =>
+        Object.entries(badgeDefinitions.value) as Array<
+            [UserBadge, (typeof badgeDefinitions.value)[UserBadge]]
+        >,
+)
 </script>
 
 <template>
@@ -27,7 +31,7 @@ const badgeEntries = Object.entries(BADGE_DEFINITIONS) as Array<
         <template v-for="[id, def] in badgeEntries" :key="id">
             <UTooltip
                 v-if="props.badges.some((b) => b.badge === id)"
-                :text="$t(def.i18nKey)"
+                :text="def.label"
                 :delay-duration="50"
             >
                 <Icon :name="def.icon" :size="getIconSize(def.iconScale)" />

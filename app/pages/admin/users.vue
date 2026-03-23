@@ -2,6 +2,7 @@
 const { locale, t } = useI18n()
 const { unbanUser: unbanUserAction } = useAdminActions()
 const { banUser } = useAppOverlay()
+const { badgeDefinitions } = useBadges()
 
 const { data, refresh } = await useFetch('/api/admin/user', {
     dedupe: 'defer',
@@ -24,8 +25,8 @@ const getMenuItems = (user: NonNullable<typeof data.value>[number]) => [
         {
             label: 'バッジ',
             icon: 'mingcute:medal-fill',
-            children: Object.entries(BADGE_DEFINITIONS).map(([, def]) => ({
-                label: t(def.i18nKey),
+            children: Object.entries(badgeDefinitions.value).map(([, def]) => ({
+                label: def.label,
                 icon: def.icon,
             })),
         },
