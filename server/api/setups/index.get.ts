@@ -105,8 +105,6 @@ export default sessionEventHandler(async ({ session }) => {
                 limit: 1,
                 columns: {
                     url: true,
-                    width: true,
-                    height: true,
                     themeColors: true,
                 },
             },

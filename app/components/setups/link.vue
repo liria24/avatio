@@ -33,7 +33,7 @@ const dominantColor = computed(() => firstImage.value?.themeColors?.[0] || '')
         "
         :style="dominantColor ? { '--dominant-color': dominantColor } : undefined"
     >
-        <div v-if="hasImages" class="relative aspect-video max-h-105 w-full">
+        <div v-if="hasImages" class="relative aspect-video max-h-64 w-full sm:max-h-105">
             <NuxtImg
                 :src="firstImage!.url"
                 :alt="setup.name"
