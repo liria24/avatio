@@ -15,7 +15,6 @@
     "close": "閉じる",
     "add": "追加",
     "report": "報告",
-    "share": "シェア",
     "unknownAvatar": "不明なベースアバター",
     "jsWarning": "このWebサイトはJavaScriptを使用しています。JavaScriptが無効の場合、正しく表示されません。",
     "shareButton": {
@@ -273,7 +272,6 @@
                 "changeCategory": "アイテムのカテゴリーを変更",
                 "incompatible": "ベースアバターに非対応",
                 "shapekeys": "シェイプキー",
-                "shapekeysCount": "{count} 個のシェイプキー",
                 "shapekeyPlaceholder": "シェイプキー名称",
                 "notePlaceholder": "ノートの追加",
                 "empty": "アイテムが登録されていません",
@@ -325,7 +323,6 @@
             "deleted": "削除されたか、非公開になっている可能性があります。",
             "bookmark": "ブックマーク",
             "unbookmark": "ブックマークから削除",
-            "report": "このセットアップを報告",
             "showActions": "アクションを表示",
             "searchByItem": "アイテムからセットアップを検索",
             "reportItem": "アイテムを報告",
@@ -339,7 +336,6 @@
             "unavailableForAvatar": "アバター非対応",
             "shapekeys": "シェイプキー",
             "valueCopied": "{name} の値をコピーしました",
-            "updatedAt": "に更新",
             "editedAt": "に編集",
             "coauthors": "共同作者",
             "editing": "編集中",
@@ -407,7 +403,6 @@
             "viewSetup": "投稿したセットアップを見る"
         },
         "deleteSetup": {
-            "title": "セットアップを削除",
             "confirm": "本当にこのセットアップを削除しますか？",
             "description": "削除したセットアップは復元できません。"
         },
@@ -579,8 +574,7 @@
             "roleUser": "ユーザー",
             "roleAdmin": "管理者",
             "ban": "BAN",
-            "unban": "BAN解除",
-            "updated": "に更新"
+            "unban": "BAN解除"
         },
         "feedbacks": {
             "empty": "フィードバックはありません。",
