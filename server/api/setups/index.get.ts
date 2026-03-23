@@ -30,7 +30,8 @@ export default sessionEventHandler(async ({ session }) => {
 
     const offset = (page - 1) * limit
 
-    const shouldShowPrivate = (bookmarked && session) || session?.user.username === username
+    const shouldShowPrivate =
+        (bookmarked && session) || (username && session?.user.username === username)
 
     const data = await db.query.setups.findMany({
         extras: {
