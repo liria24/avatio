@@ -201,55 +201,52 @@ await initialize({
                 <SetupsComposeEditingSetup v-if="editingSetupId" :setup-id="editingSetupId" />
             </div>
 
-            <div class="flex flex-col gap-8 p-2 lg:p-5">
-                <div
-                    class="grid grid-flow-row gap-6 sm:grid-cols-2 lg:grid-flow-row lg:grid-cols-1"
-                >
-                    <div class="flex flex-col gap-4">
-                        <USwitch
-                            :model-value="!state.public"
-                            :label="$t('setup.compose.limitedPublic')"
-                            :description="$t('setup.compose.limitedPublicDescription')"
-                            color="neutral"
-                            @update:model-value="(val) => (state.public = !val)"
+            <div
+                class="grid grow grid-flow-row gap-6 p-2 sm:grid-cols-2 lg:grid-cols-1 lg:grid-rows-[auto_1fr] lg:p-5"
+            >
+                <div class="flex flex-col gap-4">
+                    <SetupsComposeImages />
+
+                    <UFormField name="name" :label="$t('setup.compose.nameLabel')" required>
+                        <UInput
+                            v-model="state.name"
+                            :placeholder="$t('setup.compose.namePlaceholder')"
+                            variant="subtle"
+                            class="w-full"
+                            @keydown.enter.prevent
                         />
+                    </UFormField>
 
-                        <SetupsComposeImages />
+                    <UFormField name="description" :label="$t('setup.compose.descriptionLabel')">
+                        <UTextarea
+                            v-model="state.description"
+                            :placeholder="$t('setup.compose.descriptionPlaceholder')"
+                            autoresize
+                            variant="soft"
+                            class="w-full"
+                        />
+                    </UFormField>
+                </div>
 
-                        <UFormField name="name" :label="$t('setup.compose.nameLabel')" required>
-                            <UInput
-                                v-model="state.name"
-                                :placeholder="$t('setup.compose.namePlaceholder')"
-                                variant="subtle"
-                                class="w-full"
-                                @keydown.enter.prevent
-                            />
-                        </UFormField>
+                <div class="flex flex-col gap-4">
+                    <SetupsComposeTags />
 
-                        <UFormField
-                            name="description"
-                            :label="$t('setup.compose.descriptionLabel')"
-                        >
-                            <UTextarea
-                                v-model="state.description"
-                                :placeholder="$t('setup.compose.descriptionPlaceholder')"
-                                autoresize
-                                variant="soft"
-                                class="w-full"
-                            />
-                        </UFormField>
-                    </div>
+                    <SetupsComposeCoauthors />
 
-                    <div class="flex flex-col gap-4">
-                        <SetupsComposeTags />
-
-                        <SetupsComposeCoauthors />
-                    </div>
+                    <USwitch
+                        :model-value="!state.public"
+                        :label="$t('setup.compose.limitedPublic')"
+                        :description="$t('setup.compose.limitedPublicDescription')"
+                        color="neutral"
+                        :ui="{ description: 'text-xs mt-1' }"
+                        class="mt-auto"
+                        @update:model-value="(val) => (state.public = !val)"
+                    />
                 </div>
             </div>
 
             <div
-                class="static mt-auto flex w-full items-center justify-end gap-2 p-3 lg:sticky lg:bottom-0 lg:backdrop-blur-lg"
+                class="static flex w-full items-center justify-end gap-2 p-3 lg:sticky lg:bottom-0 lg:backdrop-blur-lg"
             >
                 <UBadge
                     v-if="draft.status !== 'new'"
