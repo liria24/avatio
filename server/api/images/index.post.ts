@@ -1,6 +1,7 @@
 import { put } from '@tigrisdata/storage'
 import { nanoid } from 'nanoid'
 import sharp from 'sharp'
+import { joinURL, withHttps } from 'ufo'
 import { z } from 'zod'
 
 const log = logger('/api/images:POST')
@@ -98,6 +99,8 @@ export default authedSessionEventHandler(
     async () => {
         const { blob, path } = await validateFormData(formData)
 
+        const config = useRuntimeConfig()
+
         log.start('Processing and uploading image to Blob Storage...')
 
         const processedBuffer = Buffer.from(await blob.arrayBuffer())
@@ -123,7 +126,7 @@ export default authedSessionEventHandler(
 
         log.success('Image processed and uploaded successfully:', result.data.path)
         return {
-            url: `https://${useRuntimeConfig().tigris.storage.domain}/${result.data.path}`,
+            url: withHttps(joinURL(config.tigris.storage.domain, result.data.path)),
             width,
             height,
         }
