@@ -17,7 +17,7 @@ export default promiseEventHandler<Item>(async () => {
     log.log(`Processing item: ${id}, Platform: ${platform || 'auto-detect'}`)
 
     if (!platform) {
-        const item = await getItemFromDatabase(transformItemId(id).decode())
+        const item = await getItemFromDatabase(id)
         platform = item?.platform
     }
 

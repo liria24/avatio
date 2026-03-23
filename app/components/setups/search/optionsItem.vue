@@ -8,7 +8,7 @@ const emit = defineEmits<{
     (e: 'remove', itemId: string): void
 }>()
 
-const { data: item } = useFetch<Item>(`/api/items/${transformItemId(props.itemId).encode()}`, {
+const { data: item } = useFetch<Item>(`/api/items/${props.itemId}`, {
     immediate: true,
     dedupe: 'defer',
 })

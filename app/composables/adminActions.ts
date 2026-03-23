@@ -220,7 +220,7 @@ export const useAdminActions = () => {
 
     const changeItemNiceName = async (itemId: string, niceName: string) => {
         try {
-            await $fetch<void>(`/api/admin/items/${transformItemId(itemId).encode()}`, {
+            await $fetch<void>(`/api/admin/items/${itemId}`, {
                 method: 'PUT',
                 body: { niceName },
             })

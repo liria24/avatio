@@ -38,7 +38,7 @@ export default authedSessionEventHandler<Item[]>(async ({ session }) => {
     const updatePromises = outdatedItems.map(async (item) => {
         try {
             // $fetchの使用を修正
-            const response = await $fetch<Item>(`/api/items/${transformItemId(item.id).encode()}`)
+            const response = await $fetch<Item>(`/api/items/${item.id}`)
             console.log(`Updated item ${item.id} from external API`)
             return { ...item, ...response }
         } catch (error) {

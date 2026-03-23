@@ -78,9 +78,7 @@ export const useSetupCompose = () => {
             const items = await Promise.all(
                 content.items.map(async (draftItem) => {
                     try {
-                        const itemData = await $fetch<Item>(
-                            `/api/items/${transformItemId(draftItem.itemId).encode()}`,
-                        )
+                        const itemData = await $fetch<Item>(`/api/items/${draftItem.itemId}`)
                         return {
                             ...itemData,
                             id: itemData.id.toString(),

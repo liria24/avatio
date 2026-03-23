@@ -226,10 +226,9 @@ const getSetup = defineCachedFunction(
         // 期限切れのアイテムを並行して更新
         const expiredItemsPromises = expiredItems.map(async (item) => {
             try {
-                const response = await $fetch<Item>(
-                    `/api/items/${transformItemId(item.item.id).encode()}`,
-                    { query: { platform: item.item.platform } },
-                )
+                const response = await $fetch<Item>(`/api/items/${item.item.id}`, {
+                    query: { platform: item.item.platform },
+                })
                 return {
                     success: true,
                     data: {

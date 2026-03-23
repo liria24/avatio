@@ -1,15 +1,3 @@
-export const transformItemId = (itemId: string) => {
-    const encode = () =>
-        itemId
-            .split('/')
-            .map((part) => encodeURIComponent(part))
-            .join('+')
-
-    const decode = () => decodeURIComponent(itemId).split('+').join('/')
-
-    return { encode, decode }
-}
-
 interface ExtractResult {
     id: string
     platform: Platform
@@ -32,7 +20,7 @@ const platformHandlers = [
             if (url.hostname !== 'github.com') return null
             const match = url.pathname.match(/^\/([^/]+\/[^/]+)\/?$/)
             if (!match?.[1]) return null
-            return transformItemId(match[1]).encode()
+            return match[1]
         },
     },
 ]

@@ -220,7 +220,7 @@ export default async (provider: 'booth' | 'github', id: string | number): Promis
     if (provider === 'booth') {
         return await getBoothItem(String(id))
     } else if (provider === 'github') {
-        const repo = transformItemId(String(id)).decode()
+        const repo = String(id)
         return await getGithubItemFromRepo(repo)
     } else {
         throw new Error(`Unsupported provider: ${provider}`)
