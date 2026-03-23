@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-const props = defineProps<{ userId: string }>()
+const props = defineProps<{ userId: User['id'] }>()
 
 const emit = defineEmits(['close'])
 

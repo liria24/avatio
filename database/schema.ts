@@ -13,6 +13,7 @@ import {
     timestamp,
     uuid,
 } from 'drizzle-orm/pg-core'
+import { nanoid } from 'nanoid'
 
 export const locales = pgEnum('locales', ['en', 'ja'])
 
@@ -309,10 +310,13 @@ export const items = pgTable(
 export const setups = pgTable(
     'setups',
     {
-        id: integer().primaryKey().generatedByDefaultAsIdentity(),
+        id: text()
+            .primaryKey()
+            .$default(() => nanoid(8)),
         createdAt: timestamp('created_at').defaultNow().notNull(),
         updatedAt: timestamp('updated_at').defaultNow().notNull(),
         userId: text('user_id').notNull(),
+        public: boolean().default(true).notNull(),
         name: text().notNull(),
         description: text(),
         hidAt: timestamp('hid_at'),
@@ -337,7 +341,7 @@ export const setupItems = pgTable(
     {
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
         itemId: text('item_id').notNull(),
-        setupId: integer('setup_id').notNull(),
+        setupId: text('setup_id').notNull(),
         category: itemCategory(),
         unsupported: boolean().default(false).notNull(),
         note: text(),
@@ -387,7 +391,7 @@ export const setupTags = pgTable(
     'setup_tags',
     {
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
-        setupId: integer('setup_id').notNull(),
+        setupId: text('setup_id').notNull(),
         tag: text().notNull(),
     },
     (table) => [
@@ -408,7 +412,7 @@ export const setupImages = pgTable(
     'setup_images',
     {
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
-        setupId: integer('setup_id').notNull(),
+        setupId: text('setup_id').notNull(),
         url: text().notNull(),
         width: integer().notNull(),
         height: integer().notNull(),
@@ -431,7 +435,7 @@ export const setupCoauthors = pgTable(
     'setup_coauthors',
     {
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
-        setupId: integer('setup_id').notNull(),
+        setupId: text('setup_id').notNull(),
         userId: text('user_id').notNull(),
         note: text(),
     },
@@ -492,7 +496,7 @@ export const setupDrafts = userSchema.table(
         createdAt: timestamp('created_at').defaultNow().notNull(),
         updatedAt: timestamp('updated_at').defaultNow().notNull(),
         userId: text('user_id').notNull(),
-        setupId: integer('setup_id'),
+        setupId: text('setup_id'),
         content: jsonb().notNull(),
     },
     (table) => [
@@ -543,7 +547,7 @@ export const bookmarks = userSchema.table(
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
         createdAt: timestamp('created_at').defaultNow().notNull(),
         userId: text('user_id').notNull(),
-        setupId: integer('setup_id').notNull(),
+        setupId: text('setup_id').notNull(),
     },
     (table) => [
         index('bookmarks_id_index').on(table.id),
@@ -680,7 +684,7 @@ export const setupReports = feedbackSchema.table(
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
         createdAt: timestamp('created_at').defaultNow().notNull(),
         reporterId: text('reporter_id').notNull(),
-        setupId: integer('setup_id').notNull(),
+        setupId: text('setup_id').notNull(),
         spam: boolean().default(false).notNull(),
         hate: boolean().default(false).notNull(),
         infringe: boolean().default(false).notNull(),

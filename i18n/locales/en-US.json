@@ -15,7 +15,6 @@
     "close": "Close",
     "add": "Add",
     "report": "Report",
-    "share": "Share",
     "unknownAvatar": "Unknown Base Avatar",
     "jsWarning": "This website uses JavaScript. It may not display correctly if JavaScript is disabled.",
     "shareButton": {
@@ -273,7 +272,6 @@
                 "changeCategory": "Change Item Category",
                 "incompatible": "Incompatible with base avatar",
                 "shapekeys": "Shape Keys",
-                "shapekeysCount": "{count} shape keys",
                 "shapekeyPlaceholder": "Shape key name",
                 "notePlaceholder": "Add note",
                 "empty": "No items registered",
@@ -316,7 +314,9 @@
             "tagDuplicate": "Cannot add duplicate tags",
             "coauthorDuplicate": "Cannot add duplicate co-authors",
             "itemAlreadyAdded": "Item already added",
-            "draftRestored": "Found and restored draft in progress"
+            "draftRestored": "Found and restored draft in progress",
+            "limitedPublic": "Limited Access",
+            "limitedPublicDescription": "Only people with the URL can view this setup."
         },
         "viewer": {
             "show": "Show Setup",
@@ -325,7 +325,6 @@
             "deleted": "This setup may have been deleted or made private.",
             "bookmark": "Bookmark",
             "unbookmark": "Remove Bookmark",
-            "report": "Report this setup",
             "showActions": "Show actions",
             "searchByItem": "Search setups by item",
             "reportItem": "Report Item",
@@ -339,11 +338,12 @@
             "unavailableForAvatar": "Incompatible with Avatar",
             "shapekeys": "Shapekeys",
             "valueCopied": "Copied value of {name}",
-            "updatedAt": " updated",
             "editedAt": " edited",
             "coauthors": "Co-authors",
             "editing": "Editing",
-            "untitled": "Untitled"
+            "untitled": "Untitled",
+            "limitedPublic": "Limited Access",
+            "limitedPublicDescription": "Only people with the URL can view this setup."
         }
     },
     "changelogs": {
@@ -407,7 +407,6 @@
             "viewSetup": "View Published Setup"
         },
         "deleteSetup": {
-            "title": "Delete Setup",
             "confirm": "Are you sure you want to delete this setup?",
             "description": "Deleted setups cannot be recovered."
         },
@@ -579,8 +578,7 @@
             "roleUser": "User",
             "roleAdmin": "Admin",
             "ban": "BAN",
-            "unban": "Unban",
-            "updated": "updated"
+            "unban": "Unban"
         },
         "feedbacks": {
             "empty": "No feedbacks.",

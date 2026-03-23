@@ -10,12 +10,12 @@ import { eq, inArray } from 'drizzle-orm'
 import { z } from 'zod'
 
 const params = z.object({
-    id: z.union([z.string().transform((val) => Number(val)), z.number()]),
+    id: z.string(),
 })
 
 const body = setupsUpdateSchema
 
-export default authedSessionEventHandler<Serialized<Setup>>(
+export default authedSessionEventHandler(
     async ({ session }) => {
         const { id } = await validateParams(params)
 
@@ -38,14 +38,23 @@ export default authedSessionEventHandler<Serialized<Setup>>(
                 statusText: 'Access denied',
             })
 
-        const { name, description, items, images, tags, coauthors } = await validateBody(body, {
+        const {
+            public: isPublic,
+            name,
+            description,
+            items,
+            images,
+            tags,
+            coauthors,
+        } = await validateBody(body, {
             sanitize: true,
         })
 
         // セットアップ基本情報の更新
         const updateData: Partial<
-            Pick<typeof setups.$inferInsert, 'name' | 'description' | 'updatedAt'>
+            Pick<typeof setups.$inferInsert, 'public' | 'name' | 'description' | 'updatedAt'>
         > = {}
+        if (isPublic !== undefined) updateData.public = isPublic
         if (name !== undefined) updateData.name = name
         if (description !== undefined) updateData.description = description
         updateData.updatedAt = new Date()

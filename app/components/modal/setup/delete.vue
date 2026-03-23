@@ -1,8 +1,8 @@
 <script setup lang="ts">
 interface Props {
-    setupId: number
+    setupId: Setup['id']
 }
-const props = defineProps<Props>()
+const { setupId } = defineProps<Props>()
 
 const emit = defineEmits(['close'])
 const localePath = useLocalePath()
@@ -10,7 +10,7 @@ const localePath = useLocalePath()
 const { deleteSetup: deleteSetupAction } = useAdminActions()
 
 const deleteSetup = async () => {
-    const success = await deleteSetupAction(props.setupId)
+    const success = await deleteSetupAction(setupId)
     if (success) {
         emit('close')
         navigateTo(localePath('/'))
@@ -19,14 +19,22 @@ const deleteSetup = async () => {
 </script>
 
 <template>
-    <UModal :title="$t('modal.deleteSetup.title')">
+    <UModal
+        :title="$t('modal.deleteSetup.confirm')"
+        :ui="{
+            header: 'p-4 sm:p-4 min-h-0',
+            body: 'p-4 sm:p-4',
+            footer: 'p-4 sm:p-4',
+            content: 'max-w-xl p-4 sm:p-8 rounded-2xl divide-y-0',
+            close: 'sm:top-6 sm:right-6',
+        }"
+    >
         <template #body>
             <UAlert
-                icon="mingcute:delete-2-fill"
-                :title="$t('modal.deleteSetup.confirm')"
+                icon="mingcute:alert-diamond-fill"
                 :description="$t('modal.deleteSetup.description')"
                 color="warning"
-                variant="subtle"
+                variant="outline"
             />
         </template>
 
@@ -35,6 +43,7 @@ const deleteSetup = async () => {
                 loading-auto
                 :label="$t('delete')"
                 color="error"
+                variant="subtle"
                 size="lg"
                 block
                 @click="deleteSetup"

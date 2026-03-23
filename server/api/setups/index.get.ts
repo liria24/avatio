@@ -14,7 +14,7 @@ const query = z.object({
     limit: z.coerce.number().min(1).max(API_LIMIT_MAX).optional().default(SETUPS_API_DEFAULT_LIMIT),
 })
 
-export default sessionEventHandler<PaginationResponse<Setup[]>>(async ({ session }) => {
+export default sessionEventHandler(async ({ session }) => {
     const { q, orderBy, sort, username, itemId, tag, bookmarked, page, limit } =
         await validateQuery(query)
 
@@ -30,6 +30,8 @@ export default sessionEventHandler<PaginationResponse<Setup[]>>(async ({ session
 
     const offset = (page - 1) * limit
 
+    const shouldShowPrivate = (bookmarked && session) || session?.user.username === username
+
     const data = await db.query.setups.findMany({
         extras: {
             count: sql<number>`CAST(COUNT(*) OVER() AS INTEGER)`,
@@ -38,6 +40,7 @@ export default sessionEventHandler<PaginationResponse<Setup[]>>(async ({ session
         offset,
         where: {
             hidAt: { isNull: true },
+            public: shouldShowPrivate ? undefined : { eq: true },
             user: {
                 OR: [{ banned: { eq: false } }, { banned: { isNull: true } }],
                 username: username ? { eq: username } : undefined,
@@ -64,28 +67,21 @@ export default sessionEventHandler<PaginationResponse<Setup[]>>(async ({ session
             id: true,
             createdAt: true,
             updatedAt: true,
-            userId: true,
+            public: true,
             name: true,
-            description: true,
             hidAt: true,
-            hidReason: true,
         },
         with: {
             user: {
                 columns: {
-                    id: true,
                     username: true,
-                    createdAt: true,
                     name: true,
                     image: true,
-                    bio: true,
-                    links: true,
                 },
                 with: {
                     badges: {
                         columns: {
                             badge: true,
-                            createdAt: true,
                         },
                     },
                 },
@@ -100,12 +96,9 @@ export default sessionEventHandler<PaginationResponse<Setup[]>>(async ({ session
                             id: true,
                             updatedAt: true,
                             platform: true,
-                            category: true,
                             name: true,
                             niceName: true,
                             image: true,
-                            price: true,
-                            likes: true,
                             nsfw: true,
                             outdated: true,
                         },
@@ -113,16 +106,10 @@ export default sessionEventHandler<PaginationResponse<Setup[]>>(async ({ session
                 },
             },
             images: {
+                limit: 1,
                 columns: {
                     url: true,
-                    width: true,
-                    height: true,
                     themeColors: true,
-                },
-            },
-            tags: {
-                columns: {
-                    tag: true,
                 },
             },
             coauthors: {
@@ -132,26 +119,14 @@ export default sessionEventHandler<PaginationResponse<Setup[]>>(async ({ session
                     },
                 },
                 columns: {
-                    note: true,
+                    // note: true,
                 },
                 with: {
                     user: {
                         columns: {
-                            id: true,
                             username: true,
-                            createdAt: true,
                             name: true,
                             image: true,
-                            bio: true,
-                            links: true,
-                        },
-                        with: {
-                            badges: {
-                                columns: {
-                                    badge: true,
-                                    createdAt: true,
-                                },
-                            },
                         },
                     },
                 },
@@ -161,9 +136,13 @@ export default sessionEventHandler<PaginationResponse<Setup[]>>(async ({ session
 
     const result = data.map((setup) => ({
         ...setup,
-        items: setup.items.filter((item) => !item.item.outdated).map((item) => item.item),
-        tags: setup.tags.map((tag) => tag.tag),
-        failedItemsCount: setup.items.filter((item) => item.item.outdated).length,
+        items: setup.items
+            .filter((item) => !item.item.outdated)
+            .map((item) => ({
+                ...item.item,
+                outdated: undefined,
+            })),
+        failedItemsCount: setup.items.filter((item) => item.item.outdated).length || undefined,
         count: undefined,
     }))
 

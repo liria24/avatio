@@ -23,7 +23,7 @@ type ReportState = {
     comment?: string
 }
 
-export const useItemReport = (itemId: string) => {
+export const useItemReport = (itemId: Item['id']) => {
     const { t } = useI18n()
     const toast = useToast()
     const schema = createReportSchema(t)
@@ -79,7 +79,7 @@ export const useItemReport = (itemId: string) => {
     }
 }
 
-export const useSetupReport = (setupId: number) => {
+export const useSetupReport = (setupId: Setup['id']) => {
     const { t } = useI18n()
     const toast = useToast()
     const schema = createReportSchema(t)
@@ -137,7 +137,7 @@ export const useSetupReport = (setupId: number) => {
     }
 }
 
-export const useUserReport = (userId: string) => {
+export const useUserReport = (userId: User['id']) => {
     const { t } = useI18n()
     const toast = useToast()
     const schema = createReportSchema(t)

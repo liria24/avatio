@@ -9,7 +9,7 @@ export const useSetup = <
     PickKeys extends KeysOf<DataT> = KeysOf<DataT>,
     DefaultT = undefined,
 >(
-    id: number,
+    id: Setup['id'],
     options?: UseFetchOptions<SetupRes, DataT, PickKeys, DefaultT, '/api/setups/:id', 'get'>,
 ) =>
     useFetch(`/api/setups/${id}` as '/api/setups/:id', {
@@ -23,7 +23,7 @@ export const useSetup = <
 export const useSetupsList = (
     type?: 'latest' | 'owned' | 'bookmarked',
     options?: {
-        username?: string
+        username?: User['username']
         query?: MaybeRef<Record<string, unknown>>
         immediate?: boolean
         watch?: UseFetchOptions<unknown>['watch']
@@ -34,7 +34,12 @@ export const useSetupsList = (
         () =>
             `setups-state-${type || 'custom'}-${options?.username || ''}-${JSON.stringify(unref(options?.query) || {})}`,
     )
-    const setups = useState<Serialized<Setup>[]>(cacheKey.value, () => [])
+    const setups = useState<
+        Extract<
+            NonNullable<FetchResult<'/api/setups', 'get'>>['data'][number],
+            { items: unknown }
+        >[]
+    >(cacheKey.value, () => [])
 
     // Build query parameters
     const queryParams = computed(() => {
@@ -66,25 +71,22 @@ export const useSetupsList = (
     })
 
     // Fetch data - 常に /api/setups を使用
-    const { data, status, refresh } = useFetch<PaginationResponse<Serialized<Setup>[]>>(
-        '/api/setups',
-        {
-            key: computed(
-                () => `setups-fetch-${type || 'custom'}-${JSON.stringify(queryParams.value)}`,
-            ),
-            query: queryParams,
-            dedupe: 'defer',
-            lazy: false,
-            immediate: options?.immediate !== false,
-            ...(options?.watch !== undefined ? { watch: options.watch } : {}),
-            onResponse({ response }) {
-                if (response._data?.data) {
-                    if (page.value === 1) setups.value = response._data.data
-                    else setups.value = [...setups.value, ...response._data.data]
-                }
-            },
+    const { data, status, refresh } = useFetch('/api/setups', {
+        key: computed(
+            () => `setups-fetch-${type || 'custom'}-${JSON.stringify(queryParams.value)}`,
+        ),
+        query: queryParams,
+        dedupe: 'defer',
+        lazy: false,
+        immediate: options?.immediate !== false,
+        ...(options?.watch !== undefined ? { watch: options.watch } : {}),
+        onResponse({ response }) {
+            if (response._data?.data) {
+                if (page.value === 1) setups.value = response._data.data
+                else setups.value = [...setups.value, ...response._data.data]
+            }
         },
-    )
+    })
 
     // Initialize: Load initial data
     const initialize = async () => {

@@ -85,7 +85,9 @@ const { locale } = useI18n()
                     <template #content>
                         <div class="flex items-center gap-1.5">
                             <Icon name="mingcute:group-2-fill" size="18" class="text-muted" />
-                            <span class="text-sm leading-none font-medium"> 共同作者 </span>
+                            <span class="text-sm leading-none font-medium">
+                                {{ $t('setup.viewer.coauthors') }}
+                            </span>
                         </div>
 
                         <div
@@ -164,5 +166,18 @@ const { locale } = useI18n()
                 @click="navigateTo(`/search?tag=${tag}`)"
             />
         </div>
+
+        <UAlert
+            v-if="!setup.public"
+            icon="mingcute:lock-fill"
+            :title="$t('setup.viewer.limitedPublic')"
+            :description="$t('setup.viewer.limitedPublicDescription')"
+            variant="subtle"
+            color="neutral"
+            :ui="{
+                title: 'leading-none text-nowrap',
+                description: 'text-xs text-muted sentence',
+            }"
+        />
     </div>
 </template>

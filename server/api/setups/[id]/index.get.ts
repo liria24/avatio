@@ -1,11 +1,11 @@
 import { z } from 'zod'
 
 const params = z.object({
-    id: z.union([z.string().transform((val) => Number(val)), z.number()]),
+    id: z.string(),
 })
 
 const getSetup = defineCachedFunction(
-    async (id: number, session: Session | undefined) => {
+    async (id: Setup['id'], session: Session | undefined) => {
         const data = await db.query.setups.findFirst({
             where: {
                 id: { eq: id },
@@ -17,6 +17,7 @@ const getSetup = defineCachedFunction(
                 id: true,
                 createdAt: true,
                 updatedAt: true,
+                public: true,
                 name: true,
                 description: true,
                 hidAt: true,
@@ -226,10 +227,9 @@ const getSetup = defineCachedFunction(
         // 期限切れのアイテムを並行して更新
         const expiredItemsPromises = expiredItems.map(async (item) => {
             try {
-                const response = await $fetch<Item>(
-                    `/api/items/${transformItemId(item.item.id).encode()}`,
-                    { query: { platform: item.item.platform } },
-                )
+                const response = await $fetch<Item>(`/api/items/${item.item.id}`, {
+                    query: { platform: item.item.platform },
+                })
                 return {
                     success: true,
                     data: {
@@ -275,7 +275,7 @@ const getSetup = defineCachedFunction(
     {
         maxAge: SETUP_CACHE_TTL,
         name: 'setup',
-        getKey: (id: number, session: Session | undefined) =>
+        getKey: (id: Setup['id'], session: Session | undefined) =>
             `${id}${session ? `:${session.user.id}` : ''}`,
         swr: false,
     },

@@ -80,7 +80,7 @@ const addItem = async (item: Item) => {
                     variant: 'soft',
                     ui: {
                         label: 'whitespace-normal line-clamp-1',
-                        leadingAvatar: 'rounded-md',
+                        leadingAvatar: 'rounded-md [&>img]:rounded-md',
                     },
                     onClick: () => addItem(ownedAvatar),
                 }))

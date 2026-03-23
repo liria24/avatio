@@ -14,7 +14,7 @@ const { isMobile } = useDevice()
 // Model Mode: typeプロップがない場合、外部からsetups/loadingモデルを受け取る
 const isPropsMode = computed(() => !!type)
 
-const modelSetups = defineModel<Serialized<Setup>[]>('setups', {
+const modelSetups = defineModel<ReturnType<typeof useSetupsList>['setups']['value']>('setups', {
     default: [],
 })
 const modelLoading = defineModel<boolean>('loading', {
@@ -53,7 +53,7 @@ watch(
     },
 )
 
-const setups = computed<Serialized<Setup>[]>(() => {
+const setups = computed(() => {
     if (isPropsMode.value && propsResult.value) return propsResult.value.setups
 
     return modelSetups.value

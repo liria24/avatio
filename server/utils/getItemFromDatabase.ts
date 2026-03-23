@@ -1,6 +1,6 @@
 export default defineCachedFunction(
-    async (id: string) => {
-        const item = await db.query.items
+    async (id: string) =>
+        await db.query.items
             .findFirst({
                 where: {
                     id: { eq: id },
@@ -30,10 +30,8 @@ export default defineCachedFunction(
                     },
                 },
             })
-            .catch(() => undefined)
-
-        return item || null
-    },
+            .then((item) => item || null)
+            .catch(() => null),
     {
         maxAge: ITEM_DATABASE_CACHE_TTL,
         name: 'itemFromDatabase',

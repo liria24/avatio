@@ -1,7 +1,7 @@
 import { items, shops } from '@@/database/schema'
-import { getAll } from '@vercel/edge-config'
 import { waitUntil } from '@vercel/functions'
 import { eq } from 'drizzle-orm'
+import { joinURL, withHttps } from 'ufo'
 
 const log = logger('getItem')
 
@@ -16,11 +16,28 @@ const markItemAsOutdated = async (id: string): Promise<void> => {
     }
 }
 
+const assignItemAttr = async (
+    id: string,
+    params: {
+        name: string
+        description?: string | { description: string; readme: string }
+        category?: string
+    },
+) => {
+    try {
+        log.log(`Defining item info for item ${id}`)
+        const { niceName, category } = await generateItemAttr(params)
+        await db.update(items).set({ niceName, category }).where(eq(items.id, id))
+        log.log(`Item info defined for item ${id}: ${niceName}, ${category}`)
+    } catch (error) {
+        log.error(`Failed to define item info for item ${id}:`, error)
+    }
+}
+
 const updateBoothDatabase = async (
     item: Item & { shop: NonNullable<Item['shop']> },
 ): Promise<void> => {
     try {
-        // ショップ情報更新
         await db
             .insert(shops)
             .values({
@@ -69,25 +86,31 @@ const updateBoothDatabase = async (
 }
 
 const getBoothItem = async (id: string): Promise<Item> => {
-    const CACHE_DURATION_MS = 24 * 60 * 60 * 1000 // 24時間
     const { forceUpdateItem, allowedBoothCategoryId, specificItemCategories } =
-        await getAll<EdgeConfig>()
+        await getEdgeConfig()
 
     const cachedItem = forceUpdateItem ? null : await getItemFromDatabase(id)
 
-    const isCacheValid =
-        cachedItem && Date.now() - new Date(cachedItem.updatedAt).getTime() < CACHE_DURATION_MS
-
-    if (isCacheValid && !cachedItem.outdated) return cachedItem
-    if (isCacheValid && cachedItem.outdated) throw new Error('Item not found or not allowed')
-
-    const BOOTH_CATEGORY_MAP: Record<number, ItemCategory> = {
-        208: 'avatar',
-        209: 'clothing',
-        217: 'accessory',
+    if (
+        cachedItem &&
+        Date.now() - new Date(cachedItem.updatedAt).getTime() < ITEM_CACHE_DURATION_MS
+    ) {
+        if (cachedItem.outdated) throw new Error('Item not found or not allowed')
+        return cachedItem
     }
 
-    const item = await fetchBoothItem(id)
+    let item: Booth | null = null
+    try {
+        item = await $fetch<Booth>(`/${id}.json`, {
+            baseURL: joinURL(withHttps(BOOTH_BASE_DOMAIN), 'ja/items'),
+            headers: {
+                Accept: 'application/json',
+                'Accept-Language': 'ja,en-US;q=0.9,en;q=0.8',
+            },
+        })
+    } catch (error) {
+        log.error(`Failed to fetch booth item ${id}:`, error)
+    }
 
     if (!item || !allowedBoothCategoryId.includes(item.category.id)) {
         if (cachedItem) await markItemAsOutdated(id)
@@ -97,8 +120,6 @@ const getBoothItem = async (id: string): Promise<Item> => {
     const category: ItemCategory =
         specificItemCategories['booth'][item.id] || BOOTH_CATEGORY_MAP[item.category.id] || 'other'
 
-    const price = item.variations.some((v) => v.status === 'free_download') ? 'FREE' : item.price
-
     const processedItem = {
         id: item.id,
         platform: 'booth' as const,
@@ -106,7 +127,7 @@ const getBoothItem = async (id: string): Promise<Item> => {
         name: item.name,
         niceName: cachedItem?.niceName || null,
         image: item.images[0]?.original || '',
-        price,
+        price: item.variations.some((v) => v.status === 'free_download') ? 'FREE' : item.price,
         likes: Number(item.wish_lists_count) || 0,
         nsfw: Boolean(item.is_adult),
         shop: {
@@ -119,24 +140,14 @@ const getBoothItem = async (id: string): Promise<Item> => {
         outdated: false,
     }
 
-    // アイテム情報の更新処理
-    // DBに無いあるいはforceUpdateItemがtrueの場合はniceNameとcategoryをAI生成
     waitUntil(
-        updateBoothDatabase(processedItem).then(async () => {
+        updateBoothDatabase(processedItem).then(() => {
             if (!cachedItem)
-                try {
-                    log.log(`Defining item info for item ${id}`)
-                    const { niceName, category } = await generateItemAttr({
-                        name: item.name,
-                        description: item.description || undefined,
-                        category: processedItem.category,
-                    })
-
-                    await db.update(items).set({ niceName, category }).where(eq(items.id, id))
-                    log.log(`Item info defined for item ${id}: ${niceName}, ${category}`)
-                } catch (error) {
-                    log.error(`Failed to define item info for item ${id}:`, error)
-                }
+                return assignItemAttr(id, {
+                    name: item.name,
+                    description: item.description || undefined,
+                    category: processedItem.category,
+                })
         }),
     )
 
@@ -144,26 +155,25 @@ const getBoothItem = async (id: string): Promise<Item> => {
 }
 
 const getGithubItemFromRepo = async (repo: string): Promise<Item> => {
-    const CACHE_DURATION_MS = 1000 * 60 * 60 // 1時間
-
     const { forceUpdateItem } = await getEdgeConfig()
 
     const cachedItem = forceUpdateItem ? null : await getItemFromDatabase(repo)
 
-    const isCacheValid =
-        cachedItem && Date.now() - new Date(cachedItem.updatedAt).getTime() < CACHE_DURATION_MS
-
-    if (isCacheValid && !cachedItem.outdated) return cachedItem
-    if (isCacheValid && cachedItem.outdated) throw new Error('Item not found or not allowed')
+    if (
+        cachedItem &&
+        Date.now() - new Date(cachedItem.updatedAt).getTime() < GITHUB_ITEM_CACHE_DURATION_MS
+    ) {
+        if (cachedItem.outdated) throw new Error('Item not found or not allowed')
+        return cachedItem
+    }
 
     const item = await getGithubItem(repo)
 
     if (!item) {
-        if (cachedItem) markItemAsOutdated(cachedItem.id)
+        if (cachedItem) waitUntil(markItemAsOutdated(cachedItem.id))
         throw new Error('Repository not found')
     }
 
-    // DBに無いあるいはforceUpdateItemがtrueの場合はniceNameとcategoryをAI生成
     waitUntil(
         (async () => {
             if (cachedItem && cachedItem.id !== item.id)
@@ -187,29 +197,18 @@ const getGithubItemFromRepo = async (repo: string): Promise<Item> => {
                     },
                 })
 
-            if (!cachedItem)
-                try {
-                    log.log(`Defining item info for item ${item.id}`)
-
-                    const repoData = await getGithubRepo(repo)
-                    const readme = await getGithubReadme(repo)
-                    const description = {
+            if (!cachedItem) {
+                const repoData = await getGithubRepo(repo)
+                const readme = await getGithubReadme(repo)
+                await assignItemAttr(item.id, {
+                    name: item.name,
+                    description: {
                         description: repoData?.repo.description || '',
                         readme: readme?.markdown || '',
-                    }
-
-                    const { niceName, category } = await generateItemAttr({
-                        name: item.name,
-                        description,
-                        category: item.category,
-                    })
-
-                    await db.update(items).set({ niceName, category }).where(eq(items.id, item.id))
-
-                    log.log(`Item info defined for item ${item.id}: ${niceName}, ${category}`)
-                } catch (error) {
-                    log.error(`Failed to define item info for item ${item.id}:`, error)
-                }
+                    },
+                    category: item.category,
+                })
+            }
         })(),
     )
 
@@ -217,12 +216,7 @@ const getGithubItemFromRepo = async (repo: string): Promise<Item> => {
 }
 
 export default async (provider: 'booth' | 'github', id: string | number): Promise<Item> => {
-    if (provider === 'booth') {
-        return await getBoothItem(String(id))
-    } else if (provider === 'github') {
-        const repo = transformItemId(String(id)).decode()
-        return await getGithubItemFromRepo(repo)
-    } else {
-        throw new Error(`Unsupported provider: ${provider}`)
-    }
+    if (provider === 'booth') return getBoothItem(String(id))
+    if (provider === 'github') return getGithubItemFromRepo(String(id))
+    throw new Error(`Unsupported provider: ${provider}`)
 }

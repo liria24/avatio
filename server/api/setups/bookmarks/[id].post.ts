@@ -2,7 +2,7 @@ import { bookmarks } from '@@/database/schema'
 import { z } from 'zod'
 
 const params = z.object({
-    id: z.union([z.string().transform((val) => Number(val)), z.number()]),
+    id: z.string(),
 })
 
 export default authedSessionEventHandler(

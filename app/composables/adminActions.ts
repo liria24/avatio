@@ -113,9 +113,9 @@ export const useAdminActions = () => {
         }
     }
 
-    const hideSetup = async (setupId: number, hideReason?: string) => {
+    const hideSetup = async (setupId: Setup['id'], hideReason?: string) => {
         try {
-            await $fetch(`/api/admin/setup/${setupId}`, {
+            await $fetch(`/api/admin/setups/${setupId}`, {
                 method: 'PATCH',
                 body: {
                     hide: true,
@@ -137,9 +137,9 @@ export const useAdminActions = () => {
         }
     }
 
-    const unhideSetup = async (setupId: number) => {
+    const unhideSetup = async (setupId: Setup['id']) => {
         try {
-            await $fetch(`/api/admin/setup/${setupId}`, {
+            await $fetch(`/api/admin/setups/${setupId}`, {
                 method: 'PATCH',
                 body: { hide: false },
             })
@@ -158,7 +158,7 @@ export const useAdminActions = () => {
         }
     }
 
-    const deleteSetup = async (setupId: number) => {
+    const deleteSetup = async (setupId: Setup['id']) => {
         try {
             await $fetch(`/api/setups/${setupId}`, {
                 method: 'DELETE',
@@ -220,7 +220,7 @@ export const useAdminActions = () => {
 
     const changeItemNiceName = async (itemId: string, niceName: string) => {
         try {
-            await $fetch<void>(`/api/admin/items/${transformItemId(itemId).encode()}`, {
+            await $fetch<void>(`/api/admin/items/${itemId}`, {
                 method: 'PUT',
                 body: { niceName },
             })

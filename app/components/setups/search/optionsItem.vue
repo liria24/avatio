@@ -1,14 +1,14 @@
 <script lang="ts" setup>
 interface Props {
-    itemId: string
+    itemId: Item['id']
 }
-const props = defineProps<Props>()
+const { itemId } = defineProps<Props>()
 
 const emit = defineEmits<{
-    (e: 'remove', itemId: string): void
+    (e: 'remove', itemId: Item['id']): void
 }>()
 
-const { data: item } = useFetch<Item>(`/api/items/${transformItemId(props.itemId).encode()}`, {
+const { data: item } = useFetch<Item>(`/api/items/${itemId}`, {
     immediate: true,
     dedupe: 'defer',
 })
@@ -46,7 +46,7 @@ const { data: item } = useFetch<Item>(`/api/items/${transformItemId(props.itemId
                 variant="ghost"
                 size="sm"
                 :aria-label="$t('search.options.removeItem', { name: item.name })"
-                @click="emit('remove', props.itemId)"
+                @click="emit('remove', itemId)"
             />
         </template>
 

@@ -67,6 +67,7 @@ const { data, status, refresh } = await useFetch('/api/changelogs', {
                                     <USeparator />
 
                                     <LazyMDC
+                                        v-if="changelog.markdown"
                                         :value="changelog.markdown"
                                         :parser-options="{
                                             toc: false,

@@ -1,14 +1,4 @@
-export const transformItemId = (itemId: string) => {
-    const encode = () =>
-        itemId
-            .split('/')
-            .map((part) => encodeURIComponent(part))
-            .join('+')
-
-    const decode = () => decodeURIComponent(itemId).split('+').join('/')
-
-    return { encode, decode }
-}
+import { parseHost, parseURL, withoutTrailingSlash } from 'ufo'
 
 interface ExtractResult {
     id: string
@@ -20,43 +10,34 @@ const platformHandlers = [
     {
         domain: 'booth.pm',
         platform: 'booth' as Platform,
-        extractId: (url: URL): string | null => {
-            const match = url.pathname.match(/\/(?:[a-z]{2}\/)?items?\/(\d+)/)
-            return match?.[1] || null
+        extractId: (pathname: string): string | null => {
+            const match = pathname.match(/\/(?:[a-z]{2}\/)?items?\/(\d+)/)
+            return match?.[1] ?? null
         },
     },
     {
         domain: 'github.com',
         platform: 'github' as Platform,
-        extractId: (url: URL): string | null => {
-            if (url.hostname !== 'github.com') return null
-            const match = url.pathname.match(/^\/([^/]+\/[^/]+)\/?$/)
-            if (!match?.[1]) return null
-            return transformItemId(match[1]).encode()
+        extractId: (pathname: string): string | null => {
+            const match = withoutTrailingSlash(pathname).match(/^\/([^/]+\/[^/]+)$/)
+            return match?.[1] ?? null
         },
     },
 ]
 
 export default (url: string): ExtractResult | null => {
-    try {
-        const parsedUrl = new URL(url)
+    const parsed = parseURL(url, 'https://')
+    if (!parsed.host) return null
 
-        // 対応するプラットフォームを検索
-        for (const handler of platformHandlers) {
-            if (parsedUrl.hostname.endsWith(handler.domain)) {
-                const id = handler.extractId(parsedUrl)
-                if (id) return { id, platform: handler.platform }
+    const { hostname } = parseHost(parsed.host)
 
-                // IDが抽出できない場合はnullを返す
-                return null
-            }
+    for (const handler of platformHandlers)
+        if (hostname.endsWith(handler.domain)) {
+            const id = handler.extractId(parsed.pathname ?? '')
+            if (id) return { id, platform: handler.platform }
+            return null
         }
 
-        // サポートされていないプラットフォームの場合はnullを返す
-        return null
-    } catch (error) {
-        // URLのパースに失敗した場合はnullを返す
-        console.error('Failed to parse URL:', error)
-        return null
-    }
+    // サポートされていないプラットフォームの場合はnullを返す
+    return null
 }

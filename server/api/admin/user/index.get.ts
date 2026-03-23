@@ -1,12 +1,8 @@
-import type { UserWithRole } from 'better-auth/plugins'
 import { z } from 'zod'
 
 const querySchema = z.object({
     limit: z.coerce.number().min(1).optional(),
-    offset: z
-        .string()
-        .refine((val) => !isNaN(Number(val)))
-        .optional(),
+    offset: z.coerce.number().min(0).optional(),
     sortBy: z.enum(['createdAt', 'name']).optional().default('createdAt'),
     sortDirection: z.enum(['asc', 'desc']).optional().default('desc'),
     searchField: z.enum(['name', 'email']).optional(),
@@ -15,15 +11,29 @@ const querySchema = z.object({
 })
 
 export default adminSessionEventHandler(async () => {
-    const query = await validateQuery(querySchema)
-    const { headers } = useEvent()
+    const { limit, offset, sortBy, sortDirection, searchField, searchOperator, searchValue } =
+        await validateQuery(querySchema)
 
-    const result = (await auth.api.listUsers({ headers, query })) as {
-        users: UserWithRole[]
-        total: number
-        limit: number | undefined
-        offset: number | undefined
-    }
+    const result = await db.query.users.findMany({
+        limit,
+        offset,
+        orderBy: {
+            [sortBy]: sortDirection,
+        },
+        where: {
+            [searchField ?? 'name']: searchValue
+                ? { [searchOperator ?? 'contains']: searchValue }
+                : undefined,
+        },
+        with: {
+            badges: {
+                columns: {
+                    badge: true,
+                    createdAt: true,
+                },
+            },
+        },
+    })
 
     return result
 })

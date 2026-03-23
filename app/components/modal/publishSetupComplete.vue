@@ -2,9 +2,9 @@
 import confetti from 'canvas-confetti'
 
 interface Props {
-    setupId: number
+    setupId: Setup['id']
 }
-const props = defineProps<Props>()
+const { setupId } = defineProps<Props>()
 
 const open = defineModel<boolean>('open', { default: false })
 
@@ -14,9 +14,9 @@ const emit = defineEmits<{
 
 const { app } = useAppConfig()
 
-const link = `${app.site}/setup/${props.setupId}`
+const link = `${app.site}/setup/${setupId}`
 
-const { data } = await useSetup(props.setupId)
+const { data } = await useSetup(setupId)
 
 const { copy, copied, isSupported } = useClipboard({ source: link })
 
@@ -91,8 +91,8 @@ onMounted(() => {
                     @click="emit('continue')"
                 />
                 <UButton
-                    :to="props.setupId ? `/setup/${props.setupId}` : undefined"
-                    :disabled="!props.setupId"
+                    :to="setupId ? `/setup/${setupId}` : undefined"
+                    :disabled="!setupId"
                     trailing-icon="mingcute:arrow-right-line"
                     :label="$t('modal.publishComplete.viewSetup')"
                     color="neutral"
