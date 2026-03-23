@@ -30,7 +30,8 @@ export default defineCachedFunction(
                     },
                 },
             })
-            .catch(() => undefined),
+            .then((item) => item || null)
+            .catch(() => null),
     {
         maxAge: ITEM_DATABASE_CACHE_TTL,
         name: 'itemFromDatabase',
