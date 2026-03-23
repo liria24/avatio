@@ -85,7 +85,9 @@ const { locale } = useI18n()
                     <template #content>
                         <div class="flex items-center gap-1.5">
                             <Icon name="mingcute:group-2-fill" size="18" class="text-muted" />
-                            <span class="text-sm leading-none font-medium"> 共同作者 </span>
+                            <span class="text-sm leading-none font-medium">
+                                {{ $t('setup.viewer.coauthors') }}
+                            </span>
                         </div>
 
                         <div
