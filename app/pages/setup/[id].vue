@@ -13,7 +13,7 @@ const { toggle: toggleBookmarkAction, getBookmarkStatus } = useBookmarks()
 
 const id = useRouteParams('id', undefined, { transform: String })
 
-if (!id)
+if (!id.value)
     throw showError({
         status: 400,
         statusText: t('errors.invalidId'),
