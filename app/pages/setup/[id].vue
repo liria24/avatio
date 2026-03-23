@@ -2,7 +2,6 @@
 import { SetupsViewerItem } from '#components'
 
 const { app } = useAppConfig()
-const route = useRoute()
 const { t } = useI18n()
 const toast = useToast()
 const { session } = useAuth()
@@ -12,16 +11,15 @@ const { copy, copied } = useClipboard({ source: location.value.href })
 const { reportSetup, imageViewer, login, setupDelete, setupHide, setupUnhide } = useAppOverlay()
 const { toggle: toggleBookmarkAction, getBookmarkStatus } = useBookmarks()
 
-const id = Number(route.params.id)
+const id = useRouteParams('id', undefined, { transform: String })
 
-// Handle invalid IDs (null, undefined, NaN, etc.)
-if (!id || isNaN(id) || id <= 0)
+if (!id)
     throw showError({
         status: 400,
         statusText: t('errors.invalidId'),
     })
 
-const { data: setup, status } = await useSetup(id)
+const { data: setup, status } = await useSetup(id.value)
 
 if (status.value === 'error' || (status.value === 'success' && !setup.value))
     throw showError({
@@ -322,8 +320,8 @@ useSeo({
                 size="sm"
                 @click="
                     setup.hidAt
-                        ? setupUnhide.open({ setupId: setup.id })
-                        : setupHide.open({ setupId: setup.id })
+                        ? setupUnhide.open({ setupId: id })
+                        : setupHide.open({ setupId: id })
                 "
             />
 

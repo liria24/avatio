@@ -18,37 +18,37 @@ import {
 } from '#components'
 
 interface ModalSetupDelete {
-    setupId: number
+    setupId: Setup['id']
 }
 
 interface ModalSetupHide {
-    setupId: number
+    setupId: Setup['id']
 }
 
 interface ModalSetupUnhide {
-    setupId: number
+    setupId: Setup['id']
 }
 
 interface ModalReportSetup {
-    setupId: number
+    setupId: Setup['id']
 }
 
 interface ModalReportItem {
-    itemId: string
+    itemId: Item['id']
 }
 
 interface ModalReportUser {
-    userId: string
+    userId: User['id']
 }
 
 interface ModalBanUser {
-    userId: string
+    userId: User['id']
     name: string
     image?: string | null
 }
 
 interface ModalChangeItemNiceName {
-    itemId: string
+    itemId: Item['id']
     current: string
 }
 

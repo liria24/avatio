@@ -1,19 +1,22 @@
 <script setup lang="ts">
-interface Props {
-    setupId: number
-}
-const props = defineProps<Props>()
+import type { FetchResult } from '#app'
 
-const { data: setup, status } = await useFetch(`/api/setups/${props.setupId}`, {
-    dedupe: 'defer',
-})
+interface Props {
+    setupId: Setup['id']
+}
+const { setupId } = defineProps<Props>()
+
+const { data: setup, status } = await useFetch<FetchResult<'/api/setups/:id', 'get'>>(
+    `/api/setups/${setupId}`,
+    { dedupe: 'defer' },
+)
 </script>
 
 <template>
     <UButton
-        :to="setup?.id ? `/setup/${setup.id}` : undefined"
+        :to="`/setup/${setupId}`"
         target="_blank"
-        :disabled="status === 'pending' || !setup?.id"
+        :disabled="status === 'pending'"
         variant="outline"
         :prefetch="false"
         class="rounded-full"

@@ -1,4 +1,3 @@
-import type { TypedInternalResponse } from 'nitropack/types'
 import type { UseFetchOptions, FetchResult } from 'nuxt/app'
 
 import type { KeysOf } from '#app/composables/asyncData'
@@ -10,7 +9,7 @@ export const useSetup = <
     PickKeys extends KeysOf<DataT> = KeysOf<DataT>,
     DefaultT = undefined,
 >(
-    id: number,
+    id: Setup['id'],
     options?: UseFetchOptions<SetupRes, DataT, PickKeys, DefaultT, '/api/setups/:id', 'get'>,
 ) =>
     useFetch(`/api/setups/${id}` as '/api/setups/:id', {
@@ -24,7 +23,7 @@ export const useSetup = <
 export const useSetupsList = (
     type?: 'latest' | 'owned' | 'bookmarked',
     options?: {
-        username?: string
+        username?: User['username']
         query?: MaybeRef<Record<string, unknown>>
         immediate?: boolean
         watch?: UseFetchOptions<unknown>['watch']
@@ -36,7 +35,10 @@ export const useSetupsList = (
             `setups-state-${type || 'custom'}-${options?.username || ''}-${JSON.stringify(unref(options?.query) || {})}`,
     )
     const setups = useState<
-        Extract<TypedInternalResponse<'/api/setups'>, { data: unknown }>['data']
+        Extract<
+            NonNullable<FetchResult<'/api/setups', 'get'>>['data'][number],
+            { items: unknown }
+        >[]
     >(cacheKey.value, () => [])
 
     // Build query parameters

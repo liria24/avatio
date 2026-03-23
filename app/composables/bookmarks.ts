@@ -2,7 +2,7 @@ export const useBookmarks = () => {
     const { t } = useI18n()
     const toast = useToast()
 
-    const toggle = async (setupId: number, isBookmarked: boolean) => {
+    const toggle = async (setupId: Setup['id'], isBookmarked: boolean) => {
         try {
             if (!isBookmarked) {
                 await $fetch(`/api/setups/bookmarks/${setupId}`, {
@@ -34,7 +34,7 @@ export const useBookmarks = () => {
         }
     }
 
-    const getBookmarkStatus = async (setupId: number, immediate = true) => {
+    const getBookmarkStatus = async (setupId: Setup['id'], immediate = true) => {
         const { data, status, refresh } = await useFetch('/api/setups/bookmarks', {
             query: { setupId, limit: 1 },
             transform: (data) => data.data.length > 0,

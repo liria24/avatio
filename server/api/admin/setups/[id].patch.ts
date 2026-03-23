@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 
 const params = z.object({
-    id: z.union([z.string().transform((val) => Number(val)), z.number()]),
+    id: z.string(),
 })
 const body = z.object({
     hide: z.union([z.boolean(), z.stringbool()]).optional(),

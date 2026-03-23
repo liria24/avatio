@@ -113,7 +113,7 @@ export const useAdminActions = () => {
         }
     }
 
-    const hideSetup = async (setupId: number, hideReason?: string) => {
+    const hideSetup = async (setupId: Setup['id'], hideReason?: string) => {
         try {
             await $fetch(`/api/admin/setups/${setupId}`, {
                 method: 'PATCH',
@@ -137,7 +137,7 @@ export const useAdminActions = () => {
         }
     }
 
-    const unhideSetup = async (setupId: number) => {
+    const unhideSetup = async (setupId: Setup['id']) => {
         try {
             await $fetch(`/api/admin/setups/${setupId}`, {
                 method: 'PATCH',
@@ -158,7 +158,7 @@ export const useAdminActions = () => {
         }
     }
 
-    const deleteSetup = async (setupId: number) => {
+    const deleteSetup = async (setupId: Setup['id']) => {
         try {
             await $fetch(`/api/setups/${setupId}`, {
                 method: 'DELETE',

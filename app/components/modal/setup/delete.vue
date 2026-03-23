@@ -1,8 +1,8 @@
 <script setup lang="ts">
 interface Props {
-    setupId: number
+    setupId: Setup['id']
 }
-const props = defineProps<Props>()
+const { setupId } = defineProps<Props>()
 
 const emit = defineEmits(['close'])
 const localePath = useLocalePath()
@@ -10,7 +10,7 @@ const localePath = useLocalePath()
 const { deleteSetup: deleteSetupAction } = useAdminActions()
 
 const deleteSetup = async () => {
-    const success = await deleteSetupAction(props.setupId)
+    const success = await deleteSetupAction(setupId)
     if (success) {
         emit('close')
         navigateTo(localePath('/'))

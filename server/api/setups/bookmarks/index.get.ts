@@ -6,14 +6,7 @@ const query = z.object({
     orderBy: z.enum(['createdAt', 'name']).optional().default('createdAt'),
     sort: z.enum(['asc', 'desc']).optional().default('desc'),
     userId: z.string().optional(),
-    setupId: z
-        .union([
-            z.string().transform((val) => Number(val)),
-            z.number(),
-            z.array(z.string().transform((val) => Number(val))),
-            z.array(z.number()),
-        ])
-        .optional(),
+    setupId: z.union([z.string(), z.array(z.string())]).optional(),
     tag: z.union([z.string(), z.array(z.string())]).optional(),
     page: z.coerce.number().min(1).optional().default(1),
     limit: z.coerce

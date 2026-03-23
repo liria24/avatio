@@ -32,7 +32,7 @@ watch(
     { deep: true, flush: 'post' },
 )
 
-const publishedSetupId = ref<number | null>(null)
+const publishedSetupId = ref<Setup['id'] | null>(null)
 const modalPublishComplete = ref(false)
 const modalNewSetupConfirm = ref(false)
 
@@ -108,7 +108,7 @@ await initialize({
         : draftId
           ? draftId.toString()
           : undefined,
-    edit: Array.isArray(edit) ? Number(edit[0]) : edit ? Number(edit) : undefined,
+    edit: Array.isArray(edit) ? String(edit[0]) : edit ? String(edit) : undefined,
 })
 </script>
 

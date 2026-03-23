@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 
 const params = z.object({
-    id: z.union([z.string().transform((val) => Number(val)), z.number()]),
+    id: z.string(),
 })
 
 export default authedSessionEventHandler(
@@ -27,7 +27,7 @@ export default authedSessionEventHandler(
                 statusText: 'Forbidden',
             })
 
-        await db.delete(setups).where(eq(setups.id, Number(id)))
+        await db.delete(setups).where(eq(setups.id, id))
 
         const keys = await useStorage('cache').keys(`nitro:functions:setup:${id}`)
         await Promise.all(keys.map((key) => useStorage('cache').del(key)))

@@ -1,11 +1,11 @@
 import { z } from 'zod'
 
 const params = z.object({
-    id: z.union([z.string().transform((val) => Number(val)), z.number()]),
+    id: z.string(),
 })
 
 const getSetup = defineCachedFunction(
-    async (id: number, session: Session | undefined) => {
+    async (id: Setup['id'], session: Session | undefined) => {
         const data = await db.query.setups.findFirst({
             where: {
                 id: { eq: id },
@@ -274,7 +274,7 @@ const getSetup = defineCachedFunction(
     {
         maxAge: SETUP_CACHE_TTL,
         name: 'setup',
-        getKey: (id: number, session: Session | undefined) =>
+        getKey: (id: Setup['id'], session: Session | undefined) =>
             `${id}${session ? `:${session.user.id}` : ''}`,
         swr: false,
     },

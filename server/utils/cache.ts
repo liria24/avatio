@@ -1,4 +1,4 @@
-export const purgeSetupCache = async (id: number) => {
+export const purgeSetupCache = async (id: Setup['id']) => {
     const keys = await useStorage('cache').keys(`nitro:functions:setup:${id}`)
     await Promise.all([
         useStorage('cache').del(`nitro:functions:setup:${id}.json`),

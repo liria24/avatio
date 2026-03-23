@@ -1,10 +1,8 @@
 import type { z } from 'zod'
 
-type Schema = {
-    [K in keyof z.infer<typeof setupsClientFormSchema>]: NonNullable<
-        z.infer<typeof setupsClientFormSchema>[K]
-    >
-}
+import type { FetchResult } from '#app'
+
+type Schema = DeepNonNullable<z.infer<typeof setupsClientFormSchema>>
 
 type DraftStatus = 'new' | 'restoring' | 'restored' | 'unsaved' | 'saving' | 'saved' | 'error'
 
@@ -27,7 +25,7 @@ export const useSetupCompose = () => {
 
     // State - using useState for cross-component sharing
     const publishing = useState('setup-compose-publishing', () => false)
-    const editingSetupId = useState<number | null>('setup-compose-editing-id', () => null)
+    const editingSetupId = useState<Setup['id'] | null>('setup-compose-editing-id', () => null)
     const imageUploading = useState('setup-compose-image-uploading', () => false)
     const skipDraftSave = useState('setup-compose-skip-draft', () => false)
 
@@ -65,7 +63,12 @@ export const useSetupCompose = () => {
                       const user = await $fetch<Serialized<User>>(`/api/users/${coauthor.userId}`)
                       return {
                           userId: coauthor.userId,
-                          user: { ...user, createdAt: new Date(user.createdAt) },
+                          user: {
+                              ...user,
+                              createdAt: new Date(user.createdAt),
+                              name: user.name ?? '',
+                              image: user.image ?? '',
+                          },
                           note: coauthor.note || '',
                       }
                   }),
@@ -98,7 +101,15 @@ export const useSetupCompose = () => {
                 if (!item) continue
                 const category = (item.category || 'other') as keyof typeof state.value.items
                 const targetCategory = state.value.items[category] ? category : 'other'
-                state.value.items[targetCategory].push({ ...item, category: targetCategory })
+                state.value.items[targetCategory].push({
+                    ...item,
+                    category: targetCategory,
+                    image: item.image ?? '',
+                    niceName: item.niceName ?? '',
+                    price: item.price ?? '',
+                    likes: item.likes ?? 0,
+                    shop: item.shop ? { ...item.shop, image: item.shop.image ?? '' } : undefined,
+                })
             }
         }
     }
@@ -142,38 +153,59 @@ export const useSetupCompose = () => {
         }
     }
 
-    const loadSetup = async (setupId: number) => {
+    const loadSetup = async (setupId: Setup['id']) => {
         skipDraftSave.value = true
         try {
-            const setup = await $fetch<Setup>(`/api/setups/${setupId}`)
-            state.value.name = setup.name
-            state.value.description = setup.description || ''
-            state.value.images = setup.images?.map((image) => image.url) || []
-            state.value.tags = setup.tags || []
-            state.value.coauthors = setup.coauthors
+            const setup = await $fetch<FetchResult<'/api/setups/:id', 'get'>>(
+                `/api/setups/${setupId}`,
+            )
+            state.value.name = setup?.name || ''
+            state.value.description = setup?.description || ''
+            state.value.images = setup?.images?.map((image) => image.url) || []
+            state.value.tags = setup?.tags || []
+            state.value.coauthors = setup?.coauthors
                 ? setup.coauthors.map((coauthor) => ({
                       userId: coauthor.user.id,
-                      user: coauthor.user,
+                      user: {
+                          ...coauthor.user,
+                          name: coauthor.user.name ?? '',
+                          image: coauthor.user.image ?? '',
+                      },
                       note: coauthor.note || '',
                   }))
                 : []
 
             state.value.items = initializeItems()
-            for (const item of setup.items) {
+            for (const item of setup?.items || []) {
                 const category = item.category as keyof typeof state.value.items
                 if (category in state.value.items) {
-                    state.value.items[category].push(item)
+                    state.value.items[category].push({
+                        ...item,
+                        image: item.image ?? '',
+                        niceName: item.niceName ?? '',
+                        price: item.price ?? '',
+                        likes: item.likes ?? 0,
+                        shop: item.shop
+                            ? { ...item.shop, image: item.shop.image ?? '' }
+                            : undefined,
+                        shapekeys: item.shapekeys?.map((sk) => ({
+                            name: sk.name,
+                            value: sk.value,
+                        })),
+                        note: item.note ?? undefined,
+                        unsupported: item.unsupported ?? undefined,
+                    })
                 } else {
                     console.warn('Invalid item category:', item.category)
                 }
             }
-            editingSetupId.value = setup.id
+            editingSetupId.value = setup?.id || null
         } finally {
             skipDraftSave.value = false
         }
     }
 
-    const initialize = async (args: { draftId?: string; edit?: number }) => {
+    const initialize = async (args: { draftId?: string; edit?: Setup['id'] }) => {
         // Load from draft
         if (args.draftId) {
             await loadDraft(args.draftId)
@@ -226,7 +258,7 @@ export const useSetupCompose = () => {
         }
     }
 
-    const publish = async (): Promise<number | undefined> => {
+    const publish = async (): Promise<Setup['id'] | undefined> => {
         if (publishing.value) return
 
         publishing.value = true
@@ -417,7 +449,11 @@ export const useSetupCompose = () => {
             return
         }
 
-        state.value.coauthors.push({ userId: user.id, user, note: '' })
+        state.value.coauthors.push({
+            userId: user.id,
+            user: { ...user, name: user.name ?? '', image: user.image ?? '' },
+            note: '',
+        })
     }
 
     const removeCoauthor = (username: string) => {
@@ -458,7 +494,7 @@ export const useSetupCompose = () => {
         Object.values(state.value.items).reduce((total, category) => total + category.length, 0),
     )
 
-    const isItemAlreadyAdded = (itemId: string): boolean =>
+    const isItemAlreadyAdded = (itemId: Item['id']): boolean =>
         Object.values(state.value.items).some((category) =>
             category.some((item) => item.id === itemId),
         )
@@ -492,10 +528,15 @@ export const useSetupCompose = () => {
             category: targetCategory,
             note: '',
             unsupported: false,
+            image: item.image ?? '',
+            niceName: item.niceName ?? '',
+            price: item.price ?? '',
+            likes: item.likes ?? 0,
+            shop: item.shop ? { ...item.shop, image: item.shop.image ?? '' } : undefined,
         })
     }
 
-    const removeItem = (category: string, id: string) => {
+    const removeItem = (category: ItemCategory, id: Item['id']) => {
         const categoryKey = category as keyof typeof state.value.items
         if (!(categoryKey in state.value.items)) {
             console.error('Invalid category:', category)
@@ -510,7 +551,7 @@ export const useSetupCompose = () => {
         }
     }
 
-    const changeItemCategory = (id: string, newCategory: ItemCategory) => {
+    const changeItemCategory = (id: Item['id'], newCategory: ItemCategory) => {
         const newCategoryKey = newCategory as keyof typeof state.value.items
         if (!(newCategoryKey in state.value.items)) {
             console.error('Invalid new category:', newCategory)
@@ -534,7 +575,12 @@ export const useSetupCompose = () => {
         console.warn('Item not found:', id)
     }
 
-    const addShapekey = (opts: { category: string; id: string; name: string; value: number }) => {
+    const addShapekey = (opts: {
+        category: ItemCategory
+        id: Item['id']
+        name: string
+        value: number
+    }) => {
         const categoryKey = opts.category as keyof typeof state.value.items
         if (!(categoryKey in state.value.items)) {
             console.error('Invalid category:', opts.category)
@@ -551,7 +597,7 @@ export const useSetupCompose = () => {
         item.shapekeys.push({ name: opts.name, value: opts.value })
     }
 
-    const removeShapekey = (opts: { category: string; id: string; index: number }) => {
+    const removeShapekey = (opts: { category: ItemCategory; id: Item['id']; index: number }) => {
         const categoryKey = opts.category as keyof typeof state.value.items
         if (!(categoryKey in state.value.items)) {
             console.error('Invalid category:', opts.category)
