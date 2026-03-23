@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 const emit = defineEmits<{
-    (e: 'select', id: string): void
+    (e: 'select', id: Item['id']): void
 }>()
 
 const { data: popularAvatars } = await useFetch('/api/items/popular-avatars', {

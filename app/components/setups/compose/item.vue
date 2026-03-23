@@ -5,7 +5,7 @@ const unsupported = defineModel<boolean>('unsupported', {
 const shapekeys = defineModel<SetupItemShapekey[]>('shapekeys', {
     default: [],
 })
-const note = defineModel<string | null | undefined>('note', {
+const note = defineModel<string | undefined>('note', {
     default: '',
 })
 
