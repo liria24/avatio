@@ -13,14 +13,12 @@ export default async function middleware(request: Request) {
         const url = new URL(request.url)
         const path = url.pathname
 
-        // メンテナンスモード時、メンテナンスページへリダイレクト
         if (isMaintenance && path !== '/on-maintenance')
             return new Response(null, {
                 status: 307,
                 headers: { Location: '/on-maintenance' },
             })
 
-        // メンテナンスモードでない時、メンテナンスページからリダイレクト
         if (!isMaintenance && path === '/on-maintenance')
             return new Response(null, {
                 status: 307,
@@ -28,6 +26,5 @@ export default async function middleware(request: Request) {
             })
     } catch (error) {
         console.error('Error in maintenance middleware:', error)
-        // エラー時はリクエストを続行
     }
 }

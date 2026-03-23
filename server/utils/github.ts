@@ -1,28 +1,26 @@
 import { z } from 'zod'
 
-const validateRepo = (repo: string) => {
-    const idSchema = z
+const unghUrl = 'https://ungh.cc'
+
+const validateRepo = (repo: string) =>
+    z
         .string()
         .min(1)
         .regex(/^[\w-]+\/[\w.-]+$/)
+        .safeParse(repo).success
 
-    return idSchema.safeParse(repo).success
-}
-
-const validateUser = (username: string) => {
-    const idSchema = z
+const validateUser = (username: string) =>
+    z
         .string()
         .min(1)
         .regex(/^[\w-]+$/)
-
-    return idSchema.safeParse(username).success
-}
+        .safeParse(username).success
 
 export const getGithubRepo = defineCachedFunction(
     async (repo: string) => {
         if (!validateRepo(repo)) return null
 
-        const response = await $fetch<GithubRepo>(`https://ungh.cc/repos/${repo}`).catch(() => null)
+        const response = await $fetch<GithubRepo>(`${unghUrl}/repos/${repo}`).catch(() => null)
         return response
     },
     {
@@ -36,7 +34,7 @@ export const getGithubContributors = defineCachedFunction(
         if (!validateRepo(repo)) return null
 
         const response = await $fetch<GithubContributors>(
-            `https://ungh.cc/repos/${repo}/contributors`,
+            `${unghUrl}/repos/${repo}/contributors`,
         ).catch(() => null)
         return response
     },
@@ -51,7 +49,7 @@ export const getGithubLatestRelease = defineCachedFunction(
         if (!validateRepo(repo)) return null
 
         const response = await $fetch<GithubLatestRelease>(
-            `https://ungh.cc/repos/${repo}/releases/latest`,
+            `${unghUrl}/repos/${repo}/releases/latest`,
         ).catch(() => null)
         return response
     },
@@ -64,9 +62,7 @@ export const getGithubLatestRelease = defineCachedFunction(
 export const getGithubReadme = async (repo: string) => {
     if (!validateRepo(repo)) return null
 
-    const response = await $fetch<GithubReadme>(`https://ungh.cc/repos/${repo}/readme`).catch(
-        () => null,
-    )
+    const response = await $fetch<GithubReadme>(`${unghUrl}/repos/${repo}/readme`).catch(() => null)
     return response
 }
 
@@ -74,9 +70,7 @@ export const getGithubUser = defineCachedFunction(
     async (username: string) => {
         if (!validateUser(username)) return null
 
-        const response = await $fetch<GithubUser>(`https://ungh.cc/users/${username}`).catch(
-            () => null,
-        )
+        const response = await $fetch<GithubUser>(`${unghUrl}/users/${username}`).catch(() => null)
         return response
     },
     {
