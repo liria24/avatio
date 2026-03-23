@@ -314,7 +314,9 @@
             "tagDuplicate": "タグを重複して追加することはできません",
             "coauthorDuplicate": "共同作者を重複して追加することはできません",
             "itemAlreadyAdded": "アイテムはすでに追加されています",
-            "draftRestored": "編集途中の下書きが見つかったため復元されました"
+            "draftRestored": "編集途中の下書きが見つかったため復元されました",
+            "limitedPublic": "限定公開",
+            "limitedPublicDescription": "URLを知っている人だけ閲覧可能になります"
         },
         "viewer": {
             "show": "セットアップを表示",
@@ -339,7 +341,9 @@
             "editedAt": "に編集",
             "coauthors": "共同作者",
             "editing": "編集中",
-            "untitled": "無題"
+            "untitled": "無題",
+            "limitedPublic": "限定公開",
+            "limitedPublicDescription": "このセットアップはURLを知っている人だけが閲覧できます。"
         }
     },
     "changelogs": {

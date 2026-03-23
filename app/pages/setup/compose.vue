@@ -129,7 +129,9 @@ await initialize({
                 )
             "
         >
-            <div class="sticky inset-x-0 top-0 z-1 flex flex-col gap-2 p-2 backdrop-blur-lg lg:p-5">
+            <div
+                class="sticky inset-x-0 top-0 z-1 flex flex-col gap-2 p-2 backdrop-blur-lg lg:p-5 lg:pb-2"
+            >
                 <div class="flex items-center gap-2">
                     <UButton
                         type="submit"
@@ -199,11 +201,19 @@ await initialize({
                 <SetupsComposeEditingSetup v-if="editingSetupId" :setup-id="editingSetupId" />
             </div>
 
-            <div class="flex flex-col gap-8 p-2 pt-2 lg:p-5">
+            <div class="flex flex-col gap-8 p-2 lg:p-5">
                 <div
                     class="grid grid-flow-row gap-6 sm:grid-cols-2 lg:grid-flow-row lg:grid-cols-1"
                 >
                     <div class="flex flex-col gap-4">
+                        <USwitch
+                            :model-value="!state.public"
+                            :label="$t('setup.compose.limitedPublic')"
+                            :description="$t('setup.compose.limitedPublicDescription')"
+                            color="neutral"
+                            @update:model-value="(val) => (state.public = !val)"
+                        />
+
                         <SetupsComposeImages />
 
                         <UFormField name="name" :label="$t('setup.compose.nameLabel')" required>

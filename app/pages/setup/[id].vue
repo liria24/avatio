@@ -91,6 +91,8 @@ onBeforeRouteLeave(() => {
     setupDelete.close()
 })
 
+if (!setup.value?.public) useSeoMeta({ robots: 'noindex, nofollow' })
+
 useSeo({
     title: `${setup.value?.name} @${setup.value?.user.name}`,
     description: setup.value?.description || undefined,

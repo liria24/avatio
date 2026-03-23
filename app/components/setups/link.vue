@@ -109,7 +109,7 @@ const dominantColor = computed(() => firstImage.value?.themeColors?.[0] || '')
                         />
                     </PopoverUser>
 
-                    <UTooltip :delay-duration="0">
+                    <UTooltip :delay-duration="100">
                         <NuxtTime
                             :datetime="setup.createdAt"
                             relative
@@ -125,6 +125,14 @@ const dominantColor = computed(() => firstImage.value?.themeColors?.[0] || '')
                                 :locale
                             />
                         </template>
+                    </UTooltip>
+
+                    <UTooltip
+                        v-if="!setup.public"
+                        :text="$t('setup.viewer.limitedPublic')"
+                        :delay-duration="100"
+                    >
+                        <Icon name="mingcute:lock-fill" size="14" class="text-muted" />
                     </UTooltip>
                 </div>
             </div>

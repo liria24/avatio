@@ -316,6 +316,7 @@ export const setups = pgTable(
         createdAt: timestamp('created_at').defaultNow().notNull(),
         updatedAt: timestamp('updated_at').defaultNow().notNull(),
         userId: text('user_id').notNull(),
+        public: boolean().default(true).notNull(),
         name: text().notNull(),
         description: text(),
         hidAt: timestamp('hid_at'),

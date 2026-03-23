@@ -14,6 +14,10 @@ export default defineSitemapEventHandler(async () => {
     const setups = await db.query.setups.findMany({
         where: {
             hidAt: { isNull: true },
+            public: { eq: true },
+            user: {
+                OR: [{ banned: { eq: false } }, { banned: { isNull: true } }],
+            },
         },
         columns: {
             id: true,

@@ -30,6 +30,8 @@ export default sessionEventHandler(async ({ session }) => {
 
     const offset = (page - 1) * limit
 
+    const shouldShowPrivate = (bookmarked && session) || session?.user.username === username
+
     const data = await db.query.setups.findMany({
         extras: {
             count: sql<number>`CAST(COUNT(*) OVER() AS INTEGER)`,
@@ -38,6 +40,7 @@ export default sessionEventHandler(async ({ session }) => {
         offset,
         where: {
             hidAt: { isNull: true },
+            public: shouldShowPrivate ? undefined : { eq: true },
             user: {
                 OR: [{ banned: { eq: false } }, { banned: { isNull: true } }],
                 username: username ? { eq: username } : undefined,
@@ -64,6 +67,7 @@ export default sessionEventHandler(async ({ session }) => {
             id: true,
             createdAt: true,
             updatedAt: true,
+            public: true,
             name: true,
             hidAt: true,
         },

@@ -266,6 +266,7 @@ export const setupsClientFormSchema = createInsertSchema(setups, {
     description: (schema) => schema.max(512, '説明文は最大 512 文字です。').optional(),
 })
     .pick({
+        public: true,
         name: true,
         description: true,
     })
@@ -326,6 +327,7 @@ export const setupsPublicSchema = setupsSelectSchema
         id: true,
         createdAt: true,
         updatedAt: true,
+        public: true,
         name: true,
         description: true,
         hidAt: true,
@@ -348,6 +350,7 @@ export type Setup = z.infer<typeof setupsPublicSchema>
 
 export const setupDraftContentSchema = setupsInsertSchema
     .pick({
+        public: true,
         name: true,
         description: true,
         tags: true,

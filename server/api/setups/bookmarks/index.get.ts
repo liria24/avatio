@@ -58,6 +58,7 @@ export default authedSessionEventHandler<PaginationResponse<Bookmark[]>>(async (
                     id: true,
                     createdAt: true,
                     updatedAt: true,
+                    public: true,
                     name: true,
                     description: true,
                     hidAt: true,

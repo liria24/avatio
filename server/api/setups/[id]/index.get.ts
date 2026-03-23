@@ -17,6 +17,7 @@ const getSetup = defineCachedFunction(
                 id: true,
                 createdAt: true,
                 updatedAt: true,
+                public: true,
                 name: true,
                 description: true,
                 hidAt: true,

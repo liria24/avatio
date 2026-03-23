@@ -166,5 +166,18 @@ const { locale } = useI18n()
                 @click="navigateTo(`/search?tag=${tag}`)"
             />
         </div>
+
+        <UAlert
+            v-if="!setup.public"
+            icon="mingcute:lock-fill"
+            :title="$t('setup.viewer.limitedPublic')"
+            :description="$t('setup.viewer.limitedPublicDescription')"
+            variant="subtle"
+            color="neutral"
+            :ui="{
+                title: 'leading-none text-nowrap',
+                description: 'text-xs text-muted sentence',
+            }"
+        />
     </div>
 </template>

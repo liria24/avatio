@@ -38,6 +38,7 @@ export const useSetupCompose = () => {
     )
 
     const state = useState<Schema>('setup-compose-state', () => ({
+        public: true,
         name: '',
         description: '',
         images: [],
@@ -52,6 +53,7 @@ export const useSetupCompose = () => {
     }
 
     const applyDraftData = async (content: SetupDraftContent) => {
+        state.value.public = content.public ?? true
         state.value.name = content.name || ''
         state.value.description = content.description || ''
         state.value.images = content.images || []
@@ -159,6 +161,7 @@ export const useSetupCompose = () => {
             const setup = await $fetch<FetchResult<'/api/setups/:id', 'get'>>(
                 `/api/setups/${setupId}`,
             )
+            state.value.public = setup.public
             state.value.name = setup?.name || ''
             state.value.description = setup?.description || ''
             state.value.images = setup?.images?.map((image) => image.url) || []
@@ -275,6 +278,7 @@ export const useSetupCompose = () => {
                 }))
 
             const body = {
+                public: state.value.public,
                 name: state.value.name,
                 description: state.value.description,
                 items,
@@ -312,7 +316,9 @@ export const useSetupCompose = () => {
                 })
             }
 
-            return response.id
+            const setupId = response.id
+            reset()
+            return setupId
         } catch (error) {
             const isEditing = editingSetupId.value !== null
             console.error(isEditing ? 'Failed to update setup:' : 'Failed to submit setup:', error)
@@ -334,6 +340,7 @@ export const useSetupCompose = () => {
     }
 
     const reset = () => {
+        state.value.public = true
         state.value.name = ''
         state.value.description = ''
         state.value.images = []
@@ -366,6 +373,7 @@ export const useSetupCompose = () => {
                 }))
 
             const content: SetupDraftContent = {
+                public: state.value.public,
                 name: state.value.name || undefined,
                 description: state.value.description || undefined,
                 images: state.value.images.length ? state.value.images : undefined,
@@ -409,6 +417,7 @@ export const useSetupCompose = () => {
             state.value.images.length ||
             state.value.tags.length ||
             state.value.coauthors.length ||
+            state.value.public !== true ||
             Object.values(state.value.items).some((items) => items.length),
         ),
     )

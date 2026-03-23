@@ -11,9 +11,15 @@ const body = setupsInsertSchema
 
 export default authedSessionEventHandler(
     async ({ session }) => {
-        const { name, description, items, images, tags, coauthors } = await validateBody(body, {
-            sanitize: true,
-        })
+        const {
+            public: isPublic,
+            name,
+            description,
+            items,
+            images,
+            tags,
+            coauthors,
+        } = await validateBody(body, { sanitize: true })
 
         const imageData = await Promise.all(
             (images || []).map(async (url) => {
@@ -32,6 +38,7 @@ export default authedSessionEventHandler(
                 .insert(setups)
                 .values({
                     userId: session.user.id,
+                    public: isPublic,
                     name,
                     description,
                 })

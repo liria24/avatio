@@ -314,7 +314,9 @@
             "tagDuplicate": "Cannot add duplicate tags",
             "coauthorDuplicate": "Cannot add duplicate co-authors",
             "itemAlreadyAdded": "Item already added",
-            "draftRestored": "Found and restored draft in progress"
+            "draftRestored": "Found and restored draft in progress",
+            "limitedPublic": "Limited Access",
+            "limitedPublicDescription": "Only people with the URL can view this setup."
         },
         "viewer": {
             "show": "Show Setup",
@@ -339,7 +341,9 @@
             "editedAt": " edited",
             "coauthors": "Co-authors",
             "editing": "Editing",
-            "untitled": "Untitled"
+            "untitled": "Untitled",
+            "limitedPublic": "Limited Access",
+            "limitedPublicDescription": "Only people with the URL can view this setup."
         }
     },
     "changelogs": {
