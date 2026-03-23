@@ -1,7 +1,5 @@
 <script setup lang="ts">
 const { session } = useAuth()
-const route = useRoute()
-const router = useRouter()
 const { login } = useAppOverlay()
 const { t, locale } = useI18n()
 
@@ -18,19 +16,18 @@ const { data: titles } = useFetch('/api/changelogs', {
 
 type Tab = 'latest' | 'owned' | 'bookmarked'
 
-const tab = ref<Tab>((route.query.tab as Tab) || 'latest')
+const _tab = useRouteQuery<Tab | null>('tab', null, { mode: 'push' })
 
-const changeTab = (newTab: Tab) => {
-    router.push({ query: { tab: newTab !== 'latest' ? newTab : undefined } })
-}
-
-watch(
-    () => route.query.tab,
-    (newTab) => {
-        if (newTab === 'latest' || newTab === 'owned' || newTab === 'bookmarked') tab.value = newTab
-        else tab.value = 'latest'
+const tab = computed<Tab>({
+    get() {
+        const val = _tab.value
+        if (val === 'owned' || val === 'bookmarked') return val
+        return 'latest'
     },
-)
+    set(newTab: Tab) {
+        _tab.value = newTab !== 'latest' ? newTab : null
+    },
+})
 
 useSeo({
     title: t('index.seo.title'),
@@ -104,7 +101,7 @@ useSeo({
                     active-variant="solid"
                     color="neutral"
                     class="px-4 py-2"
-                    @click="changeTab('latest')"
+                    @click="tab = 'latest'"
                 />
                 <UButton
                     :label="$t('index.tabs.me')"
@@ -113,7 +110,7 @@ useSeo({
                     active-variant="solid"
                     color="neutral"
                     class="px-4 py-2"
-                    @click="changeTab('owned')"
+                    @click="tab = 'owned'"
                 />
                 <UButton
                     :label="$t('index.tabs.bookmarks')"
@@ -122,7 +119,7 @@ useSeo({
                     active-variant="solid"
                     color="neutral"
                     class="px-4 py-2"
-                    @click="changeTab('bookmarked')"
+                    @click="tab = 'bookmarked'"
                 />
             </div>
             <SetupsList :type="tab" />
