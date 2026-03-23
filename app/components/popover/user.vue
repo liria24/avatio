@@ -1,6 +1,11 @@
 <script lang="ts" setup>
 interface Props {
-    user: Serialized<User>
+    user: {
+        username: string
+        name: string
+        image: string | null
+        badges?: { badge: UserBadge }[]
+    }
 }
 const { user } = defineProps<Props>()
 

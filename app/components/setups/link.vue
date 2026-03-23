@@ -1,50 +1,20 @@
 <script lang="ts" setup>
 interface Props {
-    setup: Serialized<Setup>
+    setup: ReturnType<typeof useSetupsList>['setups']['value'][number]
 }
 const { setup } = defineProps<Props>()
 
 const { locale, t } = useI18n()
 
-const dominantColor = ref('')
-
-// アバター情報の取得
-const firstAvatar = computed(() => setup.items.find((item) => item.category === 'avatar'))
-
 const avatarName = computed(() =>
-    firstAvatar.value
-        ? firstAvatar.value.niceName || avatarShortName(firstAvatar.value.name)
+    setup.items.length && setup.items[0]
+        ? setup.items[0].niceName || avatarShortName(setup.items[0].name)
         : t('unknownAvatar'),
 )
 
-// 画像関連の処理
 const firstImage = computed(() => setup.images?.[0])
 const hasImages = computed(() => !!setup.images?.length)
-
-// 画像サイズの計算（幅360px以下に制限、アスペクト比維持）
-const imageSize = computed(() => {
-    const image = firstImage.value
-    if (!image) return { width: 0, height: 0 }
-
-    const maxWidth = 360
-    const { width, height } = image
-
-    if (width <= maxWidth) return { width, height }
-
-    const aspectRatio = height / width
-    return {
-        width: maxWidth,
-        height: Math.round(maxWidth * aspectRatio),
-    }
-})
-
-// テーマカラーの初期化
-const initializeThemeColor = () => {
-    const themeColors = firstImage.value?.themeColors
-    dominantColor.value = themeColors?.[0] || ''
-}
-
-initializeThemeColor()
+const dominantColor = computed(() => firstImage.value?.themeColors?.[0] || '')
 </script>
 
 <template>
@@ -63,16 +33,15 @@ initializeThemeColor()
         "
         :style="dominantColor ? { '--dominant-color': dominantColor } : undefined"
     >
-        <div v-if="hasImages" class="relative w-full">
+        <div v-if="hasImages" class="relative aspect-video max-h-105 w-full">
             <NuxtImg
                 :src="firstImage!.url"
                 :alt="setup.name"
-                :width="imageSize.width"
-                :height="imageSize.height"
+                width="360"
                 format="avif"
                 fit="cover"
                 preload
-                class="size-full max-h-105 rounded-lg object-cover"
+                class="size-full rounded-lg object-cover"
             />
             <div
                 :class="[
@@ -105,12 +74,13 @@ initializeThemeColor()
         <div class="flex w-full items-center gap-2">
             <UTooltip v-if="!hasImages" :text="avatarName" :delay-duration="100">
                 <NuxtImg
-                    v-if="firstAvatar"
-                    :src="firstAvatar.image || undefined"
+                    v-if="setup.items[0]"
+                    :src="setup.items[0].image || undefined"
                     alt=""
                     :width="88"
                     :height="88"
                     format="avif"
+                    preload
                     class="aspect-square size-14 shrink-0 rounded-lg object-cover md:size-20"
                 />
                 <div

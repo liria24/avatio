@@ -64,7 +64,6 @@ export default sessionEventHandler(async ({ session }) => {
             id: true,
             createdAt: true,
             updatedAt: true,
-            userId: true,
             name: true,
             hidAt: true,
         },
@@ -72,7 +71,6 @@ export default sessionEventHandler(async ({ session }) => {
             user: {
                 columns: {
                     username: true,
-                    createdAt: true,
                     name: true,
                     image: true,
                 },
@@ -107,6 +105,8 @@ export default sessionEventHandler(async ({ session }) => {
                 limit: 1,
                 columns: {
                     url: true,
+                    width: true,
+                    height: true,
                     themeColors: true,
                 },
             },
@@ -122,9 +122,7 @@ export default sessionEventHandler(async ({ session }) => {
                 with: {
                     user: {
                         columns: {
-                            id: true,
                             username: true,
-                            createdAt: true,
                             name: true,
                             image: true,
                         },
@@ -142,7 +140,7 @@ export default sessionEventHandler(async ({ session }) => {
                 ...item.item,
                 outdated: undefined,
             })),
-        failedItemsCount: setup.items.filter((item) => item.item.outdated).length,
+        failedItemsCount: setup.items.filter((item) => item.item.outdated).length || undefined,
         count: undefined,
     }))
 
