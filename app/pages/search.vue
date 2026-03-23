@@ -1,48 +1,38 @@
 <script lang="ts" setup>
-const route = useRoute()
-const router = useRouter()
+const { t } = useI18n()
 
-// 配列の正規化関数
-const normalizeArray = (value: unknown): string[] => {
-    if (Array.isArray(value))
-        return value.filter((item): item is string => typeof item === 'string')
-    return value ? [String(value)] : []
+const toArray = (val: string | string[] | null): string[] => {
+    if (Array.isArray(val)) return val
+    return val ? [String(val)] : []
 }
 
-// URLからの検索パラメータ（computed - 単一の情報源）
-const searchQuery = computed(() => (route.query.q as string) || '')
-const searchItemIds = computed(() => normalizeArray(route.query.itemId))
-const searchTags = computed(() => normalizeArray(route.query.tag))
+const q = useRouteQuery('q', '')
+const itemIds = useRouteQuery<string[]>('itemId', [], { transform: toArray })
+const tags = useRouteQuery<string[]>('tag', [], { transform: toArray })
 
-// 検索API用のqueryオブジェクト
+const searchStatus = ref<'idle' | 'pending' | 'success'>('idle')
+const collapsibleSearchOptions = ref(!!(itemIds.value.length || tags.value.length))
+
+// テキスト入力はdebounce付きでURL更新（historyの蓄積を防ぐため）
+const localQ = ref(q.value)
+watch(q, (val) => (localQ.value = val))
+const syncQ = useDebounceFn(() => (q.value = localQ.value), 300)
+
 const query = computed(() => ({
-    q: searchQuery.value,
-    itemId: searchItemIds.value,
-    tag: searchTags.value,
-    page: 1,
+    q: q.value,
+    itemId: itemIds.value,
+    tag: tags.value,
     limit: SETUP_SEARCH_PER_PAGE,
 }))
 
-const shouldShowDetails = computed(() => !!(searchItemIds.value.length || searchTags.value.length))
-const searchStatus = ref<'idle' | 'pending' | 'success'>('idle')
-const collapsibleSearchOptions = ref(shouldShowDetails.value)
-
-// ローカルの編集用state(URL更新前の一時的な値)
-const localQ = ref(searchQuery.value)
-const localItemIds = ref([...searchItemIds.value])
-const localTags = ref([...searchTags.value])
-
-const { setups, status, pagination, refresh } = useSetupsList(undefined, {
+const { setups, status, pagination, loadMore, refresh } = useSetupsList(undefined, {
     query,
     immediate: false,
     watch: false,
 })
 
 const search = async () => {
-    const hasSearchParams =
-        query.value.q.length || query.value.itemId.length || query.value.tag.length
-
-    if (!hasSearchParams) {
+    if (!q.value.length && !itemIds.value.length && !tags.value.length) {
         searchStatus.value = 'idle'
         setups.value = []
         return
@@ -53,60 +43,18 @@ const search = async () => {
     searchStatus.value = 'success'
 }
 
-const loadMoreSetups = async () => {
-    if (pagination.value?.hasNext) {
-        query.value.page += 1
-        await refresh()
-    }
-}
-
-// URLクエリパラメータを更新する関数（debounce付き）
-const updateRouteQuery = useDebounceFn(() => {
-    const queryParams: Record<string, string | string[] | number> = {}
-
-    if (localQ.value) queryParams.q = localQ.value
-    if (localItemIds.value.length) queryParams.itemId = localItemIds.value
-    if (localTags.value.length) queryParams.tag = localTags.value
-
-    router.push({
-        path: route.path,
-        query: queryParams,
-    })
-}, 300)
-
-// ローカルstateの変更を監視してURL更新をトリガー
+// URLの変化（戻る・進む含む）を監視して検索を実行
 watch(
-    [localItemIds, localTags],
+    [q, itemIds, tags],
     () => {
-        if (localItemIds.value.length) collapsibleSearchOptions.value = true
-        if (localTags.value.length) collapsibleSearchOptions.value = true
-        updateRouteQuery()
-    },
-    { deep: true },
-)
-
-// route.queryの変更を監視して検索を実行（戻る・進む対応）
-watch(
-    () => route.query,
-    () => {
-        // ローカルstateを同期
-        localQ.value = searchQuery.value
-        localItemIds.value = [...searchItemIds.value]
-        localTags.value = [...searchTags.value]
-
-        if (searchItemIds.value.length) collapsibleSearchOptions.value = true
-        if (searchTags.value.length) collapsibleSearchOptions.value = true
-
-        // 検索実行
+        if (itemIds.value.length) collapsibleSearchOptions.value = true
+        if (tags.value.length) collapsibleSearchOptions.value = true
         search()
     },
     { deep: true },
 )
 
-// 初期検索の実行
 await search()
-
-const { t } = useI18n()
 
 useSeo({
     title: t('search.title'),
@@ -129,41 +77,33 @@ useSeo({
                 :placeholder="$t('search.keyword')"
                 :aria-label="$t('search.keyword')"
                 size="xl"
-                @input="updateRouteQuery"
+                @input="syncQ"
             />
 
             <SetupsSearchOptions
                 v-model:open="collapsibleSearchOptions"
-                v-model:items="localItemIds"
-                v-model:tags="localTags"
+                v-model:items="itemIds"
+                v-model:tags="tags"
             />
         </div>
 
         <USeparator />
 
-        <!-- 人気アバター表示 -->
         <SetupsSearchPopularAvatars
             v-if="searchStatus === 'idle'"
-            @select="
-                (id) => {
-                    localItemIds.push(id)
-                    updateRouteQuery()
-                }
-            "
+            @select="(id) => (itemIds = [...itemIds, id])"
         />
 
-        <!-- 検索結果表示 -->
         <div v-else-if="setups.length" class="flex flex-col gap-2 lg:grid lg:grid-cols-1">
             <SetupsList v-model:setups="setups" v-model:status="status" />
             <UButton
                 v-if="pagination?.hasNext"
                 :loading="status === 'pending'"
                 :label="$t('more')"
-                @click="loadMoreSetups"
+                @click="loadMore"
             />
         </div>
 
-        <!-- ロード中 -->
         <Icon
             v-else-if="searchStatus === 'pending'"
             name="svg-spinners:ring-resize"
@@ -171,7 +111,6 @@ useSeo({
             class="text-muted self-center"
         />
 
-        <!-- 結果なし表示 -->
         <p v-else class="text-center text-zinc-700 dark:text-zinc-300">
             {{ $t('search.notFound') }}
         </p>
