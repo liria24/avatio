@@ -61,26 +61,29 @@ const { locale } = useI18n()
             </NuxtLink>
 
             <template v-if="setup.coauthors?.length">
-                <Icon name="mingcute:add-line" size="16" class="text-muted ml-3 shrink-0" />
-
                 <UPopover
                     :content="{ align: 'end' }"
                     :ui="{ content: 'flex flex-col gap-2 p-4 max-w-md rounded-lg' }"
                 >
-                    <UAvatarGroup
-                        size="sm"
-                        :max="2"
-                        :ui="{ base: '-ml-3' }"
-                        class="ml-3 cursor-pointer"
-                    >
-                        <UAvatar
-                            v-for="coAuthor in setup.coauthors.slice(0, 2)"
-                            :key="coAuthor.user.username"
-                            :src="coAuthor.user.image || undefined"
-                            alt=""
-                            icon="mingcute:user-3-fill"
-                        />
-                    </UAvatarGroup>
+                    <UTooltip :text="$t('setup.viewer.coauthors')" :delay-duration="100">
+                        <div class="flex cursor-pointer items-center gap-1">
+                            <Icon
+                                name="mingcute:add-line"
+                                size="16"
+                                class="text-muted ml-3 shrink-0"
+                            />
+
+                            <UAvatarGroup size="sm" :max="2" :ui="{ base: '-ml-3' }" class="ml-3">
+                                <UAvatar
+                                    v-for="coAuthor in setup.coauthors.slice(0, 2)"
+                                    :key="coAuthor.user.username"
+                                    :src="coAuthor.user.image || undefined"
+                                    alt=""
+                                    icon="mingcute:user-3-fill"
+                                />
+                            </UAvatarGroup>
+                        </div>
+                    </UTooltip>
 
                     <template #content>
                         <div class="flex items-center gap-1.5">
