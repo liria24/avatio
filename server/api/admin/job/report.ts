@@ -1,6 +1,4 @@
 export default cronEventHandler(async () => {
-    const config = useRuntimeConfig()
-
     const now = new Date()
     const yesterday = new Date()
     yesterday.setDate(yesterday.getDate() - 1)
@@ -145,15 +143,7 @@ export default cronEventHandler(async () => {
         }
 
         try {
-            await $fetch(config.liria.discordEndpoint, {
-                method: 'POST',
-                body: JSON.stringify({
-                    embeds: [embed, ...embedsFeedback],
-                }),
-                headers: {
-                    authorization: `Bearer ${config.liria.accessToken}`,
-                },
-            })
+            await sendDiscordNotification({ embeds: [embed, ...embedsFeedback] })
         } catch (error) {
             console.error('Failed to send Discord message:', error)
             throw createError({

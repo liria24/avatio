@@ -90,6 +90,7 @@ export default defineNuxtConfig({
         '@nuxt/a11y',
         '@vite-pwa/nuxt',
         '@vercel/analytics',
+        '@nuxt/test-utils/module',
     ],
 
     css: ['~/assets/css/main.css'],
@@ -158,8 +159,10 @@ export default defineNuxtConfig({
             secret: import.meta.env.BETTER_AUTH_SECRET,
         },
         liria: {
-            discordEndpoint: import.meta.env.LIRIA_DISCORD_ENDPOINT,
-            accessToken: import.meta.env.LIRIA_ACCESS_TOKEN,
+            discord: {
+                endpoint: import.meta.env.LIRIA_DISCORD_ENDPOINT,
+                accessToken: import.meta.env.LIRIA_DISCORD_ACCESS_TOKEN,
+            },
         },
         neon: {
             databaseUrl: import.meta.env.NEON_DATABASE_URL,

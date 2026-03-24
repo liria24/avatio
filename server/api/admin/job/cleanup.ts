@@ -52,7 +52,6 @@ const getStorageObjects = async (prefix: string): Promise<ImageInfo[]> => {
 }
 
 export default cronEventHandler(async ({ event }) => {
-    const config = useRuntimeConfig()
     const { dryRun: dryRunParam } = getQuery(event)
     const isDryRun = dryRunParam === 'true' || dryRunParam === '1'
 
@@ -172,55 +171,49 @@ export default cronEventHandler(async ({ event }) => {
     // 処理対象の画像がある場合のみDiscord通知を送信
     if (allImages.length > 0) {
         try {
-            await $fetch(config.liria.discordEndpoint, {
-                method: 'POST',
-                body: {
-                    embeds: [
-                        {
-                            title: 'Avatio Data Cleanup',
-                            description: message,
-                            color: 0xeeeeee,
-                            timestamp: new Date().toISOString(),
-                            fields: [
-                                {
-                                    name: 'Total Processed',
-                                    value: allImages.length.toString(),
-                                    inline: true,
-                                },
-                                {
-                                    name: 'Successfully Deleted',
-                                    value: successful.length.toString(),
-                                    inline: true,
-                                },
-                                {
-                                    name: 'Failed',
-                                    value: failed.length.toString(),
-                                    inline: true,
-                                },
-                                ...(failed.length
-                                    ? [
-                                          {
-                                              name: 'Failed Images',
-                                              value: failed
-                                                  .map((f) => `${f.key}: ${f.error}`)
-                                                  .join('\n')
-                                                  .slice(0, 1024),
-                                              inline: false,
-                                          },
-                                      ]
-                                    : []),
-                            ],
-                            author: {
-                                name: 'Avatio',
-                                url: 'https://avatio.me',
-                                icon_url: 'https://avatio.me/icon_outlined.png',
+            await sendDiscordNotification({
+                embeds: [
+                    {
+                        title: 'Avatio Data Cleanup',
+                        description: message,
+                        color: 0xeeeeee,
+                        timestamp: new Date().toISOString(),
+                        fields: [
+                            {
+                                name: 'Total Processed',
+                                value: allImages.length.toString(),
+                                inline: true,
                             },
+                            {
+                                name: 'Successfully Deleted',
+                                value: successful.length.toString(),
+                                inline: true,
+                            },
+                            {
+                                name: 'Failed',
+                                value: failed.length.toString(),
+                                inline: true,
+                            },
+                            ...(failed.length
+                                ? [
+                                      {
+                                          name: 'Failed Images',
+                                          value: failed
+                                              .map((f) => `${f.key}: ${f.error}`)
+                                              .join('\n')
+                                              .slice(0, 1024),
+                                          inline: false,
+                                      },
+                                  ]
+                                : []),
+                        ],
+                        author: {
+                            name: 'Avatio',
+                            url: 'https://avatio.me',
+                            icon_url: 'https://avatio.me/icon_outlined.png',
                         },
-                    ],
-                },
-                headers: {
-                    authorization: `Bearer ${config.liria.accessToken}`,
-                },
+                    },
+                ],
             })
         } catch (error) {
             console.error('Failed to send Discord notification:', error)
