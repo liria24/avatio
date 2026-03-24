@@ -69,16 +69,17 @@ const categorizedItems = computed(() => {
 
 const shareButtons = computed(() =>
     [
-        { network: 'x', icon: 'mingcute:social-x-fill' },
-        { network: 'bluesky', icon: 'mingcute:bluesky-social-fill' },
-        { network: 'line', icon: 'mingcute:line-app-fill' },
-    ].map(({ network, icon }) => ({
+        { network: 'x', icon: 'mingcute:social-x-fill', label: 'X' },
+        { network: 'bluesky', icon: 'mingcute:bluesky-social-fill', label: 'Bluesky' },
+        { network: 'line', icon: 'mingcute:line-app-fill', label: 'Line' },
+    ].map(({ network, icon, label }) => ({
         shareUrl: useSocialShare({
             network,
             title: setup.value?.name,
             image: setup.value?.images?.[0]?.url || undefined,
         }).value?.shareUrl,
         icon,
+        label,
     })),
 )
 
@@ -297,6 +298,7 @@ useSeo({
                     :to="share.shareUrl"
                     target="_blank"
                     external
+                    :aria-label="share.label"
                     :icon="share.icon"
                     variant="ghost"
                 />
