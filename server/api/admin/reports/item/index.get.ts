@@ -11,14 +11,11 @@ const query = z.object({
         .max(API_LIMIT_MAX)
         .optional()
         .default(ADMIN_REPORTS_API_DEFAULT_LIMIT),
-    isResolved: z
-        .union([z.union([z.boolean(), z.stringbool()]).array(), z.boolean(), z.stringbool()])
-        .transform((val) => (Array.isArray(val) ? val : [val]))
-        .optional(),
+    status: z.enum(['open', 'closed', 'all']).optional().default('all'),
 })
 
-export default adminSessionEventHandler<PaginationResponse<ItemReport[]>>(async () => {
-    const { sort, reporterId, page, limit, isResolved } = await validateQuery(query)
+export default adminSessionEventHandler(async () => {
+    const { sort, reporterId, page, limit, status } = await validateQuery(query)
 
     const offset = (page - 1) * limit
 
@@ -29,9 +26,7 @@ export default adminSessionEventHandler<PaginationResponse<ItemReport[]>>(async 
         where: {
             reporterId: reporterId ? { eq: reporterId } : undefined,
             isResolved:
-                isResolved !== undefined && isResolved.length === 1
-                    ? { eq: isResolved[0] }
-                    : undefined,
+                status === 'open' ? { eq: false } : status === 'closed' ? { eq: true } : undefined,
         },
         limit,
         offset,
@@ -59,7 +54,6 @@ export default adminSessionEventHandler<PaginationResponse<ItemReport[]>>(async 
                     price: true,
                     likes: true,
                     nsfw: true,
-                    outdated: true,
                 },
                 with: {
                     shop: {
@@ -77,36 +71,8 @@ export default adminSessionEventHandler<PaginationResponse<ItemReport[]>>(async 
                 columns: {
                     id: true,
                     username: true,
-                    createdAt: true,
                     name: true,
                     image: true,
-                    bio: true,
-                    links: true,
-                },
-                with: {
-                    badges: {
-                        columns: {
-                            badge: true,
-                            createdAt: true,
-                        },
-                    },
-                    shops: {
-                        columns: {
-                            id: true,
-                            createdAt: true,
-                        },
-                        with: {
-                            shop: {
-                                columns: {
-                                    id: true,
-                                    platform: true,
-                                    name: true,
-                                    image: true,
-                                    verified: true,
-                                },
-                            },
-                        },
-                    },
                 },
             },
         },

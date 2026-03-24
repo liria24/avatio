@@ -4,22 +4,15 @@ const query = z.object({
     q: z.string().optional(),
     orderBy: z.enum(['createdAt', 'name']).optional().default('createdAt'),
     sort: z.enum(['asc', 'desc']).optional().default('desc'),
-    username: z.string().optional(),
     limit: z.coerce.number().min(1).optional(),
-    containHidden: z.stringbool().optional().default(true),
 })
 
 export default adminSessionEventHandler(async () => {
-    const { q, orderBy, sort, username, limit, containHidden } = await validateQuery(query)
+    const { q, orderBy, sort, limit } = await validateQuery(query)
 
-    const result = await db.query.setups.findMany({
+    const result = await db.query.items.findMany({
         limit,
         where: {
-            hidAt: containHidden ? undefined : { isNull: true },
-            user: {
-                // OR: [{ banned: { eq: false } }, { banned: { isNull: true } }],
-                username: username ? { eq: username } : undefined,
-            },
             name: q ? { ilike: `%${q}%` } : undefined,
         },
         orderBy: {
@@ -27,23 +20,26 @@ export default adminSessionEventHandler(async () => {
         },
         columns: {
             id: true,
-            public: true,
             createdAt: true,
             updatedAt: true,
+            platform: true,
+            category: true,
             name: true,
-            hidAt: true,
+            niceName: true,
+            image: true,
+            price: true,
+            likes: true,
+            nsfw: true,
+            outdated: true,
         },
         with: {
-            user: {
+            shop: {
                 columns: {
-                    username: true,
+                    id: true,
+                    platform: true,
                     name: true,
                     image: true,
-                },
-            },
-            images: {
-                columns: {
-                    url: true,
+                    verified: true,
                 },
             },
         },

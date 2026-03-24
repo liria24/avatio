@@ -2,9 +2,8 @@
 const { app } = useAppConfig()
 const { session, revoke } = await useAuth()
 
-const { data } = await useFetch('/api/admin/stats', {
-    dedupe: 'defer',
-})
+const dev = import.meta.dev
+const vercelEnv = process.env.NUXT_ENV_VERCEL_TARGET_ENV
 </script>
 
 <template>
@@ -20,7 +19,7 @@ const { data } = await useFetch('/api/admin/stats', {
                 }"
             >
                 <template #header="{ collapsed }">
-                    <div :data-collapsed="collapsed" class="flex items-center gap-2 pl-2">
+                    <div :data-collapsed="collapsed" class="flex w-full items-center gap-2 pl-2">
                         <UButton
                             :to="$localePath('/admin')"
                             icon="avatio:avatio"
@@ -29,6 +28,21 @@ const { data } = await useFetch('/api/admin/stats', {
                             color="neutral"
                             size="sm"
                             class="text-highlighted gap-1.5 p-0 text-base font-extralight"
+                        />
+
+                        <UBadge
+                            v-if="dev"
+                            label="dev"
+                            variant="soft"
+                            size="sm"
+                            class="ml-auto font-mono"
+                        />
+                        <UBadge
+                            v-else-if="vercelEnv && vercelEnv !== 'production'"
+                            :label="vercelEnv"
+                            variant="soft"
+                            size="sm"
+                            class="ml-auto font-mono"
                         />
                     </div>
                 </template>
@@ -41,29 +55,21 @@ const { data } = await useFetch('/api/admin/stats', {
                                 label: 'Users',
                                 icon: 'mingcute:group-2-fill',
                                 to: '/admin/users',
-                                badge: data?.users || undefined,
                             },
                             {
                                 label: 'Setups',
                                 icon: 'mingcute:sparkles-fill',
                                 to: '/admin/setups',
-                                badge: data?.setups || undefined,
                             },
                             {
                                 label: 'Items',
                                 icon: 'mingcute:package-2-fill',
                                 to: '/admin/items',
-                                badge: data?.items || undefined,
                             },
                             {
                                 label: 'Changelogs',
                                 icon: 'mingcute:cube-fill',
                                 to: '/admin/changelogs',
-                            },
-                            {
-                                label: 'Audit Logs',
-                                icon: 'mingcute:terminal-box-fill',
-                                to: '/admin/audit-logs',
                             },
                         ]"
                         orientation="vertical"
@@ -77,7 +83,11 @@ const { data } = await useFetch('/api/admin/stats', {
                     />
 
                     <div class="grid gap-1">
-                        <span class="text-muted pl-2 text-[0.8rem]">Reports</span>
+                        <span
+                            class="text-muted pl-2 font-mono text-[0.8rem] leading-none text-nowrap"
+                        >
+                            Reports
+                        </span>
 
                         <UNavigationMenu
                             :collapsed
@@ -86,25 +96,38 @@ const { data } = await useFetch('/api/admin/stats', {
                                     label: 'Feedbacks',
                                     icon: 'mingcute:chat-3-fill',
                                     to: '/admin/feedbacks',
-                                    badge: data?.feedbacks || undefined,
                                 },
                                 {
-                                    label: 'Item',
-                                    icon: 'mingcute:package-2-fill',
-                                    to: '/admin/reports/item',
-                                    badge: data?.itemReports || undefined,
+                                    label: 'Reports',
+                                    icon: 'mingcute:flag-3-fill',
+                                    to: '/admin/reports',
                                 },
+                            ]"
+                            orientation="vertical"
+                            tooltip
+                            popover
+                            color="neutral"
+                            :ui="{
+                                link: 'gap-2.5 text-toned tracking-wide',
+                                linkLeadingIcon: 'size-4.25 text-toned',
+                            }"
+                        />
+                    </div>
+
+                    <div class="grid gap-1">
+                        <span
+                            class="text-muted pl-2 font-mono text-[0.8rem] leading-none text-nowrap"
+                        >
+                            Observability
+                        </span>
+
+                        <UNavigationMenu
+                            :collapsed
+                            :items="[
                                 {
-                                    label: 'Setup',
-                                    icon: 'mingcute:sparkles-fill',
-                                    to: '/admin/reports/setup',
-                                    badge: data?.setupReports || undefined,
-                                },
-                                {
-                                    label: 'User',
-                                    icon: 'mingcute:user-3-fill',
-                                    to: '/admin/reports/user',
-                                    badge: data?.userReports || undefined,
+                                    label: 'Audit Logs',
+                                    icon: 'mingcute:terminal-box-fill',
+                                    to: '/admin/audit-logs',
                                 },
                             ]"
                             orientation="vertical"
