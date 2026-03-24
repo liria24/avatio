@@ -16,6 +16,10 @@
         "postinstall": "nuxt prepare",
         "check": "vp check",
         "check:fix": "vp check --fix",
+        "test": "vp test",
+        "test:watch": "vp test --watch",
+        "test:unit": "vp test --project unit",
+        "test:nuxt": "vp test --project nuxt",
         "release": "npx bumpp",
         "drizzle:generate": "npx drizzle-kit generate",
         "changelogen": "npx changelogen --hideAuthorEmail"
@@ -70,9 +74,11 @@
     "devDependencies": {
         "@nuxt/a11y": "1.0.0-alpha.1",
         "@nuxt/hints": "1.0.2",
+        "@nuxt/test-utils": "^4.0.0",
         "@types/canvas-confetti": "1.9.0",
         "@types/node": "25.5.0",
         "@types/sanitize-html": "2.16.1",
+        "@vue/test-utils": "^2.4.6",
         "bumpp": "11.0.1",
         "drizzle-kit": "1.0.0-beta.19",
         "taze": "^19.10.0",

@@ -90,6 +90,7 @@ export default defineNuxtConfig({
         '@nuxt/a11y',
         '@vite-pwa/nuxt',
         '@vercel/analytics',
+        '@nuxt/test-utils/module',
     ],
 
     css: ['~/assets/css/main.css'],
