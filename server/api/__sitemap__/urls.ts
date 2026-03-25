@@ -1,16 +1,6 @@
 import type { SitemapUrlInput } from '#sitemap/types'
 
 export default defineSitemapEventHandler(async () => {
-    const permanent = [
-        {
-            loc: '/',
-            images: [{ loc: '/ogp_2.png' }],
-        },
-        { loc: '/faq' },
-        { loc: '/terms' },
-        { loc: '/privacy-policy' },
-    ]
-
     const setups = await db.query.setups.findMany({
         where: {
             hidAt: { isNull: true },
@@ -47,7 +37,6 @@ export default defineSitemapEventHandler(async () => {
     defineCacheControl({ cdnAge: 60 * 60, clientAge: 60 })
 
     return [
-        ...permanent,
         ...setups.map(
             (setup): SitemapUrlInput => ({
                 loc: `/setup/${setup.id}`,
