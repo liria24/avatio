@@ -7,12 +7,16 @@
         "type": "git",
         "url": "https://github.com/liria24/avatio.git"
     },
+    "workspaces": [
+        "packages/*"
+    ],
     "type": "module",
     "scripts": {
         "build": "nuxt build",
         "dev": "nuxt dev",
         "generate": "nuxt generate",
         "preview": "nuxt preview",
+        "preinstall": "bun run --filter '@avatio/bot-notifier' build",
         "postinstall": "nuxt prepare",
         "check": "vp check",
         "check:fix": "vp check --fix",
@@ -25,6 +29,7 @@
         "changelogen": "npx changelogen --hideAuthorEmail"
     },
     "dependencies": {
+        "@avatio/bot-notifier": "workspace:*",
         "@better-auth/drizzle-adapter": "1.5.6",
         "@iconify-json/fluent-color": "1.2.21",
         "@iconify-json/lucide": "1.2.98",

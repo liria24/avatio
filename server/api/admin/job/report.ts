@@ -1,3 +1,5 @@
+import { sendMessage } from '@avatio/bot-notifier'
+
 export default cronEventHandler(async () => {
     const now = new Date()
     const yesterday = new Date()
@@ -143,7 +145,7 @@ export default cronEventHandler(async () => {
         }
 
         try {
-            await sendDiscordNotification({ embeds: [embed, ...embedsFeedback] })
+            await sendMessage({ embeds: [embed, ...embedsFeedback] })
         } catch (error) {
             console.error('Failed to send Discord message:', error)
             throw createError({
