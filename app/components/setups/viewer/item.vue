@@ -19,11 +19,7 @@ const shopPath = computed(() =>
     withoutTrailingSlash(withoutProtocol(computeShopUrl(item.shop?.id, item.shop?.platform) || '')),
 )
 
-const providerIcons = {
-    booth: 'avatio:booth',
-    github: 'mingcute:github-fill',
-}
-const providerIcon = computed(() => providerIcons[item.platform])
+const providerIcon = computed(() => platformIcons[item.platform])
 </script>
 
 <template>

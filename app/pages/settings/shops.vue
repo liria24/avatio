@@ -21,11 +21,6 @@ const modalUnverify = ref(false)
 
 const { copy, copied } = useClipboard({ source: computed(() => code.value ?? '') })
 
-const url = (shopId: string, platform: string) => {
-    if (platform === 'booth') return `https://${shopId}.booth.pm`
-    return undefined
-}
-
 const verify = async () => {
     if (!verifiable.value) return
 
@@ -189,7 +184,7 @@ useSeo({
                 class="bg-muted flex items-center gap-3 rounded-lg p-3"
             >
                 <ULink
-                    :to="url(shopItem.shop.id, shopItem.shop.platform)"
+                    :to="computeShopUrl(shopItem.shop.id, shopItem.shop.platform)"
                     class="flex grow items-center gap-3"
                 >
                     <NuxtImg
@@ -208,8 +203,7 @@ useSeo({
                     </p>
 
                     <Icon
-                        v-if="shopItem.shop.platform === 'booth'"
-                        name="avatio:booth"
+                        :name="platformIcons[shopItem.shop.platform]"
                         size="16"
                         class="text-muted"
                     />
