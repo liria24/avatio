@@ -158,28 +158,6 @@ export const useAdminActions = () => {
         }
     }
 
-    const deleteSetup = async (setupId: Setup['id']) => {
-        try {
-            await $fetch(`/api/setups/${setupId}`, {
-                method: 'DELETE',
-            })
-            toast.add({
-                title: t('toast.admin.setupDeleted'),
-                description: t('toast.admin.setupDeleteDescription'),
-                color: 'success',
-            })
-            return true
-        } catch (error) {
-            toast.add({
-                title: t('toast.admin.setupDeleteFailed'),
-                description:
-                    error instanceof Error ? error.message : t('toast.reports.unknownError'),
-                color: 'error',
-            })
-            return false
-        }
-    }
-
     const toggleMaintenanceMode = async (isMaintenance: boolean) => {
         try {
             await $fetch('/api/admin/edge-config', {
@@ -293,7 +271,6 @@ export const useAdminActions = () => {
         openFeedback,
         hideSetup,
         unhideSetup,
-        deleteSetup,
         toggleMaintenanceMode,
         toggleForceUpdateItem,
         changeItemNiceName,

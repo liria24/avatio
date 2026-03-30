@@ -117,3 +117,31 @@ export const useSetupsList = (
         refresh: refreshData,
     }
 }
+
+export const useDeleteSetup = (setupId: Setup['id']) => {
+    const { t } = useI18n()
+    const toast = useToast()
+
+    const deleteSetup = async () => {
+        await $fetch(`/api/setups/${setupId}` as '/api/setups/:id', {
+            method: 'DELETE',
+            onResponseError({ error }) {
+                toast.add({
+                    title: t('toast.admin.setupDeleteFailed'),
+                    description:
+                        error instanceof Error ? error.message : t('toast.reports.unknownError'),
+                    color: 'error',
+                })
+            },
+        })
+        toast.add({
+            title: t('toast.admin.setupDeleted'),
+            description: t('toast.admin.setupDeleteDescription'),
+            color: 'success',
+        })
+    }
+
+    return {
+        deleteSetup,
+    }
+}

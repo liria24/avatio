@@ -7,14 +7,12 @@ const { setupId } = defineProps<Props>()
 const emit = defineEmits(['close'])
 const localePath = useLocalePath()
 
-const { deleteSetup: deleteSetupAction } = useAdminActions()
+const { deleteSetup: deleteSetupAction } = useDeleteSetup(setupId)
 
 const deleteSetup = async () => {
-    const success = await deleteSetupAction(setupId)
-    if (success) {
-        emit('close')
-        navigateTo(localePath('/'))
-    }
+    await deleteSetupAction()
+    emit('close')
+    navigateTo(localePath('/'))
 }
 </script>
 
