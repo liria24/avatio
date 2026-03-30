@@ -4,8 +4,9 @@ import { MasonryWall } from '@yeger/vue-masonry-wall'
 interface Props {
     type?: 'latest' | 'owned' | 'bookmarked'
     username?: string
+    includePrivate?: boolean
 }
-const { type, username } = defineProps<Props>()
+const { type, username, includePrivate } = defineProps<Props>()
 
 const { session } = useAuth()
 const { isMobile } = useDevice()
@@ -35,6 +36,7 @@ const initializePropsMode = async () => {
     const result = useSetupsList(type, {
         username: effectiveUsername,
         immediate: false,
+        query: type === 'owned' ? { includePrivate: includePrivate ?? false } : undefined,
     })
 
     propsResult.value = result
@@ -47,7 +49,7 @@ if (type) await initializePropsMode()
 
 // typeまたはusernameが変更されたら再初期化
 watch(
-    () => [type, username] as const,
+    () => [type, username, includePrivate] as const,
     async () => {
         if (type) await initializePropsMode()
     },

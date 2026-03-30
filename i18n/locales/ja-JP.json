@@ -194,6 +194,7 @@
             "me": "自分の投稿",
             "bookmarks": "ブックマーク"
         },
+        "showPrivate": "限定公開を表示",
         "seo": {
             "title": "Avatio",
             "description": "あなたのアバター改変を共有しよう"

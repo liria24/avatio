@@ -194,6 +194,7 @@
             "me": "My Posts",
             "bookmarks": "Bookmarks"
         },
+        "showPrivate": "Show Private",
         "seo": {
             "title": "Avatio",
             "description": "Share your avatar modifications"

@@ -29,6 +29,8 @@ const tab = computed<Tab>({
     },
 })
 
+const showPrivate = ref(true)
+
 useSeo({
     title: t('index.seo.title'),
     titleTemplate: '%s',
@@ -93,7 +95,7 @@ useSeo({
         </UPageHero>
 
         <div v-if="session" class="flex w-full flex-col items-start gap-5">
-            <div class="flex flex-wrap items-center gap-1">
+            <div class="flex w-full items-center gap-1">
                 <UButton
                     :label="$t('index.tabs.latest')"
                     :active="tab === 'latest'"
@@ -121,8 +123,20 @@ useSeo({
                     class="px-4 py-2"
                     @click="tab = 'bookmarked'"
                 />
+
+                <USwitch
+                    v-if="tab === 'owned'"
+                    v-model="showPrivate"
+                    :aria-label="$t('index.showPrivate')"
+                    size="sm"
+                    class="ml-auto"
+                >
+                    <template #label>
+                        <Icon name="mingcute:lock-fill" size="16" />
+                    </template>
+                </USwitch>
             </div>
-            <SetupsList :type="tab" />
+            <SetupsList :type="tab" :include-private="showPrivate" />
         </div>
 
         <template v-else>
