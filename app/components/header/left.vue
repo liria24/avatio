@@ -8,7 +8,7 @@ const dev = import.meta.dev
 <template>
     <div class="flex items-center gap-1.5">
         <NuxtLinkLocale to="/">
-            <LogoAvatio class="-mt-1.5 w-24 sm:w-28" aria-label="Avatio" />
+            <AppLogo class="-mt-1.5 w-24 sm:w-28" aria-label="Avatio" />
         </NuxtLinkLocale>
 
         <UButton

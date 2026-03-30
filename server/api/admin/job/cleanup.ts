@@ -1,3 +1,4 @@
+import { sendMessage } from '@avatio/bot-notifier'
 import { list, remove } from '@tigrisdata/storage'
 
 interface ImageInfo {
@@ -171,7 +172,7 @@ export default cronEventHandler(async ({ event }) => {
     // 処理対象の画像がある場合のみDiscord通知を送信
     if (allImages.length > 0) {
         try {
-            await sendDiscordNotification({
+            await sendMessage({
                 embeds: [
                     {
                         title: 'Avatio Data Cleanup',

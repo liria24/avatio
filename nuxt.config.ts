@@ -74,19 +74,19 @@ export default defineNuxtConfig({
     modules: [
         '@nuxt/ui',
         '@nuxt/image',
-        '@nuxt/content',
-        '@nuxt/hints',
-        '@nuxtjs/device',
-        '@nuxtjs/i18n',
         '@nuxtjs/robots',
         '@nuxtjs/sitemap',
-        '@vueuse/nuxt',
-        'motion-v/nuxt',
-        '@stefanobartoletti/nuxt-social-share',
         'nuxt-link-checker',
         'nuxt-schema-org',
         'nuxt-seo-utils',
         'nuxt-og-image',
+        '@nuxt/content',
+        '@nuxt/hints',
+        '@nuxtjs/device',
+        '@nuxtjs/i18n',
+        '@vueuse/nuxt',
+        'motion-v/nuxt',
+        '@stefanobartoletti/nuxt-social-share',
         '@nuxt/a11y',
         '@vite-pwa/nuxt',
         '@vercel/analytics',
@@ -347,6 +347,12 @@ export default defineNuxtConfig({
     mdc: {
         remarkPlugins: {
             'remark-breaks': {},
+        },
+    },
+
+    ogImage: {
+        security: {
+            secret: process.env.OG_IMAGE_SECRET,
         },
     },
 

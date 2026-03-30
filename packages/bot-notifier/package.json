@@ -1,0 +1,25 @@
+{
+    "name": "@avatio/bot-notifier",
+    "version": "1.0.0",
+    "type": "module",
+    "exports": {
+        ".": {
+            "import": "./dist/index.mjs",
+            "types": "./dist/index.d.mts"
+        }
+    },
+    "scripts": {
+        "build": "tsdown",
+        "test": "vitest run",
+        "test:watch": "vitest"
+    },
+    "dependencies": {
+        "ofetch": "^2.0.0-alpha.3"
+    },
+    "devDependencies": {
+        "@types/node": "25.5.0",
+        "tsdown": "^0.21.0",
+        "typescript": "6.0.2",
+        "vitest": "^3.0.0"
+    }
+}

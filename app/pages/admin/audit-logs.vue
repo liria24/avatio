@@ -1,6 +1,4 @@
 <script lang="ts" setup>
-const { locale, t } = useI18n()
-
 const auditLogAttributes: Record<
     AuditActionType,
     {
@@ -11,78 +9,95 @@ const auditLogAttributes: Record<
 > = {
     user_ban: {
         icon: 'mingcute:forbid-circle-fill',
-        label: t('admin.auditLogs.userBan'),
+        label: 'Banned user',
         color: 'error',
     },
     user_unban: {
         icon: 'mingcute:back-fill',
-        label: t('admin.auditLogs.userUnban'),
+        label: 'Unbanned user',
         color: 'info',
     },
     user_delete: {
         icon: 'mingcute:user-x-fill',
-        label: t('admin.auditLogs.userDelete'),
+        label: 'Deleted user',
         color: 'error',
     },
     user_role_change: {
         icon: 'mingcute:user-security-fill',
-        label: t('admin.auditLogs.userRoleChange'),
+        label: 'Changed user role',
         color: 'info',
     },
     user_shop_verify: {
         icon: 'mingcute:store-fill',
-        label: t('admin.auditLogs.userShopVerify'),
+        label: 'Verified user shop',
         color: 'success',
     },
     user_shop_unverify: {
         icon: 'mingcute:close-circle-fill',
-        label: t('admin.auditLogs.userShopUnverify'),
+        label: 'Unverified user shop',
         color: 'error',
     },
     user_badge_grant: {
         icon: 'mingcute:award-fill',
-        label: t('admin.auditLogs.userBadgeGrant'),
+        label: 'Granted user badge',
         color: 'success',
     },
     user_badge_revoke: {
         icon: 'mingcute:award-fill',
-        label: t('admin.auditLogs.userBadgeRevoke'),
+        label: 'Revoked user badge',
         color: 'error',
     },
     setup_hide: {
         icon: 'mingcute:eye-close-fill',
-        label: t('admin.auditLogs.setupHide'),
+        label: 'Hidden setup',
         color: 'secondary',
     },
     setup_unhide: {
         icon: 'mingcute:eye-2-fill',
-        label: t('admin.auditLogs.setupUnhide'),
+        label: 'Unhidden setup',
         color: 'secondary',
     },
     setup_delete: {
         icon: 'mingcute:delete-2-fill',
-        label: t('admin.auditLogs.setupDelete'),
+        label: 'Deleted setup',
         color: 'error',
     },
     report_resolve: {
         icon: 'mingcute:check-circle-fill',
-        label: t('admin.auditLogs.reportResolve'),
+        label: 'Resolved report',
         color: 'success',
     },
     feedback_close: {
         icon: 'mingcute:forbid-circle-fill',
-        label: t('admin.auditLogs.feedbackClose'),
+        label: 'Closed feedback',
         color: 'success',
     },
     cleanup: {
         icon: 'mingcute:delete-2-fill',
-        label: t('admin.auditLogs.cleanup'),
+        label: 'Performed cleanup',
         color: 'info',
     },
 }
 
-const { data, status, refresh } = await useFetch('/api/admin/audit-log', {
+const { data, refresh } = await useFetch('/api/admin/audit-log', {
     dedupe: 'defer',
+    transform: (res) => ({
+        data: Object.entries(
+            res.data.reduce(
+                (groups, log) => {
+                    const date = new Date(log.createdAt).toLocaleDateString('ja-JP', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                    })
+                    ;(groups[date] ??= []).push(log)
+                    return groups
+                },
+                {} as Record<string, typeof res.data>,
+            ),
+        ).map(([date, items]) => ({ date, items })),
+        pagination: res.pagination,
+    }),
     default: () => ({
         data: [],
         pagination: {
@@ -101,12 +116,12 @@ const { data, status, refresh } = await useFetch('/api/admin/audit-log', {
     <UDashboardPanel id="audit-logs">
         <template #header>
             <UDashboardNavbar title="Audit Logs">
-                <template #right>
+                <template #trailing>
                     <UButton
-                        :loading="status === 'pending'"
-                        icon="mingcute:refresh-2-fill"
-                        variant="soft"
-                        color="neutral"
+                        loading-auto
+                        icon="mingcute:refresh-2-line"
+                        variant="ghost"
+                        size="sm"
                         @click="refresh()"
                     />
                 </template>
@@ -114,50 +129,37 @@ const { data, status, refresh } = await useFetch('/api/admin/audit-log', {
         </template>
 
         <template #body>
-            <UPageList class="gap-4">
-                <UAlert
-                    v-for="log in data.data"
-                    :key="`log-${log.id}`"
-                    :icon="auditLogAttributes[log.action].icon"
-                    color="neutral"
-                    variant="subtle"
-                    :ui="{
-                        wrapper: 'gap-2',
-                    }"
-                >
-                    <template #title>
-                        <div class="flex w-full items-center gap-2">
-                            <span class="font-medium">
-                                {{ auditLogAttributes[log.action].label }}
-                            </span>
+            <UPageList>
+                <template v-for="group in data.data" :key="`group-${group.date}`">
+                    <div class="p-1 font-mono text-xs">
+                        {{ group.date }}
+                    </div>
 
-                            <NuxtLink
-                                v-if="log.user"
-                                :to="`/@${log.user.username}`"
-                                class="ml-auto"
-                            >
-                                <UAvatar
-                                    :src="log.user.image || undefined"
-                                    :alt="log.user.name"
-                                    icon="mingcute:user-3-fill"
-                                    size="2xs"
-                                />
-                            </NuxtLink>
-                            <NuxtTime
-                                :datetime="log.createdAt"
-                                relative
-                                :locale
-                                class="text-muted text-xs"
+                    <div
+                        v-for="log in group.items"
+                        :key="`log-${log.id}`"
+                        class="odd:bg-muted/50 text-toned flex items-center gap-3 p-1 font-mono text-xs"
+                    >
+                        <NuxtTime
+                            :datetime="log.createdAt"
+                            time-style="medium"
+                            class="text-muted"
+                        />
+
+                        <NuxtLink v-if="log.user" :to="`/@${log.user.username}`">
+                            <UAvatar
+                                :src="log.user.image || undefined"
+                                :alt="log.user.name"
+                                icon="mingcute:user-3-fill"
+                                size="3xs"
                             />
-                        </div>
-                    </template>
+                        </NuxtLink>
 
-                    <template #description>
-                        <div class="flex flex-col gap-3">
-                            <p class="text-toned">{{ log.details }}</p>
-                        </div>
-                    </template>
-                </UAlert>
+                        <span> {{ auditLogAttributes[log.action].label }}: </span>
+
+                        <p>{{ log.details }}</p>
+                    </div>
+                </template>
             </UPageList>
         </template>
     </UDashboardPanel>

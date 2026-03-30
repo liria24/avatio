@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const { session } = useAuth()
-const { login } = useAppOverlay()
+const login = useLoginModal()
 const { t, locale } = useI18n()
 
 const dev = import.meta.dev

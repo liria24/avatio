@@ -1,33 +1,27 @@
 <script lang="ts" setup>
-const { modalFlags } = useAppOverlay()
+import 'vue-data-ui/style.css'
 
-const { data } = await useFetch('/api/admin/stats', {
+const modalFlags = useModalFlagsModal()
+
+const { data: items } = await useFetch('/api/admin/items', {
+    dedupe: 'defer',
+})
+const { data: feedbacks } = await useFetch('/api/admin/feedbacks', {
+    query: {
+        status: 'open',
+    },
     dedupe: 'defer',
 })
 
 const stats = ref([
     {
-        title: 'Total Users',
-        value: data.value?.users,
-        icon: 'mingcute:group-2-fill',
-        to: '/admin/users',
-    },
-    {
-        title: 'Active Setups',
-        value: data.value?.setups,
-        icon: 'mingcute:sparkles-fill',
-        to: '/admin/setups',
-    },
-    {
         title: 'Total Items',
-        value: data.value?.items,
-        icon: 'mingcute:package-2-fill',
+        value: items.value?.length || 0,
         to: '/admin/items',
     },
     {
         title: 'Feedbacks',
-        value: data.value?.feedbacks,
-        icon: 'mingcute:chat-3-fill',
+        value: feedbacks.value?.length || 0,
         to: '/admin/feedbacks',
     },
 ])
@@ -36,25 +30,79 @@ const stats = ref([
 <template>
     <UDashboardPanel id="index">
         <template #header>
-            <UDashboardNavbar title="Admin Console">
-                <template #right>
-                    <UButton
-                        icon="mingcute:flag-3-fill"
-                        label="Flags"
-                        variant="subtle"
-                        color="neutral"
-                        @click="modalFlags.open()"
-                    />
-                </template>
-            </UDashboardNavbar>
+            <div class="mt-6 flex w-full items-center gap-2 px-6">
+                <h1 class="text-toned font-mono text-3xl font-light">Admin Console</h1>
+                <UButton
+                    icon="mingcute:flag-3-fill"
+                    label="Flags"
+                    variant="soft"
+                    color="neutral"
+                    size="sm"
+                    class="ml-auto"
+                    @click="modalFlags.open()"
+                />
+            </div>
         </template>
 
         <template #body>
             <UPageGrid class="gap-2 sm:gap-4 lg:grid-cols-4">
                 <UPageCard
+                    variant="subtle"
+                    :ui="{
+                        container: 'gap-y-1.5',
+                        wrapper: 'items-start',
+                        leading:
+                            'p-2.5 rounded-full bg-primary/10 ring ring-inset ring-primary/25 flex-col',
+                        title: 'font-normal text-muted text-xs uppercase flex items-center gap-1 w-full',
+                        body: 'w-full',
+                    }"
+                    class="col-span-2 first:rounded-l-lg last:rounded-r-lg hover:z-1 lg:rounded-none"
+                >
+                    <AdminChartSetups />
+
+                    <template #title>
+                        <span>Active Setups</span>
+
+                        <UButton
+                            to="/admin/setups"
+                            icon="mingcute:arrow-right-line"
+                            variant="ghost"
+                            size="xs"
+                            class="ml-auto"
+                        />
+                    </template>
+                </UPageCard>
+
+                <UPageCard
+                    variant="subtle"
+                    :ui="{
+                        container: 'gap-y-1.5',
+                        wrapper: 'items-start',
+                        leading:
+                            'p-2.5 rounded-full bg-primary/10 ring ring-inset ring-primary/25 flex-col',
+                        title: 'font-normal text-muted text-xs uppercase flex items-center gap-1 w-full',
+                        body: 'w-full',
+                    }"
+                    class="col-span-2 first:rounded-l-lg last:rounded-r-lg hover:z-1 lg:rounded-none"
+                >
+                    <AdminChartUsers />
+
+                    <template #title>
+                        <span>Total Users</span>
+
+                        <UButton
+                            to="/admin/users"
+                            icon="mingcute:arrow-right-line"
+                            variant="ghost"
+                            size="xs"
+                            class="ml-auto"
+                        />
+                    </template>
+                </UPageCard>
+
+                <UPageCard
                     v-for="(stat, index) in stats"
                     :key="index"
-                    :icon="stat.icon"
                     :title="stat.title"
                     :to="stat.to"
                     variant="subtle"
@@ -67,11 +115,9 @@ const stats = ref([
                     }"
                     class="first:rounded-l-lg last:rounded-r-lg hover:z-1 lg:rounded-none"
                 >
-                    <div class="flex items-center gap-2">
-                        <span class="text-highlighted text-2xl font-semibold">
-                            {{ stat.value }}
-                        </span>
-                    </div>
+                    <span class="text-highlighted ml-auto text-2xl font-semibold">
+                        {{ stat.value }}
+                    </span>
                 </UPageCard>
             </UPageGrid>
         </template>

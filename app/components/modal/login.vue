@@ -1,6 +1,11 @@
 <script lang="ts" setup>
 const open = defineModel<boolean>('open', { default: false })
 
+interface Props {
+    callbackURL?: string
+}
+const { callbackURL } = defineProps<Props>()
+
 const route = useRoute()
 const localePath = useLocalePath()
 
@@ -47,7 +52,7 @@ onBeforeUnmount(() => {
                 @click="open = false"
             />
 
-            <UserLogin />
+            <UserLogin :callbackURL />
         </template>
     </UModal>
 </template>

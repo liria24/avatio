@@ -1,4 +1,4 @@
-import type { Component } from 'vue'
+import type { ComponentProps } from 'vue-component-type-helpers'
 
 import {
     LazyModalLogin,
@@ -17,97 +17,24 @@ import {
     LazyModalAgreeTerms,
 } from '#components'
 
-interface ModalSetupDelete {
-    setupId: Setup['id']
-}
+const opts = { destroyOnClose: true } as const
 
-interface ModalSetupHide {
-    setupId: Setup['id']
-}
+const defineOverlay =
+    <T extends Component>(component: T) =>
+    (defaults?: ComponentProps<T>) =>
+        useOverlay().create(component, { ...opts, props: defaults })
 
-interface ModalSetupUnhide {
-    setupId: Setup['id']
-}
-
-interface ModalReportSetup {
-    setupId: Setup['id']
-}
-
-interface ModalReportItem {
-    itemId: Item['id']
-}
-
-interface ModalReportUser {
-    userId: User['id']
-}
-
-interface ModalBanUser {
-    userId: User['id']
-    name: string
-    image?: string | null
-}
-
-interface ModalChangeItemNiceName {
-    itemId: Item['id']
-    current: string
-}
-
-interface ModalAgreeTerms {
-    needsTerms: boolean
-    needsPrivacyPolicy: boolean
-}
-
-interface ModalImageViewer {
-    src: string
-    alt?: string
-}
-
-interface ModalWrapper<T = void> {
-    open: T extends void ? () => void : (props: T) => void
-    close: () => void
-}
-
-export const useAppOverlay = () => {
-    const overlay = useOverlay()
-
-    const createModalWrapper = <T = void>(LazyComponent: Component): ModalWrapper<T> => {
-        let instance: { open: () => void; close: () => void } | null = null
-
-        return {
-            open: (props?: T) => {
-                if (instance) instance.close()
-
-                instance = overlay.create(
-                    LazyComponent as unknown as Parameters<typeof overlay.create>[0],
-                    props && typeof props === 'object' ? { props } : undefined,
-                )
-                instance.open()
-            },
-            close: () => {
-                if (instance) {
-                    instance.close()
-                    instance = null
-                }
-            },
-        } as ModalWrapper<T>
-    }
-
-    return {
-        agreeTerms: createModalWrapper<ModalAgreeTerms>(LazyModalAgreeTerms),
-        login: createModalWrapper<void>(LazyModalLogin),
-        feedback: createModalWrapper<void>(LazyModalFeedback),
-        publishSetupComplete: createModalWrapper<void>(LazyModalPublishSetupComplete),
-        setupDelete: createModalWrapper<ModalSetupDelete>(LazyModalSetupDelete),
-        setupHide: createModalWrapper<ModalSetupHide>(LazyModalSetupHide),
-        setupUnhide: createModalWrapper<ModalSetupUnhide>(LazyModalSetupUnhide),
-        reportSetup: createModalWrapper<ModalReportSetup>(LazyModalReportSetup),
-        reportItem: createModalWrapper<ModalReportItem>(LazyModalReportItem),
-        reportUser: createModalWrapper<ModalReportUser>(LazyModalReportUser),
-        banUser: createModalWrapper<ModalBanUser>(LazyModalAdminBanUser),
-        changeItemNiceName: createModalWrapper<ModalChangeItemNiceName>(
-            LazyModalAdminChangeItemNiceName,
-        ),
-        modalFlags: createModalWrapper<void>(LazyModalAdminModalFlags),
-        imageViewer: createModalWrapper<ModalImageViewer>(LazyImageViewer),
-    }
-}
+export const useAgreeTermsModal = defineOverlay(LazyModalAgreeTerms)
+export const useLoginModal = defineOverlay(LazyModalLogin)
+export const useFeedbackModal = defineOverlay(LazyModalFeedback)
+export const usePublishSetupCompleteModal = defineOverlay(LazyModalPublishSetupComplete)
+export const useSetupDeleteModal = defineOverlay(LazyModalSetupDelete)
+export const useSetupHideModal = defineOverlay(LazyModalSetupHide)
+export const useSetupUnhideModal = defineOverlay(LazyModalSetupUnhide)
+export const useReportSetupModal = defineOverlay(LazyModalReportSetup)
+export const useReportItemModal = defineOverlay(LazyModalReportItem)
+export const useReportUserModal = defineOverlay(LazyModalReportUser)
+export const useBanUserModal = defineOverlay(LazyModalAdminBanUser)
+export const useChangeItemNiceNameModal = defineOverlay(LazyModalAdminChangeItemNiceName)
+export const useModalFlagsModal = defineOverlay(LazyModalAdminModalFlags)
+export const useImageViewerModal = defineOverlay(LazyImageViewer)

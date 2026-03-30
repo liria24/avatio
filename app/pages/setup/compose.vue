@@ -5,6 +5,8 @@ definePageMeta({
 })
 
 const route = useRoute()
+const overlay = useOverlay()
+const { t } = useI18n()
 
 const {
     state,
@@ -33,10 +35,8 @@ watch(
 )
 
 const publishedSetupId = ref<Setup['id'] | null>(null)
-const modalPublishComplete = ref(false)
 const modalNewSetupConfirm = ref(false)
-
-const { t } = useI18n()
+const publishCompleteModal = usePublishSetupCompleteModal()
 
 const draftStatusBadge = computed(() => ({
     restoring: {
@@ -67,14 +67,13 @@ const draftStatusBadge = computed(() => ({
 
 const onSubmit = async () => {
     const setupId = await publish()
-    if (setupId) {
-        publishedSetupId.value = setupId
-        modalPublishComplete.value = true
-    }
+    if (!setupId) return
+    publishedSetupId.value = setupId
+    const result = await publishCompleteModal.open({ setupId })
+    if (result === 'continue') resetForm()
 }
 
 const resetForm = () => {
-    modalPublishComplete.value = false
     publishedSetupId.value = null
     reset()
 }
@@ -89,6 +88,7 @@ onBeforeRouteLeave((to, from, next) => {
         const answer = window.confirm(t('setup.compose.confirmLeave'))
         return next(answer)
     }
+    overlay.closeAll()
     return next(true)
 })
 
@@ -114,13 +114,6 @@ await initialize({
 
 <template>
     <UForm :state class="relative size-full pb-5 lg:pl-92" @submit="onSubmit">
-        <ModalPublishSetupComplete
-            v-if="publishedSetupId"
-            v-model:open="modalPublishComplete"
-            :setup-id="publishedSetupId"
-            @continue="resetForm"
-        />
-
         <div
             :class="
                 cn(

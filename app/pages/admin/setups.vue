@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const { locale } = useI18n()
-const { setupHide, setupUnhide } = useAppOverlay()
+const setupHide = useSetupHideModal()
+const setupUnhide = useSetupUnhideModal()
 
 const { data: setups, refresh } = await useFetch('/api/admin/setups', {
     dedupe: 'defer',
@@ -47,12 +48,19 @@ const getMenuItems = (setup: NonNullable<typeof setups.value>[number]) => [
         <template #body>
             <UPageList divide>
                 <UContextMenu v-for="setup in setups" :key="setup.id" :items="getMenuItems(setup)">
-                    <div class="hover:bg-muted/50 flex items-center gap-3 rounded-md p-2">
+                    <div class="hover:bg-muted/50 flex items-center gap-2 rounded-md p-2">
                         <UAvatar
                             :src="setup.user.image || undefined"
                             alt=""
                             icon="mingcute:user-3-fill"
                             size="xs"
+                        />
+
+                        <Icon
+                            v-if="!setup.public"
+                            name="mingcute:lock-fill"
+                            size="14"
+                            class="text-muted"
                         />
 
                         <p class="text-muted line-clamp-1 text-sm leading-none break-all">
