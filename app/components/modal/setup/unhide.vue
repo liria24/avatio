@@ -9,7 +9,7 @@ const emit = defineEmits(['close'])
 const { t } = useI18n()
 const { session } = useAuth()
 const toast = useToast()
-const { unhideSetup: unhideSetupAction } = useAdminActions()
+const { unhideSetup: unhideSetupAction } = useAdmin()
 
 const unhideSetup = async () => {
     if (session.value?.user.role !== 'admin') {
@@ -21,8 +21,7 @@ const unhideSetup = async () => {
         return
     }
 
-    const success = await unhideSetupAction(setupId)
-    if (success) emit('close')
+    await unhideSetupAction({ setupId, onSuccess: () => emit('close') })
 }
 </script>
 

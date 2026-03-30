@@ -7,16 +7,19 @@ const props = defineProps<Props>()
 
 const emit = defineEmits(['close'])
 
-const { changeItemNiceName: changeItemNiceNameAction } = useAdminActions()
+const { changeItemNiceName: changeItemNiceNameAction } = useAdmin()
 
 const input = ref(props.current)
 
 const changeItemNiceName = async () => {
-    const success = await changeItemNiceNameAction(props.itemId, input.value)
-    if (success) {
-        emit('close')
-        input.value = ''
-    }
+    await changeItemNiceNameAction({
+        itemId: props.itemId,
+        niceName: input.value,
+        onSuccess: () => {
+            emit('close')
+            input.value = ''
+        },
+    })
 }
 </script>
 

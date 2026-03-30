@@ -21,20 +21,22 @@ const { data, status, refresh } = await useFetch('/api/changelogs', {
     <UDashboardPanel id="changelogs">
         <template #header>
             <UDashboardNavbar title="Changelogs">
+                <template #trailing>
+                    <UButton
+                        loading-auto
+                        icon="mingcute:refresh-2-line"
+                        variant="ghost"
+                        size="sm"
+                        @click="refresh()"
+                    />
+                </template>
+
                 <template #right>
                     <UButton
                         :to="$localePath('/admin/changelogs/compose')"
                         icon="mingcute:add-line"
                         label="New Changelog"
                         color="neutral"
-                    />
-
-                    <UButton
-                        :loading="status === 'pending'"
-                        icon="mingcute:refresh-2-line"
-                        variant="soft"
-                        color="neutral"
-                        @click="refresh()"
                     />
                 </template>
             </UDashboardNavbar>
@@ -62,19 +64,7 @@ const { data, status, refresh } = await useFetch('/api/changelogs', {
                                 <UButton icon="mingcute:eye-2-fill" variant="soft" size="sm" />
 
                                 <template #content>
-                                    <h1 class="text-3xl font-bold">{{ changelog.title }}</h1>
-
-                                    <USeparator />
-
-                                    <LazyMDC
-                                        v-if="changelog.markdown"
-                                        :value="changelog.markdown"
-                                        :parser-options="{
-                                            toc: false,
-                                            contentHeading: false,
-                                        }"
-                                        class="sentence w-full max-w-full *:first:mt-0 *:last:mb-0"
-                                    />
+                                    <IslandChangelog :slug="changelog.slug" />
                                 </template>
                             </UModal>
 

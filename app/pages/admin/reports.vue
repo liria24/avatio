@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const { locale } = useI18n()
-const { resolveReport } = useAdminActions()
+const { resolveReport } = useAdmin()
 const itemCategory = useItemCategory()
 const changeItemNiceName = useChangeItemNiceNameModal()
 
@@ -70,10 +70,15 @@ const refresh = () => {
     return refreshUser()
 }
 
-const resolve = async (id: number, resolved?: boolean) => {
-    const success = await resolveReport(tab.value, id, resolved ?? true)
-    if (success) refresh()
-}
+const resolve = async (id: number, isResolved?: boolean) =>
+    await resolveReport({
+        type: tab.value,
+        id,
+        isResolved,
+        onSuccess() {
+            refresh()
+        },
+    })
 </script>
 
 <template>

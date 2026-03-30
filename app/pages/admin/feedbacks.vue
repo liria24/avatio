@@ -1,19 +1,17 @@
 <script lang="ts" setup>
 const { locale, t } = useI18n()
-const { closeFeedback: closeFeedbackAction, openFeedback: openFeedbackAction } = useAdminActions()
+const { closeFeedback: closeFeedbackAction, openFeedback: openFeedbackAction } = useAdmin()
 
 const { data, refresh } = await useFetch('/api/admin/feedbacks', {
     dedupe: 'defer',
 })
 
 const closeFeedback = async (feedbackId: number) => {
-    const success = await closeFeedbackAction(feedbackId)
-    if (success) refresh()
+    await closeFeedbackAction({ feedbackId, onSuccess: () => refresh() })
 }
 
 const openFeedback = async (feedbackId: number) => {
-    const success = await openFeedbackAction(feedbackId)
-    if (success) refresh()
+    await openFeedbackAction({ feedbackId, onSuccess: () => refresh() })
 }
 </script>
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { createChangelog } = useAdminActions()
+const { createChangelog } = useAdmin()
 
 const state = reactive({
     title: '',
