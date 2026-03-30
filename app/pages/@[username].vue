@@ -1,13 +1,13 @@
 <script lang="ts" setup>
 const { session } = useAuth()
 const { locale } = useI18n()
-const route = useRoute()
+const overlay = useOverlay()
 const login = useLoginModal()
 const reportUser = useReportUserModal()
 
-const username = route.params.username as string
+const username = useRouteParams('username', undefined, { transform: String })
 
-const { data: user, status: userStatus } = await useUser(username)
+const { data: user, status: userStatus } = await useUser(username.value)
 
 if (userStatus.value === 'success' && !user.value)
     showError({
@@ -27,8 +27,7 @@ const links = computed(() =>
 )
 
 onBeforeRouteLeave(() => {
-    login.close()
-    reportUser.close()
+    overlay.closeAll()
 })
 
 useSeo({
