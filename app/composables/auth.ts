@@ -80,7 +80,12 @@ const _useAuth = () => {
     }
 
     const signIn = {
-        email: async (email: string, password: string) => client.signIn.email({ email, password }),
+        email: async (options: { email: string; password: string; callbackURL?: string }) =>
+            client.signIn.email({
+                email: options.email,
+                password: options.password,
+                callbackURL: options.callbackURL,
+            }),
         twitter: async (options?: { callbackURL?: string }) =>
             client.signIn.social({
                 provider: 'twitter',

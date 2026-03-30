@@ -1,6 +1,11 @@
 <script lang="ts" setup>
 import { z } from 'zod'
 
+interface Props {
+    callbackURL?: string
+}
+const { callbackURL } = defineProps<Props>()
+
 const { signIn } = useAuth()
 const route = useRoute()
 
@@ -27,7 +32,7 @@ const emailLoginSchema = z.object({
             variant="outline"
             color="neutral"
             class="mt-5 mb-6 rounded-xl py-4"
-            @click="signIn.twitter({ callbackURL: route.path })"
+            @click="signIn.twitter({ callbackURL: callbackURL || route.path })"
         />
 
         <DevOnly>
@@ -56,7 +61,13 @@ const emailLoginSchema = z.object({
                         variant: 'subtle',
                     }"
                     class="ring-muted mb-4 rounded-xl p-4 ring-1"
-                    @submit="signIn.email($event.data.email, $event.data.password)"
+                    @submit="
+                        signIn.email({
+                            email: $event.data.email,
+                            password: $event.data.password,
+                            callbackURL: callbackURL || route.path,
+                        })
+                    "
                 />
 
                 <UBadge
