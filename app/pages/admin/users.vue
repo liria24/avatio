@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 const { locale, t } = useI18n()
 const { unbanUser: unbanUserAction } = useAdminActions()
-const { banUser } = useAppOverlay()
+const banUser = useBanUserModal()
 const { badgeDefinitions } = useBadges()
 
 const { data, refresh } = await useFetch('/api/admin/user', {

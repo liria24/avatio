@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import 'vue-data-ui/style.css'
 
-const { modalFlags } = useAppOverlay()
+const modalFlags = useModalFlagsModal()
 
 const { data: items } = await useFetch('/api/admin/items', {
     dedupe: 'defer',

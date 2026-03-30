@@ -1,17 +1,23 @@
 <script setup lang="ts">
 import { SetupsViewerItem } from '#components'
 
+const id = useRouteParams('id', undefined, { transform: String })
+
 const { app } = useAppConfig()
+const route = useRoute()
 const { t } = useI18n()
 const toast = useToast()
 const { session } = useAuth()
 const { share, isSupported: shareSupported } = useShare()
 const location = useBrowserLocation()
 const { copy, copied } = useClipboard({ source: location.value.href })
-const { reportSetup, imageViewer, login, setupDelete, setupHide, setupUnhide } = useAppOverlay()
+const overlay = useOverlay()
+const imageViewer = useImageViewerModal()
+const login = useLoginModal({ callbackURL: route.fullPath })
+const reportSetup = useReportSetupModal({ setupId: id.value })
+const setupHide = useSetupHideModal({ setupId: id.value })
+const setupUnhide = useSetupUnhideModal({ setupId: id.value })
 const { toggle: toggleBookmarkAction, getBookmarkStatus } = useBookmarks()
-
-const id = useRouteParams('id', undefined, { transform: String })
 
 if (!id.value)
     throw showError({
@@ -84,12 +90,7 @@ const shareButtons = computed(() =>
 )
 
 onBeforeRouteLeave(() => {
-    reportSetup.close()
-    imageViewer.close()
-    login.close()
-    setupHide.close()
-    setupUnhide.close()
-    setupDelete.close()
+    overlay.closeAll()
 })
 
 if (!setup.value?.public) useSeoMeta({ robots: 'noindex, nofollow' })
@@ -322,11 +323,7 @@ useSeo({
                 :label="setup.hidAt ? $t('setup.viewer.show') : $t('setup.viewer.hide')"
                 variant="ghost"
                 size="sm"
-                @click="
-                    setup.hidAt
-                        ? setupUnhide.open({ setupId: id })
-                        : setupHide.open({ setupId: id })
-                "
+                @click="setup.hidAt ? setupUnhide.open() : setupHide.open()"
             />
 
             <UButton
@@ -334,7 +331,7 @@ useSeo({
                 :label="$t('report')"
                 variant="ghost"
                 size="sm"
-                @click="session ? reportSetup.open({ setupId: id }) : login.open()"
+                @click="session ? reportSetup.open() : login.open()"
             />
         </div>
 

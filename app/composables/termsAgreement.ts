@@ -1,6 +1,6 @@
 export const useTermsAgreement = () => {
     const { session, auth, refreshSession } = useAuth()
-    const overlay = useAppOverlay()
+    const agreeTerms = useAgreeTermsModal()
 
     const { data: contents } = useAsyncData('terms-agreement-check', async () => {
         const [termsContent, privacyContent] = await Promise.all([
@@ -42,7 +42,7 @@ export const useTermsAgreement = () => {
         needsAgreement,
         agree,
         open: () =>
-            overlay.agreeTerms.open({
+            agreeTerms.open({
                 needsTerms: needsTerms.value,
                 needsPrivacyPolicy: needsPrivacyPolicy.value,
             }),

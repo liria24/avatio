@@ -6,10 +6,8 @@ interface Props {
 }
 const { setupId } = defineProps<Props>()
 
-const open = defineModel<boolean>('open', { default: false })
-
 const emit = defineEmits<{
-    (e: 'continue'): void
+    close: [value?: 'continue']
 }>()
 
 const { app } = useAppConfig()
@@ -36,7 +34,6 @@ onMounted(() => {
 
 <template>
     <UModal
-        v-model:open="open"
         :title="$t('modal.publishComplete.title')"
         :close="false"
         :dismissible="false"
@@ -88,7 +85,7 @@ onMounted(() => {
                     color="neutral"
                     size="lg"
                     block
-                    @click="emit('continue')"
+                    @click="emit('close', 'continue')"
                 />
                 <UButton
                     :to="setupId ? `/setup/${setupId}` : undefined"

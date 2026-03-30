@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 const { app } = useAppConfig()
-const { feedback } = useAppOverlay()
+const feedback = useFeedbackModal()
 const { dismissed, dismissBanner } = useOwnerWarningBanner()
 </script>
 

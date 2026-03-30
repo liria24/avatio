@@ -6,7 +6,7 @@ interface Props {
 const { setup, sidebar } = defineProps<Props>()
 
 const { session } = useAuth()
-const { setupDelete } = useAppOverlay()
+const setupDelete = useSetupDeleteModal()
 
 const { locale } = useI18n()
 </script>

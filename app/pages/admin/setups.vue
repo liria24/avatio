@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const { locale } = useI18n()
-const { setupHide, setupUnhide } = useAppOverlay()
+const setupHide = useSetupHideModal()
+const setupUnhide = useSetupUnhideModal()
 
 const { data: setups, refresh } = await useFetch('/api/admin/setups', {
     dedupe: 'defer',

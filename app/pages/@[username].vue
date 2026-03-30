@@ -2,7 +2,8 @@
 const { session } = useAuth()
 const { locale } = useI18n()
 const route = useRoute()
-const { login, reportUser } = useAppOverlay()
+const login = useLoginModal()
+const reportUser = useReportUserModal()
 
 const username = route.params.username as string
 

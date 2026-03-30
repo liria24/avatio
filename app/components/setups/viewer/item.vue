@@ -9,7 +9,8 @@ const { item, actions = true } = defineProps<Props>()
 
 const toast = useToast()
 const { copy } = useClipboard()
-const { reportItem, login } = useAppOverlay()
+const reportItem = useReportItemModal()
+const login = useLoginModal()
 const { session } = useAuth()
 
 const nsfwMask = ref(item.nsfw)

@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 const { session } = await useAuth()
 const route = useRoute()
-const { login } = useAppOverlay()
+const login = useLoginModal()
 const routeBaseName = useRouteBaseName()
 const baseRouteName = computed(() => routeBaseName(route))
 </script>

@@ -3,7 +3,8 @@ const { auth, session, sessions, revoke } = useAuth()
 const route = useRoute()
 const toast = useToast()
 const colorMode = useColorMode()
-const { login, feedback } = useAppOverlay()
+const login = useLoginModal()
+const feedback = useFeedbackModal()
 const { t, locales, setLocale } = useI18n()
 
 const switchAccount = async (sessionToken: string) => {

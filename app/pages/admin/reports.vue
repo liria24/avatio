@@ -2,7 +2,7 @@
 const { locale } = useI18n()
 const { resolveReport } = useAdminActions()
 const itemCategory = useItemCategory()
-const { changeItemNiceName } = useAppOverlay()
+const changeItemNiceName = useChangeItemNiceNameModal()
 
 type Tab = 'user' | 'setup' | 'item'
 
