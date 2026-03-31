@@ -8,6 +8,10 @@ export const relations = defineRelations(schema, (r) => ({
             from: r.users.id,
             to: r.accounts.userId,
         }),
+        settings: r.one.userSettings({
+            from: r.users.id,
+            to: r.userSettings.userId,
+        }),
         shops: r.many.userShops({
             from: r.users.id,
             to: r.userShops.userId,
@@ -60,13 +64,21 @@ export const relations = defineRelations(schema, (r) => ({
             from: r.users.id,
             to: r.setupDrafts.userId,
         }),
-        follows: r.many.followUsers({
+        followees: r.many.userFollows({
             from: r.users.id,
-            to: r.followUsers.userId,
+            to: r.userFollows.userId,
         }),
-        followers: r.many.followUsers({
+        followers: r.many.userFollows({
             from: r.users.id,
-            to: r.followUsers.targetUserId,
+            to: r.userFollows.followeeId,
+        }),
+        mutees: r.many.userMutes({
+            from: r.users.id,
+            to: r.userMutes.muteeId,
+        }),
+        muters: r.many.userMutes({
+            from: r.users.id,
+            to: r.userMutes.userId,
         }),
     },
     accounts: {
@@ -231,14 +243,33 @@ export const relations = defineRelations(schema, (r) => ({
             optional: false,
         }),
     },
-    followUsers: {
+    userSettings: {
         user: r.one.users({
-            from: r.followUsers.userId,
+            from: r.userSettings.userId,
             to: r.users.id,
             optional: false,
         }),
-        targetUser: r.one.users({
-            from: r.followUsers.targetUserId,
+    },
+    userFollows: {
+        user: r.one.users({
+            from: r.userFollows.userId,
+            to: r.users.id,
+            optional: false,
+        }),
+        followee: r.one.users({
+            from: r.userFollows.followeeId,
+            to: r.users.id,
+            optional: false,
+        }),
+    },
+    userMutes: {
+        user: r.one.users({
+            from: r.userMutes.userId,
+            to: r.users.id,
+            optional: false,
+        }),
+        mutee: r.one.users({
+            from: r.userMutes.muteeId,
             to: r.users.id,
             optional: false,
         }),

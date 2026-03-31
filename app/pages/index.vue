@@ -14,14 +14,14 @@ const { data: titles } = useFetch('/api/changelogs', {
     default: () => [],
 })
 
-type Tab = 'latest' | 'owned' | 'bookmarked'
+type Tab = 'latest' | 'following' | 'owned' | 'bookmarked'
 
 const _tab = useRouteQuery<Tab | null>('tab', null, { mode: 'push' })
 
 const tab = computed<Tab>({
     get() {
         const val = _tab.value
-        if (val === 'owned' || val === 'bookmarked') return val
+        if (val === 'following' || val === 'owned' || val === 'bookmarked') return val
         return 'latest'
     },
     set(newTab: Tab) {
@@ -33,6 +33,9 @@ const showPrivate = ref(session.value?.user.settings?.showPrivateSetups ?? true)
 const showPrivateDebounced = refDebounced(showPrivate, 300)
 
 const { setups: latestSetups, status: latestStatus } = useSetupsList('latest')
+const { setups: followingSetups, status: followingStatus } = useSetupsList('following', {
+    immediate: !!session.value,
+})
 const { setups: ownedSetups, status: ownedStatus } = useSetupsList('owned', {
     username: session.value?.user.username ?? undefined,
     query: computed(() => ({ includePrivate: showPrivateDebounced.value })),
@@ -44,16 +47,20 @@ const { setups: bookmarkedSetups, status: bookmarkedStatus } = useSetupsList('bo
 const setups = computed(() =>
     tab.value === 'owned'
         ? ownedSetups.value
-        : tab.value === 'bookmarked'
-          ? bookmarkedSetups.value
-          : latestSetups.value,
+        : tab.value === 'following'
+          ? followingSetups.value
+          : tab.value === 'bookmarked'
+            ? bookmarkedSetups.value
+            : latestSetups.value,
 )
 const loading = computed(() =>
     tab.value === 'owned'
         ? ownedStatus.value === 'pending'
-        : tab.value === 'bookmarked'
-          ? bookmarkedStatus.value === 'pending'
-          : latestStatus.value === 'pending',
+        : tab.value === 'following'
+          ? followingStatus.value === 'pending'
+          : tab.value === 'bookmarked'
+            ? bookmarkedStatus.value === 'pending'
+            : latestStatus.value === 'pending',
 )
 
 watchDebounced(
@@ -140,6 +147,15 @@ useSeo({
                     color="neutral"
                     class="px-4 py-2"
                     @click="tab = 'latest'"
+                />
+                <UButton
+                    label="フォロー中"
+                    :active="tab === 'following'"
+                    variant="ghost"
+                    active-variant="solid"
+                    color="neutral"
+                    class="px-4 py-2"
+                    @click="tab = 'following'"
                 />
                 <UButton
                     :label="$t('index.tabs.me')"

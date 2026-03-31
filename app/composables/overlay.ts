@@ -15,6 +15,7 @@ import {
     LazyModalAdminModalFlags,
     LazyImageViewer,
     LazyModalAgreeTerms,
+    LazyModalMuteUser,
 } from '#components'
 
 const opts = { destroyOnClose: true } as const
@@ -38,3 +39,4 @@ export const useBanUserModal = defineOverlay(LazyModalAdminBanUser)
 export const useChangeItemNiceNameModal = defineOverlay(LazyModalAdminChangeItemNiceName)
 export const useModalFlagsModal = defineOverlay(LazyModalAdminModalFlags)
 export const useImageViewerModal = defineOverlay(LazyImageViewer)
+export const useMuteUserModal = defineOverlay(LazyModalMuteUser)

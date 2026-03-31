@@ -9,6 +9,10 @@ const { app } = useAppConfig()
 const { t, locale, localeProperties, setLocale } = useI18n()
 const toast = useToast()
 const { auth, session, refreshSession } = useAuth()
+const { get, put } = useUserSettings()
+const { data: userSettings, refresh: refreshUserSettings } = await get({
+    pick: ['publicFollowees', 'publicBookmarks'],
+})
 
 const updating = ref(false)
 const username = ref(session.value!.user.username || '')
@@ -16,6 +20,8 @@ const name = ref(session.value!.user.name || '')
 const bio = ref(session.value!.user.bio || '')
 const links = ref([...(session.value!.user.links || [])])
 const newLink = ref('')
+const publicFollowees = ref(userSettings.value?.publicFollowees || false)
+const publicBookmarks = ref(userSettings.value?.publicBookmarks || false)
 
 const processImage = async (file: File) => {
     if (!username.value) return
@@ -92,6 +98,17 @@ const addLink = () => {
 const removeLink = (index: number) => {
     if (index < 0 || index >= links.value.length) return
     links.value.splice(index, 1)
+}
+
+const updateUserSettings = async () => {
+    await put({ publicFollowees: publicFollowees.value, publicBookmarks: publicBookmarks.value })
+    toast.add({
+        id: 'settings-saved',
+        icon: 'mingcute:check-line',
+        title: '設定が保存されました',
+        color: 'success',
+    })
+    await refreshUserSettings()
 }
 
 const { open, reset, onChange } = useFileDialog({
@@ -333,6 +350,38 @@ useSeo({
                     </UFormField>
                 </div>
             </div>
+        </section>
+
+        <section id="privacy" class="flex flex-col gap-4">
+            <div class="flex h-4 items-center gap-4">
+                <h1 class="text-muted text-sm leading-none font-semibold text-nowrap">
+                    プライバシー
+                </h1>
+                <UButton
+                    v-if="
+                        userSettings?.publicFollowees !== publicFollowees ||
+                        userSettings?.publicBookmarks !== publicBookmarks
+                    "
+                    :label="$t('save')"
+                    color="neutral"
+                    loading-auto
+                    class="ml-auto"
+                    @click="updateUserSettings()"
+                />
+            </div>
+
+            <UCard :ui="{ body: 'flex flex-col gap-4' }">
+                <USwitch
+                    v-model="publicFollowees"
+                    :label="`フォローしているユーザーを公開`"
+                    color="neutral"
+                />
+                <USwitch
+                    v-model="publicBookmarks"
+                    :label="`ブックマークしたセットアップを公開`"
+                    color="neutral"
+                />
+            </UCard>
         </section>
 
         <section id="site" class="flex flex-col gap-4">

@@ -4,9 +4,11 @@ const params = z.object({
     username: z.string(),
 })
 
-const getUser = defineCachedFunction(
-    async (username: string) => {
-        const data = await db.query.users.findFirst({
+export default sessionEventHandler<User>(async ({ session }) => {
+    const { username } = await validateParams(params)
+
+    const [user, mute] = await Promise.all([
+        db.query.users.findFirst({
             where: {
                 username: { eq: username },
                 banned: { OR: [{ eq: false }, { isNull: true }] },
@@ -44,25 +46,57 @@ const getUser = defineCachedFunction(
                         },
                     },
                 },
+                followers: {
+                    columns: {
+                        userId: true,
+                    },
+                },
+                followees: {
+                    columns: {
+                        userId: true,
+                    },
+                },
+                settings: {
+                    columns: {
+                        publicFollowees: true,
+                        publicBookmarks: true,
+                    },
+                },
             },
-        })
+        }),
+        db.query.userMutes.findFirst({
+            where: {
+                userId: { eq: session?.user.id },
+                mutee: {
+                    username: { eq: username },
+                },
+            },
+            columns: {
+                createdAt: true,
+            },
+        }),
+    ])
 
-        if (!data) throw serverError.notFound()
+    if (!user) throw serverError.notFound()
 
-        return data
-    },
-    {
-        maxAge: USER_CACHE_TTL,
-        name: 'user',
-        getKey: (id: string) => id,
-        swr: false,
-    },
-)
+    const followeesCount =
+        session?.user.id === user.id || user.settings?.publicFollowees
+            ? user.followees.length
+            : undefined
 
-export default promiseEventHandler<User>(async () => {
-    const { username } = await validateParams(params)
+    const isFollowing: boolean = session
+        ? user.followers.some((f) => f.userId === session.user.id)
+        : false
 
     defineCacheControl({ cdnAge: 60 * 30, clientAge: 60 })
 
-    return await getUser(username)
+    return {
+        ...user,
+        followersCount: user.followers.length,
+        followeesCount,
+        followers: undefined,
+        followees: undefined,
+        isFollowing,
+        isMuted: !!mute,
+    }
 })

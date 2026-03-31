@@ -1,15 +1,16 @@
 export const useBookmarks = () => {
     const { t } = useI18n()
     const toast = useToast()
+    const { session } = useAuth()
 
     const toggle = async (setupId: Setup['id'], isBookmarked: boolean) => {
         try {
             if (!isBookmarked) {
-                await $fetch(`/api/setups/bookmarks/${setupId}`, {
+                await $fetch(`/api/setups/${setupId}/bookmark`, {
                     method: 'POST',
                 })
             } else {
-                await $fetch(`/api/setups/bookmarks/${setupId}`, {
+                await $fetch(`/api/setups/${setupId}/bookmark`, {
                     method: 'DELETE',
                 })
             }
@@ -35,8 +36,12 @@ export const useBookmarks = () => {
     }
 
     const getBookmarkStatus = async (setupId: Setup['id'], immediate = true) => {
-        const { data, status, refresh } = await useFetch('/api/setups/bookmarks', {
-            query: { setupId, limit: 1 },
+        const { data, status, refresh } = await useFetch('/api/setups', {
+            query: {
+                setupId,
+                bookmarkedBy: session.value?.user.username,
+                limit: 1,
+            },
             transform: (data) => data.data.length > 0,
             dedupe: 'defer',
             default: () => false,
