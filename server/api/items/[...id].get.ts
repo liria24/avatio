@@ -12,21 +12,11 @@ const log = logger('/api/items/[id]:GET')
 
 export default promiseEventHandler<Item>(async () => {
     const { id } = await validateParams(params)
-    let { platform } = await validateQuery(query)
+    const { platform } = await validateQuery(query)
 
     log.info(`Processing item: ${id}, Platform: ${platform || 'auto-detect'}`)
 
-    if (!platform) {
-        const item = await getItemFromDatabase(id)
-        platform = item?.platform
-    }
-
     defineCacheControl({ cdnAge: 60 * 60 * 24, clientAge: 60 * 60 })
 
-    try {
-        if (!platform) throw new Error('Platform not specified')
-        return await getItem(platform, id)
-    } catch {
-        throw serverError.notFound()
-    }
+    return await getItem(platform, id)
 })

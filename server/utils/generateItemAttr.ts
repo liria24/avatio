@@ -2,6 +2,15 @@ import { itemCategory } from '@@/database/schema'
 import { generateText, Output } from 'ai'
 import { z } from 'zod'
 
+export interface GenerateItemAttrParams {
+    name: string
+    description?: {
+        description: string
+        readme?: string
+    }
+    originalCategory?: string
+}
+
 const system = `
 EC サイトや GitHub で配布されているデジタル商品の情報から、以下の情報を抽出してください。
 
@@ -38,17 +47,6 @@ ${previousItems.map((item) => `${item.name}: ${item.niceName} [${item.category}]
 これらの情報を参考にしてください。
 `
 
-interface GenerateItemAttrParams {
-    name: string
-    description?:
-        | string
-        | {
-              description: string
-              readme: string
-          }
-    category?: string
-}
-
 export default async (params: GenerateItemAttrParams) => {
     const previousItems = await db.query.items.findMany({
         where: {
@@ -69,11 +67,7 @@ export default async (params: GenerateItemAttrParams) => {
         },
         {
             role: 'user' as const,
-            content: JSON.stringify({
-                name: params.name,
-                description: params.description,
-                originalCategory: params.category,
-            }),
+            content: JSON.stringify(params),
         },
     ]
 

@@ -16,7 +16,7 @@
         "dev": "nuxt dev",
         "generate": "nuxt generate",
         "preview": "nuxt preview",
-        "postinstall": "bun run --filter '@avatio/bot-notifier' build && nuxt prepare",
+        "postinstall": "bun run --filter '@avatio/bot-notifier' build && bun run --filter '@avatio/ungh' build && nuxt prepare",
         "check": "vp check",
         "check:fix": "vp check --fix",
         "test": "vp test",
@@ -29,6 +29,7 @@
     },
     "dependencies": {
         "@avatio/bot-notifier": "workspace:*",
+        "@avatio/ungh": "workspace:*",
         "@better-auth/drizzle-adapter": "1.5.6",
         "@iconify-json/fluent-color": "1.2.21",
         "@iconify-json/lucide": "1.2.100",

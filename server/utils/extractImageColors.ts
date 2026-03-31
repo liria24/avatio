@@ -17,32 +17,23 @@ export default async (imageUrl: string, options: ExtractImageColorsOptions = {})
     } = options
 
     // 画像をフェッチしてバッファに変換
-    const blob = await $fetch<Blob>(imageUrl).catch(() => null)
+    const blob = await $fetch<Blob | null>(imageUrl, {
+        responseType: 'blob',
+        ignoreResponseError: true,
+    })
     if (!blob) return { colors: [], width: 0, height: 0 }
 
-    const buffer = Buffer.from(await blob.arrayBuffer())
-
     // sharpを使用して画像データを取得
-    const image = sharp(buffer)
-    const metadata = await image.metadata()
-    const { width = 0, height = 0 } = metadata
+    const image = sharp(Buffer.from(await blob.arrayBuffer()))
+    const { width = 0, height = 0 } = await image.metadata()
 
     // 画像を生のピクセルデータに変換
     const { data, info } = await image.ensureAlpha().raw().toBuffer({ resolveWithObject: true })
 
     // 色を抽出
     const extractedColors = await extractColors(
-        {
-            data: [...data],
-            width: info.width,
-            height: info.height,
-        },
-        {
-            pixels,
-            saturationDistance,
-            lightnessDistance,
-            hueDistance,
-        },
+        { data: [...data], width: info.width, height: info.height },
+        { pixels, saturationDistance, lightnessDistance, hueDistance },
     )
 
     const colors = extractedColors.sort((a, b) => b.area - a.area).map((color) => color.hex)

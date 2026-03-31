@@ -11,22 +11,15 @@ export default authedSessionEventHandler(
         const { id } = await validateParams(params)
 
         const data = await db.query.setups.findFirst({
-            // where: (setups, { eq }) => eq(setups.id, id),
-            where: {
-                id: { eq: id },
-            },
-            columns: {
-                userId: true,
-                name: true,
-            },
+            where: { id: { eq: id } },
+            columns: { userId: true, name: true },
         })
 
         if (!data || data.userId !== session.user.id) throw serverError.forbidden()
 
         await db.delete(setups).where(eq(setups.id, id))
 
-        const keys = await useStorage('cache').keys(`nitro:functions:setup:${id}`)
-        await Promise.all(keys.map((key) => useStorage('cache').del(key)))
+        await purgeSetupCache(id)
 
         await createAuditLog({
             userId: session.user.id,
