@@ -142,6 +142,10 @@
             "removed": "Removed from bookmarks",
             "toggleFailed": "Failed to toggle bookmark"
         },
+        "follow": {
+            "followFailed": "Failed to follow user",
+            "unfollowFailed": "Failed to unfollow user"
+        },
         "reports": {
             "submitted": "Report submitted",
             "submittedDescription": "Thank you for your cooperation.",
@@ -542,7 +546,6 @@
     },
     "user": {
         "editProfile": "Edit Profile",
-        "reportUser": "Report User",
         "shops": "Shops",
         "setups": "Setups"
     },

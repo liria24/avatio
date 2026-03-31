@@ -110,6 +110,18 @@ export const usersPublicSchema = usersSelectSchema
     .extend({
         badges: userBadgesPublicSchema.array().optional(),
         shops: userShopsPublicSchema.array().optional(),
+        followersCount: z.number().optional(),
+        followeesCount: z.number().optional(),
+        isFollowing: z.boolean().optional(),
+        isMuted: z.boolean().optional(),
+        settings: userSettingsPublicSchema
+            .pick({
+                publicFollowees: true,
+                publicBookmarks: true,
+            })
+            .partial()
+            .nullable()
+            .optional(),
     })
 export type User = z.infer<typeof usersPublicSchema>
 

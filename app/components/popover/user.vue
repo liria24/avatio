@@ -10,6 +10,8 @@ interface Props {
 const { user } = defineProps<Props>()
 
 const emit = defineEmits(['click'])
+
+const { session } = useAuth()
 </script>
 
 <template>
@@ -39,6 +41,14 @@ const emit = defineEmits(['click'])
                     </template>
                 </LazyUUser>
             </NuxtLink>
+
+            <LazyButtonUserFollow
+                v-if="session && session.user.username !== user.username"
+                :username="user.username"
+                :is-following="user.isFollowing"
+                size="sm"
+                class="px-3 py-1.5"
+            />
         </template>
     </UPopover>
 </template>

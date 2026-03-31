@@ -352,6 +352,25 @@ useSeo({
             </UCard>
         </section>
 
+        <section id="privacy" class="flex flex-col gap-4">
+            <h3 class="text-muted text-sm leading-none font-semibold text-nowrap">プライバシー</h3>
+
+            <UCard :ui="{ body: 'flex flex-col gap-4' }">
+                <USwitch
+                    :label="`フォローしているユーザーを公開`"
+                    color="neutral"
+                    :default-value="userSettings?.publicFollowees"
+                    @update:modelValue="(value) => updateUserSettings({ publicFollowees: value })"
+                />
+                <USwitch
+                    :label="`ブックマークしたセットアップを公開`"
+                    color="neutral"
+                    :default-value="userSettings?.publicBookmarks"
+                    @update:modelValue="(value) => updateUserSettings({ publicBookmarks: value })"
+                />
+            </UCard>
+        </section>
+
         <section id="site" class="flex flex-col gap-4">
             <h3 class="text-muted text-sm leading-none font-semibold text-nowrap">
                 {{ $t('settings.general.site.title') }}

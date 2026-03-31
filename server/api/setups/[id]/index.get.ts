@@ -47,6 +47,12 @@ export default sessionEventHandler<Setup>(async ({ session }) => {
                                     createdAt: true,
                                 },
                             },
+                            followers: session
+                                ? {
+                                      where: { userId: { eq: session.user.id } },
+                                      columns: { id: true },
+                                  }
+                                : undefined,
                         },
                     },
                     items: {
@@ -129,6 +135,12 @@ export default sessionEventHandler<Setup>(async ({ session }) => {
                                             createdAt: true,
                                         },
                                     },
+                                    followers: session
+                                        ? {
+                                              where: { userId: { eq: session.user.id } },
+                                              columns: { id: true },
+                                          }
+                                        : undefined,
                                 },
                             },
                         },
@@ -173,6 +185,19 @@ export default sessionEventHandler<Setup>(async ({ session }) => {
 
             return {
                 ...data,
+                user: {
+                    ...data.user,
+                    isFollowing: !!data.user.followers.length,
+                    followers: undefined,
+                },
+                coauthors: data.coauthors.map((coauthor) => ({
+                    ...coauthor,
+                    user: {
+                        ...coauthor.user,
+                        isFollowing: !!coauthor.user.followers.length,
+                        followers: undefined,
+                    },
+                })),
                 items,
                 tags: data.tags.map((tag) => tag.tag),
                 failedItemsCount,

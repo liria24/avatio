@@ -142,6 +142,10 @@
             "removed": "ブックマークを解除しました",
             "toggleFailed": "ブックマークの変更に失敗しました"
         },
+        "follow": {
+            "followFailed": "フォローに失敗しました",
+            "unfollowFailed": "フォロー解除に失敗しました"
+        },
         "reports": {
             "submitted": "報告が送信されました",
             "submittedDescription": "ご協力ありがとうございます。",
@@ -542,7 +546,6 @@
     },
     "user": {
         "editProfile": "プロフィールを編集",
-        "reportUser": "ユーザーを報告",
         "shops": "ショップ",
         "setups": "セットアップ"
     },
