@@ -229,7 +229,10 @@ export const changelogs = pgTable(
     {
         slug: text().primaryKey(),
         createdAt: timestamp('created_at').defaultNow().notNull(),
-        updatedAt: timestamp('updated_at').defaultNow().notNull(),
+        updatedAt: timestamp('updated_at')
+            .defaultNow()
+            .$onUpdate(() => /* @__PURE__ */ new Date())
+            .notNull(),
         title: text().notNull(),
         markdown: text().notNull(),
         html: text(),
@@ -293,7 +296,10 @@ export const shops = pgTable(
     {
         id: text().primaryKey(),
         createdAt: timestamp('created_at').defaultNow().notNull(),
-        updatedAt: timestamp('updated_at').defaultNow().notNull(),
+        updatedAt: timestamp('updated_at')
+            .defaultNow()
+            .$onUpdate(() => /* @__PURE__ */ new Date())
+            .notNull(),
         platform: platform().notNull(),
         name: text().notNull(),
         image: text(),
@@ -307,7 +313,10 @@ export const items = pgTable(
     {
         id: text().primaryKey(),
         createdAt: timestamp('created_at').defaultNow().notNull(),
-        updatedAt: timestamp('updated_at').defaultNow().notNull(),
+        updatedAt: timestamp('updated_at')
+            .defaultNow()
+            .$onUpdate(() => /* @__PURE__ */ new Date())
+            .notNull(),
         platform: platform().notNull(),
         outdated: boolean().default(false).notNull(),
         shopId: text('shop_id'),
@@ -339,7 +348,10 @@ export const setups = pgTable(
             .primaryKey()
             .$default(() => nanoid(8)),
         createdAt: timestamp('created_at').defaultNow().notNull(),
-        updatedAt: timestamp('updated_at').defaultNow().notNull(),
+        updatedAt: timestamp('updated_at')
+            .defaultNow()
+            .$onUpdate(() => /* @__PURE__ */ new Date())
+            .notNull(),
         userId: text('user_id').notNull(),
         public: boolean().default(true).notNull(),
         name: text().notNull(),
@@ -519,7 +531,10 @@ export const setupDrafts = userSchema.table(
     {
         id: uuid().primaryKey().defaultRandom(),
         createdAt: timestamp('created_at').defaultNow().notNull(),
-        updatedAt: timestamp('updated_at').defaultNow().notNull(),
+        updatedAt: timestamp('updated_at')
+            .defaultNow()
+            .$onUpdate(() => /* @__PURE__ */ new Date())
+            .notNull(),
         userId: text('user_id').notNull(),
         setupId: text('setup_id'),
         content: jsonb().notNull(),
