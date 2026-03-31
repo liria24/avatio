@@ -199,6 +199,31 @@ export const userBadges = userSchema.table(
     ],
 )
 
+export const userSettings = userSchema.table(
+    'user_settings',
+    {
+        id: uuid().primaryKey().defaultRandom(),
+        createdAt: timestamp('created_at').defaultNow().notNull(),
+        updatedAt: timestamp('updated_at')
+            .defaultNow()
+            .$onUpdate(() => /* @__PURE__ */ new Date())
+            .notNull(),
+        userId: text('user_id').notNull().unique(),
+        showPrivateSetups: boolean('show_private_setups').default(true).notNull(),
+        showNSFW: boolean('show_nsfw').default(false).notNull(),
+    },
+    (table) => [
+        index('user_settings_user_id_index').on(table.userId),
+        foreignKey({
+            name: 'user_settings_user_id_fkey',
+            columns: [table.userId],
+            foreignColumns: [users.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+    ],
+)
+
 export const changelogs = pgTable(
     'changelogs',
     {

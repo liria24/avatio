@@ -3,6 +3,7 @@ import {
     inferAdditionalFields,
     multiSessionClient,
     usernameClient,
+    customSessionClient,
 } from 'better-auth/client/plugins'
 import { createAuthClient } from 'better-auth/vue'
 import { withoutHost } from 'ufo'
@@ -12,6 +13,7 @@ const client = createAuthClient({
         usernameClient(),
         adminClient(),
         multiSessionClient(),
+        customSessionClient<typeof auth>(),
         inferAdditionalFields<typeof auth>(),
     ],
 })
@@ -137,13 +139,6 @@ const _useAuth = () => {
 
     // Merge promise with return object (same pattern as Nuxt's useFetch/useAsyncData)
     const awaitableResult = Object.assign(initPromise, returnObject)
-
-    // Make Promise methods enumerable
-    Object.defineProperties(awaitableResult, {
-        then: { enumerable: true, value: initPromise.then.bind(initPromise) },
-        catch: { enumerable: true, value: initPromise.catch.bind(initPromise) },
-        finally: { enumerable: true, value: initPromise.finally.bind(initPromise) },
-    })
 
     return awaitableResult
 }
