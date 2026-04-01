@@ -47,23 +47,6 @@ export default sessionEventHandler<Setup>(async ({ session }) => {
                                     createdAt: true,
                                 },
                             },
-                            shops: {
-                                columns: {
-                                    id: true,
-                                    createdAt: true,
-                                },
-                                with: {
-                                    shop: {
-                                        columns: {
-                                            id: true,
-                                            platform: true,
-                                            name: true,
-                                            image: true,
-                                            verified: true,
-                                        },
-                                    },
-                                },
-                            },
                         },
                     },
                     items: {
@@ -144,23 +127,6 @@ export default sessionEventHandler<Setup>(async ({ session }) => {
                                         columns: {
                                             badge: true,
                                             createdAt: true,
-                                        },
-                                    },
-                                    shops: {
-                                        columns: {
-                                            id: true,
-                                            createdAt: true,
-                                        },
-                                        with: {
-                                            shop: {
-                                                columns: {
-                                                    id: true,
-                                                    platform: true,
-                                                    name: true,
-                                                    image: true,
-                                                    verified: true,
-                                                },
-                                            },
                                         },
                                     },
                                 },
