@@ -164,21 +164,13 @@ const getSetup = defineCachedFunction(
             },
         })
 
-        if (!data)
-            throw createError({
-                status: 404,
-                statusText: 'Setup not found',
-            })
-
         if (
-            data.hidAt &&
-            session?.user.username !== data.user.username &&
-            session?.user.role !== 'admin'
+            !data ||
+            (data.hidAt &&
+                session?.user.username !== data.user.username &&
+                session?.user.role !== 'admin')
         )
-            throw createError({
-                status: 404,
-                statusText: 'Setup not found',
-            })
+            throw serverError.notFound()
 
         const items: SetupItem[] = []
         let failedItemsCount = 0

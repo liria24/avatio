@@ -147,10 +147,11 @@ export default cronEventHandler(async () => {
         try {
             await sendMessage({ embeds: [embed, ...embedsFeedback] })
         } catch (error) {
-            console.error('Failed to send Discord message:', error)
-            throw createError({
-                status: 500,
-                statusText: 'Failed to send Discord message',
+            throw serverError.internalServerError({
+                log: {
+                    tag: '/api/admin/job/report',
+                    message: `Failed to send report to Discord: ${error instanceof Error ? error.message : String(error)}`,
+                },
             })
         }
     }

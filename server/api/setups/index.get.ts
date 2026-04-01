@@ -19,11 +19,7 @@ export default sessionEventHandler(async ({ session }) => {
     const { q, orderBy, sort, username, itemId, tag, bookmarked, includePrivate, page, limit } =
         await validateQuery(query)
 
-    if (bookmarked && !session)
-        throw createError({
-            status: 401,
-            statusText: 'Unauthorized',
-        })
+    if (bookmarked && !session) throw serverError.unauthorized()
 
     // bookmarked === true かつ orderByが未指定の場合、bookmarks.createdAtでソート
     const effectiveOrderBy = bookmarked && !orderBy ? 'bookmarkCreatedAt' : orderBy || 'createdAt'

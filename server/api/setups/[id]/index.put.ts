@@ -26,17 +26,8 @@ export default authedSessionEventHandler(
             .where(eq(setups.id, id))
             .limit(1)
 
-        if (!existingSetup.length)
-            throw createError({
-                status: 404,
-                statusText: 'Setup not found',
-            })
-
-        if (existingSetup[0]?.userId !== session!.user.id)
-            throw createError({
-                status: 403,
-                statusText: 'Access denied',
-            })
+        if (!existingSetup.length) throw serverError.notFound()
+        if (existingSetup[0]?.userId !== session!.user.id) throw serverError.forbidden()
 
         const {
             public: isPublic,

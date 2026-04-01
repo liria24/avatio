@@ -27,11 +27,7 @@ export default adminSessionEventHandler<Feedback>(async () => {
         .where(eq(feedbacks.id, id))
         .returning()
 
-    if (!data)
-        throw createError({
-            statusCode: 404,
-            statusMessage: 'Feedback not found',
-        })
+    if (!data) throw serverError.notFound()
 
     return data
 })

@@ -14,7 +14,7 @@ export default promiseEventHandler<Item>(async () => {
     const { id } = await validateParams(params)
     let { platform } = await validateQuery(query)
 
-    log.log(`Processing item: ${id}, Platform: ${platform || 'auto-detect'}`)
+    log.info(`Processing item: ${id}, Platform: ${platform || 'auto-detect'}`)
 
     if (!platform) {
         const item = await getItemFromDatabase(id)
@@ -27,9 +27,6 @@ export default promiseEventHandler<Item>(async () => {
         if (!platform) throw new Error('Platform not specified')
         return await getItem(platform, id)
     } catch {
-        throw createError({
-            status: 404,
-            statusText: 'Item not found',
-        })
+        throw serverError.notFound()
     }
 })

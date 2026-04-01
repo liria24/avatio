@@ -63,11 +63,7 @@ export default promiseEventHandler<I18nChangelog>(async () => {
         },
     })
 
-    if (!data)
-        throw createError({
-            status: 404,
-            statusText: 'Changelog not found',
-        })
+    if (!data) throw serverError.notFound()
 
     const i18nData = data.i18n.find((i18n) => i18n.locale === lang)
 

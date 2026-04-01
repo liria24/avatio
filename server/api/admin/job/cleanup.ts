@@ -75,20 +75,17 @@ export default cronEventHandler(async ({ event }) => {
         allSetupImages.length > 0 &&
         setupImagesFromDB.length === 0 &&
         setupDraftImagesFromDB.length === 0
-    ) {
-        throw createError({
-            status: 500,
-            statusText:
+    )
+        throw serverError.internalServerError({
+            responseMessage:
                 'Aborting cleanup: setup images exist in storage but DB returned no records. This may indicate a DB connectivity issue.',
         })
-    }
-    if (allUserImages.length > 0 && userImagesFromDB.length === 0) {
-        throw createError({
-            status: 500,
-            statusText:
+
+    if (allUserImages.length > 0 && userImagesFromDB.length === 0)
+        throw serverError.internalServerError({
+            responseMessage:
                 'Aborting cleanup: user images exist in storage but DB returned no records. This may indicate a DB connectivity issue.',
         })
-    }
 
     // Bug 1: URLではなくストレージキー（パス）で比較することでドメイン変更の影響を受けなくする
     const usedSetupKeys = new Set([

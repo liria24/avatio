@@ -45,9 +45,8 @@ export default authedSessionEventHandler(
         })
 
         if ((userSetupDraftsCount[0]?.count || 0) >= MAX_SETUP_DRAFTS)
-            throw createError({
-                status: 429,
-                statusText: 'You have reached the maximum number of setup drafts allowed.',
+            throw serverError.badRequest({
+                responseMessage: 'You have reached the maximum number of setup drafts allowed.',
             })
 
         if (!id && !hasContent(content)) return null
@@ -77,11 +76,7 @@ export default authedSessionEventHandler(
                 id: setupDrafts.id,
             })
 
-        if (!result)
-            throw createError({
-                status: 500,
-                statusText: 'Failed to create draft',
-            })
+        if (!result) throw serverError.internalServerError()
 
         waitUntil(refreshDraftImages(result.id, content.images || []))
 

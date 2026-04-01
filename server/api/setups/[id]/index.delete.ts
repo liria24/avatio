@@ -21,11 +21,7 @@ export default authedSessionEventHandler(
             },
         })
 
-        if (!data || data.userId !== session.user.id)
-            throw createError({
-                status: 403,
-                statusText: 'Forbidden',
-            })
+        if (!data || data.userId !== session.user.id) throw serverError.forbidden()
 
         await db.delete(setups).where(eq(setups.id, id))
 

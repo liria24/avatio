@@ -21,19 +21,17 @@ interface ActualInboundEmail {
     attachments: unknown[]
 }
 
-const log = logger('/api/admin/emails:GET')
-
 export default adminSessionEventHandler<InboundEmail[]>(async () => {
     const unosend = useUnosend()
     const { data, error } = await unosend.inbound.list({ page: 1 })
 
-    if (error) {
-        log.error('Failed to fetch inbound emails:', error.message)
-        throw createError({
-            statusCode: 502,
-            statusMessage: 'Failed to fetch inbound emails',
+    if (error)
+        throw serverError.internalServerError({
+            log: {
+                tag: '/api/admin/emails:GET',
+                message: `Failed to fetch inbound emails: ${error.message}`,
+            },
         })
-    }
 
     return ((data as unknown as ActualInboundEmail[]) ?? []).map(
         (email) =>
