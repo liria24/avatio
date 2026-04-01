@@ -29,7 +29,18 @@ const tab = computed<Tab>({
     },
 })
 
-const showPrivate = ref(true)
+const showPrivate = ref(session.value?.user.settings?.showPrivateSetups ?? true)
+
+watchDebounced(
+    showPrivate,
+    (val) => {
+        $fetch('/api/users/me/settings', {
+            method: 'PUT',
+            body: { showPrivateSetups: val },
+        })
+    },
+    { debounce: 500 },
+)
 
 useSeo({
     title: t('index.seo.title'),
