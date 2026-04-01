@@ -26,17 +26,8 @@ export default authedSessionEventHandler(
             .where(eq(setups.id, id))
             .limit(1)
 
-        if (!existingSetup.length)
-            throw createError({
-                status: 404,
-                statusText: 'Setup not found',
-            })
-
-        if (existingSetup[0]?.userId !== session!.user.id)
-            throw createError({
-                status: 403,
-                statusText: 'Access denied',
-            })
+        if (!existingSetup.length) throw serverError.notFound()
+        if (existingSetup[0]?.userId !== session!.user.id) throw serverError.forbidden()
 
         const {
             public: isPublic,
@@ -46,9 +37,7 @@ export default authedSessionEventHandler(
             images,
             tags,
             coauthors,
-        } = await validateBody(body, {
-            sanitize: true,
-        })
+        } = await validateBody(body, { sanitize: true })
 
         // セットアップ基本情報の更新
         const updateData: Partial<
@@ -57,10 +46,17 @@ export default authedSessionEventHandler(
         if (isPublic !== undefined) updateData.public = isPublic
         if (name !== undefined) updateData.name = name
         if (description !== undefined) updateData.description = description
-        updateData.updatedAt = new Date()
 
-        if (Object.keys(updateData).length > 0)
+        const hasRelationalChanges =
+            items.length > 0 ||
+            images !== undefined ||
+            tags !== undefined ||
+            coauthors !== undefined
+
+        if (Object.keys(updateData).length || hasRelationalChanges) {
+            updateData.updatedAt = new Date()
             await db.update(setups).set(updateData).where(eq(setups.id, id))
+        }
 
         // アイテムの更新
         // 既存のアイテムとシェイプキーを削除
@@ -118,22 +114,21 @@ export default authedSessionEventHandler(
         if (images !== undefined) {
             await db.delete(setupImages).where(eq(setupImages.setupId, id))
 
-            if (images.length) {
-                const imageData = await Promise.all(
-                    images.map(async (image) => {
-                        const { colors, width, height } = await extractImageColors(image)
-                        return {
-                            setupId: id,
-                            url: image,
-                            width,
-                            height,
-                            themeColors: colors.length ? colors : null,
-                        }
-                    }),
+            if (images.length)
+                await db.insert(setupImages).values(
+                    await Promise.all(
+                        images.map(async (image) => {
+                            const { colors, width, height } = await extractImageColors(image)
+                            return {
+                                setupId: id,
+                                url: image,
+                                width,
+                                height,
+                                themeColors: colors.length ? colors : null,
+                            }
+                        }),
+                    ),
                 )
-
-                await db.insert(setupImages).values(imageData)
-            }
         }
 
         // タグの更新
@@ -153,7 +148,7 @@ export default authedSessionEventHandler(
         if (coauthors !== undefined) {
             await db.delete(setupCoauthors).where(eq(setupCoauthors.setupId, id))
 
-            if (coauthors.length > 0)
+            if (coauthors.length)
                 await db.insert(setupCoauthors).values(
                     coauthors.map((coauthor) => ({
                         setupId: id,

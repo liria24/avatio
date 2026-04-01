@@ -1,4 +1,3 @@
-import { StatusCodes, getReasonPhrase } from 'http-status-codes'
 import { z } from 'zod'
 
 const params = z.object({
@@ -48,11 +47,7 @@ const getUser = defineCachedFunction(
             },
         })
 
-        if (!data)
-            throw createError({
-                status: StatusCodes.NOT_FOUND,
-                statusText: getReasonPhrase(StatusCodes.NOT_FOUND),
-            })
+        if (!data) throw serverError.notFound()
 
         return data
     },

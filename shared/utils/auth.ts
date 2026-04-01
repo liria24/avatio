@@ -1,7 +1,8 @@
 import { drizzleAdapter } from '@better-auth/drizzle-adapter'
 import { put } from '@tigrisdata/storage'
 import { betterAuth } from 'better-auth/minimal'
-import { admin, multiSession, username } from 'better-auth/plugins'
+import type { BetterAuthOptions } from 'better-auth/minimal'
+import { admin, multiSession, username, customSession } from 'better-auth/plugins'
 import { nanoid } from 'nanoid'
 
 import { db, schema } from '../../server/utils/database'
@@ -16,7 +17,7 @@ import {
 const JPG_FILENAME_LENGTH = 16
 const minUsernameLength = 3
 
-export const auth = betterAuth({
+const options = {
     appName: 'Avatio',
     secret: process.env.BETTER_AUTH_SECRET as string,
 
@@ -171,6 +172,27 @@ export const auth = betterAuth({
             sameSite: 'lax',
         },
     },
+} satisfies BetterAuthOptions
+
+export const auth = betterAuth({
+    ...options,
+    plugins: [
+        ...(options.plugins ?? []),
+        customSession(async ({ user, session }) => {
+            const settings = await db.query.userSettings.findFirst({
+                where: { userId: { eq: user.id } },
+                columns: {
+                    updatedAt: true,
+                    showPrivateSetups: true,
+                    showNSFW: true,
+                },
+            })
+            return {
+                user: { ...user, settings },
+                session,
+            }
+        }, options),
+    ],
 })
 
 export type Session = typeof auth.$Infer.Session

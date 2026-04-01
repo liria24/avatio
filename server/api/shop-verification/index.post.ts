@@ -13,11 +13,7 @@ export default authedSessionEventHandler(
 
         // URLからアイテムIDを抽出
         const itemId = extractItemId(url)
-        if (!itemId)
-            throw createError({
-                status: 400,
-                statusText: 'Invalid URL or item ID not found',
-            })
+        if (!itemId) throw serverError.badRequest()
 
         // Boothからアイテム情報を取得
         const item = await $fetch<Booth>(
@@ -42,32 +38,22 @@ export default authedSessionEventHandler(
         })
 
         if (existingShop)
-            throw createError({
-                status: 400,
-                statusText: 'This shop is already registered',
+            throw serverError.badRequest({
+                responseMessage: 'This shop is already registered',
             })
 
         // ユーザーの検証コードを取得
         const verificationCode = await db.query.userShopVerifications.findFirst({
-            where: {
-                userId: { eq: session.user.id },
-            },
-            columns: {
-                code: true,
-            },
+            where: { userId: { eq: session.user.id } },
+            columns: { code: true },
         })
 
-        if (!verificationCode)
-            throw createError({
-                status: 400,
-                statusText: 'Verification code not found',
-            })
+        if (!verificationCode) throw serverError.internalServerError()
 
         // 検証コードがアイテムの説明に含まれているか確認
         if (!item.description?.includes(verificationCode.code))
-            throw createError({
-                status: 400,
-                statusText: 'Verification code not found in item description',
+            throw serverError.badRequest({
+                responseMessage: 'Verification code not found in item description',
             })
 
         // アイテムの詳細情報を取得

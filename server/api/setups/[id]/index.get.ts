@@ -1,159 +1,132 @@
 import { z } from 'zod'
 
+const log = logger('/api/setups/[id]:GET')
+
 const params = z.object({
     id: z.string(),
 })
 
-const getSetup = defineCachedFunction(
-    async (id: Setup['id'], session: Session | undefined) => {
-        const data = await db.query.setups.findFirst({
-            where: {
-                id: { eq: id },
-                user: {
-                    OR: [{ banned: { eq: false } }, { banned: { isNull: true } }],
-                },
-            },
-            columns: {
-                id: true,
-                createdAt: true,
-                updatedAt: true,
-                public: true,
-                name: true,
-                description: true,
-                hidAt: true,
-                hidReason: true,
-            },
-            with: {
-                user: {
-                    columns: {
-                        id: true,
-                        username: true,
-                        createdAt: true,
-                        name: true,
-                        image: true,
-                        bio: true,
-                        links: true,
+export default sessionEventHandler<Setup>(async ({ session }) => {
+    const { id } = await validateParams(params)
+
+    type Args = { id: Setup['id']; session: Session | undefined }
+    const getSetup = defineCachedFunction(
+        async ({ id, session }: Args) => {
+            const data = await db.query.setups.findFirst({
+                where: {
+                    id: { eq: id },
+                    user: {
+                        OR: [{ banned: { eq: false } }, { banned: { isNull: true } }],
                     },
-                    with: {
-                        badges: {
-                            columns: {
-                                badge: true,
-                                createdAt: true,
-                            },
+                },
+                columns: {
+                    id: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    public: true,
+                    name: true,
+                    description: true,
+                    hidAt: true,
+                    hidReason: true,
+                },
+                with: {
+                    user: {
+                        columns: {
+                            id: true,
+                            username: true,
+                            createdAt: true,
+                            name: true,
+                            image: true,
+                            bio: true,
+                            links: true,
                         },
-                        shops: {
-                            columns: {
-                                id: true,
-                                createdAt: true,
-                            },
-                            with: {
-                                shop: {
-                                    columns: {
-                                        id: true,
-                                        platform: true,
-                                        name: true,
-                                        image: true,
-                                        verified: true,
-                                    },
+                        with: {
+                            badges: {
+                                columns: {
+                                    badge: true,
+                                    createdAt: true,
                                 },
                             },
                         },
                     },
-                },
-                items: {
-                    columns: {
-                        category: true,
-                        unsupported: true,
-                        note: true,
-                    },
-                    with: {
-                        item: {
-                            columns: {
-                                id: true,
-                                updatedAt: true,
-                                platform: true,
-                                category: true,
-                                name: true,
-                                niceName: true,
-                                image: true,
-                                price: true,
-                                likes: true,
-                                nsfw: true,
-                                outdated: true,
-                            },
-                            with: {
-                                shop: {
-                                    columns: {
-                                        id: true,
-                                        platform: true,
-                                        name: true,
-                                        image: true,
-                                        verified: true,
+                    items: {
+                        columns: {
+                            category: true,
+                            unsupported: true,
+                            note: true,
+                        },
+                        with: {
+                            item: {
+                                columns: {
+                                    id: true,
+                                    updatedAt: true,
+                                    platform: true,
+                                    category: true,
+                                    name: true,
+                                    niceName: true,
+                                    image: true,
+                                    price: true,
+                                    likes: true,
+                                    nsfw: true,
+                                    outdated: true,
+                                },
+                                with: {
+                                    shop: {
+                                        columns: {
+                                            id: true,
+                                            platform: true,
+                                            name: true,
+                                            image: true,
+                                            verified: true,
+                                        },
                                     },
                                 },
                             },
-                        },
-                        shapekeys: {
-                            columns: {
-                                name: true,
-                                value: true,
-                            },
-                        },
-                    },
-                },
-                images: {
-                    columns: {
-                        url: true,
-                        width: true,
-                        height: true,
-                    },
-                },
-                tags: {
-                    columns: {
-                        tag: true,
-                    },
-                },
-                coauthors: {
-                    where: {
-                        user: {
-                            OR: [{ banned: { eq: false } }, { banned: { isNull: true } }],
-                        },
-                    },
-                    columns: {
-                        note: true,
-                    },
-                    with: {
-                        user: {
-                            columns: {
-                                id: true,
-                                username: true,
-                                createdAt: true,
-                                name: true,
-                                image: true,
-                                bio: true,
-                                links: true,
-                            },
-                            with: {
-                                badges: {
-                                    columns: {
-                                        badge: true,
-                                        createdAt: true,
-                                    },
+                            shapekeys: {
+                                columns: {
+                                    name: true,
+                                    value: true,
                                 },
-                                shops: {
-                                    columns: {
-                                        id: true,
-                                        createdAt: true,
-                                    },
-                                    with: {
-                                        shop: {
-                                            columns: {
-                                                id: true,
-                                                platform: true,
-                                                name: true,
-                                                image: true,
-                                                verified: true,
-                                            },
+                            },
+                        },
+                    },
+                    images: {
+                        columns: {
+                            url: true,
+                            width: true,
+                            height: true,
+                        },
+                    },
+                    tags: {
+                        columns: {
+                            tag: true,
+                        },
+                    },
+                    coauthors: {
+                        where: {
+                            user: {
+                                OR: [{ banned: { eq: false } }, { banned: { isNull: true } }],
+                            },
+                        },
+                        columns: {
+                            note: true,
+                        },
+                        with: {
+                            user: {
+                                columns: {
+                                    id: true,
+                                    username: true,
+                                    createdAt: true,
+                                    name: true,
+                                    image: true,
+                                    bio: true,
+                                    links: true,
+                                },
+                                with: {
+                                    badges: {
+                                        columns: {
+                                            badge: true,
+                                            createdAt: true,
                                         },
                                     },
                                 },
@@ -161,128 +134,57 @@ const getSetup = defineCachedFunction(
                         },
                     },
                 },
-            },
-        })
-
-        if (!data)
-            throw createError({
-                status: 404,
-                statusText: 'Setup not found',
             })
 
-        if (
-            data.hidAt &&
-            session?.user.username !== data.user.username &&
-            session?.user.role !== 'admin'
-        )
-            throw createError({
-                status: 404,
-                statusText: 'Setup not found',
-            })
+            if (
+                !data ||
+                (data.hidAt &&
+                    session?.user.username !== data.user.username &&
+                    session?.user.role !== 'admin')
+            )
+                throw serverError.notFound()
 
-        const items: SetupItem[] = []
-        let failedItemsCount = 0
+            const results = await Promise.all(
+                data.items.map(async (item) => {
+                    if (item.item.outdated) return null
+                    try {
+                        const response = await getItem(item.item.platform, item.item.id)
+                        if (response.outdated) return null
+                        return {
+                            ...response,
+                            category: item.category || response.category,
+                            unsupported: item.unsupported,
+                            note: item.note,
+                            shapekeys: item.shapekeys,
+                        }
+                    } catch (error) {
+                        log.error(`Failed to fetch item ${item.item.id}:`, error)
+                        return null
+                    }
+                }),
+            )
 
-        const { forceUpdateItem } = await getEdgeConfig()
+            const items: SetupItem[] = []
+            let failedItemsCount = 0
 
-        const expiredFilter = (date: string | Date) => {
-            if (forceUpdateItem) return true
-            return new Date().getTime() - new Date(date).getTime() >= ITEM_CACHE_DURATION_MS
-        }
+            for (const result of results)
+                if (result) items.push(result)
+                else failedItemsCount++
 
-        const expiredItems = data.items.filter((item) => expiredFilter(item.item.updatedAt))
-
-        const validItems = data.items.filter((item) => !expiredFilter(item.item.updatedAt))
-
-        // 有効なアイテムを処理（outdatedなものは除外）
-        for (const item of validItems) {
-            if (item.item.outdated) {
-                failedItemsCount++
-                continue
+            return {
+                ...data,
+                items,
+                tags: data.tags.map((tag) => tag.tag),
+                failedItemsCount,
             }
+        },
+        {
+            maxAge: SETUP_CACHE_TTL,
+            name: 'setup',
+            getKey: ({ id, session }: Args) => `${id}${session ? `:${session.user.id}` : ''}`,
+            swr: false,
+        },
+    )
 
-            if (item.item.platform === 'github') {
-                const data = await getGithubItem(item.item.id)
-                if (!data) continue
-                items.push({
-                    ...data,
-                    niceName: item.item.niceName,
-                    category: item.category || data.category,
-                    unsupported: item.unsupported,
-                    note: item.note,
-                    shapekeys: item.shapekeys,
-                })
-                continue
-            }
-
-            items.push({
-                ...item.item,
-                category: item.category || item.item.category,
-                unsupported: item.unsupported,
-                note: item.note,
-                shapekeys: item.shapekeys,
-            })
-        }
-
-        // 期限切れのアイテムを並行して更新
-        const expiredItemsPromises = expiredItems.map(async (item) => {
-            try {
-                const response = await $fetch<Item>(`/api/items/${item.item.id}`, {
-                    query: { platform: item.item.platform },
-                })
-                return {
-                    success: true,
-                    data: {
-                        ...response,
-                        unsupported: item.unsupported,
-                        note: item.note,
-                        shapekeys: item.shapekeys,
-                        category: item.category || response.category,
-                    },
-                }
-            } catch (error) {
-                console.error(`Failed to fetch item ${item.item.id}:`, error)
-                return {
-                    success: false,
-                    data: null,
-                }
-            }
-        })
-
-        // 並行処理の結果を待機して処理
-        const expiredItemsResults = await Promise.all(expiredItemsPromises)
-
-        for (const result of expiredItemsResults) {
-            if (result.success && result.data) {
-                // 更新後もoutdatedの場合は除外
-                if (result.data.outdated) {
-                    failedItemsCount++
-                    continue
-                }
-                items.push(result.data)
-            } else {
-                failedItemsCount++
-            }
-        }
-
-        return {
-            ...data,
-            items,
-            tags: data.tags.map((tag) => tag.tag),
-            failedItemsCount,
-        }
-    },
-    {
-        maxAge: SETUP_CACHE_TTL,
-        name: 'setup',
-        getKey: (id: Setup['id'], session: Session | undefined) =>
-            `${id}${session ? `:${session.user.id}` : ''}`,
-        swr: false,
-    },
-)
-
-export default sessionEventHandler<Setup>(async ({ session }) => {
-    const { id } = await validateParams(params)
-
-    return await getSetup(id, session || undefined)
+    return await getSetup({ id, session: session || undefined })
 })

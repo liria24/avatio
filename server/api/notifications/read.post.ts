@@ -18,17 +18,9 @@ export default authedSessionEventHandler(async ({ session }) => {
         },
     })
 
-    if (!data)
-        throw createError({
-            status: 404,
-            statusText: 'Notification not found.',
-        })
+    if (!data) throw serverError.notFound()
 
-    if (data.userId !== session.user.id)
-        throw createError({
-            status: 403,
-            statusText: 'Forbidden.',
-        })
+    if (data.userId !== session.user.id) throw serverError.forbidden()
 
     await db
         .update(notifications)

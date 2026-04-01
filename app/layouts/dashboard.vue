@@ -1,6 +1,9 @@
 <script lang="ts" setup>
 const { app } = useAppConfig()
 const { session, revoke } = await useAuth()
+const { getSummary } = useAdmin()
+
+const { data: openCounts } = await getSummary()
 
 const dev = import.meta.dev
 const vercelEnv = process.env.NUXT_ENV_VERCEL_TARGET_ENV
@@ -96,11 +99,18 @@ const vercelEnv = process.env.NUXT_ENV_VERCEL_TARGET_ENV
                                     label: 'Feedbacks',
                                     icon: 'mingcute:chat-3-fill',
                                     to: '/admin/feedbacks',
+                                    badge: openCounts?.feedbackOpenCount || undefined,
                                 },
                                 {
                                     label: 'Reports',
                                     icon: 'mingcute:flag-3-fill',
                                     to: '/admin/reports',
+                                    badge: openCounts?.reportOpenCount || undefined,
+                                },
+                                {
+                                    label: 'Emails',
+                                    icon: 'mingcute:mail-fill',
+                                    to: '/admin/emails',
                                 },
                             ]"
                             orientation="vertical"

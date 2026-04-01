@@ -2,67 +2,12 @@
 import { MasonryWall } from '@yeger/vue-masonry-wall'
 
 interface Props {
-    type?: 'latest' | 'owned' | 'bookmarked'
-    username?: string
+    setups?: ReturnType<typeof useSetupsList>['setups']['value']
+    loading?: boolean
 }
-const { type, username } = defineProps<Props>()
+const { setups = [], loading = false } = defineProps<Props>()
 
-const { session } = useAuth()
 const { isMobile } = useDevice()
-
-// Props Mode: typeプロップがある場合、内部でuseSetupsListを使用
-// Model Mode: typeプロップがない場合、外部からsetups/loadingモデルを受け取る
-const isPropsMode = computed(() => !!type)
-
-const modelSetups = defineModel<ReturnType<typeof useSetupsList>['setups']['value']>('setups', {
-    default: [],
-})
-const modelLoading = defineModel<boolean>('loading', {
-    default: false,
-})
-
-// Props Mode用のリアクティブな参照
-const propsResult = ref<ReturnType<typeof useSetupsList> | null>(null)
-
-// Props Modeの初期化関数
-const initializePropsMode = async () => {
-    if (!type) return
-
-    // ownedタイプでusernameが未指定の場合、自動的にセッションから取得
-    const effectiveUsername =
-        type === 'owned' && !username ? (session.value?.user.username ?? undefined) : username
-
-    const result = useSetupsList(type, {
-        username: effectiveUsername,
-        immediate: false,
-    })
-
-    propsResult.value = result
-
-    await result.initialize()
-}
-
-// 初回実行
-if (type) await initializePropsMode()
-
-// typeまたはusernameが変更されたら再初期化
-watch(
-    () => [type, username] as const,
-    async () => {
-        if (type) await initializePropsMode()
-    },
-)
-
-const setups = computed(() => {
-    if (isPropsMode.value && propsResult.value) return propsResult.value.setups
-
-    return modelSetups.value
-})
-const loading = computed<boolean>(() => {
-    if (isPropsMode.value && propsResult.value) return propsResult.value.status === 'pending'
-
-    return modelLoading.value
-})
 </script>
 
 <template>
@@ -99,16 +44,5 @@ const loading = computed<boolean>(() => {
                 </div>
             </template>
         </MasonryWall>
-
-        <!-- Props Modeの場合のみページネーションボタンを表示 -->
-        <UButton
-            v-if="isPropsMode && propsResult?.pagination?.hasNext"
-            :loading="propsResult?.status === 'pending'"
-            :label="$t('more')"
-            variant="soft"
-            size="lg"
-            class="w-fit self-center"
-            @click="propsResult?.loadMore()"
-        />
     </div>
 </template>

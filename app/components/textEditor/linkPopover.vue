@@ -16,7 +16,7 @@ const disabled = computed(() => {
     return selection.empty && !editor.isActive('link')
 })
 
-watch(
+watchImmediate(
     () => editor,
     (editor, _, onCleanup) => {
         if (!editor) return
@@ -33,7 +33,6 @@ watch(
             editor.off('selectionUpdate', updateUrl)
         })
     },
-    { immediate: true },
 )
 
 watch(active, (isActive) => {

@@ -8,22 +8,22 @@ const props = defineProps<Props>()
 
 const emit = defineEmits(['close'])
 
-const { banUserWithReason } = useAdminActions()
+const { banUserWithReason } = useAdmin()
 
 const banReasonInput = ref('')
 const banExpiresInInput = ref(0)
 
 const banUser = async () => {
-    const success = await banUserWithReason(
-        props.userId,
-        banReasonInput.value,
-        banExpiresInInput.value || undefined,
-    )
-    if (success) {
-        emit('close')
-        banReasonInput.value = ''
-        banExpiresInInput.value = 0
-    }
+    await banUserWithReason({
+        userId: props.userId,
+        banReason: banReasonInput.value,
+        banExpiresIn: banExpiresInInput.value || undefined,
+        onSuccess: () => {
+            emit('close')
+            banReasonInput.value = ''
+            banExpiresInInput.value = 0
+        },
+    })
 }
 </script>
 

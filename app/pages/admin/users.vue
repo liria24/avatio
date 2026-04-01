@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 const { locale, t } = useI18n()
-const { unbanUser: unbanUserAction } = useAdminActions()
+const { unbanUser: unbanUserAction } = useAdmin()
 const banUser = useBanUserModal()
 const { badgeDefinitions } = useBadges()
 
@@ -9,8 +9,7 @@ const { data, refresh } = await useFetch('/api/admin/user', {
 })
 
 const unbanUser = async (userId: string) => {
-    const success = await unbanUserAction(userId)
-    if (success) refresh()
+    await unbanUserAction({ userId, onSuccess: () => refresh() })
 }
 
 const getMenuItems = (user: NonNullable<typeof data.value>[number]) => [

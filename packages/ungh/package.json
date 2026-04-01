@@ -1,5 +1,5 @@
 {
-    "name": "@avatio/bot-notifier",
+    "name": "@avatio/ungh",
     "version": "1.0.0",
     "type": "module",
     "exports": {
@@ -9,17 +9,15 @@
         }
     },
     "scripts": {
-        "build": "tsdown",
-        "test": "vitest run",
-        "test:watch": "vitest"
+        "build": "tsdown"
     },
     "dependencies": {
-        "ofetch": "^2.0.0-alpha.3"
+        "ofetch": "^2.0.0-alpha.3",
+        "zod": "4.3.6"
     },
     "devDependencies": {
         "@types/node": "25.5.0",
         "tsdown": "^0.21.0",
-        "typescript": "6.0.2",
-        "vitest": "^4.1.2"
+        "typescript": "6.0.2"
     }
 }

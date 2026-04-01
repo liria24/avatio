@@ -1,6 +1,5 @@
 import { users } from '@@/database/schema'
 import { eq } from 'drizzle-orm'
-import { StatusCodes, getReasonPhrase } from 'http-status-codes'
 import { z } from 'zod'
 
 const params = z.object({
@@ -27,27 +26,14 @@ export default authedSessionEventHandler(async ({ session }) => {
         },
     })
 
-    if (!data)
-        throw createError({
-            status: StatusCodes.NOT_FOUND,
-            statusText: getReasonPhrase(StatusCodes.NOT_FOUND),
-        })
-
-    if (data.id !== session.user.id && session.user.role !== 'admin')
-        throw createError({
-            status: StatusCodes.FORBIDDEN,
-            statusText: getReasonPhrase(StatusCodes.FORBIDDEN),
-        })
+    if (!data) throw serverError.notFound()
+    if (data.id !== session.user.id && session.user.role !== 'admin') throw serverError.forbidden()
 
     if (username) {
         const isUsernameAvailable = await auth.api.isUsernameAvailable({
             body: { username },
         })
-        if (!isUsernameAvailable)
-            throw createError({
-                status: StatusCodes.BAD_REQUEST,
-                statusText: getReasonPhrase(StatusCodes.BAD_REQUEST),
-            })
+        if (!isUsernameAvailable) throw serverError.badRequest()
     }
 
     await db

@@ -10,19 +10,16 @@ const query = z.object({
     itemId: z.union([z.string(), z.array(z.string())]).optional(),
     tag: z.union([z.string(), z.array(z.string())]).optional(),
     bookmarked: z.union([z.boolean(), z.stringbool()]).optional(),
+    includePrivate: z.union([z.boolean(), z.stringbool()]).optional(),
     page: z.coerce.number().min(1).optional().default(1),
     limit: z.coerce.number().min(1).max(API_LIMIT_MAX).optional().default(SETUPS_API_DEFAULT_LIMIT),
 })
 
 export default sessionEventHandler(async ({ session }) => {
-    const { q, orderBy, sort, username, itemId, tag, bookmarked, page, limit } =
+    const { q, orderBy, sort, username, itemId, tag, bookmarked, includePrivate, page, limit } =
         await validateQuery(query)
 
-    if (bookmarked && !session)
-        throw createError({
-            status: 401,
-            statusText: 'Unauthorized',
-        })
+    if (bookmarked && !session) throw serverError.unauthorized()
 
     // bookmarked === true かつ orderByが未指定の場合、bookmarks.createdAtでソート
     const effectiveOrderBy = bookmarked && !orderBy ? 'bookmarkCreatedAt' : orderBy || 'createdAt'
@@ -31,7 +28,8 @@ export default sessionEventHandler(async ({ session }) => {
     const offset = (page - 1) * limit
 
     const shouldShowPrivate =
-        (bookmarked && session) || (username && session?.user.username === username)
+        (bookmarked && session) ||
+        (username && session?.user.username === username && includePrivate === true)
 
     const data = await db.query.setups.findMany({
         extras: {

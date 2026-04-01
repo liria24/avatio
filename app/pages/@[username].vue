@@ -30,6 +30,10 @@ onBeforeRouteLeave(() => {
     overlay.closeAll()
 })
 
+const { setups, status } = useSetupsList('owned', {
+    username: user.value?.username,
+})
+
 useSeo({
     title: user.value?.name,
     description: user.value?.bio || undefined,
@@ -170,29 +174,37 @@ useSeo({
                     :to="`https://${shop.shop.id}.booth.pm`"
                     target="_blank"
                     external
-                    variant="soft"
+                    variant="ghost"
                     class="gap-3 p-3"
                 >
-                    <NuxtImg
-                        v-slot="{ isLoaded, src, imgAttrs }"
-                        :src="shop.shop.image || undefined"
-                        :width="32"
-                        :height="32"
-                        format="avif"
-                        fit="cover"
-                        custom
-                    >
-                        <img
-                            v-if="isLoaded"
-                            v-bind="imgAttrs"
-                            :src
+                    <div v-if="shop.shop.image" class="relative">
+                        <NuxtImg
+                            :src="shop.shop.image"
                             alt=""
+                            :width="48"
+                            :height="48"
+                            format="avif"
+                            fit="cover"
                             loading="lazy"
                             fetchpriority="low"
-                            class="aspect-square size-8 shrink-0 rounded-lg object-cover"
+                            class="aspect-square size-10 shrink-0 rounded-lg object-cover"
                         />
-                        <USkeleton v-else class="aspect-square size-8 shrink-0 rounded-lg" />
-                    </NuxtImg>
+
+                        <div
+                            class="inset-ring-inverted/10 pointer-events-none absolute inset-0 rounded-md inset-ring-1"
+                        />
+                    </div>
+                    <div
+                        v-else
+                        class="bg-muted flex aspect-square size-22 items-center justify-center rounded-lg sm:size-28"
+                    >
+                        <Icon
+                            :name="platformIcons[shop.shop.platform]"
+                            size="24"
+                            class="text-muted"
+                        />
+                    </div>
+
                     <div class="flex flex-col items-start gap-1">
                         <span
                             class="text-sm leading-none font-semibold text-zinc-800 dark:text-zinc-300"
@@ -219,7 +231,7 @@ useSeo({
                 </h2>
             </div>
 
-            <SetupsList type="owned" :username="user.username" />
+            <SetupsList :setups :loading="status === 'pending'" />
         </div>
     </div>
 </template>

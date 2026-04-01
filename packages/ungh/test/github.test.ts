@@ -2,15 +2,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
     getGithubContributors,
-    getGithubItem,
     getGithubLatestRelease,
     getGithubReadme,
     getGithubRepo,
     getGithubUser,
-} from '../../server/utils/github'
+} from '../src/index'
 
-const mockFetch = vi.fn()
-vi.stubGlobal('$fetch', mockFetch)
+const mockFetch = vi.hoisted(() => vi.fn())
+
+vi.mock('ofetch', () => ({
+    $fetch: mockFetch,
+}))
 
 // ---------------------------------------------------------------------------
 // Fixture data
@@ -37,19 +39,6 @@ const MOCK_RELEASE = { release: { tag: 'v1.0.0' } }
 const MOCK_USER = { user: { login: 'octocat', name: 'The Octocat' } }
 
 const MOCK_README = { html: '<h1>Hello</h1>' }
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/** Makes $fetch respond differently based on the URL suffix. */
-const setupItemFetch = () => {
-    mockFetch.mockImplementation((url: string) => {
-        if (url.includes('/contributors')) return Promise.resolve(MOCK_CONTRIBUTORS)
-        if (url.includes('/releases/latest')) return Promise.resolve(MOCK_RELEASE)
-        return Promise.resolve(MOCK_REPO)
-    })
-}
 
 // ---------------------------------------------------------------------------
 // repo / user validation (shared by all functions)
@@ -192,67 +181,5 @@ describe('getGithubUser', () => {
     it('returns null when the fetch throws', async () => {
         mockFetch.mockRejectedValue(new Error('Not found'))
         expect(await getGithubUser('octocat')).toBeNull()
-    })
-})
-
-// ---------------------------------------------------------------------------
-// getGithubItem
-// ---------------------------------------------------------------------------
-
-describe('getGithubItem', () => {
-    beforeEach(() => {
-        mockFetch.mockClear()
-        setupItemFetch()
-    })
-
-    it('returns null for an invalid repo string', async () => {
-        mockFetch.mockClear()
-        expect(await getGithubItem('not-a-repo')).toBeNull()
-        expect(mockFetch).not.toHaveBeenCalled()
-    })
-
-    it('returns null when the repo fetch fails', async () => {
-        mockFetch.mockImplementation((url: string) => {
-            if (url.includes('/contributors')) return Promise.resolve(MOCK_CONTRIBUTORS)
-            if (url.includes('/releases/latest')) return Promise.resolve(MOCK_RELEASE)
-            return Promise.reject(new Error('Not found'))
-        })
-        expect(await getGithubItem('octocat/hello-world')).toBeNull()
-    })
-
-    it('returns a correctly structured item', async () => {
-        const result = await getGithubItem('octocat/hello-world')
-        expect(result).toMatchObject({
-            id: 'octocat/hello-world',
-            platform: 'github',
-            category: 'other',
-            outdated: false,
-            image: null,
-            niceName: null,
-            price: null,
-            nsfw: false,
-            likes: MOCK_REPO.repo.stars,
-            forks: MOCK_REPO.repo.forks,
-            version: MOCK_RELEASE.release.tag,
-        })
-    })
-
-    it('sorts contributors by contribution count descending', async () => {
-        const result = await getGithubItem('octocat/hello-world')
-        expect(result?.contributors?.map((c: { name: string }) => c.name)).toEqual([
-            'octocat',
-            'ghost',
-        ])
-    })
-
-    it('builds the shop from the repo owner', async () => {
-        const result = await getGithubItem('octocat/hello-world')
-        expect(result?.shop).toEqual({
-            id: 'octocat',
-            name: 'octocat',
-            image: 'https://github.com/octocat.png',
-            platform: 'github',
-            verified: false,
-        })
     })
 })

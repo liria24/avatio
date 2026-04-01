@@ -9,7 +9,7 @@ const emit = defineEmits(['close'])
 const { t } = useI18n()
 const { session } = useAuth()
 const toast = useToast()
-const { hideSetup: hideSetupAction } = useAdminActions()
+const { hideSetup: hideSetupAction } = useAdmin()
 
 const hideReason = ref('')
 
@@ -23,11 +23,14 @@ const hideSetup = async () => {
         return
     }
 
-    const success = await hideSetupAction(setupId, hideReason.value)
-    if (success) {
-        hideReason.value = ''
-        emit('close')
-    }
+    await hideSetupAction({
+        setupId,
+        hideReason: hideReason.value,
+        onSuccess: () => {
+            hideReason.value = ''
+            emit('close')
+        },
+    })
 }
 </script>
 

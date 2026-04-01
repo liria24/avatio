@@ -175,6 +175,9 @@ export default defineNuxtConfig({
                 endpoint: import.meta.env.TIGRIS_STORAGE_ENDPOINT,
             },
         },
+        unosend: {
+            apiKey: import.meta.env.UNOSEND_API_KEY,
+        },
         vercel: {
             token: import.meta.env.VERCEL_TOKEN,
             edgeConfig: {

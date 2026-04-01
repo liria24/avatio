@@ -95,7 +95,7 @@ useSeo({
         />
 
         <div v-else-if="setups.length" class="flex flex-col gap-2 lg:grid lg:grid-cols-1">
-            <SetupsList v-model:setups="setups" v-model:status="status" />
+            <SetupsList :setups :loading="status === 'pending'" />
             <UButton
                 v-if="pagination?.hasNext"
                 :loading="status === 'pending'"

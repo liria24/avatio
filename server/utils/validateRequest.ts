@@ -1,5 +1,4 @@
 import { destr } from 'destr'
-import { getReasonPhrase, StatusCodes } from 'http-status-codes'
 import type { z } from 'zod'
 
 const throwIfFailed = <T>(
@@ -8,11 +7,7 @@ const throwIfFailed = <T>(
 ): T => {
     if (!result.success) {
         if (import.meta.dev) logger(tag).error(result.error)
-        throw createError({
-            status: StatusCodes.BAD_REQUEST,
-            statusText: getReasonPhrase(StatusCodes.BAD_REQUEST),
-            message: 'Validation Error',
-        })
+        throw serverError.badRequest({ responseMessage: 'Validation Error' })
     }
     return result.data
 }

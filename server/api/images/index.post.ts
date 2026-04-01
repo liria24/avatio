@@ -118,11 +118,7 @@ export default authedSessionEventHandler(
             contentType: 'image/jpeg',
             contentDisposition: 'inline',
         })
-        if (result.error)
-            throw createError({
-                status: 500,
-                statusText: 'Failed to upload image to storage',
-            })
+        if (result.error) throw serverError.internalServerError()
 
         log.success('Image processed and uploaded successfully:', result.data.path)
         return {

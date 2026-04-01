@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-const { toggleMaintenanceMode, toggleForceUpdateItem } = useAdminActions()
+const { toggleMaintenanceMode, toggleForceUpdateItem } = useAdmin()
 
 const { data, status, refresh } = useFetch<EdgeConfig>('/api/edge-config', {
     dedupe: 'defer',
@@ -15,15 +15,23 @@ const loading = reactive({
 
 const toggleMaintenanceModeAction = async () => {
     loading.maintenance = true
-    const success = await toggleMaintenanceMode(maintenanceMode.value)
-    if (success) refresh()
-    loading.maintenance = false
+    try {
+        await toggleMaintenanceMode({
+            isMaintenance: maintenanceMode.value,
+            onSuccess: () => refresh(),
+        })
+    } finally {
+        loading.maintenance = false
+    }
 }
 
 const toggleForceUpdateItemAction = async () => {
     loading.forceUpdate = true
-    await toggleForceUpdateItem(forceUpdateItem.value)
-    loading.forceUpdate = false
+    try {
+        await toggleForceUpdateItem({ forceUpdateItem: forceUpdateItem.value })
+    } finally {
+        loading.forceUpdate = false
+    }
 }
 </script>
 

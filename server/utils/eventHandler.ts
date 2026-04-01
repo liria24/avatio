@@ -1,16 +1,11 @@
 import type { H3Event } from 'h3'
-import { getReasonPhrase, StatusCodes } from 'http-status-codes'
 
 interface SessionEventHandlerOptions {
     rejectBannedUser?: boolean
 }
 
 const rejectBannedUser = (session: Session | null) => {
-    if (session?.user?.banned)
-        throw createError({
-            status: StatusCodes.FORBIDDEN,
-            statusText: getReasonPhrase(StatusCodes.FORBIDDEN),
-        })
+    if (session?.user?.banned) throw serverError.forbidden()
 }
 
 export const promiseEventHandler = <T = unknown>(
@@ -40,11 +35,7 @@ export const authedSessionEventHandler = <T = unknown>(
     options?: SessionEventHandlerOptions,
 ) =>
     sessionEventHandler(async ({ event, session }) => {
-        if (!session)
-            throw createError({
-                status: StatusCodes.UNAUTHORIZED,
-                statusText: getReasonPhrase(StatusCodes.UNAUTHORIZED),
-            })
+        if (!session) throw serverError.unauthorized()
 
         return await handler({ event, session })
     }, options)
@@ -65,11 +56,7 @@ export const adminSessionEventHandler = <T = unknown>(
         const isAdminKey = authorization === `Bearer ${config.adminKey}`
         const isAdmin = session?.user?.role === 'admin' || isAdminKey
 
-        if (!session || !isAdmin)
-            throw createError({
-                status: StatusCodes.FORBIDDEN,
-                statusText: getReasonPhrase(StatusCodes.FORBIDDEN),
-            })
+        if (!session || !isAdmin) throw serverError.forbidden()
 
         return await handler({ event, session })
     }, options)
@@ -84,11 +71,7 @@ export const cronEventHandler = <T = unknown>(
         const isAdmin = session?.user?.role === 'admin' || isAdminKey
         const isCronValid = authorization === `Bearer ${process.env.CRON_SECRET}`
 
-        if (!isAdmin && !isCronValid)
-            throw createError({
-                status: StatusCodes.FORBIDDEN,
-                statusText: getReasonPhrase(StatusCodes.FORBIDDEN),
-            })
+        if (!isAdmin && !isCronValid) throw serverError.forbidden()
 
         return await handler({ event })
     })

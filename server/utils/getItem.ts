@@ -1,222 +1,291 @@
 import { items, shops } from '@@/database/schema'
+import {
+    getGithubContributors,
+    getGithubLatestRelease,
+    getGithubReadme,
+    getGithubRepo,
+} from '@avatio/ungh'
 import { waitUntil } from '@vercel/functions'
 import { eq } from 'drizzle-orm'
 import { joinURL, withHttps } from 'ufo'
 
 const log = logger('getItem')
 
-const markItemAsOutdated = async (id: string): Promise<void> => {
-    try {
-        await db
-            .update(items)
-            .set({ outdated: true, updatedAt: new Date() })
-            .where(eq(items.id, id))
-    } catch (error) {
-        log.error(`Failed to mark item ${id} as outdated:`, error)
-    }
-}
-
-const assignItemAttr = async (
-    id: string,
-    params: {
-        name: string
-        description?: string | { description: string; readme: string }
-        category?: string
-    },
-) => {
-    try {
-        log.log(`Defining item info for item ${id}`)
-        const { niceName, category } = await generateItemAttr(params)
-        await db.update(items).set({ niceName, category }).where(eq(items.id, id))
-        log.log(`Item info defined for item ${id}: ${niceName}, ${category}`)
-    } catch (error) {
-        log.error(`Failed to define item info for item ${id}:`, error)
-    }
-}
-
-const updateBoothDatabase = async (
-    item: Item & { shop: NonNullable<Item['shop']> },
-): Promise<void> => {
-    try {
-        await db
-            .insert(shops)
-            .values({
-                id: item.shop.id,
-                platform: item.shop.platform,
-                name: item.shop.name,
-                image: item.shop.image,
-                verified: item.shop.verified,
-            })
-            .onConflictDoUpdate({
-                target: shops.id,
-                set: {
-                    name: item.shop.name,
-                    image: item.shop.image,
-                    verified: item.shop.verified,
-                },
-            })
-
-        const itemData = {
-            id: item.id,
-            name: item.name,
-            image: item.image,
-            category: item.category,
-            price: item.price,
-            likes: item.likes,
-            nsfw: item.nsfw,
-            platform: item.platform,
-            shopId: item.shop.id,
-        }
-
-        await db
-            .insert(items)
-            .values(itemData)
-            .onConflictDoUpdate({
-                target: items.id,
-                set: {
-                    ...itemData,
-                    updatedAt: new Date(),
-                    outdated: false,
-                },
-            })
-    } catch (error) {
-        log.error(`Failed to update database for item ${item.id}:`, error)
-        throw error
-    }
-}
-
-const getBoothItem = async (id: string): Promise<Item> => {
+export default async (provider: Platform | undefined, id: string): Promise<Item> => {
     const { forceUpdateItem, allowedBoothCategoryId, specificItemCategories } =
         await getEdgeConfig()
 
-    const cachedItem = forceUpdateItem ? null : await getItemFromDatabase(id)
+    const { fresh, cachedItem } = await resolveItemCache(provider, id, forceUpdateItem)
+    if (fresh) return fresh
 
-    if (
-        cachedItem &&
-        Date.now() - new Date(cachedItem.updatedAt).getTime() < ITEM_CACHE_DURATION_MS
-    ) {
-        if (cachedItem.outdated) throw new Error('Item not found or not allowed')
-        return cachedItem
-    }
+    const resolvedProvider = provider ?? cachedItem?.platform
+    if (!resolvedProvider)
+        throw serverError.notFound({ responseMessage: 'Item not found or not allowed' })
 
-    let item: Booth | null = null
-    try {
-        item = await $fetch<Booth>(`/${id}.json`, {
+    if (resolvedProvider === 'booth') {
+        const item = await $fetch<Booth | null>(`/${id}.json`, {
             baseURL: joinURL(withHttps(BOOTH_BASE_DOMAIN), 'ja/items'),
             headers: {
                 Accept: 'application/json',
                 'Accept-Language': 'ja,en-US;q=0.9,en;q=0.8',
             },
+            ignoreResponseError: true,
+            onResponseError({ error }) {
+                log.error(`Failed to fetch booth item ${id}:`, error)
+            },
         })
-    } catch (error) {
-        log.error(`Failed to fetch booth item ${id}:`, error)
+
+        const validItem = item && allowedBoothCategoryId.includes(item.category.id) ? item : null
+
+        return persistItem(
+            validItem
+                ? {
+                      valid: true,
+                      item: {
+                          id: validItem.id,
+                          platform: 'booth' as const,
+                          name: validItem.name,
+                          niceName: cachedItem?.niceName || null,
+                          image: validItem.images[0]?.original || '',
+                          price: validItem.variations.some((v) => v.status === 'free_download')
+                              ? 'FREE'
+                              : validItem.price,
+                          likes: Number(validItem.wish_lists_count) || 0,
+                          nsfw: Boolean(validItem.is_adult),
+                          shopId: validItem.shop.subdomain,
+                          outdated: false,
+                      },
+                      shop: {
+                          id: validItem.shop.subdomain,
+                          platform: 'booth' as const,
+                          name: validItem.shop.name,
+                          image: validItem.shop.thumbnail_url || '',
+                          verified: Boolean(validItem.shop.verified),
+                      },
+                      cachedItem,
+                      specificItemCategories,
+                      categoryFallback: BOOTH_CATEGORY_MAP[validItem.category.id] ?? 'other',
+                      assignAttrParams: {
+                          name: validItem.name,
+                          description: validItem.description
+                              ? { description: validItem.description }
+                              : undefined,
+                      },
+                  }
+                : { valid: false, cachedItem },
+        )
     }
 
-    if (!item || !allowedBoothCategoryId.includes(item.category.id)) {
-        if (cachedItem) await markItemAsOutdated(id)
-        throw new Error('Item not found or not allowed')
+    if (resolvedProvider === 'github') {
+        const [repoData, contributors, latestRelease, readme] = await Promise.all([
+            getGithubRepo(id),
+            getGithubContributors(id),
+            getGithubLatestRelease(id),
+            getGithubReadme(id),
+        ])
+
+        const owner = repoData?.repo.repo.split('/')[0]
+
+        return {
+            ...persistItem(
+                repoData && owner
+                    ? {
+                          valid: true,
+                          item: {
+                              id: repoData.repo.repo,
+                              platform: 'github' as const,
+                              name: repoData.repo.name,
+                              outdated: false as const,
+                              image: null,
+                              niceName: null,
+                              price: null,
+                              nsfw: false as const,
+                              likes: repoData.repo.stars,
+                              shopId: owner,
+                          },
+                          shop: {
+                              id: owner,
+                              platform: 'github' as const,
+                              name: owner,
+                              image: `https://github.com/${owner}.png`,
+                              verified: false,
+                          },
+                          cachedItem,
+                          specificItemCategories,
+                          categoryFallback: cachedItem?.category ?? 'other',
+                          assignAttrParams: {
+                              name: repoData.repo.name,
+                              description: {
+                                  description: repoData.repo.description || '',
+                                  readme: readme?.markdown || '',
+                              },
+                          },
+                          idMigration:
+                              cachedItem && cachedItem.id !== repoData.repo.repo
+                                  ? { from: cachedItem.id, to: repoData.repo.repo }
+                                  : undefined,
+                      }
+                    : { valid: false, cachedItem },
+            ),
+            forks: repoData?.repo.forks,
+            version: latestRelease?.release.tag,
+            contributors: contributors?.contributors
+                .sort((a, b) => b.contributions - a.contributions)
+                .map((c) => ({ name: c.username, contributions: c.contributions })),
+        }
     }
 
-    const category: ItemCategory =
-        specificItemCategories['booth'][item.id] || BOOTH_CATEGORY_MAP[item.category.id] || 'other'
+    throw serverError.notFound({ responseMessage: 'Item not found or not allowed' })
+}
 
-    const processedItem = {
+type PersistItemParams =
+    | {
+          valid: true
+          item: Omit<typeof items.$inferInsert, 'category' | 'id' | 'platform' | 'name'> & {
+              id: string
+              platform: 'booth' | 'github'
+              name: string
+          }
+          shop: Omit<typeof shops.$inferInsert, 'id' | 'platform' | 'name'> & {
+              id: string
+              platform: 'booth' | 'github'
+              name: string
+          }
+          cachedItem: { id: string } | null
+          specificItemCategories: EdgeConfig['specificItemCategories']
+          categoryFallback: ItemCategory
+          assignAttrParams: Omit<GenerateItemAttrParams, 'originalCategory'>
+          idMigration?: { from: string; to: string }
+      }
+    | { valid: false; cachedItem: { id: string } | null }
+
+export const persistItem = (params: PersistItemParams): Item => {
+    if (!params.valid) {
+        if (params.cachedItem)
+            waitUntil(
+                db.update(items).set({ outdated: true }).where(eq(items.id, params.cachedItem.id)),
+            )
+        throw serverError.notFound({ responseMessage: 'Item not found or not allowed' })
+    }
+
+    const {
+        item,
+        shop,
+        cachedItem,
+        specificItemCategories,
+        categoryFallback,
+        assignAttrParams,
+        idMigration,
+    } = params
+
+    const category = specificItemCategories[item.platform]?.[item.id] ?? categoryFallback
+    const fullItem = { ...item, category }
+
+    const persist = async () => {
+        await db.transaction(async (tx) => {
+            if (idMigration)
+                await tx
+                    .update(items)
+                    .set({ id: idMigration.to })
+                    .where(eq(items.id, idMigration.from))
+
+            await tx.insert(shops).values(shop).onConflictDoUpdate({ target: shops.id, set: shop })
+            await tx
+                .insert(items)
+                .values(fullItem)
+                .onConflictDoUpdate({ target: items.id, set: fullItem })
+        })
+
+        if (!cachedItem) {
+            const { niceName, category: resolvedCategory } = await generateItemAttr({
+                ...assignAttrParams,
+                originalCategory: category,
+            })
+            await db
+                .update(items)
+                .set({ niceName, category: resolvedCategory })
+                .where(eq(items.id, item.id))
+            log.info(`Item info defined for item ${item.id}: ${niceName}, ${resolvedCategory}`)
+        }
+    }
+
+    waitUntil(persist())
+
+    return {
         id: item.id,
-        platform: 'booth' as const,
+        platform: item.platform,
         category,
         name: item.name,
-        niceName: cachedItem?.niceName || null,
-        image: item.images[0]?.original || '',
-        price: item.variations.some((v) => v.status === 'free_download') ? 'FREE' : item.price,
-        likes: Number(item.wish_lists_count) || 0,
-        nsfw: Boolean(item.is_adult),
+        niceName: fullItem.niceName ?? null,
+        image: fullItem.image ?? null,
+        price: fullItem.price ?? null,
+        likes: fullItem.likes ?? null,
+        nsfw: fullItem.nsfw ?? false,
+        outdated: fullItem.outdated ?? false,
         shop: {
-            id: item.shop.subdomain,
-            platform: 'booth' as const,
-            name: item.shop.name,
-            image: item.shop.thumbnail_url || '',
-            verified: Boolean(item.shop.verified),
+            id: shop.id,
+            platform: shop.platform,
+            name: shop.name,
+            image: shop.image ?? null,
+            verified: shop.verified ?? false,
         },
-        outdated: false,
     }
-
-    waitUntil(
-        updateBoothDatabase(processedItem).then(() => {
-            if (!cachedItem)
-                return assignItemAttr(id, {
-                    name: item.name,
-                    description: item.description || undefined,
-                    category: processedItem.category,
-                })
-        }),
-    )
-
-    return processedItem
 }
 
-const getGithubItemFromRepo = async (repo: string): Promise<Item> => {
-    const { forceUpdateItem } = await getEdgeConfig()
+export const resolveItemCache = async (
+    category: Platform | undefined,
+    id: string,
+    forceUpdate: boolean,
+) => {
+    if (forceUpdate) return { fresh: null, cachedItem: null }
 
-    const cachedItem = forceUpdateItem ? null : await getItemFromDatabase(repo)
+    const cachedItem =
+        (await db.query.items.findFirst({
+            where: {
+                id: { eq: id },
+            },
+            columns: {
+                id: true,
+                updatedAt: true,
+                name: true,
+                niceName: true,
+                image: true,
+                category: true,
+                price: true,
+                likes: true,
+                nsfw: true,
+                outdated: true,
+                platform: true,
+            },
+            with: {
+                shop: {
+                    columns: {
+                        id: true,
+                        platform: true,
+                        name: true,
+                        image: true,
+                        verified: true,
+                    },
+                },
+            },
+        })) || null
 
-    if (
+    if (cachedItem?.outdated)
+        throw serverError.notFound({ responseMessage: 'Item not found or not allowed' })
+
+    const resolvedCategory = category ?? cachedItem?.platform
+
+    const maxAgeMs = {
+        booth: ITEM_CACHE_DURATION_MS,
+        github: GITHUB_ITEM_CACHE_DURATION_MS,
+    }
+
+    const fresh =
+        resolvedCategory &&
         cachedItem &&
-        Date.now() - new Date(cachedItem.updatedAt).getTime() < GITHUB_ITEM_CACHE_DURATION_MS
-    ) {
-        if (cachedItem.outdated) throw new Error('Item not found or not allowed')
-        return cachedItem
-    }
+        Date.now() - new Date(cachedItem.updatedAt).getTime() < maxAgeMs[resolvedCategory]
+            ? cachedItem
+            : null
 
-    const item = await getGithubItem(repo)
-
-    if (!item) {
-        if (cachedItem) waitUntil(markItemAsOutdated(cachedItem.id))
-        throw new Error('Repository not found')
-    }
-
-    waitUntil(
-        (async () => {
-            if (cachedItem && cachedItem.id !== item.id)
-                await db.update(items).set({ id: item.id }).where(eq(items.id, cachedItem.id))
-
-            await db
-                .insert(items)
-                .values({
-                    id: item.id,
-                    platform: item.platform,
-                    name: item.name,
-                    niceName: cachedItem?.niceName || item.niceName,
-                    category: cachedItem?.category || item.category,
-                })
-                .onConflictDoUpdate({
-                    target: items.id,
-                    set: {
-                        ...item,
-                        updatedAt: new Date(),
-                        outdated: false,
-                    },
-                })
-
-            if (!cachedItem) {
-                const repoData = await getGithubRepo(repo)
-                const readme = await getGithubReadme(repo)
-                await assignItemAttr(item.id, {
-                    name: item.name,
-                    description: {
-                        description: repoData?.repo.description || '',
-                        readme: readme?.markdown || '',
-                    },
-                    category: item.category,
-                })
-            }
-        })(),
-    )
-
-    return item
-}
-
-export default async (provider: 'booth' | 'github', id: string | number): Promise<Item> => {
-    if (provider === 'booth') return getBoothItem(String(id))
-    if (provider === 'github') return getGithubItemFromRepo(String(id))
-    throw new Error(`Unsupported provider: ${provider}`)
+    return { fresh, cachedItem }
 }

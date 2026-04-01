@@ -3,32 +3,30 @@ import 'vue-data-ui/style.css'
 
 const modalFlags = useModalFlagsModal()
 
-const { data: items } = await useFetch('/api/admin/items', {
-    dedupe: 'defer',
-})
-const { data: feedbacks } = await useFetch('/api/admin/feedbacks', {
-    query: {
-        status: 'open',
-    },
-    dedupe: 'defer',
-})
+const { getSummary } = useAdmin()
+const { data: summary } = await getSummary()
 
 const stats = ref([
     {
         title: 'Total Items',
-        value: items.value?.length || 0,
+        value: summary.value?.itemCount || 0,
         to: '/admin/items',
     },
     {
         title: 'Feedbacks',
-        value: feedbacks.value?.length || 0,
+        value: summary.value?.feedbackOpenCount || 0,
         to: '/admin/feedbacks',
+    },
+    {
+        title: 'Reports',
+        value: summary.value?.reportOpenCount || 0,
+        to: '/admin/reports',
     },
 ])
 </script>
 
 <template>
-    <UDashboardPanel id="index">
+    <UDashboardPanel id="index" :ui="{ body: 'flex flex-col gap-8' }">
         <template #header>
             <div class="mt-6 flex w-full items-center gap-2 px-6">
                 <h1 class="text-toned font-mono text-3xl font-light">Admin Console</h1>
@@ -45,7 +43,7 @@ const stats = ref([
         </template>
 
         <template #body>
-            <UPageGrid class="gap-2 sm:gap-4 lg:grid-cols-4">
+            <UPageGrid class="gap-2 sm:gap-4 lg:grid-cols-2">
                 <UPageCard
                     variant="subtle"
                     :ui="{
@@ -56,7 +54,7 @@ const stats = ref([
                         title: 'font-normal text-muted text-xs uppercase flex items-center gap-1 w-full',
                         body: 'w-full',
                     }"
-                    class="col-span-2 first:rounded-l-lg last:rounded-r-lg hover:z-1 lg:rounded-none"
+                    class="rounded-lg"
                 >
                     <AdminChartSetups />
 
@@ -65,6 +63,7 @@ const stats = ref([
 
                         <UButton
                             to="/admin/setups"
+                            aria-label="View Setups"
                             icon="mingcute:arrow-right-line"
                             variant="ghost"
                             size="xs"
@@ -83,7 +82,7 @@ const stats = ref([
                         title: 'font-normal text-muted text-xs uppercase flex items-center gap-1 w-full',
                         body: 'w-full',
                     }"
-                    class="col-span-2 first:rounded-l-lg last:rounded-r-lg hover:z-1 lg:rounded-none"
+                    class="rounded-lg"
                 >
                     <AdminChartUsers />
 
@@ -92,6 +91,7 @@ const stats = ref([
 
                         <UButton
                             to="/admin/users"
+                            aria-label="View Users"
                             icon="mingcute:arrow-right-line"
                             variant="ghost"
                             size="xs"
@@ -99,27 +99,33 @@ const stats = ref([
                         />
                     </template>
                 </UPageCard>
-
-                <UPageCard
-                    v-for="(stat, index) in stats"
-                    :key="index"
-                    :title="stat.title"
-                    :to="stat.to"
-                    variant="subtle"
-                    :ui="{
-                        container: 'gap-y-1.5',
-                        wrapper: 'items-start',
-                        leading:
-                            'p-2.5 rounded-full bg-primary/10 ring ring-inset ring-primary/25 flex-col',
-                        title: 'font-normal text-muted text-xs uppercase',
-                    }"
-                    class="first:rounded-l-lg last:rounded-r-lg hover:z-1 lg:rounded-none"
-                >
-                    <span class="text-highlighted ml-auto text-2xl font-semibold">
-                        {{ stat.value }}
-                    </span>
-                </UPageCard>
             </UPageGrid>
+
+            <div class="flex flex-col gap-4">
+                <h2 class="text-toned font-mono leading-none font-bold">Stats</h2>
+
+                <UPageGrid class="gap-2 sm:gap-4 lg:grid-cols-4">
+                    <UPageCard
+                        v-for="(stat, index) in stats"
+                        :key="index"
+                        :title="stat.title"
+                        :to="stat.to"
+                        variant="soft"
+                        :ui="{
+                            container: 'gap-y-1.5',
+                            wrapper: 'items-start',
+                            leading:
+                                'p-2.5 rounded-full bg-primary/10 ring ring-inset ring-primary/25 flex-col',
+                            title: 'font-normal text-muted text-xs uppercase',
+                        }"
+                        class="rounded-lg"
+                    >
+                        <span class="text-highlighted ml-auto text-2xl font-semibold">
+                            {{ stat.value }}
+                        </span>
+                    </UPageCard>
+                </UPageGrid>
+            </div>
         </template>
     </UDashboardPanel>
 </template>

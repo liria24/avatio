@@ -22,11 +22,7 @@ export default authedSessionEventHandler<{ code: string }>(async ({ session }) =
         })
         .returning({ code: userShopVerifications.code })
 
-    if (!result)
-        throw createError({
-            status: 500,
-            statusText: 'Failed to create verification code',
-        })
+    if (!result) throw serverError.internalServerError()
 
     return result
 })

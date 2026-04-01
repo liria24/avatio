@@ -29,6 +29,44 @@ const tab = computed<Tab>({
     },
 })
 
+const showPrivate = ref(session.value?.user.settings?.showPrivateSetups ?? true)
+const showPrivateDebounced = refDebounced(showPrivate, 300)
+
+const { setups: latestSetups, status: latestStatus } = useSetupsList('latest')
+const { setups: ownedSetups, status: ownedStatus } = useSetupsList('owned', {
+    username: session.value?.user.username ?? undefined,
+    query: computed(() => ({ includePrivate: showPrivateDebounced.value })),
+    immediate: !!session.value,
+})
+const { setups: bookmarkedSetups, status: bookmarkedStatus } = useSetupsList('bookmarked', {
+    immediate: !!session.value,
+})
+const setups = computed(() =>
+    tab.value === 'owned'
+        ? ownedSetups.value
+        : tab.value === 'bookmarked'
+          ? bookmarkedSetups.value
+          : latestSetups.value,
+)
+const loading = computed(() =>
+    tab.value === 'owned'
+        ? ownedStatus.value === 'pending'
+        : tab.value === 'bookmarked'
+          ? bookmarkedStatus.value === 'pending'
+          : latestStatus.value === 'pending',
+)
+
+watchDebounced(
+    showPrivateDebounced,
+    (val) => {
+        $fetch('/api/users/me/settings', {
+            method: 'PUT',
+            body: { showPrivateSetups: val },
+        })
+    },
+    { debounce: 500 },
+)
+
 useSeo({
     title: t('index.seo.title'),
     titleTemplate: '%s',
@@ -93,7 +131,7 @@ useSeo({
         </UPageHero>
 
         <div v-if="session" class="flex w-full flex-col items-start gap-5">
-            <div class="flex flex-wrap items-center gap-1">
+            <div class="flex w-full items-center gap-1">
                 <UButton
                     :label="$t('index.tabs.latest')"
                     :active="tab === 'latest'"
@@ -121,13 +159,25 @@ useSeo({
                     class="px-4 py-2"
                     @click="tab = 'bookmarked'"
                 />
+
+                <USwitch
+                    v-if="tab === 'owned'"
+                    v-model="showPrivate"
+                    :aria-label="$t('index.showPrivate')"
+                    size="sm"
+                    class="ml-auto"
+                >
+                    <template #label>
+                        <Icon name="mingcute:lock-fill" size="16" />
+                    </template>
+                </USwitch>
             </div>
-            <SetupsList :type="tab" />
+            <SetupsList :setups :loading />
         </div>
 
         <template v-else>
             <h1 class="text-lg font-medium text-nowrap">{{ $t('index.tabs.latest') }}</h1>
-            <SetupsList type="latest" />
+            <SetupsList :setups="latestSetups" :loading="latestStatus === 'pending'" />
         </template>
     </div>
 </template>
