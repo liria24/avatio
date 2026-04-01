@@ -30,9 +30,34 @@ const tab = computed<Tab>({
 })
 
 const showPrivate = ref(session.value?.user.settings?.showPrivateSetups ?? true)
+const showPrivateDebounced = refDebounced(showPrivate, 300)
+
+const { setups: latestSetups, status: latestStatus } = useSetupsList('latest')
+const { setups: ownedSetups, status: ownedStatus } = useSetupsList('owned', {
+    username: session.value?.user.username ?? undefined,
+    query: computed(() => ({ includePrivate: showPrivateDebounced.value })),
+    immediate: !!session.value,
+})
+const { setups: bookmarkedSetups, status: bookmarkedStatus } = useSetupsList('bookmarked', {
+    immediate: !!session.value,
+})
+const setups = computed(() =>
+    tab.value === 'owned'
+        ? ownedSetups.value
+        : tab.value === 'bookmarked'
+          ? bookmarkedSetups.value
+          : latestSetups.value,
+)
+const loading = computed(() =>
+    tab.value === 'owned'
+        ? ownedStatus.value === 'pending'
+        : tab.value === 'bookmarked'
+          ? bookmarkedStatus.value === 'pending'
+          : latestStatus.value === 'pending',
+)
 
 watchDebounced(
-    showPrivate,
+    showPrivateDebounced,
     (val) => {
         $fetch('/api/users/me/settings', {
             method: 'PUT',
@@ -147,12 +172,12 @@ useSeo({
                     </template>
                 </USwitch>
             </div>
-            <SetupsList :type="tab" :include-private="showPrivate" />
+            <SetupsList :setups :loading />
         </div>
 
         <template v-else>
             <h1 class="text-lg font-medium text-nowrap">{{ $t('index.tabs.latest') }}</h1>
-            <SetupsList type="latest" />
+            <SetupsList :setups="latestSetups" :loading="latestStatus === 'pending'" />
         </template>
     </div>
 </template>

@@ -30,6 +30,10 @@ onBeforeRouteLeave(() => {
     overlay.closeAll()
 })
 
+const { setups, status } = useSetupsList('owned', {
+    username: user.value?.username,
+})
+
 useSeo({
     title: user.value?.name,
     description: user.value?.bio || undefined,
@@ -227,7 +231,7 @@ useSeo({
                 </h2>
             </div>
 
-            <SetupsList type="owned" :username="user.username" />
+            <SetupsList :setups :loading="status === 'pending'" />
         </div>
     </div>
 </template>
