@@ -32,9 +32,9 @@
         "@avatio/ungh": "workspace:*",
         "@better-auth/drizzle-adapter": "1.5.6",
         "@iconify-json/fluent-color": "1.2.21",
-        "@iconify-json/lucide": "1.2.100",
+        "@iconify-json/lucide": "1.2.101",
         "@iconify-json/mingcute": "1.2.7",
-        "@iconify-json/simple-icons": "1.2.75",
+        "@iconify-json/simple-icons": "1.2.76",
         "@iconify-json/svg-spinners": "1.2.4",
         "@iconify-json/twemoji": "1.2.5",
         "@neondatabase/serverless": "1.0.2",
@@ -57,7 +57,7 @@
         "@vueuse/nuxt": "14.2.1",
         "@vueuse/router": "^14.2.1",
         "@yeger/vue-masonry-wall": "6.1.0",
-        "ai": "6.0.141",
+        "ai": "6.0.142",
         "aws4fetch": "^1.0.20",
         "better-auth": "1.5.6",
         "canvas-confetti": "1.9.4",
@@ -71,7 +71,7 @@
         "nuxt-link-checker": "5.0.6",
         "nuxt-og-image": "^6.3.1",
         "nuxt-schema-org": "6.0.4",
-        "nuxt-seo-utils": "8.1.4",
+        "nuxt-seo-utils": "8.1.5",
         "remark-breaks": "4.0.0",
         "rfc2047": "^4.0.1",
         "sanitize-html": "2.17.2",
@@ -92,7 +92,7 @@
         "drizzle-kit": "1.0.0-beta.20",
         "taze": "^19.10.0",
         "typescript": "6.0.2",
-        "vite-plus": "^0.1.14"
+        "vite-plus": "^0.1.15"
     },
     "overrides": {
         "vite": "8.0.3",
