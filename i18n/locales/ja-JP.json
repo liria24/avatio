@@ -56,6 +56,7 @@
     },
     "settings": {
         "title": "ユーザー設定",
+        "toggleSidebar": "サイドバーを切り替え",
         "description": "ユーザープロフィールの編集や、アカウントに関する操作を行うことができます。",
         "general": {
             "title": "全般",
