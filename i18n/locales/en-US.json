@@ -71,6 +71,10 @@
                 "removeLink": "Remove Link",
                 "avatarAlt": "Your avatar image"
             },
+            "display": {
+                "title": "Display",
+                "showNSFW": "Show NSFW items by default"
+            },
             "site": {
                 "title": "Site Settings",
                 "language": "Language",

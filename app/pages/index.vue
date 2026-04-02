@@ -2,6 +2,7 @@
 const { session } = useAuth()
 const login = useLoginModal()
 const { t, locale } = useI18n()
+const { update } = useUserSettingsUpdate()
 
 const dev = import.meta.dev
 
@@ -51,7 +52,7 @@ const setups = computed(() =>
     session.value
         ? tab.value === 'owned'
             ? setupsOwned.setups.value
-        : tab.value === 'bookmarked'
+            : tab.value === 'bookmarked'
               ? setupsBookmarked.setups.value
               : setupsLatest.setups.value
         : setupsLatest.setups.value,
@@ -60,7 +61,7 @@ const loading = computed(() =>
     session.value
         ? tab.value === 'owned'
             ? setupsOwned.status.value === 'pending'
-        : tab.value === 'bookmarked'
+            : tab.value === 'bookmarked'
               ? setupsBookmarked.status.value === 'pending'
               : setupsLatest.status.value === 'pending'
         : setupsLatest.status.value === 'pending',
@@ -69,10 +70,7 @@ const loading = computed(() =>
 watchDebounced(
     showPrivateDebounced,
     (val) => {
-        $fetch('/api/users/me/settings', {
-            method: 'PUT',
-            body: { showPrivateSetups: val },
-        })
+        update({ showPrivateSetups: val })
     },
     { debounce: 500 },
 )

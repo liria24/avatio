@@ -71,6 +71,10 @@
                 "removeLink": "リンクを削除",
                 "avatarAlt": "あなたのアバター画像"
             },
+            "display": {
+                "title": "表示",
+                "showNSFW": "NSFWアイテムをデフォルトで表示する"
+            },
             "site": {
                 "title": "サイト設定",
                 "language": "言語",
