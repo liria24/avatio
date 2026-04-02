@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 const { data } = await useFetch('/api/admin/setups', {
     query: {
-        containHidden: false,
+        hidden: false,
     },
     transform: (res) => {
         const now = new Date()

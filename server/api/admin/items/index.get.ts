@@ -5,15 +5,19 @@ const query = z.object({
     orderBy: z.enum(['createdAt', 'name']).optional().default('createdAt'),
     sort: z.enum(['asc', 'desc']).optional().default('desc'),
     limit: z.coerce.number().min(1).optional(),
+    platform: platformSchema.optional(),
+    outdated: z.stringbool().optional(),
 })
 
 export default adminSessionEventHandler(async () => {
-    const { q, orderBy, sort, limit } = await validateQuery(query)
+    const { q, orderBy, sort, limit, platform, outdated } = await validateQuery(query)
 
     const result = await db.query.items.findMany({
         limit,
         where: {
             name: q ? { ilike: `%${q}%` } : undefined,
+            platform: platform ? { eq: platform } : undefined,
+            outdated: outdated ? { eq: true } : outdated === false ? { eq: false } : undefined,
         },
         orderBy: {
             [orderBy]: sort,

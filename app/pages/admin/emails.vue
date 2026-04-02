@@ -11,6 +11,10 @@ const { data, refresh } = await useFetch<InboundEmail[]>('/api/admin/emails', {
             from_name: email.from_name ? `${email.from_name} <${email.from}>` : email.from,
         })),
 })
+
+useSeo({
+    title: 'Admin - Emails',
+})
 </script>
 
 <template>

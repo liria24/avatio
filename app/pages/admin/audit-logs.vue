@@ -110,6 +110,10 @@ const { data, refresh } = await useFetch('/api/admin/audit-log', {
         },
     }),
 })
+
+useSeo({
+    title: 'Admin - Audit Logs',
+})
 </script>
 
 <template>

@@ -23,6 +23,10 @@ const stats = ref([
         to: '/admin/reports',
     },
 ])
+
+useSeo({
+    title: 'Admin Console',
+})
 </script>
 
 <template>
