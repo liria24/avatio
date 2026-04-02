@@ -25,6 +25,10 @@ const tab = computed<Tab>({
         return 'latest'
     },
     set(newTab: Tab) {
+        if (newTab === 'latest' && setupsLatest.status.value === 'idle') setupsLatest.refresh()
+        else if (newTab === 'owned' && setupsOwned.status.value === 'idle') setupsOwned.refresh()
+        else if (newTab === 'bookmarked' && setupsBookmarked.status.value === 'idle')
+            setupsBookmarked.refresh()
         _tab.value = newTab !== 'latest' ? newTab : null
     },
 })
@@ -32,28 +36,34 @@ const tab = computed<Tab>({
 const showPrivate = ref(session.value?.user.settings?.showPrivateSetups ?? true)
 const showPrivateDebounced = refDebounced(showPrivate, 300)
 
-const { setups: latestSetups, status: latestStatus } = useSetupsList('latest')
-const { setups: ownedSetups, status: ownedStatus } = useSetupsList('owned', {
+const setupsLatest = useSetupsList('latest', {
+    immediate: tab.value === 'latest',
+})
+const setupsOwned = useSetupsList('owned', {
     username: session.value?.user.username ?? undefined,
     query: computed(() => ({ includePrivate: showPrivateDebounced.value })),
-    immediate: !!session.value,
+    immediate: !!session.value && tab.value === 'owned',
 })
-const { setups: bookmarkedSetups, status: bookmarkedStatus } = useSetupsList('bookmarked', {
-    immediate: !!session.value,
+const setupsBookmarked = useSetupsList('bookmarked', {
+    immediate: !!session.value && tab.value === 'bookmarked',
 })
 const setups = computed(() =>
-    tab.value === 'owned'
-        ? ownedSetups.value
+    session.value
+        ? tab.value === 'owned'
+            ? setupsOwned.setups.value
         : tab.value === 'bookmarked'
-          ? bookmarkedSetups.value
-          : latestSetups.value,
+              ? setupsBookmarked.setups.value
+              : setupsLatest.setups.value
+        : setupsLatest.setups.value,
 )
 const loading = computed(() =>
-    tab.value === 'owned'
-        ? ownedStatus.value === 'pending'
+    session.value
+        ? tab.value === 'owned'
+            ? setupsOwned.status.value === 'pending'
         : tab.value === 'bookmarked'
-          ? bookmarkedStatus.value === 'pending'
-          : latestStatus.value === 'pending',
+              ? setupsBookmarked.status.value === 'pending'
+              : setupsLatest.status.value === 'pending'
+        : setupsLatest.status.value === 'pending',
 )
 
 watchDebounced(
@@ -130,8 +140,8 @@ useSeo({
             </template>
         </UPageHero>
 
-        <div v-if="session" class="flex w-full flex-col items-start gap-5">
-            <div class="flex w-full items-center gap-1">
+        <div class="flex w-full flex-col items-start gap-5">
+            <div v-if="session" class="flex w-full items-center gap-1">
                 <UButton
                     :label="$t('index.tabs.latest')"
                     :active="tab === 'latest'"
@@ -172,13 +182,10 @@ useSeo({
                     </template>
                 </USwitch>
             </div>
+            <h1 v-else class="text-lg font-medium text-nowrap">{{ $t('index.tabs.latest') }}</h1>
+
             <SetupsList :setups :loading />
         </div>
-
-        <template v-else>
-            <h1 class="text-lg font-medium text-nowrap">{{ $t('index.tabs.latest') }}</h1>
-            <SetupsList :setups="latestSetups" :loading="latestStatus === 'pending'" />
-        </template>
     </div>
 </template>
 
