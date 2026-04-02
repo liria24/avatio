@@ -244,6 +244,7 @@ useSeo({
                         v-for="(item, index) in items"
                         :key="`item-${key}-${index}`"
                         :item
+                        :show-nsfw="session?.user.settings?.showNSFW"
                     />
                 </template>
             </div>
