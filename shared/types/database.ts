@@ -28,6 +28,7 @@ import {
     userReports,
     userShops,
     type NotificationPayload,
+    userSettings,
 } from '@@/database/schema'
 import { createInsertSchema, createSelectSchema, createUpdateSchema } from 'drizzle-orm/zod'
 import { z } from 'zod'
@@ -65,6 +66,18 @@ export const userBadgesPublicSchema = userBadgesSelectSchema.pick({
     createdAt: true,
     badge: true,
 })
+
+export const userSettingsSelectSchema = createSelectSchema(userSettings)
+export const userSettingsUpdateSchema = createUpdateSchema(userSettings).omit({
+    id: true,
+    userId: true,
+    createdAt: true,
+    updatedAt: true,
+})
+export const userSettingsPublicSchema = userSettingsSelectSchema.omit({
+    userId: true,
+})
+export type UserSettings = z.infer<typeof userSettingsPublicSchema>
 
 export const usersSelectSchema = createSelectSchema(users)
 export const usersUpdateSchema = createUpdateSchema(users, {
