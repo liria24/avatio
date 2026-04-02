@@ -2,6 +2,7 @@ import {
     auditActionType,
     auditLogs,
     auditTargetType,
+    emails,
     bookmarks,
     changelogs,
     changelogI18ns,
@@ -524,6 +525,21 @@ export const auditLogsPublicSchema = auditLogsSelectSchema
         user: usersPublicSchema.nullable(),
     })
 export type AuditLog = z.infer<typeof auditLogsPublicSchema>
+
+export const emailsSelectSchema = createSelectSchema(emails)
+export const emailsPublicSchema = emailsSelectSchema.pick({
+    id: true,
+    messageId: true,
+    subject: true,
+    fromAddress: true,
+    fromName: true,
+    toAddress: true,
+    snippet: true,
+    isRead: true,
+    isArchived: true,
+    receivedAt: true,
+})
+export type Email = z.infer<typeof emailsPublicSchema>
 
 export const changelogI18nsSelectSchema = createSelectSchema(changelogI18ns)
 export const changelogI18nsInsertSchema = createInsertSchema(changelogI18ns).omit({

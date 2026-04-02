@@ -1,36 +1,29 @@
 <script setup lang="ts">
+const NuxtTime = resolveComponent('NuxtTime')
+
 const { locale } = useI18n()
 
-const { data, status, refresh } = await useFetch('/api/changelogs', {
+const rowSelection = ref<Record<string, boolean>>({})
+const filter = ref(['hidden', 'unhidden', 'public', 'private'])
+const searchQuery = ref('')
+
+const { data, status, refresh } = await useFetch('/api/admin/changelogs', {
     dedupe: 'defer',
-    default: () => ({
-        data: [],
-        pagination: {
-            page: 1,
-            limit: 0,
-            total: 0,
-            totalPages: 0,
-            hasPrev: false,
-            hasNext: false,
-        },
-    }),
+})
+
+useSeo({
+    title: 'Admin - Changelogs',
 })
 </script>
 
 <template>
-    <UDashboardPanel id="changelogs">
+    <UDashboardPanel
+        id="changelogs"
+        :ui="{ body: 'gap-2 sm:gap-2 p-0 sm:p-0' }"
+        class="max-w-[100qw]"
+    >
         <template #header>
             <UDashboardNavbar title="Changelogs">
-                <template #trailing>
-                    <UButton
-                        loading-auto
-                        icon="mingcute:refresh-2-line"
-                        variant="ghost"
-                        size="sm"
-                        @click="refresh()"
-                    />
-                </template>
-
                 <template #right>
                     <UButton
                         :to="$localePath('/admin/changelogs/compose')"
@@ -43,43 +36,49 @@ const { data, status, refresh } = await useFetch('/api/changelogs', {
         </template>
 
         <template #body>
-            <div class="flex flex-col gap-4">
-                <UCard v-for="changelog in data.data" :key="changelog.slug">
-                    <template #header>
-                        <div class="flex items-center gap-1">
-                            <span class="font-medium">
-                                {{ changelog.title }}
-                            </span>
-
-                            <NuxtTime
-                                :datetime="changelog.createdAt"
-                                relative
-                                :locale
-                                class="text-muted mr-1 ml-auto text-sm"
-                            />
-                            <UModal
-                                scrollable
-                                :ui="{ content: 'max-w-3xl p-8 flex flex-col gap-6 divide-y-0' }"
-                            >
-                                <UButton icon="mingcute:eye-2-fill" variant="soft" size="sm" />
-
-                                <template #content>
-                                    <IslandChangelog :slug="changelog.slug" />
-                                </template>
-                            </UModal>
-
-                            <!-- <UButton
-                                :to="
-                                    $localePath(`/admin/changelogs/compose?slug=${changelog.slug}`)
-                                "
-                                icon="mingcute:edit-2-fill"
-                                variant="soft"
-                                size="sm"
-                            /> -->
-                        </div>
-                    </template>
-                </UCard>
-            </div>
+            <AdminDataTable
+                v-model:search-query="searchQuery"
+                v-model:filter="filter"
+                v-model:row-selection="rowSelection"
+                :data
+                :refresh
+                :loading="status === 'pending'"
+                :columns="[
+                    {
+                        accessorKey: 'slug',
+                        header: '#',
+                    },
+                    {
+                        accessorKey: 'title',
+                        header: 'Title',
+                    },
+                    {
+                        accessorKey: 'createdAt',
+                        header: 'Created',
+                        meta: { class: { td: 'text-xs leading-none font-mono' } },
+                        cell: ({ row }) =>
+                            h(NuxtTime, {
+                                datetime: row.getValue('createdAt'),
+                                dateStyle: 'short',
+                                timeStyle: 'short',
+                                locale,
+                            }),
+                    },
+                    {
+                        accessorKey: 'updatedAt',
+                        header: 'Updated',
+                        meta: { class: { td: 'text-xs leading-none font-mono' } },
+                        cell: ({ row }) =>
+                            h(NuxtTime, {
+                                datetime: row.getValue('updatedAt'),
+                                dateStyle: 'short',
+                                timeStyle: 'short',
+                                locale,
+                            }),
+                    },
+                ]"
+                class="max-h-[calc(99dvh-var(--ui-header-height))] grow"
+            />
         </template>
     </UDashboardPanel>
 </template>

@@ -13,6 +13,7 @@ import {
     LazyModalAdminBanUser,
     LazyModalAdminChangeItemNiceName,
     LazyModalAdminModalFlags,
+    LazyModalAdminEmailDetail,
     LazyImageViewer,
     LazyModalAgreeTerms,
 } from '#components'
@@ -40,4 +41,5 @@ export const useReportUserModal = defineOverlay(LazyModalReportUser)
 export const useBanUserModal = defineOverlay(LazyModalAdminBanUser)
 export const useChangeItemNiceNameModal = defineOverlay(LazyModalAdminChangeItemNiceName)
 export const useModalFlagsModal = defineOverlay(LazyModalAdminModalFlags)
+export const useEmailDetailSlideover = defineOverlay(LazyModalAdminEmailDetail)
 export const useImageViewerModal = defineOverlay(LazyImageViewer)

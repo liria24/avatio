@@ -11,6 +11,7 @@ import {
     real,
     text,
     timestamp,
+    uniqueIndex,
     uuid,
 } from 'drizzle-orm/pg-core'
 import { nanoid } from 'nanoid'
@@ -842,5 +843,30 @@ export const auditLogs = adminSchema.table(
         })
             .onDelete('set null')
             .onUpdate('cascade'),
+    ],
+)
+
+export const emails = adminSchema.table(
+    'emails',
+    {
+        id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+        messageId: text('message_id').notNull(),
+        subject: text(),
+        fromAddress: text('from_address').notNull(),
+        fromName: text('from_name'),
+        toAddress: text('to_address').notNull(),
+        snippet: text(),
+        isRead: boolean('is_read').default(false).notNull(),
+        isArchived: boolean('is_archived').default(false).notNull(),
+        receivedAt: timestamp('received_at').notNull(),
+        createdAt: timestamp('created_at').defaultNow().notNull(),
+        updatedAt: timestamp('updated_at')
+            .$onUpdate(() => /* @__PURE__ */ new Date())
+            .notNull(),
+    },
+    (table) => [
+        uniqueIndex('emails_message_id_idx').on(table.messageId),
+        index('emails_received_at_idx').on(table.receivedAt),
+        index('emails_status_idx').on(table.isRead, table.isArchived),
     ],
 )

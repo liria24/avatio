@@ -79,6 +79,10 @@ const resolve = async (id: number, isResolved?: boolean) =>
             refresh()
         },
     })
+
+useSeo({
+    title: 'Admin - Reports',
+})
 </script>
 
 <template>
