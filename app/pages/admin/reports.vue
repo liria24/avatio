@@ -480,7 +480,7 @@ const resolve = async (id: number, isResolved?: boolean) =>
 
                         <div class="grid w-full grid-cols-1 items-start gap-4 sm:grid-cols-2">
                             <UPageCard
-                                :to="computeItemUrl(report.item.id, report.item.platform)"
+                                :to="resolveItemUrl(report.item.id, report.item.platform)"
                                 target="_blank"
                                 :ui="{ container: 'p-2 sm:p-2' }"
                             >

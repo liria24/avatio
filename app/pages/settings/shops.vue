@@ -184,7 +184,7 @@ useSeo({
                 class="bg-muted flex items-center gap-3 rounded-lg p-3"
             >
                 <ULink
-                    :to="computeShopUrl(shopItem.shop.id, shopItem.shop.platform)"
+                    :to="resolveShopUrl(shopItem.shop.id, shopItem.shop.platform)"
                     class="flex grow items-center gap-3"
                 >
                     <NuxtImg
@@ -203,7 +203,7 @@ useSeo({
                     </p>
 
                     <Icon
-                        :name="platformIcons[shopItem.shop.platform]"
+                        :name="getPlatformData(shopItem.shop.platform)?.icon"
                         size="16"
                         class="text-muted"
                     />

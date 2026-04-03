@@ -16,10 +16,10 @@ const { session } = useAuth()
 const nsfwMask = createRef(item.nsfw && !showNsfw)
 
 const shopPath = computed(() =>
-    withoutTrailingSlash(withoutProtocol(computeShopUrl(item.shop?.id, item.shop?.platform) || '')),
+    withoutTrailingSlash(withoutProtocol(resolveShopUrl(item.shop?.id, item.shop?.platform) || '')),
 )
 
-const providerIcon = computed(() => platformIcons[item.platform])
+const providerIcon = computed(() => getPlatformData(item.platform).icon)
 </script>
 
 <template>
@@ -49,7 +49,7 @@ const providerIcon = computed(() => platformIcons[item.platform])
         </UDropdownMenu>
 
         <NuxtLink
-            :to="computeItemUrl(item.id, item.platform)"
+            :to="resolveItemUrl(item.id, item.platform)"
             target="_blank"
             external
             :aria-label="item.name"
@@ -94,7 +94,7 @@ const providerIcon = computed(() => platformIcons[item.platform])
             "
         >
             <NuxtLink
-                :to="computeItemUrl(item.id, item.platform)"
+                :to="resolveItemUrl(item.id, item.platform)"
                 target="_blank"
                 external
                 prefetch
@@ -118,7 +118,7 @@ const providerIcon = computed(() => platformIcons[item.platform])
                     :ui="{ content: 'flex flex-col items-start h-fit px-4 py-3 rounded-lg' }"
                 >
                     <NuxtLink
-                        :to="computeShopUrl(item.shop.id, item.shop.platform)"
+                        :to="resolveShopUrl(item.shop.id, item.shop.platform)"
                         target="_blank"
                         external
                         prefetch
