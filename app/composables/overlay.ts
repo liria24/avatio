@@ -21,8 +21,11 @@ const opts = { destroyOnClose: true } as const
 
 const defineOverlay =
     <T extends Component>(component: T) =>
-    (defaults?: ComponentProps<T>) =>
-        useOverlay().create(component, { ...opts, props: defaults })
+    (
+        defaults?: ComponentProps<T>,
+        options?: Omit<Parameters<ReturnType<typeof useOverlay>['create']>[1], 'props'>,
+    ) =>
+        useOverlay().create(component, { ...opts, props: defaults, ...options })
 
 export const useAgreeTermsModal = defineOverlay(LazyModalAgreeTerms)
 export const useLoginModal = defineOverlay(LazyModalLogin)
