@@ -61,11 +61,8 @@ export default promiseEventHandler<PaginationResponse<I18nChangelog[]>>(async ()
                         columns: {
                             id: true,
                             username: true,
-                            createdAt: true,
                             name: true,
                             image: true,
-                            bio: true,
-                            links: true,
                         },
                         with: {
                             badges: {
