@@ -104,6 +104,7 @@ export const usersPublicSchema = usersSelectSchema
         links: true,
     })
     .partial({
+        createdAt: true,
         bio: true,
         links: true,
     })
