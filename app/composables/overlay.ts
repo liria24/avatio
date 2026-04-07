@@ -1,5 +1,3 @@
-import type { ComponentProps } from 'vue-component-type-helpers'
-
 import {
     LazyModalLogin,
     LazyModalFeedback,
@@ -22,11 +20,8 @@ const opts = { destroyOnClose: true } as const
 
 const defineOverlay =
     <T extends Component>(component: T) =>
-    (
-        defaults?: ComponentProps<T>,
-        options?: Omit<Parameters<ReturnType<typeof useOverlay>['create']>[1], 'props'>,
-    ) =>
-        useOverlay().create(component, { ...opts, props: defaults, ...options })
+    (options?: Parameters<ReturnType<typeof useOverlay>['create']>[1]) =>
+        useOverlay().create(component, { ...opts, ...options })
 
 export const useAgreeTermsModal = defineOverlay(LazyModalAgreeTerms)
 export const useLoginModal = defineOverlay(LazyModalLogin)

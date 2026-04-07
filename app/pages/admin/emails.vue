@@ -7,7 +7,10 @@ const { data, refresh, status } = await useFetch<Email[]>('/api/admin/emails', {
     query: computed(() => ({ archived: archived.value ? 'true' : undefined })),
 })
 
-const emailSlideover = useEmailDetailSlideover({ modal: false }, { destroyOnClose: false })
+const emailSlideover = useEmailDetailSlideover({
+    props: { modal: false },
+    destroyOnClose: false,
+})
 
 const openEmail = async (email: Email) => {
     // Optimistic read mark
