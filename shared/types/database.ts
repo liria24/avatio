@@ -4,8 +4,6 @@ import {
     auditTargetType,
     emails,
     bookmarks,
-    changelogs,
-    changelogI18ns,
     feedbacks,
     itemCategory,
     itemReports,
@@ -540,31 +538,6 @@ export const emailsPublicSchema = emailsSelectSchema.pick({
     receivedAt: true,
 })
 export type Email = z.infer<typeof emailsPublicSchema>
-
-export const changelogI18nsSelectSchema = createSelectSchema(changelogI18ns)
-export const changelogI18nsInsertSchema = createInsertSchema(changelogI18ns).omit({
-    id: true,
-    changelogSlug: true,
-})
-
-export const changelogsSelectSchema = createSelectSchema(changelogs)
-export const changelogsInsertSchema = createInsertSchema(changelogs)
-export const changelogsPublicSchema = changelogsSelectSchema
-    .pick({
-        slug: true,
-        createdAt: true,
-        updatedAt: true,
-        title: true,
-        markdown: true,
-    })
-    .extend({
-        authors: usersPublicSchema.array().optional(),
-        aiGenerated: z.boolean().optional(),
-    })
-    .partial({
-        markdown: true,
-    })
-export type Changelog = z.infer<typeof changelogsPublicSchema>
 
 export const notificationTypeSchema = z.enum(notificationType.enumValues)
 export type NotificationType = z.infer<typeof notificationTypeSchema>

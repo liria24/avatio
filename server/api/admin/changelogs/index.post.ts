@@ -1,9 +1,10 @@
 import { changelogAuthors, changelogs, changelogI18ns } from '@@/database/schema'
 import type { GatewayProviderOptions } from '@ai-sdk/gateway'
 import { generateText } from 'ai'
+import { createInsertSchema } from 'drizzle-orm/zod'
 import { z } from 'zod'
 
-const body = changelogsInsertSchema
+const body = createInsertSchema(changelogI18ns)
     .pick({
         title: true,
         markdown: true,
@@ -11,7 +12,7 @@ const body = changelogsInsertSchema
     .extend({
         slug: z.string().optional(),
         authors: z.string().array().optional(),
-        i18n: changelogI18nsInsertSchema.array().optional(),
+        i18n: createInsertSchema(changelogI18ns).array().optional(),
     })
 
 export default adminSessionEventHandler(async () => {

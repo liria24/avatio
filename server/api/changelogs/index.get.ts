@@ -1,3 +1,4 @@
+import { createParse } from 'comark'
 import { sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { locales } from '~~/database/schema'
@@ -14,15 +15,12 @@ const query = z.object({
         .optional()
         .default(CHANGELOGS_API_DEFAULT_LIMIT),
     lang: z.enum(locales.enumValues).optional().default('ja'),
-    content: z.union([z.boolean(), z.stringbool()]).optional().default(false),
 })
 
-interface I18nChangelog extends Changelog {
-    fallbacked: boolean
-}
+const parse = createParse()
 
-export default promiseEventHandler<PaginationResponse<I18nChangelog[]>>(async () => {
-    const { q, sort, userId, page, limit, lang, content } = await validateQuery(query)
+export default promiseEventHandler(async () => {
+    const { q, sort, userId, page, limit, lang } = await validateQuery(query)
 
     const offset = (page - 1) * limit
 
@@ -81,20 +79,23 @@ export default promiseEventHandler<PaginationResponse<I18nChangelog[]>>(async ()
     defineCacheControl({ cdnAge: 60 * 60 * 24, clientAge: 60 * 60 })
 
     return {
-        data: data.map((changelog) => {
-            const i18nData = changelog.i18n.find((i18n) => i18n.locale === lang)
+        data: await Promise.all(
+            data.map(async (changelog) => {
+                const i18nData = changelog.i18n.find((i18n) => i18n.locale === lang)
+                const tree = await parse(i18nData?.markdown || changelog.markdown)
 
-            return {
-                slug: changelog.slug,
-                createdAt: changelog.createdAt,
-                updatedAt: changelog.updatedAt,
-                title: i18nData?.title || changelog.title,
-                markdown: content ? i18nData?.markdown || changelog.markdown : undefined,
-                authors: changelog.authors.map((author) => author.user),
-                aiGenerated: i18nData?.aiGenerated || false,
-                fallbacked: lang !== 'ja' && !i18nData,
-            }
-        }),
+                return {
+                    slug: changelog.slug,
+                    createdAt: changelog.createdAt,
+                    updatedAt: changelog.updatedAt,
+                    title: i18nData?.title || changelog.title,
+                    authors: changelog.authors.map((author) => author.user),
+                    aiGenerated: i18nData?.aiGenerated || false,
+                    fallbacked: lang !== 'ja' && !i18nData,
+                    tree,
+                }
+            }),
+        ),
         pagination: {
             page,
             limit,

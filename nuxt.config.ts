@@ -72,6 +72,7 @@ export default defineNuxtConfig({
     devtools: { enabled: true, timeline: { enabled: true } },
 
     modules: [
+        '@comark/nuxt',
         '@nuxt/ui',
         '@nuxt/image',
         '@nuxtjs/robots',
@@ -227,9 +228,6 @@ export default defineNuxtConfig({
         build: {
             markdown: {
                 contentHeading: false,
-                remarkPlugins: {
-                    'remark-breaks': {},
-                },
             },
         },
         experimental: { sqliteConnector: 'native' },
@@ -345,12 +343,6 @@ export default defineNuxtConfig({
             'github.com', // GitHub
             'avatars.githubusercontent.com', // GitHub User Avatars
         ],
-    },
-
-    mdc: {
-        remarkPlugins: {
-            'remark-breaks': {},
-        },
     },
 
     ogImage: {
