@@ -6,11 +6,6 @@ export const useUserSettings = () =>
         dedupe: 'defer',
         lazy: false,
         immediate: true,
-        default: () => ({
-            updatedAt: null,
-            showPrivateSetups: true,
-            showNSFW: false,
-        }),
     })
 
 export const useUserSettingsUpdate = () => {

@@ -1,20 +1,22 @@
-import { userSettings } from '@@/database/schema'
-import { eq } from 'drizzle-orm'
-import { z } from 'zod'
+import { userSettings } from '~~/database/schema'
 
-const body = z.object({
-    showPrivateSetups: z.boolean().optional(),
-    showNSFW: z.boolean().optional(),
-})
-
-const log = logger('/api/users/me/settings:PUT')
+const request = {
+    body: userSettingsUpdateSchema,
+}
 
 export default authedSessionEventHandler(async ({ session }) => {
-    const data = await validateBody(body)
+    const body = await validateBody(request.body)
 
-    await db.update(userSettings).set(data).where(eq(userSettings.userId, session.user.id))
+    await db
+        .insert(userSettings)
+        .values({
+            ...body,
+            userId: session.user.id,
+        })
+        .onConflictDoUpdate({
+            target: [userSettings.userId],
+            set: body,
+        })
 
-    log.info(`User ${session.user.id} updated settings`)
-
-    return null
+    return { success: true }
 })
