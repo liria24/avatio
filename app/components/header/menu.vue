@@ -1,6 +1,5 @@
 <script setup lang="ts">
 const { auth, session, sessions, revoke } = useAuth()
-const route = useRoute()
 const toast = useToast()
 const colorMode = useColorMode()
 const login = useLoginModal()
@@ -16,7 +15,7 @@ const switchAccount = async (sessionToken: string) => {
         description: t('loading'),
         progress: false,
     })
-    navigateTo(route.path, { external: true })
+    reloadNuxtApp()
 }
 </script>
 

@@ -48,7 +48,7 @@
         "@nuxtjs/sitemap": "8.0.12",
         "@stefanobartoletti/nuxt-social-share": "2.3.1",
         "@takumi-rs/core": "^0.73.1",
-        "@tigrisdata/storage": "^2.16.1",
+        "@tigrisdata/storage": "^2.16.2",
         "@unosend/node": "^2.1.0",
         "@vercel/analytics": "2.0.1",
         "@vercel/config": "^0.1.0",
@@ -58,7 +58,7 @@
         "@vueuse/nuxt": "14.2.1",
         "@vueuse/router": "^14.2.1",
         "@yeger/vue-masonry-wall": "6.1.0",
-        "ai": "6.0.152",
+        "ai": "6.0.153",
         "aws4fetch": "^1.0.20",
         "better-auth": "1.6.0",
         "canvas-confetti": "1.9.4",
@@ -94,7 +94,7 @@
         "vite-plus": "^0.1.16"
     },
     "overrides": {
-        "vite": "8.0.4",
+        "vite": "8.0.7",
         "vue": "latest"
     },
     "engines": {

@@ -97,14 +97,11 @@ const _useAuth = () => {
     }
 
     const signOut = async () => {
-        const localePath = useLocalePath()
-
         const result = await client.signOut()
-        if (result.data?.success) navigateTo(localePath('/'), { external: true })
+        if (result.data?.success) reloadNuxtApp()
     }
 
     const revoke = async () => {
-        const localePath = useLocalePath()
         const session = await getSession()
 
         if (!session.value) return
@@ -114,10 +111,10 @@ const _useAuth = () => {
             const result = await client.multiSession.revoke({
                 sessionToken: session.value.session.token,
             })
-            if (!result.error) navigateTo(localePath('/'), { external: true })
+            if (!result.error) reloadNuxtApp()
         } else {
             const result = await client.signOut()
-            if (result.data?.success) navigateTo(localePath('/'), { external: true })
+            if (result.data?.success) reloadNuxtApp()
         }
     }
 
