@@ -80,7 +80,10 @@ useSeoMeta(data.value?.content?.seo || {})
             />
         </div>
 
-        <ContentRenderer :value="data.content" class="sentence mt-4 *:first:mt-0 *:last:mb-0" />
+        <ContentRenderer
+            :value="data.content"
+            class="sentence mt-4 whitespace-pre-wrap *:first:mt-0 *:last:mb-0"
+        />
 
         <template #right>
             <UContentToc :links="data.content?.body?.toc?.links" />

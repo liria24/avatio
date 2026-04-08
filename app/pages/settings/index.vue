@@ -346,7 +346,7 @@ useSeo({
                 <USwitch
                     :label="$t('settings.general.display.showNSFW')"
                     color="neutral"
-                    :default-value="userSettings.showNSFW"
+                    :default-value="userSettings?.showNSFW"
                     @update:modelValue="(value) => updateUserSettings({ showNSFW: value })"
                 />
             </UCard>
