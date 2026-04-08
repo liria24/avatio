@@ -199,7 +199,7 @@ useSeo({
                         class="bg-muted flex aspect-square size-22 items-center justify-center rounded-lg sm:size-28"
                     >
                         <Icon
-                            :name="platformIcons[shop.shop.platform]"
+                            :name="getPlatformData(shop.shop.platform)?.icon"
                             size="24"
                             class="text-muted"
                         />

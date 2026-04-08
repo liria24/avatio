@@ -3,9 +3,9 @@ import { withoutProtocol, withoutTrailingSlash } from 'ufo'
 
 interface Props {
     item: SetupItem
-    actions?: boolean
+    showNsfw?: boolean
 }
-const { item, actions = true } = defineProps<Props>()
+const { item, showNsfw = false } = defineProps<Props>()
 
 const toast = useToast()
 const { copy } = useClipboard()
@@ -13,13 +13,13 @@ const reportItem = useReportItemModal()
 const login = useLoginModal()
 const { session } = useAuth()
 
-const nsfwMask = ref(item.nsfw)
+const nsfwMask = createRef(item.nsfw && !showNsfw)
 
 const shopPath = computed(() =>
-    withoutTrailingSlash(withoutProtocol(computeShopUrl(item.shop?.id, item.shop?.platform) || '')),
+    withoutTrailingSlash(withoutProtocol(resolveShopUrl(item.shop?.id, item.shop?.platform) || '')),
 )
 
-const providerIcon = computed(() => platformIcons[item.platform])
+const providerIcon = computed(() => getPlatformData(item.platform).icon)
 </script>
 
 <template>
@@ -27,7 +27,6 @@ const providerIcon = computed(() => platformIcons[item.platform])
         class="bg-muted/30 ring-accented relative grid grid-flow-col grid-cols-[88px_auto] grid-rows-[auto_auto] gap-4 overflow-clip rounded-xl p-3 ring-1 sm:grid-cols-[max-content_auto] sm:p-4"
     >
         <UDropdownMenu
-            v-if="actions"
             :items="[
                 {
                     to: $localePath(`/search?itemId=${item.id}`),
@@ -50,7 +49,7 @@ const providerIcon = computed(() => platformIcons[item.platform])
         </UDropdownMenu>
 
         <NuxtLink
-            :to="computeItemUrl(item.id, item.platform)"
+            :to="resolveItemUrl(item.id, item.platform)"
             target="_blank"
             external
             :aria-label="item.name"
@@ -95,9 +94,10 @@ const providerIcon = computed(() => platformIcons[item.platform])
             "
         >
             <NuxtLink
-                :to="computeItemUrl(item.id, item.platform)"
+                :to="resolveItemUrl(item.id, item.platform)"
                 target="_blank"
                 external
+                prefetch
                 class="line-clamp-2 pr-8 text-left text-sm/relaxed font-semibold sm:text-base/relaxed"
             >
                 {{ item.name }}
@@ -118,9 +118,10 @@ const providerIcon = computed(() => platformIcons[item.platform])
                     :ui="{ content: 'flex flex-col items-start h-fit px-4 py-3 rounded-lg' }"
                 >
                     <NuxtLink
-                        :to="computeShopUrl(item.shop.id, item.shop.platform)"
+                        :to="resolveShopUrl(item.shop.id, item.shop.platform)"
                         target="_blank"
                         external
+                        prefetch
                         class="flex shrink-0 items-center justify-center pr-2"
                     >
                         <div v-if="item.shop.image" class="relative">

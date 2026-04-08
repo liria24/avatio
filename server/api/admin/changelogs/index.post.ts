@@ -1,4 +1,5 @@
 import { changelogAuthors, changelogs, changelogI18ns } from '@@/database/schema'
+import type { GatewayProviderOptions } from '@ai-sdk/gateway'
 import { generateText } from 'ai'
 import { z } from 'zod'
 
@@ -48,6 +49,9 @@ export default adminSessionEventHandler(async () => {
                         includeThoughts: false,
                     },
                 },
+                gateway: {
+                    zeroDataRetention: true,
+                } satisfies GatewayProviderOptions,
             },
         })
 

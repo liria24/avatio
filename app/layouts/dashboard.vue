@@ -12,6 +12,8 @@ const vercelEnv = process.env.NUXT_ENV_VERCEL_TARGET_ENV
 <template>
     <div class="bg-elevated/70 fixed inset-0">
         <UDashboardGroup unit="rem" class="bg-default m-1 rounded-lg">
+            <UDashboardSearch />
+
             <UDashboardSidebar
                 id="default"
                 collapsible
@@ -26,10 +28,8 @@ const vercelEnv = process.env.NUXT_ENV_VERCEL_TARGET_ENV
                         <UButton
                             :to="$localePath('/admin')"
                             icon="avatio:avatio"
-                            label="Admin"
                             variant="link"
                             color="neutral"
-                            size="sm"
                             class="text-highlighted gap-1.5 p-0 text-base font-extralight"
                         />
 
@@ -51,6 +51,13 @@ const vercelEnv = process.env.NUXT_ENV_VERCEL_TARGET_ENV
                 </template>
 
                 <template #default="{ collapsed }">
+                    <UDashboardSearchButton
+                        :kbds="[]"
+                        variant="soft"
+                        size="sm"
+                        :ui="{ label: 'sr-only' }"
+                    />
+
                     <UNavigationMenu
                         :collapsed
                         :items="[
@@ -85,91 +92,27 @@ const vercelEnv = process.env.NUXT_ENV_VERCEL_TARGET_ENV
                         }"
                     />
 
-                    <div class="grid gap-1">
-                        <span
-                            class="text-muted pl-2 font-mono text-[0.8rem] leading-none text-nowrap"
-                        >
-                            Reports
-                        </span>
-
-                        <UNavigationMenu
-                            :collapsed
-                            :items="[
-                                {
-                                    label: 'Feedbacks',
-                                    icon: 'mingcute:chat-3-fill',
-                                    to: '/admin/feedbacks',
-                                    badge: openCounts?.feedbackOpenCount || undefined,
-                                },
-                                {
-                                    label: 'Reports',
-                                    icon: 'mingcute:flag-3-fill',
-                                    to: '/admin/reports',
-                                    badge: openCounts?.reportOpenCount || undefined,
-                                },
-                                {
-                                    label: 'Emails',
-                                    icon: 'mingcute:mail-fill',
-                                    to: '/admin/emails',
-                                },
-                            ]"
-                            orientation="vertical"
-                            tooltip
-                            popover
-                            color="neutral"
-                            :ui="{
-                                link: 'gap-2.5 text-toned tracking-wide',
-                                linkLeadingIcon: 'size-4.25 text-toned',
-                            }"
-                        />
-                    </div>
-
-                    <div class="grid gap-1">
-                        <span
-                            class="text-muted pl-2 font-mono text-[0.8rem] leading-none text-nowrap"
-                        >
-                            Observability
-                        </span>
-
-                        <UNavigationMenu
-                            :collapsed
-                            :items="[
-                                {
-                                    label: 'Audit Logs',
-                                    icon: 'mingcute:terminal-box-fill',
-                                    to: '/admin/audit-logs',
-                                },
-                            ]"
-                            orientation="vertical"
-                            tooltip
-                            popover
-                            color="neutral"
-                            :ui="{
-                                link: 'gap-2.5 text-toned tracking-wide',
-                                linkLeadingIcon: 'size-4.25 text-toned',
-                            }"
-                        />
-                    </div>
+                    <USeparator />
 
                     <UNavigationMenu
                         :collapsed
                         :items="[
                             {
-                                label: 'X/Twitter',
-                                icon: 'mingcute:social-x-fill',
-                                to: app.liria.twitter,
-                                target: '_blank',
+                                label: 'Feedbacks',
+                                icon: 'mingcute:chat-3-fill',
+                                to: '/admin/feedbacks',
+                                badge: openCounts?.feedbackOpenCount || undefined,
                             },
                             {
-                                label: 'GitHub',
-                                icon: 'mingcute:github-fill',
-                                to: app.repo,
-                                target: '_blank',
+                                label: 'Reports',
+                                icon: 'mingcute:flag-3-fill',
+                                to: '/admin/reports',
+                                badge: openCounts?.reportOpenCount || undefined,
                             },
                             {
-                                to: $localePath('/'),
-                                label: 'Back to Site',
-                                icon: 'mingcute:arrow-left-line',
+                                label: 'Emails',
+                                icon: 'mingcute:mail-fill',
+                                to: '/admin/emails',
                             },
                         ]"
                         orientation="vertical"
@@ -180,8 +123,60 @@ const vercelEnv = process.env.NUXT_ENV_VERCEL_TARGET_ENV
                             link: 'gap-2.5 text-toned tracking-wide',
                             linkLeadingIcon: 'size-4.25 text-toned',
                         }"
-                        class="mt-auto"
                     />
+
+                    <USeparator />
+
+                    <UNavigationMenu
+                        :collapsed
+                        :items="[
+                            {
+                                label: 'Audit Logs',
+                                icon: 'mingcute:terminal-box-fill',
+                                to: '/admin/audit-logs',
+                            },
+                        ]"
+                        orientation="vertical"
+                        tooltip
+                        popover
+                        color="neutral"
+                        :ui="{
+                            link: 'gap-2.5 text-toned tracking-wide',
+                            linkLeadingIcon: 'size-4.25 text-toned',
+                        }"
+                    />
+
+                    <div class="mt-auto flex items-center px-1">
+                        <UButton
+                            :to="$localePath('/')"
+                            aria-label="Back to Site"
+                            icon="mingcute:arrow-left-line"
+                            variant="ghost"
+                            color="neutral"
+                            size="sm"
+                            class="mr-auto"
+                        />
+                        <UButton
+                            :to="app.liria.twitter"
+                            target="_blank"
+                            external
+                            aria-label="X/Twitter"
+                            icon="mingcute:social-x-fill"
+                            variant="ghost"
+                            color="neutral"
+                            size="sm"
+                        />
+                        <UButton
+                            :to="app.repo"
+                            target="_blank"
+                            external
+                            aria-label="GitHub"
+                            icon="mingcute:github-fill"
+                            variant="ghost"
+                            color="neutral"
+                            size="sm"
+                        />
+                    </div>
                 </template>
 
                 <template #footer="{ collapsed }">
@@ -231,7 +226,7 @@ const vercelEnv = process.env.NUXT_ENV_VERCEL_TARGET_ENV
                 </template>
             </UDashboardSidebar>
 
-            <main class="min-h-dvh w-full overflow-auto">
+            <main class="@container min-h-dvh w-full">
                 <slot />
             </main>
         </UDashboardGroup>

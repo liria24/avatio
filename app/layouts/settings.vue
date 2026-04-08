@@ -54,7 +54,7 @@ const openSidebar = ref(true)
         <div class="flex w-full flex-col gap-10">
             <div class="flex shrink-0 items-center gap-2">
                 <UButton
-                    aria-label="サイドバーを切り替え"
+                    :aria-label="$t('settings.toggleSidebar')"
                     icon="mingcute:layout-leftbar-open-fill"
                     color="neutral"
                     variant="ghost"

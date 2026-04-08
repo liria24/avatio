@@ -1,9 +1,23 @@
 <script lang="ts" setup>
-const { locale, t } = useI18n()
 const { closeFeedback: closeFeedbackAction, openFeedback: openFeedbackAction } = useAdmin()
+
+const filter = ref(['open'])
+
+const queryParams = computed(() => {
+    const params: Record<string, string> = {}
+
+    const hasOpen = filter.value.includes('open')
+    const hasClosed = filter.value.includes('closed')
+    if (hasOpen && !hasClosed) params.status = 'open'
+    else if (hasClosed && !hasOpen) params.status = 'closed'
+    else params.status = 'all'
+
+    return params
+})
 
 const { data, refresh } = await useFetch('/api/admin/feedbacks', {
     dedupe: 'defer',
+    query: queryParams,
 })
 
 const closeFeedback = async (feedbackId: number) => {
@@ -13,10 +27,19 @@ const closeFeedback = async (feedbackId: number) => {
 const openFeedback = async (feedbackId: number) => {
     await openFeedbackAction({ feedbackId, onSuccess: () => refresh() })
 }
+
+useSeo({
+    title: 'Admin - Feedbacks',
+})
 </script>
 
 <template>
-    <UDashboardPanel id="feedbacks">
+    <UDashboardPanel
+        id="feedbacks"
+        :ui="{
+            body: 'gap-4 sm:gap-4 p-3 sm:p-5 max-h-[calc(99dvh-var(--ui-header-height))]',
+        }"
+    >
         <template #header>
             <UDashboardNavbar title="Feedbacks">
                 <template #trailing>
@@ -28,68 +51,76 @@ const openFeedback = async (feedbackId: number) => {
                         @click="refresh()"
                     />
                 </template>
-
-                <template #right>
-                    <USelect
-                        :items="[
-                            {
-                                label: 'All',
-                                icon: 'mingcute:filter-fill',
-                                value: 'all',
-                            },
-                            {
-                                label: 'Open',
-                                icon: 'lucide:circle-dot',
-                                value: 'open',
-                            },
-                            {
-                                label: 'Closed',
-                                icon: 'lucide:circle-slash',
-                                value: 'closed',
-                            },
-                        ]"
-                        default-value="all"
-                        disabled
-                        class="min-w-32"
-                    />
-                </template>
             </UDashboardNavbar>
         </template>
 
         <template #body>
+            <div class="flex items-center gap-1">
+                <USelect
+                    v-model="filter"
+                    :items="[
+                        {
+                            value: 'open',
+                            label: 'Open',
+                            icon: 'lucide:circle-dot',
+                        },
+                        {
+                            value: 'closed',
+                            label: 'Closed',
+                            icon: 'lucide:circle-slash',
+                        },
+                    ]"
+                    multiple
+                    placeholder="Filter"
+                    icon="mingcute:filter-fill"
+                    size="sm"
+                    class="min-w-32 rounded-lg"
+                />
+            </div>
+
+            <USeparator />
+
             <div v-if="!data?.length">
                 <p class="text-muted text-center text-sm">{{ $t('admin.feedbacks.empty') }}</p>
             </div>
 
-            <div v-else class="flex max-h-96 flex-col gap-2 overflow-y-auto p-1">
+            <div v-else class="flex flex-col gap-4">
                 <div
                     v-for="feedback in data"
                     :key="feedback.id"
-                    class="bg-muted flex flex-col gap-2 rounded-lg p-3"
+                    class="text-muted flex flex-col gap-1 text-xs"
                 >
-                    <div class="flex items-center gap-2">
-                        <div class="flex grow items-center gap-2">
-                            <p class="text-muted text-xs leading-none text-nowrap">
-                                {{ feedback.fingerprint }}
-                            </p>
-                            <p class="text-muted text-xs leading-none text-nowrap">
-                                {{ feedback.contextPath }}
-                            </p>
-                        </div>
+                    <div class="flex items-center gap-1">
+                        <Icon
+                            v-if="feedback.isClosed"
+                            name="lucide:circle-slash"
+                            size="18"
+                            class="m-0.75 text-purple-400"
+                        />
+                        <Icon
+                            v-else
+                            name="lucide:circle-dot"
+                            size="18"
+                            class="text-success m-0.75"
+                        />
 
                         <NuxtTime
                             :datetime="feedback.createdAt"
                             relative
-                            :locale
-                            class="text-muted text-xs leading-none text-nowrap"
+                            locale="en"
+                            class="leading-none text-nowrap"
                         />
-                        <UBadge
-                            v-if="feedback.isClosed"
-                            label="CLOSED"
-                            variant="subtle"
-                            color="success"
-                            size="sm"
-                        />
+
+                        <span class="ml-auto font-mono leading-none text-nowrap">
+                            {{ feedback.contextPath }}
+                        </span>
+
+                        <Icon name="lucide:dot" size="14" class="text-dimmed" />
+
+                        <span class="font-mono">
+                            {{ feedback.fingerprint.slice(0, 8) }}
+                        </span>
+
                         <UDropdownMenu
                             :items="[
                                 {
@@ -106,10 +137,15 @@ const openFeedback = async (feedbackId: number) => {
                                 },
                             ]"
                         >
-                            <UButton icon="lucide:menu" variant="ghost" size="xs" />
+                            <UButton icon="mingcute:more-2-line" variant="ghost" size="xs" />
                         </UDropdownMenu>
                     </div>
-                    <p class="text-toned text-sm">{{ feedback.comment }}</p>
+
+                    <p
+                        class="ring-muted text-toned grow rounded-xl p-3 whitespace-pre-wrap ring-1 ring-inset"
+                    >
+                        {{ feedback.comment }}
+                    </p>
                 </div>
             </div>
         </template>

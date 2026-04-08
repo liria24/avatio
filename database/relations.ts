@@ -20,6 +20,10 @@ export const relations = defineRelations(schema, (r) => ({
             from: r.users.id,
             to: r.userBadges.userId,
         }),
+        settings: r.one.userSettings({
+            from: r.users.id,
+            to: r.userSettings.userId,
+        }),
         setupCoauthors: r.many.setupCoauthors({
             from: r.users.id,
             to: r.setupCoauthors.userId,
@@ -100,6 +104,13 @@ export const relations = defineRelations(schema, (r) => ({
         }),
         user: r.one.users({
             from: r.changelogAuthors.userId,
+            to: r.users.id,
+            optional: false,
+        }),
+    },
+    userSettings: {
+        user: r.one.users({
+            from: r.userSettings.userId,
             to: r.users.id,
             optional: false,
         }),

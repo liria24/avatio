@@ -34,7 +34,7 @@ const inputShapekeyValue = ref(0)
             <div class="flex items-start gap-1">
                 <NuxtLink
                     v-if="props.item.image"
-                    :to="computeItemUrl(props.item.id, props.item.platform)"
+                    :to="resolveItemUrl(props.item.id, props.item.platform)"
                     target="_blank"
                     external
                     class="shrink-0"
@@ -81,7 +81,7 @@ const inputShapekeyValue = ref(0)
                         </UTooltip>
 
                         <NuxtLink
-                            :to="computeItemUrl(props.item.id, props.item.platform)"
+                            :to="resolveItemUrl(props.item.id, props.item.platform)"
                             target="_blank"
                             external
                             class="text-toned line-clamp-2 py-1 font-mono text-sm tracking-wider"

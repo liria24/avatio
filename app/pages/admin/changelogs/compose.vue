@@ -14,6 +14,10 @@ const resetForm = () => {
     state.title = ''
     state.markdown = ''
 }
+
+useSeo({
+    title: 'Admin - Changelogs Compose',
+})
 </script>
 
 <template>

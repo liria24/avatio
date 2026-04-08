@@ -2,6 +2,7 @@
 const { app } = useAppConfig()
 const feedback = useFeedbackModal()
 const { dismissed, dismissBanner } = useOwnerWarningBanner()
+const dev = import.meta.dev
 </script>
 
 <template>
@@ -39,6 +40,7 @@ const { dismissed, dismissBanner } = useOwnerWarningBanner()
                 <div class="flex items-center gap-0.5">
                     <UButton
                         :to="$localePath('/changelogs')"
+                        :prefetch="!dev"
                         :label="$t('footer.links.changelogs')"
                         variant="link"
                         size="sm"

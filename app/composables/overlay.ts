@@ -1,5 +1,3 @@
-import type { ComponentProps } from 'vue-component-type-helpers'
-
 import {
     LazyModalLogin,
     LazyModalFeedback,
@@ -13,6 +11,7 @@ import {
     LazyModalAdminBanUser,
     LazyModalAdminChangeItemNiceName,
     LazyModalAdminModalFlags,
+    LazyModalAdminEmailDetail,
     LazyImageViewer,
     LazyModalAgreeTerms,
 } from '#components'
@@ -21,8 +20,8 @@ const opts = { destroyOnClose: true } as const
 
 const defineOverlay =
     <T extends Component>(component: T) =>
-    (defaults?: ComponentProps<T>) =>
-        useOverlay().create(component, { ...opts, props: defaults })
+    (options?: Parameters<ReturnType<typeof useOverlay>['create']>[1]) =>
+        useOverlay().create(component, { ...opts, ...options })
 
 export const useAgreeTermsModal = defineOverlay(LazyModalAgreeTerms)
 export const useLoginModal = defineOverlay(LazyModalLogin)
@@ -37,4 +36,5 @@ export const useReportUserModal = defineOverlay(LazyModalReportUser)
 export const useBanUserModal = defineOverlay(LazyModalAdminBanUser)
 export const useChangeItemNiceNameModal = defineOverlay(LazyModalAdminChangeItemNiceName)
 export const useModalFlagsModal = defineOverlay(LazyModalAdminModalFlags)
+export const useEmailDetailSlideover = defineOverlay(LazyModalAdminEmailDetail)
 export const useImageViewerModal = defineOverlay(LazyImageViewer)
