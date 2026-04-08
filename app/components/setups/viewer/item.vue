@@ -98,7 +98,7 @@ const providerIcon = computed(() => getPlatformData(item.platform).icon)
                 target="_blank"
                 external
                 prefetch
-                class="line-clamp-2 pr-8 text-left text-sm/relaxed font-semibold sm:text-base/relaxed"
+                class="sentence line-clamp-2 pr-8 text-left text-sm/relaxed font-semibold sm:text-base/relaxed"
             >
                 {{ item.name }}
             </NuxtLink>

@@ -62,7 +62,6 @@
 }
 
 @utility sentence {
-    font-family: 'Noto Sans JP', var(--font-sans);
     text-autospace: normal;
     text-spacing-trim: trim-start;
     line-break: strict;
