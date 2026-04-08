@@ -4,13 +4,11 @@ const login = useLoginModal()
 const { t, locale } = useI18n()
 const { update } = useUserSettingsUpdate()
 
-const { data: titles } = useFetch('/api/changelogs', {
-    key: computed(() => `changelog-titles-${locale.value}`),
-    dedupe: 'defer',
+const { data: latestChangelog } = useFetch('/api/changelogs/latest', {
+    key: computed(() => `latest-changelog-${locale.value}`),
     query: { lang: locale.value },
-    watch: [locale],
-    transform: (response) => response.data.map((item) => item.title),
-    default: () => [],
+    dedupe: 'defer',
+    immediate: !session.value,
 })
 
 type Tab = 'latest' | 'owned' | 'bookmarked'
@@ -95,10 +93,10 @@ useSeo({
                 headline: 'mb-6',
             }"
         >
-            <template v-if="titles.length" #headline>
+            <template v-if="latestChangelog" #headline>
                 <UButton
                     :to="$localePath('/changelogs')"
-                    :label="titles[0]"
+                    :label="latestChangelog.title"
                     variant="soft"
                     color="neutral"
                     style="animation-delay: 0.5s"
