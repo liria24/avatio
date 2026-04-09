@@ -12,11 +12,12 @@ const { share, isSupported: shareSupported } = useShare()
 const location = useBrowserLocation()
 const { copy, copied } = useClipboard({ source: location.value.href })
 const overlay = useOverlay()
-const imageViewer = useImageViewerModal()
-const login = useLoginModal({ props: { callbackURL: route.fullPath } })
-const reportSetup = useReportSetupModal({ props: { setupId: id.value } })
-const setupHide = useSetupHideModal({ props: { setupId: id.value } })
-const setupUnhide = useSetupUnhideModal({ props: { setupId: id.value } })
+const imageViewer = useImageViewerModal({ destroyOnClose: false })
+const login = useLoginModal({ props: { callbackURL: route.fullPath }, destroyOnClose: false })
+const reportSetup = useReportSetupModal({ props: { setupId: id.value }, destroyOnClose: false })
+const reportItem = useReportItemModal({ destroyOnClose: false })
+const setupHide = useSetupHideModal({ props: { setupId: id.value }, destroyOnClose: false })
+const setupUnhide = useSetupUnhideModal({ props: { setupId: id.value }, destroyOnClose: false })
 const { toggle: toggleBookmarkAction, getBookmarkStatus } = useBookmarks()
 
 if (!id.value)
@@ -245,6 +246,7 @@ useSeo({
                         :key="`item-${key}-${index}`"
                         :item
                         :show-nsfw="session?.user.settings?.showNSFW"
+                        @report-item="session ? reportItem.open({ itemId: $event }) : login.open()"
                     />
                 </template>
             </div>
