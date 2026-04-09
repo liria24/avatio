@@ -4,7 +4,7 @@ const NuxtTime = resolveComponent('NuxtTime')
 const { locale } = useI18n()
 const setupHide = useSetupHideModal()
 const setupUnhide = useSetupUnhideModal()
-const modalImageViewer = useImageViewerModal({ destroyOnClose: false })
+const modalImageViewer = useImageViewerModal()
 
 const rowSelection = ref<Record<string, boolean>>({})
 const filter = ref(['hidden', 'unhidden', 'public', 'private'])

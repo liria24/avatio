@@ -9,7 +9,6 @@ const { data, refresh, status } = await useFetch<Email[]>('/api/admin/emails', {
 
 const emailSlideover = useEmailDetailSlideover({
     props: { modal: false },
-    destroyOnClose: false,
 })
 
 const openEmail = async (email: Email) => {
