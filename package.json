@@ -30,7 +30,7 @@
     "dependencies": {
         "@avatio/bot-notifier": "workspace:*",
         "@avatio/ungh": "workspace:*",
-        "@better-auth/drizzle-adapter": "1.6.0",
+        "@better-auth/drizzle-adapter": "1.6.1",
         "@comark/nuxt": "^0.2.0",
         "@iconify-json/fluent-color": "1.2.21",
         "@iconify-json/lucide": "1.2.101",
@@ -60,7 +60,7 @@
         "@yeger/vue-masonry-wall": "6.1.0",
         "ai": "6.0.152",
         "aws4fetch": "^1.0.20",
-        "better-auth": "1.6.0",
+        "better-auth": "1.6.1",
         "canvas-confetti": "1.9.4",
         "clsx": "2.1.1",
         "drizzle-orm": "1.0.0-beta.20",
@@ -81,7 +81,7 @@
     "devDependencies": {
         "@nuxt/a11y": "1.0.0-alpha.1",
         "@nuxt/hints": "1.0.3",
-        "@nuxt/test-utils": "^4.0.0",
+        "@nuxt/test-utils": "4.0.0",
         "@types/canvas-confetti": "1.9.0",
         "@types/node": "25.5.2",
         "@types/rfc2047": "^2.0.3",
