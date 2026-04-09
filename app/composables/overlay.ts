@@ -16,7 +16,7 @@ import {
     LazyModalAgreeTerms,
 } from '#components'
 
-const opts = { destroyOnClose: true } as const
+const opts = { destroyOnClose: false } as const
 
 const defineOverlay =
     <T extends Component>(component: T) =>

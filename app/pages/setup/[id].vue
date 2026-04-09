@@ -15,6 +15,7 @@ const overlay = useOverlay()
 const imageViewer = useImageViewerModal()
 const login = useLoginModal({ props: { callbackURL: route.fullPath } })
 const reportSetup = useReportSetupModal({ props: { setupId: id.value } })
+const reportItem = useReportItemModal()
 const setupHide = useSetupHideModal({ props: { setupId: id.value } })
 const setupUnhide = useSetupUnhideModal({ props: { setupId: id.value } })
 const { toggle: toggleBookmarkAction, getBookmarkStatus } = useBookmarks()
@@ -245,6 +246,7 @@ useSeo({
                         :key="`item-${key}-${index}`"
                         :item
                         :show-nsfw="session?.user.settings?.showNSFW"
+                        @report-item="session ? reportItem.open({ itemId: $event }) : login.open()"
                     />
                 </template>
             </div>

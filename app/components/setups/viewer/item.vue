@@ -7,11 +7,9 @@ interface Props {
 }
 const { item, showNsfw = false } = defineProps<Props>()
 
-const toast = useToast()
-const { copy } = useClipboard()
-const reportItem = useReportItemModal()
-const login = useLoginModal()
-const { session } = useAuth()
+const emit = defineEmits<{
+    'report-item': [itemId: string]
+}>()
 
 const nsfwMask = createRef(item.nsfw && !showNsfw)
 
@@ -36,7 +34,7 @@ const providerIcon = computed(() => getPlatformData(item.platform).icon)
                 {
                     icon: 'mingcute:flag-3-fill',
                     label: $t('setup.viewer.reportItem'),
-                    onClick: () => (session ? reportItem.open({ itemId: item.id }) : login.open()),
+                    onClick: () => emit('report-item', item.id),
                 },
             ]"
         >
@@ -55,7 +53,7 @@ const providerIcon = computed(() => getPlatformData(item.platform).icon)
             :aria-label="item.name"
             :class="
                 cn(
-                    'relative row-span-2 size-fit shrink-0 select-none',
+                    'group relative row-span-2 size-fit shrink-0 overflow-hidden rounded-lg select-none',
                     (item.note?.length || item.unsupported || item.shapekeys?.length) &&
                         'row-span-1 sm:row-span-2',
                 )
@@ -70,15 +68,26 @@ const providerIcon = computed(() => getPlatformData(item.platform).icon)
                     alt=""
                     loading="lazy"
                     fetchpriority="low"
-                    class="aspect-square size-22 overflow-hidden rounded-lg object-cover text-xs sm:size-28"
+                    class="aspect-square size-22 object-cover text-xs sm:size-28"
                 />
                 <div
-                    class="inset-ring-inverted/15 pointer-events-none absolute inset-0 rounded-md inset-ring-2"
+                    class="inset-ring-inverted/15 pointer-events-none absolute inset-0 rounded-lg inset-ring-2"
                 />
+
+                <div
+                    class="bg-default/80 absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100"
+                >
+                    <Icon :name="providerIcon" size="20" />
+                    <Icon
+                        name="mingcute:arrow-right-up-line"
+                        size="20"
+                        class="absolute top-2 right-2"
+                    />
+                </div>
             </template>
             <div
                 v-else
-                class="bg-muted flex aspect-square size-22 items-center justify-center rounded-lg sm:size-28"
+                class="bg-muted flex aspect-square size-22 items-center justify-center sm:size-28"
             >
                 <Icon :name="providerIcon" size="24" class="text-muted" />
             </div>
@@ -98,7 +107,7 @@ const providerIcon = computed(() => getPlatformData(item.platform).icon)
                 target="_blank"
                 external
                 prefetch
-                class="sentence line-clamp-2 pr-8 text-left text-sm/relaxed font-semibold sm:text-base/relaxed"
+                class="sentence hover:text-muted mr-8 line-clamp-2 w-fit text-left text-sm/relaxed font-semibold transition-colors sm:text-base/relaxed"
             >
                 {{ item.name }}
             </NuxtLink>
@@ -261,45 +270,33 @@ const providerIcon = computed(() => getPlatformData(item.platform).icon)
                 />
 
                 <template #content>
-                    <div class="flex min-w-48 flex-col gap-3 p-3">
-                        <div class="flex w-full items-center gap-2">
-                            <Icon
-                                name="mingcute:union-fill"
-                                :size="18"
-                                class="text-muted shrink-0"
-                            />
-                            <p class="text-sm font-medium">
-                                {{ $t('setup.viewer.shapekeys') }}
-                            </p>
-                        </div>
-                        <div class="flex flex-col gap-3 rounded-lg">
+                    <div class="flex min-w-48 flex-col gap-2 px-2 py-3">
+                        <span class="mx-1 text-sm font-medium">
+                            {{ $t('setup.viewer.shapekeys') }}
+                        </span>
+
+                        <div class="flex flex-col rounded-lg">
                             <div
                                 v-for="(key, index) in item.shapekeys"
                                 :key="'shapekey-' + index"
-                                class="flex items-center justify-between gap-3"
+                                class="odd:bg-muted/40 flex items-center justify-between gap-3 rounded-md px-2 py-1"
                             >
-                                <p class="text-toned text-sm leading-none text-nowrap">
+                                <span class="text-toned font-mono text-xs">
                                     {{ key.name }}
-                                </p>
-                                <UButton
+                                </span>
+
+                                <CopyableButton
+                                    :value="key.value.toString()"
                                     :label="
                                         key.value.toLocaleString(undefined, {
                                             minimumFractionDigits: 1,
                                             maximumFractionDigits: 4,
                                         })
                                     "
-                                    variant="soft"
+                                    variant="link"
                                     size="sm"
-                                    @click="
-                                        copy(key.value.toString()).then(() => {
-                                            toast.add({
-                                                id: `copy-shapekey-${index}`,
-                                                title: $t('setup.viewer.valueCopied', {
-                                                    name: key.name,
-                                                }),
-                                            })
-                                        })
-                                    "
+                                    :ui="{ leadingIcon: 'size-3.5' }"
+                                    class="p-0 font-mono"
                                 />
                             </div>
                         </div>
