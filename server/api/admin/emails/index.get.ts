@@ -1,7 +1,11 @@
 import { z } from 'zod'
 
+const query = z.object({
+    archived: z.stringbool().optional(),
+})
+
 export default adminSessionEventHandler(async () => {
-    const { archived } = await validateQuery(z.object({ archived: z.coerce.boolean().optional() }))
+    const { archived } = await validateQuery(query)
 
     await syncEmails()
 
