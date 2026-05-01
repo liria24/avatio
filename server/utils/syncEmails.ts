@@ -18,7 +18,7 @@ interface ActualInboundEmail {
     attachments: unknown[]
 }
 
-function buildSnippet(email: ActualInboundEmail): string | null {
+const buildSnippet = (email: ActualInboundEmail) => {
     if (email.text_content) {
         const text = Buffer.from(email.text_content.replace(/\r?\n/g, ''), 'base64').toString(
             'utf8',
@@ -35,19 +35,17 @@ function buildSnippet(email: ActualInboundEmail): string | null {
     return null
 }
 
-export async function syncEmails(): Promise<void> {
+export const syncEmails = async () => {
     const unosend = useUnosend()
     const { data, error } = await unosend.inbound.list({ page: 1 })
 
-    if (error) {
-        log.error('Failed to fetch inbound emails from Unosend', error.message)
+    if (error)
         throw serverError.internalServerError({
             log: {
                 tag: 'syncEmails',
                 message: `Failed to fetch inbound emails: ${error.message}`,
             },
         })
-    }
 
     const rows = ((data as unknown as ActualInboundEmail[]) ?? []).map((email) => ({
         messageId: email.id,

@@ -6,13 +6,12 @@ import {
     integer,
     jsonb,
     pgEnum,
-    pgSchema,
-    pgTable,
     real,
     text,
     timestamp,
     uniqueIndex,
     uuid,
+    snakeCase,
 } from 'drizzle-orm/pg-core'
 import { nanoid } from 'nanoid'
 
@@ -41,7 +40,7 @@ export const itemCategory = pgEnum('item_category', [
     'other',
 ])
 
-export const userSchema = pgSchema('user')
+export const userSchema = snakeCase.schema('user')
 
 export const users = userSchema.table(
     'users',
@@ -49,19 +48,19 @@ export const users = userSchema.table(
         id: text().primaryKey(),
         name: text().notNull(),
         username: text().unique().notNull(),
-        displayUsername: text('display_username').notNull(),
+        displayUsername: text().notNull(),
         email: text().notNull().unique(),
-        emailVerified: boolean('email_verified').default(false).notNull(),
+        emailVerified: boolean().default(false).notNull(),
         image: text(),
-        createdAt: timestamp('created_at').defaultNow().notNull(),
-        updatedAt: timestamp('updated_at').defaultNow().notNull(),
+        createdAt: timestamp().defaultNow().notNull(),
+        updatedAt: timestamp().defaultNow().notNull(),
         role: text(),
         banned: boolean(),
-        banReason: text('ban_reason'),
-        banExpires: timestamp('ban_expires'),
+        banReason: text(),
+        banExpires: timestamp(),
         bio: text(),
         links: text().array(),
-        lastAgreedToTerms: timestamp('last_agreed_to_terms').defaultNow(),
+        lastAgreedToTerms: timestamp().defaultNow(),
     },
     (table) => [index('user_email_index').on(table.email)],
 )
@@ -70,16 +69,16 @@ export const sessions = userSchema.table(
     'sessions',
     {
         id: text().primaryKey(),
-        expiresAt: timestamp('expires_at').notNull(),
+        expiresAt: timestamp().notNull(),
         token: text().notNull().unique(),
-        createdAt: timestamp('created_at').defaultNow().notNull(),
-        updatedAt: timestamp('updated_at')
+        createdAt: timestamp().defaultNow().notNull(),
+        updatedAt: timestamp()
             .$onUpdate(() => /* @__PURE__ */ new Date())
             .notNull(),
-        ipAddress: text('ip_address'),
-        userAgent: text('user_agent'),
-        userId: text('user_id').notNull(),
-        impersonatedBy: text('impersonated_by'),
+        ipAddress: text(),
+        userAgent: text(),
+        userId: text().notNull(),
+        impersonatedBy: text(),
     },
     (table) => [
         index('session_userId_idx').on(table.userId),
@@ -95,23 +94,23 @@ export const accounts = userSchema.table(
     'accounts',
     {
         id: text().primaryKey(),
-        accountId: text('account_id').notNull(),
-        providerId: text('provider_id').notNull(),
-        userId: text('user_id')
+        accountId: text().notNull(),
+        providerId: text().notNull(),
+        userId: text()
             .notNull()
             .references(() => users.id, {
                 onUpdate: 'cascade',
                 onDelete: 'cascade',
             }),
-        accessToken: text('access_token'),
-        refreshToken: text('refresh_token'),
-        idToken: text('id_token'),
-        accessTokenExpiresAt: timestamp('access_token_expires_at'),
-        refreshTokenExpiresAt: timestamp('refresh_token_expires_at'),
+        accessToken: text(),
+        refreshToken: text(),
+        idToken: text(),
+        accessTokenExpiresAt: timestamp(),
+        refreshTokenExpiresAt: timestamp(),
         scope: text(),
         password: text(),
-        createdAt: timestamp('created_at').notNull(),
-        updatedAt: timestamp('updated_at').notNull(),
+        createdAt: timestamp().notNull(),
+        updatedAt: timestamp().notNull(),
     },
     (table) => [index('account_user_id_index').on(table.userId)],
 )
@@ -122,9 +121,9 @@ export const verifications = userSchema.table(
         id: text().primaryKey(),
         identifier: text().notNull(),
         value: text().notNull(),
-        expiresAt: timestamp('expires_at').notNull(),
-        createdAt: timestamp('created_at').defaultNow().notNull(),
-        updatedAt: timestamp('updated_at')
+        expiresAt: timestamp().notNull(),
+        createdAt: timestamp().defaultNow().notNull(),
+        updatedAt: timestamp()
             .defaultNow()
             .$onUpdate(() => /* @__PURE__ */ new Date())
             .notNull(),
@@ -136,9 +135,9 @@ export const userShops = userSchema.table(
     'user_shops',
     {
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
-        createdAt: timestamp('created_at').defaultNow().notNull(),
-        userId: text('user_id').notNull(),
-        shopId: text('shop_id').notNull(),
+        createdAt: timestamp().defaultNow().notNull(),
+        userId: text().notNull(),
+        shopId: text().notNull(),
     },
     (table) => [
         index('user_shops_user_id_index').on(table.userId),
@@ -165,8 +164,8 @@ export const userShopVerifications = userSchema.table(
     {
         id: uuid().primaryKey().defaultRandom(),
         code: text().notNull(),
-        createdAt: timestamp('created_at').defaultNow().notNull(),
-        userId: text('user_id').notNull(),
+        createdAt: timestamp().defaultNow().notNull(),
+        userId: text().notNull(),
     },
     (table) => [
         index('user_shop_verifications_user_id_index').on(table.userId),
@@ -184,8 +183,8 @@ export const userBadges = userSchema.table(
     'user_badges',
     {
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
-        createdAt: timestamp('created_at').defaultNow().notNull(),
-        userId: text('user_id').notNull(),
+        createdAt: timestamp().defaultNow().notNull(),
+        userId: text().notNull(),
         badge: userBadge().notNull(),
     },
     (table) => [
@@ -204,14 +203,14 @@ export const userSettings = userSchema.table(
     'user_settings',
     {
         id: uuid().primaryKey().defaultRandom(),
-        createdAt: timestamp('created_at').defaultNow().notNull(),
-        updatedAt: timestamp('updated_at')
+        createdAt: timestamp().defaultNow().notNull(),
+        updatedAt: timestamp()
             .defaultNow()
             .$onUpdate(() => /* @__PURE__ */ new Date())
             .notNull(),
-        userId: text('user_id').notNull().unique(),
-        showPrivateSetups: boolean('show_private_setups').default(true).notNull(),
-        showNSFW: boolean('show_nsfw').default(false).notNull(),
+        userId: text().notNull().unique(),
+        showPrivateSetups: boolean().default(true).notNull(),
+        showNSFW: boolean().default(false).notNull(),
     },
     (table) => [
         index('user_settings_user_id_index').on(table.userId),
@@ -225,12 +224,12 @@ export const userSettings = userSchema.table(
     ],
 )
 
-export const changelogs = pgTable(
+export const changelogs = snakeCase.table(
     'changelogs',
     {
         slug: text().primaryKey(),
-        createdAt: timestamp('created_at').defaultNow().notNull(),
-        updatedAt: timestamp('updated_at')
+        createdAt: timestamp().defaultNow().notNull(),
+        updatedAt: timestamp()
             .defaultNow()
             .$onUpdate(() => /* @__PURE__ */ new Date())
             .notNull(),
@@ -241,16 +240,16 @@ export const changelogs = pgTable(
     (table) => [index('changelogs_slug_index').on(table.slug)],
 )
 
-export const changelogI18ns = pgTable(
+export const changelogI18ns = snakeCase.table(
     'changelog_i18ns',
     {
         id: uuid().primaryKey().defaultRandom(),
-        changelogSlug: text('changelog_slug').notNull(),
+        changelogSlug: text().notNull(),
         locale: locales().notNull(),
         title: text().notNull(),
         markdown: text().notNull(),
         html: text(),
-        aiGenerated: boolean('ai_generated').default(false).notNull(),
+        aiGenerated: boolean().default(false).notNull(),
     },
     (table) => [
         index('changelog_i18ns_changelog_slug_index').on(table.changelogSlug),
@@ -265,12 +264,12 @@ export const changelogI18ns = pgTable(
     ],
 )
 
-export const changelogAuthors = pgTable(
+export const changelogAuthors = snakeCase.table(
     'changelog_authors',
     {
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
-        changelogSlug: text('changelog_slug').notNull(),
-        userId: text('user_id').notNull(),
+        changelogSlug: text().notNull(),
+        userId: text().notNull(),
     },
     (table) => [
         index('changelog_authors_changelog_slug_index').on(table.changelogSlug),
@@ -292,12 +291,12 @@ export const changelogAuthors = pgTable(
     ],
 )
 
-export const shops = pgTable(
+export const shops = snakeCase.table(
     'shops',
     {
         id: text().primaryKey(),
-        createdAt: timestamp('created_at').defaultNow().notNull(),
-        updatedAt: timestamp('updated_at')
+        createdAt: timestamp().defaultNow().notNull(),
+        updatedAt: timestamp()
             .defaultNow()
             .$onUpdate(() => /* @__PURE__ */ new Date())
             .notNull(),
@@ -309,20 +308,20 @@ export const shops = pgTable(
     (table) => [index('shops_id_index').on(table.id), index('shops_name_index').on(table.name)],
 )
 
-export const items = pgTable(
+export const items = snakeCase.table(
     'items',
     {
         id: text().primaryKey(),
-        createdAt: timestamp('created_at').defaultNow().notNull(),
-        updatedAt: timestamp('updated_at')
+        createdAt: timestamp().defaultNow().notNull(),
+        updatedAt: timestamp()
             .defaultNow()
             .$onUpdate(() => /* @__PURE__ */ new Date())
             .notNull(),
         platform: platform().notNull(),
         outdated: boolean().default(false).notNull(),
-        shopId: text('shop_id'),
+        shopId: text(),
         name: text().notNull(),
-        niceName: text('nice_name'),
+        niceName: text(),
         category: itemCategory().notNull(),
         image: text(),
         price: text(),
@@ -342,23 +341,23 @@ export const items = pgTable(
     ],
 )
 
-export const setups = pgTable(
+export const setups = snakeCase.table(
     'setups',
     {
         id: text()
             .primaryKey()
             .$default(() => nanoid(8)),
-        createdAt: timestamp('created_at').defaultNow().notNull(),
-        updatedAt: timestamp('updated_at')
+        createdAt: timestamp().defaultNow().notNull(),
+        updatedAt: timestamp()
             .defaultNow()
             .$onUpdate(() => /* @__PURE__ */ new Date())
             .notNull(),
-        userId: text('user_id').notNull(),
+        userId: text().notNull(),
         public: boolean().default(true).notNull(),
         name: text().notNull(),
         description: text(),
-        hidAt: timestamp('hid_at'),
-        hidReason: text('hid_reason'),
+        hidAt: timestamp(),
+        hidReason: text(),
     },
     (table) => [
         index('setups_id_index').on(table.id),
@@ -374,12 +373,12 @@ export const setups = pgTable(
     ],
 )
 
-export const setupItems = pgTable(
+export const setupItems = snakeCase.table(
     'setup_items',
     {
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
-        itemId: text('item_id').notNull(),
-        setupId: text('setup_id').notNull(),
+        itemId: text().notNull(),
+        setupId: text().notNull(),
         category: itemCategory(),
         unsupported: boolean().default(false).notNull(),
         note: text(),
@@ -404,11 +403,11 @@ export const setupItems = pgTable(
     ],
 )
 
-export const setupItemShapekeys = pgTable(
+export const setupItemShapekeys = snakeCase.table(
     'setup_item_shapekeys',
     {
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
-        setupItemId: integer('setup_item_id').notNull(),
+        setupItemId: integer().notNull(),
         name: text().notNull(),
         value: real().notNull(),
     },
@@ -425,11 +424,11 @@ export const setupItemShapekeys = pgTable(
     ],
 )
 
-export const setupTags = pgTable(
+export const setupTags = snakeCase.table(
     'setup_tags',
     {
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
-        setupId: text('setup_id').notNull(),
+        setupId: text().notNull(),
         tag: text().notNull(),
     },
     (table) => [
@@ -446,15 +445,15 @@ export const setupTags = pgTable(
     ],
 )
 
-export const setupImages = pgTable(
+export const setupImages = snakeCase.table(
     'setup_images',
     {
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
-        setupId: text('setup_id').notNull(),
+        setupId: text().notNull(),
         url: text().notNull(),
         width: integer().notNull(),
         height: integer().notNull(),
-        themeColors: text('theme_colors').array(),
+        themeColors: text().array(),
     },
     (table) => [
         index('setup_images_id_index').on(table.id),
@@ -469,12 +468,12 @@ export const setupImages = pgTable(
     ],
 )
 
-export const setupCoauthors = pgTable(
+export const setupCoauthors = snakeCase.table(
     'setup_coauthors',
     {
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
-        setupId: text('setup_id').notNull(),
-        userId: text('user_id').notNull(),
+        setupId: text().notNull(),
+        userId: text().notNull(),
         note: text(),
     },
     (table) => [
@@ -502,9 +501,9 @@ export const followUsers = userSchema.table(
     'follow_users',
     {
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
-        createdAt: timestamp('created_at').defaultNow().notNull(),
-        userId: text('user_id').notNull(),
-        targetUserId: text('target_user_id').notNull(),
+        createdAt: timestamp().defaultNow().notNull(),
+        userId: text().notNull(),
+        targetUserId: text().notNull(),
     },
     (table) => [
         index('follow_users_id_index').on(table.id),
@@ -531,13 +530,13 @@ export const setupDrafts = userSchema.table(
     'setup_drafts',
     {
         id: uuid().primaryKey().defaultRandom(),
-        createdAt: timestamp('created_at').defaultNow().notNull(),
-        updatedAt: timestamp('updated_at')
+        createdAt: timestamp().defaultNow().notNull(),
+        updatedAt: timestamp()
             .defaultNow()
             .$onUpdate(() => /* @__PURE__ */ new Date())
             .notNull(),
-        userId: text('user_id').notNull(),
-        setupId: text('setup_id'),
+        userId: text().notNull(),
+        setupId: text(),
         content: jsonb().notNull(),
     },
     (table) => [
@@ -565,7 +564,7 @@ export const setupDraftImages = userSchema.table(
     'setup_draft_images',
     {
         id: uuid().primaryKey().defaultRandom(),
-        setupDraftId: uuid('setup_draft_id').notNull(),
+        setupDraftId: uuid().notNull(),
         url: text().notNull(),
     },
     (table) => [
@@ -586,9 +585,9 @@ export const bookmarks = userSchema.table(
     'bookmarks',
     {
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
-        createdAt: timestamp('created_at').defaultNow().notNull(),
-        userId: text('user_id').notNull(),
-        setupId: text('setup_id').notNull(),
+        createdAt: timestamp().defaultNow().notNull(),
+        userId: text().notNull(),
+        setupId: text().notNull(),
     },
     (table) => [
         index('bookmarks_id_index').on(table.id),
@@ -646,12 +645,12 @@ export const notifications = userSchema.table(
     'notifications',
     {
         id: uuid().primaryKey().defaultRandom(),
-        createdAt: timestamp('created_at').defaultNow().notNull(),
-        userId: text('user_id').notNull(),
+        createdAt: timestamp().defaultNow().notNull(),
+        userId: text().notNull(),
         type: notificationType().notNull(),
-        readAt: timestamp('read_at'),
-        payload: jsonb('payload').$type<NotificationPayload>().notNull(),
-        actionUrl: text('action_url'),
+        readAt: timestamp(),
+        payload: jsonb().$type<NotificationPayload>().notNull(),
+        actionUrl: text(),
         banner: boolean().default(false).notNull(),
     },
     (table) => [
@@ -667,17 +666,17 @@ export const notifications = userSchema.table(
     ],
 )
 
-export const feedbackSchema = pgSchema('feedback')
+export const feedbackSchema = snakeCase.schema('feedback')
 
 export const feedbacks = feedbackSchema.table(
     'feedbacks',
     {
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
-        createdAt: timestamp('created_at').defaultNow().notNull(),
+        createdAt: timestamp().defaultNow().notNull(),
         fingerprint: text().notNull(),
         comment: text().notNull(),
-        contextPath: text('context_path'),
-        isClosed: boolean('is_closed').default(false).notNull(),
+        contextPath: text(),
+        isClosed: boolean().default(false).notNull(),
     },
     (table) => [
         index('feedbacks_id_index').on(table.id),
@@ -689,14 +688,14 @@ export const itemReports = feedbackSchema.table(
     'item_reports',
     {
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
-        createdAt: timestamp('created_at').defaultNow().notNull(),
-        reporterId: text('reporter_id').notNull(),
-        itemId: text('item_id').notNull(),
-        nameError: boolean('name_error').default(false).notNull(),
+        createdAt: timestamp().defaultNow().notNull(),
+        reporterId: text().notNull(),
+        itemId: text().notNull(),
+        nameError: boolean().default(false).notNull(),
         irrelevant: boolean().default(false).notNull(),
         other: boolean().default(false).notNull(),
         comment: text(),
-        isResolved: boolean('is_resolved').default(false).notNull(),
+        isResolved: boolean().default(false).notNull(),
     },
     (table) => [
         index('item_reports_id_index').on(table.id),
@@ -723,16 +722,16 @@ export const setupReports = feedbackSchema.table(
     'setup_reports',
     {
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
-        createdAt: timestamp('created_at').defaultNow().notNull(),
-        reporterId: text('reporter_id').notNull(),
-        setupId: text('setup_id').notNull(),
+        createdAt: timestamp().defaultNow().notNull(),
+        reporterId: text().notNull(),
+        setupId: text().notNull(),
         spam: boolean().default(false).notNull(),
         hate: boolean().default(false).notNull(),
         infringe: boolean().default(false).notNull(),
-        badImage: boolean('bad_image').default(false).notNull(),
+        badImage: boolean().default(false).notNull(),
         other: boolean().default(false).notNull(),
         comment: text(),
-        isResolved: boolean('is_resolved').default(false).notNull(),
+        isResolved: boolean().default(false).notNull(),
     },
     (table) => [
         index('setup_reports_id_index').on(table.id),
@@ -759,16 +758,16 @@ export const userReports = feedbackSchema.table(
     'user_reports',
     {
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
-        createdAt: timestamp('created_at').defaultNow().notNull(),
-        reporterId: text('reporter_id').notNull(),
-        reporteeId: text('reportee_id').notNull(),
+        createdAt: timestamp().defaultNow().notNull(),
+        reporterId: text().notNull(),
+        reporteeId: text().notNull(),
         spam: boolean().default(false).notNull(),
         hate: boolean().default(false).notNull(),
         infringe: boolean().default(false).notNull(),
-        badImage: boolean('bad_image').default(false).notNull(),
+        badImage: boolean().default(false).notNull(),
         other: boolean().default(false).notNull(),
         comment: text(),
-        isResolved: boolean('is_resolved').default(false).notNull(),
+        isResolved: boolean().default(false).notNull(),
     },
     (table) => [
         index('user_reports_id_index').on(table.id),
@@ -791,7 +790,7 @@ export const userReports = feedbackSchema.table(
     ],
 )
 
-export const adminSchema = pgSchema('admin')
+export const adminSchema = snakeCase.schema('admin')
 
 export const auditActionType = pgEnum('audit_action_type', [
     'user_ban',
@@ -823,11 +822,11 @@ export const auditLogs = adminSchema.table(
     'audit_logs',
     {
         id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
-        createdAt: timestamp('created_at').defaultNow().notNull(),
-        userId: text('user_id'),
+        createdAt: timestamp().defaultNow().notNull(),
+        userId: text(),
         action: auditActionType().notNull(),
         targetType: auditTargetType().notNull(),
-        targetId: text('target_id'),
+        targetId: text(),
         details: text(),
     },
     (table) => [
@@ -850,17 +849,17 @@ export const emails = adminSchema.table(
     'emails',
     {
         id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
-        messageId: text('message_id').notNull(),
+        messageId: text().notNull(),
         subject: text(),
-        fromAddress: text('from_address').notNull(),
-        fromName: text('from_name'),
-        toAddress: text('to_address').notNull(),
+        fromAddress: text().notNull(),
+        fromName: text(),
+        toAddress: text().notNull(),
         snippet: text(),
-        isRead: boolean('is_read').default(false).notNull(),
-        isArchived: boolean('is_archived').default(false).notNull(),
-        receivedAt: timestamp('received_at').notNull(),
-        createdAt: timestamp('created_at').defaultNow().notNull(),
-        updatedAt: timestamp('updated_at')
+        isRead: boolean().default(false).notNull(),
+        isArchived: boolean().default(false).notNull(),
+        receivedAt: timestamp().notNull(),
+        createdAt: timestamp().defaultNow().notNull(),
+        updatedAt: timestamp()
             .$onUpdate(() => /* @__PURE__ */ new Date())
             .notNull(),
     },
