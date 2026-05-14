@@ -59,9 +59,19 @@ export const adminSessionEventHandler = <T = unknown>(
 export const cronEventHandler = <T = unknown>(
     handler: ({ event }: { event: H3Event }) => Promise<T> | T,
 ) =>
-    sessionEventHandler(async ({ event }) => {
+    promiseEventHandler(async ({ event }) => {
+        const cronSecret = process.env.CRON_SECRET?.trim()
+
+        if (!cronSecret)
+            throw serverError.forbidden({
+                log: {
+                    tag: 'cronEventHandler',
+                    message: 'CRON_SECRET is not configured',
+                },
+            })
+
         const { authorization } = getHeaders(event)
-        const isCronValid = authorization === `Bearer ${process.env.CRON_SECRET}`
+        const isCronValid = authorization === `Bearer ${cronSecret}`
 
         if (!isCronValid) throw serverError.forbidden()
 
