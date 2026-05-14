@@ -96,7 +96,7 @@
         "vitest": "^4.1.6"
     },
     "overrides": {
-        "vite": "8.0.7",
+        "vite": "^8.0.0",
         "vue": "latest"
     },
     "engines": {
