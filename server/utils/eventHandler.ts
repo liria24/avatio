@@ -51,12 +51,7 @@ export const adminSessionEventHandler = <T = unknown>(
     options?: SessionEventHandlerOptions,
 ) =>
     sessionEventHandler(async ({ event, session }) => {
-        const config = useRuntimeConfig()
-        const { authorization } = getHeaders(event)
-        const isAdminKey = authorization === `Bearer ${config.adminKey}`
-        const isAdmin = session?.user?.role === 'admin' || isAdminKey
-
-        if (!session || !isAdmin) throw serverError.forbidden()
+        if (!session || session.user.role !== 'admin') throw serverError.forbidden()
 
         return await handler({ event, session })
     }, options)
@@ -64,14 +59,21 @@ export const adminSessionEventHandler = <T = unknown>(
 export const cronEventHandler = <T = unknown>(
     handler: ({ event }: { event: H3Event }) => Promise<T> | T,
 ) =>
-    sessionEventHandler(async ({ event, session }) => {
-        const config = useRuntimeConfig()
-        const { authorization } = getHeaders(event)
-        const isAdminKey = authorization === `Bearer ${config.adminKey}`
-        const isAdmin = session?.user?.role === 'admin' || isAdminKey
-        const isCronValid = authorization === `Bearer ${process.env.CRON_SECRET}`
+    promiseEventHandler(async ({ event }) => {
+        const cronSecret = process.env.CRON_SECRET?.trim()
 
-        if (!isAdmin && !isCronValid) throw serverError.forbidden()
+        if (!cronSecret)
+            throw serverError.forbidden({
+                log: {
+                    tag: 'cronEventHandler',
+                    message: 'CRON_SECRET is not configured',
+                },
+            })
+
+        const { authorization } = getHeaders(event)
+        const isCronValid = authorization === `Bearer ${cronSecret}`
+
+        if (!isCronValid) throw serverError.forbidden()
 
         return await handler({ event })
     })

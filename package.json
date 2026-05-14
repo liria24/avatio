@@ -17,15 +17,18 @@
         "generate": "nuxt generate",
         "preview": "nuxt preview",
         "postinstall": "bun run --filter '@avatio/bot-notifier' build && bun run --filter '@avatio/ungh' build && nuxt prepare",
-        "check": "vp check",
-        "check:fix": "vp check --fix",
-        "test": "vp test",
-        "test:watch": "vp test --watch",
-        "test:unit": "vp test --project unit",
-        "test:nuxt": "vp test --project nuxt",
-        "release": "npx bumpp",
-        "drizzle:generate": "npx drizzle-kit generate",
-        "changelogen": "npx changelogen --hideAuthorEmail"
+        "typecheck": "vue-tsc --noEmit",
+        "lint": "oxlint",
+        "lint:fix": "oxlint --fix",
+        "fmt": "oxfmt",
+        "fmt:check": "oxfmt --check",
+        "test": "vitest run",
+        "test:watch": "vitest --watch",
+        "test:unit": "vitest --project unit",
+        "test:nuxt": "vitest --project nuxt",
+        "release": "bumpp",
+        "drizzle:generate": "drizzle-kit generate",
+        "changelogen": "changelogen --hideAuthorEmail"
     },
     "dependencies": {
         "@avatio/bot-notifier": "workspace:*",
@@ -93,7 +96,8 @@
         "oxlint": "^1.64.0",
         "taze": "^19.11.0",
         "typescript": "6.0.3",
-        "vitest": "^4.1.6"
+        "vitest": "^4.1.6",
+        "vue-tsc": "^3.2.9"
     },
     "overrides": {
         "vite": "^8.0.0",

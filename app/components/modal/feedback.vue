@@ -22,7 +22,7 @@ const { state, schema, submit } = useFeedback()
             <UForm
                 :state
                 :schema
-                class="flex w-full flex-col items-center gap-4 overflow-y-auto scrollbar-thin"
+                class="flex w-full scrollbar-thin flex-col items-center gap-4 overflow-y-auto"
                 @submit="submit"
             >
                 <UFormField name="comment" :label="$t('modal.feedback.comment')" class="w-full">

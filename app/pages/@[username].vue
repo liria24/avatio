@@ -105,7 +105,12 @@ useSeo({
                             <span> @{{ user.username }} </span>
 
                             <Icon name="mingcute:calendar-2-fill" size="18" class="ml-2" />
-                            <NuxtTime :datetime="user.createdAt" date-style="short" :locale />
+                            <NuxtTime
+                                v-if="user.createdAt"
+                                :datetime="user.createdAt"
+                                date-style="short"
+                                :locale
+                            />
                         </div>
                     </div>
                 </div>

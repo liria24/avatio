@@ -1,3 +1,4 @@
+import { waitUntil } from '@vercel/functions'
 import { z } from 'zod'
 
 const params = z.object({
@@ -74,7 +75,7 @@ export default adminSessionEventHandler(async () => {
             })
         }
 
-    purgeUserCache(userId)
+    waitUntil(purgeUserCache(userId))
 
     return
 })

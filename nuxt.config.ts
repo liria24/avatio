@@ -150,7 +150,6 @@ export default defineNuxtConfig({
     },
 
     runtimeConfig: {
-        adminKey: import.meta.env.ADMIN_KEY,
         ai: {
             gateway: {
                 apiKey: import.meta.env.AI_GATEWAY_API_KEY,

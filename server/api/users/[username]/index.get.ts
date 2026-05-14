@@ -5,56 +5,11 @@ const params = z.object({
 })
 
 const getUser = defineCachedFunction(
-    async (username: string) => {
-        const data = await db.query.users.findFirst({
-            where: {
-                username: { eq: username },
-                banned: { OR: [{ eq: false }, { isNull: true }] },
-            },
-            columns: {
-                id: true,
-                username: true,
-                createdAt: true,
-                name: true,
-                image: true,
-                bio: true,
-                links: true,
-            },
-            with: {
-                badges: {
-                    columns: {
-                        badge: true,
-                        createdAt: true,
-                    },
-                },
-                shops: {
-                    columns: {
-                        id: true,
-                        createdAt: true,
-                    },
-                    with: {
-                        shop: {
-                            columns: {
-                                id: true,
-                                platform: true,
-                                name: true,
-                                image: true,
-                                verified: true,
-                            },
-                        },
-                    },
-                },
-            },
-        })
-
-        if (!data) throw serverError.notFound()
-
-        return data
-    },
+    async (username: string) => await getPublicUser({ username }),
     {
         maxAge: USER_CACHE_TTL,
         name: 'user',
-        getKey: (id: string) => id,
+        getKey: (username: string) => username,
         swr: false,
     },
 )

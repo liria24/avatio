@@ -2,33 +2,33 @@
 title: FAQ
 description: Avatioに関するよくある質問と回答
 schemaOrg:
-    type: FaqPage
-    mainEntity:
-        - '@type': 'Question'
-          name: 'Avatioとは'
-          acceptedAnswer:
-              '@type': 'Answer'
-              text: 'Avatioは、VRSNSで使用しているアバターの改変に使用したアイテムを、リストして共有できるサービスです。'
-        - '@type': 'Question'
-          name: 'セットアップへ登録できるアイテムに制限はある？'
-          acceptedAnswer:
-              '@type': 'Answer'
-              text: |
-                  <p>基本的に、VRアバターに関連しないアイテムの登録はできません。</p>
-                  <p>現在、以下のいずれかに該当しているアイテムの登録が可能です。</p>
-                  <ul>
-                    <li>BOOTH
-                      <ul>
-                        <li><strong>3Dモデル</strong> 及び <strong>素材データ</strong> カテゴリのアイテム</li>
-                        <li><strong>VRChat</strong> タグが付いているアイテム</li>
-                      </ul>
-                    </li>
-                    <li>GitHub
-                      <ul>
-                        <li>パブリックリポジトリ</li>
-                      </ul>
-                    </li>
-                  </ul>
+  type: FaqPage
+  mainEntity:
+    - '@type': 'Question'
+      name: 'Avatioとは'
+      acceptedAnswer:
+        '@type': 'Answer'
+        text: 'Avatioは、VRSNSで使用しているアバターの改変に使用したアイテムを、リストして共有できるサービスです。'
+    - '@type': 'Question'
+      name: 'セットアップへ登録できるアイテムに制限はある？'
+      acceptedAnswer:
+        '@type': 'Answer'
+        text: |
+          <p>基本的に、VRアバターに関連しないアイテムの登録はできません。</p>
+          <p>現在、以下のいずれかに該当しているアイテムの登録が可能です。</p>
+          <ul>
+            <li>BOOTH
+              <ul>
+                <li><strong>3Dモデル</strong> 及び <strong>素材データ</strong> カテゴリのアイテム</li>
+                <li><strong>VRChat</strong> タグが付いているアイテム</li>
+              </ul>
+            </li>
+            <li>GitHub
+              <ul>
+                <li>パブリックリポジトリ</li>
+              </ul>
+            </li>
+          </ul>
 ---
 
 ## Avatioとは
@@ -54,10 +54,10 @@ Avatioは、VRSNSで使用しているアバターの改変に使用したアイ
 現在、以下のいずれかに該当しているアイテムの登録が可能です。
 
 - BOOTH
-    - **3Dモデル** 及び **素材データ** カテゴリのアイテム
-    - **VRChat** タグが付いているアイテム
+  - **3Dモデル** 及び **素材データ** カテゴリのアイテム
+  - **VRChat** タグが付いているアイテム
 - GitHub
-    - パブリックリポジトリ
+  - パブリックリポジトリ
 
 ::warning
 本サービスの趣旨に関係のないアイテムは非表示処置を行う場合があります。

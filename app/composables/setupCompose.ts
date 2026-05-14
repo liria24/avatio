@@ -59,23 +59,32 @@ export const useSetupCompose = () => {
         state.value.images = content.images || []
         state.value.tags = content.tags ? content.tags.map((tag) => tag.tag) : []
 
-        state.value.coauthors = content.coauthors
+        const coauthorResults = content.coauthors
             ? await Promise.all(
                   content.coauthors.map(async (coauthor) => {
-                      const user = await $fetch<Serialized<User>>(`/api/users/${coauthor.userId}`)
-                      return {
-                          userId: coauthor.userId,
-                          user: {
-                              ...user,
-                              createdAt: new Date(user.createdAt),
-                              name: user.name ?? '',
-                              image: user.image ?? '',
-                          },
-                          note: coauthor.note || '',
+                      try {
+                          const user = await $fetch(`/api/users/id/${coauthor.userId}`)
+                          return {
+                              userId: coauthor.userId,
+                              user: {
+                                  ...user,
+                                  createdAt: new Date(user.createdAt ?? ''),
+                                  name: user.name ?? '',
+                                  image: user.image ?? '',
+                              },
+                              note: coauthor.note || '',
+                          }
+                      } catch {
+                          console.error('Failed to load coauthor.')
+                          return null
                       }
                   }),
               )
             : []
+
+        state.value.coauthors = coauthorResults.filter(
+            (c): c is NonNullable<typeof c> => c !== null,
+        )
 
         state.value.items = initializeItems()
 

@@ -11,4 +11,5 @@ export default defineConfig({
     sortImports: {},
     sortPackageJson: {},
     ignorePatterns: [],
+    overrides: [{ files: ['**/*.yml', '**/*.yaml', '**/*.md'], options: { tabWidth: 2 } }],
 })
