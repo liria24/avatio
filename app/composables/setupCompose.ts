@@ -77,7 +77,7 @@ export const useSetupCompose = () => {
                               note: coauthor.note || '',
                           }
                       } catch {
-                          console.error('Failed to load coauthor:', coauthor.userId)
+                          console.error('Failed to load coauthor.')
                           return null
                       }
                   }),
