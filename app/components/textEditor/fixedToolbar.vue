@@ -198,7 +198,7 @@ const fixedToolbarItems = computed<EditorToolbarItem[][]>(() => [
     <UEditorToolbar
         :editor
         :items="fixedToolbarItems"
-        class="bg-muted sticky inset-x-0 top-0 z-50 overflow-x-auto rounded-lg p-2"
+        class="bg-muted sticky inset-x-0 top-0 z-50 overflow-x-auto scrollbar-thin rounded-lg p-2"
     >
         <template #link>
             <TextEditorLinkPopover :editor />

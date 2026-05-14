@@ -226,7 +226,7 @@ const vercelEnv = process.env.NUXT_ENV_VERCEL_TARGET_ENV
                 </template>
             </UDashboardSidebar>
 
-            <main class="@container min-h-dvh w-full">
+            <main class="@container-size min-h-dvh w-full">
                 <slot />
             </main>
         </UDashboardGroup>

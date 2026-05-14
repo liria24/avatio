@@ -7,15 +7,10 @@
 VRSNSユーザー向けのアバターセットアップ共有サービス。<br>
 「セットアップ」を作成し、ユーザーが使用しているアバター・衣装・装飾品・ツールなどをリストできます。
 
-[![Vercel badge][badge-vercel]][vercel]
-[![Nuxt badge][badge-nuxt]][nuxt]
-[![Tailwind badge][badge-tailwind]][tailwind]
-[![Better Auth badge][badge-better-auth]][better-auth]
-[![Neon badge][badge-neon]][neon]
-[![Drizzle ORM badge][badge-drizzle]][drizzle]
-[![Oxc badge][badge-oxc]][oxc]
-
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/liria24/avatio)
+![Last commit](https://www.shieldcn.dev/github/last-commit/liria24/avatio.svg?variant=secondary&size=xs)
+![Commits](https://www.shieldcn.dev/github/commits/liria24/avatio.svg?variant=secondary&size=xs)
+![Release](https://www.shieldcn.dev/github/release/liria24/avatio.svg?size=xs)
+![CI](https://www.shieldcn.dev/github/ci/liria24/avatio.svg?variant=secondary&size=xs)
 
 </div>
 
@@ -32,6 +27,16 @@ VRSNSユーザー向けのアバターセットアップ共有サービス。<br
 
 - 🐫 [BOOTH](https://booth.pm)
 - 🐙 [GitHub](https://github.com)
+
+## 🛠 Tech Stack
+
+[![Vercel badge][badge-vercel]][vercel]
+[![Nuxt badge][badge-nuxt]][nuxt]
+[![Tailwind badge][badge-tailwind]][tailwind]
+[![Better Auth badge][badge-better-auth]][better-auth]
+[![Neon badge][badge-neon]][neon]
+[![Drizzle ORM badge][badge-drizzle]][drizzle]
+[![Oxc badge][badge-oxc]][oxc]
 
 ## 🤝 Contributions
 
