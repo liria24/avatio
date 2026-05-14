@@ -63,9 +63,7 @@ export const useSetupCompose = () => {
             ? await Promise.all(
                   content.coauthors.map(async (coauthor) => {
                       try {
-                          const user = await $fetch<Serialized<User>>(
-                              `/api/users/${coauthor.userId}`,
-                          )
+                          const user = await $fetch(`/api/users/id/${coauthor.userId}`)
                           return {
                               userId: coauthor.userId,
                               user: {
