@@ -17,6 +17,7 @@
         "generate": "nuxt generate",
         "preview": "nuxt preview",
         "postinstall": "bun run --filter '@avatio/bot-notifier' build && bun run --filter '@avatio/ungh' build && nuxt prepare",
+        "typecheck": "vue-tsc --noEmit",
         "lint": "oxlint",
         "lint:fix": "oxlint --fix",
         "fmt": "oxfmt",
@@ -95,7 +96,8 @@
         "oxlint": "^1.64.0",
         "taze": "^19.11.0",
         "typescript": "6.0.3",
-        "vitest": "^4.1.6"
+        "vitest": "^4.1.6",
+        "vue-tsc": "^3.2.9"
     },
     "overrides": {
         "vite": "^8.0.0",
