@@ -118,6 +118,7 @@ await initialize({
             :class="
                 cn(
                     'ring-accented static top-0 bottom-4 left-0 flex flex-col overflow-y-auto rounded-lg',
+                    'scrollbar-thin scrollbar-thumb-(--ui-bg-accented) scrollbar-track-transparent',
                     'lg:absolute lg:w-88 lg:ring-2',
                 )
             "

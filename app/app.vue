@@ -9,6 +9,7 @@ const { needsAgreement, open: openTermsAgreement } = useTermsAgreement()
 useHead({
     htmlAttrs: {
         lang: () => locale.value,
+        class: 'scrollbar-thin scrollbar-thumb-(--ui-bg-accented) scrollbar-track-transparent',
     },
 })
 
