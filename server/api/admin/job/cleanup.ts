@@ -1,5 +1,6 @@
 import { sendMessage } from '@avatio/bot-notifier'
-import { list, remove } from '@tigrisdata/storage'
+
+const log = logger('/api/admin/job/cleanup')
 
 interface ImageInfo {
     key: string
@@ -21,32 +22,26 @@ const extractKeyFromUrl = (url: string): string | null => {
 // ページネーションを考慮してストレージオブジェクトを全件取得する
 const getStorageObjects = async (prefix: string): Promise<ImageInfo[]> => {
     const items: ImageInfo[] = []
-    let paginationToken: string | undefined
+    let cursor: string | undefined
 
     try {
         do {
-            const result = await list({
+            const result = await storage.list({
                 prefix: `${prefix}/`,
-                ...(paginationToken ? { paginationToken } : {}),
+                ...(cursor ? { cursor } : {}),
             })
 
-            if (result.error) {
-                console.error(`Failed to list storage objects for prefix ${prefix}:`, result.error)
-                break
-            }
-            if (!result.data?.items) break
-
-            for (const obj of result.data.items) {
+            for (const obj of result.items) {
                 items.push({
-                    key: obj.name,
-                    lastModified: new Date(obj.lastModified!),
+                    key: obj.key,
+                    lastModified: new Date(obj.lastModified ?? Date.now()),
                 })
             }
 
-            paginationToken = result.data.hasMore ? result.data.paginationToken : undefined
-        } while (paginationToken)
+            cursor = result.cursor
+        } while (cursor)
     } catch (error) {
-        console.error(`Failed to get storage objects for prefix ${prefix}:`, error)
+        log.error(`Failed to get storage objects for prefix ${prefix}:`, error)
     }
 
     return items
@@ -114,7 +109,7 @@ export default cronEventHandler(async ({ event }) => {
     const allImages = allUnusedImages.filter((img) => img.lastModified < thresholdDate)
 
     if (isDryRun) {
-        console.log(
+        log.info(
             `[DRY RUN] Would delete ${allImages.length} image(s):`,
             allImages.map((img) => img.key),
         )
@@ -133,9 +128,8 @@ export default cronEventHandler(async ({ event }) => {
     //         Promise.allSettled が失敗を正しく rejected として検出できるようにする
     const deleteResults = await Promise.allSettled(
         allImages.map(async (image) => {
-            console.log('Deleting image from storage:', image.key)
-            const result = await remove(image.key)
-            if (result.error) throw result.error
+            log.info('Deleting image from storage:', image.key)
+            await storage.delete(image.key)
             return image.key
         }),
     )
@@ -150,7 +144,7 @@ export default cronEventHandler(async ({ event }) => {
             if (result.status === 'fulfilled') {
                 acc.successful.push(imageKey)
             } else {
-                console.error('Failed to delete image:', imageKey, result.reason)
+                log.error('Failed to delete image:', imageKey, result.reason)
                 acc.failed.push({
                     key: imageKey,
                     error: result.reason?.message || 'Unknown error',
@@ -214,7 +208,7 @@ export default cronEventHandler(async ({ event }) => {
                 ],
             })
         } catch (error) {
-            console.error('Failed to send Discord notification:', error)
+            log.error('Failed to send Discord notification:', error)
         }
     }
 

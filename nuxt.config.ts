@@ -167,14 +167,6 @@ export default defineNuxtConfig({
         neon: {
             databaseUrl: import.meta.env.NEON_DATABASE_URL,
         },
-        tigris: {
-            storage: {
-                domain: import.meta.env.TIGRIS_STORAGE_DOMAIN,
-                accessKeyId: import.meta.env.TIGRIS_STORAGE_ACCESS_KEY_ID,
-                secretAccessKey: import.meta.env.TIGRIS_STORAGE_SECRET_ACCESS_KEY,
-                endpoint: import.meta.env.TIGRIS_STORAGE_ENDPOINT,
-            },
-        },
         unosend: {
             apiKey: import.meta.env.UNOSEND_API_KEY,
         },
