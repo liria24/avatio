@@ -30,7 +30,7 @@ const compressImage = async (buffer: Buffer) => {
     log.start('Compressing image...')
 
     const metadata = await sharp(buffer).metadata()
-    const { width = 0, height = 0 } = metadata
+    const { width, height } = metadata
 
     // リサイズが必要かチェック
     const needsResize = width > MAX_DIMENSION || height > MAX_DIMENSION

@@ -49,7 +49,7 @@ export const useSetupCompose = () => {
 
     // Utilities
     const updateRouterQuery = (updates: Record<string, string | number | undefined>) => {
-        router.replace({ query: { ...route.query, ...updates } })
+        void router.replace({ query: { ...route.query, ...updates } })
     }
 
     const applyDraftData = async (content: SetupDraftContent) => {
@@ -359,7 +359,7 @@ export const useSetupCompose = () => {
         draft.value = { id: null, status: 'new' }
         editingSetupId.value = null
         skipDraftSave.value = false
-        router.replace({ query: {} })
+        void router.replace({ query: {} })
     }
 
     const saveDraft = useDebounceFn(async () => {

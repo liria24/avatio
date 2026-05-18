@@ -44,11 +44,12 @@ const _useNotifications = () => {
     }
 
     const open = (id: string, actionUrl: string | null) => {
-        markAsRead(id)
-        if (actionUrl) navigateTo(localePath(actionUrl))
+        void markAsRead(id)
+        if (actionUrl) void navigateTo(localePath(actionUrl))
     }
 
     return {
+        // oxlint-disable-next-line typescript/no-misused-spread
         ..._asyncData,
         all,
         read,
