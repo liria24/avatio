@@ -17,7 +17,7 @@
         "generate": "nuxt generate",
         "preview": "nuxt preview",
         "postinstall": "bun run --filter '@avatio/bot-notifier' build && bun run --filter '@avatio/ungh' build && nuxt prepare",
-        "typecheck": "vue-tsc --noEmit",
+        "typecheck": "nuxt typecheck",
         "lint": "oxlint",
         "lint:fix": "oxlint --fix",
         "fmt": "oxfmt",
