@@ -5,6 +5,9 @@ export default defineConfig({
     categories: {
         correctness: 'error',
     },
+    options: {
+        typeAware: true,
+    },
     env: {
         builtin: true,
         browser: true,
