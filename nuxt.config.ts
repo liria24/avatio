@@ -89,9 +89,9 @@ export default defineNuxtConfig({
         'motion-v/nuxt',
         '@stefanobartoletti/nuxt-social-share',
         '@nuxt/a11y',
-        '@vite-pwa/nuxt',
         '@vercel/analytics',
         '@nuxt/test-utils/module',
+        ...(process.env.VITEST ? [] : ['@vite-pwa/nuxt']),
     ],
 
     css: ['~/assets/css/main.css'],
@@ -139,6 +139,7 @@ export default defineNuxtConfig({
         },
         typescript: {
             tsConfig: {
+                include: ['../test/unit/**/*'],
                 compilerOptions: {
                     noUncheckedIndexedAccess: true,
                 },
@@ -343,6 +344,7 @@ export default defineNuxtConfig({
     },
 
     pwa: {
+        disable: process.env.NODE_ENV === 'test',
         registerWebManifestInRouteRules: true,
         registerType: 'autoUpdate',
         manifest: {

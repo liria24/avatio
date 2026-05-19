@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import avatarShortName from '../../app/utils/avatarShortName'
+import avatarShortName from '../../../app/utils/avatarShortName'
 
 describe('avatarShortName', () => {
     it.each<[string, string, string]>([

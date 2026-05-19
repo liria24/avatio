@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import sanitizeObject from '../../server/utils/sanitizeObject'
+import sanitizeObject from '../../../server/utils/sanitizeObject'
 
 describe('sanitizeObject — string input', () => {
     it.each<[string, string, string]>([
