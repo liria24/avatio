@@ -33,6 +33,9 @@
     "dependencies": {
         "@avatio/bot-notifier": "workspace:*",
         "@avatio/ungh": "workspace:*",
+        "@aws-sdk/client-s3": "^3.1050.0",
+        "@aws-sdk/s3-presigned-post": "^3.1050.0",
+        "@aws-sdk/s3-request-presigner": "^3.1050.0",
         "@better-auth/drizzle-adapter": "1.6.11",
         "@comark/nuxt": "0.2.1",
         "@iconify-json/fluent-color": "1.2.21",
