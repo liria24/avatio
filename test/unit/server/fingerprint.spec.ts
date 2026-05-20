@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { getFingerprint } from '../../server/utils/fingerprint'
+import { getFingerprint } from '../../../server/utils/fingerprint'
 
 const mockUseEvent = vi.fn().mockReturnValue({})
 const mockGetHeaders = vi.fn()

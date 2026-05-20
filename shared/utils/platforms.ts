@@ -30,5 +30,5 @@ export const resolveItemUrl = (itemId: string, platform: Platform): string | und
 
 export const resolveShopUrl = (shopId: string | undefined, platform: Platform | undefined) => {
     if (!shopId || !platform) return undefined
-    return getPlatformData(platform).shopUrl(shopId)
+    return getPlatformData(platform)?.shopUrl(shopId)
 }

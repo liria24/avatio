@@ -33,7 +33,7 @@ describe('cronEventHandler', () => {
         delete process.env.CRON_SECRET
 
         const { forbidden, forbiddenError, getSession } = stubCronGlobals('Bearer undefined')
-        const { cronEventHandler } = await import('../../server/utils/eventHandler')
+        const { cronEventHandler } = await import('../../../server/utils/eventHandler')
 
         const handler = cronEventHandler(async () => 'ok')
 
@@ -51,7 +51,7 @@ describe('cronEventHandler', () => {
         process.env.CRON_SECRET = 'secret'
 
         const { getSession } = stubCronGlobals('Bearer secret')
-        const { cronEventHandler } = await import('../../server/utils/eventHandler')
+        const { cronEventHandler } = await import('../../../server/utils/eventHandler')
 
         const handler = cronEventHandler(async () => 'ok')
 
@@ -63,7 +63,7 @@ describe('cronEventHandler', () => {
         process.env.CRON_SECRET = 'secret'
 
         const { forbidden, forbiddenError, getSession } = stubCronGlobals('Bearer nope')
-        const { cronEventHandler } = await import('../../server/utils/eventHandler')
+        const { cronEventHandler } = await import('../../../server/utils/eventHandler')
 
         const handler = cronEventHandler(async () => 'ok')
 

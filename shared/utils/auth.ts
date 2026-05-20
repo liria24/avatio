@@ -1,11 +1,11 @@
 import { drizzleAdapter } from '@better-auth/drizzle-adapter'
-import { put } from '@tigrisdata/storage'
 import { betterAuth } from 'better-auth/minimal'
 import type { BetterAuthOptions } from 'better-auth/minimal'
 import { admin, multiSession, username, customSession } from 'better-auth/plugins'
 import { nanoid } from 'nanoid'
 
 import { db, schema } from '../../server/utils/database'
+import { storage } from '../../server/utils/storage'
 import {
     RATE_LIMIT_DEFAULT,
     RATE_LIMIT_SESSION,
@@ -132,11 +132,14 @@ const options = {
                             const buffer = await $fetch<Blob>(image)
                             const arrayBuffer = await buffer.arrayBuffer()
                             const imageId = nanoid(JPG_FILENAME_LENGTH)
-                            await put(`avatar/${imageId}.jpg`, Buffer.from(arrayBuffer), {
-                                contentType: 'image/jpeg',
-                                contentDisposition: 'inline',
-                            })
-                            image = `https://${process.env.TIGRIS_STORAGE_DOMAIN}/avatar/${imageId}.jpg`
+                            await storage.upload(
+                                `avatar/${imageId}.jpg`,
+                                Buffer.from(arrayBuffer),
+                                {
+                                    contentType: 'image/jpeg',
+                                },
+                            )
+                            image = await storage.url(`avatar/${imageId}.jpg`)
                         } catch {
                             image = null
                         }

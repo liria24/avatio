@@ -25,7 +25,7 @@ export default async (imageUrl: string, options: ExtractImageColorsOptions = {})
 
     // sharpを使用して画像データを取得
     const image = sharp(Buffer.from(await blob.arrayBuffer()))
-    const { width = 0, height = 0 } = await image.metadata()
+    const { width, height } = await image.metadata()
 
     // 画像を生のピクセルデータに変換
     const { data, info } = await image.ensureAlpha().raw().toBuffer({ resolveWithObject: true })

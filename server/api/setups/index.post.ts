@@ -69,19 +69,20 @@ export default authedSessionEventHandler(
                 })),
             )
 
-            await Promise.all(
-                [
-                    shapekeys.length && tx.insert(setupItemShapekeys).values(shapekeys),
-                    imageData.length &&
-                        tx
-                            .insert(setupImages)
-                            .values(imageData.map((img) => ({ ...img, setupId }))),
-                    tags?.length &&
-                        tx.insert(setupTags).values(tags.map((t) => ({ setupId, tag: t.tag }))),
-                    coauthors?.length &&
-                        tx.insert(setupCoauthors).values(coauthors.map((c) => ({ setupId, ...c }))),
-                ].filter(Boolean),
-            )
+            await Promise.all([
+                shapekeys.length
+                    ? tx.insert(setupItemShapekeys).values(shapekeys)
+                    : Promise.resolve(),
+                imageData.length
+                    ? tx.insert(setupImages).values(imageData.map((img) => ({ ...img, setupId })))
+                    : Promise.resolve(),
+                tags?.length
+                    ? tx.insert(setupTags).values(tags.map((t) => ({ setupId, tag: t.tag })))
+                    : Promise.resolve(),
+                coauthors?.length
+                    ? tx.insert(setupCoauthors).values(coauthors.map((c) => ({ setupId, ...c })))
+                    : Promise.resolve(),
+            ])
 
             return setupId
         })

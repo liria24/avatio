@@ -27,7 +27,7 @@ export const useAdmin = () => {
                                 : config.successTitle
                         toast.add({ title, color: 'success' })
                     }
-                    if (config.refreshSummary) refreshNuxtData('admin-summary')
+                    if (config.refreshSummary) void refreshNuxtData('admin-summary')
                     params.onSuccess?.()
                 },
                 onResponseError({ error }) {

@@ -89,9 +89,9 @@ export default defineNuxtConfig({
         'motion-v/nuxt',
         '@stefanobartoletti/nuxt-social-share',
         '@nuxt/a11y',
-        '@vite-pwa/nuxt',
         '@vercel/analytics',
         '@nuxt/test-utils/module',
+        ...(process.env.VITEST ? [] : ['@vite-pwa/nuxt']),
     ],
 
     css: ['~/assets/css/main.css'],
@@ -137,15 +137,18 @@ export default defineNuxtConfig({
                 driver: 'null',
             },
         },
-        typescript: {
-            tsConfig: {
-                compilerOptions: {
-                    noUncheckedIndexedAccess: true,
-                },
-            },
-        },
         experimental: {
             asyncContext: true,
+        },
+    },
+
+    typescript: {
+        typeCheck: true,
+        tsConfig: {
+            include: ['test/unit/**/*'],
+            compilerOptions: {
+                noUncheckedIndexedAccess: true,
+            },
         },
     },
 
@@ -166,14 +169,6 @@ export default defineNuxtConfig({
         },
         neon: {
             databaseUrl: import.meta.env.NEON_DATABASE_URL,
-        },
-        tigris: {
-            storage: {
-                domain: import.meta.env.TIGRIS_STORAGE_DOMAIN,
-                accessKeyId: import.meta.env.TIGRIS_STORAGE_ACCESS_KEY_ID,
-                secretAccessKey: import.meta.env.TIGRIS_STORAGE_SECRET_ACCESS_KEY,
-                endpoint: import.meta.env.TIGRIS_STORAGE_ENDPOINT,
-            },
         },
         unosend: {
             apiKey: import.meta.env.UNOSEND_API_KEY,
@@ -351,6 +346,7 @@ export default defineNuxtConfig({
     },
 
     pwa: {
+        disable: process.env.NODE_ENV === 'test',
         registerWebManifestInRouteRules: true,
         registerType: 'autoUpdate',
         manifest: {

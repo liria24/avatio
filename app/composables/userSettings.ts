@@ -18,7 +18,7 @@ export const useUserSettingsUpdate = () => {
             ...options,
             body,
             onResponse() {
-                refreshNuxtData('user-settings')
+                void refreshNuxtData('user-settings')
             },
         })
 

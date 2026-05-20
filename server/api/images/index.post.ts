@@ -1,7 +1,5 @@
-import { put } from '@tigrisdata/storage'
 import { nanoid } from 'nanoid'
 import sharp from 'sharp'
-import { joinURL, withHttps } from 'ufo'
 import { z } from 'zod'
 
 const log = logger('/api/images:POST')
@@ -32,7 +30,7 @@ const compressImage = async (buffer: Buffer) => {
     log.start('Compressing image...')
 
     const metadata = await sharp(buffer).metadata()
-    const { width = 0, height = 0 } = metadata
+    const { width, height } = metadata
 
     // リサイズが必要かチェック
     const needsResize = width > MAX_DIMENSION || height > MAX_DIMENSION
@@ -99,8 +97,6 @@ export default authedSessionEventHandler(
     async () => {
         const { blob, path } = await validateFormData(formData)
 
-        const config = useRuntimeConfig()
-
         log.start('Processing and uploading image to Blob Storage...')
 
         const processedBuffer = Buffer.from(await blob.arrayBuffer())
@@ -114,15 +110,15 @@ export default authedSessionEventHandler(
         const normalizedPath = path.replace(/\/+/g, '/').replace(/^\/|\/$/g, '')
         const fullPath = `${normalizedPath}/${jpgFilename}`
 
-        const result = await put(fullPath, compressedImage, {
-            contentType: 'image/jpeg',
-            contentDisposition: 'inline',
-        })
-        if (result.error) throw serverError.internalServerError()
+        try {
+            await storage.upload(fullPath, compressedImage, { contentType: 'image/jpeg' })
+        } catch {
+            throw serverError.internalServerError()
+        }
 
-        log.success('Image processed and uploaded successfully:', result.data.path)
+        log.success('Image processed and uploaded successfully:', fullPath)
         return {
-            url: withHttps(joinURL(config.tigris.storage.domain, result.data.path)),
+            url: await storage.url(fullPath),
             width,
             height,
         }

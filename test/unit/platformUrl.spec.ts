@@ -14,7 +14,7 @@ describe('resolveItemUrl', () => {
 })
 
 describe('resolveShopUrl', () => {
-    it.each<[string, string | undefined, Platform | undefined, string | undefined]>([
+    it.each<[string, string | undefined, Platform, string | undefined]>([
         ['Booth shop URL', 'myshop', 'booth', 'https://myshop.booth.pm/'],
         ['GitHub shop URL', 'someuser', 'github', 'https://github.com/someuser'],
         ['shopId is undefined', undefined, 'booth', undefined],
