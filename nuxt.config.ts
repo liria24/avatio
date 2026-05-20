@@ -137,16 +137,18 @@ export default defineNuxtConfig({
                 driver: 'null',
             },
         },
-        typescript: {
-            tsConfig: {
-                include: ['../test/unit/**/*'],
-                compilerOptions: {
-                    noUncheckedIndexedAccess: true,
-                },
-            },
-        },
         experimental: {
             asyncContext: true,
+        },
+    },
+
+    typescript: {
+        typeCheck: true,
+        tsConfig: {
+            include: ['../test/unit/**/*'],
+            compilerOptions: {
+                noUncheckedIndexedAccess: true,
+            },
         },
     },
 
