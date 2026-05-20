@@ -145,7 +145,7 @@ export default defineNuxtConfig({
     typescript: {
         typeCheck: true,
         tsConfig: {
-            include: ['../test/unit/**/*'],
+            include: ['test/unit/**/*'],
             compilerOptions: {
                 noUncheckedIndexedAccess: true,
             },
