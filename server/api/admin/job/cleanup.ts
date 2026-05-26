@@ -19,27 +19,15 @@ const extractKeyFromUrl = (url: string): string | null => {
     }
 }
 
-// ページネーションを考慮してストレージオブジェクトを全件取得する
 const getStorageObjects = async (prefix: string): Promise<ImageInfo[]> => {
     const items: ImageInfo[] = []
-    let cursor: string | undefined
 
     try {
-        do {
-            const result = await storage.list({
-                prefix: `${prefix}/`,
-                ...(cursor ? { cursor } : {}),
+        for await (const obj of storage.listAll({ prefix: `${prefix}/` }))
+            items.push({
+                key: obj.key,
+                lastModified: new Date(obj.lastModified ?? Date.now()),
             })
-
-            for (const obj of result.items) {
-                items.push({
-                    key: obj.key,
-                    lastModified: new Date(obj.lastModified ?? Date.now()),
-                })
-            }
-
-            cursor = result.cursor
-        } while (cursor)
     } catch (error) {
         log.error(`Failed to get storage objects for prefix ${prefix}:`, error)
     }
