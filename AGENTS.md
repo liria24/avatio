@@ -7,7 +7,6 @@ Compact instruction for OpenCode sessions. If a fact is obvious from filenames, 
 ## Package manager & runtime
 
 - **Package manager:** `bun`. `bunfig.toml` uses `linker = "hoisted"`.
-- **Node:** 24.x required.
 - **Postinstall is mandatory:** `bun run postinstall` builds workspace packages (`@avatio/bot-notifier`, `@avatio/ungh`) **before** `nuxt prepare`. Run it after any install.
 
 ## Developer commands
@@ -145,7 +144,6 @@ Wrap every API handler with the appropriate factory from `server/utils/eventHand
 
 ## Common mistakes to avoid
 
-- Do not assume `process.env` in `nuxt.config.ts`; the config uses `import.meta.env` for runtime config defaults.
 - Do not skip `bun run postinstall` after adding packages; workspace packages must be built before Nuxt prepare succeeds.
 - Do not use Vue Options API (disabled in Vite config).
 - Admin pages live under `app/pages/admin/` and use the `dashboard` layout + `admin` middleware (configured in route rules, not per-page).

@@ -2,9 +2,9 @@ import type { NitroRouteConfig } from 'nitropack'
 import { defineOrganization } from 'nuxt-schema-org/schema'
 import { withLeadingSlash } from 'ufo'
 
-const baseUrl = import.meta.env.PUBLIC_SITE_URL || 'http://localhost:3000'
-const imageDomain = import.meta.env.R2_PUBLIC_BASE_URL
-    ? new URL(import.meta.env.R2_PUBLIC_BASE_URL).hostname
+const baseUrl = process.env.PUBLIC_SITE_URL || 'http://localhost:3000'
+const imageDomain = process.env.R2_PUBLIC_BASE_URL
+    ? new URL(process.env.R2_PUBLIC_BASE_URL).hostname
     : undefined
 const title = 'Avatio'
 const description = 'アバター改変レシピの共有プラットフォーム'
@@ -147,23 +147,23 @@ export default defineNuxtConfig({
         storage: {
             auth: {
                 driver: 'cloudflare-kv-http',
-                accountId: import.meta.env.CLOUDFLARE_ACCOUNT_ID || 'local',
-                namespaceId: import.meta.env.CLOUDFLARE_KV_NAMESPACE_ID || 'local',
-                apiToken: import.meta.env.CLOUDFLARE_API_TOKEN || 'local',
+                accountId: process.env.CLOUDFLARE_ACCOUNT_ID || 'local',
+                namespaceId: process.env.CLOUDFLARE_KV_NAMESPACE_ID || 'local',
+                apiToken: process.env.CLOUDFLARE_API_TOKEN || 'local',
                 base: 'auth',
             },
             cache: {
                 driver: 'cloudflare-kv-http',
-                accountId: import.meta.env.CLOUDFLARE_ACCOUNT_ID || 'local',
-                namespaceId: import.meta.env.CLOUDFLARE_KV_NAMESPACE_ID || 'local',
-                apiToken: import.meta.env.CLOUDFLARE_API_TOKEN || 'local',
+                accountId: process.env.CLOUDFLARE_ACCOUNT_ID || 'local',
+                namespaceId: process.env.CLOUDFLARE_KV_NAMESPACE_ID || 'local',
+                apiToken: process.env.CLOUDFLARE_API_TOKEN || 'local',
                 base: 'cache',
             },
             flags: {
                 driver: 'cloudflare-kv-http',
-                accountId: import.meta.env.CLOUDFLARE_ACCOUNT_ID || 'local',
-                namespaceId: import.meta.env.CLOUDFLARE_KV_NAMESPACE_ID || 'local',
-                apiToken: import.meta.env.CLOUDFLARE_API_TOKEN || 'local',
+                accountId: process.env.CLOUDFLARE_ACCOUNT_ID || 'local',
+                namespaceId: process.env.CLOUDFLARE_KV_NAMESPACE_ID || 'local',
+                apiToken: process.env.CLOUDFLARE_API_TOKEN || 'local',
                 base: 'flags',
             },
         },
@@ -198,23 +198,23 @@ export default defineNuxtConfig({
     runtimeConfig: {
         ai: {
             gateway: {
-                apiKey: import.meta.env.AI_GATEWAY_API_KEY,
+                apiKey: process.env.AI_GATEWAY_API_KEY,
             },
         },
         betterAuth: {
-            secret: import.meta.env.BETTER_AUTH_SECRET,
+            secret: process.env.BETTER_AUTH_SECRET,
         },
         liria: {
             discord: {
-                endpoint: import.meta.env.LIRIA_DISCORD_ENDPOINT,
-                accessToken: import.meta.env.LIRIA_DISCORD_ACCESS_TOKEN,
+                endpoint: process.env.LIRIA_DISCORD_ENDPOINT,
+                accessToken: process.env.LIRIA_DISCORD_ACCESS_TOKEN,
             },
         },
         neon: {
-            databaseUrl: import.meta.env.NEON_DATABASE_URL,
+            databaseUrl: process.env.NEON_DATABASE_URL,
         },
         unosend: {
-            apiKey: import.meta.env.UNOSEND_API_KEY,
+            apiKey: process.env.UNOSEND_API_KEY,
         },
         public: {
             siteUrl: baseUrl,
