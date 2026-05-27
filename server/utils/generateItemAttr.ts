@@ -1,6 +1,7 @@
 import { itemCategory } from '@@/database/schema'
 import type { GatewayProviderOptions } from '@ai-sdk/gateway'
 import { generateText, Output } from 'ai'
+import { createWorkersAI } from 'workers-ai-provider'
 import { z } from 'zod'
 
 export interface GenerateItemAttrParams {
@@ -72,8 +73,9 @@ export default async (params: GenerateItemAttrParams) => {
         },
     ]
 
+    const workersai = createWorkersAI({ binding: useEvent().context.cloudflare.env.AI })
     const { output } = await generateText({
-        model: 'google/gemini-3.1-flash-lite-preview',
+        model: workersai('@cf/google/gemini-3.1-flash-lite'),
         system,
         messages,
         output: Output.object({

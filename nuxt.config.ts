@@ -135,6 +135,9 @@ export default defineNuxtConfig({
                         database_name: 'avatio-content',
                     },
                 ],
+                ai: {
+                    binding: 'AI',
+                },
                 triggers: {
                     crons: ['0 22 * * *'],
                 },

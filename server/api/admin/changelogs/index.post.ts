@@ -2,6 +2,7 @@ import { changelogAuthors, changelogs, changelogI18ns } from '@@/database/schema
 import type { GatewayProviderOptions } from '@ai-sdk/gateway'
 import { generateText } from 'ai'
 import { createInsertSchema } from 'drizzle-orm/zod'
+import { createWorkersAI } from 'workers-ai-provider'
 import { z } from 'zod'
 
 const body = createInsertSchema(changelogI18ns)
@@ -33,8 +34,9 @@ export default adminSessionEventHandler(async () => {
                 content: `The short slug must not overlap with any of the existing slugs: ${exists.map((b) => b.slug).join(', ')}`,
             })
 
+        const workersai = createWorkersAI({ binding: useEvent().context.cloudflare.env.AI })
         const result = await generateText({
-            model: 'google/gemini-3.1-flash-lite-preview',
+            model: workersai('@cf/google/gemini-3.1-flash-lite'),
             messages: [
                 ...messages,
                 {
