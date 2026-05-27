@@ -6,7 +6,6 @@ const { getSummary } = useAdmin()
 const { data: openCounts } = await getSummary()
 
 const dev = import.meta.dev
-const vercelEnv = process.env.NUXT_ENV_VERCEL_TARGET_ENV
 </script>
 
 <template>
@@ -36,13 +35,6 @@ const vercelEnv = process.env.NUXT_ENV_VERCEL_TARGET_ENV
                         <UBadge
                             v-if="dev"
                             label="dev"
-                            variant="soft"
-                            size="sm"
-                            class="ml-auto font-mono"
-                        />
-                        <UBadge
-                            v-else-if="vercelEnv && vercelEnv !== 'production'"
-                            :label="vercelEnv"
                             variant="soft"
                             size="sm"
                             class="ml-auto font-mono"

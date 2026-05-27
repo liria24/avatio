@@ -1,5 +1,4 @@
 import { setupDraftImages, setupDrafts } from '@@/database/schema'
-import { waitUntil } from '@vercel/functions'
 import { eq, sql } from 'drizzle-orm'
 
 const body = setupDraftsInsertSchema.pick({
@@ -78,7 +77,7 @@ export default authedSessionEventHandler(
 
         if (!result) throw serverError.internalServerError()
 
-        waitUntil(refreshDraftImages(result.id, content.images || []))
+        runAfterResponse(refreshDraftImages(result.id, content.images || []))
 
         return { draftId: result.id }
     },

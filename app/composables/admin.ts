@@ -114,7 +114,7 @@ export const useAdmin = () => {
     })
 
     const toggleMaintenanceMode = defineAction<{ isMaintenance: boolean }>({
-        url: () => '/api/admin/edge-config',
+        url: () => '/api/admin/flags',
         method: 'PUT',
         body: ({ isMaintenance }) => ({ isMaintenance }),
         errorTitle: t('toast.admin.toggleFailed'),
@@ -122,7 +122,7 @@ export const useAdmin = () => {
     })
 
     const toggleForceUpdateItem = defineAction<{ forceUpdateItem: boolean }>({
-        url: () => '/api/admin/edge-config',
+        url: () => '/api/admin/flags',
         method: 'PUT',
         body: ({ forceUpdateItem }) => ({ forceUpdateItem }),
         successTitle: t('toast.admin.forceUpdateItemToggled'),

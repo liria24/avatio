@@ -5,15 +5,13 @@ import {
     getGithubReadme,
     getGithubRepo,
 } from '@avatio/ungh'
-import { waitUntil } from '@vercel/functions'
 import { eq } from 'drizzle-orm'
 import { joinURL, withHttps } from 'ufo'
 
 const log = logger('getItem')
 
 export default async (provider: Platform | undefined, id: string): Promise<Item> => {
-    const { forceUpdateItem, allowedBoothCategoryId, specificItemCategories } =
-        await getEdgeConfig()
+    const { forceUpdateItem, allowedBoothCategoryId, specificItemCategories } = await getAppFlags()
 
     const { fresh, cachedItem } = await resolveItemCache(provider, id, forceUpdateItem)
     if (fresh) return fresh
@@ -152,7 +150,7 @@ type PersistItemParams =
               name: string
           }
           cachedItem: { id: string } | null
-          specificItemCategories: EdgeConfig['specificItemCategories']
+          specificItemCategories: AppFlags['specificItemCategories']
           categoryFallback: ItemCategory
           assignAttrParams: Omit<GenerateItemAttrParams, 'originalCategory'>
           idMigration?: { from: string; to: string }
@@ -162,7 +160,7 @@ type PersistItemParams =
 export const persistItem = (params: PersistItemParams): Item => {
     if (!params.valid) {
         if (params.cachedItem)
-            waitUntil(
+            runAfterResponse(
                 db.update(items).set({ outdated: true }).where(eq(items.id, params.cachedItem.id)),
             )
         throw serverError.notFound({ responseMessage: 'Item not found or not allowed' })
@@ -209,7 +207,7 @@ export const persistItem = (params: PersistItemParams): Item => {
         }
     }
 
-    waitUntil(persist())
+    runAfterResponse(persist())
 
     return {
         id: item.id,

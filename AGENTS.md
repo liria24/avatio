@@ -35,7 +35,7 @@ Run **`bun run typecheck`** and **`bun run lint`** to verify there are no errors
 ## Project architecture
 
 - **Framework:** Nuxt 4 (`compatibilityVersion: 5`).
-- **Deployment target:** Vercel (`nitro.preset: 'vercel'`).
+- **Deployment target:** Cloudflare Workers (`nitro.preset: 'cloudflare-module'`).
 - **Structure:**
   - `app/` — Vue frontend (pages, layouts, composables, components).
   - `server/` — Nitro API routes and server middleware.
@@ -76,12 +76,12 @@ Run **`bun run typecheck`** and **`bun run lint`** to verify there are no errors
 
 ## Deployment & infra quirks
 
-- **Vercel Edge Config** drives a maintenance mode middleware (`middleware.ts` at repo root, not Nuxt middleware). Key: `isMaintenance`.
-- **Vercel crons** (configured in `vercel.ts`):
+- **Cloudflare KV HTTP** drives app flags and maintenance mode (`server/middleware/maintenance.ts`). Key: `isMaintenance`.
+- **Workers Cron Triggers**:
   - `/api/admin/job/report` — daily at 22:00
   - `/api/admin/job/cleanup` — daily at 22:00
-- **Images:** served through `@nuxt/image`. Allowed external domains are whitelisted in `nuxt.config.ts` (Booth, GitHub, Tigris).
-- **Storage:** Tigris (S3-compatible) for user-uploaded images.
+- **Images:** served through `@nuxt/image`. Allowed external domains are whitelisted in `nuxt.config.ts` (Booth, GitHub, R2 public domain).
+- **Storage:** Cloudflare R2 through `files-sdk/r2` HTTP mode for user-uploaded images.
 - **PWA:** `@vite-pwa/nuxt` is enabled; `sw.js` and `manifest.webmanifest` are served with `must-revalidate`.
 
 ## i18n

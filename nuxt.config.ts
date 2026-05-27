@@ -3,6 +3,9 @@ import { defineOrganization } from 'nuxt-schema-org/schema'
 import { withLeadingSlash } from 'ufo'
 
 const baseUrl = import.meta.env.PUBLIC_SITE_URL || 'http://localhost:3000'
+const imageDomain = import.meta.env.R2_PUBLIC_BASE_URL
+    ? new URL(import.meta.env.R2_PUBLIC_BASE_URL).hostname
+    : undefined
 const title = 'Avatio'
 const description = 'アバター改変レシピの共有プラットフォーム'
 
@@ -63,13 +66,13 @@ const routeRules: { [path: string]: NitroRouteConfig } = {
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-    compatibilityDate: 'latest',
+    compatibilityDate: '2026-05-26',
 
     future: {
         compatibilityVersion: 5,
     },
 
-    devtools: { enabled: true, timeline: { enabled: true } },
+    devtools: { enabled: import.meta.dev, timeline: { enabled: import.meta.dev } },
 
     modules: [
         '@comark/nuxt',
@@ -89,7 +92,6 @@ export default defineNuxtConfig({
         'motion-v/nuxt',
         '@stefanobartoletti/nuxt-social-share',
         '@nuxt/a11y',
-        '@vercel/analytics',
         '@nuxt/test-utils/module',
         ...(process.env.VITEST ? [] : ['@vite-pwa/nuxt']),
     ],
@@ -116,16 +118,50 @@ export default defineNuxtConfig({
     routeRules,
 
     nitro: {
-        preset: 'vercel',
+        preset: 'cloudflare-module',
+        cloudflare: {
+            deployConfig: true,
+            nodeCompat: true,
+            wrangler: {
+                name: 'avatio',
+                compatibility_flags: ['nodejs_compat'],
+                observability: {
+                    enabled: true,
+                    head_sampling_rate: 1,
+                },
+                d1_databases: [
+                    {
+                        binding: 'DB',
+                        database_name: 'avatio-content',
+                    },
+                ],
+                triggers: {
+                    crons: ['0 22 * * *'],
+                },
+            },
+        },
         compressPublicAssets: true,
         storage: {
             auth: {
-                driver: 'vercel-runtime-cache',
-                tags: ['auth'],
+                driver: 'cloudflare-kv-http',
+                accountId: import.meta.env.CLOUDFLARE_ACCOUNT_ID || 'local',
+                namespaceId: import.meta.env.CLOUDFLARE_KV_NAMESPACE_ID || 'local',
+                apiToken: import.meta.env.CLOUDFLARE_API_TOKEN || 'local',
+                base: 'auth',
             },
             cache: {
-                driver: 'vercel-runtime-cache',
-                tags: ['cache'],
+                driver: 'cloudflare-kv-http',
+                accountId: import.meta.env.CLOUDFLARE_ACCOUNT_ID || 'local',
+                namespaceId: import.meta.env.CLOUDFLARE_KV_NAMESPACE_ID || 'local',
+                apiToken: import.meta.env.CLOUDFLARE_API_TOKEN || 'local',
+                base: 'cache',
+            },
+            flags: {
+                driver: 'cloudflare-kv-http',
+                accountId: import.meta.env.CLOUDFLARE_ACCOUNT_ID || 'local',
+                namespaceId: import.meta.env.CLOUDFLARE_KV_NAMESPACE_ID || 'local',
+                apiToken: import.meta.env.CLOUDFLARE_API_TOKEN || 'local',
+                base: 'flags',
             },
         },
         devStorage: {
@@ -135,6 +171,10 @@ export default defineNuxtConfig({
             },
             cache: {
                 driver: 'null',
+            },
+            flags: {
+                driver: 'fs-lite',
+                base: './.data/storage/flags',
             },
         },
         experimental: {
@@ -172,12 +212,6 @@ export default defineNuxtConfig({
         },
         unosend: {
             apiKey: import.meta.env.UNOSEND_API_KEY,
-        },
-        vercel: {
-            token: import.meta.env.VERCEL_TOKEN,
-            edgeConfig: {
-                endpoint: import.meta.env.VERCEL_EDGE_CONFIG_ENDPOINT,
-            },
         },
         public: {
             siteUrl: baseUrl,
@@ -223,6 +257,10 @@ export default defineNuxtConfig({
             markdown: {
                 contentHeading: false,
             },
+        },
+        database: {
+            type: 'd1',
+            bindingName: 'DB',
         },
         experimental: { sqliteConnector: 'native' },
     },
@@ -331,7 +369,7 @@ export default defineNuxtConfig({
         },
         densities: [1],
         domains: [
-            import.meta.env.TIGRIS_STORAGE_DOMAIN!,
+            ...(imageDomain ? [imageDomain] : []),
             'booth.pximg.net', // booth
             's2.booth.pm', // booth
             'github.com', // GitHub

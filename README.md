@@ -30,7 +30,7 @@ VRSNSユーザー向けのアバターセットアップ共有サービス。<br
 
 ## 🛠 Tech Stack
 
-[![Vercel badge][badge-vercel]][vercel]
+[![Cloudflare badge][badge-cloudflare]][cloudflare]
 [![Nuxt badge][badge-nuxt]][nuxt]
 [![Tailwind badge][badge-tailwind]][tailwind]
 [![Better Auth badge][badge-better-auth]][better-auth]
@@ -70,19 +70,19 @@ Avatio は、ピクシブ株式会社 および BOOTH とは関係ありませ�
 [avatio-terms]: https://avatio.me/terms
 [avatio-privacy]: https://avatio.me/privacy-policy
 [liria]: https://liria.me
-[vercel]: https://vercel.com
+[cloudflare]: https://cloudflare.com/developer-platform/products/workers
 [nuxt]: https://nuxt.com
 [tailwind]: https://tailwindcss.com
-[badge-vercel]: https://svgl-badge.vercel.app/api/Hosting/Vercel?theme=dark
-[badge-nuxt]: https://svgl-badge.vercel.app/api/Framework/Nuxt?theme=dark
-[badge-tailwind]: https://svgl-badge.vercel.app/api/Framework/Tailwind%20CSS?theme=dark
+[badge-cloudflare]: https://img.shields.io/badge/Cloudflare-Workers-F38020?style=flat-square&logo=cloudflare&logoColor=white
+[badge-nuxt]: https://img.shields.io/badge/Nuxt-4-00DC82?style=flat-square&logo=nuxt&logoColor=white
+[badge-tailwind]: https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white
 [contributors]: https://github.com/liria24/avatio/graphs/contributors
 [contributors-image]: https://contrib.rocks/image?repo=liria24/avatio&anon=1
 [better-auth]: https://better-auth.com
 [neon]: https://neon.tech
 [drizzle]: https://orm.drizzle.team
-[badge-better-auth]: https://svgl-badge.vercel.app/api/Authentication/Better%20Auth?theme=dark
-[badge-neon]: https://svgl-badge.vercel.app/api/Database/Neon?theme=dark
-[badge-drizzle]: https://svgl-badge.vercel.app/api/Database/Drizzle%20ORM?theme=dark
+[badge-better-auth]: https://img.shields.io/badge/Better_Auth-1.6-black?style=flat-square
+[badge-neon]: https://img.shields.io/badge/Neon-Postgres-00E699?style=flat-square&logo=neon&logoColor=black
+[badge-drizzle]: https://img.shields.io/badge/Drizzle-ORM-C5F74F?style=flat-square
 [oxc]: https://oxc.rs
-[badge-oxc]: https://svgl-badge.vercel.app/api/Devtool/Oxc?theme=dark
+[badge-oxc]: https://img.shields.io/badge/Oxc-toolchain-7F52FF?style=flat-square

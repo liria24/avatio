@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 const { toggleMaintenanceMode, toggleForceUpdateItem } = useAdmin()
 
-const { data, status, refresh } = useFetch<EdgeConfig>('/api/edge-config', {
+const { data, status, refresh } = useFetch<AppFlags>('/api/flags', {
     dedupe: 'defer',
 })
 

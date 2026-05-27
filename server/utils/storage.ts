@@ -1,8 +1,15 @@
 import { Files } from 'files-sdk'
-import { tigris } from 'files-sdk/tigris'
+import { r2 } from 'files-sdk/r2'
+
+type StorageClient = InstanceType<typeof Files>
+type RuntimeEnv = Partial<Record<string, string>>
+
+const getRuntimeEnv = () =>
+    ((globalThis as typeof globalThis & { __env__?: RuntimeEnv }).__env__ ||
+        process.env) as RuntimeEnv
 
 const requireEnv = (name: string) => {
-    const value = process.env[name]
+    const value = getRuntimeEnv()[name]
     if (!value)
         throw new Error(
             `Missing required environment variable: ${name}. Ensure it is set before starting the server.`,
@@ -10,12 +17,26 @@ const requireEnv = (name: string) => {
     return value
 }
 
-export const storage = new Files({
-    adapter: tigris({
-        bucket: requireEnv('TIGRIS_STORAGE_BUCKET'),
-        accessKeyId: requireEnv('TIGRIS_STORAGE_ACCESS_KEY_ID'),
-        secretAccessKey: requireEnv('TIGRIS_STORAGE_SECRET_ACCESS_KEY'),
-        endpoint: process.env.TIGRIS_STORAGE_ENDPOINT,
-        publicBaseUrl: `https://${requireEnv('TIGRIS_STORAGE_DOMAIN')}`,
-    }),
+let storageClient: StorageClient | null = null
+
+const getStorage = () => {
+    if (storageClient) return storageClient
+
+    storageClient = new Files({
+        adapter: r2({
+            bucket: requireEnv('R2_BUCKET'),
+            accountId: requireEnv('R2_ACCOUNT_ID'),
+            accessKeyId: requireEnv('R2_ACCESS_KEY_ID'),
+            secretAccessKey: requireEnv('R2_SECRET_ACCESS_KEY'),
+            publicBaseUrl: requireEnv('R2_PUBLIC_BASE_URL'),
+        }),
+    })
+    return storageClient
+}
+
+export const storage = new Proxy({} as StorageClient, {
+    get: (_target, property, receiver) => {
+        const value = Reflect.get(getStorage(), property, receiver)
+        return typeof value === 'function' ? value.bind(getStorage()) : value
+    },
 })
