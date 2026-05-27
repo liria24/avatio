@@ -50,6 +50,7 @@
         "@neondatabase/serverless": "1.1.0",
         "@nuxt/content": "3.14.0",
         "@nuxt/image": "2.0.0",
+        "@nuxt/scripts": "^1.1.1",
         "@nuxt/ui": "4.8.0",
         "@nuxtjs/device": "4.0.0",
         "@nuxtjs/i18n": "10.4.0",

@@ -78,6 +78,7 @@ export default defineNuxtConfig({
         '@comark/nuxt',
         '@nuxt/ui',
         '@nuxt/image',
+        '@nuxt/scripts',
         '@nuxtjs/robots',
         '@nuxtjs/sitemap',
         'nuxt-link-checker',
@@ -435,6 +436,15 @@ export default defineNuxtConfig({
     robots: {
         blockNonSeoBots: true,
         blockAiBots: true,
+    },
+
+    scripts: {
+        registry: {
+            umamiAnalytics: {
+                websiteId: process.env.UMAMI_WEBSITE_ID,
+                trigger: 'onNuxtReady',
+            },
+        },
     },
 
     socialShare: {
