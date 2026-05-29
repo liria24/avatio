@@ -125,7 +125,11 @@ export default defineNuxtConfig({
             nodeCompat: true,
             wrangler: {
                 name: 'avatio',
-                compatibility_flags: ['nodejs_compat'],
+                compatibility_flags: [
+                    'nodejs_compat',
+                    'nodejs_als',
+                    'no_handle_cross_request_promise_resolution',
+                ],
                 observability: {
                     enabled: true,
                     head_sampling_rate: 1,
@@ -134,6 +138,12 @@ export default defineNuxtConfig({
                     {
                         binding: 'DB',
                         database_name: 'avatio-content',
+                    },
+                ],
+                kv_namespaces: [
+                    {
+                        binding: 'KV',
+                        id: '8d93b5819aab49df9d3244c84a7741ed',
                     },
                 ],
                 ai: {
@@ -147,24 +157,18 @@ export default defineNuxtConfig({
         compressPublicAssets: true,
         storage: {
             auth: {
-                driver: 'cloudflare-kv-http',
-                accountId: process.env.CLOUDFLARE_ACCOUNT_ID || 'local',
-                namespaceId: process.env.CLOUDFLARE_KV_NAMESPACE_ID || 'local',
-                apiToken: process.env.CLOUDFLARE_API_TOKEN || 'local',
+                driver: 'cloudflare-kv-binding',
+                binding: 'KV',
                 base: 'auth',
             },
             cache: {
-                driver: 'cloudflare-kv-http',
-                accountId: process.env.CLOUDFLARE_ACCOUNT_ID || 'local',
-                namespaceId: process.env.CLOUDFLARE_KV_NAMESPACE_ID || 'local',
-                apiToken: process.env.CLOUDFLARE_API_TOKEN || 'local',
+                driver: 'cloudflare-kv-binding',
+                binding: 'KV',
                 base: 'cache',
             },
             flags: {
-                driver: 'cloudflare-kv-http',
-                accountId: process.env.CLOUDFLARE_ACCOUNT_ID || 'local',
-                namespaceId: process.env.CLOUDFLARE_KV_NAMESPACE_ID || 'local',
-                apiToken: process.env.CLOUDFLARE_API_TOKEN || 'local',
+                driver: 'cloudflare-kv-binding',
+                binding: 'KV',
                 base: 'flags',
             },
         },
@@ -184,10 +188,13 @@ export default defineNuxtConfig({
         experimental: {
             asyncContext: true,
         },
+        unenv: {
+            external: ['node:async_hooks'],
+        },
     },
 
     typescript: {
-        typeCheck: true,
+        typeCheck: 'build',
         tsConfig: {
             include: ['test/unit/**/*'],
             compilerOptions: {
@@ -438,15 +445,6 @@ export default defineNuxtConfig({
         blockAiBots: true,
     },
 
-    scripts: {
-        registry: {
-            umamiAnalytics: {
-                websiteId: process.env.UMAMI_WEBSITE_ID,
-                trigger: 'onNuxtReady',
-            },
-        },
-    },
-
     socialShare: {
         baseUrl,
     },
@@ -486,6 +484,17 @@ export default defineNuxtConfig({
         inlineRouteRules: true,
         componentIslands: true,
         nitroAutoImports: true,
+    },
+
+    $production: {
+        scripts: {
+            registry: {
+                umamiAnalytics: {
+                    websiteId: process.env.UMAMI_WEBSITE_ID,
+                    trigger: 'onNuxtReady',
+                },
+            },
+        },
     },
 })
 
