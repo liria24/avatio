@@ -17,7 +17,7 @@ interface ActualInboundEmailDetail {
     received_at: string
 }
 
-export default adminSessionEventHandler(async () => {
+export default adminSessionEventHandler(async ({ db }) => {
     const { id } = await validateParams(params)
 
     const email = await db.query.emails.findFirst({

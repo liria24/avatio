@@ -11,7 +11,7 @@ const query = z.object({
     banned: z.stringbool().optional(),
 })
 
-export default adminSessionEventHandler(async () => {
+export default adminSessionEventHandler(async ({ db }) => {
     const {
         q,
         orderBy,

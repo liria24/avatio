@@ -7,7 +7,7 @@ const body = z.object({
 })
 
 export default authedSessionEventHandler(
-    async ({ session }) => {
+    async ({ session, db }) => {
         const { id } = await validateBody(body)
 
         const data = await db.query.notifications.findFirst({

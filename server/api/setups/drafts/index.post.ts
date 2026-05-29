@@ -8,6 +8,7 @@ const body = setupDraftsInsertSchema.pick({
 })
 
 const refreshDraftImages = async (draftId: string, imageUrls: string[]) => {
+    const db = useDB()
     await db.delete(setupDraftImages).where(eq(setupDraftImages.setupDraftId, draftId))
     const images = imageUrls.map((url) => ({
         setupDraftId: draftId,
@@ -26,7 +27,7 @@ const hasContent = (content: Record<string, unknown>) =>
     })
 
 export default authedSessionEventHandler(
-    async ({ session }) => {
+    async ({ session, db }) => {
         const { id, setupId, content } = await validateBody(body, {
             sanitize: true,
         })

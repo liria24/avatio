@@ -10,7 +10,7 @@ const query = z.object({
     content: z.stringbool().optional().default(false),
 })
 
-export default adminSessionEventHandler(async () => {
+export default adminSessionEventHandler(async ({ db }) => {
     const { q, sort, userId, limit, lang, content } = await validateQuery(query)
 
     const data = await db.query.changelogs.findMany({

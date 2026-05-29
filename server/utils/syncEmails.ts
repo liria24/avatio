@@ -59,6 +59,7 @@ export const syncEmails = async () => {
 
     if (rows.length === 0) return
 
+    const db = useDB()
     await db.insert(emails).values(rows).onConflictDoNothing()
 
     log.info(`Synced ${rows.length} emails`)

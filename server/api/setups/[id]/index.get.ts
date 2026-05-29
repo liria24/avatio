@@ -6,7 +6,7 @@ const params = z.object({
     id: z.string(),
 })
 
-export default sessionEventHandler<Setup>(async ({ session }) => {
+export default sessionEventHandler<Setup>(async ({ session, db }) => {
     const { id } = await validateParams(params)
 
     type Args = { id: Setup['id']; session: Session | undefined }

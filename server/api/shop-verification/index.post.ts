@@ -8,7 +8,7 @@ const body = z.object({
 })
 
 export default authedSessionEventHandler(
-    async ({ session }) => {
+    async ({ session, db }) => {
         const { url } = await validateBody(body)
 
         // URLからアイテムIDを抽出

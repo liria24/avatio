@@ -10,7 +10,7 @@ const query = z.object({
         .default(POPULAR_AVATARS_API_DEFAULT_LIMIT),
 })
 
-export default promiseEventHandler(async () => {
+export default promiseEventHandler(async ({ db }) => {
     const { limit } = await validateQuery(query)
 
     const data = await db.query.items.findMany({

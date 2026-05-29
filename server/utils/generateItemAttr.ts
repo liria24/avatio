@@ -50,6 +50,8 @@ ${previousItems.map((item) => `${item.name}: ${item.niceName} [${item.category}]
 `
 
 export default async (params: GenerateItemAttrParams) => {
+    const db = useDB()
+
     const previousItems = await db.query.items.findMany({
         where: {
             niceName: { isNotNull: true },

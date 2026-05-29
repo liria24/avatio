@@ -10,7 +10,7 @@ import {
 const body = setupsInsertSchema
 
 export default authedSessionEventHandler(
-    async ({ session }) => {
+    async ({ session, db }) => {
         const {
             public: isPublic,
             name,

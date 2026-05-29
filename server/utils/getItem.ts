@@ -159,6 +159,7 @@ type PersistItemParams =
 
 export const persistItem = (params: PersistItemParams): Item => {
     if (!params.valid) {
+        const db = useDB()
         if (params.cachedItem)
             runAfterResponse(
                 db.update(items).set({ outdated: true }).where(eq(items.id, params.cachedItem.id)),
@@ -180,6 +181,7 @@ export const persistItem = (params: PersistItemParams): Item => {
     const fullItem = { ...item, category }
 
     const persist = async () => {
+        const db = useDB()
         await db.transaction(async (tx) => {
             if (idMigration)
                 await tx
@@ -236,6 +238,8 @@ export const resolveItemCache = async (
     forceUpdate: boolean,
 ) => {
     if (forceUpdate) return { fresh: null, cachedItem: null }
+
+    const db = useDB()
 
     const cachedItem =
         (await db.query.items.findFirst({

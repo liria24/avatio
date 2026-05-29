@@ -9,7 +9,7 @@ const query = z.object({
 })
 
 export default authedSessionEventHandler<SetupDraft[]>(
-    async ({ session }) => {
+    async ({ session, db }) => {
         const { id, setupId } = await validateQuery(query)
 
         const data = await db.query.setupDrafts.findMany({

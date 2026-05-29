@@ -9,7 +9,7 @@ const generateSecureRandomString = (length: number): string =>
         .toString('hex')
         .slice(0, length)
 
-export default authedSessionEventHandler<{ code: string }>(async ({ session }) => {
+export default authedSessionEventHandler<{ code: string }>(async ({ session, db }) => {
     const code = generateSecureRandomString(32)
 
     await db.delete(userShopVerifications).where(eq(userShopVerifications.userId, session!.user.id))

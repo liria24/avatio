@@ -6,7 +6,7 @@ const body = z.object({
     shopId: z.string().min(1, 'Shop ID is required'),
 })
 
-export default authedSessionEventHandler(async ({ session }) => {
+export default authedSessionEventHandler(async ({ session, db }) => {
     // リクエストボディの検証
     const { shopId } = await validateBody(body)
 

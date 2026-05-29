@@ -1,6 +1,6 @@
 import { defu } from 'defu'
 
-export default authedSessionEventHandler(async ({ session }) => {
+export default authedSessionEventHandler(async ({ session, db }) => {
     const data = await db.query.userSettings.findFirst({
         where: {
             userId: { eq: session.user.id },

@@ -16,7 +16,7 @@ const params = z.object({
 const body = setupsUpdateSchema
 
 export default authedSessionEventHandler(
-    async ({ session }) => {
+    async ({ session, db }) => {
         const { id } = await validateParams(params)
 
         // セットアップの存在確認と権限チェック

@@ -5,7 +5,7 @@ const body = feedbacksInsertSchema.pick({
     contextPath: true,
 })
 
-export default defineEventHandler(async () => {
+export default promiseEventHandler(async ({ db }) => {
     const { comment, contextPath } = await validateBody(body, {
         sanitize: true,
     })

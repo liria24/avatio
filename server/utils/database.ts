@@ -4,8 +4,11 @@ import { drizzle } from 'drizzle-orm/neon-serverless'
 import { relations } from '../../database/relations'
 import * as schema from '../../database/schema'
 
-const client = new Pool({ connectionString: process.env.NEON_DATABASE_URL })
-const db = drizzle({ client, relations, ws: WebSocket, jit: true })
+// const db = drizzle({ client, relations })
+const useDB = () =>
+    drizzle({
+        client: new Pool({ connectionString: process.env.NEON_DATABASE_URL }),
+        relations,
+    })
 
-export default db
-export { db, relations, schema }
+export { useDB, relations, schema }

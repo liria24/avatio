@@ -14,7 +14,7 @@ const query = z.object({
 export default authedSessionEventHandler<{
     data: Notification[]
     unread: number
-}>(async ({ session }) => {
+}>(async ({ session, db }) => {
     const { status } = await validateQuery(query)
     const userId = session!.user.id
 

@@ -8,7 +8,7 @@ const query = z.object({
     status: z.enum(['open', 'closed', 'all']).optional().default('all'),
 })
 
-export default adminSessionEventHandler<Feedback[]>(async () => {
+export default adminSessionEventHandler<Feedback[]>(async ({ db }) => {
     const { q, sort, fingerprint, limit, status } = await validateQuery(query)
 
     const data = await db.query.feedbacks.findMany({

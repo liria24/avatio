@@ -9,7 +9,7 @@ const query = z.object({
         .default(OWNED_AVATARS_API_DEFAULT_LIMIT),
 })
 
-export default authedSessionEventHandler<Item[]>(async ({ session }) => {
+export default authedSessionEventHandler<Item[]>(async ({ session, db }) => {
     const { limit } = await validateQuery(query)
 
     const oneDayAgo = new Date()

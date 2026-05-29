@@ -16,7 +16,7 @@ const body = createInsertSchema(changelogI18ns)
         i18n: createInsertSchema(changelogI18ns).array().optional(),
     })
 
-export default adminSessionEventHandler(async () => {
+export default adminSessionEventHandler(async ({ db }) => {
     const { slug, title, markdown, authors, i18n } = await validateBody(body)
     let generatedSlug: string = ''
 
