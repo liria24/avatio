@@ -30,6 +30,7 @@ Compact instruction for OpenCode sessions. If a fact is obvious from filenames, 
 ## After making changes
 
 Run **`bun run typecheck`** and **`bun run lint`** to verify there are no errors before finishing.
+For deployment-related changes, also run **`bun run build`**. In this repo, the production build is expected to complete successfully even though Nuxt/Rolldown may still print non-fatal warnings during the build; treat the command exit code as the source of truth.
 
 ## Project architecture
 
