@@ -138,7 +138,7 @@ export const uploadImage = async (file: File, path: string): Promise<UploadedIma
     formData.append('path', path)
     formData.append('width', image.width.toString())
     formData.append('height', image.height.toString())
-    formData.append('themeColors', JSON.stringify(image.themeColors))
+    formData.append('themeColors', image.themeColors.join(','))
 
     const response = await $fetch<UploadedImage>('/api/images', {
         method: 'POST',
