@@ -134,6 +134,7 @@ export default defineNuxtConfig({
                     enabled: true,
                     head_sampling_rate: 1,
                 },
+                account_id: process.env.CLOUDFLARE_ACCOUNT_ID,
                 d1_databases: [
                     {
                         binding: 'DB',
