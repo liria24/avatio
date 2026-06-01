@@ -11,8 +11,10 @@ const rejectBannedUser = (session: Session | null) => {
 export const promiseEventHandler = <T = unknown>(
     handler: ({ event, db }: { event: H3Event; db: ReturnType<typeof useDB> }) => Promise<T> | T,
 ) => {
-    const db = useDB()
-    return eventHandler(async (event) => handler({ event, db }))
+    return eventHandler(async (event) => {
+        const db = useDB()
+        return handler({ event, db })
+    })
 }
 
 export const sessionEventHandler = <T = unknown>(
