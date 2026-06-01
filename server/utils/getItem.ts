@@ -6,7 +6,7 @@ import {
     getGithubRepo,
 } from '@avatio/ungh'
 import { eq } from 'drizzle-orm'
-import { joinURL, withHttps } from 'ufo'
+import { joinURL } from 'ufo'
 
 const log = logger('getItem')
 
@@ -21,12 +21,9 @@ export default async (provider: Platform | undefined, id: string): Promise<Item>
         throw serverError.notFound({ responseMessage: 'Item not found or not allowed' })
 
     if (resolvedProvider === 'booth') {
-        const item = await $fetch<Booth | null>(`/${id}.json`, {
-            baseURL: joinURL(withHttps(BOOTH_BASE_DOMAIN), 'ja/items'),
-            headers: {
-                Accept: 'application/json',
-                'Accept-Language': 'ja,en-US;q=0.9,en;q=0.8',
-            },
+        const config = useRuntimeConfig()
+
+        const item = await $fetch<Booth | null>(joinURL(config.booth.proxyUrl, id), {
             ignoreResponseError: true,
             onResponseError({ error }) {
                 log.error(`Failed to fetch booth item ${id}:`, error)

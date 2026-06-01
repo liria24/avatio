@@ -1,6 +1,6 @@
 import { userBadges, userShops, userShopVerifications } from '@@/database/schema'
 import { eq } from 'drizzle-orm'
-import { joinURL, withHttps } from 'ufo'
+import { joinURL } from 'ufo'
 import { z } from 'zod'
 
 const body = z.object({
@@ -8,23 +8,17 @@ const body = z.object({
 })
 
 export default authedSessionEventHandler(
-    async ({ session, db }) => {
+    async ({ event, session, db }) => {
         const { url } = await validateBody(body)
+
+        const config = useRuntimeConfig(event)
 
         // URLからアイテムIDを抽出
         const itemId = extractItemId(url)
         if (!itemId) throw serverError.badRequest()
 
         // Boothからアイテム情報を取得
-        const item = await $fetch<Booth>(
-            joinURL(withHttps(BOOTH_BASE_DOMAIN), 'ja/items', `${itemId.id}.json`),
-            {
-                headers: {
-                    Accept: 'application/json',
-                    'Accept-Language': 'ja,en-US;q=0.9,en;q=0.8',
-                },
-            },
-        )
+        const item = await $fetch<Booth>(joinURL(config.booth.proxyUrl, itemId.id))
 
         // ショップが既に登録されているか確認
         const existingShop = await db.query.userShops.findFirst({
@@ -32,9 +26,7 @@ export default authedSessionEventHandler(
                 shopId: { eq: item.shop.subdomain },
                 userId: { eq: session.user.id },
             },
-            columns: {
-                id: true,
-            },
+            columns: { id: true },
         })
 
         if (existingShop)

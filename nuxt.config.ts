@@ -212,6 +212,9 @@ export default defineNuxtConfig({
         betterAuth: {
             secret: process.env.BETTER_AUTH_SECRET,
         },
+        booth: {
+            proxyUrl: process.env.BOOTH_PROXY_URL,
+        },
         liria: {
             discord: {
                 endpoint: process.env.LIRIA_DISCORD_ENDPOINT,
