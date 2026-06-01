@@ -34,7 +34,13 @@ export default adminSessionEventHandler(async ({ db }) => {
                 content: `The short slug must not overlap with any of the existing slugs: ${exists.map((b) => b.slug).join(', ')}`,
             })
 
-        const workersai = createWorkersAI({ binding: useEvent().context.cloudflare.env.AI })
+        const aiBinding = useEvent().context.cloudflare?.env?.AI
+        if (!aiBinding)
+            throw createError({
+                statusCode: 503,
+                message: 'AI binding is unavailable. Provide a slug manually.',
+            })
+        const workersai = createWorkersAI({ binding: aiBinding })
         const result = await generateText({
             model: workersai('@cf/google/gemini-3.1-flash-lite'),
             messages: [

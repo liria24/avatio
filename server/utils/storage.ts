@@ -5,9 +5,17 @@ import type { R2Bucket } from 'files-sdk/r2'
 type StorageClient = InstanceType<typeof Files>
 type RuntimeEnv = Partial<Record<string, string | R2Bucket>>
 
-const getRuntimeEnv = () =>
-    ((globalThis as typeof globalThis & { __env__?: RuntimeEnv }).__env__ ||
-        process.env) as RuntimeEnv
+const getRuntimeEnv = (): RuntimeEnv => {
+    const g = globalThis as typeof globalThis & { __env__?: RuntimeEnv }
+    if (g.__env__) return g.__env__
+    try {
+        const cfEnv = useEvent().context.cloudflare?.env
+        if (cfEnv) return cfEnv as RuntimeEnv
+    } catch {
+        // not inside a request context (e.g. during module load or tests)
+    }
+    return process.env as RuntimeEnv
+}
 
 const requireEnv = (name: string) => {
     const value = getRuntimeEnv()[name]

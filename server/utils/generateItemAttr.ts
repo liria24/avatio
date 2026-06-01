@@ -75,7 +75,13 @@ export default async (params: GenerateItemAttrParams) => {
         },
     ]
 
-    const workersai = createWorkersAI({ binding: useEvent().context.cloudflare.env.AI })
+    const aiBinding = useEvent().context.cloudflare?.env?.AI
+    if (!aiBinding)
+        throw createError({
+            statusCode: 503,
+            message: 'AI binding is unavailable in this environment.',
+        })
+    const workersai = createWorkersAI({ binding: aiBinding })
     const { output } = await generateText({
         model: workersai('@cf/google/gemini-3.1-flash-lite'),
         system,
