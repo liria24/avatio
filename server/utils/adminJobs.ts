@@ -39,6 +39,8 @@ const getStorageObjects = async (prefix: string): Promise<ImageInfo[]> => {
 }
 
 export const runReportJob = async () => {
+    const db = useDB()
+
     const now = new Date()
     const yesterday = new Date()
     yesterday.setDate(yesterday.getDate() - 1)
@@ -200,6 +202,7 @@ export const runReportJob = async () => {
 
 export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) => {
     const thresholdDate = new Date(Date.now() - IMAGE_DELETION_THRESHOLD)
+    const db = useDB()
 
     const [
         [setupImagesFromDB, setupDraftImagesFromDB, userImagesFromDB],
@@ -271,36 +274,20 @@ export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) 
         }
     }
 
-    const deleteResults = await Promise.allSettled(
-        allImages.map(async (image) => {
-            cleanupLog.info('Deleting image from storage:', image.key)
-            await storage.delete(image.key)
-            return image.key
-        }),
-    )
+    for (const image of allImages) cleanupLog.info('Deleting image from storage:', image.key)
 
-    const { successful, failed } = deleteResults.reduce(
-        (acc, result, index) => {
-            const image = allImages[index]
-            if (!image) return acc
-            const imageKey = image.key
-
-            if (result.status === 'fulfilled') {
-                acc.successful.push(imageKey)
-            } else {
-                cleanupLog.error('Failed to delete image:', imageKey, result.reason)
-                acc.failed.push({
-                    key: imageKey,
-                    error: result.reason?.message || 'Unknown error',
-                })
-            }
-            return acc
-        },
-        {
-            successful: [] as string[],
-            failed: [] as Array<{ key: string; error: string }>,
-        },
-    )
+    const deleteResults =
+        allImages.length > 0
+            ? await storage.delete(allImages.map((image) => image.key))
+            : { deleted: [], errors: undefined }
+    const successful = deleteResults.deleted
+    const failed = (deleteResults.errors ?? []).map(({ key, error }) => {
+        cleanupLog.error('Failed to delete image:', key, error)
+        return {
+            key,
+            error: error.message || 'Unknown error',
+        }
+    })
 
     const message = 'Cleanup completed.'
 

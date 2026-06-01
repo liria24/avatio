@@ -81,7 +81,7 @@ For deployment-related changes, also run **`bun run build`**. In this repo, the 
   - `/api/admin/job/report` — daily at 22:00
   - `/api/admin/job/cleanup` — daily at 22:00
 - **Images:** served through `@nuxt/image`. Allowed external domains are whitelisted in `nuxt.config.ts` (Booth, GitHub, R2 public domain).
-- **Storage:** Cloudflare R2 through `files-sdk/r2` HTTP mode for user-uploaded images.
+- **Storage:** Cloudflare R2 through `files-sdk/r2` for user-uploaded images. Workers use the `R2` binding; local environments fall back to HTTP mode.
 - **PWA:** `@vite-pwa/nuxt` is enabled; `sw.js` and `manifest.webmanifest` are served with `must-revalidate`.
 
 ## i18n

@@ -146,6 +146,12 @@ export default defineNuxtConfig({
                         id: '8d93b5819aab49df9d3244c84a7741ed',
                     },
                 ],
+                r2_buckets: [
+                    {
+                        binding: 'R2',
+                        bucket_name: 'avatio',
+                    },
+                ],
                 ai: {
                     binding: 'AI',
                 },

@@ -1,8 +1,9 @@
 import { Files } from 'files-sdk'
 import { r2 } from 'files-sdk/r2'
+import type { R2Bucket } from 'files-sdk/r2'
 
 type StorageClient = InstanceType<typeof Files>
-type RuntimeEnv = Partial<Record<string, string>>
+type RuntimeEnv = Partial<Record<string, string | R2Bucket>>
 
 const getRuntimeEnv = () =>
     ((globalThis as typeof globalThis & { __env__?: RuntimeEnv }).__env__ ||
@@ -10,7 +11,7 @@ const getRuntimeEnv = () =>
 
 const requireEnv = (name: string) => {
     const value = getRuntimeEnv()[name]
-    if (!value)
+    if (typeof value !== 'string' || !value)
         throw new Error(
             `Missing required environment variable: ${name}. Ensure it is set before starting the server.`,
         )
@@ -22,21 +23,30 @@ let storageClient: StorageClient | null = null
 const getStorage = () => {
     if (storageClient) return storageClient
 
+    const binding = getRuntimeEnv().R2
+
     storageClient = new Files({
-        adapter: r2({
-            bucket: requireEnv('R2_BUCKET'),
-            accountId: requireEnv('R2_ACCOUNT_ID'),
-            accessKeyId: requireEnv('R2_ACCESS_KEY_ID'),
-            secretAccessKey: requireEnv('R2_SECRET_ACCESS_KEY'),
-            publicBaseUrl: requireEnv('R2_PUBLIC_BASE_URL'),
-        }),
+        adapter:
+            binding && typeof binding === 'object'
+                ? r2({
+                      binding,
+                      publicBaseUrl: requireEnv('R2_PUBLIC_BASE_URL'),
+                  })
+                : r2({
+                      bucket: requireEnv('R2_BUCKET'),
+                      accountId: requireEnv('R2_ACCOUNT_ID'),
+                      accessKeyId: requireEnv('R2_ACCESS_KEY_ID'),
+                      secretAccessKey: requireEnv('R2_SECRET_ACCESS_KEY'),
+                      publicBaseUrl: requireEnv('R2_PUBLIC_BASE_URL'),
+                  }),
     })
     return storageClient
 }
 
 export const storage = new Proxy({} as StorageClient, {
-    get: (_target, property, receiver) => {
-        const value = Reflect.get(getStorage(), property, receiver)
-        return typeof value === 'function' ? value.bind(getStorage()) : value
+    get: (_target, property) => {
+        const client = getStorage()
+        const value = Reflect.get(client, property)
+        return typeof value === 'function' ? value.bind(client) : value
     },
 })
