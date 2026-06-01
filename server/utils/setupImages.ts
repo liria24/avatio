@@ -15,6 +15,8 @@ export const resolveSetupImageData = async ({
 }: ResolveSetupImageDataOptions) => {
     if (!images.length) return []
 
+    const db = useDB()
+
     const existingImages = setupId
         ? await db
               .select({
