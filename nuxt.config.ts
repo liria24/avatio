@@ -146,6 +146,10 @@ export default defineNuxtConfig({
                         binding: 'KV',
                         id: '8d93b5819aab49df9d3244c84a7741ed',
                     },
+                    {
+                        binding: 'OG_IMAGE_CACHE',
+                        id: 'e678f8e834784ea8b457786c695ded19',
+                    },
                 ],
                 r2_buckets: [
                     {
@@ -401,6 +405,10 @@ export default defineNuxtConfig({
     ogImage: {
         security: {
             secret: process.env.OG_IMAGE_SECRET,
+        },
+        runtimeCacheStorage: {
+            driver: 'cloudflare-kv-binding',
+            binding: 'OG_IMAGE_CACHE',
         },
     },
 
