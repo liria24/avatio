@@ -11,7 +11,7 @@ const body = userReportsInsertSchema.pick({
 })
 
 export default authedSessionEventHandler(
-    async ({ session }) => {
+    async ({ session, db }) => {
         const { reporteeId, spam, hate, infringe, badImage, other, comment } = await validateBody(
             body,
             { sanitize: true },

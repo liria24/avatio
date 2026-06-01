@@ -1,17 +1,17 @@
 import { nanoid } from 'nanoid'
-import sharp from 'sharp'
 import { z } from 'zod'
 
 const log = logger('/api/images:POST')
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024 // ファイルサイズ制限（10MB）
-const MAX_DIMENSION = 1920 // 最大長辺（px）
-const TARGET_MAX_FILE_SIZE = 2 * 1024 * 1024 // 圧縮後の目標最大ファイルサイズ（2MB）
+const MAX_FILE_SIZE = 2 * 1024 * 1024 // クライアント圧縮後の上限（2MB）
 const JPG_FILENAME_LENGTH = 16 // JPEGファイル名の長さ
 
 const formData = z.object({
     blob: z
         .instanceof(Blob, { message: 'Blob is required' })
+        .refine((blob) => blob.type === 'image/jpeg', {
+            message: 'Blob must be a JPEG image',
+        })
         .refine((blob) => blob.size <= MAX_FILE_SIZE, {
             message: `Blob size must be less than ${MAX_FILE_SIZE / 1024 / 1024}MB`,
         }),
@@ -24,85 +24,27 @@ const formData = z.object({
         .refine((path) => !path.includes('..'), {
             message: 'Path traversal is not allowed',
         }),
+    width: z.coerce.number().int().min(1).max(4096),
+    height: z.coerce.number().int().min(1).max(4096),
+    themeColors: z.preprocess(
+        (value) => {
+            if (Array.isArray(value)) return value
+            if (typeof value === 'string') return value.split(',').filter(Boolean)
+            return []
+        },
+        z
+            .string()
+            .regex(/^#[0-9a-f]{6}$/i)
+            .array()
+            .max(8),
+    ),
 })
-
-const compressImage = async (buffer: Buffer) => {
-    log.start('Compressing image...')
-
-    const metadata = await sharp(buffer).metadata()
-    const { width, height } = metadata
-
-    // リサイズが必要かチェック
-    const needsResize = width > MAX_DIMENSION || height > MAX_DIMENSION
-    let resizedWidth: number | undefined
-    let resizedHeight: number | undefined
-
-    if (needsResize) {
-        const aspectRatio = width / height
-        if (width > height) {
-            resizedWidth = MAX_DIMENSION
-            resizedHeight = Math.round(MAX_DIMENSION / aspectRatio)
-        } else {
-            resizedHeight = MAX_DIMENSION
-            resizedWidth = Math.round(MAX_DIMENSION * aspectRatio)
-        }
-        log.info(`Resizing image from ${width}x${height} to ${resizedWidth}x${resizedHeight}`)
-    }
-
-    // 品質を段階的に下げて目標サイズに収める
-    let quality = 90
-    let compressedImage: Buffer
-
-    do {
-        let sharpInstance = sharp(buffer)
-
-        if (needsResize)
-            sharpInstance = sharpInstance.resize(resizedWidth, resizedHeight, {
-                fit: 'inside',
-                withoutEnlargement: true,
-            })
-
-        compressedImage = await sharpInstance.jpeg({ quality, progressive: true }).toBuffer()
-
-        log.info(
-            `Compressed image with quality ${quality}: ${(
-                compressedImage.length /
-                1024 /
-                1024
-            ).toFixed(2)}MB`,
-        )
-
-        if (compressedImage.length <= TARGET_MAX_FILE_SIZE || quality <= 30) break
-
-        quality -= 10
-    } while (quality > 0)
-
-    const finalMetadata = await sharp(compressedImage).metadata()
-    log.success(
-        `Image compressed successfully: ${finalMetadata.width}x${finalMetadata.height}, ${(
-            compressedImage.length /
-            1024 /
-            1024
-        ).toFixed(2)}MB`,
-    )
-
-    return {
-        buffer: compressedImage,
-        width: finalMetadata.width || 0,
-        height: finalMetadata.height || 0,
-    }
-}
 
 export default authedSessionEventHandler(
     async () => {
-        const { blob, path } = await validateFormData(formData)
+        const { blob, path, width, height, themeColors } = await validateFormData(formData)
 
-        log.start('Processing and uploading image to Blob Storage...')
-
-        const processedBuffer = Buffer.from(await blob.arrayBuffer())
-
-        // 画像を圧縮
-        const { buffer: compressedImage, width, height } = await compressImage(processedBuffer)
+        log.start('Uploading image to R2...')
 
         const jpgFilename = `${nanoid(JPG_FILENAME_LENGTH)}.jpg`
 
@@ -111,7 +53,7 @@ export default authedSessionEventHandler(
         const fullPath = `${normalizedPath}/${jpgFilename}`
 
         try {
-            await storage.upload(fullPath, compressedImage, { contentType: 'image/jpeg' })
+            await storage.upload(fullPath, blob, { contentType: 'image/jpeg' })
         } catch {
             throw serverError.internalServerError()
         }
@@ -121,6 +63,7 @@ export default authedSessionEventHandler(
             url: await storage.url(fullPath),
             width,
             height,
+            themeColors,
         }
     },
     {

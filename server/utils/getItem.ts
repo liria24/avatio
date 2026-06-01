@@ -5,15 +5,13 @@ import {
     getGithubReadme,
     getGithubRepo,
 } from '@avatio/ungh'
-import { waitUntil } from '@vercel/functions'
 import { eq } from 'drizzle-orm'
-import { joinURL, withHttps } from 'ufo'
+import { joinURL } from 'ufo'
 
 const log = logger('getItem')
 
 export default async (provider: Platform | undefined, id: string): Promise<Item> => {
-    const { forceUpdateItem, allowedBoothCategoryId, specificItemCategories } =
-        await getEdgeConfig()
+    const { forceUpdateItem, allowedBoothCategoryId, specificItemCategories } = await getAppFlags()
 
     const { fresh, cachedItem } = await resolveItemCache(provider, id, forceUpdateItem)
     if (fresh) return fresh
@@ -23,12 +21,9 @@ export default async (provider: Platform | undefined, id: string): Promise<Item>
         throw serverError.notFound({ responseMessage: 'Item not found or not allowed' })
 
     if (resolvedProvider === 'booth') {
-        const item = await $fetch<Booth | null>(`/${id}.json`, {
-            baseURL: joinURL(withHttps(BOOTH_BASE_DOMAIN), 'ja/items'),
-            headers: {
-                Accept: 'application/json',
-                'Accept-Language': 'ja,en-US;q=0.9,en;q=0.8',
-            },
+        const config = useRuntimeConfig()
+
+        const item = await $fetch<Booth | null>(joinURL(config.booth.proxyUrl, id), {
             ignoreResponseError: true,
             onResponseError({ error }) {
                 log.error(`Failed to fetch booth item ${id}:`, error)
@@ -152,7 +147,7 @@ type PersistItemParams =
               name: string
           }
           cachedItem: { id: string } | null
-          specificItemCategories: EdgeConfig['specificItemCategories']
+          specificItemCategories: AppFlags['specificItemCategories']
           categoryFallback: ItemCategory
           assignAttrParams: Omit<GenerateItemAttrParams, 'originalCategory'>
           idMigration?: { from: string; to: string }
@@ -161,8 +156,9 @@ type PersistItemParams =
 
 export const persistItem = (params: PersistItemParams): Item => {
     if (!params.valid) {
+        const db = useDB()
         if (params.cachedItem)
-            waitUntil(
+            runAfterResponse(
                 db.update(items).set({ outdated: true }).where(eq(items.id, params.cachedItem.id)),
             )
         throw serverError.notFound({ responseMessage: 'Item not found or not allowed' })
@@ -182,6 +178,7 @@ export const persistItem = (params: PersistItemParams): Item => {
     const fullItem = { ...item, category }
 
     const persist = async () => {
+        const db = useDB()
         await db.transaction(async (tx) => {
             if (idMigration)
                 await tx
@@ -209,7 +206,7 @@ export const persistItem = (params: PersistItemParams): Item => {
         }
     }
 
-    waitUntil(persist())
+    runAfterResponse(persist())
 
     return {
         id: item.id,
@@ -238,6 +235,8 @@ export const resolveItemCache = async (
     forceUpdate: boolean,
 ) => {
     if (forceUpdate) return { fresh: null, cachedItem: null }
+
+    const db = useDB()
 
     const cachedItem =
         (await db.query.items.findFirst({

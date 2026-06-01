@@ -10,28 +10,19 @@ import {
 const body = setupsInsertSchema
 
 export default authedSessionEventHandler(
-    async ({ session }) => {
+    async ({ session, db }) => {
         const {
             public: isPublic,
             name,
             description,
             items,
             images,
+            imageMetadata,
             tags,
             coauthors,
         } = await validateBody(body, { sanitize: true })
 
-        const imageData = await Promise.all(
-            (images || []).map(async (url) => {
-                const { colors, width, height } = await extractImageColors(url)
-                return {
-                    url,
-                    width,
-                    height,
-                    themeColors: colors.length ? colors : null,
-                }
-            }),
-        )
+        const imageData = await resolveSetupImageData({ images, imageMetadata })
 
         const setupId = await db.transaction(async (tx) => {
             const [setup] = await tx

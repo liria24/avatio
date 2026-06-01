@@ -7,7 +7,7 @@ const params = z.object({
 })
 
 export default authedSessionEventHandler(
-    async ({ session }) => {
+    async ({ session, db }) => {
         const { id } = await validateParams(params)
 
         const data = await db.query.setups.findFirst({

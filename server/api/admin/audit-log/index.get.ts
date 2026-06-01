@@ -17,7 +17,7 @@ const query = z.object({
         .default(ADMIN_AUDIT_LOG_API_DEFAULT_LIMIT),
 })
 
-export default adminSessionEventHandler<PaginationResponse<AuditLog[]>>(async () => {
+export default adminSessionEventHandler<PaginationResponse<AuditLog[]>>(async ({ db }) => {
     const { q, sort, userId, action, targetType, targetId, page, limit } =
         await validateQuery(query)
 

@@ -7,7 +7,6 @@ Compact instruction for OpenCode sessions. If a fact is obvious from filenames, 
 ## Package manager & runtime
 
 - **Package manager:** `bun`. `bunfig.toml` uses `linker = "hoisted"`.
-- **Node:** 24.x required.
 - **Postinstall is mandatory:** `bun run postinstall` builds workspace packages (`@avatio/bot-notifier`, `@avatio/ungh`) **before** `nuxt prepare`. Run it after any install.
 
 ## Developer commands
@@ -31,11 +30,12 @@ Compact instruction for OpenCode sessions. If a fact is obvious from filenames, 
 ## After making changes
 
 Run **`bun run typecheck`** and **`bun run lint`** to verify there are no errors before finishing.
+For deployment-related changes, also run **`bun run build`**. In this repo, the production build is expected to complete successfully even though Nuxt/Rolldown may still print non-fatal warnings during the build; treat the command exit code as the source of truth.
 
 ## Project architecture
 
 - **Framework:** Nuxt 4 (`compatibilityVersion: 5`).
-- **Deployment target:** Vercel (`nitro.preset: 'vercel'`).
+- **Deployment target:** Cloudflare Workers (`nitro.preset: 'cloudflare-module'`).
 - **Structure:**
   - `app/` — Vue frontend (pages, layouts, composables, components).
   - `server/` — Nitro API routes and server middleware.
@@ -76,12 +76,12 @@ Run **`bun run typecheck`** and **`bun run lint`** to verify there are no errors
 
 ## Deployment & infra quirks
 
-- **Vercel Edge Config** drives a maintenance mode middleware (`middleware.ts` at repo root, not Nuxt middleware). Key: `isMaintenance`.
-- **Vercel crons** (configured in `vercel.ts`):
+- **Cloudflare KV HTTP** drives app flags and maintenance mode (`server/middleware/maintenance.ts`). Key: `isMaintenance`.
+- **Workers Cron Triggers**:
   - `/api/admin/job/report` — daily at 22:00
   - `/api/admin/job/cleanup` — daily at 22:00
-- **Images:** served through `@nuxt/image`. Allowed external domains are whitelisted in `nuxt.config.ts` (Booth, GitHub, Tigris).
-- **Storage:** Tigris (S3-compatible) for user-uploaded images.
+- **Images:** served through `@nuxt/image`. Allowed external domains are whitelisted in `nuxt.config.ts` (Booth, GitHub, R2 public domain).
+- **Storage:** Cloudflare R2 through `files-sdk/r2` for user-uploaded images. Workers use the `R2` binding; local environments fall back to HTTP mode.
 - **PWA:** `@vite-pwa/nuxt` is enabled; `sw.js` and `manifest.webmanifest` are served with `must-revalidate`.
 
 ## i18n
@@ -145,7 +145,6 @@ Wrap every API handler with the appropriate factory from `server/utils/eventHand
 
 ## Common mistakes to avoid
 
-- Do not assume `process.env` in `nuxt.config.ts`; the config uses `import.meta.env` for runtime config defaults.
 - Do not skip `bun run postinstall` after adding packages; workspace packages must be built before Nuxt prepare succeeds.
 - Do not use Vue Options API (disabled in Vite config).
 - Admin pages live under `app/pages/admin/` and use the `dashboard` layout + `admin` middleware (configured in route rules, not per-page).

@@ -30,7 +30,7 @@ export default defineConfig({
         '**/.env',
         '**/.env.*',
         '!**/.env.example',
-        '**/.vercel',
+        '**/.wrangler',
         '**/.netlify',
         '**/public',
     ],

@@ -2,7 +2,10 @@ import type { NitroRouteConfig } from 'nitropack'
 import { defineOrganization } from 'nuxt-schema-org/schema'
 import { withLeadingSlash } from 'ufo'
 
-const baseUrl = import.meta.env.PUBLIC_SITE_URL || 'http://localhost:3000'
+const baseUrl = process.env.PUBLIC_SITE_URL || 'http://localhost:3000'
+const imageDomain = process.env.R2_PUBLIC_BASE_URL
+    ? new URL(process.env.R2_PUBLIC_BASE_URL).hostname
+    : undefined
 const title = 'Avatio'
 const description = 'アバター改変レシピの共有プラットフォーム'
 
@@ -63,18 +66,19 @@ const routeRules: { [path: string]: NitroRouteConfig } = {
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-    compatibilityDate: 'latest',
+    compatibilityDate: '2026-05-26',
 
     future: {
         compatibilityVersion: 5,
     },
 
-    devtools: { enabled: true, timeline: { enabled: true } },
+    devtools: { enabled: import.meta.dev, timeline: { enabled: import.meta.dev } },
 
     modules: [
         '@comark/nuxt',
         '@nuxt/ui',
         '@nuxt/image',
+        '@nuxt/scripts',
         '@nuxtjs/robots',
         '@nuxtjs/sitemap',
         'nuxt-link-checker',
@@ -89,7 +93,6 @@ export default defineNuxtConfig({
         'motion-v/nuxt',
         '@stefanobartoletti/nuxt-social-share',
         '@nuxt/a11y',
-        '@vercel/analytics',
         '@nuxt/test-utils/module',
         ...(process.env.VITEST ? [] : ['@vite-pwa/nuxt']),
     ],
@@ -116,16 +119,64 @@ export default defineNuxtConfig({
     routeRules,
 
     nitro: {
-        preset: 'vercel',
+        preset: 'cloudflare-module',
+        cloudflare: {
+            deployConfig: true,
+            nodeCompat: true,
+            wrangler: {
+                name: 'avatio',
+                compatibility_flags: [
+                    'nodejs_compat',
+                    'nodejs_als',
+                    'no_handle_cross_request_promise_resolution',
+                ],
+                observability: {
+                    enabled: true,
+                    head_sampling_rate: 1,
+                },
+                account_id: process.env.CLOUDFLARE_ACCOUNT_ID,
+                d1_databases: [
+                    {
+                        binding: 'DB',
+                        database_name: 'avatio-content',
+                    },
+                ],
+                kv_namespaces: [
+                    {
+                        binding: 'KV',
+                        id: '8d93b5819aab49df9d3244c84a7741ed',
+                    },
+                ],
+                r2_buckets: [
+                    {
+                        binding: 'R2',
+                        bucket_name: 'avatio',
+                    },
+                ],
+                ai: {
+                    binding: 'AI',
+                },
+                triggers: {
+                    crons: ['0 22 * * *'],
+                },
+            },
+        },
         compressPublicAssets: true,
         storage: {
             auth: {
-                driver: 'vercel-runtime-cache',
-                tags: ['auth'],
+                driver: 'cloudflare-kv-binding',
+                binding: 'KV',
+                base: 'auth',
             },
             cache: {
-                driver: 'vercel-runtime-cache',
-                tags: ['cache'],
+                driver: 'cloudflare-kv-binding',
+                binding: 'KV',
+                base: 'cache',
+            },
+            flags: {
+                driver: 'cloudflare-kv-binding',
+                binding: 'KV',
+                base: 'flags',
             },
         },
         devStorage: {
@@ -136,14 +187,21 @@ export default defineNuxtConfig({
             cache: {
                 driver: 'null',
             },
+            flags: {
+                driver: 'fs-lite',
+                base: './.data/storage/flags',
+            },
         },
         experimental: {
             asyncContext: true,
         },
+        unenv: {
+            external: ['node:async_hooks'],
+        },
     },
 
     typescript: {
-        typeCheck: true,
+        typeCheck: 'build',
         tsConfig: {
             include: ['test/unit/**/*'],
             compilerOptions: {
@@ -155,29 +213,26 @@ export default defineNuxtConfig({
     runtimeConfig: {
         ai: {
             gateway: {
-                apiKey: import.meta.env.AI_GATEWAY_API_KEY,
+                apiKey: process.env.AI_GATEWAY_API_KEY,
             },
         },
         betterAuth: {
-            secret: import.meta.env.BETTER_AUTH_SECRET,
+            secret: process.env.BETTER_AUTH_SECRET,
+        },
+        booth: {
+            proxyUrl: process.env.BOOTH_PROXY_URL,
         },
         liria: {
             discord: {
-                endpoint: import.meta.env.LIRIA_DISCORD_ENDPOINT,
-                accessToken: import.meta.env.LIRIA_DISCORD_ACCESS_TOKEN,
+                endpoint: process.env.LIRIA_DISCORD_ENDPOINT,
+                accessToken: process.env.LIRIA_DISCORD_ACCESS_TOKEN,
             },
         },
         neon: {
-            databaseUrl: import.meta.env.NEON_DATABASE_URL,
+            databaseUrl: process.env.NEON_DATABASE_URL,
         },
         unosend: {
-            apiKey: import.meta.env.UNOSEND_API_KEY,
-        },
-        vercel: {
-            token: import.meta.env.VERCEL_TOKEN,
-            edgeConfig: {
-                endpoint: import.meta.env.VERCEL_EDGE_CONFIG_ENDPOINT,
-            },
+            apiKey: process.env.UNOSEND_API_KEY,
         },
         public: {
             siteUrl: baseUrl,
@@ -223,6 +278,10 @@ export default defineNuxtConfig({
             markdown: {
                 contentHeading: false,
             },
+        },
+        database: {
+            type: 'd1',
+            bindingName: 'DB',
         },
         experimental: { sqliteConnector: 'native' },
     },
@@ -331,7 +390,7 @@ export default defineNuxtConfig({
         },
         densities: [1],
         domains: [
-            import.meta.env.TIGRIS_STORAGE_DOMAIN!,
+            ...(imageDomain ? [imageDomain] : []),
             'booth.pximg.net', // booth
             's2.booth.pm', // booth
             'github.com', // GitHub
@@ -435,6 +494,17 @@ export default defineNuxtConfig({
         inlineRouteRules: true,
         componentIslands: true,
         nitroAutoImports: true,
+    },
+
+    $production: {
+        scripts: {
+            registry: {
+                umamiAnalytics: {
+                    websiteId: process.env.UMAMI_WEBSITE_ID,
+                    trigger: 'onNuxtReady',
+                },
+            },
+        },
     },
 })
 

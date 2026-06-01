@@ -3,7 +3,7 @@ import { itemReports } from '@@/database/schema'
 const body = itemReportsInsertSchema
 
 export default authedSessionEventHandler(
-    async ({ session }) => {
+    async ({ session, db }) => {
         const { itemId, nameError, irrelevant, other, comment } = await validateBody(body, {
             sanitize: true,
         })

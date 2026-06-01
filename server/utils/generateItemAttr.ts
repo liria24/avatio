@@ -1,6 +1,7 @@
 import { itemCategory } from '@@/database/schema'
 import type { GatewayProviderOptions } from '@ai-sdk/gateway'
 import { generateText, Output } from 'ai'
+import { createWorkersAI } from 'workers-ai-provider'
 import { z } from 'zod'
 
 export interface GenerateItemAttrParams {
@@ -49,6 +50,8 @@ ${previousItems.map((item) => `${item.name}: ${item.niceName} [${item.category}]
 `
 
 export default async (params: GenerateItemAttrParams) => {
+    const db = useDB()
+
     const previousItems = await db.query.items.findMany({
         where: {
             niceName: { isNotNull: true },
@@ -72,8 +75,15 @@ export default async (params: GenerateItemAttrParams) => {
         },
     ]
 
+    const aiBinding = useEvent().context.cloudflare?.env?.AI
+    if (!aiBinding)
+        throw createError({
+            statusCode: 503,
+            message: 'AI binding is unavailable in this environment.',
+        })
+    const workersai = createWorkersAI({ binding: aiBinding })
     const { output } = await generateText({
-        model: 'google/gemini-3.1-flash-lite-preview',
+        model: workersai('@cf/google/gemini-3.1-flash-lite'),
         system,
         messages,
         output: Output.object({

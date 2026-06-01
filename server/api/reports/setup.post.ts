@@ -3,7 +3,7 @@ import { setupReports } from '@@/database/schema'
 const body = setupReportsInsertSchema
 
 export default authedSessionEventHandler(
-    async ({ session }) => {
+    async ({ session, db }) => {
         const { setupId, spam, hate, infringe, badImage, other, comment } = await validateBody(
             body,
             { sanitize: true },

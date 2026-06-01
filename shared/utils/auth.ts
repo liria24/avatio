@@ -3,8 +3,9 @@ import { betterAuth } from 'better-auth/minimal'
 import type { BetterAuthOptions } from 'better-auth/minimal'
 import { admin, multiSession, username, customSession } from 'better-auth/plugins'
 import { nanoid } from 'nanoid'
+import { useStorage } from 'nitropack/runtime/internal/storage'
 
-import { db, schema } from '../../server/utils/database'
+import { useDB, dbProxy, schema } from '../../server/utils/database'
 import { storage } from '../../server/utils/storage'
 import {
     RATE_LIMIT_DEFAULT,
@@ -16,16 +17,18 @@ import {
 
 const JPG_FILENAME_LENGTH = 16
 const minUsernameLength = 3
+const productionCookies =
+    process.env.NODE_ENV === 'production' || process.env.CLOUDFLARE_ENV === 'production'
 
 const options = {
     appName: 'Avatio',
     secret: process.env.BETTER_AUTH_SECRET as string,
 
     baseURL: {
-        allowedHosts: ['localhost', 'localhost:*', 'dev.avatio.me', 'avatio.me', '*.vercel.app'],
+        allowedHosts: ['localhost', 'localhost:*', 'dev.avatio.me', 'avatio.me', '*.workers.dev'],
     },
 
-    database: drizzleAdapter(db, {
+    database: drizzleAdapter(dbProxy, {
         provider: 'pg',
         schema,
         usePlural: true,
@@ -166,12 +169,12 @@ const options = {
             disableIpTracking: false,
         },
         // セキュアクッキーの強制（本番環境）
-        useSecureCookies: process.env.ENV_VERCEL_ENV === 'production',
+        useSecureCookies: productionCookies,
         // CSRF保護を有効化
         disableCSRFCheck: false,
         defaultCookieAttributes: {
             httpOnly: true,
-            secure: process.env.ENV_VERCEL_ENV === 'production',
+            secure: productionCookies,
             sameSite: 'lax',
         },
     },
@@ -182,6 +185,7 @@ export const auth = betterAuth({
     plugins: [
         ...(options.plugins ?? []),
         customSession(async ({ user, session }) => {
+            const db = useDB()
             const settings = await db.query.userSettings.findFirst({
                 where: { userId: { eq: user.id } },
                 columns: {

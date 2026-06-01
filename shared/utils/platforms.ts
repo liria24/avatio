@@ -12,8 +12,8 @@ const platforms: Record<
     booth: {
         icon: 'avatio:booth',
         label: 'BOOTH',
-        itemUrl: (id) => joinURL(withHttps(BOOTH_BASE_DOMAIN), 'ja/items', String(id)),
-        shopUrl: (id) => withTrailingSlash(withHttps(`${id}.${BOOTH_BASE_DOMAIN}`)),
+        itemUrl: (id) => joinURL('https://booth.pm', 'ja/items', String(id)),
+        shopUrl: (id) => withTrailingSlash(withHttps(`${id}.booth.pm`)),
     },
     github: {
         icon: 'mingcute:github-fill',
