@@ -7,7 +7,7 @@ const reportUser = useReportUserModal()
 
 const username = useRouteParams('username', undefined, { transform: String })
 
-const { data: user, status: userStatus } = useUser(username.value)
+const { data: user, status: userStatus } = await useUser(username.value)
 
 if (userStatus.value === 'success' && !user.value)
     showError({
