@@ -7,16 +7,6 @@ const body = setupDraftsInsertSchema.pick({
     content: true,
 })
 
-const refreshDraftImages = async (draftId: string, imageUrls: string[]) => {
-    const db = useDB()
-    await db.delete(setupDraftImages).where(eq(setupDraftImages.setupDraftId, draftId))
-    const images = imageUrls.map((url) => ({
-        setupDraftId: draftId,
-        url,
-    }))
-    if (images.length) await db.insert(setupDraftImages).values(images)
-}
-
 const hasContent = (content: Record<string, unknown>) =>
     Object.values(content).some((value) => {
         if (value === null || value === undefined) return false
@@ -56,29 +46,41 @@ export default authedSessionEventHandler(
             return null
         }
 
-        const [result] = await db
-            .insert(setupDrafts)
-            .values({
-                id,
-                userId: session.user.id,
-                setupId,
-                content,
-            })
-            .onConflictDoUpdate({
-                target: setupDrafts.id,
-                set: {
-                    updatedAt: new Date(),
+        const result = await db.transaction(async (tx) => {
+            const [upserted] = await tx
+                .insert(setupDrafts)
+                .values({
+                    id,
+                    userId: session.user.id,
                     setupId,
                     content,
-                },
-            })
-            .returning({
-                id: setupDrafts.id,
-            })
+                })
+                .onConflictDoUpdate({
+                    target: setupDrafts.id,
+                    set: {
+                        updatedAt: new Date(),
+                        setupId,
+                        content,
+                    },
+                })
+                .returning({
+                    id: setupDrafts.id,
+                })
 
-        if (!result) throw serverError.internalServerError()
+            if (!upserted) throw serverError.internalServerError()
 
-        runAfterResponse(refreshDraftImages(result.id, content.images || []))
+            const images = (content.images || []).map((url) => ({
+                setupDraftId: upserted.id,
+                url,
+            }))
+
+            await Promise.all([
+                tx.delete(setupDraftImages).where(eq(setupDraftImages.setupDraftId, upserted.id)),
+                ...(images.length ? [tx.insert(setupDraftImages).values(images)] : []),
+            ])
+
+            return upserted
+        })
 
         return { draftId: result.id }
     },
