@@ -80,6 +80,7 @@
         "sanitize-html": "2.17.4",
         "vue-data-ui": "3.21.0",
         "vue-draggable-plus": "0.6.1",
+        "workers-ai-provider": "^3.1.14",
         "zod": "4.4.3"
     },
     "devDependencies": {
@@ -102,7 +103,6 @@
         "typescript": "6.0.3",
         "vitest": "^4.1.7",
         "vue-tsc": "^3.3.3",
-        "workers-ai-provider": "^3.1.14",
         "wrangler": "^4.95.0"
     },
     "overrides": {
