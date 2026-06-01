@@ -1,5 +1,4 @@
 import { itemCategory } from '@@/database/schema'
-import type { GatewayProviderOptions } from '@ai-sdk/gateway'
 import { generateText, Output } from 'ai'
 import { createWorkersAI } from 'workers-ai-provider'
 import { z } from 'zod'
@@ -99,9 +98,6 @@ export default async (params: GenerateItemAttrParams) => {
                     includeThoughts: false,
                 },
             },
-            gateway: {
-                zeroDataRetention: true,
-            } satisfies GatewayProviderOptions,
         },
     })
 
