@@ -11,6 +11,10 @@ const stubCronGlobals = (authorization?: string) => {
 
     vi.stubGlobal('eventHandler', <T>(handler: T) => handler)
     vi.stubGlobal('getHeaders', () => ({ authorization }))
+    vi.stubGlobal(
+        'useDB',
+        vi.fn(() => ({})),
+    )
     vi.stubGlobal('auth', { api: { getSession } })
     vi.stubGlobal('serverError', {
         forbidden,
