@@ -215,10 +215,9 @@ export default defineNuxtConfig({
     },
 
     runtimeConfig: {
-        ai: {
-            gateway: {
-                apiKey: process.env.AI_GATEWAY_API_KEY,
-            },
+        cloudflare: {
+            accountId: process.env.CLOUDFLARE_ACCOUNT_ID,
+            apiToken: process.env.CLOUDFLARE_API_TOKEN,
         },
         betterAuth: {
             secret: process.env.BETTER_AUTH_SECRET,

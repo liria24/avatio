@@ -14,6 +14,19 @@ interface CleanupJobOptions {
 
 const IMAGE_DELETION_THRESHOLD = 24 * 60 * 60 * 1000
 
+const BACKUP_PREFIX = 'backup'
+const BACKUP_RULE_ID = 'avatio-backup-cleanup'
+const BACKUP_RETENTION_SECONDS = 3 * 24 * 60 * 60 // 3 days
+
+interface LifecycleRule {
+    id: string
+    conditions: { prefix: string }
+    enabled: boolean
+    deleteObjectsTransition?: {
+        condition: { maxAge: number; type: 'Age' }
+    }
+}
+
 const extractKeyFromUrl = (url: string): string | null => {
     try {
         return new URL(url).pathname.slice(1) || null
@@ -36,6 +49,57 @@ const getStorageObjects = async (prefix: string): Promise<ImageInfo[]> => {
     }
 
     return items
+}
+
+const ensureBackupLifecycleRule = async () => {
+    const config = useRuntimeConfig()
+    const accountId = config.cloudflare?.accountId
+    const apiToken = config.cloudflare?.apiToken
+    const bucket = process.env.R2_BUCKET ?? 'avatio'
+
+    if (!accountId || !apiToken) {
+        cleanupLog.warn('Cloudflare credentials not configured; skipping lifecycle rule setup')
+        return
+    }
+
+    const baseUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}/r2/buckets/${bucket}/lifecycle`
+    const headers = {
+        Authorization: `Bearer ${apiToken}`,
+        'Content-Type': 'application/json',
+    }
+
+    let existingRules: LifecycleRule[] = []
+    try {
+        const res = await $fetch<{ result: { rules?: LifecycleRule[] }; success: boolean }>(
+            baseUrl,
+            { headers },
+        )
+        if (res.success) existingRules = res.result.rules ?? []
+    } catch (error) {
+        cleanupLog.warn('Failed to fetch existing lifecycle rules:', error)
+    }
+
+    const backupRule: LifecycleRule = {
+        id: BACKUP_RULE_ID,
+        conditions: { prefix: `${BACKUP_PREFIX}/` },
+        enabled: true,
+        deleteObjectsTransition: {
+            condition: { maxAge: BACKUP_RETENTION_SECONDS, type: 'Age' },
+        },
+    }
+
+    const mergedRules = [...existingRules.filter((r) => r.id !== BACKUP_RULE_ID), backupRule]
+
+    try {
+        await $fetch(baseUrl, {
+            method: 'PUT',
+            headers,
+            body: { rules: mergedRules },
+        })
+        cleanupLog.info('Backup lifecycle rule ensured on R2 bucket')
+    } catch (error) {
+        cleanupLog.warn('Failed to set lifecycle rules:', error)
+    }
 }
 
 export const runReportJob = async () => {
@@ -258,6 +322,8 @@ export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) 
 
     const allImages = allUnusedImages.filter((img) => img.lastModified < thresholdDate)
 
+    const today = new Date().toISOString().slice(0, 10)
+
     if (dryRun) {
         cleanupLog.info(
             `[DRY RUN] Would delete ${allImages.length} image(s):`,
@@ -269,8 +335,26 @@ export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) 
             message: 'Dry run completed. No images were deleted.',
             data: {
                 wouldDelete: allImages.map((img) => img.key),
+                wouldBackupTo: allImages.map((img) => `${BACKUP_PREFIX}/${today}/${img.key}`),
                 totalWouldProcess: allImages.length,
             },
+        }
+    }
+
+    await ensureBackupLifecycleRule()
+
+    const backupResults = await Promise.allSettled(
+        allImages.map((img) => storage.copy(img.key, `${BACKUP_PREFIX}/${today}/${img.key}`)),
+    )
+    const backedUp: string[] = []
+    const backupFailed: string[] = []
+    for (let i = 0; i < backupResults.length; i++) {
+        const result = backupResults[i]
+        const key = allImages[i]?.key ?? ''
+        if (result?.status === 'fulfilled') backedUp.push(key)
+        else {
+            backupFailed.push(key)
+            cleanupLog.warn('Failed to backup image before deletion:', key, result?.reason)
         }
     }
 
@@ -307,6 +391,11 @@ export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) 
                                 inline: true,
                             },
                             {
+                                name: 'Backed Up',
+                                value: backedUp.length.toString(),
+                                inline: true,
+                            },
+                            {
                                 name: 'Successfully Deleted',
                                 value: successful.length.toString(),
                                 inline: true,
@@ -316,6 +405,15 @@ export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) 
                                 value: failed.length.toString(),
                                 inline: true,
                             },
+                            ...(backupFailed.length
+                                ? [
+                                      {
+                                          name: 'Backup Failed',
+                                          value: backupFailed.join('\n').slice(0, 1024),
+                                          inline: false,
+                                      },
+                                  ]
+                                : []),
                             ...(failed.length
                                 ? [
                                       {
@@ -346,6 +444,8 @@ export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) 
         success: true,
         message,
         data: {
+            backedUp,
+            backupFailed,
             successfulDeletes: successful,
             failedDeletes: failed,
             totalProcessed: allImages.length,
