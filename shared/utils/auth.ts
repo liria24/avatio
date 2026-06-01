@@ -5,7 +5,7 @@ import { admin, multiSession, username, customSession } from 'better-auth/plugin
 import { nanoid } from 'nanoid'
 import { useStorage } from 'nitropack/runtime/internal/storage'
 
-import { useDB, schema } from '../../server/utils/database'
+import { useDB, dbProxy, schema } from '../../server/utils/database'
 import { storage } from '../../server/utils/storage'
 import {
     RATE_LIMIT_DEFAULT,
@@ -28,7 +28,7 @@ const options = {
         allowedHosts: ['localhost', 'localhost:*', 'dev.avatio.me', 'avatio.me', '*.workers.dev'],
     },
 
-    database: drizzleAdapter(useDB(), {
+    database: drizzleAdapter(dbProxy, {
         provider: 'pg',
         schema,
         usePlural: true,
