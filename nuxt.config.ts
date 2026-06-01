@@ -16,9 +16,6 @@ const baseRouteRules: { [path: string]: NitroRouteConfig } = {
         appLayout: 'dashboard',
         appMiddleware: 'admin',
     },
-    '/changelogs': {
-        isr: 60 * 60, // 1 hour
-    },
     '/faq': {
         prerender: true,
     },
@@ -72,12 +69,13 @@ export default defineNuxtConfig({
         compatibilityVersion: 5,
     },
 
-    devtools: { enabled: import.meta.dev, timeline: { enabled: import.meta.dev } },
+    devtools: { enabled: true, timeline: { enabled: true } },
 
     modules: [
         '@comark/nuxt',
         '@nuxt/ui',
         '@nuxt/image',
+        '@nuxt/fonts',
         '@nuxt/scripts',
         '@nuxtjs/robots',
         '@nuxtjs/sitemap',
@@ -146,10 +144,6 @@ export default defineNuxtConfig({
                         binding: 'KV',
                         id: '8d93b5819aab49df9d3244c84a7741ed',
                     },
-                    {
-                        binding: 'OG_IMAGE_CACHE',
-                        id: 'e678f8e834784ea8b457786c695ded19',
-                    },
                 ],
                 r2_buckets: [
                     {
@@ -202,6 +196,9 @@ export default defineNuxtConfig({
         },
         unenv: {
             external: ['node:async_hooks'],
+        },
+        prerender: {
+            ignore: ['/_og'],
         },
     },
 
@@ -405,10 +402,7 @@ export default defineNuxtConfig({
     ogImage: {
         security: {
             secret: process.env.OG_IMAGE_SECRET,
-        },
-        runtimeCacheStorage: {
-            driver: 'cloudflare-kv-binding',
-            binding: 'OG_IMAGE_CACHE',
+            renderTimeout: 100000,
         },
     },
 
