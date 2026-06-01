@@ -196,9 +196,6 @@ export default defineNuxtConfig({
             asyncContext: true,
             tasks: true,
         },
-        scheduledTasks: {
-            '0 22 * * *': ['job:report', 'job:cleanup'],
-        },
         unenv: {
             external: ['node:async_hooks'],
         },
@@ -500,6 +497,12 @@ export default defineNuxtConfig({
     },
 
     $production: {
+        nitro: {
+            scheduledTasks: {
+                '0 22 * * *': ['job:report', 'job:cleanup'],
+            },
+        },
+
         scripts: {
             registry: {
                 umamiAnalytics: {
