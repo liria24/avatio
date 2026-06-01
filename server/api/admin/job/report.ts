@@ -1,1 +1,4 @@
-export default cronEventHandler(async () => await runReportJob())
+export default adminSessionEventHandler(async () => {
+    const { result } = await runTask('job:report')
+    return result
+})
