@@ -19,7 +19,7 @@ const query = z.object({
 
 const parse = createParse()
 
-export default promiseEventHandler(async () => {
+export default promiseEventHandler(async ({ db }) => {
     const { q, sort, userId, page, limit, lang } = await validateQuery(query)
 
     const offset = (page - 1) * limit

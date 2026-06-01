@@ -9,7 +9,7 @@ const query = z.object({
     outdated: z.stringbool().optional(),
 })
 
-export default adminSessionEventHandler(async () => {
+export default adminSessionEventHandler(async ({ db }) => {
     const { q, orderBy, sort, limit, platform, outdated } = await validateQuery(query)
 
     const result = await db.query.items.findMany({

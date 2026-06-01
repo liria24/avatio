@@ -16,7 +16,7 @@ const body = z
         message: 'At least one field must be provided',
     })
 
-export default adminSessionEventHandler(async () => {
+export default adminSessionEventHandler(async ({ db }) => {
     const { id } = await validateParams(params)
     const { isRead, isArchived } = await validateBody(body)
 

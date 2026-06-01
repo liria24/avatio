@@ -14,7 +14,7 @@ const query = z.object({
     status: z.enum(['open', 'closed', 'all']).optional().default('all'),
 })
 
-export default adminSessionEventHandler(async () => {
+export default adminSessionEventHandler(async ({ db }) => {
     const { sort, reporterId, page, limit, status } = await validateQuery(query)
 
     const offset = (page - 1) * limit

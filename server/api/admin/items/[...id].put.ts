@@ -10,9 +10,8 @@ const body = itemsUpdateSchema.pick({
     niceName: true,
 })
 
-export default adminSessionEventHandler(async () => {
+export default adminSessionEventHandler(async ({ db }) => {
     const { id } = await validateParams(params)
-
     const { niceName } = await validateBody(body, { sanitize: true })
 
     await db.update(items).set({ niceName }).where(eq(items.id, id))

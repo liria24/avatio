@@ -31,11 +31,8 @@ export const GITHUB_ITEM_CACHE_DURATION_MS = 60 * 60 * 1000 // 1 hour
 export const GITHUB_API_CACHE_TTL = 60 * 60 // 1 hour
 export const SETUP_CACHE_TTL = 60 * 60 // 1 hour
 export const USER_CACHE_TTL = 60 * 60 // 1 hour
-export const EDGE_CONFIG_CACHE_TTL = 5 // 5 seconds
+export const APP_FLAGS_CACHE_TTL = 5 // 5 seconds
 export const SESSION_COOKIE_CACHE_MAX_AGE = 5 * 60 // 5 minutes
-
-// Booth
-export const BOOTH_BASE_DOMAIN = 'booth.pm'
 
 // Booth category map
 export const BOOTH_CATEGORY_MAP: Record<number, ItemCategory> = {

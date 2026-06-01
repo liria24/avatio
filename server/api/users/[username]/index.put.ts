@@ -9,7 +9,7 @@ const body = usersUpdateSchema
 
 const log = logger('/api/users/[username]:PUT')
 
-export default authedSessionEventHandler(async ({ session }) => {
+export default authedSessionEventHandler(async ({ session, db }) => {
     const { username: oldUsername } = await validateParams(params)
     const { username, name, image, bio, links } = await validateBody(body, {
         sanitize: true,

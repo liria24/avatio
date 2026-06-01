@@ -173,6 +173,8 @@
             "toggleFailed": "切替えに失敗しました",
             "forceUpdateItemToggled": "アイテム情報の強制更新を切り替えました",
             "forceUpdateItemToggleFailed": "切換えに失敗しました",
+            "configSaved": "設定を保存しました",
+            "configSaveFailed": "設定の保存に失敗しました",
             "itemNiceNameChanged": "アイテムの名称を変更しました",
             "itemNiceNameChangeFailed": "アイテムの名称の変更に失敗しました",
             "changelogCreated": "Changelog created successfully",

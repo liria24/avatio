@@ -1,8 +1,6 @@
 <script lang="ts" setup>
 import 'vue-data-ui/style.css'
 
-const modalFlags = useModalFlagsModal()
-
 const { getSummary } = useAdmin()
 const { data: summary } = await getSummary()
 
@@ -35,13 +33,13 @@ useSeo({
             <div class="mt-6 flex w-full items-center gap-2 px-6">
                 <h1 class="text-toned font-mono text-3xl font-light">Admin Console</h1>
                 <UButton
+                    to="/admin/config"
                     icon="mingcute:flag-3-fill"
                     label="Flags"
                     variant="soft"
                     color="neutral"
                     size="sm"
                     class="ml-auto"
-                    @click="modalFlags.open()"
                 />
             </div>
         </template>

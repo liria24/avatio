@@ -14,7 +14,7 @@ export interface PaginationResponse<T> {
     }
 }
 
-export interface EdgeConfig {
+export interface AppFlags {
     allowedBoothCategoryId: number[]
     forceUpdateItem: boolean
     isMaintenance: boolean

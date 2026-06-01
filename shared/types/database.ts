@@ -207,6 +207,19 @@ export const setupImagesPublicSchema = setupImagesSelectSchema
     })
 export type SetupImage = z.infer<typeof setupImagesPublicSchema>
 
+export const setupImageMetadataSchema = z.object({
+    width: z.number().int().min(1).max(4096),
+    height: z.number().int().min(1).max(4096),
+    themeColors: z
+        .string()
+        .regex(/^#[\da-f]{6}$/i)
+        .array()
+        .max(8)
+        .nullable()
+        .optional(),
+})
+export type SetupImageMetadata = z.infer<typeof setupImageMetadataSchema>
+
 export const setupCoauthorsSelectSchema = createSelectSchema(setupCoauthors)
 export const setupCoauthorsInsertSchema = createInsertSchema(setupCoauthors, {
     note: (schema) => schema.max(140, 'ノートは最大 140 文字です。').optional(),
@@ -237,6 +250,7 @@ export const setupsInsertSchema = createInsertSchema(setups, {
             .max(8, 'タグは最大 8 個です。')
             .optional(),
         images: z.url().array().max(1, '画像は最大 1 個です。').optional(),
+        imageMetadata: z.record(z.string(), setupImageMetadataSchema).optional(),
         coauthors: setupCoauthorsInsertSchema
             .omit({ setupId: true })
             .array()
@@ -261,6 +275,7 @@ export const setupsUpdateSchema = createUpdateSchema(setups, {
         .max(8, 'タグは最大 8 個です。')
         .optional(),
     images: z.url().array().max(1, '画像は最大 1 個です。').optional(),
+    imageMetadata: z.record(z.string(), setupImageMetadataSchema).optional(),
     coauthors: setupCoauthorsInsertSchema
         .omit({ setupId: true })
         .array()
@@ -368,6 +383,7 @@ export const setupDraftContentSchema = setupsInsertSchema
         description: true,
         tags: true,
         images: true,
+        imageMetadata: true,
         coauthors: true,
         items: true,
     })

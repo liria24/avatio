@@ -1,6 +1,8 @@
 import type { SitemapUrlInput } from '#sitemap/types'
 
 export default defineSitemapEventHandler(async () => {
+    const db = useDB()
+
     const setups = await db.query.setups.findMany({
         where: {
             hidAt: { isNull: true },

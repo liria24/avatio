@@ -10,7 +10,7 @@ const query = z.object({
 })
 
 export default authedSessionEventHandler(
-    async ({ session }) => {
+    async ({ session, db }) => {
         const { id } = await validateQuery(query)
 
         const data = await db.query.setupDrafts.findMany({

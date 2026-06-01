@@ -1,6 +1,8 @@
 type PublicUserLookup = { id: string; username?: never } | { id?: never; username: string }
 
 export const getPublicUser = async (lookup: PublicUserLookup): Promise<User> => {
+    const db = useDB()
+
     const where = lookup.id ? { id: { eq: lookup.id } } : { username: { eq: lookup.username } }
 
     const data = await db.query.users.findFirst({

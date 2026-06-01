@@ -5,7 +5,7 @@ const query = z.object({
     lang: z.enum(locales.enumValues).optional().default('ja'),
 })
 
-export default promiseEventHandler(async () => {
+export default promiseEventHandler(async ({ db }) => {
     const { lang } = await validateQuery(query)
 
     const data = await db.query.changelogs.findFirst({

@@ -17,133 +17,135 @@ const query = z.object({
         .default(SETUPS_BOOKMARKS_API_DEFAULT_LIMIT),
 })
 
-export default authedSessionEventHandler<PaginationResponse<Bookmark[]>>(async ({ session }) => {
-    const { q, orderBy, sort, userId, setupId, tag, page, limit } = await validateQuery(query)
+export default authedSessionEventHandler<PaginationResponse<Bookmark[]>>(
+    async ({ session, db }) => {
+        const { q, orderBy, sort, userId, setupId, tag, page, limit } = await validateQuery(query)
 
-    const offset = (page - 1) * limit
+        const offset = (page - 1) * limit
 
-    const data = await db.query.bookmarks.findMany({
-        extras: {
-            count: sql<number>`CAST(COUNT(*) OVER() AS INTEGER)`,
-        },
-        limit,
-        offset,
-        where: {
-            user: {
-                AND: [
-                    { id: { eq: session!.user.id } },
-                    {
-                        OR: [{ banned: { eq: false } }, { banned: { isNull: true } }],
-                    },
-                ],
+        const data = await db.query.bookmarks.findMany({
+            extras: {
+                count: sql<number>`CAST(COUNT(*) OVER() AS INTEGER)`,
             },
-            setup: {
-                hidAt: { isNull: true },
-                id: setupId ? { in: Array.isArray(setupId) ? setupId : [setupId] } : undefined,
-                userId: userId ? { eq: userId } : undefined,
-                name: q ? { ilike: `%${q}%` } : undefined,
-                tags: tag ? { tag: { in: Array.isArray(tag) ? tag : [tag] } } : undefined,
-            },
-        },
-        orderBy: {
-            [orderBy]: sort,
-        },
-        columns: {
-            id: true,
-            createdAt: true,
-        },
-        with: {
-            setup: {
-                columns: {
-                    id: true,
-                    createdAt: true,
-                    updatedAt: true,
-                    public: true,
-                    name: true,
-                    description: true,
-                    hidAt: true,
-                    hidReason: true,
+            limit,
+            offset,
+            where: {
+                user: {
+                    AND: [
+                        { id: { eq: session!.user.id } },
+                        {
+                            OR: [{ banned: { eq: false } }, { banned: { isNull: true } }],
+                        },
+                    ],
                 },
-                with: {
-                    user: {
-                        columns: {
-                            id: true,
-                            username: true,
-                            createdAt: true,
-                            name: true,
-                            image: true,
-                            bio: true,
-                            links: true,
-                        },
-                        with: {
-                            badges: {
-                                columns: {
-                                    badge: true,
-                                    createdAt: true,
+                setup: {
+                    hidAt: { isNull: true },
+                    id: setupId ? { in: Array.isArray(setupId) ? setupId : [setupId] } : undefined,
+                    userId: userId ? { eq: userId } : undefined,
+                    name: q ? { ilike: `%${q}%` } : undefined,
+                    tags: tag ? { tag: { in: Array.isArray(tag) ? tag : [tag] } } : undefined,
+                },
+            },
+            orderBy: {
+                [orderBy]: sort,
+            },
+            columns: {
+                id: true,
+                createdAt: true,
+            },
+            with: {
+                setup: {
+                    columns: {
+                        id: true,
+                        createdAt: true,
+                        updatedAt: true,
+                        public: true,
+                        name: true,
+                        description: true,
+                        hidAt: true,
+                        hidReason: true,
+                    },
+                    with: {
+                        user: {
+                            columns: {
+                                id: true,
+                                username: true,
+                                createdAt: true,
+                                name: true,
+                                image: true,
+                                bio: true,
+                                links: true,
+                            },
+                            with: {
+                                badges: {
+                                    columns: {
+                                        badge: true,
+                                        createdAt: true,
+                                    },
                                 },
                             },
                         },
-                    },
-                    items: {
-                        where: {
-                            category: { eq: 'avatar' },
-                        },
-                        with: {
-                            item: {
-                                columns: {
-                                    id: true,
-                                    updatedAt: true,
-                                    platform: true,
-                                    category: true,
-                                    name: true,
-                                    niceName: true,
-                                    image: true,
-                                    price: true,
-                                    likes: true,
-                                    nsfw: true,
-                                    outdated: true,
+                        items: {
+                            where: {
+                                category: { eq: 'avatar' },
+                            },
+                            with: {
+                                item: {
+                                    columns: {
+                                        id: true,
+                                        updatedAt: true,
+                                        platform: true,
+                                        category: true,
+                                        name: true,
+                                        niceName: true,
+                                        image: true,
+                                        price: true,
+                                        likes: true,
+                                        nsfw: true,
+                                        outdated: true,
+                                    },
                                 },
                             },
                         },
-                    },
-                    images: {
-                        columns: {
-                            url: true,
-                            width: true,
-                            height: true,
-                            themeColors: true,
-                        },
-                    },
-                    tags: {
-                        columns: {
-                            tag: true,
-                        },
-                    },
-                    coauthors: {
-                        where: {
-                            user: {
-                                OR: [{ banned: { eq: false } }, { banned: { isNull: true } }],
+                        images: {
+                            columns: {
+                                url: true,
+                                width: true,
+                                height: true,
+                                themeColors: true,
                             },
                         },
-                        columns: {
-                            note: true,
+                        tags: {
+                            columns: {
+                                tag: true,
+                            },
                         },
-                        with: {
-                            user: {
-                                columns: {
-                                    id: true,
-                                    username: true,
-                                    createdAt: true,
-                                    name: true,
-                                    image: true,
-                                    bio: true,
-                                    links: true,
+                        coauthors: {
+                            where: {
+                                user: {
+                                    OR: [{ banned: { eq: false } }, { banned: { isNull: true } }],
                                 },
-                                with: {
-                                    badges: {
-                                        columns: {
-                                            badge: true,
-                                            createdAt: true,
+                            },
+                            columns: {
+                                note: true,
+                            },
+                            with: {
+                                user: {
+                                    columns: {
+                                        id: true,
+                                        username: true,
+                                        createdAt: true,
+                                        name: true,
+                                        image: true,
+                                        bio: true,
+                                        links: true,
+                                    },
+                                    with: {
+                                        badges: {
+                                            columns: {
+                                                badge: true,
+                                                createdAt: true,
+                                            },
                                         },
                                     },
                                 },
@@ -152,27 +154,27 @@ export default authedSessionEventHandler<PaginationResponse<Bookmark[]>>(async (
                     },
                 },
             },
-        },
-    })
+        })
 
-    const result = data.map((bookmark) => ({
-        ...bookmark,
-        setup: {
-            ...bookmark.setup,
-            items: bookmark.setup.items.map((item) => item.item),
-            tags: bookmark.setup.tags.map((tag) => tag.tag),
-        },
-    }))
+        const result = data.map((bookmark) => ({
+            ...bookmark,
+            setup: {
+                ...bookmark.setup,
+                items: bookmark.setup.items.map((item) => item.item),
+                tags: bookmark.setup.tags.map((tag) => tag.tag),
+            },
+        }))
 
-    return {
-        data: result,
-        pagination: {
-            page,
-            limit,
-            total: data[0]?.count || 0,
-            totalPages: Math.ceil((data[0]?.count || 0) / limit),
-            hasNext: offset + limit < (data[0]?.count || 0),
-            hasPrev: offset > 0,
-        },
-    }
-})
+        return {
+            data: result,
+            pagination: {
+                page,
+                limit,
+                total: data[0]?.count || 0,
+                totalPages: Math.ceil((data[0]?.count || 0) / limit),
+                hasNext: offset + limit < (data[0]?.count || 0),
+                hasPrev: offset > 0,
+            },
+        }
+    },
+)

@@ -25,10 +25,9 @@ const processImage = async (file: File) => {
     updating.value = true
 
     try {
-        const imageUrl = await uploadImage(file, 'avatar')
-        if (!imageUrl) return
+        const image = await uploadImage(file, 'avatar')
 
-        await auth.updateUser({ image: imageUrl })
+        await auth.updateUser({ image: image.url })
     } catch (error) {
         console.error('Failed to upload image:', error)
     } finally {

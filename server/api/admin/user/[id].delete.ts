@@ -1,4 +1,3 @@
-import { waitUntil } from '@vercel/functions'
 import { z } from 'zod'
 
 const params = z.object({
@@ -11,7 +10,7 @@ export default adminSessionEventHandler(async () => {
 
     const result = await auth.api.removeUser({ headers, body: { userId } })
 
-    waitUntil(purgeUserCache(userId))
+    runAfterResponse(purgeUserCache(userId))
 
     return result
 })

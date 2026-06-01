@@ -14,7 +14,7 @@ const query = z.object({
         .default(SETUP_TAGS_API_DEFAULT_LIMIT),
 })
 
-export default eventHandler(async () => {
+export default promiseEventHandler(async ({ db }) => {
     const { q, orderBy, sort, limit } = await validateQuery(query)
 
     const sortFn = sort === 'asc' ? asc : desc

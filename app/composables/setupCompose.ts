@@ -28,6 +28,10 @@ export const useSetupCompose = () => {
     const editingSetupId = useState<Setup['id'] | null>('setup-compose-editing-id', () => null)
     const imageUploading = useState('setup-compose-image-uploading', () => false)
     const skipDraftSave = useState('setup-compose-skip-draft', () => false)
+    const imageMetadata = useState<Record<string, SetupImageMetadata>>(
+        'setup-compose-image-metadata',
+        () => ({}),
+    )
 
     const draft = useState<{ id: string | null; status: DraftStatus }>(
         'setup-compose-draft',
@@ -57,6 +61,7 @@ export const useSetupCompose = () => {
         state.value.name = content.name || ''
         state.value.description = content.description || ''
         state.value.images = content.images || []
+        imageMetadata.value = content.imageMetadata || {}
         state.value.tags = content.tags ? content.tags.map((tag) => tag.tag) : []
 
         const coauthorResults = content.coauthors
@@ -174,6 +179,16 @@ export const useSetupCompose = () => {
             state.value.name = setup?.name || ''
             state.value.description = setup?.description || ''
             state.value.images = setup?.images?.map((image) => image.url) || []
+            imageMetadata.value = Object.fromEntries(
+                (setup?.images || []).map((image) => [
+                    image.url,
+                    {
+                        width: image.width,
+                        height: image.height,
+                        themeColors: image.themeColors || null,
+                    },
+                ]),
+            )
             state.value.tags = setup?.tags || []
             state.value.coauthors = setup?.coauthors
                 ? setup.coauthors.map((coauthor) => ({
@@ -292,6 +307,7 @@ export const useSetupCompose = () => {
                 description: state.value.description,
                 items,
                 images: state.value.images.length ? state.value.images : undefined,
+                imageMetadata: getSelectedImageMetadata(),
                 tags: state.value.tags.length
                     ? state.value.tags.map((tag) => ({ tag }))
                     : undefined,
@@ -356,6 +372,7 @@ export const useSetupCompose = () => {
         state.value.tags = []
         state.value.coauthors = []
         state.value.items = initializeItems()
+        imageMetadata.value = {}
         draft.value = { id: null, status: 'new' }
         editingSetupId.value = null
         skipDraftSave.value = false
@@ -386,6 +403,7 @@ export const useSetupCompose = () => {
                 name: state.value.name || undefined,
                 description: state.value.description || undefined,
                 images: state.value.images.length ? state.value.images : undefined,
+                imageMetadata: getSelectedImageMetadata(),
                 tags: state.value.tags.length
                     ? state.value.tags.map((tag) => ({ tag }))
                     : undefined,
@@ -480,6 +498,16 @@ export const useSetupCompose = () => {
     }
 
     // Images
+    const getSelectedImageMetadata = () => {
+        const entries = state.value.images
+            .map((url) => {
+                const metadata = imageMetadata.value[url]
+                return metadata ? ([url, metadata] as const) : null
+            })
+            .filter((entry): entry is readonly [string, SetupImageMetadata] => entry !== null)
+        return entries.length ? Object.fromEntries(entries) : undefined
+    }
+
     const processImages = async (files: FileList | File[] | null) => {
         if (!files?.length) return
 
@@ -488,8 +516,13 @@ export const useSetupCompose = () => {
 
         imageUploading.value = true
         try {
-            const imageUrl = await uploadImage(file, 'setup')
-            if (imageUrl) state.value.images.push(imageUrl)
+            const image = await uploadImage(file, 'setup')
+            state.value.images.push(image.url)
+            imageMetadata.value[image.url] = {
+                width: image.width,
+                height: image.height,
+                themeColors: image.themeColors.length ? image.themeColors : null,
+            }
         } catch (error) {
             console.error('Error uploading image:', error)
             toast.add({
@@ -504,7 +537,15 @@ export const useSetupCompose = () => {
 
     const addImage = (url: string) => state.value.images.push(url)
     const removeImage = (index: number) => {
-        if (index >= 0 && index < state.value.images.length) state.value.images.splice(index, 1)
+        const [removed] =
+            index >= 0 && index < state.value.images.length
+                ? state.value.images.splice(index, 1)
+                : []
+        if (removed) {
+            const nextMetadata = { ...imageMetadata.value }
+            Reflect.deleteProperty(nextMetadata, removed)
+            imageMetadata.value = nextMetadata
+        }
     }
 
     // Items

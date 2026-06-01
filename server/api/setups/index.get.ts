@@ -15,7 +15,7 @@ const query = z.object({
     limit: z.coerce.number().min(1).max(API_LIMIT_MAX).optional().default(SETUPS_API_DEFAULT_LIMIT),
 })
 
-export default sessionEventHandler(async ({ session }) => {
+export default sessionEventHandler(async ({ session, db }) => {
     const { q, orderBy, sort, username, itemId, tag, bookmarked, includePrivate, page, limit } =
         await validateQuery(query)
 

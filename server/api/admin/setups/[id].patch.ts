@@ -10,7 +10,7 @@ const body = z.object({
     hideReason: z.string().optional(),
 })
 
-export default adminSessionEventHandler(async () => {
+export default adminSessionEventHandler(async ({ db }) => {
     const { id } = await validateParams(params)
     const { hide, hideReason } = await validateBody(body)
 

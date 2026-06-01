@@ -2,6 +2,7 @@ import { changelogAuthors, changelogs, changelogI18ns } from '@@/database/schema
 import type { GatewayProviderOptions } from '@ai-sdk/gateway'
 import { generateText } from 'ai'
 import { createInsertSchema } from 'drizzle-orm/zod'
+import { createWorkersAI } from 'workers-ai-provider'
 import { z } from 'zod'
 
 const body = createInsertSchema(changelogI18ns)
@@ -15,7 +16,7 @@ const body = createInsertSchema(changelogI18ns)
         i18n: createInsertSchema(changelogI18ns).array().optional(),
     })
 
-export default adminSessionEventHandler(async () => {
+export default adminSessionEventHandler(async ({ db }) => {
     const { slug, title, markdown, authors, i18n } = await validateBody(body)
     let generatedSlug: string = ''
 
@@ -33,8 +34,15 @@ export default adminSessionEventHandler(async () => {
                 content: `The short slug must not overlap with any of the existing slugs: ${exists.map((b) => b.slug).join(', ')}`,
             })
 
+        const aiBinding = useEvent().context.cloudflare?.env?.AI
+        if (!aiBinding)
+            throw createError({
+                statusCode: 503,
+                message: 'AI binding is unavailable. Provide a slug manually.',
+            })
+        const workersai = createWorkersAI({ binding: aiBinding })
         const result = await generateText({
-            model: 'google/gemini-3.1-flash-lite-preview',
+            model: workersai('@cf/google/gemini-3.1-flash-lite'),
             messages: [
                 ...messages,
                 {

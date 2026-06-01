@@ -16,7 +16,7 @@ const params = z.object({
 const body = setupsUpdateSchema
 
 export default authedSessionEventHandler(
-    async ({ session }) => {
+    async ({ session, db }) => {
         const { id } = await validateParams(params)
 
         // セットアップの存在確認と権限チェック
@@ -35,6 +35,7 @@ export default authedSessionEventHandler(
             description,
             items,
             images,
+            imageMetadata,
             tags,
             coauthors,
         } = await validateBody(body, { sanitize: true })
@@ -112,22 +113,20 @@ export default authedSessionEventHandler(
 
         // 画像の更新
         if (images !== undefined) {
+            const imageData = await resolveSetupImageData({
+                setupId: id,
+                images,
+                imageMetadata,
+            })
+
             await db.delete(setupImages).where(eq(setupImages.setupId, id))
 
             if (images.length)
                 await db.insert(setupImages).values(
-                    await Promise.all(
-                        images.map(async (image) => {
-                            const { colors, width, height } = await extractImageColors(image)
-                            return {
-                                setupId: id,
-                                url: image,
-                                width,
-                                height,
-                                themeColors: colors.length ? colors : null,
-                            }
-                        }),
-                    ),
+                    imageData.map((image) => ({
+                        setupId: id,
+                        ...image,
+                    })),
                 )
         }
 
