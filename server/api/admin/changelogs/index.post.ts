@@ -1,5 +1,4 @@
 import { changelogAuthors, changelogs, changelogI18ns } from '@@/database/schema'
-import type { GatewayProviderOptions } from '@ai-sdk/gateway'
 import { generateText } from 'ai'
 import { createInsertSchema } from 'drizzle-orm/zod'
 import { createWorkersAI } from 'workers-ai-provider'
@@ -58,9 +57,6 @@ export default adminSessionEventHandler(async ({ db }) => {
                         includeThoughts: false,
                     },
                 },
-                gateway: {
-                    zeroDataRetention: true,
-                } satisfies GatewayProviderOptions,
             },
         })
 

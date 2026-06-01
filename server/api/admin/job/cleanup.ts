@@ -1,6 +1,7 @@
-export default cronEventHandler(async ({ event }) => {
+export default adminSessionEventHandler(async ({ event }) => {
     const { dryRun: dryRunParam } = getQuery(event)
     const dryRun = dryRunParam === 'true' || dryRunParam === '1'
 
-    return await runCleanupJob({ dryRun })
+    const { result } = await runTask('job:cleanup', { payload: { dryRun } })
+    return result
 })

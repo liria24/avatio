@@ -194,6 +194,10 @@ export default defineNuxtConfig({
         },
         experimental: {
             asyncContext: true,
+            tasks: true,
+        },
+        scheduledTasks: {
+            '0 22 * * *': ['job:report', 'job:cleanup'],
         },
         unenv: {
             external: ['node:async_hooks'],
@@ -211,10 +215,9 @@ export default defineNuxtConfig({
     },
 
     runtimeConfig: {
-        ai: {
-            gateway: {
-                apiKey: process.env.AI_GATEWAY_API_KEY,
-            },
+        cloudflare: {
+            accountId: process.env.CLOUDFLARE_ACCOUNT_ID,
+            apiToken: process.env.CLOUDFLARE_API_TOKEN,
         },
         betterAuth: {
             secret: process.env.BETTER_AUTH_SECRET,
