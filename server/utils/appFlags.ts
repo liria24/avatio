@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 const FLAGS_KEY = 'app'
 
-const defaultAppFlags = {
+export const defaultAppFlags = {
     allowedBoothCategoryId: [],
     forceUpdateItem: false,
     isMaintenance: false,
@@ -12,7 +12,7 @@ const defaultAppFlags = {
     },
 } satisfies AppFlags
 
-const appFlagsSchema = z.object({
+export const appFlagsSchema = z.object({
     allowedBoothCategoryId: z.number().int().array().default([]),
     forceUpdateItem: z.boolean().default(false),
     isMaintenance: z.boolean().default(false),
@@ -27,7 +27,17 @@ const appFlagsSchema = z.object({
         }),
 })
 
-const appFlagsPatchSchema = appFlagsSchema.partial()
+export const appFlagsPatchSchema = z.object({
+    allowedBoothCategoryId: z.number().int().array().optional(),
+    forceUpdateItem: z.boolean().optional(),
+    isMaintenance: z.boolean().optional(),
+    specificItemCategories: z
+        .object({
+            booth: z.record(z.string(), itemCategorySchema).optional(),
+            github: z.record(z.string(), itemCategorySchema).optional(),
+        })
+        .optional(),
+})
 
 export const getAppFlags = defineCachedFunction(
     async (): Promise<AppFlags> => {

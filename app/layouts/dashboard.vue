@@ -127,6 +127,11 @@ const dev = import.meta.dev
                                 icon: 'mingcute:terminal-box-fill',
                                 to: '/admin/audit-logs',
                             },
+                            {
+                                label: 'Config',
+                                icon: 'mingcute:settings-3-fill',
+                                to: '/admin/config',
+                            },
                         ]"
                         orientation="vertical"
                         tooltip

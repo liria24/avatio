@@ -173,6 +173,8 @@
             "toggleFailed": "Failed to toggle",
             "forceUpdateItemToggled": "Force update item toggled",
             "forceUpdateItemToggleFailed": "Failed to toggle",
+            "configSaved": "Config saved",
+            "configSaveFailed": "Failed to save config",
             "itemNiceNameChanged": "Item name changed",
             "itemNiceNameChangeFailed": "Failed to change item name",
             "changelogCreated": "Changelog created successfully",

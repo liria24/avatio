@@ -113,22 +113,20 @@ export const useAdmin = () => {
         errorLog: 'Error unhiding setup:',
     })
 
-    const toggleMaintenanceMode = defineAction<{ isMaintenance: boolean }>({
-        url: () => '/api/admin/flags',
-        method: 'PUT',
-        body: ({ isMaintenance }) => ({ isMaintenance }),
-        errorTitle: t('toast.admin.toggleFailed'),
-        errorLog: 'Error toggling maintenance mode:',
-    })
-
-    const toggleForceUpdateItem = defineAction<{ forceUpdateItem: boolean }>({
-        url: () => '/api/admin/flags',
-        method: 'PUT',
-        body: ({ forceUpdateItem }) => ({ forceUpdateItem }),
-        successTitle: t('toast.admin.forceUpdateItemToggled'),
-        errorTitle: t('toast.admin.forceUpdateItemToggleFailed'),
-        errorLog: 'Error changing forceUpdateItem:',
-    })
+    const saveAppFlags = async (flags: AppFlags): Promise<AppFlags | null> => {
+        try {
+            const response = await $fetch<AppFlags>('/api/admin/flags', {
+                method: 'PUT',
+                body: flags,
+            })
+            toast.add({ title: t('toast.admin.configSaved'), color: 'success' })
+            return response
+        } catch (error) {
+            console.error('Error saving app flags:', error)
+            toast.add({ title: t('toast.admin.configSaveFailed'), color: 'error' })
+            return null
+        }
+    }
 
     const changeItemNiceName = defineAction<{ itemId: string; niceName: string }>({
         url: ({ itemId }) => `/api/admin/items/${itemId}`,
@@ -172,8 +170,7 @@ export const useAdmin = () => {
         openFeedback,
         hideSetup,
         unhideSetup,
-        toggleMaintenanceMode,
-        toggleForceUpdateItem,
+        saveAppFlags,
         changeItemNiceName,
         banUserWithReason,
         createChangelog,
