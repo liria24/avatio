@@ -24,16 +24,16 @@ const commitLogUrl = computed(() => {
     return joinURL(app.repo, 'commits/main', data.value.content.commitLogPath)
 })
 
+const ogImage = await useAvatioOgImage({
+    title: data.value?.content?.title || '',
+    description: data.value?.content?.description,
+})
+console.log('OG Image URL:', ogImage)
+
 useSeo({
     title: data.value?.content?.title,
     description: data.value?.content?.description,
-    image: {
-        component: 'General.takumi',
-        props: {
-            title: data.value?.content?.title,
-            description: data.value?.content?.description,
-        },
-    },
+    image: ogImage,
     twitterCard: 'summary_large_image',
 })
 // @ts-expect-error - `useHead` is not typed to accept the content of `data.value?.content?.head`, but it should work as expected.

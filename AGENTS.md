@@ -7,7 +7,7 @@ Compact instruction for OpenCode sessions. If a fact is obvious from filenames, 
 ## Package manager & runtime
 
 - **Package manager:** `bun`. `bunfig.toml` uses `linker = "hoisted"`.
-- **Postinstall is mandatory:** `bun run postinstall` builds workspace packages (`@avatio/bot-notifier`, `@avatio/ungh`) **before** `nuxt prepare`. Run it after any install.
+- **Postinstall:** `bun run postinstall` runs `nuxt prepare` only. Workspace package builds are explicit via `bun run packages:build`.
 
 ## Developer commands
 
@@ -24,6 +24,10 @@ Compact instruction for OpenCode sessions. If a fact is obvious from filenames, 
 | Unit tests only                    | `bun run test:unit`        |
 | Nuxt tests only                    | `bun run test:nuxt`        |
 | Watch tests                        | `bun run test:watch`       |
+| Build all workspace packages       | `bun run packages:build`   |
+| OG image Worker dev                | `bun run og-image:dev`     |
+| OG image Worker build              | `bun run og-image:build`   |
+| OG image Worker check              | `bun run og-image:check`   |
 | Generate Drizzle migrations        | `bun run drizzle:generate` |
 | Bump version + commit + tag + push | `bun run release`          |
 
@@ -42,7 +46,7 @@ For deployment-related changes, also run **`bun run build`**. In this repo, the 
   - `database/schema.ts` — Drizzle ORM schema (PostgreSQL via Neon).
   - `shared/` — Utilities shared between client and server.
   - `content/` — `@nuxt/content` pages, split by `en/` and `ja/`.
-  - `packages/` — Workspace libraries (`bot-notifier`, `ungh`). Built with `tsdown`.
+  - `packages/` — Workspace libraries and workers (`bot-notifier`, `ungh`, `og-image`). Build them explicitly with `bun run packages:build`.
 
 ## Tooling constraints
 
@@ -77,6 +81,7 @@ For deployment-related changes, also run **`bun run build`**. In this repo, the 
 ## Deployment & infra quirks
 
 - **Cloudflare KV HTTP** drives app flags and maintenance mode (`server/middleware/maintenance.ts`). Key: `isMaintenance`.
+- **OG image Worker:** `packages/og-image` is a standalone Nitro app on the `cloudflare-module` preset. Nitro generates the deployment `wrangler.json` under `.output` from `packages/og-image/nitro.config.ts`. It uses the `OG_IMAGE_CACHE` KV binding and `OG_IMAGE_SECRET` Wrangler secret. The Nuxt app reads `OG_IMAGE_WORKER_URL` and `OG_IMAGE_SECRET` from private runtime config and falls back to no dynamic OG image when issuing fails.
 - **Workers Cron Triggers**:
   - `/api/admin/job/report` — daily at 22:00
   - `/api/admin/job/cleanup` — daily at 22:00
@@ -145,7 +150,7 @@ Wrap every API handler with the appropriate factory from `server/utils/eventHand
 
 ## Common mistakes to avoid
 
-- Do not skip `bun run postinstall` after adding packages; workspace packages must be built before Nuxt prepare succeeds.
+- After adding or changing workspace package code, run `bun run packages:build` explicitly instead of relying on install hooks.
 - Do not use Vue Options API (disabled in Vite config).
 - Admin pages live under `app/pages/admin/` and use the `dashboard` layout + `admin` middleware (configured in route rules, not per-page).
 

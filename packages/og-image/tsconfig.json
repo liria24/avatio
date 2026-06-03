@@ -1,0 +1,14 @@
+{
+    "extends": "./.nitro/types/tsconfig.json",
+    "compilerOptions": {
+        "strictNullChecks": true,
+        "paths": {
+            "#imports": ["./.nitro/types/nitro-imports"],
+            "~/*": ["./*"],
+            "@/*": ["./*"],
+            "~~/*": ["./*"],
+            "@@/*": ["./*"],
+            "@src/*": ["./src/*"]
+        }
+    }
+}

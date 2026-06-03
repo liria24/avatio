@@ -1,7 +1,6 @@
 import { defineCollection, defineContentConfig } from '@nuxt/content'
 import { defineRobotsSchema } from '@nuxtjs/robots/content'
 import { defineSitemapSchema } from '@nuxtjs/sitemap/content'
-import { defineOgImageSchema } from 'nuxt-og-image/content'
 import { defineSchemaOrgSchema } from 'nuxt-schema-org/content'
 import { z } from 'zod'
 
@@ -21,7 +20,6 @@ export default defineContentConfig({
                 schemaOrg: defineSchemaOrgSchema(),
                 sitemap: defineSitemapSchema(),
                 robots: defineRobotsSchema(),
-                ogImage: defineOgImageSchema(),
             }),
         }),
         content_ja: defineCollection({
@@ -38,7 +36,6 @@ export default defineContentConfig({
                 schemaOrg: defineSchemaOrgSchema(),
                 sitemap: defineSitemapSchema(),
                 robots: defineRobotsSchema(),
-                ogImage: defineOgImageSchema(),
             }),
         }),
     },
