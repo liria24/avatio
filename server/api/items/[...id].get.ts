@@ -10,7 +10,7 @@ const query = z.object({
 
 const log = logger('/api/items/[id]:GET')
 
-export default promiseEventHandler<Item>(async () => {
+export default promiseEventHandler<Item>(async ({ event, db }) => {
     const { id } = await validateParams(params)
     const { platform } = await validateQuery(query)
 
@@ -18,5 +18,5 @@ export default promiseEventHandler<Item>(async () => {
 
     defineCacheControl({ cdnAge: 60 * 60 * 24, clientAge: 60 * 60 })
 
-    return await getItem(id, platform)
+    return await getItem(event, db, id, platform)
 })
