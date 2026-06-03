@@ -501,7 +501,7 @@ export default defineNuxtConfig({
     $production: {
         nitro: {
             scheduledTasks: {
-                '0 22 * * *': ['job:report', 'job:cleanup'],
+                '0 22 * * *': ['job:report'],
             },
         },
 
