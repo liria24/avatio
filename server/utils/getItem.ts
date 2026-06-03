@@ -6,24 +6,25 @@ import {
     getGithubRepo,
 } from '@avatio/ungh'
 import { eq } from 'drizzle-orm'
-import { joinURL } from 'ufo'
+import { joinURL, withHttps } from 'ufo'
 
 const log = logger('getItem')
 
-export default async (provider: Platform | undefined, id: string): Promise<Item> => {
+export default async (id: string, provider: Platform | undefined): Promise<Item> => {
     const { forceUpdateItem, allowedBoothCategoryId, specificItemCategories } = await getAppFlags()
 
     const { fresh, cachedItem } = await resolveItemCache(provider, id, forceUpdateItem)
     if (fresh) return fresh
 
     const resolvedProvider = provider ?? cachedItem?.platform
+    console.log('Resolved provider:', resolvedProvider)
     if (!resolvedProvider)
         throw serverError.notFound({ responseMessage: 'Item not found or not allowed' })
 
     if (resolvedProvider === 'booth') {
         const config = useRuntimeConfig()
 
-        const item = await $fetch<Booth | null>(joinURL(config.booth.proxyUrl, id), {
+        const item = await $fetch<Booth | null>(joinURL(withHttps(config.booth.proxyUrl), id), {
             ignoreResponseError: true,
             onResponseError({ error }) {
                 log.error(`Failed to fetch booth item ${id}:`, error)

@@ -148,7 +148,7 @@ export default sessionEventHandler<Setup>(async ({ session, db }) => {
                 data.items.map(async (item) => {
                     if (item.item.outdated) return null
                     try {
-                        const response = await getItem(item.item.platform, item.item.id)
+                        const response = await getItem(item.item.id, item.item.platform)
                         if (response.outdated) return null
                         return {
                             ...response,

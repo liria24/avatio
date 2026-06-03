@@ -18,5 +18,5 @@ export default promiseEventHandler<Item>(async () => {
 
     defineCacheControl({ cdnAge: 60 * 60 * 24, clientAge: 60 * 60 })
 
-    return await getItem(platform, id)
+    return await getItem(id, platform)
 })
