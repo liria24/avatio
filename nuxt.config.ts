@@ -16,9 +16,6 @@ const baseRouteRules: { [path: string]: NitroRouteConfig } = {
         appLayout: 'dashboard',
         appMiddleware: 'admin',
     },
-    '/changelogs': {
-        isr: 60 * 60, // 1 hour
-    },
     '/faq': {
         prerender: true,
     },
@@ -72,12 +69,13 @@ export default defineNuxtConfig({
         compatibilityVersion: 5,
     },
 
-    devtools: { enabled: import.meta.dev, timeline: { enabled: import.meta.dev } },
+    devtools: { enabled: true, timeline: { enabled: true } },
 
     modules: [
         '@comark/nuxt',
         '@nuxt/ui',
         '@nuxt/image',
+        '@nuxt/fonts',
         '@nuxt/scripts',
         '@nuxtjs/robots',
         '@nuxtjs/sitemap',
@@ -196,11 +194,11 @@ export default defineNuxtConfig({
             asyncContext: true,
             tasks: true,
         },
-        scheduledTasks: {
-            '0 22 * * *': ['job:report', 'job:cleanup'],
-        },
         unenv: {
             external: ['node:async_hooks'],
+        },
+        prerender: {
+            ignore: ['/_og'],
         },
     },
 
@@ -404,6 +402,7 @@ export default defineNuxtConfig({
     ogImage: {
         security: {
             secret: process.env.OG_IMAGE_SECRET,
+            renderTimeout: 100000,
         },
     },
 
@@ -500,6 +499,12 @@ export default defineNuxtConfig({
     },
 
     $production: {
+        nitro: {
+            scheduledTasks: {
+                '0 22 * * *': ['job:report'],
+            },
+        },
+
         scripts: {
             registry: {
                 umamiAnalytics: {
