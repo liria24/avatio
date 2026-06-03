@@ -6,7 +6,7 @@ const params = z.object({
     id: z.string(),
 })
 
-export default sessionEventHandler<Setup>(async ({ session, db }) => {
+export default sessionEventHandler<Setup>(async ({ event, session, db }) => {
     const { id } = await validateParams(params)
 
     type Args = { id: Setup['id']; session: Session | undefined }
@@ -148,7 +148,7 @@ export default sessionEventHandler<Setup>(async ({ session, db }) => {
                 data.items.map(async (item) => {
                     if (item.item.outdated) return null
                     try {
-                        const response = await getItem(item.item.id, item.item.platform)
+                        const response = await getItem(event, db, item.item.id, item.item.platform)
                         if (response.outdated) return null
                         return {
                             ...response,

@@ -6,25 +6,43 @@ import {
     getGithubRepo,
 } from '@avatio/ungh'
 import { eq } from 'drizzle-orm'
+import type { H3Event } from 'h3'
 import { joinURL, withHttps } from 'ufo'
 
 const log = logger('getItem')
 
-export default async (id: string, provider: Platform | undefined): Promise<Item> => {
+export default async (
+    event: H3Event,
+    db: ReturnType<typeof useDB>,
+    id: string,
+    provider: Platform | undefined,
+): Promise<Item> => {
     const { forceUpdateItem, allowedBoothCategoryId, specificItemCategories } = await getAppFlags()
 
-    const { fresh, cachedItem } = await resolveItemCache(provider, id, forceUpdateItem)
+    const { fresh, cachedItem } = await resolveItemCache(db, id, provider, forceUpdateItem)
     if (fresh) return fresh
 
     const resolvedProvider = provider ?? cachedItem?.platform
-    console.log('Resolved provider:', resolvedProvider)
     if (!resolvedProvider)
         throw serverError.notFound({ responseMessage: 'Item not found or not allowed' })
 
     if (resolvedProvider === 'booth') {
-        const config = useRuntimeConfig()
+        const config = useRuntimeConfig(event)
+        const proxyUrl = config.booth.proxyUrl
 
-        const item = await $fetch<Booth | null>(joinURL(withHttps(config.booth.proxyUrl), id), {
+        if (!proxyUrl)
+            throw serverError.internalServerError({
+                log: {
+                    tag: 'getItem',
+                    message:
+                        'Missing BOOTH proxy URL. Set NUXT_BOOTH_PROXY_URL in Workers secrets.',
+                },
+                responseMessage: 'BOOTH proxy is not configured',
+            })
+
+        const boothProxyUrl = joinURL(withHttps(proxyUrl), id)
+
+        const item = await $fetch<Booth | null>(boothProxyUrl, {
             ignoreResponseError: true,
             onResponseError({ error }) {
                 log.error(`Failed to fetch booth item ${id}:`, error)
@@ -231,13 +249,12 @@ export const persistItem = (params: PersistItemParams): Item => {
 }
 
 export const resolveItemCache = async (
-    category: Platform | undefined,
+    db: ReturnType<typeof useDB>,
     id: string,
+    category: Platform | undefined,
     forceUpdate: boolean,
 ) => {
     if (forceUpdate) return { fresh: null, cachedItem: null }
-
-    const db = useDB()
 
     const cachedItem =
         (await db.query.items.findFirst({

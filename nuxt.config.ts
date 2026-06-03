@@ -221,7 +221,7 @@ export default defineNuxtConfig({
             secret: process.env.BETTER_AUTH_SECRET,
         },
         booth: {
-            proxyUrl: process.env.BOOTH_PROXY_URL,
+            proxyUrl: process.env.NUXT_BOOTH_PROXY_URL,
         },
         liria: {
             discord: {
