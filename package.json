@@ -12,7 +12,7 @@
     ],
     "type": "module",
     "scripts": {
-        "build": "nuxt build",
+        "build": "bun run packages:build && nuxt build",
         "dev": "nuxt dev",
         "generate": "nuxt generate",
         "preview": "nuxt preview",
