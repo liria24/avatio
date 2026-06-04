@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { requestAvatioOgImage } from '../../packages/og-image/src/client'
-import type { OgImageDescriptor, OgImageEnv } from '../../packages/og-image/src/schema'
-import type { OgImageStorage } from '../../packages/og-image/src/storage'
+import { requestAvatioOgImage } from '../src/client'
+import type { OgImageDescriptor, OgImageEnv } from '../src/schema'
+import type { OgImageStorage } from '../src/storage'
 import {
     cleanupImage,
     cleanupImages,
@@ -10,18 +10,14 @@ import {
     getImage,
     imageIdForDescriptor,
     issueAvatioImage,
-} from '../../packages/og-image/src/worker'
+} from '../src/worker'
 
-vi.mock(
-    '#og-image-fonts/noto-sans-jp',
-    () => ({
-        fontFamily: 'Noto Sans JP',
-        fonts: [],
-    }),
-    { virtual: true },
-)
+vi.mock('#og-image-fonts/noto-sans-jp', () => ({
+    fontFamily: 'Noto Sans JP',
+    fonts: [],
+}))
 
-vi.mock('../../packages/og-image/src/presets', () => ({
+vi.mock('../src/getPreset', () => ({
     getPreset: () => ({ cacheKey: 'avatio:v1:test' }),
 }))
 
@@ -65,13 +61,16 @@ class MemoryOgImageStorage implements OgImageStorage {
 
     private async set(key: string, value: unknown, options?: { ttl?: number }) {
         if (this.failSet) throw new Error('Storage set failed')
-        const stored =
+        const stored: string | ArrayBuffer =
             typeof value === 'string'
                 ? value
                 : value instanceof ArrayBuffer
                   ? value
                   : value instanceof Uint8Array
-                    ? value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength)
+                    ? (value.buffer.slice(
+                          value.byteOffset,
+                          value.byteOffset + value.byteLength,
+                      ) as ArrayBuffer)
                     : String(value)
 
         this.store.set(key, stored)
@@ -271,7 +270,7 @@ describe('og image worker', () => {
         const response = await getImage({
             imageId,
             renderTimeoutMs: 5,
-            renderPng: () => new Promise(() => {}),
+            renderPng: (): Promise<Uint8Array> => new Promise(() => {}),
             storage,
         })
 

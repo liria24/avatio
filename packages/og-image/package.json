@@ -14,6 +14,7 @@
         "build": "bun run build:client && nitro build",
         "dev": "nitro dev --port 4000",
         "preview": "wrangler --cwd .output dev",
+        "test": "vitest run",
         "check": "tsc --noEmit && bun run build && wrangler --cwd .output deploy --dry-run",
         "deploy": "bun run build && wrangler --cwd .output deploy"
     },
