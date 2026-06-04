@@ -37,7 +37,7 @@ const loadMore = async () => {
     }
 }
 
-const ogImage = await useAvatioOgImage({
+const ogImage = await useOgImage({
     title: t('changelogs.title'),
     description: t('changelogs.description'),
 })

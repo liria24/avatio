@@ -52,7 +52,10 @@ export const renderDescriptor = async (
     const { Renderer } = await ensureTakumi()
     if (context.signal?.aborted) throw new Error('Render aborted')
 
-    const renderer = new Renderer({ loadDefaultFonts: false })
+    const renderer = new Renderer({
+        loadDefaultFonts: false,
+        persistentImages: preset.persistentImages,
+    })
     try {
         await loadPresetFonts(renderer, preset, preset.fontText(descriptor.props), context.signal)
         return renderer.render(preset.render(descriptor.props), preset.renderOptions)

@@ -1,52 +1,61 @@
-import type { Node, RenderOptions } from '@takumi-rs/wasm'
+import type { ConstructRendererOptions, Node, RenderOptions } from '@takumi-rs/wasm'
+import type { GenericSchema, InferOutput } from 'valibot'
 
 import type { GoogleFontConfig } from './fonts'
 
 type PresetRenderOptions = Omit<RenderOptions, 'width' | 'height' | 'format' | 'devicePixelRatio'>
+type PresetPropsSchema = GenericSchema
+type FontTextValue = string | null | undefined | false
+type FontText = string | readonly FontTextValue[]
 
-export interface DefinePresetOptions<TProps> {
-    id: string
+export interface DefinePresetOptions<TPropsSchema extends PresetPropsSchema> {
     version: string
-    cacheKey: string
-    schema: unknown
+    props: TPropsSchema
     fonts: readonly GoogleFontConfig[]
-    fontText: (props: TProps) => string
-    render: (props: TProps) => Node
-    width: number
-    height: number
+    fontText: (props: InferOutput<TPropsSchema>) => FontText
+    render: (props: InferOutput<TPropsSchema>) => Node
+    width?: number
+    height?: number
     format?: RenderOptions['format']
     devicePixelRatio?: number
+    persistentImages?: ConstructRendererOptions['persistentImages']
     renderOptions?: PresetRenderOptions
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+interface PresetRenderConfig {
+    width: number
+    height: number
+    format: RenderOptions['format']
+    devicePixelRatio: number
+}
+
 export interface OgImagePreset {
     id: string
     version: string
-    cacheKey: string
-    schema: unknown
+    props: PresetPropsSchema
     fonts: readonly GoogleFontConfig[]
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    fontText: (props: any) => string
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    render: (props: any) => Node
-    renderOptions: {
-        width: number
-        height: number
-        format: RenderOptions['format']
-        devicePixelRatio: number
-    }
+    fontText: (props: unknown) => string
+    render: (props: unknown) => Node
+    renderOptions: PresetRenderConfig
+    persistentImages?: ConstructRendererOptions['persistentImages']
 }
 
-export const definePreset = <
-    TProps,
-    const TOptions extends DefinePresetOptions<TProps> = DefinePresetOptions<TProps>,
->(
-    options: TOptions,
-) => {
+export type DefinedOgImagePreset<TPropsSchema extends PresetPropsSchema> = Omit<
+    OgImagePreset,
+    'id' | 'props' | 'fontText' | 'render'
+> & {
+    props: TPropsSchema
+    fontText: (props: InferOutput<TPropsSchema>) => string
+    render: (props: InferOutput<TPropsSchema>) => Node
+}
+
+export const definePreset = <const TPropsSchema extends PresetPropsSchema>(
+    options: DefinePresetOptions<TPropsSchema>,
+): DefinedOgImagePreset<TPropsSchema> => {
     const {
-        width,
-        height,
+        fontText,
+        width = 1200,
+        height = 630,
         format = 'png',
         devicePixelRatio = 1,
         renderOptions,
@@ -55,6 +64,7 @@ export const definePreset = <
 
     return {
         ...preset,
+        fontText: (props) => normalizeFontText(fontText(props)),
         renderOptions: {
             width,
             height,
@@ -62,5 +72,20 @@ export const definePreset = <
             devicePixelRatio,
             ...renderOptions,
         },
-    } as const
+    }
 }
+
+const normalizeFontText = (value: FontText) =>
+    typeof value === 'string'
+        ? value
+        : value.filter((text): text is string => Boolean(text)).join('\n')
+
+export const withPresetId = <const TPropsSchema extends PresetPropsSchema>(
+    preset: DefinedOgImagePreset<TPropsSchema>,
+    id: string,
+): OgImagePreset => ({
+    ...preset,
+    id,
+    fontText: preset.fontText as (props: unknown) => string,
+    render: preset.render as (props: unknown) => Node,
+})

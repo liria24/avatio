@@ -1,19 +1,26 @@
-import type { AvatioImageProps, IssueImageResponse } from './schema'
+import type { IssueImageResponse } from './schema'
 
-export interface RequestAvatioOgImageOptions {
+export interface RequestOgImageOptions<TProps = unknown> {
     endpoint: string
     secret: string
-    props: AvatioImageProps
+    preset: string
+    version: string
+    props: TProps
     fetch?: typeof fetch
 }
 
-export const requestAvatioOgImage = async ({
+export const requestOgImage = async ({
     endpoint,
     secret,
+    preset,
+    version,
     props,
     fetch: fetcher = fetch,
-}: RequestAvatioOgImageOptions): Promise<string | undefined> => {
-    const url = new URL('/v1/images/avatio/v1', endpoint)
+}: RequestOgImageOptions): Promise<string | undefined> => {
+    const url = new URL(
+        `/v1/images/${encodeURIComponent(preset)}/${encodeURIComponent(version)}`,
+        endpoint,
+    )
     const response = await fetcher(url, {
         method: 'POST',
         headers: {
@@ -28,4 +35,4 @@ export const requestAvatioOgImage = async ({
     return typeof body.url === 'string' ? body.url : undefined
 }
 
-export type { AvatioImageProps, IssueImageResponse } from './schema'
+export type { IssueImageResponse } from './schema'

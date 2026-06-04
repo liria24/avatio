@@ -1,4 +1,4 @@
-import { readdirSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
 import { defineNitroConfig } from 'nitropack/config'
@@ -36,7 +36,7 @@ export default defineNitroConfig({
     devStorage: {
         'og-image': {
             driver: 'fs',
-            base: './.data/og-image',
+            base: fileURLToPath(new URL('./.data/og-image', import.meta.url)),
         },
     },
 
@@ -45,19 +45,36 @@ export default defineNitroConfig({
     },
 
     virtual: {
+        '#og-image-images': () => {
+            const assetsDir = fileURLToPath(new URL('./assets', import.meta.url))
+            const entries = readdirSync(assetsDir)
+                .filter((file) => file.endsWith('.svg'))
+                .map((file) => {
+                    const key = file.replace(/\.svg$/, '')
+                    const svgPath = fileURLToPath(new URL(`./assets/${file}`, import.meta.url))
+                    const svg = readFileSync(svgPath, 'utf8')
+                    return [
+                        JSON.stringify(key),
+                        `{ src: ${JSON.stringify(key)}, svg: ${JSON.stringify(svg)} }`,
+                    ].join(': ')
+                })
+            return `export const images = { ${entries.join(', ')} }`
+        },
         '#og-image-presets': () => {
             const presetsDir = fileURLToPath(new URL('./src/presets', import.meta.url))
             const names = readdirSync(presetsDir)
                 .filter((f) => f.endsWith('.ts'))
                 .map((f) => f.replace(/\.ts$/, ''))
             const imports = names
-                .map(
-                    (name, i) =>
+                .map((name, i) =>
+                    [
                         `import _preset${i} from '${fileURLToPath(new URL(`./src/presets/${name}.ts`, import.meta.url)).replace(/\\/g, '/')}'`,
+                    ].join('\n'),
                 )
                 .join('\n')
-            const exports = `export const allPresets = [${names.map((_, i) => `_preset${i}`).join(', ')}]`
-            return [imports, exports].join('\n')
+            const helper = `import { withPresetId as _withPresetId } from '${fileURLToPath(new URL('./src/definePreset.ts', import.meta.url)).replace(/\\/g, '/')}'`
+            const exports = `export const allPresets = [${names.map((name, i) => `_withPresetId(_preset${i}, ${JSON.stringify(name)})`).join(', ')}]`
+            return [helper, imports, exports].join('\n')
         },
     },
 

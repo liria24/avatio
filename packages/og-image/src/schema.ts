@@ -1,26 +1,17 @@
 import * as v from 'valibot'
 
-export const avatioImagePropsSchema = v.object({
-    title: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(120)),
-    description: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(240))),
+export const ogImageDescriptorBaseSchema = v.object({
+    preset: v.string(),
+    version: v.string(),
+    props: v.unknown(),
 })
 
-export type AvatioImageProps = v.InferOutput<typeof avatioImagePropsSchema>
+export type OgImageDescriptor = v.InferOutput<typeof ogImageDescriptorBaseSchema>
 
-export const ogImageDescriptorSchema = v.object({
-    preset: v.literal('avatio'),
-    version: v.literal('v1'),
-    props: avatioImagePropsSchema,
-})
-
-export type OgImageDescriptor = v.InferOutput<typeof ogImageDescriptorSchema>
-
-export const issueAvatioImageRequestSchema = v.object({
+export const issueImageRequestBaseSchema = v.object({
     secret: v.string(),
-    props: avatioImagePropsSchema,
+    props: v.unknown(),
 })
-
-export type IssueAvatioImageRequest = v.InferOutput<typeof issueAvatioImageRequestSchema>
 
 export interface IssueImageResponse {
     url: string
