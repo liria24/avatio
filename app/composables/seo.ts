@@ -1,18 +1,8 @@
-import type { OgImageComponents } from '#og-image/components'
-
-type OgImageInput = {
-    [T in keyof OgImageComponents]: {
-        component: Parameters<typeof defineOgImage<T>>[0]
-        props?: Parameters<typeof defineOgImage<T>>[1]
-        options?: Parameters<typeof defineOgImage<T>>[2]
-    }
-}[keyof OgImageComponents]
-
 interface Args {
     title?: string
     titleTemplate?: string
     description?: string
-    image?: string | OgImageInput
+    image?: string
     type?: 'website' | 'article'
     twitterCard?: 'summary' | 'summary_large_image'
     schemaOrg?: {
@@ -80,15 +70,12 @@ export const useSeo = ({
 
     let ogImage: string | undefined = undefined
 
-    if (image && typeof image === 'string') {
+    if (image) {
         ogImage = image.startsWith('/') ? `${config.public.siteUrl}${image}` : image
         useSeoMeta({
             ogImage: ogImage,
             twitterImage: ogImage,
         })
-    } else if (typeof image === 'object') {
-        const ogImageResult = defineOgImage(image.component, image.props, image.options)
-        ogImage = ogImageResult[0]
     }
 
     const schemaOrgItems = []

@@ -37,16 +37,15 @@ const loadMore = async () => {
     }
 }
 
+const ogImage = await useAvatioOgImage({
+    title: t('changelogs.title'),
+    description: t('changelogs.description'),
+})
+
 useSeo({
     title: t('changelogs.title'),
     description: t('changelogs.description'),
-    image: {
-        component: 'General.takumi',
-        props: {
-            title: t('changelogs.title'),
-            description: t('changelogs.description'),
-        },
-    },
+    image: ogImage,
     twitterCard: 'summary_large_image',
 })
 </script>

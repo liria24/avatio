@@ -1,0 +1,15 @@
+{
+    "extends": "./.nitro/types/tsconfig.json",
+    "compilerOptions": {
+        "strictNullChecks": true,
+        "types": ["@cloudflare/workers-types"],
+        "paths": {
+            "#imports": ["./.nitro/types/nitro-imports"],
+            "~/*": ["./*"],
+            "@/*": ["./*"],
+            "~~/*": ["./*"],
+            "@@/*": ["./*"],
+            "@src/*": ["./src/*"]
+        }
+    }
+}

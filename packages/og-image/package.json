@@ -1,0 +1,35 @@
+{
+    "name": "@avatio/og-image",
+    "version": "1.0.0",
+    "type": "module",
+    "exports": {
+        "./client": {
+            "import": "./dist/client.mjs",
+            "types": "./dist/client.d.mts"
+        }
+    },
+    "scripts": {
+        "prepare": "nitro prepare",
+        "build:client": "tsdown",
+        "build": "bun run build:client && nitro build",
+        "dev": "nitro dev --port 4000",
+        "preview": "wrangler --cwd .output dev",
+        "test": "vitest run",
+        "check": "tsc --noEmit && bun run build && wrangler --cwd .output deploy --dry-run",
+        "deploy": "bun run build && wrangler --cwd .output deploy"
+    },
+    "dependencies": {
+        "@takumi-rs/helpers": "^1.7.0",
+        "@takumi-rs/wasm": "^1.7.0",
+        "valibot": "^1.4.1"
+    },
+    "devDependencies": {
+        "@cloudflare/workers-types": "^4.20260604.1",
+        "@types/node": "25.9.1",
+        "nitropack": "2.13.4",
+        "tsdown": "^0.22.1",
+        "typescript": "6.0.3",
+        "vitest": "^4.1.8",
+        "wrangler": "^4.97.0"
+    }
+}

@@ -1,3 +1,4 @@
+import { useNuxt } from '@nuxt/kit'
 import type { NitroRouteConfig } from 'nitropack'
 import { defineOrganization } from 'nuxt-schema-org/schema'
 import { withLeadingSlash } from 'ufo'
@@ -10,6 +11,13 @@ const title = 'Avatio'
 const description = 'アバター改変レシピの共有プラットフォーム'
 
 const availableI18nLocales = ['en']
+
+const normalizeRuntimeConfigForVitest = () => {
+    if (!process.env.VITEST) return
+
+    const nuxt = useNuxt()
+    nuxt.options.runtimeConfig = JSON.parse(JSON.stringify(nuxt.options.runtimeConfig))
+}
 
 const baseRouteRules: { [path: string]: NitroRouteConfig } = {
     '/admin/**': {
@@ -71,6 +79,11 @@ export default defineNuxtConfig({
 
     devtools: { enabled: true, timeline: { enabled: true } },
 
+    hooks: {
+        'modules:done': normalizeRuntimeConfigForVitest,
+        'vite:extendConfig': normalizeRuntimeConfigForVitest,
+    },
+
     modules: [
         '@comark/nuxt',
         '@nuxt/ui',
@@ -82,7 +95,6 @@ export default defineNuxtConfig({
         'nuxt-link-checker',
         'nuxt-schema-org',
         'nuxt-seo-utils',
-        'nuxt-og-image',
         '@nuxt/content',
         '@nuxt/hints',
         '@nuxtjs/device',
@@ -197,9 +209,6 @@ export default defineNuxtConfig({
         unenv: {
             external: ['node:async_hooks'],
         },
-        prerender: {
-            ignore: ['/_og'],
-        },
     },
 
     typescript: {
@@ -231,6 +240,10 @@ export default defineNuxtConfig({
         },
         neon: {
             databaseUrl: process.env.NEON_DATABASE_URL,
+        },
+        ogImage: {
+            endpoint: process.env.OG_IMAGE_ENDPOINT,
+            secret: process.env.OG_IMAGE_SECRET,
         },
         unosend: {
             apiKey: process.env.UNOSEND_API_KEY,
@@ -397,13 +410,6 @@ export default defineNuxtConfig({
             'github.com', // GitHub
             'avatars.githubusercontent.com', // GitHub User Avatars
         ],
-    },
-
-    ogImage: {
-        security: {
-            secret: process.env.OG_IMAGE_SECRET,
-            renderTimeout: 100000,
-        },
     },
 
     pwa: {
