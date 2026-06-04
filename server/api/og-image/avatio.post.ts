@@ -1,4 +1,5 @@
 import { requestOgImage } from '@avatio/og-image/client'
+import { withHttps } from 'ufo'
 import { z } from 'zod'
 
 const log = logger('/api/og-image/avatio:POST')
@@ -11,7 +12,7 @@ const body = z.object({
 export default promiseEventHandler(async ({ event }) => {
     const props = await validateBody(body, { sanitize: true })
     const config = useRuntimeConfig(event)
-    const endpoint = config.ogImage.endpoint
+    const endpoint = withHttps(config.ogImage.endpoint)
     const secret = config.ogImage.secret
 
     if (!endpoint || !secret) return { url: null }
