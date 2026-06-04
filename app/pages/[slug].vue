@@ -24,7 +24,7 @@ const commitLogUrl = computed(() => {
     return joinURL(app.repo, 'commits/main', data.value.content.commitLogPath)
 })
 
-const ogImage = await useAvatioOgImage({
+const ogImage = await useOgImage({
     title: data.value?.content?.title || '',
     description: data.value?.content?.description,
 })

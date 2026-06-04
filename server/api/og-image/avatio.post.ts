@@ -1,4 +1,4 @@
-import { requestAvatioOgImage } from '@avatio/og-image/client'
+import { requestOgImage } from '@avatio/og-image/client'
 import { z } from 'zod'
 
 const log = logger('/api/og-image/avatio:POST')
@@ -19,9 +19,11 @@ export default promiseEventHandler(async ({ event }) => {
     try {
         return {
             url:
-                (await requestAvatioOgImage({
+                (await requestOgImage({
                     endpoint,
                     secret,
+                    preset: 'avatio',
+                    version: 'v1',
                     props,
                 })) ?? null,
         }

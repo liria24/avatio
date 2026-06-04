@@ -6,8 +6,8 @@ import { getPreset } from './getPreset'
 import { logger } from './logger'
 import type { RenderContext } from './render'
 import {
-    issueAvatioImageRequestSchema,
-    ogImageDescriptorSchema,
+    issueImageRequestBaseSchema,
+    ogImageDescriptorBaseSchema,
     type OgImageDescriptor,
     type OgImageEnv,
     type WaitUntil,
@@ -23,6 +23,7 @@ export const FAILURE_CACHE_CONTROL = 'no-store'
 const imageIdPattern = /^[a-f0-9]{64}$/
 const pngExtensionPattern = /\.png$/i
 const cleanupKeyPrefixes = ['descriptor:', 'png:', 'failed:'] as const
+const avatioPresetDescriptor = { preset: 'avatio', version: 'v1', props: undefined }
 
 type CanonicalValue =
     | string
@@ -54,6 +55,7 @@ export interface GetImageOptions extends RenderDependencies {
     env?: OgImageEnv
     imageId: string
     origin?: string
+    bypassCache?: boolean
 }
 
 export interface CleanupImagesOptions {
@@ -102,7 +104,6 @@ export const descriptorPayload = (descriptor: OgImageDescriptor) =>
     canonicalJson({
         preset: descriptor.preset,
         version: descriptor.version,
-        cacheKey: getPreset(descriptor)?.cacheKey ?? `${descriptor.preset}:${descriptor.version}`,
         props: descriptor.props,
     })
 
@@ -152,12 +153,19 @@ const validateCleanupSecret = async (body: unknown, env: OgImageEnv) => {
     return { ok: true as const }
 }
 
-const parseDescriptor = (value: string | null): OgImageDescriptor | undefined => {
+const parseDescriptor = (value: unknown): OgImageDescriptor | undefined => {
     if (!value) return undefined
 
     try {
-        const result = v.safeParse(ogImageDescriptorSchema, JSON.parse(value) as unknown)
-        return result.success ? result.output : undefined
+        const parsed = typeof value === 'string' ? (JSON.parse(value) as unknown) : value
+        const result = v.safeParse(ogImageDescriptorBaseSchema, parsed)
+        if (!result.success) return undefined
+
+        const preset = getPreset(result.output)
+        if (!preset) return undefined
+
+        const propsResult = v.safeParse(preset.props, result.output.props)
+        return propsResult.success ? { ...result.output, props: propsResult.output } : undefined
     } catch {
         return undefined
     }
@@ -194,11 +202,11 @@ const pngBytes = (png: ArrayBuffer | ArrayBufferView) =>
 
 const pngArrayBuffer = (png: ArrayBuffer | ArrayBufferView) => Uint8Array.from(pngBytes(png)).buffer
 
-const pngResponse = (png: ArrayBuffer | ArrayBufferView) =>
+const pngResponse = (png: ArrayBuffer | ArrayBufferView, cacheControl = SUCCESS_CACHE_CONTROL) =>
     new Response(pngArrayBuffer(png), {
         headers: {
             'content-type': 'image/png',
-            'cache-control': SUCCESS_CACHE_CONTROL,
+            'cache-control': cacheControl,
         },
     })
 
@@ -303,7 +311,7 @@ export async function issueAvatioImage(input: H3Event | IssueAvatioImageOptions)
               waitUntil: getWaitUntil(input),
           }
         : input
-    const bodyResult = v.safeParse(issueAvatioImageRequestSchema, body)
+    const bodyResult = v.safeParse(issueImageRequestBaseSchema, body)
     if (!bodyResult.success) return jsonResponse({ error: 'Invalid request' }, 400)
 
     const validSecret = await timingSafeEqual(bodyResult.output.secret, env.OG_IMAGE_SECRET)
@@ -312,10 +320,16 @@ export async function issueAvatioImage(input: H3Event | IssueAvatioImageOptions)
         return jsonResponse({ error: 'Unauthorized' }, 401)
     }
 
+    const preset = getPreset(avatioPresetDescriptor)
+    if (!preset) return jsonResponse({ error: 'Preset is not available' }, 500)
+
+    const propsResult = v.safeParse(preset.props, bodyResult.output.props)
+    if (!propsResult.success) return jsonResponse({ error: 'Invalid request' }, 400)
+
     const descriptor: OgImageDescriptor = {
-        preset: 'avatio',
-        version: 'v1',
-        props: bodyResult.output.props,
+        preset: preset.id,
+        version: preset.version,
+        props: propsResult.output,
     }
     const imageId = await imageIdForDescriptor(descriptor)
 
@@ -359,12 +373,14 @@ export async function getImage(input: H3Event | GetImageOptions) {
         env,
         imageId: rawImageId,
         origin,
+        bypassCache = false,
         ...dependencies
     } = isH3Event(input)
         ? {
               env: getOgImageEnv(input) ?? {},
               imageId: getImageIdFromEvent(input),
               origin: getRequestURL(input).origin,
+              bypassCache: import.meta.dev,
           }
         : input
     const imageId = normalizeImageId(rawImageId)
@@ -374,37 +390,46 @@ export async function getImage(input: H3Event | GetImageOptions) {
         resolveRenderDependencies(dependencies)
 
     try {
-        const cachedPng = await storage.getItemRaw<ArrayBuffer | ArrayBufferView>(`png:${imageId}`)
-        if (cachedPng) return pngResponse(cachedPng)
+        if (!bypassCache) {
+            const cachedPng = await storage.getItemRaw<ArrayBuffer | ArrayBufferView>(
+                `png:${imageId}`,
+            )
+            if (cachedPng) return pngResponse(cachedPng)
 
-        const failed = await storage.getItem(`failed:${imageId}`)
-        if (failed) return notFoundResponse()
+            const failed = await storage.getItem(`failed:${imageId}`)
+            if (failed) return notFoundResponse()
+        }
 
-        const descriptor = parseDescriptor(await storage.getItem<string>(`descriptor:${imageId}`))
+        const descriptor = parseDescriptor(await storage.getItem(`descriptor:${imageId}`))
         if (!descriptor) return notFoundResponse()
 
         const renderStart = Date.now()
-        const png = await renderAndCache(
-            storage,
-            imageId,
-            descriptor,
-            renderPng,
-            renderTimeoutMs,
-            renderContext,
-        )
+        const png = bypassCache
+            ? await withRenderTimeout(descriptor, renderPng, renderTimeoutMs, renderContext)
+            : await renderAndCache(
+                  storage,
+                  imageId,
+                  descriptor,
+                  renderPng,
+                  renderTimeoutMs,
+                  renderContext,
+              )
         logger.info('Image rendered on demand', {
             imageId,
             origin,
             preset: descriptor.preset,
+            bypassCache,
             durationMs: Date.now() - renderStart,
         })
-        return pngResponse(png)
+        return pngResponse(png, bypassCache ? FAILURE_CACHE_CONTROL : SUCCESS_CACHE_CONTROL)
     } catch (error: unknown) {
         logger.error('On-demand render failed', {
             imageId,
             origin,
             error: error instanceof Error ? error.message : String(error),
         })
+        if (bypassCache) return notFoundResponse()
+
         try {
             await putFailedMarker(storage, imageId)
         } catch {

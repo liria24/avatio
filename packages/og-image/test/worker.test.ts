@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { requestAvatioOgImage } from '../src/client'
+import { requestOgImage } from '../src/client'
 import type { OgImageDescriptor, OgImageEnv } from '../src/schema'
 import type { OgImageStorage } from '../src/storage'
 import {
@@ -12,14 +12,29 @@ import {
     issueAvatioImage,
 } from '../src/worker'
 
-vi.mock('../src/getPreset', () => ({
-    getPreset: () => ({ cacheKey: 'avatio:v1:test' }),
-}))
+vi.mock('../src/getPreset', async () => {
+    const v = await import('valibot')
+    const avatioImagePropsSchema = v.object({
+        title: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(120)),
+        description: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(240))),
+    })
+
+    return {
+        getPreset: (descriptor: { preset: string; version: string }) =>
+            descriptor.preset === 'avatio' && descriptor.version === 'v1'
+                ? {
+                      id: 'avatio',
+                      version: 'v1',
+                      props: avatioImagePropsSchema,
+                  }
+                : undefined,
+    }
+})
 
 const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47])
 
 class MemoryOgImageStorage implements OgImageStorage {
-    readonly store = new Map<string, string | ArrayBuffer>()
+    readonly store = new Map<string, unknown>()
     readonly puts: { key: string; value: string | ArrayBuffer; ttl?: number }[] = []
     failSet = false
 
@@ -27,7 +42,10 @@ class MemoryOgImageStorage implements OgImageStorage {
         const value = this.store.get(key)
         if (!value) return null
 
-        return (typeof value === 'string' ? value : new TextDecoder().decode(value)) as T
+        if (typeof value === 'string') return value as T
+        if (value instanceof ArrayBuffer) return new TextDecoder().decode(value) as T
+
+        return value as T
     }
 
     async getItemRaw<T = unknown>(key: string) {
@@ -212,6 +230,45 @@ describe('og image worker', () => {
         expect(renderPng).not.toHaveBeenCalled()
     })
 
+    it('bypasses PNG and failed caches in dev mode and renders every GET', async () => {
+        const storage = new MemoryOgImageStorage()
+        const descriptor: OgImageDescriptor = {
+            preset: 'avatio',
+            version: 'v1',
+            props: { title: 'Title' },
+        }
+        const imageId = await imageIdForDescriptor(descriptor)
+        const renderedPng = new Uint8Array([0x01, 0x02, 0x03, 0x04])
+
+        storage.store.set(`descriptor:${imageId}`, descriptorPayload(descriptor))
+        storage.store.set(`png:${imageId}`, png.buffer)
+        storage.store.set(`failed:${imageId}`, '1')
+
+        const renderPng = vi.fn(async () => renderedPng)
+
+        const first = await getImage({
+            imageId,
+            bypassCache: true,
+            renderPng,
+            storage,
+        })
+        const second = await getImage({
+            imageId,
+            bypassCache: true,
+            renderPng,
+            storage,
+        })
+
+        expect(first.status).toBe(200)
+        expect(first.headers.get('cache-control')).toBe('no-store')
+        expect(new Uint8Array(await first.arrayBuffer())).toEqual(renderedPng)
+        expect(second.status).toBe(200)
+        expect(renderPng).toHaveBeenCalledTimes(2)
+        expect(
+            storage.puts.some((put) => put.key.startsWith('png:') || put.key.startsWith('failed:')),
+        ).toBe(false)
+    })
+
     it('renders synchronously on GET cache miss and stores PNG', async () => {
         const storage = new MemoryOgImageStorage()
         const descriptor: OgImageDescriptor = {
@@ -230,6 +287,52 @@ describe('og image worker', () => {
 
         expect(response.status).toBe(200)
         expect(storage.store.has(`png:${imageId}`)).toBe(true)
+    })
+
+    it('accepts parsed descriptor objects from filesystem dev storage', async () => {
+        const storage = new MemoryOgImageStorage()
+        const descriptor: OgImageDescriptor = {
+            preset: 'avatio',
+            version: 'v1',
+            props: { title: 'Title' },
+        }
+        const imageId = await imageIdForDescriptor(descriptor)
+        storage.store.set(`descriptor:${imageId}`, {
+            ...descriptor,
+        })
+
+        const response = await getImage({
+            imageId,
+            bypassCache: true,
+            renderPng: async () => png,
+            storage,
+        })
+
+        expect(response.status).toBe(200)
+        expect(new Uint8Array(await response.arrayBuffer())).toEqual(png)
+    })
+
+    it('does not write failed markers when dev bypass rendering fails', async () => {
+        const storage = new MemoryOgImageStorage()
+        const descriptor: OgImageDescriptor = {
+            preset: 'avatio',
+            version: 'v1',
+            props: { title: 'Title' },
+        }
+        const imageId = await imageIdForDescriptor(descriptor)
+        storage.store.set(`descriptor:${imageId}`, descriptorPayload(descriptor))
+
+        const response = await getImage({
+            imageId,
+            bypassCache: true,
+            renderPng: async () => {
+                throw new Error('Render failed')
+            },
+            storage,
+        })
+
+        expect(response.status).toBe(404)
+        expect(storage.puts.some((put) => put.key.startsWith('failed:'))).toBe(false)
     })
 
     it('returns 404 no-store for missing descriptors and honors failed backoff', async () => {
@@ -352,18 +455,22 @@ describe('og image client', () => {
         )
 
         await expect(
-            requestAvatioOgImage({
+            requestOgImage({
                 endpoint: 'https://og.example',
                 secret: 'secret',
+                preset: 'avatio',
+                version: 'v1',
                 props: { title: 'Title' },
                 fetch: okFetch as typeof fetch,
             }),
         ).resolves.toBe('https://og.example/v1/images/id.png')
 
         await expect(
-            requestAvatioOgImage({
+            requestOgImage({
                 endpoint: 'https://og.example',
                 secret: 'secret',
+                preset: 'avatio',
+                version: 'v1',
                 props: { title: 'Title' },
                 fetch: vi.fn(async () => new Response(null, { status: 500 })) as typeof fetch,
             }),
