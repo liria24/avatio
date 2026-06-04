@@ -20,11 +20,11 @@
     },
     "dependencies": {
         "@fontsource-variable/noto-sans-jp": "^5.2.10",
-        "@takumi-rs/wasm": "^1.6.0",
+        "@takumi-rs/wasm": "^1.7.0",
         "valibot": "^1.4.1"
     },
     "devDependencies": {
-        "@cloudflare/workers-types": "^4.20260603.1",
+        "@cloudflare/workers-types": "^4.20260604.1",
         "@types/node": "25.9.1",
         "nitropack": "2.13.4",
         "tsdown": "^0.22.1",
