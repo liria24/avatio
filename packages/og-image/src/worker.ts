@@ -1,5 +1,10 @@
+import { getRequestURL, getRouterParam, readBody, type H3Event } from 'h3'
 import * as v from 'valibot'
 
+import { getOgImageEnv, getWaitUntil } from './cloudflare'
+import { getPreset } from './getPreset'
+import { logger } from './logger'
+import type { RenderContext } from './render'
 import {
     issueAvatioImageRequestSchema,
     ogImageDescriptorSchema,
@@ -8,16 +13,16 @@ import {
     type WaitUntil,
 } from './schema'
 import { getOgImageStorage, type OgImageStorage } from './storage'
-import { getPresetCacheKey } from './presets/cache'
 
-export const PNG_TTL_SECONDS = 60 * 60 * 24 * 30
-export const FAILED_TTL_SECONDS = 60 * 5
-export const RENDER_TIMEOUT_MS = 15_000
+export const PNG_TTL_SECONDS = 60 * 60 * 24 * 30 // 30 days
+export const FAILED_TTL_SECONDS = 60 * 5 // 5 minutes
+export const RENDER_TIMEOUT_MS = 15_000 // 15 seconds
 export const SUCCESS_CACHE_CONTROL = 'public, max-age=31536000, immutable'
 export const FAILURE_CACHE_CONTROL = 'no-store'
 
 const imageIdPattern = /^[a-f0-9]{64}$/
 const pngExtensionPattern = /\.png$/i
+const cleanupKeyPrefixes = ['descriptor:', 'png:', 'failed:'] as const
 
 type CanonicalValue =
     | string
@@ -27,9 +32,14 @@ type CanonicalValue =
     | CanonicalValue[]
     | { [key: string]: CanonicalValue }
 
-export type RenderPng = (descriptor: OgImageDescriptor, signal?: AbortSignal) => Promise<Uint8Array>
+export type RenderPng = (
+    descriptor: OgImageDescriptor,
+    context?: RenderContext,
+) => Promise<Uint8Array>
 
 export interface RenderDependencies {
+    assets?: Fetcher
+    origin?: string
     renderPng?: RenderPng
     renderTimeoutMs?: number
     storage?: OgImageStorage
@@ -43,22 +53,43 @@ export interface IssueAvatioImageOptions extends RenderDependencies {
 }
 
 export interface GetImageOptions extends RenderDependencies {
+    env?: OgImageEnv
     imageId: string
 }
+
+export interface CleanupImagesOptions {
+    body: unknown
+    env: OgImageEnv
+    storage?: OgImageStorage
+}
+
+export interface CleanupImageOptions extends CleanupImagesOptions {
+    imageId: string
+}
+
+const isH3Event = (value: unknown): value is H3Event =>
+    typeof value === 'object' && value !== null && 'context' in value && 'path' in value
+
+const getImageIdFromEvent = (event: H3Event) =>
+    getRouterParam(event, 'imageId') ??
+    getRouterParam(event, 'imageId.png') ??
+    event.path.split('?')[0]?.split('/').pop() ??
+    ''
+
+const getEventBody = (event: H3Event) => readBody(event).catch(() => null)
 
 const canonicalize = (value: unknown): CanonicalValue => {
     if (value === null) return null
 
     if (Array.isArray(value)) return value.map((item) => canonicalize(item))
 
-    if (typeof value === 'object') {
+    if (typeof value === 'object')
         return Object.fromEntries(
             Object.entries(value as Record<string, unknown>)
                 .filter(([, entry]) => entry !== undefined)
                 .sort(([a], [b]) => a.localeCompare(b))
                 .map(([key, entry]) => [key, canonicalize(entry)]),
         )
-    }
 
     if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean')
         return value
@@ -72,7 +103,7 @@ export const descriptorPayload = (descriptor: OgImageDescriptor) =>
     canonicalJson({
         preset: descriptor.preset,
         version: descriptor.version,
-        cacheKey: getPresetCacheKey(descriptor),
+        cacheKey: getPreset(descriptor)?.cacheKey ?? `${descriptor.preset}:${descriptor.version}`,
         props: descriptor.props,
     })
 
@@ -99,6 +130,27 @@ const timingSafeEqual = async (actual: string, expected: string | undefined) => 
         diff |= actualDigest[index]! ^ expectedDigest[index]!
 
     return diff === 0
+}
+
+const cleanupRequestSchema = v.object({
+    secret: v.string(),
+})
+
+const cleanupKeysForImageId = (imageId: string) =>
+    cleanupKeyPrefixes.map((prefix) => `${prefix}${imageId}`)
+
+const isCleanupKey = (key: string) => cleanupKeyPrefixes.some((prefix) => key.startsWith(prefix))
+
+const validateCleanupSecret = async (body: unknown, env: OgImageEnv) => {
+    const bodyResult = v.safeParse(cleanupRequestSchema, body)
+    if (!bodyResult.success)
+        return { ok: false as const, response: jsonResponse({ error: 'Invalid request' }, 400) }
+
+    const validSecret = await timingSafeEqual(bodyResult.output.secret, env.OG_IMAGE_SECRET)
+    if (!validSecret)
+        return { ok: false as const, response: jsonResponse({ error: 'Unauthorized' }, 401) }
+
+    return { ok: true as const }
 }
 
 const parseDescriptor = (value: string | null): OgImageDescriptor | undefined => {
@@ -151,16 +203,25 @@ const pngResponse = (png: ArrayBuffer | ArrayBufferView) =>
         },
     })
 
-const defaultRenderPng: RenderPng = async (descriptor, signal) => {
+const defaultRenderPng: RenderPng = async (descriptor, context) => {
     const { renderDescriptor } = await import('./render')
-    return renderDescriptor(descriptor, signal)
+    return renderDescriptor(descriptor, context)
 }
 
-const resolveRenderDependencies = ({
-    renderPng = defaultRenderPng,
-    renderTimeoutMs = RENDER_TIMEOUT_MS,
-    storage = getOgImageStorage(),
-}: RenderDependencies = {}) => ({
+const resolveRenderDependencies = (
+    {
+        assets,
+        origin,
+        renderPng = defaultRenderPng,
+        renderTimeoutMs = RENDER_TIMEOUT_MS,
+        storage = getOgImageStorage(),
+    }: RenderDependencies = {},
+    fallbackContext: RenderContext = {},
+) => ({
+    renderContext: {
+        assets: assets ?? fallbackContext.assets,
+        origin: origin ?? fallbackContext.origin,
+    },
     renderPng,
     renderTimeoutMs,
     storage,
@@ -170,6 +231,7 @@ const withRenderTimeout = async (
     descriptor: OgImageDescriptor,
     renderPng: RenderPng,
     timeoutMs = RENDER_TIMEOUT_MS,
+    context: RenderContext = {},
 ) => {
     const controller = new AbortController()
     let timeout: ReturnType<typeof setTimeout> | undefined
@@ -182,7 +244,13 @@ const withRenderTimeout = async (
             }, timeoutMs)
         })
 
-        return await Promise.race([renderPng(descriptor, controller.signal), timeoutPromise])
+        return await Promise.race([
+            renderPng(descriptor, {
+                ...context,
+                signal: controller.signal,
+            }),
+            timeoutPromise,
+        ])
     } finally {
         if (timeout) clearTimeout(timeout)
     }
@@ -194,11 +262,10 @@ const renderAndCache = async (
     descriptor: OgImageDescriptor,
     renderPng: RenderPng,
     renderTimeoutMs = RENDER_TIMEOUT_MS,
+    renderContext: RenderContext = {},
 ) => {
-    const png = await withRenderTimeout(descriptor, renderPng, renderTimeoutMs)
-    await storage.setItemRaw(`png:${imageId}`, pngBytes(png), {
-        ttl: PNG_TTL_SECONDS,
-    })
+    const png = await withRenderTimeout(descriptor, renderPng, renderTimeoutMs, renderContext)
+    await storage.setItemRaw(`png:${imageId}`, pngBytes(png), { ttl: PNG_TTL_SECONDS })
     return png
 }
 
@@ -207,29 +274,52 @@ const putFailedMarker = (storage: OgImageStorage, imageId: string) =>
         ttl: FAILED_TTL_SECONDS,
     })
 
-const logBackgroundFailure = (imageId: string, error: unknown) => {
-    console.error(
-        JSON.stringify({
-            level: 'error',
-            message: 'OG image pre-render failed',
-            imageId,
-            error: error instanceof Error ? error.message : 'Unknown error',
-        }),
-    )
+const backgroundRenderAndCache = (
+    storage: OgImageStorage,
+    imageId: string,
+    descriptor: OgImageDescriptor,
+    renderPng: RenderPng,
+    renderTimeoutMs: number,
+    renderContext: RenderContext,
+) => {
+    const start = Date.now()
+    return renderAndCache(storage, imageId, descriptor, renderPng, renderTimeoutMs, renderContext)
+        .then(() => {
+            logger.info('Image rendered', {
+                imageId,
+                preset: descriptor.preset,
+                durationMs: Date.now() - start,
+            })
+        })
+        .catch((error: unknown) => {
+            logger.error('Background render failed', {
+                imageId,
+                preset: descriptor.preset,
+                durationMs: Date.now() - start,
+                error: error instanceof Error ? error.message : String(error),
+            })
+        })
 }
 
-export const issueAvatioImage = async ({
-    body,
-    origin,
-    env,
-    waitUntil,
-    ...dependencies
-}: IssueAvatioImageOptions) => {
+export async function issueAvatioImage(event: H3Event): Promise<Response>
+export async function issueAvatioImage(options: IssueAvatioImageOptions): Promise<Response>
+export async function issueAvatioImage(input: H3Event | IssueAvatioImageOptions) {
+    const { body, origin, env, waitUntil, ...dependencies } = isH3Event(input)
+        ? {
+              body: await getEventBody(input),
+              origin: getRequestURL(input).origin,
+              env: getOgImageEnv(input) ?? {},
+              waitUntil: getWaitUntil(input),
+          }
+        : input
     const bodyResult = v.safeParse(issueAvatioImageRequestSchema, body)
     if (!bodyResult.success) return jsonResponse({ error: 'Invalid request' }, 400)
 
     const validSecret = await timingSafeEqual(bodyResult.output.secret, env.OG_IMAGE_SECRET)
-    if (!validSecret) return jsonResponse({ error: 'Unauthorized' }, 401)
+    if (!validSecret) {
+        logger.warn('Unauthorized issue request', { origin })
+        return jsonResponse({ error: 'Unauthorized' }, 401)
+    }
 
     const descriptor: OgImageDescriptor = {
         preset: 'avatio',
@@ -239,31 +329,68 @@ export const issueAvatioImage = async ({
     const imageId = await imageIdForDescriptor(descriptor)
 
     try {
-        const { renderPng, renderTimeoutMs, storage } = resolveRenderDependencies(dependencies)
+        const { renderContext, renderPng, renderTimeoutMs, storage } = resolveRenderDependencies(
+            dependencies,
+            {
+                assets: env.ASSETS,
+                origin,
+            },
+        )
         await storage.setItem(`descriptor:${imageId}`, descriptorPayload(descriptor))
 
         waitUntil(
-            renderAndCache(storage, imageId, descriptor, renderPng, renderTimeoutMs).catch(
-                (error: unknown) => logBackgroundFailure(imageId, error),
+            backgroundRenderAndCache(
+                storage,
+                imageId,
+                descriptor,
+                renderPng,
+                renderTimeoutMs,
+                renderContext,
             ),
         )
-    } catch {
+        logger.info('Image issued', {
+            origin,
+            imageId,
+            preset: descriptor.preset,
+            props: descriptor.props,
+        })
+    } catch (error: unknown) {
+        logger.error('Failed to issue image', {
+            origin,
+            imageId,
+            error: error instanceof Error ? error.message : String(error),
+        })
         return jsonResponse({ error: 'Unable to issue image URL' }, 500)
     }
 
     return jsonResponse({ url: `${origin}/v1/images/${imageId}.png` }, 202)
 }
 
-export const getImage = async ({ imageId: rawImageId, ...dependencies }: GetImageOptions) => {
+export async function getImage(event: H3Event): Promise<Response>
+export async function getImage(options: GetImageOptions): Promise<Response>
+export async function getImage(input: H3Event | GetImageOptions) {
+    const {
+        env,
+        imageId: rawImageId,
+        origin,
+        ...dependencies
+    } = isH3Event(input)
+        ? {
+              env: getOgImageEnv(input) ?? {},
+              imageId: getImageIdFromEvent(input),
+              origin: getRequestURL(input).origin,
+          }
+        : input
     const imageId = normalizeImageId(rawImageId)
     if (!imageIdPattern.test(imageId)) return notFoundResponse()
 
-    const { renderPng, renderTimeoutMs, storage } = resolveRenderDependencies(dependencies)
+    const { renderContext, renderPng, renderTimeoutMs, storage } = resolveRenderDependencies(
+        dependencies,
+        { assets: env?.ASSETS, origin },
+    )
 
     try {
-        const cachedPng = await storage.getItemRaw<ArrayBuffer | ArrayBufferView>(
-            `png:${imageId}`,
-        )
+        const cachedPng = await storage.getItemRaw<ArrayBuffer | ArrayBufferView>(`png:${imageId}`)
         if (cachedPng) return pngResponse(cachedPng)
 
         const failed = await storage.getItem(`failed:${imageId}`)
@@ -272,15 +399,123 @@ export const getImage = async ({ imageId: rawImageId, ...dependencies }: GetImag
         const descriptor = parseDescriptor(await storage.getItem<string>(`descriptor:${imageId}`))
         if (!descriptor) return notFoundResponse()
 
-        return pngResponse(
-            await renderAndCache(storage, imageId, descriptor, renderPng, renderTimeoutMs),
+        const renderStart = Date.now()
+        const png = await renderAndCache(
+            storage,
+            imageId,
+            descriptor,
+            renderPng,
+            renderTimeoutMs,
+            renderContext,
         )
-    } catch {
+        logger.info('Image rendered on demand', {
+            imageId,
+            origin,
+            preset: descriptor.preset,
+            durationMs: Date.now() - renderStart,
+        })
+        return pngResponse(png)
+    } catch (error: unknown) {
+        logger.error('On-demand render failed', {
+            imageId,
+            origin,
+            error: error instanceof Error ? error.message : String(error),
+        })
         try {
             await putFailedMarker(storage, imageId)
         } catch {
             return storageUnavailableResponse()
         }
         return notFoundResponse()
+    }
+}
+
+export async function cleanupImage(event: H3Event): Promise<Response>
+export async function cleanupImage(options: CleanupImageOptions): Promise<Response>
+export async function cleanupImage(input: H3Event | CleanupImageOptions) {
+    const {
+        body,
+        env,
+        imageId: rawImageId,
+        storage = getOgImageStorage(),
+    } = isH3Event(input)
+        ? {
+              body: await getEventBody(input),
+              env: getOgImageEnv(input) ?? {},
+              imageId: getImageIdFromEvent(input),
+          }
+        : input
+    const secret = await validateCleanupSecret(body, env)
+    if (!secret.ok) {
+        logger.warn('Unauthorized cleanup request')
+        return secret.response
+    }
+
+    const imageId = normalizeImageId(rawImageId)
+    if (!imageIdPattern.test(imageId)) return notFoundResponse()
+
+    try {
+        const keys = cleanupKeysForImageId(imageId)
+        const existingKeys = (
+            await Promise.all(
+                keys.map(async (key) => ((await storage.hasItem(key)) ? key : undefined)),
+            )
+        ).filter((key): key is string => key !== undefined)
+
+        await Promise.all(existingKeys.map((key) => storage.removeItem(key)))
+
+        logger.info('Image cleaned up', { imageId, deleted: existingKeys.length })
+        return jsonResponse({
+            imageId,
+            deleted: existingKeys.length,
+        })
+    } catch (error: unknown) {
+        logger.error('Failed to cleanup image', {
+            imageId,
+            error: error instanceof Error ? error.message : String(error),
+        })
+        return storageUnavailableResponse()
+    }
+}
+
+export async function cleanupImages(event: H3Event): Promise<Response>
+export async function cleanupImages(options: CleanupImagesOptions): Promise<Response>
+export async function cleanupImages(input: H3Event | CleanupImagesOptions) {
+    const {
+        body,
+        env,
+        storage = getOgImageStorage(),
+    } = isH3Event(input)
+        ? {
+              body: await getEventBody(input),
+              env: getOgImageEnv(input) ?? {},
+          }
+        : input
+    const secret = await validateCleanupSecret(body, env)
+    if (!secret.ok) {
+        logger.warn('Unauthorized cleanup request')
+        return secret.response
+    }
+
+    try {
+        const keys = [
+            ...new Set(
+                (await Promise.all(cleanupKeyPrefixes.map((prefix) => storage.getKeys(prefix))))
+                    .flat()
+                    .filter(isCleanupKey),
+            ),
+        ]
+
+        await Promise.all(keys.map((key) => storage.removeItem(key)))
+
+        logger.info('Images cleaned up', { deleted: keys.length })
+        return jsonResponse({
+            deleted: keys.length,
+        })
+    } catch (error: unknown) {
+        logger.error('Failed to cleanup images', {
+            error: error instanceof Error ? error.message : String(error),
+        })
+        return storageUnavailableResponse()
     }
 }

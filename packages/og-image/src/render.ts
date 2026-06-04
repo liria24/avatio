@@ -1,10 +1,12 @@
-import { loadPresetFonts } from './fonts'
-import { getPreset } from './presets'
+import { loadPresetFonts, type FontLoadContext } from './fonts'
+import { getPreset } from './getPreset'
 import type { OgImageDescriptor } from './schema'
 
 type TakumiModule = typeof import('@takumi-rs/wasm')
 
 let takumiPromise: Promise<TakumiModule> | undefined
+
+export type RenderContext = FontLoadContext
 
 const loadTakumiForDev = async () => {
     const [takumi, { readFileSync }, { createRequire }] = await Promise.all([
@@ -38,18 +40,19 @@ const ensureTakumi = () => {
 
 export const renderDescriptor = async (
     descriptor: OgImageDescriptor,
-    signal?: AbortSignal,
+    context: RenderContext = {},
 ): Promise<Uint8Array> => {
-    const { Renderer } = await ensureTakumi()
-    if (signal?.aborted) throw new Error('Render aborted')
+    if (context.signal?.aborted) throw new Error('Render aborted')
 
     const preset = getPreset(descriptor)
     if (!preset) throw new Error('Unknown renderer')
 
-    const renderer = new Renderer({ loadDefaultFonts: false })
+    const { Renderer } = await ensureTakumi()
+    if (context.signal?.aborted) throw new Error('Render aborted')
 
+    const renderer = new Renderer({ loadDefaultFonts: false })
     try {
-        await loadPresetFonts(renderer, preset, signal)
+        await loadPresetFonts(renderer, preset, preset.fontText(descriptor.props), context)
         return renderer.render(preset.render(descriptor.props), preset.renderOptions)
     } finally {
         renderer.free()

@@ -1,24 +1,24 @@
-import { readFileSync } from 'node:fs'
+import { readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
 import { defineNitroConfig } from 'nitropack/config'
-import type { Plugin } from 'rollup'
 
-const withoutQuery = (id: string) => id.split('?')[0] ?? id
+import {
+    createFontAssets,
+    includeLatinAndNumberedSubsets,
+    sortLatinAndNumberedSubsets,
+} from './build/font-assets'
 
-const inlineFontAssets = (): Plugin => ({
-    name: 'inline-og-image-font-assets',
-    load(id) {
-        const filePath = withoutQuery(id)
-        if (!filePath.endsWith('.woff2')) return null
-
-        return [
-            `const binary = atob(${JSON.stringify(readFileSync(filePath).toString('base64'))})`,
-            'const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0))',
-            'export default bytes.buffer',
-        ].join('\n')
+const fontAssets = createFontAssets(import.meta.url, [
+    {
+        packageName: '@fontsource-variable/noto-sans-jp',
+        moduleId: '#og-image-fonts/noto-sans-jp',
+        publicBaseURL: '/_og/fonts/noto-sans-jp',
+        generatedDir: './.nitro/public-fonts/noto-sans-jp',
+        includeSubset: includeLatinAndNumberedSubsets({ maxNumberedShard: 119 }),
+        sortSubsets: sortLatinAndNumberedSubsets,
     },
-})
+])
 
 export default defineNitroConfig({
     compatibilityDate: '2026-06-03',
@@ -29,7 +29,7 @@ export default defineNitroConfig({
         deployConfig: true,
         nodeCompat: true,
         wrangler: {
-            name: 'avatio-og-image',
+            name: 'og-image',
             observability: {
                 enabled: true,
                 head_sampling_rate: 1,
@@ -61,8 +61,27 @@ export default defineNitroConfig({
         '@src': fileURLToPath(new URL('./src', import.meta.url)),
     },
 
+    publicAssets: fontAssets.publicAssets,
+
+    virtual: {
+        '#og-image-presets': () => {
+            const presetsDir = fileURLToPath(new URL('./src/presets', import.meta.url))
+            const names = readdirSync(presetsDir)
+                .filter((f) => f.endsWith('.ts'))
+                .map((f) => f.replace(/\.ts$/, ''))
+            const imports = names
+                .map(
+                    (name, i) =>
+                        `import _preset${i} from '${fileURLToPath(new URL(`./src/presets/${name}.ts`, import.meta.url)).replace(/\\/g, '/')}'`,
+                )
+                .join('\n')
+            const exports = `export const allPresets = [${names.map((_, i) => `_preset${i}`).join(', ')}]`
+            return [imports, exports].join('\n')
+        },
+    },
+
     rollupConfig: {
-        plugins: [inlineFontAssets()],
+        plugins: fontAssets.plugins,
     },
 
     experimental: {

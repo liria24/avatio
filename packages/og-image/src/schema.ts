@@ -28,6 +28,7 @@ export interface IssueImageResponse {
 
 export interface OgImageEnv {
     OG_IMAGE_SECRET?: string
+    ASSETS?: Fetcher
 }
 
 export type WaitUntil = (promise: Promise<unknown>) => void

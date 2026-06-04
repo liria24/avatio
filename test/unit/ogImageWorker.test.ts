@@ -4,11 +4,26 @@ import { requestAvatioOgImage } from '../../packages/og-image/src/client'
 import type { OgImageDescriptor, OgImageEnv } from '../../packages/og-image/src/schema'
 import type { OgImageStorage } from '../../packages/og-image/src/storage'
 import {
+    cleanupImage,
+    cleanupImages,
     descriptorPayload,
     getImage,
     imageIdForDescriptor,
     issueAvatioImage,
 } from '../../packages/og-image/src/worker'
+
+vi.mock(
+    '#og-image-fonts/noto-sans-jp',
+    () => ({
+        fontFamily: 'Noto Sans JP',
+        fonts: [],
+    }),
+    { virtual: true },
+)
+
+vi.mock('../../packages/og-image/src/presets', () => ({
+    getPreset: () => ({ cacheKey: 'avatio:v1:test' }),
+}))
 
 const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47])
 
@@ -28,12 +43,24 @@ class MemoryOgImageStorage implements OgImageStorage {
         return (this.store.get(key) ?? null) as T | null
     }
 
+    async hasItem(key: string) {
+        return this.store.has(key)
+    }
+
     async setItem<T>(key: string, value: T, options?: { ttl?: number }) {
         await this.set(key, String(value), options)
     }
 
     async setItemRaw<T>(key: string, value: T, options?: { ttl?: number }) {
         await this.set(key, value, options)
+    }
+
+    async getKeys(base = '') {
+        return [...this.store.keys()].filter((key) => key.startsWith(base))
+    }
+
+    async removeItem(key: string) {
+        this.store.delete(key)
     }
 
     private async set(key: string, value: unknown, options?: { ttl?: number }) {
@@ -250,6 +277,77 @@ describe('og image worker', () => {
 
         expect(response.status).toBe(404)
         expect(storage.puts).toContainEqual({ key: `failed:${imageId}`, value: '1', ttl: 300 })
+    })
+
+    it('cleans up a specific image id after validating the secret', async () => {
+        const storage = new MemoryOgImageStorage()
+        const imageId = 'c'.repeat(64)
+        const otherImageId = 'd'.repeat(64)
+        storage.store.set(`descriptor:${imageId}`, 'descriptor')
+        storage.store.set(`png:${imageId}`, png.buffer)
+        storage.store.set(`failed:${imageId}`, '1')
+        storage.store.set(`png:${otherImageId}`, png.buffer)
+
+        const response = await cleanupImage({
+            body: { secret: 'secret' },
+            env: createEnv(),
+            imageId: `${imageId}.png`,
+            storage,
+        })
+
+        expect(response.status).toBe(200)
+        expect(await response.json()).toEqual({ imageId, deleted: 3 })
+        expect(storage.store.has(`descriptor:${imageId}`)).toBe(false)
+        expect(storage.store.has(`png:${imageId}`)).toBe(false)
+        expect(storage.store.has(`failed:${imageId}`)).toBe(false)
+        expect(storage.store.has(`png:${otherImageId}`)).toBe(true)
+    })
+
+    it('cleans up all og image keys after validating the secret', async () => {
+        const storage = new MemoryOgImageStorage()
+        const imageId = 'e'.repeat(64)
+        storage.store.set(`descriptor:${imageId}`, 'descriptor')
+        storage.store.set(`png:${imageId}`, png.buffer)
+        storage.store.set(`failed:${imageId}`, '1')
+        storage.store.set('other:key', 'value')
+
+        const response = await cleanupImages({
+            body: { secret: 'secret' },
+            env: createEnv(),
+            storage,
+        })
+
+        expect(response.status).toBe(200)
+        expect(await response.json()).toEqual({ deleted: 3 })
+        expect(storage.store.has(`descriptor:${imageId}`)).toBe(false)
+        expect(storage.store.has(`png:${imageId}`)).toBe(false)
+        expect(storage.store.has(`failed:${imageId}`)).toBe(false)
+        expect(storage.store.has('other:key')).toBe(true)
+    })
+
+    it('rejects cleanup requests with invalid ids or secrets', async () => {
+        const storage = new MemoryOgImageStorage()
+
+        expect(
+            (
+                await cleanupImage({
+                    body: { secret: 'secret' },
+                    env: createEnv(),
+                    imageId: 'invalid',
+                    storage,
+                })
+            ).status,
+        ).toBe(404)
+
+        expect(
+            (
+                await cleanupImages({
+                    body: { secret: 'wrong' },
+                    env: createEnv(),
+                    storage,
+                })
+            ).status,
+        ).toBe(401)
     })
 })
 

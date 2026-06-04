@@ -20,10 +20,7 @@ const getCloudflareContext = (event: H3Event) => {
     return context.cloudflare ?? context._platform?.cloudflare
 }
 
-export const getOgImageEnv = (event: H3Event) => {
-    const env = getCloudflareContext(event)?.env
-    return env as OgImageEnv | undefined
-}
+export const getOgImageEnv = (event: H3Event) => getCloudflareContext(event)?.env
 
 export const getWaitUntil = (event: H3Event): WaitUntil => {
     const context = event.context as NitroEventContext
