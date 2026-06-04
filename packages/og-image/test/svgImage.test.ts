@@ -59,7 +59,7 @@ describe('avatio preset SVG logo', () => {
 
         expect(image).toBeDefined()
         expect(image ? decode(image.data) : '').toContain('currentColor')
-        expect(image ? decode(image.data) : '').toContain('style="color: #71717b;"')
+        expect(image ? decode(image.data) : '').toContain('style="color: #18181b;"')
         expect(JSON.stringify(node)).toContain('"src":"avatio-footer-logo"')
     })
 })
