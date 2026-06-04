@@ -1,6 +1,6 @@
 import type { Node, RenderOptions } from '@takumi-rs/wasm'
 
-import type { FontAssetDefinition } from './fonts'
+import type { GoogleFontConfig } from './fonts'
 
 type PresetRenderOptions = Omit<RenderOptions, 'width' | 'height' | 'format' | 'devicePixelRatio'>
 
@@ -9,7 +9,7 @@ export interface DefinePresetOptions<TProps> {
     version: string
     cacheKey: string
     schema: unknown
-    fonts: readonly FontAssetDefinition[]
+    fonts: readonly GoogleFontConfig[]
     fontText: (props: TProps) => string
     render: (props: TProps) => Node
     width: number
@@ -25,7 +25,7 @@ export interface OgImagePreset {
     version: string
     cacheKey: string
     schema: unknown
-    fonts: readonly FontAssetDefinition[]
+    fonts: readonly GoogleFontConfig[]
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     fontText: (props: any) => string
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

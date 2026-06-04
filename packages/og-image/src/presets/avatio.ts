@@ -1,5 +1,3 @@
-import { fontFamily, fonts } from '#og-image-fonts/noto-sans-jp'
-
 import { definePreset } from '../definePreset'
 import { avatioImagePropsSchema, type AvatioImageProps } from '../schema'
 
@@ -11,11 +9,11 @@ const texts = {
 const avatioPreset = definePreset<AvatioImageProps>({
     id: 'avatio',
     version: 'v1',
-    cacheKey: 'avatio:v1:noto-sans-jp-assets-japanese-0-119-latin-fallback',
+    cacheKey: 'avatio:v1:noto-sans-jp-google-fonts-variable',
     schema: avatioImagePropsSchema,
     width: 1200,
     height: 630,
-    fonts,
+    fonts: [{ family: 'Noto Sans JP', options: { weight: '100..900' } }],
     fontText: ({ title, description }) =>
         [title, description, ...Object.values(texts)].filter((text) => Boolean(text)).join('\n'),
     render: ({ title, description }) => ({
@@ -27,7 +25,7 @@ const avatioPreset = definePreset<AvatioImageProps>({
             padding: '72px',
             backgroundColor: '#111113',
             color: '#f4f4f5',
-            fontFamily,
+            fontFamily: 'Noto Sans JP',
         },
         children: [
             {

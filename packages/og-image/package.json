@@ -19,7 +19,7 @@
         "deploy": "bun run build && wrangler --cwd .output deploy"
     },
     "dependencies": {
-        "@fontsource-variable/noto-sans-jp": "^5.2.10",
+        "@takumi-rs/helpers": "^1.7.0",
         "@takumi-rs/wasm": "^1.7.0",
         "valibot": "^1.4.1"
     },

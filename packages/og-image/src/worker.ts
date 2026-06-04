@@ -38,8 +38,6 @@ export type RenderPng = (
 ) => Promise<Uint8Array>
 
 export interface RenderDependencies {
-    assets?: Fetcher
-    origin?: string
     renderPng?: RenderPng
     renderTimeoutMs?: number
     storage?: OgImageStorage
@@ -55,6 +53,7 @@ export interface IssueAvatioImageOptions extends RenderDependencies {
 export interface GetImageOptions extends RenderDependencies {
     env?: OgImageEnv
     imageId: string
+    origin?: string
 }
 
 export interface CleanupImagesOptions {
@@ -208,20 +207,12 @@ const defaultRenderPng: RenderPng = async (descriptor, context) => {
     return renderDescriptor(descriptor, context)
 }
 
-const resolveRenderDependencies = (
-    {
-        assets,
-        origin,
-        renderPng = defaultRenderPng,
-        renderTimeoutMs = RENDER_TIMEOUT_MS,
-        storage = getOgImageStorage(),
-    }: RenderDependencies = {},
-    fallbackContext: RenderContext = {},
-) => ({
-    renderContext: {
-        assets: assets ?? fallbackContext.assets,
-        origin: origin ?? fallbackContext.origin,
-    },
+const resolveRenderDependencies = ({
+    renderPng = defaultRenderPng,
+    renderTimeoutMs = RENDER_TIMEOUT_MS,
+    storage = getOgImageStorage(),
+}: RenderDependencies = {}) => ({
+    renderContext: {} as RenderContext,
     renderPng,
     renderTimeoutMs,
     storage,
@@ -329,13 +320,8 @@ export async function issueAvatioImage(input: H3Event | IssueAvatioImageOptions)
     const imageId = await imageIdForDescriptor(descriptor)
 
     try {
-        const { renderContext, renderPng, renderTimeoutMs, storage } = resolveRenderDependencies(
-            dependencies,
-            {
-                assets: env.ASSETS,
-                origin,
-            },
-        )
+        const { renderContext, renderPng, renderTimeoutMs, storage } =
+            resolveRenderDependencies(dependencies)
         await storage.setItem(`descriptor:${imageId}`, descriptorPayload(descriptor))
 
         waitUntil(
@@ -384,10 +370,8 @@ export async function getImage(input: H3Event | GetImageOptions) {
     const imageId = normalizeImageId(rawImageId)
     if (!imageIdPattern.test(imageId)) return notFoundResponse()
 
-    const { renderContext, renderPng, renderTimeoutMs, storage } = resolveRenderDependencies(
-        dependencies,
-        { assets: env?.ASSETS, origin },
-    )
+    const { renderContext, renderPng, renderTimeoutMs, storage } =
+        resolveRenderDependencies(dependencies)
 
     try {
         const cachedPng = await storage.getItemRaw<ArrayBuffer | ArrayBufferView>(`png:${imageId}`)

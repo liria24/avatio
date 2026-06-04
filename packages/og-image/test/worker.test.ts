@@ -12,11 +12,6 @@ import {
     issueAvatioImage,
 } from '../src/worker'
 
-vi.mock('#og-image-fonts/noto-sans-jp', () => ({
-    fontFamily: 'Noto Sans JP',
-    fonts: [],
-}))
-
 vi.mock('../src/getPreset', () => ({
     getPreset: () => ({ cacheKey: 'avatio:v1:test' }),
 }))
