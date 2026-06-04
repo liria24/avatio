@@ -37,7 +37,7 @@ export default defineNitroConfig({
             kv_namespaces: [
                 {
                     binding: 'OG_IMAGE_CACHE',
-                    id: 'replace-with-og-image-cache-kv-namespace-id',
+                    id: 'e678f8e834784ea8b457786c695ded19',
                 },
             ],
         },
