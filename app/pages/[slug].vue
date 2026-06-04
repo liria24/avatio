@@ -28,7 +28,6 @@ const ogImage = await useAvatioOgImage({
     title: data.value?.content?.title || '',
     description: data.value?.content?.description,
 })
-console.log('OG Image URL:', ogImage)
 
 useSeo({
     title: data.value?.content?.title,
