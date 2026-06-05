@@ -16,7 +16,5 @@ export default promiseEventHandler<Item>(async ({ event, db }) => {
 
     log.info(`Processing item: ${id}, Platform: ${platform || 'auto-detect'}`)
 
-    defineCacheControl({ cdnAge: 60 * 60 * 24, clientAge: 60 * 60 })
-
     return await getItem(event, db, id, platform)
 })

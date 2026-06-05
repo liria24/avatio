@@ -28,8 +28,6 @@ export default promiseEventHandler(async ({ db }) => {
 
     if (!data) throw serverError.notFound()
 
-    defineCacheControl({ cdnAge: 60 * 60 * 24, clientAge: 60 * 60 })
-
     const i18nData = data?.i18n.find((i18n) => i18n.locale === lang)
 
     return {

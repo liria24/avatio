@@ -58,8 +58,6 @@ export default promiseEventHandler<PaginationResponse<Item[]>>(async ({ db }) =>
         },
     })
 
-    defineCacheControl({ cdnAge: 60 * 5, clientAge: 60 })
-
     return {
         data,
         pagination: {

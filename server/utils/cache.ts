@@ -36,11 +36,3 @@ export const getSetupCacheKey = (
 export const purgeUserCache = async (id: string) => {
     await useStorage('cache').del(`nitro:functions:user:${id}.json`)
 }
-
-export const defineCacheControl = (options: { cdnAge?: number; clientAge?: number }) => {
-    if (options.cdnAge !== undefined)
-        setResponseHeader(useEvent(), 'CDN-Cache-Control', `max-age=${options.cdnAge}`)
-
-    if (options.clientAge !== undefined)
-        setResponseHeader(useEvent(), 'Cache-Control', `max-age=${options.clientAge}`)
-}

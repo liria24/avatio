@@ -31,7 +31,5 @@ export default promiseEventHandler(async ({ db }) => {
         .orderBy(sortFn(orderByFn))
         .where(q ? ilike(setupTags.tag, `%${q}%`) : undefined)
 
-    defineCacheControl({ cdnAge: 60 * 60, clientAge: 60 })
-
     return data
 })

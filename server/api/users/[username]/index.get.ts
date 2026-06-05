@@ -17,7 +17,5 @@ const getUser = defineCachedFunction(
 export default promiseEventHandler<User>(async () => {
     const { username } = await validateParams(params)
 
-    // defineCacheControl({ cdnAge: 60 * 30, clientAge: 60 })
-
     return await getUser(username)
 })
