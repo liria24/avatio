@@ -24,12 +24,12 @@
         "valibot": "^1.4.1"
     },
     "devDependencies": {
-        "@cloudflare/workers-types": "^4.20260604.1",
+        "@cloudflare/workers-types": "^4.20260605.1",
         "@types/node": "25.9.1",
         "nitropack": "2.13.4",
-        "tsdown": "^0.22.1",
+        "tsdown": "^0.22.2",
         "typescript": "6.0.3",
         "vitest": "^4.1.8",
-        "wrangler": "^4.97.0"
+        "wrangler": "^4.98.0"
     }
 }

@@ -4,6 +4,8 @@ import { createInsertSchema } from 'drizzle-orm/zod'
 import { createWorkersAI } from 'workers-ai-provider'
 import { z } from 'zod'
 
+const log = logger('/api/admin/changelogs:POST')
+
 const body = createInsertSchema(changelogI18ns)
     .pick({
         title: true,
@@ -16,7 +18,7 @@ const body = createInsertSchema(changelogI18ns)
     })
 
 export default adminSessionEventHandler(async ({ db }) => {
-    const { slug, title, markdown, authors, i18n } = await validateBody(body)
+    const { slug, title, markdown, authors, i18n } = await validateBody(body, { sanitize: true })
     let generatedSlug: string = ''
 
     const exists = await db.query.changelogs.findMany({
@@ -118,7 +120,7 @@ Please return the translation in the following JSON format:
             })
 
             try {
-                const translated = JSON.parse(translationResult.text.trim())
+                const translated = parseChangelogTranslation(translationResult.text)
 
                 await db.insert(changelogI18ns).values({
                     changelogSlug: finalSlug,
@@ -128,7 +130,7 @@ Please return the translation in the following JSON format:
                     aiGenerated: true,
                 })
             } catch (error) {
-                console.error(`Failed to parse translation for locale ${locale}:`, error)
+                log.error(`Failed to parse translation for locale ${locale}:`, error)
             }
         }
     } else {

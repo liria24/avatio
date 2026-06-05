@@ -76,7 +76,7 @@ useSeo({
                     <ComarkRenderer
                         v-if="changelog.tree"
                         :tree="changelog.tree as ComarkTree"
-                        class="sentence w-full max-w-full whitespace-pre-wrap *:first:mt-0 *:last:mb-0 [&_img]:max-w-lg"
+                        class="sentence w-full max-w-full *:first:mt-0 *:last:mb-0 [&_img]:max-w-lg"
                     />
                     <UBadge
                         v-if="changelog.aiGenerated"

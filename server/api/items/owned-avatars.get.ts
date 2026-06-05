@@ -68,7 +68,5 @@ export default authedSessionEventHandler<Item[]>(async ({ session, db }) => {
     // 結果をマッピング
     const result = data.map((item) => updatedItemsMap.get(item.id) || item)
 
-    defineCacheControl({ cdnAge: 60 * 10, clientAge: 0 })
-
     return result
 })

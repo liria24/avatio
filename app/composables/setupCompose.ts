@@ -68,9 +68,9 @@ export const useSetupCompose = () => {
             ? await Promise.all(
                   content.coauthors.map(async (coauthor) => {
                       try {
-                          const user = await $fetch(`/api/users/id/${coauthor.userId}`)
+                          const user = await $fetch(`/api/users/${coauthor.username}`)
                           return {
-                              userId: coauthor.userId,
+                              userId: user.id,
                               user: {
                                   ...user,
                                   createdAt: new Date(user.createdAt ?? ''),
@@ -410,7 +410,11 @@ export const useSetupCompose = () => {
                 coauthors: state.value.coauthors.length
                     ? state.value.coauthors
                           .filter((c) => c.userId)
-                          .map((c) => ({ userId: c.userId, note: c.note || undefined }))
+                          .map((c) => ({
+                              userId: c.userId,
+                              username: c.user.username,
+                              note: c.note || undefined,
+                          }))
                     : undefined,
                 items: items.length ? items : undefined,
             }

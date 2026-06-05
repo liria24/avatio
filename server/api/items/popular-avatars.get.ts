@@ -35,7 +35,5 @@ export default promiseEventHandler(async ({ db }) => {
         },
     })
 
-    defineCacheControl({ cdnAge: 60 * 60 * 24, clientAge: 60 * 60 })
-
     return data
 })

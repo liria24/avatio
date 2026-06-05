@@ -3,7 +3,7 @@ import type { z } from 'zod'
 
 type Body = z.infer<typeof auditLogsInsertSchema>
 
-export default async (body: Body): Promise<{ id: number } | null> => {
+export default async (db: ReturnType<typeof useDB>, body: Body): Promise<{ id: number } | null> => {
     const log = logger('createAuditLog')
 
     try {

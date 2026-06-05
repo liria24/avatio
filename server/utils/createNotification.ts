@@ -7,7 +7,7 @@ type Body = Omit<z.infer<typeof notificationsInsertSchema>, 'payload'> & {
     payload: NotificationPayload
 }
 
-export default async (body: Body): Promise<{ id: string } | null> => {
+export default async (db: ReturnType<typeof useDB>, body: Body): Promise<{ id: string } | null> => {
     const log = logger('createNotification')
 
     try {

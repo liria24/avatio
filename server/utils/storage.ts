@@ -1,6 +1,9 @@
 import { Files } from 'files-sdk'
 import { r2 } from 'files-sdk/r2'
 import type { R2Bucket } from 'files-sdk/r2'
+import type { H3Event } from 'h3'
+
+declare const useEvent: () => H3Event
 
 type StorageClient = InstanceType<typeof Files>
 type RuntimeEnv = Partial<Record<string, string | R2Bucket>>
