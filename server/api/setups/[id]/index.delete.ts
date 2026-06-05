@@ -21,7 +21,7 @@ export default authedSessionEventHandler(
 
         await purgeSetupCache(id)
 
-        await createAuditLog({
+        await createAuditLog(db, {
             userId: session.user.id,
             action: 'setup_delete',
             targetType: 'setup',

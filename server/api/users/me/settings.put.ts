@@ -5,7 +5,7 @@ const request = {
 }
 
 export default authedSessionEventHandler(
-    async ({ session }) => {
+    async ({ session, db }) => {
         const body = await validateBody(request.body)
 
         await db
