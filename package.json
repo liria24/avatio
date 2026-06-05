@@ -89,7 +89,7 @@
         "zod": "4.4.3"
     },
     "devDependencies": {
-        "@cloudflare/workers-types": "^4.20260604.1",
+        "@cloudflare/workers-types": "^4.20260605.1",
         "@nuxt/a11y": "1.0.0-alpha.1",
         "@nuxt/hints": "1.1.2",
         "@nuxt/test-utils": "4.0.3",
