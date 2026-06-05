@@ -543,6 +543,12 @@
         "imageUploadFailed": "画像のアップロードに失敗しました"
     },
     "user": {
+        "bannedNotice": "このユーザーはBANされています",
+        "banReason": "理由",
+        "banReasonUnknown": "不明",
+        "banExpires": "解除予定日",
+        "objectToBan": "異議を申し立てる",
+        "objectToBanSubject": "ユーザーBANへの異議申し立て",
         "editProfile": "プロフィールを編集",
         "reportUser": "ユーザーを報告",
         "shops": "ショップ",

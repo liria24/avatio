@@ -101,11 +101,17 @@ export const usersPublicSchema = usersSelectSchema
         image: true,
         bio: true,
         links: true,
+        banned: true,
+        banReason: true,
+        banExpires: true,
     })
     .partial({
         createdAt: true,
         bio: true,
         links: true,
+        banned: true,
+        banReason: true,
+        banExpires: true,
     })
     .extend({
         badges: userBadgesPublicSchema.array().optional(),
@@ -384,10 +390,19 @@ export const setupDraftContentSchema = setupsInsertSchema
         tags: true,
         images: true,
         imageMetadata: true,
-        coauthors: true,
         items: true,
     })
     .partial()
+    .extend({
+        coauthors: setupCoauthorsInsertSchema
+            .omit({ setupId: true })
+            .extend({
+                username: z.string(),
+            })
+            .array()
+            .max(8)
+            .optional(),
+    })
 export const setupDraftsSelectSchema = createSelectSchema(setupDrafts)
 export const setupDraftsInsertSchema = createInsertSchema(setupDrafts, {
     content: () => setupDraftContentSchema,

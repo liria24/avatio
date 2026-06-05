@@ -34,5 +34,35 @@ export const getSetupCacheKey = (
 }
 
 export const purgeUserCache = async (id: string) => {
-    await useStorage('cache').del(`nitro:functions:user:${id}.json`)
+    const keys = await useStorage('cache').keys(`nitro:functions:user:${id}`)
+    await Promise.all([
+        useStorage('cache').del(`nitro:functions:user:${id}.json`),
+        useStorage('cache').del(`nitro:functions:user:${id}:banned.json`),
+        ...keys.map((key) => useStorage('cache').del(key)),
+    ])
+}
+
+type UserCacheVisibility = {
+    id: User['id']
+    banned: boolean | null
+}
+
+type UserCacheSession =
+    | {
+          user: {
+              id: string
+              role?: string | null
+          }
+      }
+    | null
+    | undefined
+
+export const getUserCacheKey = (
+    user: UserCacheVisibility,
+    session: UserCacheSession,
+): string | null => {
+    if (!user.banned) return user.id
+    if (session?.user.role === 'admin' || session?.user.id === user.id) return `${user.id}:banned`
+
+    return null
 }

@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 const { session } = useAuth()
-const { locale } = useI18n()
+const { app } = useAppConfig()
+const { locale, t } = useI18n()
 const overlay = useOverlay()
 const login = useLoginModal()
 const reportUser = useReportUserModal()
@@ -25,6 +26,19 @@ const links = computed(() =>
         }
     }),
 )
+
+const banNoticeDescription = computed(() => {
+    if (!user.value?.banned) return ''
+
+    const reason = `${t('user.banReason')}: ${user.value.banReason || t('user.banReasonUnknown')}`
+    if (!user.value.banExpires) return reason
+
+    const expires = new Intl.DateTimeFormat(locale.value, {
+        dateStyle: 'medium',
+    }).format(new Date(user.value.banExpires))
+
+    return `${reason} / ${t('user.banExpires')}: ${expires}`
+})
 
 onBeforeRouteLeave(() => {
     overlay.closeAll()
@@ -58,6 +72,24 @@ useSeo({
     </div>
 
     <div v-else-if="user" class="flex w-full flex-col gap-6 px-2">
+        <LazyUAlert
+            v-if="user.banned"
+            icon="mingcute:forbid-circle-fill"
+            :title="$t('user.bannedNotice')"
+            :description="banNoticeDescription"
+            variant="subtle"
+            :actions="[
+                {
+                    to: `mailto:${app.mailaddress}?subject=${$t('user.objectToBanSubject')}%20(@${user.username})`,
+                    target: '_blank',
+                    external: true,
+                    label: $t('user.objectToBan'),
+                    variant: 'soft',
+                },
+            ]"
+            class="w-full"
+        />
+
         <div class="flex w-full flex-col items-start gap-3">
             <div
                 class="flex w-full flex-col items-start justify-between gap-3 sm:flex-row sm:items-center"

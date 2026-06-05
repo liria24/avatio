@@ -543,6 +543,12 @@
         "imageUploadFailed": "Failed to upload image"
     },
     "user": {
+        "bannedNotice": "This user is banned",
+        "banReason": "Reason",
+        "banReasonUnknown": "Unknown",
+        "banExpires": "Ban expires",
+        "objectToBan": "Object to ban",
+        "objectToBanSubject": "Object to user ban",
         "editProfile": "Edit Profile",
         "reportUser": "Report User",
         "shops": "Shops",
