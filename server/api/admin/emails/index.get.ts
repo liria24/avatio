@@ -7,7 +7,7 @@ const query = z.object({
 export default adminSessionEventHandler(async ({ db }) => {
     const { archived } = await validateQuery(query)
 
-    await syncEmails()
+    await syncEmails(db)
 
     return db.query.emails.findMany({
         where: {

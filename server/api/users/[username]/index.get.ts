@@ -7,8 +7,8 @@ const params = z.object({
 type Args = { id: User['id']; cacheKey: string }
 
 const getUser = defineCachedFunction(
-    async ({ id, cacheKey }: Args): Promise<User> => {
-        const data = await useDB().query.users.findFirst({
+    async (db: ReturnType<typeof useDB>, { id, cacheKey }: Args): Promise<User> => {
+        const data = await db.query.users.findFirst({
             where: {
                 id: { eq: id },
             },
@@ -62,7 +62,7 @@ const getUser = defineCachedFunction(
     {
         maxAge: USER_CACHE_TTL,
         name: 'user',
-        getKey: ({ cacheKey }: Args) => cacheKey,
+        getKey: (_db, { cacheKey }: Args) => cacheKey,
         swr: false,
     },
 )
@@ -85,5 +85,5 @@ export default sessionEventHandler<User>(async ({ session, db }) => {
     const cacheKey = getUserCacheKey(visibility, session)
     if (!cacheKey) throw serverError.notFound()
 
-    return await getUser({ id: visibility.id, cacheKey })
+    return await getUser(db, { id: visibility.id, cacheKey })
 })

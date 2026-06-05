@@ -52,6 +52,7 @@ export default async (
         const validItem = item && allowedBoothCategoryId.includes(item.category.id) ? item : null
 
         return persistItem(
+            db,
             validItem
                 ? {
                       valid: true,
@@ -102,6 +103,7 @@ export default async (
 
         return {
             ...persistItem(
+                db,
                 repoData && owner
                     ? {
                           valid: true,
@@ -173,9 +175,8 @@ type PersistItemParams =
       }
     | { valid: false; cachedItem: { id: string } | null }
 
-export const persistItem = (params: PersistItemParams): Item => {
+export const persistItem = (db: ReturnType<typeof useDB>, params: PersistItemParams): Item => {
     if (!params.valid) {
-        const db = useDB()
         if (params.cachedItem)
             runAfterResponse(
                 db.update(items).set({ outdated: true }).where(eq(items.id, params.cachedItem.id)),
@@ -197,7 +198,6 @@ export const persistItem = (params: PersistItemParams): Item => {
     const fullItem = { ...item, category }
 
     const persist = async () => {
-        const db = useDB()
         await db.transaction(async (tx) => {
             if (idMigration)
                 await tx
@@ -213,7 +213,7 @@ export const persistItem = (params: PersistItemParams): Item => {
         })
 
         if (!cachedItem) {
-            const { niceName, category: resolvedCategory } = await generateItemAttr({
+            const { niceName, category: resolvedCategory } = await generateItemAttr(db, {
                 ...assignAttrParams,
                 originalCategory: category,
             })

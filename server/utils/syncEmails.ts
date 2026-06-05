@@ -35,7 +35,7 @@ const buildSnippet = (email: ActualInboundEmail) => {
     return null
 }
 
-export const syncEmails = async () => {
+export const syncEmails = async (db: ReturnType<typeof useDB>) => {
     const unosend = useUnosend()
     const { data, error } = await unosend.inbound.list({ page: 1 })
 
@@ -59,7 +59,6 @@ export const syncEmails = async () => {
 
     if (rows.length === 0) return
 
-    const db = useDB()
     await db.insert(emails).values(rows).onConflictDoNothing()
 
     log.info(`Synced ${rows.length} emails`)

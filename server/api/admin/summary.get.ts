@@ -1,9 +1,7 @@
 import { feedbacks, itemReports, items, setupReports, userReports } from '@@/database/schema'
 import { count, eq } from 'drizzle-orm'
 
-export default adminSessionEventHandler(async () => {
-    const db = useDB()
-
+export default adminSessionEventHandler(async ({ db }) => {
     const [
         feedbackCountResult,
         itemCountResult,

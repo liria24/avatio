@@ -8,14 +8,11 @@ interface ResolveSetupImageDataOptions {
     imageMetadata?: Record<string, SetupImageMetadata>
 }
 
-export const resolveSetupImageData = async ({
-    setupId,
-    images = [],
-    imageMetadata,
-}: ResolveSetupImageDataOptions) => {
+export const resolveSetupImageData = async (
+    db: ReturnType<typeof useDB>,
+    { setupId, images = [], imageMetadata }: ResolveSetupImageDataOptions,
+) => {
     if (!images.length) return []
-
-    const db = useDB()
 
     const existingImages = setupId
         ? await db
