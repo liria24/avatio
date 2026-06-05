@@ -23,7 +23,7 @@ export default adminSessionEventHandler(async ({ db }) => {
             })
             .where(eq(setups.id, id))
 
-    void purgeSetupCache(id)
+    await purgeSetupCache(id)
 
     return null
 })

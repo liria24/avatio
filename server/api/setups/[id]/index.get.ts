@@ -9,9 +9,27 @@ const params = z.object({
 export default sessionEventHandler<Setup>(async ({ event, session, db }) => {
     const { id } = await validateParams(params)
 
-    type Args = { id: Setup['id']; session: Session | undefined }
+    const cacheVisibility = await db.query.setups.findFirst({
+        where: {
+            id: { eq: id },
+            user: {
+                OR: [{ banned: { eq: false } }, { banned: { isNull: true } }],
+            },
+        },
+        columns: {
+            id: true,
+            userId: true,
+            hidAt: true,
+        },
+    })
+    if (!cacheVisibility) throw serverError.notFound()
+
+    const cacheKey = getSetupCacheKey(cacheVisibility, session)
+    if (!cacheKey) throw serverError.notFound()
+
+    type Args = { id: Setup['id']; cacheKey: string }
     const getSetup = defineCachedFunction(
-        async ({ id, session }: Args) => {
+        async ({ id }: Args) => {
             const data = await db.query.setups.findFirst({
                 where: {
                     id: { eq: id },
@@ -136,13 +154,7 @@ export default sessionEventHandler<Setup>(async ({ event, session, db }) => {
                 },
             })
 
-            if (
-                !data ||
-                (data.hidAt &&
-                    session?.user.username !== data.user.username &&
-                    session?.user.role !== 'admin')
-            )
-                throw serverError.notFound()
+            if (!data) throw serverError.notFound()
 
             const results = await Promise.all(
                 data.items.map(async (item) => {
@@ -181,10 +193,10 @@ export default sessionEventHandler<Setup>(async ({ event, session, db }) => {
         {
             maxAge: SETUP_CACHE_TTL,
             name: 'setup',
-            getKey: ({ id, session }: Args) => `${id}${session ? `:${session.user.id}` : ''}`,
+            getKey: ({ cacheKey }: Args) => cacheKey,
             swr: false,
         },
     )
 
-    return await getSetup({ id, session: session || undefined })
+    return await getSetup({ id, cacheKey })
 })
