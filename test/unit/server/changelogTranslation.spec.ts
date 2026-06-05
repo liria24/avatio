@@ -1,6 +1,15 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { parseChangelogTranslation } from '../../../server/utils/changelogTranslation'
+import sanitizeObject from '../../../server/utils/sanitizeObject'
+
+beforeEach(() => {
+    vi.stubGlobal('sanitizeObject', sanitizeObject)
+})
+
+afterEach(() => {
+    vi.unstubAllGlobals()
+})
 
 describe('parseChangelogTranslation', () => {
     it('sanitizes translated changelog content before persistence', () => {
