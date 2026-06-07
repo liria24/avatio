@@ -8,11 +8,22 @@ interface ImageInfo {
     lastModified: Date
 }
 
+interface UsedImageUrls {
+    setup: string[]
+    avatar: string[]
+}
+
+interface FailedImageOperation {
+    key: string
+    error: string
+}
+
 interface CleanupJobOptions {
     dryRun?: boolean
 }
 
 const IMAGE_DELETION_THRESHOLD = 24 * 60 * 60 * 1000
+const STORAGE_OPERATION_CONCURRENCY = 8
 
 const BACKUP_PREFIX = 'backup'
 const BACKUP_RULE_ID = 'avatio-backup-cleanup'
@@ -27,13 +38,53 @@ interface LifecycleRule {
     }
 }
 
-const extractKeyFromUrl = (url: string): string | null => {
+const getR2PublicBaseUrl = () => process.env.R2_PUBLIC_BASE_URL?.replace(/\/+$/, '')
+
+const extractStorageKeyFromUrl = (
+    url: string,
+    publicBaseUrl = getR2PublicBaseUrl(),
+): string | null => {
+    if (!publicBaseUrl) return null
+
     try {
-        return new URL(url).pathname.slice(1) || null
+        const parsedUrl = new URL(url)
+        const parsedBaseUrl = new URL(publicBaseUrl)
+        if (parsedUrl.origin !== parsedBaseUrl.origin) return null
+
+        const basePath = parsedBaseUrl.pathname.replace(/\/+$/, '')
+        if (basePath && !parsedUrl.pathname.startsWith(`${basePath}/`)) return null
+
+        const key = parsedUrl.pathname.slice(basePath.length).replace(/^\/+/, '')
+        return key ? decodeURIComponent(key) : null
     } catch {
         return null
     }
 }
+
+const getUsedImageUrls = async (db: ReturnType<typeof useDB>): Promise<UsedImageUrls> => {
+    const [setupImagesFromDB, setupDraftImagesFromDB, userImagesFromDB] = await Promise.all([
+        db.query.setupImages.findMany({ columns: { url: true } }),
+        db.query.setupDraftImages.findMany({ columns: { url: true } }),
+        db.query.users.findMany({ columns: { image: true } }),
+    ])
+
+    return {
+        setup: [
+            ...setupImagesFromDB.map((image) => image.url),
+            ...setupDraftImagesFromDB.map((image) => image.url),
+        ],
+        avatar: userImagesFromDB
+            .map((user) => user.image)
+            .filter((image): image is string => Boolean(image?.trim())),
+    }
+}
+
+const imageUrlsToStorageKeys = (urls: string[]) =>
+    new Set(
+        urls
+            .map((url) => extractStorageKeyFromUrl(url))
+            .filter((key): key is string => key !== null),
+    )
 
 const getStorageObjects = async (prefix: string): Promise<ImageInfo[]> => {
     const items: ImageInfo[] = []
@@ -49,6 +100,42 @@ const getStorageObjects = async (prefix: string): Promise<ImageInfo[]> => {
     }
 
     return items
+}
+
+const getCleanupCandidates = (
+    storageImages: ImageInfo[],
+    usedKeys: Set<string>,
+    thresholdDate: Date,
+) => storageImages.filter((image) => !usedKeys.has(image.key) && image.lastModified < thresholdDate)
+
+const copyWithConcurrency = async (images: ImageInfo[], backupDate: string) => {
+    const backedUp: string[] = []
+    const backupFailed: FailedImageOperation[] = []
+    let index = 0
+
+    await Promise.all(
+        Array.from({ length: Math.min(STORAGE_OPERATION_CONCURRENCY, images.length) }, async () => {
+            while (index < images.length) {
+                const current = index
+                index += 1
+                const image = images[current]
+                if (!image) return
+
+                try {
+                    await storage.copy(image.key, `${BACKUP_PREFIX}/${backupDate}/${image.key}`)
+                    backedUp.push(image.key)
+                } catch (error) {
+                    cleanupLog.warn('Failed to backup image before deletion:', image.key, error)
+                    backupFailed.push({
+                        key: image.key,
+                        error: error instanceof Error ? error.message : String(error),
+                    })
+                }
+            }
+        }),
+    )
+
+    return { backedUp, backupFailed }
 }
 
 const ensureBackupLifecycleRule = async () => {
@@ -268,74 +355,35 @@ export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) 
     const thresholdDate = new Date(Date.now() - IMAGE_DELETION_THRESHOLD)
     const db = useDB()
 
-    const [
-        [setupImagesFromDB, setupDraftImagesFromDB, userImagesFromDB],
-        [allSetupImages, allUserImages],
-    ] = await Promise.all([
-        Promise.all([
-            db.query.setupImages.findMany({ columns: { url: true } }),
-            db.query.setupDraftImages.findMany({ columns: { url: true } }),
-            db.query.users.findMany({ columns: { image: true } }),
-        ]),
+    const [usedImageUrls, [allSetupImages, allUserImages]] = await Promise.all([
+        getUsedImageUrls(db),
         Promise.all([getStorageObjects('setup'), getStorageObjects('avatar')]),
     ])
 
-    if (
-        allSetupImages.length > 0 &&
-        setupImagesFromDB.length === 0 &&
-        setupDraftImagesFromDB.length === 0
-    )
-        throw serverError.internalServerError({
-            responseMessage:
-                'Aborting cleanup: setup images exist in storage but DB returned no records. This may indicate a DB connectivity issue.',
-        })
-
-    if (allUserImages.length > 0 && userImagesFromDB.length === 0)
-        throw serverError.internalServerError({
-            responseMessage:
-                'Aborting cleanup: user images exist in storage but DB returned no records. This may indicate a DB connectivity issue.',
-        })
-
-    const usedSetupKeys = new Set([
-        ...setupImagesFromDB
-            .map((img) => extractKeyFromUrl(img.url))
-            .filter((key): key is string => key !== null),
-        ...setupDraftImagesFromDB
-            .map((img) => extractKeyFromUrl(img.url))
-            .filter((key): key is string => key !== null),
-    ])
-    const usedUserKeys = new Set(
-        userImagesFromDB
-            .map((user) => user.image)
-            .filter((image): image is string => Boolean(image?.trim()))
-            .map((url) => extractKeyFromUrl(url))
-            .filter((key): key is string => key !== null),
-    )
+    const usedSetupKeys = imageUrlsToStorageKeys(usedImageUrls.setup)
+    const usedUserKeys = imageUrlsToStorageKeys(usedImageUrls.avatar)
 
     cleanupLog.info('Used setup image keys from DB:', Array.from(usedSetupKeys))
     cleanupLog.info('Used user image keys from DB:', Array.from(usedUserKeys))
 
-    const allUnusedImages = [
-        ...allSetupImages.filter((img) => !usedSetupKeys.has(img.key)),
-        ...allUserImages.filter((img) => !usedUserKeys.has(img.key)),
+    const allImages = [
+        ...getCleanupCandidates(allSetupImages, usedSetupKeys, thresholdDate),
+        ...getCleanupCandidates(allUserImages, usedUserKeys, thresholdDate),
     ]
-
-    const allImages = allUnusedImages.filter((img) => img.lastModified < thresholdDate)
+    const candidates = allImages.map((image) => image.key)
 
     const today = new Date().toISOString().slice(0, 10)
 
     if (dryRun) {
-        cleanupLog.info(
-            `[DRY RUN] Would delete ${allImages.length} image(s):`,
-            allImages.map((img) => img.key),
-        )
+        cleanupLog.info(`[DRY RUN] Would delete ${allImages.length} image(s):`, candidates)
         return {
             success: true,
             dryRun: true,
             message: 'Dry run completed. No images were deleted.',
             data: {
-                wouldDelete: allImages.map((img) => img.key),
-                wouldBackupTo: allImages.map((img) => `${BACKUP_PREFIX}/${today}/${img.key}`),
+                candidates,
+                wouldDelete: candidates,
+                wouldBackupTo: candidates.map((key) => `${BACKUP_PREFIX}/${today}/${key}`),
                 totalWouldProcess: allImages.length,
             },
         }
@@ -343,26 +391,20 @@ export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) 
 
     await ensureBackupLifecycleRule()
 
-    const backupResults = await Promise.allSettled(
-        allImages.map((img) => storage.copy(img.key, `${BACKUP_PREFIX}/${today}/${img.key}`)),
-    )
-    const backedUp: string[] = []
-    const backupFailed: string[] = []
-    for (let i = 0; i < backupResults.length; i++) {
-        const result = backupResults[i]
-        const key = allImages[i]?.key ?? ''
-        if (result?.status === 'fulfilled') backedUp.push(key)
-        else {
-            backupFailed.push(key)
-            cleanupLog.warn('Failed to backup image before deletion:', key, result?.reason)
-        }
-    }
+    const { backedUp, backupFailed: backupFailures } = await copyWithConcurrency(allImages, today)
+    const backedUpSet = new Set(backedUp)
+    const imagesToDelete = allImages.filter((image) => backedUpSet.has(image.key))
+    const backupFailed = backupFailures.map((failure) => failure.key)
+    const skippedBecauseBackupFailed = backupFailed
 
-    for (const image of allImages) cleanupLog.info('Deleting image from storage:', image.key)
+    for (const image of imagesToDelete) cleanupLog.info('Deleting image from storage:', image.key)
 
     const deleteResults =
-        allImages.length > 0
-            ? await storage.delete(allImages.map((image) => image.key))
+        imagesToDelete.length > 0
+            ? await storage.delete(
+                  imagesToDelete.map((image) => image.key),
+                  { concurrency: STORAGE_OPERATION_CONCURRENCY },
+              )
             : { deleted: [], errors: undefined }
     const successful = deleteResults.deleted
     const failed = (deleteResults.errors ?? []).map(({ key, error }) => {
@@ -405,11 +447,25 @@ export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) 
                                 value: failed.length.toString(),
                                 inline: true,
                             },
-                            ...(backupFailed.length
+                            ...(skippedBecauseBackupFailed.length
+                                ? [
+                                      {
+                                          name: 'Skipped Because Backup Failed',
+                                          value: skippedBecauseBackupFailed
+                                              .join('\n')
+                                              .slice(0, 1024),
+                                          inline: false,
+                                      },
+                                  ]
+                                : []),
+                            ...(backupFailures.length
                                 ? [
                                       {
                                           name: 'Backup Failed',
-                                          value: backupFailed.join('\n').slice(0, 1024),
+                                          value: backupFailures
+                                              .map((f) => `${f.key}: ${f.error}`)
+                                              .join('\n')
+                                              .slice(0, 1024),
                                           inline: false,
                                       },
                                   ]
@@ -444,8 +500,11 @@ export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) 
         success: true,
         message,
         data: {
+            candidates,
             backedUp,
             backupFailed,
+            backupFailures,
+            skippedBecauseBackupFailed,
             successfulDeletes: successful,
             failedDeletes: failed,
             totalProcessed: allImages.length,
