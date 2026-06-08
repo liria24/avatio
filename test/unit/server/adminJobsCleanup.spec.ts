@@ -17,9 +17,14 @@ interface CleanupDbRows {
     users?: { image: string | null }[]
 }
 
+type RuntimeGlobal = typeof globalThis & {
+    __env__?: Partial<Record<string, string>>
+}
+
 const publicBaseUrl = 'https://cdn.example.com'
 const oldDate = Date.parse('2026-06-05T00:00:00.000Z')
 const recentDate = Date.parse('2026-06-07T10:00:00.000Z')
+const runtimeGlobal = globalThis as RuntimeGlobal
 
 const log = {
     error: vi.fn(),
@@ -95,6 +100,7 @@ describe('runCleanupJob', () => {
         vi.resetModules()
         vi.unstubAllGlobals()
         delete process.env.R2_PUBLIC_BASE_URL
+        delete runtimeGlobal.__env__
     })
 
     it('keeps referenced setup and avatar images and skips recent orphan images', async () => {
@@ -156,6 +162,48 @@ describe('runCleanupJob', () => {
             candidates: ['avatar/old-orphan.jpg'],
             totalWouldProcess: 1,
         })
+    })
+
+    it('uses R2 public base URL from runtime env when process env is unavailable', async () => {
+        delete process.env.R2_PUBLIC_BASE_URL
+        runtimeGlobal.__env__ = { R2_PUBLIC_BASE_URL: `${publicBaseUrl}/` }
+        arrange({
+            rows: {
+                setupImages: [{ url: `${publicBaseUrl}/setup/used.jpg` }],
+            },
+            setupObjects: [{ key: 'setup/used.jpg', lastModified: oldDate }],
+        })
+
+        const result = await runCleanupJob(true)
+
+        expect(result.data).toMatchObject({
+            candidates: [],
+            totalWouldProcess: 0,
+        })
+    })
+
+    it('skips cleanup when R2 public base URL is unavailable', async () => {
+        delete process.env.R2_PUBLIC_BASE_URL
+        arrange({
+            rows: {
+                setupImages: [{ url: `${publicBaseUrl}/setup/used.jpg` }],
+            },
+            setupObjects: [{ key: 'setup/used.jpg', lastModified: oldDate }],
+        })
+
+        const result = await runCleanupJob(true)
+
+        expect(result).toMatchObject({
+            success: false,
+            dryRun: true,
+            message: 'R2_PUBLIC_BASE_URL is not configured. Cleanup skipped.',
+            data: {
+                candidates: [],
+                wouldDelete: [],
+                totalWouldProcess: 0,
+            },
+        })
+        expect(storage.listAll).not.toHaveBeenCalled()
     })
 
     it('deletes only images that were backed up successfully', async () => {

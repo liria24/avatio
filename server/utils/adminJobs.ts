@@ -28,6 +28,7 @@ const STORAGE_OPERATION_CONCURRENCY = 8
 const BACKUP_PREFIX = 'backup'
 const BACKUP_RULE_ID = 'avatio-backup-cleanup'
 const BACKUP_RETENTION_SECONDS = 3 * 24 * 60 * 60 // 3 days
+type RuntimeEnv = Partial<Record<string, unknown>>
 
 interface LifecycleRule {
     id: string
@@ -38,7 +39,22 @@ interface LifecycleRule {
     }
 }
 
-const getR2PublicBaseUrl = () => process.env.R2_PUBLIC_BASE_URL?.replace(/\/+$/, '')
+const getRuntimeEnvValue = (name: string) => {
+    const g = globalThis as typeof globalThis & { __env__?: RuntimeEnv }
+    const globalValue = g.__env__?.[name]
+    if (typeof globalValue === 'string' && globalValue) return globalValue
+
+    try {
+        const cfValue = (useEvent().context.cloudflare?.env as RuntimeEnv | undefined)?.[name]
+        if (typeof cfValue === 'string' && cfValue) return cfValue
+    } catch {
+        // not inside a request context
+    }
+
+    return process.env[name]
+}
+
+const getR2PublicBaseUrl = () => getRuntimeEnvValue('R2_PUBLIC_BASE_URL')?.replace(/\/+$/, '')
 
 const extractStorageKeyFromUrl = (
     url: string,
@@ -79,10 +95,10 @@ const getUsedImageUrls = async (db: ReturnType<typeof useDB>): Promise<UsedImage
     }
 }
 
-const imageUrlsToStorageKeys = (urls: string[]) =>
+const imageUrlsToStorageKeys = (urls: string[], publicBaseUrl: string) =>
     new Set(
         urls
-            .map((url) => extractStorageKeyFromUrl(url))
+            .map((url) => extractStorageKeyFromUrl(url, publicBaseUrl))
             .filter((key): key is string => key !== null),
     )
 
@@ -353,6 +369,39 @@ export const runReportJob = async () => {
 
 export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) => {
     const thresholdDate = new Date(Date.now() - IMAGE_DELETION_THRESHOLD)
+    const publicBaseUrl = getR2PublicBaseUrl()
+
+    if (!publicBaseUrl) {
+        const message = 'R2_PUBLIC_BASE_URL is not configured. Cleanup skipped.'
+        cleanupLog.error(message)
+        return dryRun
+            ? {
+                  success: false,
+                  dryRun: true,
+                  message,
+                  data: {
+                      candidates: [],
+                      wouldDelete: [],
+                      wouldBackupTo: [],
+                      totalWouldProcess: 0,
+                  },
+              }
+            : {
+                  success: false,
+                  message,
+                  data: {
+                      candidates: [],
+                      backedUp: [],
+                      backupFailed: [],
+                      backupFailures: [],
+                      skippedBecauseBackupFailed: [],
+                      successfulDeletes: [],
+                      failedDeletes: [],
+                      totalProcessed: 0,
+                  },
+              }
+    }
+
     const db = useDB()
 
     const [usedImageUrls, [allSetupImages, allUserImages]] = await Promise.all([
@@ -360,8 +409,8 @@ export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) 
         Promise.all([getStorageObjects('setup'), getStorageObjects('avatar')]),
     ])
 
-    const usedSetupKeys = imageUrlsToStorageKeys(usedImageUrls.setup)
-    const usedUserKeys = imageUrlsToStorageKeys(usedImageUrls.avatar)
+    const usedSetupKeys = imageUrlsToStorageKeys(usedImageUrls.setup, publicBaseUrl)
+    const usedUserKeys = imageUrlsToStorageKeys(usedImageUrls.avatar, publicBaseUrl)
 
     cleanupLog.info('Used setup image keys from DB:', Array.from(usedSetupKeys))
     cleanupLog.info('Used user image keys from DB:', Array.from(usedUserKeys))
