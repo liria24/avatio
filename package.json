@@ -79,7 +79,7 @@
         "motion-v": "^2.2.1",
         "nuxt": "4.4.7",
         "nuxt-link-checker": "5.0.10",
-        "nuxt-schema-org": "6.1.0",
+        "nuxt-schema-org": "6.0.4",
         "nuxt-seo-utils": "8.1.11",
         "rfc2047": "^4.0.1",
         "sanitize-html": "2.17.4",
