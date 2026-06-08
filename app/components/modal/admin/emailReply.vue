@@ -18,6 +18,7 @@ const state = reactive({
 })
 
 const sending = ref(false)
+const formId = useId()
 
 const subject = computed(() => {
     const value = props.email.subject || '(no subject)'
@@ -56,7 +57,7 @@ const send = async () => {
 <template>
     <UModal title="Reply" :ui="{ footer: 'justify-end' }">
         <template #body>
-            <UForm :state :schema class="flex flex-col gap-4" @submit="send">
+            <UForm :id="formId" :state :schema class="flex flex-col gap-4" @submit="send">
                 <div class="text-muted flex flex-col gap-1 text-sm">
                     <p class="truncate">
                         <span class="font-medium">To:</span>
@@ -89,7 +90,13 @@ const send = async () => {
                 :disabled="sending"
                 @click="emit('close')"
             />
-            <UButton label="Send" icon="mingcute:send-fill" :loading="sending" @click="send()" />
+            <UButton
+                label="Send"
+                icon="mingcute:send-fill"
+                type="submit"
+                :form="formId"
+                :loading="sending"
+            />
         </template>
     </UModal>
 </template>
