@@ -8,6 +8,7 @@ const props = defineProps<Props>()
 const emit = defineEmits(['close'])
 
 const { data: body, status } = useLazyFetch(`/api/admin/emails/${props.email.id}/body`)
+const emailReplyModal = useEmailReplyModal()
 
 const archiving = ref(false)
 
@@ -23,6 +24,12 @@ const archive = async () => {
     } finally {
         archiving.value = false
     }
+}
+
+const reply = () => {
+    emailReplyModal.open({
+        email: props.email,
+    })
 }
 </script>
 
@@ -49,14 +56,24 @@ const archive = async () => {
                 </div>
             </div>
 
-            <UButton
-                :loading="archiving"
-                :icon="email.isArchived ? 'mingcute:inbox-2-line' : 'mingcute:archive-line'"
-                :aria-label="email.isArchived ? 'Unarchive' : 'Archive'"
-                variant="ghost"
-                size="sm"
-                @click="archive()"
-            />
+            <div class="flex items-center gap-1">
+                <UButton
+                    icon="mingcute:reply-fill"
+                    aria-label="Reply"
+                    variant="ghost"
+                    size="sm"
+                    @click="reply()"
+                />
+
+                <UButton
+                    :loading="archiving"
+                    :icon="email.isArchived ? 'mingcute:inbox-2-line' : 'mingcute:archive-line'"
+                    :aria-label="email.isArchived ? 'Unarchive' : 'Archive'"
+                    variant="ghost"
+                    size="sm"
+                    @click="archive()"
+                />
+            </div>
         </template>
 
         <template #body>
@@ -86,6 +103,17 @@ const archive = async () => {
                         </span>
                     </div>
                 </template>
+            </div>
+        </template>
+
+        <template #footer>
+            <div class="flex justify-end gap-2">
+                <UButton
+                    icon="mingcute:reply-fill"
+                    label="Reply"
+                    color="neutral"
+                    @click="reply()"
+                />
             </div>
         </template>
     </USlideover>

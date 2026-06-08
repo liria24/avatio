@@ -24,8 +24,8 @@
         "valibot": "^1.4.1"
     },
     "devDependencies": {
-        "@cloudflare/workers-types": "^4.20260605.1",
-        "@types/node": "25.9.1",
+        "@cloudflare/workers-types": "^4.20260607.1",
+        "@types/node": "25.9.2",
         "nitropack": "2.13.4",
         "tsdown": "^0.22.2",
         "typescript": "6.0.3",

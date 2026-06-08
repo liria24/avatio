@@ -4,9 +4,15 @@ import { drizzle } from 'drizzle-orm/neon-serverless'
 import { relations } from '../../database/relations'
 import * as schema from '../../database/schema'
 
+const getDatabaseUrl = () => {
+    const databaseUrl = useRuntimeConfig().neon?.databaseUrl
+    if (!databaseUrl) throw new Error('Missing required runtime config: neon.databaseUrl')
+    return databaseUrl
+}
+
 const useDB = () =>
     drizzle({
-        client: new Pool({ connectionString: process.env.NEON_DATABASE_URL }),
+        client: new Pool({ connectionString: getDatabaseUrl() }),
         relations,
     })
 
