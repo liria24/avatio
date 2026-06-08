@@ -26,6 +26,7 @@ import {
     userBadges,
     userReports,
     userShops,
+    type EmailAttachmentMetadata,
     type NotificationPayload,
     userSettings,
 } from '@@/database/schema'
@@ -569,6 +570,7 @@ export const emailsPublicSchema = emailsSelectSchema.pick({
     receivedAt: true,
 })
 export type Email = z.infer<typeof emailsPublicSchema>
+export type EmailAttachment = EmailAttachmentMetadata
 
 export const notificationTypeSchema = z.enum(notificationType.enumValues)
 export type NotificationType = z.infer<typeof notificationTypeSchema>

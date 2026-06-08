@@ -1,0 +1,81 @@
+interface EmailAddress {
+    email: string
+    name?: string
+}
+
+interface EmailAttachment {
+    content: string | ArrayBuffer | ArrayBufferView
+    filename: string
+    type: string
+    disposition: 'attachment' | 'inline'
+    contentId?: string
+}
+
+interface SendEmailBinding {
+    send(message: {
+        from: string | EmailAddress
+        to: string | EmailAddress | (string | EmailAddress)[]
+        subject: string
+        replyTo?: string | EmailAddress
+        cc?: string | EmailAddress | (string | EmailAddress)[]
+        bcc?: string | EmailAddress | (string | EmailAddress)[]
+        headers?: Record<string, string>
+        text?: string
+        html?: string
+        attachments?: EmailAttachment[]
+    }): Promise<{ messageId: string }>
+}
+
+type RuntimeEnv = Partial<Record<string, string | SendEmailBinding>>
+
+export interface SendEmailInput {
+    to: string | EmailAddress | (string | EmailAddress)[]
+    subject: string
+    text?: string
+    html?: string
+    from?: string | EmailAddress
+    replyTo?: string | EmailAddress
+    cc?: string | EmailAddress | (string | EmailAddress)[]
+    bcc?: string | EmailAddress | (string | EmailAddress)[]
+    headers?: Record<string, string>
+    attachments?: EmailAttachment[]
+}
+
+const defaultEmailFrom = 'hello@avatio.me'
+
+const getRuntimeEnv = (): RuntimeEnv => {
+    const g = globalThis as typeof globalThis & { __env__?: RuntimeEnv }
+    if (g.__env__) return g.__env__
+    try {
+        const cfEnv = useEvent().context.cloudflare?.env
+        if (cfEnv) return cfEnv as RuntimeEnv
+    } catch {
+        // not inside a request context
+    }
+    return {}
+}
+
+export const getEmailFromAddress = () => {
+    try {
+        const config = useRuntimeConfig()
+        const fromAddress = config.email?.fromAddress
+        if (typeof fromAddress === 'string' && fromAddress) return fromAddress
+    } catch {
+        // runtime config is unavailable in isolated unit tests
+    }
+
+    return defaultEmailFrom
+}
+
+const getEmailBinding = () => {
+    const binding = getRuntimeEnv().EMAIL
+    if (!binding || typeof binding === 'string')
+        throw new Error('Cloudflare Email binding EMAIL is unavailable in this environment.')
+    return binding
+}
+
+export const sendEmail = async (input: SendEmailInput) =>
+    await getEmailBinding().send({
+        ...input,
+        from: input.from ?? getEmailFromAddress(),
+    })

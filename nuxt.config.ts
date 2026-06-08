@@ -1,19 +1,27 @@
+import { fileURLToPath } from 'node:url'
+
 import { useNuxt } from '@nuxt/kit'
 import type { NitroRouteConfig } from 'nitropack'
 import { defineOrganization } from 'nuxt-schema-org/schema'
+import { dirname } from 'pathe'
 import { withLeadingSlash } from 'ufo'
+import { loadEnv } from 'vite'
 
-const baseUrl = process.env.PUBLIC_SITE_URL || 'http://localhost:3000'
-const imageDomain = process.env.R2_PUBLIC_BASE_URL
-    ? new URL(process.env.R2_PUBLIC_BASE_URL).hostname
-    : undefined
+const env = loadEnv('', dirname(fileURLToPath(import.meta.url)), '')
+const isVitest = Boolean(env.VITEST)
+const isTest = env.NODE_ENV === 'test'
+
+const baseUrl = env.PUBLIC_SITE_URL || 'http://localhost:3000'
+const r2PublicBaseUrl = env.NUXT_R2_PUBLIC_BASE_URL || env.R2_PUBLIC_BASE_URL
+const imageDomain = r2PublicBaseUrl ? new URL(r2PublicBaseUrl).hostname : undefined
+const emailFromAddress = env.NUXT_EMAIL_FROM_ADDRESS || env.EMAIL_FROM || 'hello@avatio.me'
 const title = 'Avatio'
 const description = 'アバター改変レシピの共有プラットフォーム'
 
 const availableI18nLocales = ['en']
 
 const normalizeRuntimeConfigForVitest = () => {
-    if (!process.env.VITEST) return
+    if (!isVitest) return
 
     const nuxt = useNuxt()
     nuxt.options.runtimeConfig = JSON.parse(JSON.stringify(nuxt.options.runtimeConfig))
@@ -104,7 +112,7 @@ export default defineNuxtConfig({
         '@stefanobartoletti/nuxt-social-share',
         '@nuxt/a11y',
         '@nuxt/test-utils/module',
-        ...(process.env.VITEST ? [] : ['@vite-pwa/nuxt']),
+        ...(isVitest ? [] : ['@vite-pwa/nuxt']),
     ],
 
     css: ['~/assets/css/main.css'],
@@ -144,7 +152,7 @@ export default defineNuxtConfig({
                     enabled: true,
                     head_sampling_rate: 1,
                 },
-                account_id: process.env.CLOUDFLARE_ACCOUNT_ID,
+                account_id: env.CLOUDFLARE_ACCOUNT_ID,
                 d1_databases: [
                     {
                         binding: 'DB',
@@ -166,6 +174,11 @@ export default defineNuxtConfig({
                 ai: {
                     binding: 'AI',
                 },
+                send_email: [
+                    {
+                        name: 'EMAIL',
+                    },
+                ],
                 triggers: {
                     crons: ['0 22 * * *'],
                 },
@@ -245,8 +258,8 @@ export default defineNuxtConfig({
             endpoint: process.env.OG_IMAGE_ENDPOINT,
             secret: process.env.OG_IMAGE_SECRET,
         },
-        unosend: {
-            apiKey: process.env.UNOSEND_API_KEY,
+        email: {
+            fromAddress: emailFromAddress,
         },
         public: {
             siteUrl: baseUrl,
@@ -413,7 +426,7 @@ export default defineNuxtConfig({
     },
 
     pwa: {
-        disable: process.env.NODE_ENV === 'test',
+        disable: isTest,
         registerWebManifestInRouteRules: true,
         registerType: 'autoUpdate',
         manifest: {
@@ -474,6 +487,7 @@ export default defineNuxtConfig({
     },
 
     schemaOrg: {
+        defaults: !isVitest,
         identity: defineOrganization({
             name: 'Liria',
             description: 'Creation Circle by Liry24',
@@ -514,7 +528,7 @@ export default defineNuxtConfig({
         scripts: {
             registry: {
                 umamiAnalytics: {
-                    websiteId: process.env.UMAMI_WEBSITE_ID,
+                    websiteId: env.UMAMI_WEBSITE_ID,
                     trigger: 'onNuxtReady',
                 },
             },

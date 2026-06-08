@@ -792,6 +792,14 @@ export const userReports = feedbackSchema.table(
 
 export const adminSchema = snakeCase.schema('admin')
 
+export interface EmailAttachmentMetadata {
+    filename: string | null
+    size: number | null
+    type: string
+    disposition?: 'attachment' | 'inline' | null
+    contentId?: string
+}
+
 export const auditActionType = pgEnum('audit_action_type', [
     'user_ban',
     'user_unban',
@@ -855,6 +863,10 @@ export const emails = adminSchema.table(
         fromName: text(),
         toAddress: text().notNull(),
         snippet: text(),
+        textBody: text(),
+        htmlBody: text(),
+        attachments: jsonb().$type<EmailAttachmentMetadata[]>().default([]).notNull(),
+        rawSize: integer(),
         isRead: boolean().default(false).notNull(),
         isArchived: boolean().default(false).notNull(),
         receivedAt: timestamp().notNull(),
