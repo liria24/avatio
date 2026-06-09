@@ -254,10 +254,6 @@ export default defineNuxtConfig({
         neon: {
             databaseUrl: process.env.NEON_DATABASE_URL,
         },
-        ogImage: {
-            endpoint: process.env.OG_IMAGE_ENDPOINT,
-            secret: process.env.OG_IMAGE_SECRET,
-        },
         email: {
             fromAddress: emailFromAddress,
         },
