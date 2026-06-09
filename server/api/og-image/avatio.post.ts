@@ -1,5 +1,4 @@
-import { requestOgImage } from '@avatio/og-image/client'
-import { withHttps } from 'ufo'
+import { requestOgImage } from '@liria24/og-image'
 import { z } from 'zod'
 
 const log = logger('/api/og-image/avatio:POST')
@@ -9,25 +8,11 @@ const body = z.object({
     description: z.string().trim().max(240).optional(),
 })
 
-export default promiseEventHandler(async ({ event }) => {
+export default promiseEventHandler<{ url: string | null }>(async () => {
     const props = await validateBody(body, { sanitize: true })
-    const config = useRuntimeConfig(event)
-    const endpoint = withHttps(config.ogImage.endpoint)
-    const secret = config.ogImage.secret
-
-    if (!endpoint || !secret) return { url: null }
 
     try {
-        return {
-            url:
-                (await requestOgImage({
-                    endpoint,
-                    secret,
-                    preset: 'avatio',
-                    version: 'v1',
-                    props,
-                })) ?? null,
-        }
+        return await requestOgImage({ preset: 'avatio', version: 'v1', props })
     } catch (error) {
         log.warn('Failed to issue OG image URL', error)
         return { url: null }
