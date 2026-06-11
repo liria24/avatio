@@ -12,7 +12,7 @@ export default promiseEventHandler<{ url: string | null }>(async () => {
     const props = await validateBody(body, { sanitize: true })
 
     try {
-        return await requestOgImage({ preset: 'avatio', version: 'v1', props })
+        return await requestOgImage({ preset: 'avatio', props })
     } catch (error) {
         log.warn('Failed to issue OG image URL', error)
         return { url: null }
