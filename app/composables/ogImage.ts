@@ -2,7 +2,7 @@ export const useOgImage = async (props: { title: string; description?: string })
     if (!props.title.trim()) return undefined
 
     try {
-        const response = await $fetch<{ url: string | null }>('/api/og-image/avatio', {
+        const response = await $fetch<{ url: string | null }>('/api/og-image', {
             method: 'POST',
             body: props,
         })
