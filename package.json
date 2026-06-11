@@ -48,7 +48,7 @@
         "@iconify-json/simple-icons": "1.2.86",
         "@iconify-json/svg-spinners": "1.2.4",
         "@iconify-json/twemoji": "1.2.5",
-        "@liria24/og-image": "^1.1.0",
+        "@liria24/og-image": "^1.2.0",
         "@neondatabase/serverless": "1.1.0",
         "@nuxt/content": "3.14.0",
         "@nuxt/fonts": "^0.14.0",
