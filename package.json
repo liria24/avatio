@@ -105,7 +105,6 @@
         "wrangler": "^4.100.0"
     },
     "overrides": {
-        "tailwindcss": "4.2.2",
         "vite": "^8.0.0",
         "vue": "latest"
     },
