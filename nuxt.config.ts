@@ -112,8 +112,19 @@ export default defineNuxtConfig({
         '@stefanobartoletti/nuxt-social-share',
         '@nuxt/a11y',
         '@nuxt/test-utils/module',
+        '@liria24/og-image/nuxt',
         ...(isVitest ? [] : ['@vite-pwa/nuxt']),
     ],
+
+    ogImage: {
+        preset: 'avatio',
+        secret: process.env.OG_IMAGE_SECRET,
+        routes: {
+            revoke: {
+                requireToken: true,
+            },
+        },
+    },
 
     css: ['~/assets/css/main.css'],
 
