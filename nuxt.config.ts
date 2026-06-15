@@ -117,16 +117,6 @@ export default defineNuxtConfig({
         ...(isVitest ? [] : ['@vite-pwa/nuxt']),
     ],
 
-    ogImage: {
-        preset: 'avatio',
-        secret: process.env.OG_IMAGE_SECRET,
-        routes: {
-            revoke: {
-                requireToken: true,
-            },
-        },
-    },
-
     css: ['~/assets/css/main.css'],
 
     vite: {
@@ -445,6 +435,16 @@ export default defineNuxtConfig({
             'github.com', // GitHub
             'avatars.githubusercontent.com', // GitHub User Avatars
         ],
+    },
+
+    ogImage: {
+        preset: 'avatio',
+        secret: process.env.OG_IMAGE_SECRET,
+        routes: {
+            revoke: {
+                requireToken: true,
+            },
+        },
     },
 
     pwa: {
