@@ -38,7 +38,6 @@ const dominantColor = computed(() => firstImage.value?.themeColors?.[0] || '')
                 :src="firstImage!.url"
                 :alt="setup.name"
                 width="640"
-                height="480"
                 sizes="sm:100vw md:50vw lg:33vw"
                 format="webp"
                 quality="80"
