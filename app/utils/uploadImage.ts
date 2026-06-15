@@ -39,7 +39,8 @@ export const uploadImage = async (file: File, path: 'setup' | 'avatar'): Promise
             objectKey: string
             uploadUrl: string
             method: string
-            headers: Record<string, string>
+            headers?: Record<string, string>
+            fields?: Record<string, string>
             expiresAt: string
         }>('/api/images/upload-url', {
             method: 'POST',
@@ -52,10 +53,16 @@ export const uploadImage = async (file: File, path: 'setup' | 'avatar'): Promise
         }),
     ])
 
+    const body = upload.method === 'POST' && upload.fields ? new FormData() : file
+    if (body instanceof FormData) {
+        Object.entries(upload.fields || {}).forEach(([key, value]) => body.append(key, value))
+        body.append('file', file)
+    }
+
     const uploadResponse = await fetch(upload.uploadUrl, {
         method: upload.method,
-        headers: upload.headers,
-        body: file,
+        headers: upload.method === 'POST' ? undefined : upload.headers,
+        body,
     })
 
     if (!uploadResponse.ok) throw new Error('Failed to upload image.')

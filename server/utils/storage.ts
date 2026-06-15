@@ -1,13 +1,18 @@
 import { Files } from 'files-sdk'
+import type { StoredFile } from 'files-sdk'
 import { r2 } from 'files-sdk/r2'
 import type { R2Bucket } from 'files-sdk/r2'
 import type { H3Event } from 'h3'
 
 declare const useEvent: () => H3Event
+declare const useStorage: (base?: string) => {
+    getItem: <T>(key: string) => Promise<T | null>
+    setItem: <T>(key: string, value: T) => Promise<void>
+    removeItem: (key: string) => Promise<void>
+}
 
 type StorageClient = InstanceType<typeof Files>
 type RuntimeEnv = Partial<Record<string, string | R2Bucket>>
-type FileHead = Awaited<ReturnType<StorageClient['head']>>
 
 const getRuntimeEnv = (): RuntimeEnv => {
     const g = globalThis as typeof globalThis & { __env__?: RuntimeEnv }
@@ -82,9 +87,9 @@ export const cachedStorageUrl = async (key: string) => {
     return url
 }
 
-export const cachedStorageHead = async (key: string): Promise<FileHead> => {
+export const cachedStorageHead = async (key: string): Promise<StoredFile> => {
     const cacheKey = fileCacheKey('head', key)
-    const cached = await fileCache().getItem<FileHead>(cacheKey)
+    const cached = await fileCache().getItem<StoredFile>(cacheKey)
     if (cached) return cached
 
     const head = await storage.head(key)

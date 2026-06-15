@@ -13,8 +13,11 @@ const extensionByContentType: Record<ImageContentType, string> = {
     'image/webp': 'webp',
 }
 
-const createTemporaryImageKey = (path: ImageUploadPath, userId: string, contentType: ImageContentType) =>
-    `${path}/tmp/${userId}/${nanoid(IMAGE_KEY_ID_LENGTH)}.${extensionByContentType[contentType]}`
+const createTemporaryImageKey = (
+    path: ImageUploadPath,
+    userId: string,
+    contentType: ImageContentType,
+) => `${path}/tmp/${userId}/${nanoid(IMAGE_KEY_ID_LENGTH)}.${extensionByContentType[contentType]}`
 
 const body = z.object({
     path: z.enum(IMAGE_UPLOAD_PATHS),
@@ -31,11 +34,8 @@ export default authedSessionEventHandler(
         const signed = await storage.signedUploadUrl(objectKey, {
             contentType,
             expiresIn: SIGNED_UPLOAD_EXPIRES_IN,
-            metadata: {
-                userId: session.user.id,
-                purpose: path,
-                size: size.toString(),
-            },
+            maxSize: MAX_IMAGE_UPLOAD_SIZE,
+            minSize: 1,
         })
         const uploadUrl =
             typeof signed === 'string'
@@ -58,7 +58,14 @@ export default authedSessionEventHandler(
             objectKey,
             uploadUrl,
             method: typeof signed === 'string' ? 'PUT' : signed.method,
-            headers: typeof signed === 'string' ? { 'content-type': contentType } : signed.headers,
+            headers:
+                typeof signed === 'string'
+                    ? { 'content-type': contentType }
+                    : 'headers' in signed
+                      ? signed.headers
+                      : undefined,
+            fields:
+                typeof signed === 'string' || signed.method === 'PUT' ? undefined : signed.fields,
             expiresAt: new Date(Date.now() + SIGNED_UPLOAD_EXPIRES_IN * 1000).toISOString(),
         }
     },

@@ -214,7 +214,11 @@ export const setupImagesPublicSchema = setupImagesSelectSchema
         etag: true,
     })
     .partial({
+        objectKey: true,
         themeColors: true,
+        contentType: true,
+        size: true,
+        etag: true,
     })
 export type SetupImage = z.infer<typeof setupImagesPublicSchema>
 
