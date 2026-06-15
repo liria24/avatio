@@ -28,9 +28,10 @@ export default authedSessionEventHandler<Item[]>(async ({ event, session, db }) 
         limit,
     })
 
-    await Promise.all(
-        data.map((item) => enqueueItemRevalidation(event, item, 'owned-avatars')),
-    )
+    if (data.length)
+        runAfterResponse(
+            Promise.all(data.map((item) => enqueueItemRevalidation(event, item, 'owned-avatars'))),
+        )
 
     return data
 })

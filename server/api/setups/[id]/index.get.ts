@@ -155,6 +155,7 @@ export default sessionEventHandler<Setup>(async ({ event, session, db }) => {
             if (!data) throw serverError.notFound()
 
             const items: SetupItem[] = []
+            const revalidationTasks: Promise<unknown>[] = []
             let failedItemsCount = 0
 
             for (const setupItem of data.items) {
@@ -163,7 +164,9 @@ export default sessionEventHandler<Setup>(async ({ event, session, db }) => {
                     continue
                 }
 
-                await enqueueItemRevalidation(event, setupItem.item, 'setup-detail')
+                revalidationTasks.push(
+                    enqueueItemRevalidation(event, setupItem.item, 'setup-detail'),
+                )
 
                 items.push({
                     id: setupItem.item.id,
@@ -182,6 +185,8 @@ export default sessionEventHandler<Setup>(async ({ event, session, db }) => {
                     shapekeys: setupItem.shapekeys,
                 })
             }
+
+            if (revalidationTasks.length) runAfterResponse(Promise.all(revalidationTasks))
 
             return {
                 ...data,

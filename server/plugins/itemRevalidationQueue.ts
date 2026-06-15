@@ -14,7 +14,6 @@ export default defineNitroPlugin((nitroApp) => {
                     await handleItemRevalidationMessage(message.body)
                     message.ack()
                 } catch (error) {
-                    await clearItemRevalidationLock(message.body)
                     log.error('Failed to revalidate item from queue:', error)
                     message.retry()
                 }
