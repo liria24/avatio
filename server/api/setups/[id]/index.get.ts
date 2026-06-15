@@ -1,7 +1,5 @@
 import { z } from 'zod'
 
-const log = logger('/api/setups/[id]:GET')
-
 const params = z.object({
     id: z.string(),
 })
@@ -156,32 +154,39 @@ export default sessionEventHandler<Setup>(async ({ event, session, db }) => {
 
             if (!data) throw serverError.notFound()
 
-            const results = await Promise.all(
-                data.items.map(async (item) => {
-                    if (item.item.outdated) return null
-                    try {
-                        const response = await getItem(event, db, item.item.id, item.item.platform)
-                        if (response.outdated) return null
-                        return {
-                            ...response,
-                            category: item.category || response.category,
-                            unsupported: item.unsupported,
-                            note: item.note,
-                            shapekeys: item.shapekeys,
-                        }
-                    } catch (error) {
-                        log.error(`Failed to fetch item ${item.item.id}:`, error)
-                        return null
-                    }
-                }),
-            )
-
             const items: SetupItem[] = []
+            const revalidationTasks: Promise<unknown>[] = []
             let failedItemsCount = 0
 
-            for (const result of results)
-                if (result) items.push(result)
-                else failedItemsCount++
+            for (const setupItem of data.items) {
+                if (setupItem.item.outdated) {
+                    failedItemsCount++
+                    continue
+                }
+
+                revalidationTasks.push(
+                    enqueueItemRevalidation(event, setupItem.item, 'setup-detail'),
+                )
+
+                items.push({
+                    id: setupItem.item.id,
+                    platform: setupItem.item.platform,
+                    category: setupItem.category || setupItem.item.category,
+                    name: setupItem.item.name,
+                    niceName: setupItem.item.niceName,
+                    image: setupItem.item.image,
+                    price: setupItem.item.price,
+                    likes: setupItem.item.likes,
+                    nsfw: setupItem.item.nsfw,
+                    outdated: setupItem.item.outdated,
+                    shop: setupItem.item.shop,
+                    unsupported: setupItem.unsupported,
+                    note: setupItem.note,
+                    shapekeys: setupItem.shapekeys,
+                })
+            }
+
+            if (revalidationTasks.length) runAfterResponse(Promise.all(revalidationTasks))
 
             return {
                 ...data,

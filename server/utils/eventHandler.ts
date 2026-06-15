@@ -8,6 +8,11 @@ const rejectBannedUser = (session: Session | null) => {
     if (session?.user?.banned) throw serverError.forbidden()
 }
 
+const hasBetterAuthSessionCookie = (headers: Headers) => {
+    const cookie = headers.get('cookie')
+    return Boolean(cookie?.includes('better-auth'))
+}
+
 export const promiseEventHandler = <T = unknown>(
     handler: ({ event, db }: { event: H3Event; db: ReturnType<typeof useDB> }) => Promise<T> | T,
 ) => {
@@ -30,7 +35,9 @@ export const sessionEventHandler = <T = unknown>(
     options?: SessionEventHandlerOptions,
 ) =>
     promiseEventHandler(async ({ event, db }) => {
-        const session = await auth.api.getSession({ headers: event.headers })
+        const session = hasBetterAuthSessionCookie(event.headers)
+            ? await auth.api.getSession({ headers: event.headers })
+            : null
 
         if (options?.rejectBannedUser) rejectBannedUser(session)
 
