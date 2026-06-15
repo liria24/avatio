@@ -1,7 +1,9 @@
+import { extractColorsFromImageData } from 'extract-colors'
 import { PNG } from 'pngjs'
 
 const log = logger('extractImageColors')
 const MAX_SAMPLE_DIMENSION = 128
+const MAX_COLORS = 6
 
 interface ExtractedImageColors {
     colors: string[]
@@ -14,50 +16,38 @@ const createCloudflareImageUrl = (url: string) => {
     return `${baseUrl}/cdn-cgi/image/fit=scale-down,width=${MAX_SAMPLE_DIMENSION},format=png,quality=100/${url}`
 }
 
-const hex = (value: number) => value.toString(16).padStart(2, '0')
-
-const extractDominantColors = (data: Uint8Array) => {
-    const buckets = new Map<string, { count: number; r: number; g: number; b: number }>()
-
-    for (let i = 0; i < data.length; i += 4) {
-        const alpha = data[i + 3] ?? 255
-        if (alpha < 128) continue
-
-        const r = data[i] ?? 0
-        const g = data[i + 1] ?? 0
-        const b = data[i + 2] ?? 0
-        const saturation = Math.max(r, g, b) - Math.min(r, g, b)
-        if (saturation < 18 && r > 235 && g > 235 && b > 235) continue
-        if (r < 18 && g < 18 && b < 18) continue
-
-        const key = `${r >> 4}-${g >> 4}-${b >> 4}`
-        const bucket = buckets.get(key) ?? { count: 0, r: 0, g: 0, b: 0 }
-        bucket.count += 1
-        bucket.r += r
-        bucket.g += g
-        bucket.b += b
-        buckets.set(key, bucket)
-    }
-
-    return [...buckets.values()]
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 6)
-        .map((bucket) => {
-            const r = Math.round(bucket.r / bucket.count)
-            const g = Math.round(bucket.g / bucket.count)
-            const b = Math.round(bucket.b / bucket.count)
-            return `#${hex(r)}${hex(g)}${hex(b)}`
-        })
-}
-
 export const extractImageColors = async (imageUrl: string): Promise<ExtractedImageColors> => {
     try {
         const response = await fetch(createCloudflareImageUrl(imageUrl))
         if (!response.ok) return { colors: [], width: 0, height: 0 }
 
         const image = PNG.sync.read(Buffer.from(await response.arrayBuffer()))
+        const colors = extractColorsFromImageData(
+            {
+                data: new Uint8ClampedArray(image.data),
+                width: image.width,
+                height: image.height,
+            },
+            {
+                pixels: image.width * image.height,
+                saturationDistance: 0.5,
+                lightnessDistance: 0.65,
+                hueDistance: 0.3,
+                colorValidator: (red, green, blue, alpha) => {
+                    const saturation = Math.max(red, green, blue) - Math.min(red, green, blue)
+                    if (alpha < 128) return false
+                    if (saturation < 18 && red > 235 && green > 235 && blue > 235) return false
+                    if (red < 18 && green < 18 && blue < 18) return false
+                    return true
+                },
+            },
+        )
+
         return {
-            colors: extractDominantColors(image.data),
+            colors: colors
+                .sort((a, b) => b.area - a.area)
+                .slice(0, MAX_COLORS)
+                .map((color) => color.hex),
             width: image.width,
             height: image.height,
         }
