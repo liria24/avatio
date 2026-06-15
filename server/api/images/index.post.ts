@@ -1,4 +1,5 @@
 import { nanoid } from 'nanoid'
+import { withHttps } from 'ufo'
 import { z } from 'zod'
 
 const log = logger('/api/images:POST')
@@ -60,7 +61,7 @@ export default authedSessionEventHandler(
 
         log.success('Image processed and uploaded successfully:', fullPath)
         return {
-            url: await storage.url(fullPath),
+            url: withHttps(await storage.url(fullPath)),
             width,
             height,
             themeColors,

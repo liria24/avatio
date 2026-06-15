@@ -4,6 +4,7 @@ import type { BetterAuthOptions } from 'better-auth/minimal'
 import { admin, multiSession, username, customSession } from 'better-auth/plugins'
 import { nanoid } from 'nanoid'
 import { useStorage } from 'nitropack/runtime/internal/storage'
+import { withHttps } from 'ufo'
 
 import { dbProxy, schema } from '../../server/utils/database'
 import { storage } from '../../server/utils/storage'
@@ -162,7 +163,7 @@ const options = {
                                     contentType: 'image/jpeg',
                                 },
                             )
-                            image = await storage.url(`avatar/${imageId}.jpg`)
+                            image = withHttps(await storage.url(`avatar/${imageId}.jpg`))
                         } catch {
                             image = null
                         }
