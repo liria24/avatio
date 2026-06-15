@@ -1,21 +1,17 @@
-import { fileURLToPath } from 'node:url'
-
 import { useNuxt } from '@nuxt/kit'
 import type { NitroRouteConfig } from 'nitropack'
 import { defineOrganization } from 'nuxt-schema-org/schema'
-import { dirname } from 'pathe'
 import { withLeadingSlash } from 'ufo'
-import { loadEnv } from 'vite'
 
-const env = loadEnv('', dirname(fileURLToPath(import.meta.url)), '')
-const isVitest = Boolean(env.VITEST)
-const isTest = env.NODE_ENV === 'test'
+const isVitest = Boolean(process.env.VITEST)
+const isTest = process.env.NODE_ENV === 'test'
 
-const baseUrl = env.PUBLIC_SITE_URL || 'http://localhost:3000'
+const baseUrl = process.env.PUBLIC_SITE_URL || 'http://localhost:3000'
 const publicUrl = 'https://avatio.me'
-const r2PublicBaseUrl = env.NUXT_R2_PUBLIC_BASE_URL || env.R2_PUBLIC_BASE_URL
+const r2PublicBaseUrl = process.env.NUXT_R2_PUBLIC_BASE_URL || process.env.R2_PUBLIC_BASE_URL
 const imageDomain = r2PublicBaseUrl ? new URL(r2PublicBaseUrl).hostname : undefined
-const emailFromAddress = env.NUXT_EMAIL_FROM_ADDRESS || env.EMAIL_FROM || 'hello@avatio.me'
+const emailFromAddress =
+    process.env.NUXT_EMAIL_FROM_ADDRESS || process.env.EMAIL_FROM || 'hello@avatio.me'
 const title = 'Avatio'
 const description = 'アバター改変レシピの共有プラットフォーム'
 
@@ -170,7 +166,7 @@ export default defineNuxtConfig({
                         ? cloudflareObservabilityHeadSamplingRate
                         : 1,
                 },
-                account_id: env.CLOUDFLARE_ACCOUNT_ID,
+                account_id: process.env.CLOUDFLARE_ACCOUNT_ID,
                 d1_databases: [
                     {
                         binding: 'DB',
@@ -560,7 +556,7 @@ export default defineNuxtConfig({
         scripts: {
             registry: {
                 umamiAnalytics: {
-                    websiteId: env.UMAMI_WEBSITE_ID,
+                    websiteId: process.env.UMAMI_WEBSITE_ID,
                     trigger: 'onNuxtReady',
                 },
             },
