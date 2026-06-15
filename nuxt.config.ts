@@ -275,12 +275,6 @@ export default defineNuxtConfig({
         booth: {
             proxyUrl: process.env.NUXT_BOOTH_PROXY_URL,
         },
-        liria: {
-            discord: {
-                endpoint: process.env.LIRIA_DISCORD_ENDPOINT,
-                accessToken: process.env.LIRIA_DISCORD_ACCESS_TOKEN,
-            },
-        },
         neon: {
             databaseUrl: process.env.NEON_DATABASE_URL,
         },

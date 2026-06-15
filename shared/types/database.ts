@@ -205,18 +205,30 @@ export const setupImagesInsertSchema = createInsertSchema(setupImages)
 export const setupImagesPublicSchema = setupImagesSelectSchema
     .pick({
         url: true,
+        objectKey: true,
         width: true,
         height: true,
         themeColors: true,
+        contentType: true,
+        size: true,
+        etag: true,
     })
     .partial({
+        objectKey: true,
         themeColors: true,
+        contentType: true,
+        size: true,
+        etag: true,
     })
 export type SetupImage = z.infer<typeof setupImagesPublicSchema>
 
 export const setupImageMetadataSchema = z.object({
-    width: z.number().int().min(1).max(4096),
-    height: z.number().int().min(1).max(4096),
+    objectKey: z.string().min(1).optional(),
+    contentType: z.string().optional(),
+    size: z.number().int().min(1).optional(),
+    etag: z.string().nullable().optional(),
+    width: z.number().int().min(1).max(8192),
+    height: z.number().int().min(1).max(8192),
     themeColors: z
         .string()
         .regex(/^#[\da-f]{6}$/i)
@@ -256,7 +268,7 @@ export const setupsInsertSchema = createInsertSchema(setups, {
             .array()
             .max(8, 'タグは最大 8 個です。')
             .optional(),
-        images: z.url().array().max(1, '画像は最大 1 個です。').optional(),
+        images: z.string().min(1).array().max(1, '画像は最大 1 個です。').optional(),
         imageMetadata: z.record(z.string(), setupImageMetadataSchema).optional(),
         coauthors: setupCoauthorsInsertSchema
             .omit({ setupId: true })
@@ -281,7 +293,7 @@ export const setupsUpdateSchema = createUpdateSchema(setups, {
         .array()
         .max(8, 'タグは最大 8 個です。')
         .optional(),
-    images: z.url().array().max(1, '画像は最大 1 個です。').optional(),
+    images: z.string().min(1).array().max(1, '画像は最大 1 個です。').optional(),
     imageMetadata: z.record(z.string(), setupImageMetadataSchema).optional(),
     coauthors: setupCoauthorsInsertSchema
         .omit({ setupId: true })

@@ -1,10 +1,8 @@
-import type { H3Event } from 'h3'
 import type { Queue } from '@cloudflare/workers-types'
+import type { H3Event } from 'h3'
 const log = logger('itemRevalidationQueue')
 const QUEUE_BINDING = 'ITEM_REVALIDATION_QUEUE'
 const REVALIDATION_LOCK_TTL = 60 * 30
-
-type RuntimeEnv = Record<string, unknown>
 
 export interface ItemRevalidationMessage {
     id: Item['id']
@@ -13,10 +11,8 @@ export interface ItemRevalidationMessage {
     requestedAt: string
 }
 
-const getRuntimeEnv = (event?: H3Event): RuntimeEnv => {
-    const g = globalThis as typeof globalThis & { __env__?: RuntimeEnv }
-    if (g.__env__) return g.__env__
-    return (event?.context.cloudflare?.env ?? process.env) as RuntimeEnv
+type RevalidatableItem = Pick<Item, 'id' | 'platform'> & {
+    updatedAt: string | number | Date
 }
 
 const getQueue = (event?: H3Event) => getRuntimeEnv(event)[QUEUE_BINDING] as Queue | undefined
@@ -26,7 +22,7 @@ const getLockKey = (id: Item['id'], platform: Platform) =>
 
 const shouldUseQueue = () => !import.meta.dev && process.env.NODE_ENV !== 'test'
 
-export const isItemRevalidationDue = (item: Pick<Item, 'platform' | 'updatedAt'>) => {
+export const isItemRevalidationDue = (item: Pick<RevalidatableItem, 'platform' | 'updatedAt'>) => {
     const maxAgeMs =
         item.platform === 'github' ? GITHUB_ITEM_CACHE_DURATION_MS : ITEM_CACHE_DURATION_MS
     return Date.now() - new Date(item.updatedAt).getTime() >= maxAgeMs
@@ -34,7 +30,7 @@ export const isItemRevalidationDue = (item: Pick<Item, 'platform' | 'updatedAt'>
 
 export const enqueueItemRevalidation = async (
     event: H3Event,
-    item: Pick<Item, 'id' | 'platform' | 'updatedAt'>,
+    item: RevalidatableItem,
     reason: ItemRevalidationMessage['reason'],
 ) => {
     if (!shouldUseQueue() || !isItemRevalidationDue(item)) return false

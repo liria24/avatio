@@ -77,6 +77,31 @@ const auditLogAttributes: Record<
         label: 'Performed cleanup',
         color: 'info',
     },
+    image_upload_url_create: {
+        icon: 'mingcute:upload-fill',
+        label: 'Created image upload URL',
+        color: 'info',
+    },
+    image_upload_complete: {
+        icon: 'mingcute:pic-fill',
+        label: 'Completed image upload',
+        color: 'success',
+    },
+    image_move: {
+        icon: 'mingcute:transfer-3-fill',
+        label: 'Moved image',
+        color: 'info',
+    },
+    image_delete: {
+        icon: 'mingcute:delete-2-fill',
+        label: 'Deleted image',
+        color: 'error',
+    },
+    image_cleanup: {
+        icon: 'mingcute:broom-fill',
+        label: 'Cleaned up image',
+        color: 'info',
+    },
 }
 
 const { data, refresh } = await useFetch('/api/admin/audit-log', {

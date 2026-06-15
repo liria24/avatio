@@ -46,3 +46,9 @@ export const RATE_LIMIT_WINDOW = 60 // seconds
 export const RATE_LIMIT_DEFAULT = 100
 export const RATE_LIMIT_SIGNIN = 10
 export const RATE_LIMIT_SESSION = 200
+
+// Image uploads
+export const MAX_IMAGE_UPLOAD_SIZE = 5 * 1024 * 1024
+export const IMAGE_UPLOAD_PATHS = ['setup', 'avatar'] as const
+export const IMAGE_CONTENT_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const
+export const IMAGE_KEY_ID_LENGTH = 16

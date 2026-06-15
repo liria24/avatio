@@ -18,9 +18,13 @@ export const resolveSetupImageData = async (
         ? await db
               .select({
                   url: setupImages.url,
+                  objectKey: setupImages.objectKey,
                   width: setupImages.width,
                   height: setupImages.height,
                   themeColors: setupImages.themeColors,
+                  contentType: setupImages.contentType,
+                  size: setupImages.size,
+                  etag: setupImages.etag,
               })
               .from(setupImages)
               .where(and(eq(setupImages.setupId, setupId), inArray(setupImages.url, images)))
@@ -32,9 +36,13 @@ export const resolveSetupImageData = async (
         if (metadata)
             return {
                 url,
+                objectKey: metadata.objectKey ?? null,
                 width: metadata.width,
                 height: metadata.height,
                 themeColors: metadata.themeColors?.length ? metadata.themeColors : null,
+                contentType: metadata.contentType ?? null,
+                size: metadata.size ?? null,
+                etag: metadata.etag ?? null,
             }
 
         const existing = existingByUrl.get(url)

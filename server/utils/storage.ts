@@ -1,24 +1,17 @@
 import { Files } from 'files-sdk'
+import type { StoredFile } from 'files-sdk'
 import { r2 } from 'files-sdk/r2'
 import type { R2Bucket } from 'files-sdk/r2'
-import type { H3Event } from 'h3'
 
-declare const useEvent: () => H3Event
+import { getRuntimeEnv } from './runtimeEnv'
+
+declare const useStorage: (base?: string) => {
+    getItem: <T>(key: string) => Promise<T | null>
+    setItem: <T>(key: string, value: T) => Promise<void>
+    removeItem: (key: string) => Promise<void>
+}
 
 type StorageClient = InstanceType<typeof Files>
-type RuntimeEnv = Partial<Record<string, string | R2Bucket>>
-
-const getRuntimeEnv = (): RuntimeEnv => {
-    const g = globalThis as typeof globalThis & { __env__?: RuntimeEnv }
-    if (g.__env__) return g.__env__
-    try {
-        const cfEnv = useEvent().context.cloudflare?.env
-        if (cfEnv) return cfEnv as RuntimeEnv
-    } catch {
-        // not inside a request context (e.g. during module load or tests)
-    }
-    return process.env as RuntimeEnv
-}
 
 const requireEnv = (name: string) => {
     const value = getRuntimeEnv()[name]
@@ -34,7 +27,7 @@ let storageClient: StorageClient | null = null
 const getStorage = () => {
     if (storageClient) return storageClient
 
-    const binding = getRuntimeEnv().R2
+    const binding = getRuntimeEnv().R2 as R2Bucket | undefined
 
     storageClient = new Files({
         adapter:
@@ -61,3 +54,32 @@ export const storage = new Proxy({} as StorageClient, {
         return typeof value === 'function' ? value.bind(client) : value
     },
 })
+
+const fileCache = () => useStorage('cache')
+const fileCacheKey = (type: 'url' | 'head', key: string) => `files:${type}:${key}`
+
+export const invalidateStorageCache = async (key: string) =>
+    await Promise.all([
+        fileCache().removeItem(fileCacheKey('url', key)),
+        fileCache().removeItem(fileCacheKey('head', key)),
+    ])
+
+export const cachedStorageUrl = async (key: string) => {
+    const cacheKey = fileCacheKey('url', key)
+    const cached = await fileCache().getItem<string>(cacheKey)
+    if (cached) return cached
+
+    const url = await storage.url(key)
+    await fileCache().setItem(cacheKey, url)
+    return url
+}
+
+export const cachedStorageHead = async (key: string): Promise<StoredFile> => {
+    const cacheKey = fileCacheKey('head', key)
+    const cached = await fileCache().getItem<StoredFile>(cacheKey)
+    if (cached) return cached
+
+    const head = await storage.head(key)
+    await fileCache().setItem(cacheKey, head)
+    return head
+}

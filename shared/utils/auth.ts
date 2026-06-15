@@ -22,8 +22,7 @@ type CachedUserSettings = {
 } | null
 
 const JPG_FILENAME_LENGTH = 16
-const userSettingsCacheKey = (userId: string) =>
-    `user-settings:${encodeURIComponent(userId)}`
+const userSettingsCacheKey = (userId: string) => `user-settings:${encodeURIComponent(userId)}`
 
 const normalizeCachedUserSettings = (settings: CachedUserSettings) =>
     settings

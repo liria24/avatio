@@ -37,8 +37,11 @@ const dominantColor = computed(() => firstImage.value?.themeColors?.[0] || '')
             <NuxtImg
                 :src="firstImage!.url"
                 :alt="setup.name"
-                width="360"
-                format="avif"
+                width="640"
+                height="480"
+                sizes="sm:100vw md:50vw lg:33vw"
+                format="webp"
+                quality="80"
                 fit="cover"
                 preload
                 class="size-full max-h-64 rounded-lg object-cover sm:max-h-105"

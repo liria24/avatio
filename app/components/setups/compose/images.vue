@@ -5,13 +5,13 @@ const dropZoneRef = ref<HTMLDivElement>()
 
 const { isOverDropZone } = useDropZone(dropZoneRef, {
     onDrop: processImages,
-    dataTypes: ['image/jpg', 'image/jpeg', 'image/png', 'image/webp', 'image/tiff'],
+    dataTypes: ['image/jpg', 'image/jpeg', 'image/png', 'image/webp'],
     multiple: false,
     preventDefaultForUnhandled: true,
 })
 
 const { open, reset, onChange } = useFileDialog({
-    accept: 'image/png, image/jpg, image/jpeg, image/webp, image/tiff',
+    accept: 'image/png, image/jpg, image/jpeg, image/webp',
     multiple: false,
     directory: false,
 })
@@ -46,7 +46,16 @@ onChange(async (files) => {
 
     <div v-else class="grid grid-cols-3 gap-2">
         <div v-for="(image, index) in state.images" :key="`image-${index}`" class="relative grid">
-            <NuxtImg v-slot="{ isLoaded, src, imgAttrs }" :src="image" custom>
+            <NuxtImg
+                v-slot="{ isLoaded, src, imgAttrs }"
+                :src="image"
+                width="320"
+                height="320"
+                format="webp"
+                quality="80"
+                fit="cover"
+                custom
+            >
                 <img
                     v-if="isLoaded"
                     v-bind="imgAttrs"
