@@ -3,6 +3,12 @@ import type { NitroRouteConfig } from 'nitropack'
 import { defineOrganization } from 'nuxt-schema-org/schema'
 import { withLeadingSlash } from 'ufo'
 
+import {
+    defaultI18nLocale,
+    i18nRoutingStrategy,
+    prefixedI18nLocales,
+} from './shared/utils/i18nRouting'
+
 const isVitest = Boolean(process.env.VITEST)
 const isTest = process.env.NODE_ENV === 'test'
 
@@ -14,8 +20,6 @@ const emailFromAddress =
     process.env.NUXT_EMAIL_FROM_ADDRESS || process.env.EMAIL_FROM || 'hello@avatio.me'
 const title = 'Avatio'
 const description = 'アバター改変レシピの共有プラットフォーム'
-
-const availableI18nLocales = ['en']
 
 const cloudflareObservabilityHeadSamplingRate = Number(
     process.env.CLOUDFLARE_OBSERVABILITY_HEAD_SAMPLING_RATE ?? 1,
@@ -62,7 +66,7 @@ const baseRouteRules: { [path: string]: NitroRouteConfig } = {
 const routeRules: { [path: string]: NitroRouteConfig } = {
     ...baseRouteRules,
     ...Object.fromEntries(
-        availableI18nLocales.flatMap((locale) =>
+        prefixedI18nLocales.flatMap((locale) =>
             Object.entries(baseRouteRules).map(([path, config]) => {
                 const localizedPath = withLeadingSlash(`${locale}${path}`)
                 const localizedConfig = { ...config }
@@ -350,7 +354,8 @@ export default defineNuxtConfig({
 
     i18n: {
         baseUrl,
-        defaultLocale: 'ja',
+        strategy: i18nRoutingStrategy,
+        defaultLocale: defaultI18nLocale,
         locales: [
             {
                 code: 'en',
