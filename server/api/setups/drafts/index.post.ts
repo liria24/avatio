@@ -72,6 +72,7 @@ export default authedSessionEventHandler(
             const images = (content.images || []).map((url) => ({
                 setupDraftId: upserted.id,
                 url,
+                objectKey: content.imageMetadata?.[url]?.objectKey ?? null,
             }))
 
             await Promise.all([

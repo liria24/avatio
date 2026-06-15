@@ -7,6 +7,7 @@ declare const useEvent: () => H3Event
 
 type StorageClient = InstanceType<typeof Files>
 type RuntimeEnv = Partial<Record<string, string | R2Bucket>>
+type FileHead = Awaited<ReturnType<StorageClient['head']>>
 
 const getRuntimeEnv = (): RuntimeEnv => {
     const g = globalThis as typeof globalThis & { __env__?: RuntimeEnv }
@@ -61,3 +62,32 @@ export const storage = new Proxy({} as StorageClient, {
         return typeof value === 'function' ? value.bind(client) : value
     },
 })
+
+const fileCache = () => useStorage('cache')
+const fileCacheKey = (type: 'url' | 'head', key: string) => `files:${type}:${key}`
+
+export const invalidateStorageCache = async (key: string) =>
+    await Promise.all([
+        fileCache().removeItem(fileCacheKey('url', key)),
+        fileCache().removeItem(fileCacheKey('head', key)),
+    ])
+
+export const cachedStorageUrl = async (key: string) => {
+    const cacheKey = fileCacheKey('url', key)
+    const cached = await fileCache().getItem<string>(cacheKey)
+    if (cached) return cached
+
+    const url = await storage.url(key)
+    await fileCache().setItem(cacheKey, url)
+    return url
+}
+
+export const cachedStorageHead = async (key: string): Promise<FileHead> => {
+    const cacheKey = fileCacheKey('head', key)
+    const cached = await fileCache().getItem<FileHead>(cacheKey)
+    if (cached) return cached
+
+    const head = await storage.head(key)
+    await fileCache().setItem(cacheKey, head)
+    return head
+}

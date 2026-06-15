@@ -183,6 +183,10 @@ export const useSetupCompose = () => {
                 (setup?.images || []).map((image) => [
                     image.url,
                     {
+                        objectKey: image.objectKey ?? undefined,
+                        contentType: image.contentType ?? undefined,
+                        size: image.size ?? undefined,
+                        etag: image.etag ?? undefined,
                         width: image.width,
                         height: image.height,
                         themeColors: image.themeColors || null,
@@ -523,6 +527,10 @@ export const useSetupCompose = () => {
             const image = await uploadImage(file, 'setup')
             state.value.images.push(image.url)
             imageMetadata.value[image.url] = {
+                objectKey: image.objectKey,
+                contentType: image.contentType,
+                size: image.size,
+                etag: image.etag,
                 width: image.width,
                 height: image.height,
                 themeColors: image.themeColors.length ? image.themeColors : null,
