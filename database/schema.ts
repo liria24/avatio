@@ -451,7 +451,7 @@ export const setupImages = snakeCase.table(
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
         setupId: text().notNull(),
         url: text().notNull(),
-        objectKey: text(),
+        objectKey: text().notNull(),
         width: integer().notNull(),
         height: integer().notNull(),
         themeColors: text().array(),
@@ -571,7 +571,7 @@ export const setupDraftImages = userSchema.table(
         id: uuid().primaryKey().defaultRandom(),
         setupDraftId: uuid().notNull(),
         url: text().notNull(),
-        objectKey: text(),
+        objectKey: text().notNull(),
     },
     (table) => [
         index('setup_draft_images_id_index').on(table.id),
