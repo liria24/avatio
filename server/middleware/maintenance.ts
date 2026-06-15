@@ -14,16 +14,17 @@ const ignoredMaintenancePaths = [
 ]
 
 export default defineEventHandler(async (event) => {
-    const path = event.path.split('?')[0] || '/'
+    const path = normalizeMaintenancePath(event.path)
     if (ignoredMaintenancePaths.some((prefix) => path.startsWith(prefix))) return
 
     try {
         const isMaintenance = await getMaintenanceFlag()
 
-        if (isMaintenance && path !== '/on-maintenance')
-            return sendRedirect(event, '/on-maintenance', 307)
+        if (isMaintenance && !isMaintenancePagePath(path))
+            return sendRedirect(event, getMaintenancePagePath(path), 307)
 
-        if (!isMaintenance && path === '/on-maintenance') return sendRedirect(event, '/', 307)
+        if (!isMaintenance && isMaintenancePagePath(path))
+            return sendRedirect(event, getMaintenanceExitPath(path), 307)
     } catch (error) {
         maintenanceLog.error('Failed to resolve maintenance flag:', error)
     }
