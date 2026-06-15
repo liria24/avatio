@@ -156,7 +156,7 @@ export default defineNuxtConfig({
             wrangler: {
                 name: 'avatio',
                 compatibility_flags: [
-                    'nodejs_compat_v2',
+                    'nodejs_compat',
                     'nodejs_als',
                     'no_handle_cross_request_promise_resolution',
                 ],
@@ -274,12 +274,6 @@ export default defineNuxtConfig({
         },
         booth: {
             proxyUrl: process.env.NUXT_BOOTH_PROXY_URL,
-        },
-        liria: {
-            discord: {
-                endpoint: process.env.LIRIA_DISCORD_ENDPOINT,
-                accessToken: process.env.LIRIA_DISCORD_ACCESS_TOKEN,
-            },
         },
         neon: {
             databaseUrl: process.env.NEON_DATABASE_URL,
