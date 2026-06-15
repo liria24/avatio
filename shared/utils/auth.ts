@@ -15,7 +15,27 @@ import {
     SESSION_COOKIE_CACHE_MAX_AGE,
 } from './constants'
 
+type CachedUserSettings = {
+    updatedAt: Date | string | null
+    showPrivateSetups: boolean
+    showNSFW: boolean
+} | null
+
 const JPG_FILENAME_LENGTH = 16
+const userSettingsCacheKey = (userId: string) => `user-settings:${encodeURIComponent(userId)}`
+
+const normalizeCachedUserSettings = (settings: CachedUserSettings) =>
+    settings
+        ? {
+              ...settings,
+              updatedAt: settings.updatedAt ? new Date(settings.updatedAt) : null,
+          }
+        : settings
+
+export const purgeUserSettingsSessionCache = async (userId: string) => {
+    await useStorage('auth').del(userSettingsCacheKey(userId))
+}
+
 const minUsernameLength = 3
 const productionCookies =
     process.env.NODE_ENV === 'production' || process.env.CLOUDFLARE_ENV === 'production'
@@ -185,14 +205,25 @@ export const auth = betterAuth({
     plugins: [
         ...(options.plugins ?? []),
         customSession(async ({ user, session }) => {
-            const settings = await dbProxy.query.userSettings.findFirst({
-                where: { userId: { eq: user.id } },
-                columns: {
-                    updatedAt: true,
-                    showPrivateSetups: true,
-                    showNSFW: true,
-                },
+            const key = userSettingsCacheKey(user.id)
+            const cachedSettings = await useStorage('auth').getItem<CachedUserSettings>(key)
+            const settings = normalizeCachedUserSettings(
+                cachedSettings !== undefined
+                    ? cachedSettings
+                    : ((await dbProxy.query.userSettings.findFirst({
+                          where: { userId: { eq: user.id } },
+                          columns: {
+                              updatedAt: true,
+                              showPrivateSetups: true,
+                              showNSFW: true,
+                          },
+                      })) ?? null),
+            )
+
+            await useStorage('auth').setItem(key, settings, {
+                ttl: SESSION_COOKIE_CACHE_MAX_AGE,
             })
+
             return {
                 user: { ...user, settings },
                 session,

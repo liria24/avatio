@@ -450,10 +450,14 @@ export const setupImages = snakeCase.table(
     {
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
         setupId: text().notNull(),
-        url: text().notNull(),
+        objectKey: text().notNull(),
         width: integer().notNull(),
         height: integer().notNull(),
         themeColors: text().array(),
+        contentType: text(),
+        size: integer(),
+        etag: text(),
+        createdAt: timestamp().defaultNow().notNull(),
     },
     (table) => [
         index('setup_images_id_index').on(table.id),
@@ -565,12 +569,12 @@ export const setupDraftImages = userSchema.table(
     {
         id: uuid().primaryKey().defaultRandom(),
         setupDraftId: uuid().notNull(),
-        url: text().notNull(),
+        objectKey: text().notNull(),
     },
     (table) => [
         index('setup_draft_images_id_index').on(table.id),
         index('setup_draft_images_setup_draft_id_index').on(table.setupDraftId),
-        index('setup_draft_images_url_index').on(table.url),
+        index('setup_draft_images_object_key_index').on(table.objectKey),
         foreignKey({
             name: 'setup_draft_images_setup_draft_id_fkey',
             columns: [table.setupDraftId],
@@ -815,6 +819,11 @@ export const auditActionType = pgEnum('audit_action_type', [
     'report_resolve',
     'feedback_close',
     'cleanup',
+    'image_upload_url_create',
+    'image_upload_complete',
+    'image_move',
+    'image_delete',
+    'image_cleanup',
 ])
 
 export const auditTargetType = pgEnum('audit_target_type', [
@@ -824,6 +833,7 @@ export const auditTargetType = pgEnum('audit_target_type', [
     'feedback',
     'badge',
     'system',
+    'image',
 ])
 
 export const auditLogs = adminSchema.table(

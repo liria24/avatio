@@ -69,10 +69,18 @@ export default authedSessionEventHandler(
 
             if (!upserted) throw serverError.internalServerError()
 
-            const images = (content.images || []).map((url) => ({
-                setupDraftId: upserted.id,
-                url,
-            }))
+            const images = (content.images || []).map((url) => {
+                const objectKey = content.imageMetadata?.[url]?.objectKey
+                if (!objectKey)
+                    throw serverError.badRequest({
+                        responseMessage: 'Image metadata is required for uploaded setup images.',
+                    })
+
+                return {
+                    setupDraftId: upserted.id,
+                    objectKey,
+                }
+            })
 
             await Promise.all([
                 tx.delete(setupDraftImages).where(eq(setupDraftImages.setupDraftId, upserted.id)),

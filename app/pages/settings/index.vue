@@ -96,7 +96,7 @@ const removeLink = (index: number) => {
 }
 
 const { open, reset, onChange } = useFileDialog({
-    accept: 'image/png, image/jpg, image/jpeg, image/webp, image/tiff',
+    accept: 'image/png, image/jpg, image/jpeg, image/webp',
     multiple: false,
     directory: false,
 })

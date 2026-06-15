@@ -66,7 +66,7 @@ export default adminSessionEventHandler(async ({ db }) => {
                     },
                     images: {
                         columns: {
-                            url: true,
+                            objectKey: true,
                         },
                     },
                 },
@@ -83,7 +83,15 @@ export default adminSessionEventHandler(async ({ db }) => {
     })
 
     return {
-        data,
+        data: await Promise.all(
+            data.map(async (report) => ({
+                ...report,
+                setup: {
+                    ...report.setup,
+                    images: await withSetupImageUrls(report.setup.images),
+                },
+            })),
+        ),
         pagination: {
             page,
             limit,

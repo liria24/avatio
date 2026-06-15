@@ -56,11 +56,16 @@ export default adminSessionEventHandler(async ({ db }) => {
             },
             images: {
                 columns: {
-                    url: true,
+                    objectKey: true,
                 },
             },
         },
     })
 
-    return result
+    return await Promise.all(
+        result.map(async (setup) => ({
+            ...setup,
+            images: await withSetupImageUrls(setup.images),
+        })),
+    )
 })

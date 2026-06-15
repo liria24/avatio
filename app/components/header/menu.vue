@@ -1,10 +1,15 @@
 <script setup lang="ts">
-const { auth, session, sessions, revoke } = useAuth()
+const { auth, session, sessions, getSessions, revoke } = useAuth()
 const toast = useToast()
 const colorMode = useColorMode()
 const login = useLoginModal()
 const feedback = useFeedbackModal()
 const { t, locales, setLocale } = useI18n()
+const open = ref(false)
+
+watch(open, async (value) => {
+    if (value && session.value && sessions.value === undefined) await getSessions()
+})
 
 const switchAccount = async (sessionToken: string) => {
     await auth.multiSession.setActive({ sessionToken })
@@ -21,6 +26,7 @@ const switchAccount = async (sessionToken: string) => {
 
 <template>
     <UDropdownMenu
+        v-model:open="open"
         :items="[
             [
                 {

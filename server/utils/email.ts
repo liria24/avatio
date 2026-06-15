@@ -26,8 +26,6 @@ interface SendEmailBinding {
     }): Promise<{ messageId: string }>
 }
 
-type RuntimeEnv = Partial<Record<string, string | SendEmailBinding>>
-
 export interface SendEmailInput {
     to: string | EmailAddress | (string | EmailAddress)[]
     subject: string
@@ -43,18 +41,6 @@ export interface SendEmailInput {
 
 const defaultEmailFrom = 'hello@avatio.me'
 
-const getRuntimeEnv = (): RuntimeEnv => {
-    const g = globalThis as typeof globalThis & { __env__?: RuntimeEnv }
-    if (g.__env__) return g.__env__
-    try {
-        const cfEnv = useEvent().context.cloudflare?.env
-        if (cfEnv) return cfEnv as RuntimeEnv
-    } catch {
-        // not inside a request context
-    }
-    return {}
-}
-
 export const getEmailFromAddress = () => {
     try {
         const config = useRuntimeConfig()
@@ -67,9 +53,15 @@ export const getEmailFromAddress = () => {
     return defaultEmailFrom
 }
 
+const isSendEmailBinding = (binding: unknown): binding is SendEmailBinding =>
+    typeof binding === 'object' &&
+    binding !== null &&
+    'send' in binding &&
+    typeof binding.send === 'function'
+
 const getEmailBinding = () => {
     const binding = getRuntimeEnv().EMAIL
-    if (!binding || typeof binding === 'string')
+    if (!isSendEmailBinding(binding))
         throw new Error('Cloudflare Email binding EMAIL is unavailable in this environment.')
     return binding
 }

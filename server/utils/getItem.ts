@@ -12,7 +12,7 @@ import { joinURL, withHttps } from 'ufo'
 const log = logger('getItem')
 
 export default async (
-    event: H3Event,
+    event: H3Event | undefined,
     db: ReturnType<typeof useDB>,
     id: string,
     provider: Platform | undefined,
@@ -27,7 +27,7 @@ export default async (
         throw serverError.notFound({ responseMessage: 'Item not found or not allowed' })
 
     if (resolvedProvider === 'booth') {
-        const config = useRuntimeConfig(event)
+        const config = event ? useRuntimeConfig(event) : useRuntimeConfig()
         const proxyUrl = config.booth.proxyUrl
 
         if (!proxyUrl)

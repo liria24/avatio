@@ -1,24 +1,25 @@
-import { fileURLToPath } from 'node:url'
-
 import { useNuxt } from '@nuxt/kit'
 import type { NitroRouteConfig } from 'nitropack'
 import { defineOrganization } from 'nuxt-schema-org/schema'
-import { dirname } from 'pathe'
 import { withLeadingSlash } from 'ufo'
-import { loadEnv } from 'vite'
 
-const env = loadEnv('', dirname(fileURLToPath(import.meta.url)), '')
-const isVitest = Boolean(env.VITEST)
-const isTest = env.NODE_ENV === 'test'
+const isVitest = Boolean(process.env.VITEST)
+const isTest = process.env.NODE_ENV === 'test'
 
-const baseUrl = env.PUBLIC_SITE_URL || 'http://localhost:3000'
-const r2PublicBaseUrl = env.NUXT_R2_PUBLIC_BASE_URL || env.R2_PUBLIC_BASE_URL
+const baseUrl = process.env.PUBLIC_SITE_URL || 'http://localhost:3000'
+const publicUrl = 'https://avatio.me'
+const r2PublicBaseUrl = process.env.NUXT_R2_PUBLIC_BASE_URL || process.env.R2_PUBLIC_BASE_URL
 const imageDomain = r2PublicBaseUrl ? new URL(r2PublicBaseUrl).hostname : undefined
-const emailFromAddress = env.NUXT_EMAIL_FROM_ADDRESS || env.EMAIL_FROM || 'hello@avatio.me'
+const emailFromAddress =
+    process.env.NUXT_EMAIL_FROM_ADDRESS || process.env.EMAIL_FROM || 'hello@avatio.me'
 const title = 'Avatio'
 const description = 'アバター改変レシピの共有プラットフォーム'
 
 const availableI18nLocales = ['en']
+
+const cloudflareObservabilityHeadSamplingRate = Number(
+    process.env.CLOUDFLARE_OBSERVABILITY_HEAD_SAMPLING_RATE ?? 1,
+)
 
 const normalizeRuntimeConfigForVitest = () => {
     if (!isVitest) return
@@ -161,9 +162,11 @@ export default defineNuxtConfig({
                 ],
                 observability: {
                     enabled: true,
-                    head_sampling_rate: 1,
+                    head_sampling_rate: Number.isFinite(cloudflareObservabilityHeadSamplingRate)
+                        ? cloudflareObservabilityHeadSamplingRate
+                        : 1,
                 },
-                account_id: env.CLOUDFLARE_ACCOUNT_ID,
+                account_id: process.env.CLOUDFLARE_ACCOUNT_ID,
                 d1_databases: [
                     {
                         binding: 'DB',
@@ -192,6 +195,22 @@ export default defineNuxtConfig({
                 ],
                 triggers: {
                     crons: ['0 22 * * *'],
+                },
+                queues: {
+                    producers: [
+                        {
+                            queue: 'item-revalidation',
+                            binding: 'ITEM_REVALIDATION_QUEUE',
+                        },
+                    ],
+                    consumers: [
+                        {
+                            queue: 'item-revalidation',
+                            max_batch_size: 10,
+                            max_batch_timeout: 5,
+                            max_retries: 3,
+                        },
+                    ],
                 },
             },
         },
@@ -255,12 +274,6 @@ export default defineNuxtConfig({
         },
         booth: {
             proxyUrl: process.env.NUXT_BOOTH_PROXY_URL,
-        },
-        liria: {
-            discord: {
-                endpoint: process.env.LIRIA_DISCORD_ENDPOINT,
-                accessToken: process.env.LIRIA_DISCORD_ACCESS_TOKEN,
-            },
         },
         neon: {
             databaseUrl: process.env.NEON_DATABASE_URL,
@@ -408,6 +421,8 @@ export default defineNuxtConfig({
     },
 
     image: {
+        provider: 'cloudflare',
+        cloudflare: { baseURL: publicUrl },
         screens: {
             xsIcon: 24,
             smIcon: 32,
@@ -535,7 +550,7 @@ export default defineNuxtConfig({
         scripts: {
             registry: {
                 umamiAnalytics: {
-                    websiteId: env.UMAMI_WEBSITE_ID,
+                    websiteId: process.env.UMAMI_WEBSITE_ID,
                     trigger: 'onNuxtReady',
                 },
             },

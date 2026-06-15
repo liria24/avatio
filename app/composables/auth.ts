@@ -131,8 +131,9 @@ const _useAuth = () => {
         revoke,
     }
 
-    // Create initialization promise that waits for session and sessions data
-    const initPromise = Promise.all([getSession(), getSessions()]).then(() => returnObject)
+    // Create initialization promise that waits for the active session only.
+    // Device sessions are loaded lazily by UI that needs account switching.
+    const initPromise = getSession().then(() => returnObject)
 
     // Merge promise with return object (same pattern as Nuxt's useFetch/useAsyncData)
     const awaitableResult = Object.assign(initPromise, returnObject)

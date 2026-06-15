@@ -2,6 +2,12 @@ import { z } from 'zod'
 
 const FLAGS_KEY = 'app'
 
+let maintenanceFlagCache: { value: boolean; expiresAt: number } | null = null
+
+export const clearMaintenanceFlagCache = () => {
+    maintenanceFlagCache = null
+}
+
 export const defaultAppFlags = {
     allowedBoothCategoryId: [],
     forceUpdateItem: false,
@@ -52,6 +58,19 @@ export const getAppFlags = defineCachedFunction(
     },
 )
 
+export const getMaintenanceFlag = async () => {
+    const now = Date.now()
+    if (maintenanceFlagCache && maintenanceFlagCache.expiresAt > now)
+        return maintenanceFlagCache.value
+
+    const { isMaintenance } = await getAppFlags()
+    maintenanceFlagCache = {
+        value: isMaintenance,
+        expiresAt: now + APP_FLAGS_CACHE_TTL * 1000,
+    }
+    return isMaintenance
+}
+
 export const updateAppFlags = async (patch: unknown) => {
     const parsedPatch = appFlagsPatchSchema.parse(patch)
     const current = await getAppFlags()
@@ -65,6 +84,7 @@ export const updateAppFlags = async (patch: unknown) => {
     })
 
     await useStorage('flags').setItem(FLAGS_KEY, next)
+    clearMaintenanceFlagCache()
     await useStorage('cache').del('nitro:functions:app-flags:.json')
     return next
 }

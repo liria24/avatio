@@ -107,7 +107,7 @@ export default sessionEventHandler(async ({ session, db }) => {
             images: {
                 limit: 1,
                 columns: {
-                    url: true,
+                    objectKey: true,
                     themeColors: true,
                 },
             },
@@ -133,17 +133,20 @@ export default sessionEventHandler(async ({ session, db }) => {
         },
     })
 
-    const result = data.map((setup) => ({
-        ...setup,
-        items: setup.items
-            .filter((item) => !item.item.outdated)
-            .map((item) => ({
-                ...item.item,
-                outdated: undefined,
-            })),
-        failedItemsCount: setup.items.filter((item) => item.item.outdated).length || undefined,
-        count: undefined,
-    }))
+    const result = await Promise.all(
+        data.map(async (setup) => ({
+            ...setup,
+            images: await withSetupImageUrls(setup.images),
+            items: setup.items
+                .filter((item) => !item.item.outdated)
+                .map((item) => ({
+                    ...item.item,
+                    outdated: undefined,
+                })),
+            failedItemsCount: setup.items.filter((item) => item.item.outdated).length || undefined,
+            count: undefined,
+        })),
+    )
 
     return {
         data: result,

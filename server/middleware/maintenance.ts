@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
     if (ignoredMaintenancePaths.some((prefix) => path.startsWith(prefix))) return
 
     try {
-        const { isMaintenance } = await getAppFlags()
+        const isMaintenance = await getMaintenanceFlag()
 
         if (isMaintenance && path !== '/on-maintenance')
             return sendRedirect(event, '/on-maintenance', 307)
