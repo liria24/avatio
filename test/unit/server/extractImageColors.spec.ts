@@ -70,7 +70,7 @@ describe('extractImageColors', () => {
         const result = await extractImageColors('https://files.example.com/setup/image.png')
 
         expect(mocks.fetch).toHaveBeenCalledWith(
-            'https://avatio.example/cdn-cgi/image/fit=scale-down,width=128,format=png,quality=100/https://files.example.com/setup/image.png',
+            'https://avatio.example/cdn-cgi/image/fit=scale-down,width=128,format=png,quality=100/https%3A%2F%2Ffiles.example.com%2Fsetup%2Fimage.png',
         )
         expect(mocks.pngRead).toHaveBeenCalledWith(imageBuffer)
         expect(mocks.extractColorsFromImageData).toHaveBeenCalledWith(
@@ -91,6 +91,19 @@ describe('extractImageColors', () => {
             width: 2,
             height: 1,
         })
+    })
+
+    it('encodes signed image URLs before appending them to the Cloudflare Image path', async () => {
+        mocks.fetch.mockResolvedValue(createFetchResponse(false))
+
+        const extractImageColors = await loadExtractImageColors()
+        await extractImageColors(
+            'https://files.example.com/setup/image.png?token=a/b+c&exp=1#preview',
+        )
+
+        expect(mocks.fetch).toHaveBeenCalledWith(
+            'https://avatio.example/cdn-cgi/image/fit=scale-down,width=128,format=png,quality=100/https%3A%2F%2Ffiles.example.com%2Fsetup%2Fimage.png%3Ftoken%3Da%2Fb%2Bc%26exp%3D1%23preview',
+        )
     })
 
     it('returns empty metadata when the image sample request fails', async () => {

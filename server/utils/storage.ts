@@ -2,14 +2,9 @@ import { Files } from 'files-sdk'
 import type { StoredFile } from 'files-sdk'
 import { r2 } from 'files-sdk/r2'
 import type { R2Bucket } from 'files-sdk/r2'
+import { useStorage } from 'nitropack/runtime/storage'
 
 import { getRuntimeEnv } from './runtimeEnv'
-
-declare const useStorage: (base?: string) => {
-    getItem: <T>(key: string) => Promise<T | null>
-    setItem: <T>(key: string, value: T) => Promise<void>
-    removeItem: (key: string) => Promise<void>
-}
 
 type StorageClient = InstanceType<typeof Files>
 
@@ -59,7 +54,7 @@ const fileCache = () => useStorage('cache')
 const fileCacheKey = (type: 'head', key: string) => `files:${type}:${key}`
 
 export const invalidateStorageHeadCache = async (key: string) =>
-    await fileCache().removeItem(fileCacheKey('head', key))
+    await fileCache().del(fileCacheKey('head', key))
 
 export const cachedStorageHead = async (key: string): Promise<StoredFile> => {
     const cacheKey = fileCacheKey('head', key)

@@ -1,4 +1,5 @@
 import { nanoid } from 'nanoid'
+import { withHttps } from 'ufo'
 import { z } from 'zod'
 
 const log = logger('/api/images/complete:POST')
@@ -70,7 +71,7 @@ export default authedSessionEventHandler(
             invalidateStorageHeadCache(finalKey),
         ])
 
-        const url = await storage.url(finalKey)
+        const url = withHttps(await storage.url(finalKey))
         const { colors } = await extractImageColors(url)
 
         await createAuditLog(db, {

@@ -13,7 +13,7 @@ interface ExtractedImageColors {
 
 const createCloudflareImageUrl = (url: string) => {
     const baseUrl = useRuntimeConfig().public.siteUrl
-    return `${baseUrl}/cdn-cgi/image/fit=scale-down,width=${MAX_SAMPLE_DIMENSION},format=png,quality=100/${url}`
+    return `${baseUrl}/cdn-cgi/image/fit=scale-down,width=${MAX_SAMPLE_DIMENSION},format=png,quality=100/${encodeURIComponent(url)}`
 }
 
 export const extractImageColors = async (imageUrl: string): Promise<ExtractedImageColors> => {

@@ -4,6 +4,7 @@ import type { BetterAuthOptions } from 'better-auth/minimal'
 import { admin, multiSession, username, customSession } from 'better-auth/plugins'
 import { nanoid } from 'nanoid'
 import { useStorage } from 'nitropack/runtime/internal/storage'
+import { withHttps } from 'ufo'
 
 import { dbProxy, schema } from '../../server/utils/database'
 import { storage } from '../../server/utils/storage'
@@ -19,18 +20,21 @@ type CachedUserSettings = {
     updatedAt: Date | string | null
     showPrivateSetups: boolean
     showNSFW: boolean
-} | null
+}
 
 const JPG_FILENAME_LENGTH = 16
 const userSettingsCacheKey = (userId: string) => `user-settings:${encodeURIComponent(userId)}`
+const defaultUserSettings = {
+    updatedAt: null,
+    showPrivateSetups: true,
+    showNSFW: false,
+} satisfies CachedUserSettings
 
 const normalizeCachedUserSettings = (settings: CachedUserSettings) =>
-    settings
-        ? {
-              ...settings,
-              updatedAt: settings.updatedAt ? new Date(settings.updatedAt) : null,
-          }
-        : settings
+    ({
+        ...settings,
+        updatedAt: settings.updatedAt ? new Date(settings.updatedAt) : null,
+    }) satisfies CachedUserSettings
 
 export const purgeUserSettingsSessionCache = async (userId: string) => {
     await useStorage('auth').del(userSettingsCacheKey(userId))
@@ -162,7 +166,7 @@ const options = {
                                     contentType: 'image/jpeg',
                                 },
                             )
-                            image = await storage.url(`avatar/${imageId}.jpg`)
+                            image = withHttps(await storage.url(`avatar/${imageId}.jpg`))
                         } catch {
                             image = null
                         }
@@ -208,7 +212,7 @@ export const auth = betterAuth({
             const key = userSettingsCacheKey(user.id)
             const cachedSettings = await useStorage('auth').getItem<CachedUserSettings>(key)
             const settings = normalizeCachedUserSettings(
-                cachedSettings !== undefined
+                cachedSettings !== null
                     ? cachedSettings
                     : ((await dbProxy.query.userSettings.findFirst({
                           where: { userId: { eq: user.id } },
@@ -217,7 +221,7 @@ export const auth = betterAuth({
                               showPrivateSetups: true,
                               showNSFW: true,
                           },
-                      })) ?? null),
+                      })) ?? defaultUserSettings),
             )
 
             await useStorage('auth').setItem(key, settings, {
