@@ -28,7 +28,6 @@ const STORAGE_OPERATION_CONCURRENCY = 8
 const BACKUP_PREFIX = 'backup'
 const BACKUP_RULE_ID = 'avatio-backup-cleanup'
 const BACKUP_RETENTION_SECONDS = 3 * 24 * 60 * 60 // 3 days
-type RuntimeEnv = Partial<Record<string, unknown>>
 
 interface LifecycleRule {
     id: string
@@ -39,22 +38,7 @@ interface LifecycleRule {
     }
 }
 
-const getRuntimeEnvValue = (name: string) => {
-    const g = globalThis as typeof globalThis & { __env__?: RuntimeEnv }
-    const globalValue = g.__env__?.[name]
-    if (typeof globalValue === 'string' && globalValue) return globalValue
-
-    try {
-        const cfValue = (useEvent().context.cloudflare?.env as RuntimeEnv | undefined)?.[name]
-        if (typeof cfValue === 'string' && cfValue) return cfValue
-    } catch {
-        // not inside a request context
-    }
-
-    return process.env[name]
-}
-
-const getR2PublicBaseUrl = () => getRuntimeEnvValue('R2_PUBLIC_BASE_URL')?.replace(/\/+$/, '')
+const getR2PublicBaseUrl = () => getRuntimeEnvString('R2_PUBLIC_BASE_URL')?.replace(/\/+$/, '')
 
 const extractStorageKeyFromUrl = (
     url: string,
@@ -98,7 +82,9 @@ const getUsedImageUrls = async (db: ReturnType<typeof useDB>): Promise<UsedImage
 const imageUrlsToStorageKeys = (urls: string[], publicBaseUrl: string) =>
     new Set(
         urls
-            .map((url) => (url.includes('://') ? extractStorageKeyFromUrl(url, publicBaseUrl) : url))
+            .map((url) =>
+                url.includes('://') ? extractStorageKeyFromUrl(url, publicBaseUrl) : url,
+            )
             .filter((key): key is string => key !== null),
     )
 
