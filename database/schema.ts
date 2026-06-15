@@ -450,7 +450,6 @@ export const setupImages = snakeCase.table(
     {
         id: integer().primaryKey().generatedAlwaysAsIdentity(),
         setupId: text().notNull(),
-        url: text().notNull(),
         objectKey: text().notNull(),
         width: integer().notNull(),
         height: integer().notNull(),
@@ -570,13 +569,11 @@ export const setupDraftImages = userSchema.table(
     {
         id: uuid().primaryKey().defaultRandom(),
         setupDraftId: uuid().notNull(),
-        url: text().notNull(),
         objectKey: text().notNull(),
     },
     (table) => [
         index('setup_draft_images_id_index').on(table.id),
         index('setup_draft_images_setup_draft_id_index').on(table.setupDraftId),
-        index('setup_draft_images_url_index').on(table.url),
         index('setup_draft_images_object_key_index').on(table.objectKey),
         foreignKey({
             name: 'setup_draft_images_setup_draft_id_fkey',

@@ -2,11 +2,23 @@ import { setupImages } from '@@/database/schema'
 import type { SetupImageMetadata } from '@@/shared/types/database'
 import { and, eq, inArray } from 'drizzle-orm'
 
+import { storage } from './storage'
+
 interface ResolveSetupImageDataOptions {
     setupId?: string
     images?: string[]
     imageMetadata?: Record<string, SetupImageMetadata>
 }
+
+export const withSetupImageUrls = async <T extends { objectKey: string }>(
+    images: T[],
+): Promise<(T & { url: string })[]> =>
+    await Promise.all(
+        images.map(async (image) => ({
+            ...image,
+            url: await storage.url(image.objectKey),
+        })),
+    )
 
 export const resolveSetupImageData = async (
     db: ReturnType<typeof useDB>,
@@ -14,29 +26,39 @@ export const resolveSetupImageData = async (
 ) => {
     if (!images.length) return []
 
-    const existingImages = setupId
-        ? await db
-              .select({
-                  url: setupImages.url,
-                  objectKey: setupImages.objectKey,
-                  width: setupImages.width,
-                  height: setupImages.height,
-                  themeColors: setupImages.themeColors,
-                  contentType: setupImages.contentType,
-                  size: setupImages.size,
-                  etag: setupImages.etag,
-              })
-              .from(setupImages)
-              .where(and(eq(setupImages.setupId, setupId), inArray(setupImages.url, images)))
-        : []
-    const existingByUrl = new Map(existingImages.map((image) => [image.url, image]))
+    const objectKeys = images
+        .map((url) => imageMetadata?.[url]?.objectKey ?? (url.includes('://') ? null : url))
+        .filter((objectKey): objectKey is string => Boolean(objectKey))
+
+    const existingImages =
+        setupId && objectKeys.length
+            ? await db
+                  .select({
+                      objectKey: setupImages.objectKey,
+                      width: setupImages.width,
+                      height: setupImages.height,
+                      themeColors: setupImages.themeColors,
+                      contentType: setupImages.contentType,
+                      size: setupImages.size,
+                      etag: setupImages.etag,
+                  })
+                  .from(setupImages)
+                  .where(
+                      and(
+                          eq(setupImages.setupId, setupId),
+                          inArray(setupImages.objectKey, objectKeys),
+                      ),
+                  )
+            : []
+    const existingByObjectKey = new Map(existingImages.map((image) => [image.objectKey, image]))
 
     return images.map((url) => {
         const metadata = imageMetadata?.[url]
+        const objectKey = metadata?.objectKey ?? (url.includes('://') ? null : url)
+
         if (metadata)
             return {
-                url,
-                objectKey: metadata.objectKey ?? null,
+                objectKey: metadata.objectKey,
                 width: metadata.width,
                 height: metadata.height,
                 themeColors: metadata.themeColors?.length ? metadata.themeColors : null,
@@ -45,7 +67,7 @@ export const resolveSetupImageData = async (
                 etag: metadata.etag ?? null,
             }
 
-        const existing = existingByUrl.get(url)
+        const existing = objectKey ? existingByObjectKey.get(objectKey) : undefined
         if (existing) return existing
 
         throw serverError.badRequest({

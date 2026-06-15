@@ -56,23 +56,10 @@ export const storage = new Proxy({} as StorageClient, {
 })
 
 const fileCache = () => useStorage('cache')
-const fileCacheKey = (type: 'url' | 'head', key: string) => `files:${type}:${key}`
+const fileCacheKey = (type: 'head', key: string) => `files:${type}:${key}`
 
-export const invalidateStorageCache = async (key: string) =>
-    await Promise.all([
-        fileCache().removeItem(fileCacheKey('url', key)),
-        fileCache().removeItem(fileCacheKey('head', key)),
-    ])
-
-export const cachedStorageUrl = async (key: string) => {
-    const cacheKey = fileCacheKey('url', key)
-    const cached = await fileCache().getItem<string>(cacheKey)
-    if (cached) return cached
-
-    const url = await storage.url(key)
-    await fileCache().setItem(cacheKey, url)
-    return url
-}
+export const invalidateStorageHeadCache = async (key: string) =>
+    await fileCache().removeItem(fileCacheKey('head', key))
 
 export const cachedStorageHead = async (key: string): Promise<StoredFile> => {
     const cacheKey = fileCacheKey('head', key)

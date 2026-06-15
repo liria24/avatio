@@ -18,7 +18,7 @@ export default defineSitemapEventHandler(async () => {
         with: {
             images: {
                 columns: {
-                    url: true,
+                    objectKey: true,
                 },
             },
         },
@@ -37,18 +37,20 @@ export default defineSitemapEventHandler(async () => {
     })
 
     return [
-        ...setups.map(
-            (setup): SitemapUrlInput => ({
-                loc: `/setup/${setup.id}`,
-                lastmod: setup.updatedAt,
-                images: setup.images?.length
-                    ? setup.images.map((image) => ({
-                          loc: image.url,
-                      }))
-                    : undefined,
-                _i18nTransform: true,
-            }),
-        ),
+        ...(await Promise.all(
+            setups.map(
+                async (setup): Promise<SitemapUrlInput> => ({
+                    loc: `/setup/${setup.id}`,
+                    lastmod: setup.updatedAt,
+                    images: setup.images?.length
+                        ? (await withSetupImageUrls(setup.images)).map((image) => ({
+                              loc: image.url,
+                          }))
+                        : undefined,
+                    _i18nTransform: true,
+                }),
+            ),
+        )),
         ...users.map(
             (user): SitemapUrlInput => ({
                 loc: `/@${user.username}`,

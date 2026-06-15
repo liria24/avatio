@@ -63,15 +63,15 @@ const extractStorageKeyFromUrl = (
 
 const getUsedImageUrls = async (db: ReturnType<typeof useDB>): Promise<UsedImageUrls> => {
     const [setupImagesFromDB, setupDraftImagesFromDB, userImagesFromDB] = await Promise.all([
-        db.query.setupImages.findMany({ columns: { url: true, objectKey: true } }),
-        db.query.setupDraftImages.findMany({ columns: { url: true, objectKey: true } }),
+        db.query.setupImages.findMany({ columns: { objectKey: true } }),
+        db.query.setupDraftImages.findMany({ columns: { objectKey: true } }),
         db.query.users.findMany({ columns: { image: true } }),
     ])
 
     return {
         setup: [
-            ...setupImagesFromDB.map((image) => image.objectKey || image.url),
-            ...setupDraftImagesFromDB.map((image) => image.objectKey || image.url),
+            ...setupImagesFromDB.map((image) => image.objectKey),
+            ...setupDraftImagesFromDB.map((image) => image.objectKey),
         ],
         avatar: userImagesFromDB
             .map((user) => user.image)

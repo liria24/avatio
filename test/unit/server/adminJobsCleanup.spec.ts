@@ -12,8 +12,8 @@ interface StorageObject {
 }
 
 interface CleanupDbRows {
-    setupImages?: { url: string }[]
-    setupDraftImages?: { url: string }[]
+    setupImages?: { objectKey: string }[]
+    setupDraftImages?: { objectKey: string }[]
     users?: { image: string | null }[]
 }
 
@@ -106,8 +106,8 @@ describe('runCleanupJob', () => {
     it('keeps referenced setup and avatar images and skips recent orphan images', async () => {
         arrange({
             rows: {
-                setupImages: [{ url: `${publicBaseUrl}/setup/used.jpg` }],
-                setupDraftImages: [{ url: `${publicBaseUrl}/setup/draft-used.jpg` }],
+                setupImages: [{ objectKey: 'setup/used.jpg' }],
+                setupDraftImages: [{ objectKey: 'setup/draft-used.jpg' }],
                 users: [{ image: `${publicBaseUrl}/avatar/used.jpg` }],
             },
             setupObjects: [
@@ -169,7 +169,7 @@ describe('runCleanupJob', () => {
         runtimeGlobal.__env__ = { R2_PUBLIC_BASE_URL: `${publicBaseUrl}/` }
         arrange({
             rows: {
-                setupImages: [{ url: `${publicBaseUrl}/setup/used.jpg` }],
+                setupImages: [{ objectKey: 'setup/used.jpg' }],
             },
             setupObjects: [{ key: 'setup/used.jpg', lastModified: oldDate }],
         })
@@ -186,7 +186,7 @@ describe('runCleanupJob', () => {
         delete process.env.R2_PUBLIC_BASE_URL
         arrange({
             rows: {
-                setupImages: [{ url: `${publicBaseUrl}/setup/used.jpg` }],
+                setupImages: [{ objectKey: 'setup/used.jpg' }],
             },
             setupObjects: [{ key: 'setup/used.jpg', lastModified: oldDate }],
         })

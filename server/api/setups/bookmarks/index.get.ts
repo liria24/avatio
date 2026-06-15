@@ -109,7 +109,7 @@ export default authedSessionEventHandler<PaginationResponse<Bookmark[]>>(
                         },
                         images: {
                             columns: {
-                                url: true,
+                                objectKey: true,
                                 width: true,
                                 height: true,
                                 themeColors: true,
@@ -156,14 +156,17 @@ export default authedSessionEventHandler<PaginationResponse<Bookmark[]>>(
             },
         })
 
-        const result = data.map((bookmark) => ({
-            ...bookmark,
-            setup: {
-                ...bookmark.setup,
-                items: bookmark.setup.items.map((item) => item.item),
-                tags: bookmark.setup.tags.map((tag) => tag.tag),
-            },
-        }))
+        const result = await Promise.all(
+            data.map(async (bookmark) => ({
+                ...bookmark,
+                setup: {
+                    ...bookmark.setup,
+                    images: await withSetupImageUrls(bookmark.setup.images),
+                    items: bookmark.setup.items.map((item) => item.item),
+                    tags: bookmark.setup.tags.map((tag) => tag.tag),
+                },
+            })),
+        )
 
         return {
             data: result,

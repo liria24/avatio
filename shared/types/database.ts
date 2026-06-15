@@ -204,7 +204,6 @@ export const setupImagesSelectSchema = createSelectSchema(setupImages)
 export const setupImagesInsertSchema = createInsertSchema(setupImages)
 export const setupImagesPublicSchema = setupImagesSelectSchema
     .pick({
-        url: true,
         objectKey: true,
         width: true,
         height: true,
@@ -213,8 +212,10 @@ export const setupImagesPublicSchema = setupImagesSelectSchema
         size: true,
         etag: true,
     })
+    .extend({
+        url: z.string().min(1),
+    })
     .partial({
-        objectKey: true,
         themeColors: true,
         contentType: true,
         size: true,
@@ -223,7 +224,7 @@ export const setupImagesPublicSchema = setupImagesSelectSchema
 export type SetupImage = z.infer<typeof setupImagesPublicSchema>
 
 export const setupImageMetadataSchema = z.object({
-    objectKey: z.string().min(1).optional(),
+    objectKey: z.string().min(1),
     contentType: z.string().optional(),
     size: z.number().int().min(1).optional(),
     etag: z.string().nullable().optional(),

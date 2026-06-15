@@ -24,10 +24,8 @@ const imageBuffer = Buffer.from([1, 2, 3])
 const createFetchResponse = (ok: boolean, buffer = imageBuffer): Response =>
     ({
         ok,
-        arrayBuffer: async () => buffer.buffer.slice(
-            buffer.byteOffset,
-            buffer.byteOffset + buffer.byteLength,
-        ),
+        arrayBuffer: async () =>
+            buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength),
     }) as Response
 
 const loadExtractImageColors = async () => {
@@ -100,7 +98,9 @@ describe('extractImageColors', () => {
 
         const extractImageColors = await loadExtractImageColors()
 
-        await expect(extractImageColors('https://files.example.com/setup/image.png')).resolves.toEqual({
+        await expect(
+            extractImageColors('https://files.example.com/setup/image.png'),
+        ).resolves.toEqual({
             colors: [],
             width: 0,
             height: 0,
@@ -118,7 +118,9 @@ describe('extractImageColors', () => {
 
         const extractImageColors = await loadExtractImageColors()
 
-        await expect(extractImageColors('https://files.example.com/setup/image.png')).resolves.toEqual({
+        await expect(
+            extractImageColors('https://files.example.com/setup/image.png'),
+        ).resolves.toEqual({
             colors: [],
             width: 0,
             height: 0,

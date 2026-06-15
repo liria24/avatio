@@ -183,7 +183,7 @@ export const useSetupCompose = () => {
                 (setup?.images || []).map((image) => [
                     image.url,
                     {
-                        objectKey: image.objectKey ?? undefined,
+                        objectKey: image.objectKey,
                         contentType: image.contentType ?? undefined,
                         size: image.size ?? undefined,
                         etag: image.etag ?? undefined,

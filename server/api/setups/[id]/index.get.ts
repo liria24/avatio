@@ -108,7 +108,7 @@ export default sessionEventHandler<Setup>(async ({ event, session, db }) => {
                     },
                     images: {
                         columns: {
-                            url: true,
+                            objectKey: true,
                             width: true,
                             height: true,
                         },
@@ -190,6 +190,7 @@ export default sessionEventHandler<Setup>(async ({ event, session, db }) => {
 
             return {
                 ...data,
+                images: await withSetupImageUrls(data.images),
                 items,
                 tags: data.tags.map((tag) => tag.tag),
                 failedItemsCount,
