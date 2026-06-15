@@ -21,6 +21,10 @@ const description = 'アバター改変レシピの共有プラットフォー�
 
 const availableI18nLocales = ['en']
 
+const cloudflareObservabilityHeadSamplingRate = Number(
+    process.env.CLOUDFLARE_OBSERVABILITY_HEAD_SAMPLING_RATE ?? 1,
+)
+
 const normalizeRuntimeConfigForVitest = () => {
     if (!isVitest) return
 
@@ -162,7 +166,9 @@ export default defineNuxtConfig({
                 ],
                 observability: {
                     enabled: true,
-                    head_sampling_rate: 1,
+                    head_sampling_rate: Number.isFinite(cloudflareObservabilityHeadSamplingRate)
+                        ? cloudflareObservabilityHeadSamplingRate
+                        : 1,
                 },
                 account_id: env.CLOUDFLARE_ACCOUNT_ID,
                 d1_databases: [
@@ -193,6 +199,22 @@ export default defineNuxtConfig({
                 ],
                 triggers: {
                     crons: ['0 22 * * *'],
+                },
+                queues: {
+                    producers: [
+                        {
+                            queue: 'item-revalidation',
+                            binding: 'ITEM_REVALIDATION_QUEUE',
+                        },
+                    ],
+                    consumers: [
+                        {
+                            queue: 'item-revalidation',
+                            max_batch_size: 10,
+                            max_batch_timeout: 5,
+                            max_retries: 3,
+                        },
+                    ],
                 },
             },
         },
