@@ -12,6 +12,7 @@ const isVitest = Boolean(env.VITEST)
 const isTest = env.NODE_ENV === 'test'
 
 const baseUrl = env.PUBLIC_SITE_URL || 'http://localhost:3000'
+const publicUrl = 'https://avatio.me'
 const r2PublicBaseUrl = env.NUXT_R2_PUBLIC_BASE_URL || env.R2_PUBLIC_BASE_URL
 const imageDomain = r2PublicBaseUrl ? new URL(r2PublicBaseUrl).hostname : undefined
 const emailFromAddress = env.NUXT_EMAIL_FROM_ADDRESS || env.EMAIL_FROM || 'hello@avatio.me'
@@ -408,6 +409,8 @@ export default defineNuxtConfig({
     },
 
     image: {
+        provider: 'cloudflare',
+        cloudflare: { baseURL: publicUrl },
         screens: {
             xsIcon: 24,
             smIcon: 32,
