@@ -156,7 +156,7 @@ export default defineNuxtConfig({
             wrangler: {
                 name: 'avatio',
                 compatibility_flags: [
-                    'nodejs_compat',
+                    'nodejs_compat_v2',
                     'nodejs_als',
                     'no_handle_cross_request_promise_resolution',
                 ],

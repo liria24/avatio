@@ -3,6 +3,8 @@ import type { StoredFile } from 'files-sdk'
 import { r2 } from 'files-sdk/r2'
 import type { R2Bucket } from 'files-sdk/r2'
 
+import { getRuntimeEnv } from './runtimeEnv'
+
 declare const useStorage: (base?: string) => {
     getItem: <T>(key: string) => Promise<T | null>
     setItem: <T>(key: string, value: T) => Promise<void>
