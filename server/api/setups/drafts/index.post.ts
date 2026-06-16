@@ -22,28 +22,30 @@ export default authedSessionEventHandler(
             sanitize: true,
         })
 
-        const userSetupDraftsCount = await db.query.setupDrafts.findMany({
-            where: {
-                userId: { eq: session.user.id },
-            },
-            columns: {
-                id: true,
-            },
-            extras: {
-                count: sql<number>`CAST(COUNT(*) OVER() AS INTEGER)`,
-            },
-        })
-
-        if ((userSetupDraftsCount[0]?.count || 0) >= MAX_SETUP_DRAFTS)
-            throw serverError.badRequest({
-                responseMessage: 'You have reached the maximum number of setup drafts allowed.',
-            })
-
         if (!id && !hasContent(content)) return null
 
         if (id && !hasContent(content)) {
             await db.delete(setupDrafts).where(eq(setupDrafts.id, id))
             return null
+        }
+
+        if (!id) {
+            const userSetupDraftsCount = await db.query.setupDrafts.findMany({
+                where: {
+                    userId: { eq: session.user.id },
+                },
+                columns: {
+                    id: true,
+                },
+                extras: {
+                    count: sql<number>`CAST(COUNT(*) OVER() AS INTEGER)`,
+                },
+            })
+
+            if ((userSetupDraftsCount[0]?.count || 0) >= MAX_SETUP_DRAFTS)
+                throw serverError.badRequest({
+                    responseMessage: 'You have reached the maximum number of setup drafts allowed.',
+                })
         }
 
         const result = await db.transaction(async (tx) => {

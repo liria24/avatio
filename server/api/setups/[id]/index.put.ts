@@ -54,109 +54,114 @@ export default authedSessionEventHandler(
             tags !== undefined ||
             coauthors !== undefined
 
-        if (Object.keys(updateData).length || hasRelationalChanges) {
-            updateData.updatedAt = new Date()
-            await db.update(setups).set(updateData).where(eq(setups.id, id))
-        }
+        const imageData =
+            images !== undefined
+                ? await resolveSetupImageData(db, {
+                      userId: session.user.id,
+                      setupId: id,
+                      images,
+                      imageMetadata,
+                  })
+                : undefined
 
-        // アイテムの更新
-        // 既存のアイテムとシェイプキーを削除
-        await db
-            .delete(setupItemShapekeys)
-            .where(
-                inArray(
-                    setupItemShapekeys.setupItemId,
-                    db
-                        .select({ id: setupItems.id })
-                        .from(setupItems)
-                        .where(eq(setupItems.setupId, id)),
-                ),
-            )
-
-        await db.delete(setupItems).where(eq(setupItems.setupId, id))
-
-        // 新しいアイテムを挿入
-        if (items.length) {
-            const insertedItems = await db
-                .insert(setupItems)
-                .values(
-                    items.map((item) => ({
-                        setupId: id,
-                        itemId: item.itemId,
-                        category: item.category,
-                        note: item.note,
-                        unsupported: item.category === 'avatar' ? false : item.unsupported,
-                    })),
-                )
-                .returning({
-                    id: setupItems.id,
-                    itemId: setupItems.itemId,
-                })
-
-            // シェイプキーの挿入
-            if (items.some((item) => item.shapekeys?.length)) {
-                const shapekeys = items.flatMap((item, index) => {
-                    const setupItemId = insertedItems[index]?.id
-                    if (!setupItemId) return []
-                    return (
-                        item.shapekeys?.map((shapekey) => ({
-                            setupItemId,
-                            name: shapekey.name,
-                            value: shapekey.value,
-                        })) || []
-                    )
-                })
-
-                if (shapekeys.length) await db.insert(setupItemShapekeys).values(shapekeys)
+        await db.transaction(async (tx) => {
+            if (Object.keys(updateData).length || hasRelationalChanges) {
+                updateData.updatedAt = new Date()
+                await tx.update(setups).set(updateData).where(eq(setups.id, id))
             }
-        }
 
-        // 画像の更新
-        if (images !== undefined) {
-            const imageData = await resolveSetupImageData(db, {
-                userId: session.user.id,
-                setupId: id,
-                images,
-                imageMetadata,
-            })
-
-            await db.delete(setupImages).where(eq(setupImages.setupId, id))
-
-            if (images.length)
-                await db.insert(setupImages).values(
-                    imageData.map((image) => ({
-                        setupId: id,
-                        ...image,
-                    })),
+            // アイテムの更新
+            // 既存のアイテムとシェイプキーを削除
+            await tx
+                .delete(setupItemShapekeys)
+                .where(
+                    inArray(
+                        setupItemShapekeys.setupItemId,
+                        tx
+                            .select({ id: setupItems.id })
+                            .from(setupItems)
+                            .where(eq(setupItems.setupId, id)),
+                    )
                 )
-        }
 
-        // タグの更新
-        if (tags !== undefined) {
-            await db.delete(setupTags).where(eq(setupTags.setupId, id))
+            await tx.delete(setupItems).where(eq(setupItems.setupId, id))
 
-            if (tags.length)
-                await db.insert(setupTags).values(
-                    tags.map((tag) => ({
-                        setupId: id,
-                        tag: tag.tag,
-                    })),
-                )
-        }
+            // 新しいアイテムを挿入
+            if (items.length) {
+                const insertedItems = await tx
+                    .insert(setupItems)
+                    .values(
+                        items.map((item) => ({
+                            setupId: id,
+                            itemId: item.itemId,
+                            category: item.category,
+                            note: item.note,
+                            unsupported: item.category === 'avatar' ? false : item.unsupported,
+                        })),
+                    )
+                    .returning({
+                        id: setupItems.id,
+                        itemId: setupItems.itemId,
+                    })
 
-        // 共同作者の更新
-        if (coauthors !== undefined) {
-            await db.delete(setupCoauthors).where(eq(setupCoauthors.setupId, id))
+                // シェイプキーの挿入
+                if (items.some((item) => item.shapekeys?.length)) {
+                    const shapekeys = items.flatMap((item, index) => {
+                        const setupItemId = insertedItems[index]?.id
+                        if (!setupItemId) return []
+                        return (
+                            item.shapekeys?.map((shapekey) => ({
+                                setupItemId,
+                                name: shapekey.name,
+                                value: shapekey.value,
+                            })) || []
+                        )
+                    })
 
-            if (coauthors.length)
-                await db.insert(setupCoauthors).values(
-                    coauthors.map((coauthor) => ({
-                        setupId: id,
-                        userId: coauthor.userId,
-                        note: coauthor.note,
-                    })),
-                )
-        }
+                    if (shapekeys.length) await tx.insert(setupItemShapekeys).values(shapekeys)
+                }
+            }
+
+            // 画像の更新
+            if (images !== undefined && imageData !== undefined) {
+                await tx.delete(setupImages).where(eq(setupImages.setupId, id))
+
+                if (images.length)
+                    await tx.insert(setupImages).values(
+                        imageData.map((image) => ({
+                            setupId: id,
+                            ...image,
+                        })),
+                    )
+            }
+
+            // タグの更新
+            if (tags !== undefined) {
+                await tx.delete(setupTags).where(eq(setupTags.setupId, id))
+
+                if (tags.length)
+                    await tx.insert(setupTags).values(
+                        tags.map((tag) => ({
+                            setupId: id,
+                            tag: tag.tag,
+                        })),
+                    )
+            }
+
+            // 共同作者の更新
+            if (coauthors !== undefined) {
+                await tx.delete(setupCoauthors).where(eq(setupCoauthors.setupId, id))
+
+                if (coauthors.length)
+                    await tx.insert(setupCoauthors).values(
+                        coauthors.map((coauthor) => ({
+                            setupId: id,
+                            userId: coauthor.userId,
+                            note: coauthor.note,
+                        })),
+                    )
+            }
+        })
 
         await purgeSetupCache(id)
 
