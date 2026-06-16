@@ -114,6 +114,7 @@ export default authedSessionEventHandler(
         // 画像の更新
         if (images !== undefined) {
             const imageData = await resolveSetupImageData(db, {
+                userId: session.user.id,
                 setupId: id,
                 images,
                 imageMetadata,
