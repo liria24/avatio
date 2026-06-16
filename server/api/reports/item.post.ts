@@ -4,6 +4,13 @@ const body = itemReportsInsertSchema
 
 export default authedSessionEventHandler(
     async ({ session, db }) => {
+        await enforceRateLimit({
+            scope: 'reports:item:create',
+            identity: session.user.id,
+            limit: 20,
+            windowSeconds: 60 * 60,
+        })
+
         const { itemId, nameError, irrelevant, other, comment } = await validateBody(body, {
             sanitize: true,
         })

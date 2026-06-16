@@ -11,6 +11,12 @@ export default promiseEventHandler(async ({ db }) => {
     })
 
     const fingerprint = await getFingerprint()
+    await enforceRateLimit({
+        scope: 'feedback:create',
+        identity: fingerprint,
+        limit: 5,
+        windowSeconds: 10 * 60,
+    })
 
     await db.insert(feedbacks).values({
         fingerprint,

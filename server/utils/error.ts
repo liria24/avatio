@@ -45,6 +45,15 @@ export const serverError = {
             message: options?.responseMessage,
         })
     },
+    /** 429 */
+    tooManyRequests(options?: ServerErrorOptions): never {
+        if (options?.log) logger(options.log.tag ?? 'server:error').error(options.log.message)
+        throw createError({
+            status: StatusCodes.TOO_MANY_REQUESTS,
+            statusText: getReasonPhrase(StatusCodes.TOO_MANY_REQUESTS),
+            message: options?.responseMessage,
+        })
+    },
     /** 500 */
     internalServerError(options?: ServerErrorOptions): never {
         if (options?.log) logger(options.log.tag ?? 'server:error').error(options.log.message)

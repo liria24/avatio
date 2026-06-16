@@ -21,6 +21,12 @@ export default authedSessionEventHandler(
         const { id, setupId, content } = await validateBody(body, {
             sanitize: true,
         })
+        await enforceRateLimit({
+            scope: 'setups:drafts:save',
+            identity: session.user.id,
+            limit: 120,
+            windowSeconds: 60,
+        })
 
         if (!id && !hasContent(content)) return null
 

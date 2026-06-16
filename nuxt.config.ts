@@ -221,6 +221,11 @@ export default defineNuxtConfig({
                 binding: 'KV',
                 base: 'flags',
             },
+            'rate-limit': {
+                driver: 'cloudflare-kv-binding',
+                binding: 'KV',
+                base: 'rate-limit',
+            },
         },
         devStorage: {
             auth: {
@@ -233,6 +238,10 @@ export default defineNuxtConfig({
             flags: {
                 driver: 'fs-lite',
                 base: './.data/storage/flags',
+            },
+            'rate-limit': {
+                driver: 'fs-lite',
+                base: './.data/storage/rate-limit',
             },
         },
         experimental: {
