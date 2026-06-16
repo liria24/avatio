@@ -1,6 +1,6 @@
 {
     "name": "avatio",
-    "version": "1.10.2",
+    "version": "1.10.3",
     "private": true,
     "author": "Liria",
     "repository": {
@@ -96,6 +96,7 @@
         "@types/sanitize-html": "2.16.1",
         "@vue/test-utils": "^2.4.11",
         "bumpp": "11.1.0",
+        "changelogen": "^0.6.2",
         "drizzle-kit": "1.0.0-rc.3",
         "happy-dom": "^20.10.4",
         "oxfmt": "^0.55.0",
