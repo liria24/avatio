@@ -64,6 +64,27 @@ Content-Type: text/html; charset=utf-8
         expect(row.htmlBody).toBe('<p>Hello <strong>HTML</strong></p>')
     })
 
+    it('removes remote images from html bodies', async () => {
+        const { parseInboundEmail } = await loadParser()
+        const raw = encodeEmail(`From: sender@example.com
+To: hello@avatio.me
+Subject: Tracking pixel
+Message-ID: <html-img-1@example.com>
+Content-Type: text/html; charset=utf-8
+
+<p>Hello</p><img src="https://tracker.example.com/pixel.png" alt="pixel"><a href="https://example.com">safe</a>`)
+
+        const row = await parseInboundEmail({
+            from: 'sender@example.com',
+            to: 'hello@avatio.me',
+            headers: new Headers(),
+            raw,
+            rawSize: raw.byteLength,
+        })
+
+        expect(row.htmlBody).toBe('<p>Hello</p><a href="https://example.com">safe</a>')
+    })
+
     it('decodes encoded subjects', async () => {
         const { parseInboundEmail } = await loadParser()
         const raw = encodeEmail(`From: sender@example.com

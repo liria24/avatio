@@ -2,7 +2,7 @@ import type { EmailAttachmentMetadata, emails } from '@@/database/schema'
 import type { InferInsertModel } from 'drizzle-orm'
 import PostalMime, { type Address, type Email as ParsedEmail } from 'postal-mime'
 
-import sanitizeObject from './sanitizeObject'
+import { sanitizeEmailHtml } from './sanitizeEmailHtml'
 
 type EmailInsert = InferInsertModel<typeof emails>
 
@@ -74,7 +74,7 @@ export const parseInboundEmail = async (input: InboundEmailInput): Promise<Email
         attachmentEncoding: 'base64',
     }).parse(new Uint8Array(input.raw))
     const from = firstMailbox(parsed.from)
-    const html = parsed.html ? sanitizeObject(parsed.html).trim() : null
+    const html = parsed.html ? sanitizeEmailHtml(parsed.html).trim() : null
     const text = parsed.text?.trim() || null
 
     return {
