@@ -51,7 +51,7 @@ onChange(async (files) => {
                 :src="image"
                 width="320"
                 height="320"
-                format="webp"
+                format="avif"
                 quality="80"
                 fit="cover"
                 custom

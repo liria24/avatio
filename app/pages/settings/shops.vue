@@ -192,7 +192,7 @@ useSeo({
                         alt=""
                         :width="32"
                         :height="32"
-                        format="webp"
+                        format="avif"
                         loading="lazy"
                         fetchpriority="low"
                         class="aspect-square size-7 shrink-0 rounded-md object-cover"
