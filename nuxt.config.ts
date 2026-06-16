@@ -21,10 +21,6 @@ const emailFromAddress =
 const title = 'Avatio'
 const description = 'アバター改変レシピの共有プラットフォーム'
 
-const cloudflareObservabilityHeadSamplingRate = Number(
-    process.env.CLOUDFLARE_OBSERVABILITY_HEAD_SAMPLING_RATE ?? 1,
-)
-
 const normalizeRuntimeConfigForVitest = () => {
     if (!isVitest) return
 
@@ -156,9 +152,9 @@ export default defineNuxtConfig({
                 ],
                 observability: {
                     enabled: true,
-                    head_sampling_rate: Number.isFinite(cloudflareObservabilityHeadSamplingRate)
-                        ? cloudflareObservabilityHeadSamplingRate
-                        : 1,
+                    head_sampling_rate: Number(
+                        process.env.CLOUDFLARE_OBSERVABILITY_HEAD_SAMPLING_RATE ?? 1,
+                    ),
                 },
                 account_id: process.env.CLOUDFLARE_ACCOUNT_ID,
                 d1_databases: [
@@ -419,11 +415,8 @@ export default defineNuxtConfig({
         provider: 'cloudflare',
         cloudflare: { baseURL: publicUrl },
         screens: {
-            xsIcon: 24,
-            smIcon: 32,
             mdIcon: 48,
             lgIcon: 88,
-            xxs: 256,
             xs: 320,
             sm: 640,
             md: 768,

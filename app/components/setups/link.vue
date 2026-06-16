@@ -39,11 +39,13 @@ const dominantColor = computed(() => firstImage.value?.themeColors?.[0] || '')
                 :alt="setup.name"
                 width="640"
                 sizes="sm:100vw md:50vw lg:33vw"
-                format="webp"
+                format="avif"
                 quality="80"
                 fit="cover"
+                placeholder
+                placeholder-class="is-loading opacity-60"
                 preload
-                class="size-full max-h-64 rounded-lg object-cover sm:max-h-105"
+                class="size-full max-h-64 rounded-lg object-cover transition-all ease-in-out [clip-path:inset(0_round_var(--radius-lg))] sm:max-h-105 [&.is-loading]:blur-xl"
             />
             <div
                 :class="[
@@ -82,8 +84,10 @@ const dominantColor = computed(() => firstImage.value?.themeColors?.[0] || '')
                     :width="88"
                     :height="88"
                     format="avif"
+                    :placeholder="[50, 50, 50, 10]"
                     preload
-                    class="aspect-square size-14 shrink-0 rounded-lg object-cover md:size-20"
+                    placeholder-class="is-loading opacity-60"
+                    class="aspect-square size-14 shrink-0 rounded-lg object-cover transition-all ease-in-out [clip-path:inset(0_round_var(--radius-lg))] md:size-20 [&.is-loading]:blur-xl"
                 />
                 <div
                     v-else
