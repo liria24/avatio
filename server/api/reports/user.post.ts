@@ -1,14 +1,6 @@
 import { userReports } from '@@/database/schema'
 
-const body = userReportsInsertSchema.pick({
-    reporteeId: true,
-    spam: true,
-    hate: true,
-    infringe: true,
-    badImage: true,
-    other: true,
-    comment: true,
-})
+const body = userReportsInsertSchema
 
 export default authedSessionEventHandler(
     async ({ session, db }) => {

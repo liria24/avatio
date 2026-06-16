@@ -527,7 +527,19 @@ export const setupReportsPublicSchema = setupReportsSelectSchema
 export type SetupReport = z.infer<typeof setupReportsPublicSchema>
 
 export const userReportsSelectSchema = createSelectSchema(userReports)
-export const userReportsInsertSchema = createInsertSchema(userReports)
+export const userReportsInsertSchema = createInsertSchema(userReports, {
+    comment: (schema) => schema.max(1000, 'コメントは最大 1000 文字です。').optional(),
+})
+    .pick({
+        reporteeId: true,
+        spam: true,
+        hate: true,
+        infringe: true,
+        badImage: true,
+        other: true,
+        comment: true,
+    })
+    .refine((data) => data.spam || data.hate || data.infringe || data.badImage || data.other)
 export const userReportsUpdateSchema = createUpdateSchema(userReports)
 export const userReportsPublicSchema = userReportsSelectSchema
     .pick({
