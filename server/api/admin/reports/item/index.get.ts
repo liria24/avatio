@@ -1,21 +1,7 @@
 import { sql } from 'drizzle-orm'
-import { z } from 'zod'
-
-const query = z.object({
-    sort: z.enum(['asc', 'desc']).optional().default('desc'),
-    reporterId: z.string().nullable().optional(),
-    page: z.coerce.number().min(1).optional().default(1),
-    limit: z.coerce
-        .number()
-        .min(1)
-        .max(API_LIMIT_MAX)
-        .optional()
-        .default(ADMIN_REPORTS_API_DEFAULT_LIMIT),
-    status: z.enum(['open', 'closed', 'all']).optional().default('all'),
-})
 
 export default adminSessionEventHandler(async ({ db }) => {
-    const { sort, reporterId, page, limit, status } = await validateQuery(query)
+    const { sort, reporterId, page, limit, status } = await validateQuery(adminReportQuerySchema)
 
     const offset = (page - 1) * limit
 
@@ -25,8 +11,7 @@ export default adminSessionEventHandler(async ({ db }) => {
         },
         where: {
             reporterId: reporterId ? { eq: reporterId } : undefined,
-            isResolved:
-                status === 'open' ? { eq: false } : status === 'closed' ? { eq: true } : undefined,
+            isResolved: getAdminReportResolvedFilter(status),
         },
         limit,
         offset,
@@ -80,13 +65,6 @@ export default adminSessionEventHandler(async ({ db }) => {
 
     return {
         data,
-        pagination: {
-            page,
-            limit,
-            total: data[0]?.count || 0,
-            totalPages: Math.ceil((data[0]?.count || 0) / limit),
-            hasNext: offset + limit < (data[0]?.count || 0),
-            hasPrev: offset > 0,
-        },
+        pagination: createPagination(data[0]?.count || 0, page, limit, offset),
     }
 })

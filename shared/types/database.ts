@@ -304,6 +304,7 @@ export const setupsUpdateSchema = createUpdateSchema(setups, {
     items: setupItemsInsertSchema
         .omit({ setupId: true })
         .array()
+        .min(1, 'アイテムは1個以上必要です。')
         .max(32, 'アイテムは最大 32 個です。'),
 })
 export const setupsClientFormSchema = createInsertSchema(setups, {

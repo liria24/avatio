@@ -5,7 +5,7 @@ const query = z.object({
     orderBy: z.enum(['createdAt', 'name']).optional().default('createdAt'),
     sort: z.enum(['asc', 'desc']).optional().default('desc'),
     username: z.string().optional(),
-    limit: z.coerce.number().min(1).optional(),
+    limit: z.coerce.number().min(1).max(API_LIMIT_MAX).optional(),
     private: z.stringbool().optional(),
     hidden: z.stringbool().optional(),
     banned: z.stringbool().optional(),
