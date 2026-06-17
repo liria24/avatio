@@ -78,35 +78,6 @@ const routeRules: { [path: string]: NitroRouteConfig } = {
     ),
 }
 
-const rateLimitBindings = {
-    ratelimits: [
-        {
-            name: 'RATE_LIMIT_USER_ACTION',
-            namespace_id: '2101',
-            simple: {
-                limit: 5,
-                period: 60,
-            },
-        },
-        {
-            name: 'RATE_LIMIT_IMAGE',
-            namespace_id: '2102',
-            simple: {
-                limit: 30,
-                period: 60,
-            },
-        },
-        {
-            name: 'RATE_LIMIT_DRAFT',
-            namespace_id: '2103',
-            simple: {
-                limit: 120,
-                period: 60,
-            },
-        },
-    ],
-}
-
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
     compatibilityDate: '2026-05-26',
@@ -212,7 +183,24 @@ export default defineNuxtConfig({
                         name: 'EMAIL',
                     },
                 ],
-                ...rateLimitBindings,
+                // @ts-expect-error: The `rateLimits` property is not yet supported in the `wrangler` type definitions, but it is a valid property in the Wrangler configuration.
+                ratelimits: [
+                    {
+                        name: 'RATE_LIMIT_USER_ACTION',
+                        namespace_id: '2101',
+                        simple: { limit: 5, period: 60 },
+                    },
+                    {
+                        name: 'RATE_LIMIT_IMAGE',
+                        namespace_id: '2102',
+                        simple: { limit: 30, period: 60 },
+                    },
+                    {
+                        name: 'RATE_LIMIT_DRAFT',
+                        namespace_id: '2103',
+                        simple: { limit: 120, period: 60 },
+                    },
+                ],
                 triggers: {
                     crons: ['0 22 * * *'],
                 },
