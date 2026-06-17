@@ -36,10 +36,10 @@
     "dependencies": {
         "@avatio/bot-notifier": "workspace:*",
         "@avatio/ungh": "workspace:*",
-        "@aws-sdk/client-s3": "^3.1069.0",
-        "@aws-sdk/lib-storage": "^3.1069.0",
-        "@aws-sdk/s3-presigned-post": "^3.1069.0",
-        "@aws-sdk/s3-request-presigner": "^3.1069.0",
+        "@aws-sdk/client-s3": "^3.1070.0",
+        "@aws-sdk/lib-storage": "^3.1070.0",
+        "@aws-sdk/s3-presigned-post": "^3.1070.0",
+        "@aws-sdk/s3-request-presigner": "^3.1070.0",
         "@better-auth/drizzle-adapter": "1.6.19",
         "@comark/nuxt": "0.4.0",
         "@iconify-json/fluent-color": "1.2.21",
@@ -64,7 +64,7 @@
         "@vueuse/nuxt": "14.3.0",
         "@vueuse/router": "^14.3.0",
         "@yeger/vue-masonry-wall": "6.1.1",
-        "ai": "6.0.206",
+        "ai": "6.0.207",
         "better-auth": "1.6.19",
         "canvas-confetti": "1.9.4",
         "clsx": "2.1.1",
@@ -82,7 +82,7 @@
         "sanitize-html": "2.17.5",
         "vue-data-ui": "3.21.5",
         "vue-draggable-plus": "0.6.1",
-        "workers-ai-provider": "^3.1.14",
+        "workers-ai-provider": "^3.2.0",
         "zod": "4.4.3"
     },
     "devDependencies": {
@@ -98,7 +98,7 @@
         "bumpp": "11.1.0",
         "changelogen": "^0.6.2",
         "drizzle-kit": "1.0.0-rc.3",
-        "happy-dom": "^20.10.4",
+        "happy-dom": "^20.10.5",
         "oxfmt": "^0.55.0",
         "oxlint": "^1.70.0",
         "oxlint-tsgolint": "^0.23.0",
@@ -106,7 +106,7 @@
         "typescript": "6.0.3",
         "vitest": "^4.1.9",
         "vue-tsc": "^3.3.5",
-        "wrangler": "^4.100.0"
+        "wrangler": "^4.101.0"
     },
     "overrides": {
         "vite": "^8.0.0",
