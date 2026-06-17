@@ -37,10 +37,8 @@ export default authedSessionEventHandler(
     async ({ session }) => {
         const { blob, path, width, height, themeColors } = await validateFormData(formData)
         await enforceRateLimit({
-            scope: 'images:create',
-            identity: session.user.id,
-            limit: 60,
-            windowSeconds: 60,
+            binding: 'RATE_LIMIT_IMAGE',
+            key: `images:${session.user.id}`,
         })
 
         log.start('Uploading image to R2...')

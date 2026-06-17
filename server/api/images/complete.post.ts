@@ -46,10 +46,8 @@ export default authedSessionEventHandler(
     async ({ session, db }) => {
         const { objectKey, width, height } = await validateBody(body)
         await enforceRateLimit({
-            scope: 'images:complete',
-            identity: session.user.id,
-            limit: 60,
-            windowSeconds: 60,
+            binding: 'RATE_LIMIT_IMAGE',
+            key: `images:${session.user.id}`,
         })
 
         const path = getTemporaryImagePath(objectKey, session.user.id)

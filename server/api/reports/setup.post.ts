@@ -5,10 +5,8 @@ const body = setupReportsInsertSchema
 export default authedSessionEventHandler(
     async ({ session, db }) => {
         await enforceRateLimit({
-            scope: 'reports:setup:create',
-            identity: session.user.id,
-            limit: 20,
-            windowSeconds: 60 * 60,
+            binding: 'RATE_LIMIT_USER_ACTION',
+            key: `reports:${session.user.id}`,
         })
 
         const { setupId, spam, hate, infringe, badImage, other, comment } = await validateBody(

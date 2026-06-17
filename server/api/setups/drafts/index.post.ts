@@ -22,10 +22,8 @@ export default authedSessionEventHandler(
             sanitize: true,
         })
         await enforceRateLimit({
-            scope: 'setups:drafts:save',
-            identity: session.user.id,
-            limit: 120,
-            windowSeconds: 60,
+            binding: 'RATE_LIMIT_DRAFT',
+            key: `drafts:${session.user.id}`,
         })
 
         if (!id && !hasContent(content)) return null

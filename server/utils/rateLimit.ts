@@ -1,58 +1,44 @@
 import { serverError } from './error'
+import { getRuntimeEnv } from './runtimeEnv'
+
+type RateLimitBindingName = 'RATE_LIMIT_USER_ACTION' | 'RATE_LIMIT_IMAGE' | 'RATE_LIMIT_DRAFT'
+
+interface RateLimitBinding {
+    limit(options: { key: string }): Promise<{ success: boolean }>
+}
 
 interface RateLimitOptions {
-    scope: string
-    identity: string
-    limit: number
-    windowSeconds: number
+    binding: RateLimitBindingName
+    key: string
 }
 
-interface RateLimitRecord {
-    count: number
-    resetAt: number
-}
+const isProduction =
+    process.env.NODE_ENV === 'production' || process.env.CLOUDFLARE_ENV === 'production'
 
-const RATE_LIMIT_STORAGE_TTL_PADDING_SECONDS = 60
+const isRateLimitBinding = (binding: unknown): binding is RateLimitBinding =>
+    typeof binding === 'object' &&
+    binding !== null &&
+    'limit' in binding &&
+    typeof binding.limit === 'function'
 
-const sha256Hex = async (value: string) => {
-    const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))
-    return [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, '0')).join('')
-}
+export const enforceRateLimit = async ({ binding, key }: RateLimitOptions) => {
+    const limiter = getRuntimeEnv()[binding]
 
-const getRateLimitKey = async (scope: string, identity: string, windowStart: number) =>
-    `v1:${scope}:${await sha256Hex(identity)}:${windowStart}`
+    if (!isRateLimitBinding(limiter)) {
+        if (isProduction)
+            throw serverError.internalServerError({
+                log: {
+                    tag: 'rateLimit',
+                    message: `Cloudflare Rate Limit binding ${binding} is unavailable.`,
+                },
+            })
 
-export const enforceRateLimit = async ({
-    scope,
-    identity,
-    limit,
-    windowSeconds,
-}: RateLimitOptions) => {
-    const now = Date.now()
-    const windowMs = windowSeconds * 1000
-    const windowStart = Math.floor(now / windowMs) * windowMs
-    const resetAt = windowStart + windowMs
-    const storage = useStorage('rate-limit')
-    const key = await getRateLimitKey(scope, identity, windowStart)
-    const current = await storage.getItem<RateLimitRecord>(key)
-    const count = (current?.count ?? 0) + 1
-    const remaining = Math.max(limit - count, 0)
-    const event = useEvent()
+        return
+    }
 
-    setResponseHeader(event, 'X-RateLimit-Limit', String(limit))
-    setResponseHeader(event, 'X-RateLimit-Remaining', String(remaining))
-    setResponseHeader(event, 'X-RateLimit-Reset', String(Math.ceil(resetAt / 1000)))
-
-    if (count > limit) {
-        setResponseHeader(event, 'Retry-After', Math.ceil((resetAt - now) / 1000))
+    const { success } = await limiter.limit({ key })
+    if (!success)
         throw serverError.tooManyRequests({
             responseMessage: 'Too many requests. Please try again later.',
         })
-    }
-
-    await storage.setItem(
-        key,
-        { count, resetAt } satisfies RateLimitRecord,
-        { ttl: windowSeconds + RATE_LIMIT_STORAGE_TTL_PADDING_SECONDS },
-    )
 }
