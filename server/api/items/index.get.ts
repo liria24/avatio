@@ -14,7 +14,7 @@ const query = z.object({
 })
 
 export default promiseEventHandler<PaginationResponse<Item[]>>(async ({ db }) => {
-    const { q, orderBy, sort, page, limit } = await validateQuery(query)
+    const { q, orderBy, sort, category, page, limit } = await validateQuery(query)
 
     const offset = (page - 1) * limit
 
@@ -27,6 +27,7 @@ export default promiseEventHandler<PaginationResponse<Item[]>>(async ({ db }) =>
         where: {
             outdated: { eq: false },
             name: q ? { ilike: `%${q}%` } : undefined,
+            category: category ? { in: category } : undefined,
         },
         orderBy: {
             [orderBy]: sort,

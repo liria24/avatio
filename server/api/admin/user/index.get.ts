@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm'
 import { z } from 'zod'
 
 const querySchema = z.object({
-    limit: z.coerce.number().min(1).optional(),
+    limit: z.coerce.number().min(1).max(API_LIMIT_MAX).optional(),
     offset: z.coerce.number().min(0).optional(),
     sortBy: z.enum(['createdAt', 'username', 'name']).optional().default('createdAt'),
     sortDirection: z.enum(['asc', 'desc']).optional().default('desc'),

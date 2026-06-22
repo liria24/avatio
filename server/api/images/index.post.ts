@@ -16,15 +16,7 @@ const formData = z.object({
         .refine((blob) => blob.size <= MAX_FILE_SIZE, {
             message: `Blob size must be less than ${MAX_FILE_SIZE / 1024 / 1024}MB`,
         }),
-    path: z
-        .string()
-        .min(1, { message: 'Path is required' })
-        .regex(/^[a-zA-Z0-9\-_/]+$/, {
-            message: 'Path contains invalid characters',
-        })
-        .refine((path) => !path.includes('..'), {
-            message: 'Path traversal is not allowed',
-        }),
+    path: z.enum(IMAGE_UPLOAD_PATHS),
     width: z.coerce.number().int().min(1).max(4096),
     height: z.coerce.number().int().min(1).max(4096),
     themeColors: z.preprocess(
@@ -42,26 +34,29 @@ const formData = z.object({
 })
 
 export default authedSessionEventHandler(
-    async () => {
+    async ({ session }) => {
         const { blob, path, width, height, themeColors } = await validateFormData(formData)
+        await enforceRateLimit({
+            binding: 'RATE_LIMIT_IMAGE',
+            key: `images:${session.user.id}`,
+        })
 
         log.start('Uploading image to R2...')
 
         const jpgFilename = `${nanoid(JPG_FILENAME_LENGTH)}.jpg`
 
-        // パスの正規化
-        const normalizedPath = path.replace(/\/+/g, '/').replace(/^\/|\/$/g, '')
-        const fullPath = `${normalizedPath}/${jpgFilename}`
+        const objectKey = `${path}/${session.user.id}/${jpgFilename}`
 
         try {
-            await storage.upload(fullPath, blob, { contentType: 'image/jpeg' })
+            await storage.upload(objectKey, blob, { contentType: 'image/jpeg' })
         } catch {
             throw serverError.internalServerError()
         }
 
-        log.success('Image processed and uploaded successfully:', fullPath)
+        log.success('Image processed and uploaded successfully:', objectKey)
         return {
-            url: withHttps(await storage.url(fullPath)),
+            objectKey,
+            url: withHttps(await storage.url(objectKey)),
             width,
             height,
             themeColors,

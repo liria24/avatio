@@ -22,7 +22,11 @@ export default authedSessionEventHandler(
             coauthors,
         } = await validateBody(body, { sanitize: true })
 
-        const imageData = await resolveSetupImageData(db, { images, imageMetadata })
+        const imageData = await resolveSetupImageData(db, {
+            userId: session.user.id,
+            images,
+            imageMetadata,
+        })
 
         const setupId = await db.transaction(async (tx) => {
             const [setup] = await tx

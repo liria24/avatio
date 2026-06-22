@@ -29,6 +29,11 @@ const body = z.object({
 export default authedSessionEventHandler(
     async ({ session, db }) => {
         const { path, contentType, size } = await validateBody(body)
+        await enforceRateLimit({
+            binding: 'RATE_LIMIT_IMAGE',
+            key: `images:${session.user.id}`,
+        })
+
         const objectKey = createTemporaryImageKey(path, session.user.id, contentType)
 
         const signed = await storage.signedUploadUrl(objectKey, {

@@ -4,7 +4,7 @@ const query = z.object({
     q: z.string().optional(),
     sort: z.enum(['asc', 'desc']).optional().default('desc'),
     fingerprint: z.string().optional(),
-    limit: z.coerce.number().min(1).optional(),
+    limit: z.coerce.number().min(1).max(API_LIMIT_MAX).optional(),
     status: z.enum(['open', 'closed', 'all']).optional().default('all'),
 })
 

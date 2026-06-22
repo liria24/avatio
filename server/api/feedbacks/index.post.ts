@@ -11,6 +11,10 @@ export default promiseEventHandler(async ({ db }) => {
     })
 
     const fingerprint = await getFingerprint()
+    await enforceRateLimit({
+        binding: 'RATE_LIMIT_USER_ACTION',
+        key: `feedback:${fingerprint}`,
+    })
 
     await db.insert(feedbacks).values({
         fingerprint,

@@ -17,6 +17,10 @@ const searchTerm = ref('')
 const { data: users, status } = useFetch('/api/users', {
     dedupe: 'defer',
     default: () => [],
+    query: {
+        q: computed(() => searchTerm.value.trim() || undefined),
+        limit: 24,
+    },
     getCachedData: (key, nuxtApp, ctx) =>
         ctx.cause === 'refresh:manual'
             ? undefined

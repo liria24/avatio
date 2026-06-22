@@ -1,5 +1,5 @@
 import { setupDraftImages, setupDrafts } from '@@/database/schema'
-import { eq, sql } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 
 const body = setupDraftsInsertSchema.pick({
     id: true,
@@ -21,53 +21,78 @@ export default authedSessionEventHandler(
         const { id, setupId, content } = await validateBody(body, {
             sanitize: true,
         })
-
-        const userSetupDraftsCount = await db.query.setupDrafts.findMany({
-            where: {
-                userId: { eq: session.user.id },
-            },
-            columns: {
-                id: true,
-            },
-            extras: {
-                count: sql<number>`CAST(COUNT(*) OVER() AS INTEGER)`,
-            },
+        await enforceRateLimit({
+            binding: 'RATE_LIMIT_DRAFT',
+            key: `drafts:${session.user.id}`,
         })
-
-        if ((userSetupDraftsCount[0]?.count || 0) >= MAX_SETUP_DRAFTS)
-            throw serverError.badRequest({
-                responseMessage: 'You have reached the maximum number of setup drafts allowed.',
-            })
 
         if (!id && !hasContent(content)) return null
 
+        const existingDraft = id
+            ? await db.query.setupDrafts.findFirst({
+                  where: {
+                      id: { eq: id },
+                      userId: { eq: session.user.id },
+                  },
+                  columns: {
+                      id: true,
+                  },
+              })
+            : null
+
+        if (id && !existingDraft) throw serverError.notFound()
+
         if (id && !hasContent(content)) {
-            await db.delete(setupDrafts).where(eq(setupDrafts.id, id))
+            await db
+                .delete(setupDrafts)
+                .where(and(eq(setupDrafts.id, id), eq(setupDrafts.userId, session.user.id)))
             return null
         }
 
-        const result = await db.transaction(async (tx) => {
-            const [upserted] = await tx
-                .insert(setupDrafts)
-                .values({
-                    id,
-                    userId: session.user.id,
-                    setupId,
-                    content,
-                })
-                .onConflictDoUpdate({
-                    target: setupDrafts.id,
-                    set: {
-                        updatedAt: new Date(),
-                        setupId,
-                        content,
-                    },
-                })
-                .returning({
-                    id: setupDrafts.id,
-                })
+        if (!existingDraft) {
+            const userSetupDraftsCount = await db.query.setupDrafts.findMany({
+                where: {
+                    userId: { eq: session.user.id },
+                },
+                columns: {
+                    id: true,
+                },
+                extras: {
+                    count: sql<number>`CAST(COUNT(*) OVER() AS INTEGER)`,
+                },
+            })
 
-            if (!upserted) throw serverError.internalServerError()
+            if ((userSetupDraftsCount[0]?.count || 0) >= MAX_SETUP_DRAFTS)
+                throw serverError.badRequest({
+                    responseMessage: 'You have reached the maximum number of setup drafts allowed.',
+                })
+        }
+
+        const result = await db.transaction(async (tx) => {
+            const [saved] = existingDraft
+                ? await tx
+                      .update(setupDrafts)
+                      .set({
+                          updatedAt: new Date(),
+                          setupId,
+                          content,
+                      })
+                      .where(and(eq(setupDrafts.id, id!), eq(setupDrafts.userId, session.user.id)))
+                      .returning({
+                          id: setupDrafts.id,
+                      })
+                : await tx
+                      .insert(setupDrafts)
+                      .values({
+                          userId: session.user.id,
+                          setupId,
+                          content,
+                      })
+                      .returning({
+                          id: setupDrafts.id,
+                      })
+
+            if (!saved) throw serverError.internalServerError()
 
             const images = (content.images || []).map((url) => {
                 const objectKey = content.imageMetadata?.[url]?.objectKey
@@ -77,17 +102,17 @@ export default authedSessionEventHandler(
                     })
 
                 return {
-                    setupDraftId: upserted.id,
+                    setupDraftId: saved.id,
                     objectKey,
                 }
             })
 
             await Promise.all([
-                tx.delete(setupDraftImages).where(eq(setupDraftImages.setupDraftId, upserted.id)),
+                tx.delete(setupDraftImages).where(eq(setupDraftImages.setupDraftId, saved.id)),
                 ...(images.length ? [tx.insert(setupDraftImages).values(images)] : []),
             ])
 
-            return upserted
+            return saved
         })
 
         return { draftId: result.id }

@@ -6,6 +6,7 @@ import { withHttps } from 'ufo'
 import { storage } from './storage'
 
 interface ResolveSetupImageDataOptions {
+    userId: string
     setupId?: string
     images?: string[]
     imageMetadata?: Record<string, SetupImageMetadata>
@@ -21,9 +22,12 @@ export const withSetupImageUrls = async <T extends { objectKey: string }>(
         })),
     )
 
+export const isUserSetupImageKey = (objectKey: string, userId: string) =>
+    objectKey.startsWith(`setup/${userId}/`)
+
 export const resolveSetupImageData = async (
     db: ReturnType<typeof useDB>,
-    { setupId, images = [], imageMetadata }: ResolveSetupImageDataOptions,
+    { userId, setupId, images = [], imageMetadata }: ResolveSetupImageDataOptions,
 ) => {
     if (!images.length) return []
 
@@ -57,7 +61,15 @@ export const resolveSetupImageData = async (
         const metadata = imageMetadata?.[url]
         const objectKey = metadata?.objectKey ?? (url.includes('://') ? null : url)
 
-        if (metadata)
+        const existing = objectKey ? existingByObjectKey.get(objectKey) : undefined
+        if (existing) return existing
+
+        if (metadata) {
+            if (!isUserSetupImageKey(metadata.objectKey, userId))
+                throw serverError.badRequest({
+                    responseMessage: 'Invalid image key.',
+                })
+
             return {
                 objectKey: metadata.objectKey,
                 width: metadata.width,
@@ -67,9 +79,7 @@ export const resolveSetupImageData = async (
                 size: metadata.size ?? null,
                 etag: metadata.etag ?? null,
             }
-
-        const existing = objectKey ? existingByObjectKey.get(objectKey) : undefined
-        if (existing) return existing
+        }
 
         throw serverError.badRequest({
             responseMessage: 'Image metadata is required for uploaded setup images.',

@@ -45,6 +45,11 @@ const readHeadMetadata = (head: HeadMetadata): HeadMetadata => ({
 export default authedSessionEventHandler(
     async ({ session, db }) => {
         const { objectKey, width, height } = await validateBody(body)
+        await enforceRateLimit({
+            binding: 'RATE_LIMIT_IMAGE',
+            key: `images:${session.user.id}`,
+        })
+
         const path = getTemporaryImagePath(objectKey, session.user.id)
         if (!path) throw serverError.badRequest({ responseMessage: 'Invalid image key.' })
 

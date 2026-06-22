@@ -5,7 +5,13 @@ import { z } from 'zod'
 const params = z.object({
     username: z.string(),
 })
-const body = usersUpdateSchema
+const body = usersUpdateSchema.pick({
+    username: true,
+    name: true,
+    image: true,
+    bio: true,
+    links: true,
+})
 
 const log = logger('/api/users/[username]:PUT')
 

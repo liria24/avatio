@@ -5,7 +5,7 @@ const query = z.object({
     q: z.string().optional(),
     sort: z.enum(['asc', 'desc']).optional().default('desc'),
     userId: z.string().nullable().optional(),
-    limit: z.coerce.number().min(1).optional(),
+    limit: z.coerce.number().min(1).max(API_LIMIT_MAX).optional(),
     lang: z.enum(locales.enumValues).optional().default('ja'),
     content: z.stringbool().optional().default(false),
 })

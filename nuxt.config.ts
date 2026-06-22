@@ -78,6 +78,41 @@ const routeRules: { [path: string]: NitroRouteConfig } = {
     ),
 }
 
+const rateLimitBindings = {
+    unsafe: {
+        // Workers Builds can lag Wrangler's top-level ratelimits config support.
+        bindings: [
+            {
+                name: 'RATE_LIMIT_USER_ACTION',
+                type: 'ratelimit',
+                namespace_id: '2101',
+                simple: {
+                    limit: 5,
+                    period: 60,
+                },
+            },
+            {
+                name: 'RATE_LIMIT_IMAGE',
+                type: 'ratelimit',
+                namespace_id: '2102',
+                simple: {
+                    limit: 30,
+                    period: 60,
+                },
+            },
+            {
+                name: 'RATE_LIMIT_DRAFT',
+                type: 'ratelimit',
+                namespace_id: '2103',
+                simple: {
+                    limit: 120,
+                    period: 60,
+                },
+            },
+        ],
+    },
+}
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
     compatibilityDate: '2026-05-26',
@@ -183,6 +218,7 @@ export default defineNuxtConfig({
                         name: 'EMAIL',
                     },
                 ],
+                ...rateLimitBindings,
                 triggers: {
                     crons: ['0 22 * * *'],
                 },

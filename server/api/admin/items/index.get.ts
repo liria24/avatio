@@ -4,7 +4,7 @@ const query = z.object({
     q: z.string().optional(),
     orderBy: z.enum(['createdAt', 'name']).optional().default('createdAt'),
     sort: z.enum(['asc', 'desc']).optional().default('desc'),
-    limit: z.coerce.number().min(1).optional(),
+    limit: z.coerce.number().min(1).max(API_LIMIT_MAX).optional(),
     platform: platformSchema.optional(),
     outdated: z.stringbool().optional(),
 })
