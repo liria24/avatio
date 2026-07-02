@@ -2,7 +2,7 @@ import { nanoid } from 'nanoid'
 import { withHttps } from 'ufo'
 import { z } from 'zod'
 
-const log = logger('/api/images/complete:POST')
+const log = logger('/api/files/complete:POST')
 
 type ImageUploadPath = (typeof IMAGE_UPLOAD_PATHS)[number]
 type ImageContentType = (typeof IMAGE_CONTENT_TYPES)[number]
@@ -58,25 +58,29 @@ export default authedSessionEventHandler(
         const contentType = head.type ?? head.contentType ?? ''
 
         if (!isImageContentType(contentType)) {
-            await storage.delete(objectKey).catch(() => null)
+            await getStorage()
+                .delete(objectKey)
+                .catch(() => null)
             await invalidateStorageHeadCache(objectKey)
             throw serverError.badRequest({ responseMessage: 'Unsupported image type.' })
         }
 
         if (!head.size || head.size > MAX_IMAGE_UPLOAD_SIZE) {
-            await storage.delete(objectKey).catch(() => null)
+            await getStorage()
+                .delete(objectKey)
+                .catch(() => null)
             await invalidateStorageHeadCache(objectKey)
             throw serverError.badRequest({ responseMessage: 'Image is too large.' })
         }
 
         const finalKey = createImageKey(path, session.user.id, contentType)
-        await storage.move(objectKey, finalKey)
+        await getStorage().move(objectKey, finalKey)
         await Promise.all([
             invalidateStorageHeadCache(objectKey),
             invalidateStorageHeadCache(finalKey),
         ])
 
-        const url = withHttps(await storage.url(finalKey))
+        const url = withHttps(await getStorage().url(finalKey))
         const { colors } = await extractImageColors(url)
 
         await createAuditLog(db, {

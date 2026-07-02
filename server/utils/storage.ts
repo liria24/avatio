@@ -19,7 +19,7 @@ const requireEnv = (name: string) => {
 
 let storageClient: StorageClient | null = null
 
-const getStorage = () => {
+export const getStorage = () => {
     if (storageClient) return storageClient
 
     const binding = getRuntimeEnv().R2 as R2Bucket | undefined
@@ -42,14 +42,6 @@ const getStorage = () => {
     return storageClient
 }
 
-export const storage = new Proxy({} as StorageClient, {
-    get: (_target, property) => {
-        const client = getStorage()
-        const value = Reflect.get(client, property)
-        return typeof value === 'function' ? value.bind(client) : value
-    },
-})
-
 const fileCache = () => useStorage('cache')
 const fileCacheKey = (type: 'head', key: string) => `files:${type}:${key}`
 
@@ -61,7 +53,7 @@ export const cachedStorageHead = async (key: string): Promise<StoredFile> => {
     const cached = await fileCache().getItem<StoredFile>(cacheKey)
     if (cached) return cached
 
-    const head = await storage.head(key)
+    const head = await getStorage().head(key)
     await fileCache().setItem(cacheKey, head)
     return head
 }

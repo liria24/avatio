@@ -2,7 +2,7 @@ import { nanoid } from 'nanoid'
 import { withHttps } from 'ufo'
 import { z } from 'zod'
 
-const log = logger('/api/images:POST')
+const log = logger('/api/files:POST')
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024 // クライアント圧縮後の上限（2MB）
 const JPG_FILENAME_LENGTH = 16 // JPEGファイル名の長さ
@@ -48,7 +48,7 @@ export default authedSessionEventHandler(
         const objectKey = `${path}/${session.user.id}/${jpgFilename}`
 
         try {
-            await storage.upload(objectKey, blob, { contentType: 'image/jpeg' })
+            await getStorage().upload(objectKey, blob, { contentType: 'image/jpeg' })
         } catch {
             throw serverError.internalServerError()
         }
@@ -56,7 +56,7 @@ export default authedSessionEventHandler(
         log.success('Image processed and uploaded successfully:', objectKey)
         return {
             objectKey,
-            url: withHttps(await storage.url(objectKey)),
+            url: withHttps(await getStorage().url(objectKey)),
             width,
             height,
             themeColors,

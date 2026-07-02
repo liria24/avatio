@@ -7,7 +7,7 @@ import { useStorage } from 'nitropack/runtime/internal/storage'
 import { withHttps } from 'ufo'
 
 import { dbProxy, schema } from '../../server/utils/database'
-import { storage } from '../../server/utils/storage'
+import { getStorage } from '../../server/utils/storage'
 import {
     RATE_LIMIT_DEFAULT,
     RATE_LIMIT_SESSION,
@@ -159,14 +159,14 @@ const options = {
                             const buffer = await $fetch<Blob>(image)
                             const arrayBuffer = await buffer.arrayBuffer()
                             const imageId = nanoid(JPG_FILENAME_LENGTH)
-                            await storage.upload(
+                            await getStorage().upload(
                                 `avatar/${imageId}.jpg`,
                                 Buffer.from(arrayBuffer),
                                 {
                                     contentType: 'image/jpeg',
                                 },
                             )
-                            image = withHttps(await storage.url(`avatar/${imageId}.jpg`))
+                            image = withHttps(await getStorage().url(`avatar/${imageId}.jpg`))
                         } catch {
                             image = null
                         }
