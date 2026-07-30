@@ -75,7 +75,7 @@ export const adminSessionEventHandler = <T = unknown>(
     options?: SessionEventHandlerOptions,
 ) =>
     sessionEventHandler(async ({ event, session, db }) => {
-        if (!session || session.user.role !== 'admin') throw serverError.forbidden()
+        assertAdminSession(session)
 
         return await handler({ event, session, db })
     }, options)

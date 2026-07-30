@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid'
 import { z } from 'zod'
 
-const log = logger('/api/images/upload-url:POST')
+const log = logger('/api/files/upload-url:POST')
 const SIGNED_UPLOAD_EXPIRES_IN = 60 * 5
 
 type ImageUploadPath = (typeof IMAGE_UPLOAD_PATHS)[number]
@@ -36,7 +36,7 @@ export default authedSessionEventHandler(
 
         const objectKey = createTemporaryImageKey(path, session.user.id, contentType)
 
-        const signed = await storage.signedUploadUrl(objectKey, {
+        const signed = await getStorage().signedUploadUrl(objectKey, {
             contentType,
             expiresIn: SIGNED_UPLOAD_EXPIRES_IN,
             maxSize: MAX_IMAGE_UPLOAD_SIZE,

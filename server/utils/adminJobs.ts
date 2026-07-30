@@ -92,7 +92,7 @@ const getStorageObjects = async (prefix: string): Promise<ImageInfo[]> => {
     const items: ImageInfo[] = []
 
     try {
-        for await (const obj of storage.listAll({ prefix: `${prefix}/` }))
+        for await (const obj of getStorage().listAll({ prefix: `${prefix}/` }))
             items.push({
                 key: obj.key,
                 lastModified: new Date(obj.lastModified ?? Date.now()),
@@ -124,7 +124,10 @@ const copyWithConcurrency = async (images: ImageInfo[], backupDate: string) => {
                 if (!image) return
 
                 try {
-                    await storage.copy(image.key, `${BACKUP_PREFIX}/${backupDate}/${image.key}`)
+                    await getStorage().copy(
+                        image.key,
+                        `${BACKUP_PREFIX}/${backupDate}/${image.key}`,
+                    )
                     backedUp.push(image.key)
                 } catch (error) {
                     cleanupLog.warn('Failed to backup image before deletion:', image.key, error)
@@ -436,7 +439,7 @@ export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) 
 
     const deleteResults =
         imagesToDelete.length > 0
-            ? await storage.delete(
+            ? await getStorage().delete(
                   imagesToDelete.map((image) => image.key),
                   { concurrency: STORAGE_OPERATION_CONCURRENCY },
               )
