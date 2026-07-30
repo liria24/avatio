@@ -108,7 +108,7 @@ const options = {
     },
 
     emailAndPassword: {
-        enabled: import.meta.dev,
+        enabled: import.meta.dev ?? false,
     },
 
     socialProviders: {
@@ -187,14 +187,11 @@ const options = {
     },
 
     advanced: {
-        // IPアドレストラッキングの設定（プロキシ環境対応）
         ipAddress: {
             ipAddressHeaders: ['x-forwarded-for', 'x-real-ip', 'cf-connecting-ip'],
             disableIpTracking: false,
         },
-        // セキュアクッキーの強制（本番環境）
         useSecureCookies: productionCookies,
-        // CSRF保護を有効化
         disableCSRFCheck: false,
         defaultCookieAttributes: {
             httpOnly: true,
