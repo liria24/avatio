@@ -110,6 +110,13 @@ const rateLimitBindings = {
     },
 }
 
+// Nitro forwards this to the generated Wrangler config. Its bundled type has not yet added `cache`.
+const workersCacheConfig = {
+    cache: {
+        enabled: true,
+    },
+} as const
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
     compatibilityDate: '2026-05-26',
@@ -177,6 +184,7 @@ export default defineNuxtConfig({
             nodeCompat: true,
             wrangler: {
                 name: 'avatio',
+                ...workersCacheConfig,
                 compatibility_flags: [
                     'nodejs_compat',
                     'nodejs_als',
