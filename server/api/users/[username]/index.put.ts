@@ -15,7 +15,7 @@ const body = usersUpdateSchema.pick({
 
 const log = logger('/api/users/[username]:PUT')
 
-export default authedSessionEventHandler(async ({ session, db }) => {
+export default authedSessionEventHandler(async ({ event, session, db }) => {
     const { username: oldUsername } = await validateParams(params)
     const { username, name, image, bio, links } = await validateBody(body, {
         sanitize: true,
@@ -56,7 +56,7 @@ export default authedSessionEventHandler(async ({ session, db }) => {
 
     log.success(`User ${username} updated successfully`)
 
-    await purgeUserCache(data.id)
+    await purgeUserContentCache(event, db, data.id, 'user profile update')
 
     return null
 })

@@ -2,11 +2,19 @@ import { drizzleAdapter } from '@better-auth/drizzle-adapter'
 import { betterAuth } from 'better-auth/minimal'
 import type { BetterAuthOptions } from 'better-auth/minimal'
 import { admin, multiSession, username, customSession } from 'better-auth/plugins'
+import type { H3Event } from 'h3'
 import { nanoid } from 'nanoid'
+import { useEvent } from 'nitropack/runtime/internal/context'
 import { useStorage } from 'nitropack/runtime/internal/storage'
 import { withHttps } from 'ufo'
 
-import { dbProxy, schema } from '../../server/utils/database'
+import { dbProxy, schema, useDB } from '../../server/utils/database'
+import {
+    EDGE_CACHE_TAGS,
+    getUserContentCacheTags,
+    purgeEdgeCacheTags,
+    purgeUserContentCache,
+} from '../../server/utils/edgeCache'
 import { storage } from '../../server/utils/storage'
 import {
     RATE_LIMIT_DEFAULT,
@@ -15,29 +23,26 @@ import {
     RATE_LIMIT_WINDOW,
     SESSION_COOKIE_CACHE_MAX_AGE,
 } from './constants'
-
-type CachedUserSettings = {
-    updatedAt: Date | string | null
-    showPrivateSetups: boolean
-    showNSFW: boolean
-}
+import { getUserSettingsForSession } from './userSettingsCache'
 
 const JPG_FILENAME_LENGTH = 16
-const userSettingsCacheKey = (userId: string) => `user-settings:${encodeURIComponent(userId)}`
-const defaultUserSettings = {
-    updatedAt: null,
-    showPrivateSetups: true,
-    showNSFW: false,
-} satisfies CachedUserSettings
 
-const normalizeCachedUserSettings = (settings: CachedUserSettings) =>
-    ({
-        ...settings,
-        updatedAt: settings.updatedAt ? new Date(settings.updatedAt) : null,
-    }) satisfies CachedUserSettings
+type CacheInvalidationEvent = H3Event & {
+    context: H3Event['context'] & {
+        userDeletionCacheTags?: string[]
+    }
+}
+
+const getCurrentEvent = () => {
+    try {
+        return useEvent() as CacheInvalidationEvent
+    } catch {
+        return null
+    }
+}
 
 export const purgeUserSettingsSessionCache = async (userId: string) => {
-    await useStorage('auth').del(userSettingsCacheKey(userId))
+    await useStorage('auth').del(getUserSettingsCacheKey(userId))
 }
 
 const minUsernameLength = 3
@@ -57,17 +62,6 @@ const options = {
         schema,
         usePlural: true,
     }),
-
-    secondaryStorage: {
-        get: async (key) => await useStorage('auth').get(encodeURIComponent(key)),
-        set: async (key, value, ttl) => {
-            if (ttl) await useStorage('auth').set(encodeURIComponent(key), value, { ttl })
-            else await useStorage('auth').set(encodeURIComponent(key), value)
-        },
-        delete: async (key) => {
-            await useStorage('auth').del(encodeURIComponent(key))
-        },
-    },
 
     user: {
         additionalFields: {
@@ -99,8 +93,8 @@ const options = {
 
     session: {
         storeSessionInDatabase: true,
-        disableSessionRefresh: true,
-        deferSessionRefresh: true,
+        expiresIn: 60 * 60 * 24 * 30,
+        updateAge: 60 * 60 * 24,
         cookieCache: {
             enabled: true,
             maxAge: SESSION_COOKIE_CACHE_MAX_AGE,
@@ -108,7 +102,7 @@ const options = {
     },
 
     emailAndPassword: {
-        enabled: import.meta.dev,
+        enabled: import.meta.dev ?? false,
     },
 
     socialProviders: {
@@ -145,7 +139,7 @@ const options = {
                 max: RATE_LIMIT_SESSION,
             },
         },
-        storage: 'secondary-storage',
+        storage: 'database',
     },
 
     databaseHooks: {
@@ -179,6 +173,44 @@ const options = {
                     }
                 },
             },
+            update: {
+                after: async (user) => {
+                    const event = getCurrentEvent()
+                    if (!event) return
+
+                    await purgeUserContentCache(
+                        event,
+                        useDB(),
+                        user.id,
+                        'better auth user update',
+                        { includePopularAvatars: true },
+                    )
+                },
+            },
+            delete: {
+                before: async (user) => {
+                    const event = getCurrentEvent()
+                    if (!event) return
+
+                    event.context.userDeletionCacheTags = await getUserContentCacheTags(
+                        useDB(),
+                        user.id,
+                    )
+                },
+                after: async (_user) => {
+                    const event = getCurrentEvent()
+                    if (!event) return
+
+                    await purgeEdgeCacheTags(
+                        event,
+                        [
+                            ...(event.context.userDeletionCacheTags || []),
+                            EDGE_CACHE_TAGS.popularAvatars,
+                        ],
+                        'better auth user delete',
+                    )
+                },
+            },
         },
     },
 
@@ -187,14 +219,11 @@ const options = {
     },
 
     advanced: {
-        // IPアドレストラッキングの設定（プロキシ環境対応）
         ipAddress: {
             ipAddressHeaders: ['x-forwarded-for', 'x-real-ip', 'cf-connecting-ip'],
             disableIpTracking: false,
         },
-        // セキュアクッキーの強制（本番環境）
         useSecureCookies: productionCookies,
-        // CSRF保護を有効化
         disableCSRFCheck: false,
         defaultCookieAttributes: {
             httpOnly: true,
@@ -209,24 +238,20 @@ export const auth = betterAuth({
     plugins: [
         ...(options.plugins ?? []),
         customSession(async ({ user, session }) => {
-            const key = userSettingsCacheKey(user.id)
-            const cachedSettings = await useStorage('auth').getItem<CachedUserSettings>(key)
-            const settings = normalizeCachedUserSettings(
-                cachedSettings !== null
-                    ? cachedSettings
-                    : ((await dbProxy.query.userSettings.findFirst({
-                          where: { userId: { eq: user.id } },
-                          columns: {
-                              updatedAt: true,
-                              showPrivateSetups: true,
-                              showNSFW: true,
-                          },
-                      })) ?? defaultUserSettings),
+            const settings = await getUserSettingsForSession(
+                useStorage('auth'),
+                user.id,
+                SESSION_COOKIE_CACHE_MAX_AGE,
+                async () =>
+                    (await dbProxy.query.userSettings.findFirst({
+                        where: { userId: { eq: user.id } },
+                        columns: {
+                            updatedAt: true,
+                            showPrivateSetups: true,
+                            showNSFW: true,
+                        },
+                    })) ?? undefined,
             )
-
-            await useStorage('auth').setItem(key, settings, {
-                ttl: SESSION_COOKIE_CACHE_MAX_AGE,
-            })
 
             return {
                 user: { ...user, settings },

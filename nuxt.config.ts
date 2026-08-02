@@ -9,9 +9,6 @@ import {
     prefixedI18nLocales,
 } from './shared/utils/i18nRouting'
 
-const isVitest = Boolean(process.env.VITEST)
-const isTest = process.env.NODE_ENV === 'test'
-
 const baseUrl = process.env.PUBLIC_SITE_URL || 'http://localhost:3000'
 const publicUrl = 'https://avatio.me'
 const r2PublicBaseUrl = process.env.NUXT_R2_PUBLIC_BASE_URL || process.env.R2_PUBLIC_BASE_URL
@@ -22,7 +19,7 @@ const title = 'Avatio'
 const description = 'アバター改変レシピの共有プラットフォーム'
 
 const normalizeRuntimeConfigForVitest = () => {
-    if (!isVitest) return
+    if (!process.env.VITEST) return
 
     const nuxt = useNuxt()
     nuxt.options.runtimeConfig = JSON.parse(JSON.stringify(nuxt.options.runtimeConfig))
@@ -113,6 +110,13 @@ const rateLimitBindings = {
     },
 }
 
+// Nitro forwards this to the generated Wrangler config. Its bundled type has not yet added `cache`.
+const workersCacheConfig = {
+    cache: {
+        enabled: true,
+    },
+} as const
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
     compatibilityDate: '2026-05-26',
@@ -149,7 +153,7 @@ export default defineNuxtConfig({
         '@nuxt/a11y',
         '@nuxt/test-utils/module',
         '@liria24/og-image/nuxt',
-        ...(isVitest ? [] : ['@vite-pwa/nuxt']),
+        ...(import.meta.test ? [] : ['@vite-pwa/nuxt']),
     ],
 
     css: ['~/assets/css/main.css'],
@@ -180,6 +184,7 @@ export default defineNuxtConfig({
             nodeCompat: true,
             wrangler: {
                 name: 'avatio',
+                ...workersCacheConfig,
                 compatibility_flags: [
                     'nodejs_compat',
                     'nodejs_als',
@@ -482,7 +487,7 @@ export default defineNuxtConfig({
     },
 
     pwa: {
-        disable: isTest,
+        disable: import.meta.test,
         registerWebManifestInRouteRules: true,
         registerType: 'autoUpdate',
         manifest: {
@@ -543,7 +548,7 @@ export default defineNuxtConfig({
     },
 
     schemaOrg: {
-        defaults: !isVitest,
+        defaults: !import.meta.test,
         identity: defineOrganization({
             name: 'Liria',
             description: 'Creation Circle by Liry24',

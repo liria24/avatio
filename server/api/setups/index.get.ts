@@ -15,7 +15,7 @@ const query = z.object({
     limit: z.coerce.number().min(1).max(API_LIMIT_MAX).optional().default(SETUPS_API_DEFAULT_LIMIT),
 })
 
-export default sessionEventHandler(async ({ session, db }) => {
+export default sessionEventHandler(async ({ event, session, db }) => {
     const { q, orderBy, sort, username, itemId, tag, bookmarked, includePrivate, page, limit } =
         await validateQuery(query)
 
@@ -133,7 +133,7 @@ export default sessionEventHandler(async ({ session, db }) => {
         },
     })
 
-    const result = await Promise.all(
+    const setupData = await Promise.all(
         data.map(async (setup) => ({
             ...setup,
             images: await withSetupImageUrls(setup.images),
@@ -148,8 +148,8 @@ export default sessionEventHandler(async ({ session, db }) => {
         })),
     )
 
-    return {
-        data: result,
+    const result = {
+        data: setupData,
         pagination: {
             page,
             limit,
@@ -159,4 +159,8 @@ export default sessionEventHandler(async ({ session, db }) => {
             hasPrev: offset > 0,
         },
     }
+
+    if (!bookmarked && !shouldShowPrivate) applyPublicEdgeCache(event, [EDGE_CACHE_TAGS.setups])
+
+    return result
 })

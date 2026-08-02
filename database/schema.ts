@@ -131,6 +131,13 @@ export const verifications = userSchema.table(
     (table) => [index('verification_identifier_idx').on(table.identifier)],
 )
 
+export const rateLimits = userSchema.table('rate_limits', {
+    id: text().primaryKey(),
+    key: text().notNull().unique(),
+    count: integer().notNull(),
+    lastRequest: bigint({ mode: 'number' }).notNull(),
+})
+
 export const userShops = userSchema.table(
     'user_shops',
     {

@@ -6,7 +6,7 @@ const body = z.object({
     shopId: z.string().min(1, 'Shop ID is required'),
 })
 
-export default authedSessionEventHandler(async ({ session, db }) => {
+export default authedSessionEventHandler(async ({ event, session, db }) => {
     // リクエストボディの検証
     const { shopId } = await validateBody(body)
 
@@ -27,6 +27,8 @@ export default authedSessionEventHandler(async ({ session, db }) => {
         await db
             .delete(userBadges)
             .where(and(eq(userBadges.userId, session.user.id), eq(userBadges.badge, 'shop_owner')))
+
+    await purgeUserContentCache(event, db, session.user.id, 'shop verification removal')
 
     return { success: true }
 })

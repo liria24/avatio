@@ -10,7 +10,7 @@ import {
 const body = setupsInsertSchema
 
 export default authedSessionEventHandler(
-    async ({ session, db }) => {
+    async ({ event, session, db }) => {
         const {
             public: isPublic,
             name,
@@ -82,7 +82,13 @@ export default authedSessionEventHandler(
             return setupId
         })
 
-        const data = await useEvent().$fetch(`/api/setups/${setupId}`)
+        await purgeEdgeCacheTags(
+            event,
+            [EDGE_CACHE_TAGS.popularAvatars, EDGE_CACHE_TAGS.setups],
+            'setup create',
+        )
+
+        const data = await event.$fetch(`/api/setups/${setupId}`)
 
         return data
     },

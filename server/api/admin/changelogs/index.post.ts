@@ -17,7 +17,7 @@ const body = createInsertSchema(changelogI18ns)
         i18n: createInsertSchema(changelogI18ns).array().optional(),
     })
 
-export default adminSessionEventHandler(async ({ db }) => {
+export default adminSessionEventHandler(async ({ event, db }) => {
     const { slug, title, markdown, authors, i18n } = await validateBody(body, { sanitize: true })
     let generatedSlug: string = ''
 
@@ -35,7 +35,7 @@ export default adminSessionEventHandler(async ({ db }) => {
                 content: `The short slug must not overlap with any of the existing slugs: ${exists.map((b) => b.slug).join(', ')}`,
             })
 
-        const aiBinding = useEvent().context.cloudflare?.env?.AI
+        const aiBinding = event.context.cloudflare?.env?.AI
         if (!aiBinding)
             throw createError({
                 statusCode: 503,
@@ -146,6 +146,8 @@ Please return the translation in the following JSON format:
             })),
         )
     }
+
+    await purgeEdgeCacheTags(event, [EDGE_CACHE_TAGS.changelogs], 'changelog create')
 
     return {
         slug: finalSlug,

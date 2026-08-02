@@ -29,8 +29,6 @@ export const LATEST_SETUPS_LIST_PER_PAGE = 64
 export const ITEM_CACHE_DURATION_MS = 24 * 60 * 60 * 1000 // 24 hours
 export const GITHUB_ITEM_CACHE_DURATION_MS = 60 * 60 * 1000 // 1 hour
 export const GITHUB_API_CACHE_TTL = 60 * 60 // 1 hour
-export const SETUP_CACHE_TTL = 60 * 60 // 1 hour
-export const USER_CACHE_TTL = 60 * 60 // 1 hour
 export const APP_FLAGS_CACHE_TTL = 5 // 5 seconds
 export const SESSION_COOKIE_CACHE_MAX_AGE = 5 * 60 // 5 minutes
 
