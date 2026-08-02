@@ -36,11 +36,15 @@
     "dependencies": {
         "@avatio/bot-notifier": "workspace:*",
         "@avatio/ungh": "workspace:*",
-        "@better-auth/drizzle-adapter": "1.6.25",
+        "@aws-sdk/client-s3": "^3.1101.0",
+        "@aws-sdk/lib-storage": "^3.1101.0",
+        "@aws-sdk/s3-presigned-post": "^3.1101.0",
+        "@aws-sdk/s3-request-presigner": "^3.1101.0",
+        "@better-auth/drizzle-adapter": "1.7.0-rc.2",
         "@comark/nuxt": "0.5.1",
         "@iconify-json/fluent-color": "1.2.21",
-        "@iconify-json/lucide": "1.2.120",
-        "@iconify-json/mingcute": "1.2.7",
+        "@iconify-json/lucide": "1.2.121",
+        "@iconify-json/mingcute": "1.2.8",
         "@iconify-json/simple-icons": "1.2.92",
         "@iconify-json/svg-spinners": "1.2.4",
         "@iconify-json/twemoji": "1.2.5",
@@ -57,12 +61,11 @@
         "@nuxtjs/sitemap": "8.3.2",
         "@stefanobartoletti/nuxt-social-share": "3.2.0",
         "@vite-pwa/nuxt": "1.1.1",
-        "@vueuse/nuxt": "14.4.0",
+        "@vueuse/nuxt": "14.3.0",
         "@vueuse/router": "14.3.0",
         "@yeger/vue-masonry-wall": "6.1.4",
-        "ai": "7.0.42",
-        "aws4fetch": "^1.0.20",
-        "better-auth": "1.6.25",
+        "ai": "7.0.48",
+        "better-auth": "1.7.0-rc.2",
         "canvas-confetti": "1.9.4",
         "clsx": "2.1.1",
         "drizzle-orm": "1.0.0-rc.4",
@@ -83,7 +86,7 @@
         "zod": "4.4.3"
     },
     "devDependencies": {
-        "@cloudflare/workers-types": "^5.20260730.1",
+        "@cloudflare/workers-types": "^5.20260801.1",
         "@nuxt/a11y": "1.0.0-alpha.1",
         "@nuxt/hints": "1.1.4",
         "@nuxt/test-utils": "4.1.0",
@@ -102,8 +105,8 @@
         "taze": "^19.16.0",
         "typescript": "6.0.3",
         "vitest": "^4.1.10",
-        "vue-tsc": "^3.3.8",
-        "wrangler": "^4.116.0"
+        "vue-tsc": "^3.3.9",
+        "wrangler": "^4.118.0"
     },
     "overrides": {
         "vue": "latest"

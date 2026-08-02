@@ -58,17 +58,6 @@ const options = {
         usePlural: true,
     }),
 
-    secondaryStorage: {
-        get: async (key) => await useStorage('auth').get(encodeURIComponent(key)),
-        set: async (key, value, ttl) => {
-            if (ttl) await useStorage('auth').set(encodeURIComponent(key), value, { ttl })
-            else await useStorage('auth').set(encodeURIComponent(key), value)
-        },
-        delete: async (key) => {
-            await useStorage('auth').del(encodeURIComponent(key))
-        },
-    },
-
     user: {
         additionalFields: {
             bio: {
@@ -99,8 +88,8 @@ const options = {
 
     session: {
         storeSessionInDatabase: true,
-        disableSessionRefresh: true,
-        deferSessionRefresh: true,
+        expiresIn: 60 * 60 * 24 * 30,
+        updateAge: 60 * 60 * 24,
         cookieCache: {
             enabled: true,
             maxAge: SESSION_COOKIE_CACHE_MAX_AGE,
@@ -145,7 +134,7 @@ const options = {
                 max: RATE_LIMIT_SESSION,
             },
         },
-        storage: 'secondary-storage',
+        storage: 'database',
     },
 
     databaseHooks: {
