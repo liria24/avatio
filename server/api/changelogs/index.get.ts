@@ -20,7 +20,7 @@ const query = z.object({
 
 const parse = createParse({ plugins: [breaks()] })
 
-export default promiseEventHandler(async ({ db }) => {
+export default promiseEventHandler(async ({ event, db }) => {
     const { q, sort, userId, page, limit, lang } = await validateQuery(query)
 
     const offset = (page - 1) * limit
@@ -77,7 +77,7 @@ export default promiseEventHandler(async ({ db }) => {
         },
     })
 
-    return {
+    const result = {
         data: await Promise.all(
             data.map(async (changelog) => {
                 const i18nData = changelog.i18n.find((i18n) => i18n.locale === lang)
@@ -104,4 +104,7 @@ export default promiseEventHandler(async ({ db }) => {
             hasPrev: offset > 0,
         },
     }
+
+    applyPublicEdgeCache(event, [EDGE_CACHE_TAGS.changelogs])
+    return result
 })

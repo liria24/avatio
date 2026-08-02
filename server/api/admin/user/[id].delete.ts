@@ -10,7 +10,5 @@ export default adminSessionEventHandler(async () => {
 
     const result = await auth.api.removeUser({ headers, body: { userId } })
 
-    runAfterResponse(purgeUserCache(userId))
-
     return result
 })

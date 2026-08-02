@@ -7,7 +7,7 @@ const params = z.object({
 })
 
 export default authedSessionEventHandler(
-    async ({ session, db }) => {
+    async ({ event, session, db }) => {
         const { id } = await validateParams(params)
 
         const data = await db.query.setups.findFirst({
@@ -19,7 +19,11 @@ export default authedSessionEventHandler(
 
         await db.delete(setups).where(eq(setups.id, id))
 
-        await purgeSetupCache(id)
+        await purgeEdgeCacheTags(
+            event,
+            [getSetupCacheTag(id), EDGE_CACHE_TAGS.popularAvatars, EDGE_CACHE_TAGS.setups],
+            'setup delete',
+        )
 
         await createAuditLog(db, {
             userId: session.user.id,

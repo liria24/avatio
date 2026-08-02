@@ -74,7 +74,5 @@ export default adminSessionEventHandler(async ({ db }) => {
             })
         }
 
-    runAfterResponse(purgeUserCache(userId))
-
     return
 })

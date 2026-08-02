@@ -5,7 +5,7 @@ const query = z.object({
     lang: z.enum(locales.enumValues).optional().default('ja'),
 })
 
-export default promiseEventHandler(async ({ db }) => {
+export default promiseEventHandler(async ({ event, db }) => {
     const { lang } = await validateQuery(query)
 
     const data = await db.query.changelogs.findFirst({
@@ -30,9 +30,12 @@ export default promiseEventHandler(async ({ db }) => {
 
     const i18nData = data?.i18n.find((i18n) => i18n.locale === lang)
 
-    return {
+    const result = {
         slug: data?.slug,
         title: i18nData?.title || data?.title,
         fallbacked: lang !== 'ja' && !i18nData,
     }
+
+    applyPublicEdgeCache(event, [EDGE_CACHE_TAGS.changelogs])
+    return result
 })

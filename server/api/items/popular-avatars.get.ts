@@ -10,40 +10,35 @@ const query = z.object({
         .default(POPULAR_AVATARS_API_DEFAULT_LIMIT),
 })
 
-const getPopularAvatars = defineCachedFunction(
-    async (db: ReturnType<typeof useDB>, limit: number) => {
-        return await db.query.items.findMany({
-            where: {
-                outdated: { eq: false },
-                category: { eq: 'avatar' },
-                setupItems: {
-                    setup: {
-                        public: { eq: true },
+export default promiseEventHandler(async ({ event, db }) => {
+    const { limit } = await validateQuery(query)
+
+    const data = await db.query.items.findMany({
+        where: {
+            outdated: { eq: false },
+            category: { eq: 'avatar' },
+            setupItems: {
+                setup: {
+                    public: { eq: true },
+                    hidAt: { isNull: true },
+                    user: {
+                        OR: [{ banned: { eq: false } }, { banned: { isNull: true } }],
                     },
                 },
             },
-            orderBy: (t) => sql`(SELECT COUNT(*) FROM setup_items WHERE item_id = ${t.id}) DESC`,
-            limit,
-            columns: {
-                id: true,
-                platform: true,
-                name: true,
-                niceName: true,
-                image: true,
-                nsfw: true,
-            },
-        })
-    },
-    {
-        name: 'popular-avatars',
-        maxAge: 60 * 60 * 24,
-        getKey: (_db, limit) => String(limit),
-        swr: false,
-    },
-)
+        },
+        orderBy: (t) => sql`(SELECT COUNT(*) FROM setup_items WHERE item_id = ${t.id}) DESC`,
+        limit,
+        columns: {
+            id: true,
+            platform: true,
+            name: true,
+            niceName: true,
+            image: true,
+            nsfw: true,
+        },
+    })
 
-export default promiseEventHandler(async ({ db }) => {
-    const { limit } = await validateQuery(query)
-
-    return await getPopularAvatars(db, limit)
+    applyPublicEdgeCache(event, [EDGE_CACHE_TAGS.popularAvatars])
+    return data
 })

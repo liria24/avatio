@@ -16,7 +16,7 @@ const params = z.object({
 const body = setupsUpdateSchema
 
 export default authedSessionEventHandler(
-    async ({ session, db }) => {
+    async ({ event, session, db }) => {
         const { id } = await validateParams(params)
 
         // セットアップの存在確認と権限チェック
@@ -81,7 +81,7 @@ export default authedSessionEventHandler(
                             .select({ id: setupItems.id })
                             .from(setupItems)
                             .where(eq(setupItems.setupId, id)),
-                    )
+                    ),
                 )
 
             await tx.delete(setupItems).where(eq(setupItems.setupId, id))
@@ -163,7 +163,11 @@ export default authedSessionEventHandler(
             }
         })
 
-        await purgeSetupCache(id)
+        await purgeEdgeCacheTags(
+            event,
+            [getSetupCacheTag(id), EDGE_CACHE_TAGS.popularAvatars, EDGE_CACHE_TAGS.setups],
+            'setup update',
+        )
 
         const data = await useEvent().$fetch(`/api/setups/${id}`)
 

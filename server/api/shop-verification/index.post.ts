@@ -73,6 +73,8 @@ export default authedSessionEventHandler(
             .delete(userShopVerifications)
             .where(eq(userShopVerifications.userId, session.user.id))
 
+        await purgeUserContentCache(event, db, session.user.id, 'shop verification')
+
         return { success: true, shopId: itemData.shop?.id }
     },
     {

@@ -5,7 +5,7 @@ const query = z.object({
     limit: z.coerce.number().min(1).max(50).optional().default(24),
 })
 
-export default promiseEventHandler<User[]>(async ({ db }) => {
+export default promiseEventHandler<User[]>(async ({ event, db }) => {
     const { q, limit } = await validateQuery(query)
 
     const data = await db.query.users.findMany({
@@ -16,9 +16,7 @@ export default promiseEventHandler<User[]>(async ({ db }) => {
         where: {
             banned: { OR: [{ eq: false }, { isNull: true }] },
             setups: true,
-            OR: q
-                ? [{ username: { ilike: `%${q}%` } }, { name: { ilike: `%${q}%` } }]
-                : undefined,
+            OR: q ? [{ username: { ilike: `%${q}%` } }, { name: { ilike: `%${q}%` } }] : undefined,
         },
         columns: {
             id: true,
@@ -36,5 +34,6 @@ export default promiseEventHandler<User[]>(async ({ db }) => {
         },
     })
 
+    applyPublicEdgeCache(event, [EDGE_CACHE_TAGS.users])
     return data
 })
