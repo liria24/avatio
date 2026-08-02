@@ -23,9 +23,19 @@ import {
     RATE_LIMIT_WINDOW,
     SESSION_COOKIE_CACHE_MAX_AGE,
 } from './constants'
+import { logger } from './logger'
 import { getUserSettingsForSession } from './userSettingsCache'
 
 const JPG_FILENAME_LENGTH = 16
+const authLog = logger('better-auth')
+
+const logBetterAuthError = (message: string, args: unknown[]) => {
+    const error = args.find((arg): arg is Error => arg instanceof Error)
+    const detail = error?.message
+    const summary = message || 'Better Auth request failed'
+
+    authLog.error(detail ? `${summary}: ${detail}` : summary)
+}
 
 type CacheInvalidationEvent = H3Event & {
     context: H3Event['context'] & {
@@ -215,7 +225,15 @@ const options = {
     },
 
     onAPIError: {
-        throw: true,
+        // Let Better Auth turn API errors into its expected response instead of
+        // rethrowing them past Nitro, where the original cause was discarded.
+        onError: (error) => logBetterAuthError('API error', [error]),
+    },
+
+    logger: {
+        level: 'error',
+        disableColors: true,
+        log: (_level, message, ...args) => logBetterAuthError(message, args),
     },
 
     advanced: {
