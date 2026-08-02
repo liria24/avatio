@@ -94,7 +94,8 @@ export const accounts = userSchema.table(
     'accounts',
     {
         id: text().primaryKey(),
-        accountId: text().notNull(),
+        issuer: text().notNull(),
+        providerAccountId: text().notNull(),
         providerId: text().notNull(),
         userId: text()
             .notNull()
@@ -112,7 +113,13 @@ export const accounts = userSchema.table(
         createdAt: timestamp().notNull(),
         updatedAt: timestamp().notNull(),
     },
-    (table) => [index('account_user_id_index').on(table.userId)],
+    (table) => [
+        index('account_user_id_index').on(table.userId),
+        uniqueIndex('accounts_issuer_providerAccountId_uidx').on(
+            table.issuer,
+            table.providerAccountId,
+        ),
+    ],
 )
 
 export const verifications = userSchema.table(
