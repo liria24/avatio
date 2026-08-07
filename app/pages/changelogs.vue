@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ComarkTree } from 'comark'
+import type { MarkdownDocument } from 'comark'
 import type { FetchResult } from 'nuxt/app'
 
 const { t, locale, localeProperties } = useI18n()
@@ -73,9 +73,9 @@ useSeo({
                         :label="$t('changelogs.fallbacked', { locale: localeProperties.name })"
                         variant="soft"
                     />
-                    <ComarkRenderer
+                    <MarkdownDocument
                         v-if="changelog.tree"
-                        :tree="changelog.tree as ComarkTree"
+                        :value="changelog.tree as MarkdownDocument"
                         class="sentence w-full max-w-full *:first:mt-0 *:last:mb-0 [&_img]:max-w-lg"
                     />
                     <UBadge

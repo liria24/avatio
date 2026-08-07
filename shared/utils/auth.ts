@@ -1,4 +1,4 @@
-import { drizzleAdapter } from '@better-auth/drizzle-adapter'
+import { drizzleAdapter } from '@better-auth/drizzle-adapter/relations-v2'
 import { betterAuth } from 'better-auth/minimal'
 import type { BetterAuthOptions } from 'better-auth/minimal'
 import { admin, multiSession, username, customSession } from 'better-auth/plugins'
@@ -237,6 +237,9 @@ const options = {
     },
 
     advanced: {
+        database: {
+            joins: true,
+        },
         ipAddress: {
             ipAddressHeaders: ['x-forwarded-for', 'x-real-ip', 'cf-connecting-ip'],
             disableIpTracking: false,
