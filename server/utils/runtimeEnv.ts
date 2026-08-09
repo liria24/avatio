@@ -36,13 +36,6 @@ export const getRuntimeEnv = (event?: H3Event): RuntimeEnv =>
     getCurrentEventRuntimeEnv() ??
     process.env
 
-export const getRuntimeEnvValue = (name: string, event?: H3Event) => {
-    for (const env of getRuntimeEnvSources(event)) {
-        const value = env[name]
-        if (value !== undefined && value !== null) return value
-    }
-}
-
 export const getRuntimeEnvString = (name: string, event?: H3Event) => {
     for (const env of getRuntimeEnvSources(event)) {
         const value = env[name]

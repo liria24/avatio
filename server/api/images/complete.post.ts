@@ -53,28 +53,21 @@ export default authedSessionEventHandler(
         const path = getTemporaryImagePath(objectKey, session.user.id)
         if (!path) throw serverError.badRequest({ responseMessage: 'Invalid image key.' })
 
-        await invalidateStorageHeadCache(objectKey)
-        const head = readHeadMetadata(await cachedStorageHead(objectKey))
+        const head = readHeadMetadata(await storage.head(objectKey))
         const contentType = head.type ?? head.contentType ?? ''
 
         if (!isImageContentType(contentType)) {
             await storage.delete(objectKey).catch(() => null)
-            await invalidateStorageHeadCache(objectKey)
             throw serverError.badRequest({ responseMessage: 'Unsupported image type.' })
         }
 
         if (!head.size || head.size > MAX_IMAGE_UPLOAD_SIZE) {
             await storage.delete(objectKey).catch(() => null)
-            await invalidateStorageHeadCache(objectKey)
             throw serverError.badRequest({ responseMessage: 'Image is too large.' })
         }
 
         const finalKey = createImageKey(path, session.user.id, contentType)
         await storage.move(objectKey, finalKey)
-        await Promise.all([
-            invalidateStorageHeadCache(objectKey),
-            invalidateStorageHeadCache(finalKey),
-        ])
 
         const url = withHttps(await storage.url(finalKey))
         const { colors } = await extractImageColors(url)

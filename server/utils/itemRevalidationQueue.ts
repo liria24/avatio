@@ -1,5 +1,6 @@
 import type { CacheContext, Queue } from '@cloudflare/workers-types'
 import type { H3Event } from 'h3'
+
 const log = logger('itemRevalidationQueue')
 const QUEUE_BINDING = 'ITEM_REVALIDATION_QUEUE'
 const REVALIDATION_LOCK_TTL = 60 * 30
@@ -87,9 +88,5 @@ export const handleItemRevalidationMessage = async (
             'item revalidation',
         )
 
-    await useStorage('cache').del(getLockKey(message.id, message.platform))
-}
-
-export const clearItemRevalidationLock = async (message: ItemRevalidationMessage) => {
     await useStorage('cache').del(getLockKey(message.id, message.platform))
 }

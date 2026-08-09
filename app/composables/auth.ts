@@ -70,17 +70,6 @@ const _useAuth = () => {
         return globalSessions
     }
 
-    const refreshSessions = async () => {
-        try {
-            const { data } = await client.multiSession.listDeviceSessions()
-            globalSessions.value = data || []
-        } catch {
-            globalSessions.value = undefined
-        }
-
-        return globalSessions
-    }
-
     const signIn = {
         email: async (options: { email: string; password: string; callbackURL?: string }) =>
             client.signIn.email({
@@ -122,10 +111,8 @@ const _useAuth = () => {
         auth: client,
         session: globalSession,
         sessions: globalSessions,
-        getSession,
         getSessions,
         refreshSession,
-        refreshSessions,
         signIn,
         signOut,
         revoke,

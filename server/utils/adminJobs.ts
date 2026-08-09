@@ -1,5 +1,3 @@
-import { sendMessage } from '@avatio/bot-notifier'
-
 const reportLog = logger('/api/admin/job/report')
 const cleanupLog = logger('/api/admin/job/cleanup')
 
@@ -28,6 +26,18 @@ const STORAGE_OPERATION_CONCURRENCY = 8
 const BACKUP_PREFIX = 'backup'
 const BACKUP_RULE_ID = 'avatio-backup-cleanup'
 const BACKUP_RETENTION_SECONDS = 3 * 24 * 60 * 60 // 3 days
+
+const sendMessage = (message: { content?: string; embeds?: object[] }) =>
+    $fetch('/admin/message', {
+        baseURL:
+            getRuntimeEnvString('LIRIA_DISCORD_ENDPOINT')?.replace(/\/+$/, '') ??
+            'https://discord.liria.me',
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${getRuntimeEnvString('LIRIA_DISCORD_ACCESS_TOKEN')}`,
+        },
+        body: message,
+    })
 
 interface LifecycleRule {
     id: string

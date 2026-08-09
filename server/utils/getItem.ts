@@ -1,15 +1,37 @@
 import { items, shops } from '@@/database/schema'
-import {
-    getGithubContributors,
-    getGithubLatestRelease,
-    getGithubReadme,
-    getGithubRepo,
-} from '@avatio/ungh'
 import { eq } from 'drizzle-orm'
 import type { H3Event } from 'h3'
 import { joinURL, withHttps } from 'ufo'
 
 const log = logger('getItem')
+const UNGH_URL = 'https://ungh.cc'
+
+interface GithubRepoResponse {
+    repo: {
+        name: string
+        repo: string
+        description: string
+        stars: number
+        forks: number
+    }
+}
+
+interface GithubContributorsResponse {
+    contributors: { username: string; contributions: number }[]
+}
+
+interface GithubLatestReleaseResponse {
+    release: { tag: string }
+}
+
+interface GithubReadmeResponse {
+    markdown: string
+}
+
+const getGithubResource = <T>(repo: string, path = ''): Promise<T | null> => {
+    if (!/^[\w-]+\/[\w.-]+$/.test(repo)) return Promise.resolve(null)
+    return $fetch<T>(`${UNGH_URL}/repos/${repo}${path}`).catch(() => null)
+}
 
 export default async (
     event: H3Event | undefined,
@@ -93,10 +115,10 @@ export default async (
 
     if (resolvedProvider === 'github') {
         const [repoData, contributors, latestRelease, readme] = await Promise.all([
-            getGithubRepo(id),
-            getGithubContributors(id),
-            getGithubLatestRelease(id),
-            getGithubReadme(id),
+            getGithubResource<GithubRepoResponse>(id),
+            getGithubResource<GithubContributorsResponse>(id, '/contributors'),
+            getGithubResource<GithubLatestReleaseResponse>(id, '/releases/latest'),
+            getGithubResource<GithubReadmeResponse>(id, '/readme'),
         ])
 
         const owner = repoData?.repo.repo.split('/')[0]

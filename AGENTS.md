@@ -7,26 +7,26 @@ Compact instruction for OpenCode sessions. If a fact is obvious from filenames, 
 ## Package manager & runtime
 
 - **Package manager:** `bun`. `bunfig.toml` uses `linker = "hoisted"`.
-- **Postinstall:** `bun run postinstall` runs `nuxt prepare` only. Workspace package builds are explicit via `bun run packages:build`.
+- **Postinstall:** `bun run postinstall` runs `nuxt prepare` only.
 
 ## Developer commands
 
-| Task                               | Command                    |
-| ---------------------------------- | -------------------------- |
-| Dev server                         | `bun run dev`              |
-| Build                              | `bun run build`            |
-| Typecheck                          | `bun run typecheck`        |
-| Lint                               | `bun run lint`             |
-| Fix lint                           | `bun run lint:fix`         |
-| Format                             | `bun run fmt`              |
-| Check formatting                   | `bun run fmt:check`        |
-| Run all tests                      | `bun run test`             |
-| Unit tests only                    | `bun run test:unit`        |
-| Nuxt tests only                    | `bun run test:nuxt`        |
-| Watch tests                        | `bun run test:watch`       |
-| Build all workspace packages       | `bun run packages:build`   |
-| Generate Drizzle migrations        | `bun run drizzle:generate` |
-| Bump version + commit + tag + push | `bun run release`          |
+| Task                               | Command                                         |
+| ---------------------------------- | ----------------------------------------------- |
+| Dev server                         | `bun run dev`                                   |
+| Build                              | `bun run build`                                 |
+| Typecheck                          | `bun run typecheck`                             |
+| Lint                               | `bun run lint`                                  |
+| Fix lint                           | `bun run lint:fix`                              |
+| Format                             | `bun run fmt`                                   |
+| Check formatting                   | `bun run fmt:check`                             |
+| Run all tests                      | `bun run test`                                  |
+| Unit tests only                    | `bun run test:unit`                             |
+| Nuxt tests only                    | `bun run test:nuxt`                             |
+| Watch tests                        | `bun run test:watch`                            |
+| Generate Drizzle migrations        | `bun run drizzle:generate`                      |
+| Generate Better Auth schema        | `bunx auth@rc generate --config auth.config.ts` |
+| Bump version + commit + tag + push | `bun run release`                               |
 
 ## After making changes
 
@@ -43,7 +43,6 @@ For deployment-related changes, also run **`bun run build`**. In this repo, the 
   - `database/schema.ts` — Drizzle ORM schema (PostgreSQL via Neon).
   - `shared/` — Utilities shared between client and server.
   - `content/` — `@nuxt/content` pages, split by `en/` and `ja/`.
-  - `packages/` — Workspace libraries and workers (`bot-notifier`, `ungh`). Build them explicitly with `bun run packages:build`.
 
 ## Tooling constraints
 
@@ -80,7 +79,7 @@ For deployment-related changes, also run **`bun run build`**. In this repo, the 
 - **Cloudflare KV HTTP** drives app flags and maintenance mode (`server/middleware/maintenance.ts`). Key: `isMaintenance`.
 - **Workers Cron Triggers**:
   - `/api/admin/job/report` — daily at 22:00
-  - `/api/admin/job/cleanup` — daily at 22:00
+  - `/api/admin/job/cleanup` — manual/admin only
 - **Images:** served through `@nuxt/image`. Allowed external domains are whitelisted in `nuxt.config.ts` (Booth, GitHub, R2 public domain).
 - **Storage:** Cloudflare R2 through `files-sdk/r2` for user-uploaded images. Workers use the `R2` binding; local environments fall back to HTTP mode.
 - **PWA:** `@vite-pwa/nuxt` is enabled; `sw.js` and `manifest.webmanifest` are served with `must-revalidate`.
@@ -146,7 +145,6 @@ Wrap every API handler with the appropriate factory from `server/utils/eventHand
 
 ## Common mistakes to avoid
 
-- After adding or changing workspace package code, run `bun run packages:build` explicitly instead of relying on install hooks.
 - Do not use Vue Options API (disabled in Vite config).
 - Admin pages live under `app/pages/admin/` and use the `dashboard` layout + `admin` middleware (configured in route rules, not per-page).
 

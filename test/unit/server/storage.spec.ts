@@ -38,7 +38,7 @@ describe('storage', () => {
             R2_PUBLIC_BASE_URL: 'https://files.example.com',
         })
 
-        expect(storage.adapter.name).toBe('r2-http')
+        expect(storage.adapter.name).toBe('r2-http-fetch')
     })
 
     it('reports missing HTTP fallback environment variables clearly', async () => {

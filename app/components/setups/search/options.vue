@@ -3,10 +3,10 @@ const open = defineModel<boolean>('open', {
     default: false,
 })
 const items = defineModel<string[]>('items', {
-    default: [],
+    default: () => [],
 })
 const tags = defineModel<string[]>('tags', {
-    default: [],
+    default: () => [],
 })
 
 const popoverItemSearch = ref(false)
