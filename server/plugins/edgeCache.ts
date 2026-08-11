@@ -32,7 +32,7 @@ const applyPublicDocumentCache = (response: Partial<RenderResponse>, event: H3Ev
     const cacheHeaders = getDocumentCacheHeaders(
         getRequestURL(event).pathname,
         response.statusCode ?? 200,
-        Boolean(event.headers.get('cookie')),
+        event.headers.get('cookie'),
     )
 
     if (cacheHeaders['Cache-Control'] === NO_STORE_CACHE_CONTROL) {

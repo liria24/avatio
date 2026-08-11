@@ -1,6 +1,6 @@
 import type { SitemapUrlInput } from '#sitemap/types'
 
-export default defineSitemapEventHandler(async () => {
+export default defineSitemapEventHandler(async (event) => {
     const db = useDB()
 
     const setups = await db.query.setups.findMany({
@@ -36,6 +36,7 @@ export default defineSitemapEventHandler(async () => {
         },
     })
 
+    applyPublicEdgeCache(event, [EDGE_CACHE_TAGS.setups, EDGE_CACHE_TAGS.users])
     return [
         ...(await Promise.all(
             setups.map(async (setup): Promise<SitemapUrlInput> => ({

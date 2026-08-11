@@ -13,7 +13,7 @@ const query = z.object({
     limit: z.coerce.number().min(1).max(API_LIMIT_MAX).optional().default(ITEMS_API_DEFAULT_LIMIT),
 })
 
-export default promiseEventHandler<PaginationResponse<Item[]>>(async ({ db }) => {
+export default promiseEventHandler<PaginationResponse<Item[]>>(async ({ event, db }) => {
     const { q, orderBy, sort, category, page, limit } = await validateQuery(query)
 
     const offset = (page - 1) * limit
@@ -58,6 +58,8 @@ export default promiseEventHandler<PaginationResponse<Item[]>>(async ({ db }) =>
             },
         },
     })
+
+    applyPublicEdgeCache(event, [EDGE_CACHE_TAGS.items])
 
     return {
         data,

@@ -138,7 +138,7 @@ SGVsbG8=
         expect(row.attachments).toEqual([
             {
                 filename: 'note.txt',
-                size: 8,
+                size: 5,
                 type: 'text/plain',
                 disposition: 'attachment',
                 contentId: undefined,

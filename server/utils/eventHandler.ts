@@ -1,16 +1,13 @@
 import type { H3Event } from 'h3'
 
+import { hasBetterAuthSessionCookie } from '../../shared/utils/authCookie'
+
 interface SessionEventHandlerOptions {
     rejectBannedUser?: boolean
 }
 
 const rejectBannedUser = (session: Session | null) => {
     if (session?.user?.banned) throw serverError.forbidden()
-}
-
-const hasBetterAuthSessionCookie = (headers: Headers) => {
-    const cookie = headers.get('cookie')
-    return Boolean(cookie?.includes('better-auth'))
 }
 
 export const promiseEventHandler = <T = unknown>(
@@ -35,7 +32,7 @@ export const sessionEventHandler = <T = unknown>(
     options?: SessionEventHandlerOptions,
 ) =>
     promiseEventHandler(async ({ event, db }) => {
-        const session = hasBetterAuthSessionCookie(event.headers)
+        const session = hasBetterAuthSessionCookie(event.headers.get('cookie'))
             ? await auth.api.getSession({ headers: event.headers })
             : null
 

@@ -8,6 +8,8 @@ import {
 import { createAuthClient } from 'better-auth/vue'
 import { withoutHost } from 'ufo'
 
+import { hasBetterAuthSessionCookie } from '#shared/utils/authCookie'
+
 const client = createAuthClient({
     plugins: [
         usernameClient(),
@@ -28,6 +30,11 @@ const _useAuth = () => {
         if (globalSession.value !== undefined) return globalSession
 
         const headers = useRequestHeaders()
+        if (import.meta.server && !hasBetterAuthSessionCookie(headers.cookie)) {
+            globalSession.value = null
+            return globalSession
+        }
+
         const { data } = await client.useSession((url, options) =>
             useFetch(withoutHost(url), { ...options, dedupe: 'defer', headers }),
         )

@@ -2,12 +2,16 @@ import type { CacheContext } from '@cloudflare/workers-types'
 import { eq, or } from 'drizzle-orm'
 import { setResponseHeader, setResponseHeaders } from 'h3'
 import type { H3Event } from 'h3'
-import { setupCoauthors, setups } from '~~/database/schema'
+
+import { setupCoauthors, setups } from '../../database/schema'
+import { hasBetterAuthSessionCookie } from '../../shared/utils/authCookie'
+import { runAfterResponse } from './waitUntil'
 
 const log = logger('edgeCache')
 
 export const EDGE_CACHE_TAGS = {
     changelogs: 'changelogs',
+    items: 'items',
     popularAvatars: 'popular-avatars',
     setups: 'setups',
     users: 'users',
@@ -85,10 +89,11 @@ export const getPublicEdgeCacheHeaders = (tags: Iterable<string>, varyCookie = f
 export const getDocumentCacheHeaders = (
     pathname: string,
     statusCode: number,
-    hasCookie: boolean,
+    cookieHeader?: string | null,
 ) => {
     const tags = getPublicDocumentCacheTags(pathname)
-    if (statusCode !== 200 || !tags || hasCookie) return { 'Cache-Control': NO_STORE_CACHE_CONTROL }
+    if (statusCode !== 200 || !tags || hasBetterAuthSessionCookie(cookieHeader))
+        return { 'Cache-Control': NO_STORE_CACHE_CONTROL }
 
     return getPublicEdgeCacheHeaders(tags, true)
 }

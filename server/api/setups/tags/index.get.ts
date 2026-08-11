@@ -14,7 +14,7 @@ const query = z.object({
         .default(SETUP_TAGS_API_DEFAULT_LIMIT),
 })
 
-export default promiseEventHandler(async ({ db }) => {
+export default promiseEventHandler(async ({ event, db }) => {
     const { q, orderBy, sort, limit } = await validateQuery(query)
 
     const sortFn = sort === 'asc' ? asc : desc
@@ -31,5 +31,6 @@ export default promiseEventHandler(async ({ db }) => {
         .orderBy(sortFn(orderByFn))
         .where(q ? ilike(setupTags.tag, `%${q}%`) : undefined)
 
+    applyPublicEdgeCache(event, [EDGE_CACHE_TAGS.setups])
     return data
 })
