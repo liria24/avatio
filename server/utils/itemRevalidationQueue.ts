@@ -1,5 +1,6 @@
 import type { CacheContext, Queue } from '@cloudflare/workers-types'
 import type { H3Event } from 'h3'
+
 const log = logger('itemRevalidationQueue')
 const QUEUE_BINDING = 'ITEM_REVALIDATION_QUEUE'
 const REVALIDATION_LOCK_TTL = 60 * 30
@@ -64,11 +65,23 @@ export const handleItemRevalidationMessage = async (
     cache?: CacheContext,
 ) => {
     const db = useDB()
-    await getItem(undefined, db, message.id, message.platform)
+    let persistedItemId = message.id
+    try {
+        const item = await getItem(undefined, db, message.id, message.platform, cache)
+        persistedItemId = item.id
+    } catch (error) {
+        if (
+            typeof error !== 'object' ||
+            error === null ||
+            !('statusCode' in error) ||
+            error.statusCode !== 404
+        )
+            throw error
+    }
 
     const relatedSetupItems = await db.query.setupItems.findMany({
         where: {
-            itemId: { eq: message.id },
+            itemId: { eq: persistedItemId },
         },
         columns: {
             setupId: true,
@@ -80,6 +93,7 @@ export const handleItemRevalidationMessage = async (
         await purgeEdgeCacheTagsWithContext(
             cache,
             [
+                EDGE_CACHE_TAGS.items,
                 EDGE_CACHE_TAGS.popularAvatars,
                 EDGE_CACHE_TAGS.setups,
                 ...setupIds.map((setupId) => getSetupCacheTag(setupId)),
@@ -87,9 +101,5 @@ export const handleItemRevalidationMessage = async (
             'item revalidation',
         )
 
-    await useStorage('cache').del(getLockKey(message.id, message.platform))
-}
-
-export const clearItemRevalidationLock = async (message: ItemRevalidationMessage) => {
     await useStorage('cache').del(getLockKey(message.id, message.platform))
 }

@@ -1,9 +1,10 @@
 // oxlint-disable typescript/no-explicit-any
 import { $fetch } from 'ofetch'
 
+import { getRuntimeEnv, getRuntimeEnvString } from '../server/utils/runtimeEnv'
 import * as constants from '../shared/utils/constants'
 
-Object.assign(globalThis, constants)
+Object.assign(globalThis, constants, { getRuntimeEnv, getRuntimeEnvString })
 
 // Polyfill Nuxt/Nitro auto-imported $fetch
 ;(globalThis as any).$fetch = $fetch

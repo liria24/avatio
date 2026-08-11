@@ -3,8 +3,6 @@ import type { SetupImageMetadata } from '@@/shared/types/database'
 import { and, eq, inArray } from 'drizzle-orm'
 import { withHttps } from 'ufo'
 
-import { storage } from './storage'
-
 interface ResolveSetupImageDataOptions {
     userId: string
     setupId?: string

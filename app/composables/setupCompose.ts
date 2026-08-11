@@ -547,7 +547,6 @@ export const useSetupCompose = () => {
         }
     }
 
-    const addImage = (url: string) => state.value.images.push(url)
     const removeImage = (index: number) => {
         const [removed] =
             index >= 0 && index < state.value.images.length
@@ -719,7 +718,6 @@ export const useSetupCompose = () => {
         // Images
         imageUploading,
         processImages,
-        addImage,
         removeImage,
         // Items
         totalItemsCount,

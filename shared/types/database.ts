@@ -12,7 +12,6 @@ import {
     notificationType,
     platform,
     setupCoauthors,
-    setupDraftImages,
     setupDrafts,
     setupImages,
     setupItems,
@@ -67,17 +66,12 @@ export const userBadgesPublicSchema = userBadgesSelectSchema.pick({
     badge: true,
 })
 
-export const userSettingsSelectSchema = createSelectSchema(userSettings)
 export const userSettingsUpdateSchema = createUpdateSchema(userSettings).omit({
     id: true,
     userId: true,
     createdAt: true,
     updatedAt: true,
 })
-export const userSettingsPublicSchema = userSettingsSelectSchema.omit({
-    userId: true,
-})
-export type UserSettings = z.infer<typeof userSettingsPublicSchema>
 
 export const usersSelectSchema = createSelectSchema(users)
 export const usersUpdateSchema = createUpdateSchema(users, {
@@ -121,7 +115,6 @@ export const usersPublicSchema = usersSelectSchema
 export type User = z.infer<typeof usersPublicSchema>
 
 export const itemsSelectSchema = createSelectSchema(items)
-export const itemsInsertSchema = createInsertSchema(items)
 export const itemsUpdateSchema = createUpdateSchema(items)
 export const itemsPublicSchema = itemsSelectSchema
     .pick({
@@ -191,17 +184,12 @@ export type SetupItem = z.infer<typeof setupItemsPublicSchema> & {
     }[]
 }
 
-export const setupTagsSelectSchema = createSelectSchema(setupTags)
 export const setupTagsInsertSchema = createInsertSchema(setupTags, {
     tag: (schema) =>
         schema.min(1, 'タグは 1 文字以上必要です。').max(32, 'タグは最大 32 文字です。'),
 })
-export const setupTagsPublicSchema = setupTagsSelectSchema.pick({
-    tag: true,
-})
 
 export const setupImagesSelectSchema = createSelectSchema(setupImages)
-export const setupImagesInsertSchema = createInsertSchema(setupImages)
 export const setupImagesPublicSchema = setupImagesSelectSchema
     .pick({
         objectKey: true,
@@ -221,7 +209,6 @@ export const setupImagesPublicSchema = setupImagesSelectSchema
         size: true,
         etag: true,
     })
-export type SetupImage = z.infer<typeof setupImagesPublicSchema>
 
 export const setupImageMetadataSchema = z.object({
     objectKey: z.string().min(1),
@@ -252,7 +239,6 @@ export const setupCoauthorsPublicSchema = setupCoauthorsSelectSchema
     .extend({
         user: usersPublicSchema,
     })
-export type SetupCoauthor = z.infer<typeof setupCoauthorsPublicSchema>
 
 export const setupsSelectSchema = createSelectSchema(setups)
 export const setupsInsertSchema = createInsertSchema(setups, {
@@ -435,9 +421,6 @@ export const setupDraftsPublicSchema = setupDraftsSelectSchema
 export type SetupDraftContent = z.infer<typeof setupDraftContentSchema>
 export type SetupDraft = z.infer<typeof setupDraftsPublicSchema>
 
-export const setupDraftImagesSelectSchema = createSelectSchema(setupDraftImages)
-export type SetupDraftImage = z.infer<typeof setupDraftImagesSelectSchema>
-
 export const bookmarksSelectSchema = createSelectSchema(bookmarks)
 export const bookmarksPublicSchema = bookmarksSelectSchema
     .pick({
@@ -465,7 +448,6 @@ export const feedbacksPublicSchema = feedbacksSelectSchema.pick({
 })
 export type Feedback = z.infer<typeof feedbacksPublicSchema>
 
-export const itemReportsSelectSchema = createSelectSchema(itemReports)
 export const itemReportsInsertSchema = createInsertSchema(itemReports, {
     comment: (schema) => schema.max(1000, 'コメントは最大 1000 文字です。').optional(),
 })
@@ -478,23 +460,7 @@ export const itemReportsInsertSchema = createInsertSchema(itemReports, {
     })
     .refine((data) => data.nameError || data.irrelevant || data.other)
 export const itemReportsUpdateSchema = createUpdateSchema(itemReports)
-export const itemReportsPublicSchema = itemReportsSelectSchema
-    .pick({
-        id: true,
-        createdAt: true,
-        nameError: true,
-        irrelevant: true,
-        other: true,
-        comment: true,
-        isResolved: true,
-    })
-    .extend({
-        reporter: usersPublicSchema,
-        item: itemsPublicSchema,
-    })
-export type ItemReport = z.infer<typeof itemReportsPublicSchema>
 
-export const setupReportsSelectSchema = createSelectSchema(setupReports)
 export const setupReportsInsertSchema = createInsertSchema(setupReports, {
     comment: (schema) => schema.max(1000, 'コメントは最大 1000 文字です。').optional(),
 })
@@ -509,25 +475,7 @@ export const setupReportsInsertSchema = createInsertSchema(setupReports, {
     })
     .refine((data) => data.spam || data.hate || data.infringe || data.badImage || data.other)
 export const setupReportsUpdateSchema = createUpdateSchema(setupReports)
-export const setupReportsPublicSchema = setupReportsSelectSchema
-    .pick({
-        id: true,
-        createdAt: true,
-        spam: true,
-        hate: true,
-        infringe: true,
-        badImage: true,
-        other: true,
-        comment: true,
-        isResolved: true,
-    })
-    .extend({
-        reporter: usersPublicSchema,
-        setup: setupsPublicSchema,
-    })
-export type SetupReport = z.infer<typeof setupReportsPublicSchema>
 
-export const userReportsSelectSchema = createSelectSchema(userReports)
 export const userReportsInsertSchema = createInsertSchema(userReports, {
     comment: (schema) => schema.max(1000, 'コメントは最大 1000 文字です。').optional(),
 })
@@ -542,29 +490,11 @@ export const userReportsInsertSchema = createInsertSchema(userReports, {
     })
     .refine((data) => data.spam || data.hate || data.infringe || data.badImage || data.other)
 export const userReportsUpdateSchema = createUpdateSchema(userReports)
-export const userReportsPublicSchema = userReportsSelectSchema
-    .pick({
-        id: true,
-        createdAt: true,
-        spam: true,
-        hate: true,
-        infringe: true,
-        badImage: true,
-        other: true,
-        comment: true,
-        isResolved: true,
-    })
-    .extend({
-        reporter: usersPublicSchema,
-        reportee: usersPublicSchema,
-    })
-export type UserReport = z.infer<typeof userReportsPublicSchema>
 
 export const auditActionTypeSchema = z.enum(auditActionType.enumValues)
 export type AuditActionType = z.infer<typeof auditActionTypeSchema>
 
 export const auditTargetTypeSchema = z.enum(auditTargetType.enumValues)
-export type AuditTargetType = z.infer<typeof auditTargetTypeSchema>
 
 export const auditLogsSelectSchema = createSelectSchema(auditLogs)
 export const auditLogsInsertSchema = createInsertSchema(auditLogs)

@@ -15,7 +15,7 @@ describe('edge cache policy', () => {
         const { EDGE_CACHE_CONTROL, getDocumentCacheHeaders } =
             await import('../../../server/utils/edgeCache')
 
-        expect(getDocumentCacheHeaders('/en/setup/Abc_123-', 200, false)).toEqual({
+        expect(getDocumentCacheHeaders('/en/setup/Abc_123-', 200)).toEqual({
             'Cache-Control': 'public, max-age=60',
             'Cloudflare-CDN-Cache-Control': EDGE_CACHE_CONTROL,
             'Cache-Tag': 'setup:Abc_123-',
@@ -23,17 +23,38 @@ describe('edge cache policy', () => {
         })
     })
 
-    it('does not cache cookie-bearing, private-route, or error documents', async () => {
+    it('only treats exact Better Auth session cookies as private', async () => {
         const { NO_STORE_CACHE_CONTROL, getDocumentCacheHeaders } =
             await import('../../../server/utils/edgeCache')
 
-        expect(getDocumentCacheHeaders('/@alice', 200, true)).toEqual({
+        for (const cookie of [
+            'better-auth.session_token=token',
+            '__Secure-better-auth.session_token=token',
+            'better-auth-session-token=token',
+        ])
+            expect(getDocumentCacheHeaders('/@alice', 200, cookie)).toEqual({
+                'Cache-Control': NO_STORE_CACHE_CONTROL,
+            })
+
+        for (const cookie of [
+            'i18n_redirected=ja',
+            'theme=dark; better-auth.session_token-extra=token',
+            'unrelated-better-auth=value',
+        ])
+            expect(getDocumentCacheHeaders('/@alice', 200, cookie)).toMatchObject({
+                'Cloudflare-CDN-Cache-Control': expect.stringContaining('public'),
+                Vary: 'Cookie',
+            })
+    })
+
+    it('does not cache private routes or error documents', async () => {
+        const { NO_STORE_CACHE_CONTROL, getDocumentCacheHeaders } =
+            await import('../../../server/utils/edgeCache')
+
+        expect(getDocumentCacheHeaders('/settings', 200)).toEqual({
             'Cache-Control': NO_STORE_CACHE_CONTROL,
         })
-        expect(getDocumentCacheHeaders('/settings', 200, false)).toEqual({
-            'Cache-Control': NO_STORE_CACHE_CONTROL,
-        })
-        expect(getDocumentCacheHeaders('/setup/Abc_123-', 404, false)).toEqual({
+        expect(getDocumentCacheHeaders('/setup/Abc_123-', 404)).toEqual({
             'Cache-Control': NO_STORE_CACHE_CONTROL,
         })
     })

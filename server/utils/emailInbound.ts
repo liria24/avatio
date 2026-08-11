@@ -71,7 +71,7 @@ const fallbackMessageId = (input: InboundEmailInput, parsed: ParsedEmail) =>
 
 export const parseInboundEmail = async (input: InboundEmailInput): Promise<EmailInsert> => {
     const parsed = await new PostalMime({
-        attachmentEncoding: 'base64',
+        attachmentEncoding: 'arraybuffer',
     }).parse(new Uint8Array(input.raw))
     const from = firstMailbox(parsed.from)
     const html = parsed.html ? sanitizeEmailHtml(parsed.html).trim() : null

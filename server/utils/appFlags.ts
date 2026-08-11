@@ -4,10 +4,6 @@ const FLAGS_KEY = 'app'
 
 let maintenanceFlagCache: { value: boolean; expiresAt: number } | null = null
 
-export const clearMaintenanceFlagCache = () => {
-    maintenanceFlagCache = null
-}
-
 export const defaultAppFlags = {
     allowedBoothCategoryId: [],
     forceUpdateItem: false,
@@ -84,7 +80,7 @@ export const updateAppFlags = async (patch: unknown) => {
     })
 
     await useStorage('flags').setItem(FLAGS_KEY, next)
-    clearMaintenanceFlagCache()
+    maintenanceFlagCache = null
     await useStorage('cache').del('nitro:functions:app-flags:.json')
     return next
 }

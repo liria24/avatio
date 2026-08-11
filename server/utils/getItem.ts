@@ -1,22 +1,59 @@
 import { items, shops } from '@@/database/schema'
-import {
-    getGithubContributors,
-    getGithubLatestRelease,
-    getGithubReadme,
-    getGithubRepo,
-} from '@avatio/ungh'
+import type { CacheContext } from '@cloudflare/workers-types'
 import { eq } from 'drizzle-orm'
 import type { H3Event } from 'h3'
 import { joinURL, withHttps } from 'ufo'
 
 const log = logger('getItem')
+const UNGH_URL = 'https://ungh.cc'
+
+interface GithubRepoResponse {
+    repo: {
+        name: string
+        repo: string
+        description: string
+        stars: number
+        forks: number
+    }
+}
+
+interface GithubContributorsResponse {
+    contributors: { username: string; contributions: number }[]
+}
+
+interface GithubLatestReleaseResponse {
+    release: { tag: string }
+}
+
+interface GithubReadmeResponse {
+    markdown: string
+}
+
+const getGithubResource = <T>(repo: string, path = ''): Promise<T | null> => {
+    if (!/^[\w-]+\/[\w.-]+$/.test(repo)) return Promise.resolve(null)
+    return $fetch<T>(`${UNGH_URL}/repos/${repo}${path}`).catch(() => null)
+}
 
 export default async (
     event: H3Event | undefined,
     db: ReturnType<typeof useDB>,
     id: string,
     provider: Platform | undefined,
+    cache?: CacheContext,
 ): Promise<Item> => {
+    const persistence = {
+        defer: Boolean(event),
+        purge: event
+            ? () => purgeEdgeCacheTags(event, [EDGE_CACHE_TAGS.items], 'item persistence')
+            : cache
+              ? () =>
+                    purgeEdgeCacheTagsWithContext(
+                        cache,
+                        [EDGE_CACHE_TAGS.items],
+                        'item persistence',
+                    )
+              : () => Promise.resolve(),
+    }
     const { forceUpdateItem, allowedBoothCategoryId, specificItemCategories } = await getAppFlags()
 
     const { fresh, cachedItem } = await resolveItemCache(db, id, provider, forceUpdateItem)
@@ -51,7 +88,7 @@ export default async (
 
         const validItem = item && allowedBoothCategoryId.includes(item.category.id) ? item : null
 
-        return persistItem(
+        return await persistItem(
             db,
             validItem
                 ? {
@@ -88,21 +125,22 @@ export default async (
                       },
                   }
                 : { valid: false, cachedItem },
+            persistence,
         )
     }
 
     if (resolvedProvider === 'github') {
         const [repoData, contributors, latestRelease, readme] = await Promise.all([
-            getGithubRepo(id),
-            getGithubContributors(id),
-            getGithubLatestRelease(id),
-            getGithubReadme(id),
+            getGithubResource<GithubRepoResponse>(id),
+            getGithubResource<GithubContributorsResponse>(id, '/contributors'),
+            getGithubResource<GithubLatestReleaseResponse>(id, '/releases/latest'),
+            getGithubResource<GithubReadmeResponse>(id, '/readme'),
         ])
 
         const owner = repoData?.repo.repo.split('/')[0]
 
         return {
-            ...persistItem(
+            ...(await persistItem(
                 db,
                 repoData && owner
                     ? {
@@ -142,7 +180,8 @@ export default async (
                                   : undefined,
                       }
                     : { valid: false, cachedItem },
-            ),
+                persistence,
+            )),
             forks: repoData?.repo.forks,
             version: latestRelease?.release.tag,
             contributors: contributors?.contributors
@@ -175,12 +214,27 @@ type PersistItemParams =
       }
     | { valid: false; cachedItem: { id: string } | null }
 
-export const persistItem = (db: ReturnType<typeof useDB>, params: PersistItemParams): Item => {
+interface PersistenceOptions {
+    defer: boolean
+    purge: () => Promise<void>
+}
+
+export const persistItem = async (
+    db: ReturnType<typeof useDB>,
+    params: PersistItemParams,
+    options: PersistenceOptions,
+): Promise<Item> => {
     if (!params.valid) {
-        if (params.cachedItem)
-            runAfterResponse(
-                db.update(items).set({ outdated: true }).where(eq(items.id, params.cachedItem.id)),
-            )
+        if (params.cachedItem) {
+            const cachedItemId = params.cachedItem.id
+            const persist = async () => {
+                await db.update(items).set({ outdated: true }).where(eq(items.id, cachedItemId))
+                await options.purge()
+            }
+
+            if (options.defer) runAfterResponse(persist())
+            else await persist()
+        }
         throw serverError.notFound({ responseMessage: 'Item not found or not allowed' })
     }
 
@@ -211,6 +265,7 @@ export const persistItem = (db: ReturnType<typeof useDB>, params: PersistItemPar
                 .values(fullItem)
                 .onConflictDoUpdate({ target: items.id, set: fullItem })
         })
+        await options.purge()
 
         if (!cachedItem) {
             const { niceName, category: resolvedCategory } = await generateItemAttr(db, {
@@ -221,11 +276,13 @@ export const persistItem = (db: ReturnType<typeof useDB>, params: PersistItemPar
                 .update(items)
                 .set({ niceName, category: resolvedCategory })
                 .where(eq(items.id, item.id))
+            await options.purge()
             log.info(`Item info defined for item ${item.id}: ${niceName}, ${resolvedCategory}`)
         }
     }
 
-    runAfterResponse(persist())
+    if (options.defer) runAfterResponse(persist())
+    else await persist()
 
     return {
         id: item.id,

@@ -1,30 +1,11 @@
-import { drizzleAdapter } from '@better-auth/drizzle-adapter'
+import { drizzleAdapter } from '@better-auth/drizzle-adapter/relations-v2'
 import { betterAuth } from 'better-auth/minimal'
 import type { BetterAuthOptions } from 'better-auth/minimal'
-import { admin, multiSession, username, customSession } from 'better-auth/plugins'
+import { customSession } from 'better-auth/plugins'
 import type { H3Event } from 'h3'
 import { nanoid } from 'nanoid'
-import { useEvent } from 'nitropack/runtime/internal/context'
-import { useStorage } from 'nitropack/runtime/internal/storage'
+import { useEvent, useStorage } from 'nitropack/runtime'
 import { withHttps } from 'ufo'
-
-import { dbProxy, schema, useDB } from '../../server/utils/database'
-import {
-    EDGE_CACHE_TAGS,
-    getUserContentCacheTags,
-    purgeEdgeCacheTags,
-    purgeUserContentCache,
-} from '../../server/utils/edgeCache'
-import { storage } from '../../server/utils/storage'
-import {
-    RATE_LIMIT_DEFAULT,
-    RATE_LIMIT_SESSION,
-    RATE_LIMIT_SIGNIN,
-    RATE_LIMIT_WINDOW,
-    SESSION_COOKIE_CACHE_MAX_AGE,
-} from './constants'
-import { logger } from './logger'
-import { getUserSettingsForSession } from './userSettingsCache'
 
 const JPG_FILENAME_LENGTH = 16
 const authLog = logger('better-auth')
@@ -55,11 +36,10 @@ export const purgeUserSettingsSessionCache = async (userId: string) => {
     await useStorage('auth').del(getUserSettingsCacheKey(userId))
 }
 
-const minUsernameLength = 3
-const productionCookies =
-    process.env.NODE_ENV === 'production' || process.env.CLOUDFLARE_ENV === 'production'
+const productionCookies = process.env.NODE_ENV === 'production'
 
 const options = {
+    ...authSchemaOptions,
     appName: 'Avatio',
     secret: process.env.BETTER_AUTH_SECRET as string,
 
@@ -74,35 +54,13 @@ const options = {
     }),
 
     user: {
-        additionalFields: {
-            bio: {
-                type: 'string',
-                required: false,
-            },
-            links: {
-                type: 'string[]',
-                required: false,
-            },
-            lastAgreedToTerms: {
-                type: 'date',
-                required: false,
-            },
-        },
+        ...authSchemaOptions.user,
         deleteUser: {
             enabled: true,
         },
     },
 
-    account: {
-        storeStateStrategy: 'database',
-    },
-
-    verification: {
-        storeInDatabase: true,
-    },
-
     session: {
-        storeSessionInDatabase: true,
         expiresIn: 60 * 60 * 24 * 30,
         updateAge: 60 * 60 * 24,
         cookieCache: {
@@ -112,7 +70,7 @@ const options = {
     },
 
     emailAndPassword: {
-        enabled: import.meta.dev ?? false,
+        enabled: import.meta.dev,
     },
 
     socialProviders: {
@@ -131,25 +89,6 @@ const options = {
                 emailVerified: true,
             }),
         },
-    },
-
-    plugins: [username({ minUsernameLength }), admin(), multiSession()],
-
-    rateLimit: {
-        enabled: true,
-        window: RATE_LIMIT_WINDOW,
-        max: RATE_LIMIT_DEFAULT,
-        customRules: {
-            '/sign-in/social': {
-                window: RATE_LIMIT_WINDOW,
-                max: RATE_LIMIT_SIGNIN,
-            },
-            '/get-session': {
-                window: RATE_LIMIT_WINDOW,
-                max: RATE_LIMIT_SESSION,
-            },
-        },
-        storage: 'database',
     },
 
     databaseHooks: {
@@ -237,24 +176,20 @@ const options = {
     },
 
     advanced: {
+        database: {
+            joins: true,
+        },
         ipAddress: {
             ipAddressHeaders: ['x-forwarded-for', 'x-real-ip', 'cf-connecting-ip'],
-            disableIpTracking: false,
         },
         useSecureCookies: productionCookies,
-        disableCSRFCheck: false,
-        defaultCookieAttributes: {
-            httpOnly: true,
-            secure: productionCookies,
-            sameSite: 'lax',
-        },
     },
 } satisfies BetterAuthOptions
 
 export const auth = betterAuth({
     ...options,
     plugins: [
-        ...(options.plugins ?? []),
+        ...options.plugins,
         customSession(async ({ user, session }) => {
             const settings = await getUserSettingsForSession(
                 useStorage('auth'),

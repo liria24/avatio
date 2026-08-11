@@ -70,7 +70,7 @@ describe('extractImageColors', () => {
         const result = await extractImageColors('https://files.example.com/setup/image.png')
 
         expect(mocks.fetch).toHaveBeenCalledWith(
-            'https://avatio.example/cdn-cgi/image/fit=scale-down,width=128,format=png,quality=100/https%3A%2F%2Ffiles.example.com%2Fsetup%2Fimage.png',
+            'https://avatio.example/cdn-cgi/image/fit=scale-down,width=96,format=png,quality=100/https%3A%2F%2Ffiles.example.com%2Fsetup%2Fimage.png',
         )
         expect(mocks.pngRead).toHaveBeenCalledWith(imageBuffer)
         expect(mocks.extractColorsFromImageData).toHaveBeenCalledWith(
@@ -102,7 +102,7 @@ describe('extractImageColors', () => {
         )
 
         expect(mocks.fetch).toHaveBeenCalledWith(
-            'https://avatio.example/cdn-cgi/image/fit=scale-down,width=128,format=png,quality=100/https%3A%2F%2Ffiles.example.com%2Fsetup%2Fimage.png%3Ftoken%3Da%2Fb%2Bc%26exp%3D1%23preview',
+            'https://avatio.example/cdn-cgi/image/fit=scale-down,width=96,format=png,quality=100/https%3A%2F%2Ffiles.example.com%2Fsetup%2Fimage.png%3Ftoken%3Da%2Fb%2Bc%26exp%3D1%23preview',
         )
     })
 

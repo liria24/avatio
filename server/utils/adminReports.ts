@@ -16,12 +16,7 @@ export const adminReportQuerySchema = z.object({
 export const getAdminReportResolvedFilter = (status: 'open' | 'closed' | 'all') =>
     status === 'open' ? { eq: false } : status === 'closed' ? { eq: true } : undefined
 
-export const createPagination = (
-    total: number,
-    page: number,
-    limit: number,
-    offset: number,
-) => ({
+export const createPagination = (total: number, page: number, limit: number, offset: number) => ({
     page,
     limit,
     total,

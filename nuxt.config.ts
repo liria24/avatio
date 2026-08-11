@@ -76,39 +76,33 @@ const routeRules: { [path: string]: NitroRouteConfig } = {
 }
 
 const rateLimitBindings = {
-    unsafe: {
-        // Workers Builds can lag Wrangler's top-level ratelimits config support.
-        bindings: [
-            {
-                name: 'RATE_LIMIT_USER_ACTION',
-                type: 'ratelimit',
-                namespace_id: '2101',
-                simple: {
-                    limit: 5,
-                    period: 60,
-                },
+    ratelimits: [
+        {
+            name: 'RATE_LIMIT_USER_ACTION',
+            namespace_id: '2101',
+            simple: {
+                limit: 5,
+                period: 60,
             },
-            {
-                name: 'RATE_LIMIT_IMAGE',
-                type: 'ratelimit',
-                namespace_id: '2102',
-                simple: {
-                    limit: 30,
-                    period: 60,
-                },
+        },
+        {
+            name: 'RATE_LIMIT_IMAGE',
+            namespace_id: '2102',
+            simple: {
+                limit: 30,
+                period: 60,
             },
-            {
-                name: 'RATE_LIMIT_DRAFT',
-                type: 'ratelimit',
-                namespace_id: '2103',
-                simple: {
-                    limit: 120,
-                    period: 60,
-                },
+        },
+        {
+            name: 'RATE_LIMIT_DRAFT',
+            namespace_id: '2103',
+            simple: {
+                limit: 120,
+                period: 60,
             },
-        ],
-    },
-}
+        },
+    ],
+} as const
 
 // Nitro forwards this to the generated Wrangler config. Its bundled type has not yet added `cache`.
 const workersCacheConfig = {
@@ -153,7 +147,7 @@ export default defineNuxtConfig({
         '@nuxt/a11y',
         '@nuxt/test-utils/module',
         '@liria24/og-image/nuxt',
-        ...(import.meta.test ? [] : ['@vite-pwa/nuxt']),
+        ...(process.env.VITEST ? [] : ['@vite-pwa/nuxt']),
     ],
 
     css: ['~/assets/css/main.css'],
@@ -181,15 +175,10 @@ export default defineNuxtConfig({
         preset: 'cloudflare-module',
         cloudflare: {
             deployConfig: true,
-            nodeCompat: true,
             wrangler: {
                 name: 'avatio',
                 ...workersCacheConfig,
-                compatibility_flags: [
-                    'nodejs_compat',
-                    'nodejs_als',
-                    'no_handle_cross_request_promise_resolution',
-                ],
+                compatibility_flags: ['no_handle_cross_request_promise_resolution'],
                 observability: {
                     enabled: true,
                     head_sampling_rate: Number(
@@ -343,7 +332,7 @@ export default defineNuxtConfig({
             ],
             link: [
                 { rel: 'icon', href: `/favicon.ico`, sizes: '48x48' },
-                { rel: 'apple-touch-icon', href: `/apple-touch-icon-180x180.png` },
+                { rel: 'apple-touch-icon', href: `/pwa-192x192.png`, sizes: '192x192' },
             ],
         },
     },
@@ -444,6 +433,21 @@ export default defineNuxtConfig({
                 'mingcute:down-line',
                 'mingcute:up-line',
                 'mingcute:copy-2-fill',
+                'mingcute:baby-fill',
+                'mingcute:hair-fill',
+                'mingcute:dress-fill',
+                'mingcute:bowknot-fill',
+                'mingcute:pic-fill',
+                'mingcute:shadow-fill',
+                'mingcute:tool-fill',
+                'mingcute:package-2-fill',
+                'fluent-color:code-block-24',
+                'fluent-color:animal-paw-print-24',
+                'fluent-color:chat-multiple-24',
+                'fluent-color:ribbon-star-24',
+                'fluent-color:building-store-24',
+                'fluent-color:shield-24',
+                'fluent-color:lightbulb-24',
                 'twemoji:flag-united-states',
                 'twemoji:flag-japan',
             ],
@@ -587,6 +591,9 @@ export default defineNuxtConfig({
         },
 
         scripts: {
+            assets: {
+                fallbackOnSrcOnBundleFail: true,
+            },
             registry: {
                 umamiAnalytics: {
                     websiteId: process.env.UMAMI_WEBSITE_ID,
@@ -596,29 +603,3 @@ export default defineNuxtConfig({
         },
     },
 })
-
-//
-//                       _oo0oo_
-//                      o8888888o
-//                      88" . "88
-//                      (| -_- |)
-//                      0\  =  /0
-//                    ___/`---'\___
-//                  .' \\|     |// '.
-//                 / \\|||  :  |||// \
-//                / _||||| -:- |||||- \
-//               |   | \\\  -  /// |   |
-//               | \_|  ''\---/''  |_/ |
-//               \  .-\__  '-'  ___/-. /
-//             ___'. .'  /--.--\  `. .'___
-//          ."" '<  `.___\_<|>_/___.' >' "".
-//         | | :  `- \`.;`\ _ /`;.`/ - ` : | |
-//         \  \ `_.   \_ __\ /__ _/   .-` /  /
-//     =====`-.____`.___ \_____/___.-`___.-'=====
-//                       `=---='
-//
-//
-//     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//
-//               佛祖保佑         永无BUG
-//

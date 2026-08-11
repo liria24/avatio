@@ -5,6 +5,12 @@ const { app } = useAppConfig()
 const route = useRoute()
 const { localeProperties } = useI18n()
 
+if (import.meta.server) {
+    const method = useRequestEvent()?.method.toUpperCase()
+    if (method && method !== 'GET' && method !== 'HEAD')
+        throw createError({ statusCode: 405, statusMessage: 'Method Not Allowed' })
+}
+
 const slug = computed(() =>
     Array.isArray(route.params.slug)
         ? withLeadingSlash(String(route.params.slug.join('/')))
@@ -13,11 +19,7 @@ const slug = computed(() =>
 
 const { data } = await useContentPage(slug.value)
 
-if (!data.value)
-    showError({
-        status: 404,
-        statusText: 'Page not found.',
-    })
+if (!data.value) throw createError({ statusCode: 404, statusMessage: 'Page not found.' })
 
 const commitLogUrl = computed(() => {
     if (!data.value?.content?.commitLogPath) return null

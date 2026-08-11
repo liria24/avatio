@@ -3,6 +3,8 @@ import { loadEnv } from 'vite'
 import { defineConfig } from 'vitest/config'
 
 const env = loadEnv('test', process.cwd(), '')
+Object.assign(process.env, env)
+
 const selectedProjectIndex = process.argv.findIndex((arg) => arg === '--project')
 const selectedProject =
     selectedProjectIndex >= 0 ? process.argv[selectedProjectIndex + 1] : undefined
@@ -25,18 +27,6 @@ export default defineConfig({
                 ? []
                 : [
                       await defineVitestProject({
-                          plugins: [
-                              {
-                                  name: 'mock-pwa-virtual',
-                                  resolveId(id) {
-                                      if (id.startsWith('virtual:pwa-register')) return `\0${id}`
-                                  },
-                                  load(id) {
-                                      if (id.startsWith('\0virtual:pwa-register'))
-                                          return 'export default () => {}; export const useRegisterSW = () => ({})'
-                                  },
-                              },
-                          ],
                           test: {
                               name: 'nuxt',
                               include: ['test/nuxt/*.{test,spec}.ts'],

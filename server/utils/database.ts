@@ -1,8 +1,7 @@
 import { Pool } from '@neondatabase/serverless'
 import { drizzle } from 'drizzle-orm/neon-serverless'
-
-import { relations } from '../../database/relations'
-import * as schema from '../../database/schema'
+import { relations } from '~~/database/relations'
+import * as schema from '~~/database/schema'
 
 const getDatabaseUrl = () => {
     const databaseUrl = useRuntimeConfig().neon?.databaseUrl

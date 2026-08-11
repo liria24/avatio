@@ -2,7 +2,7 @@ import { extractColorsFromImageData } from 'extract-colors'
 import { PNG } from 'pngjs/browser'
 
 const log = logger('extractImageColors')
-const MAX_SAMPLE_DIMENSION = 128
+const MAX_SAMPLE_DIMENSION = 96
 const MAX_COLORS = 6
 
 interface ExtractedImageColors {

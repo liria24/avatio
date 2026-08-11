@@ -1,4 +1,4 @@
-import { createParse } from 'comark'
+import { createMarkdownParser } from 'comark'
 import breaks from 'comark/plugins/breaks'
 import { sql } from 'drizzle-orm'
 import { z } from 'zod'
@@ -18,7 +18,7 @@ const query = z.object({
     lang: z.enum(locales.enumValues).optional().default('ja'),
 })
 
-const parse = createParse({ plugins: [breaks()] })
+const parse = createMarkdownParser({ plugins: [breaks()] })
 
 export default promiseEventHandler(async ({ event, db }) => {
     const { q, sort, userId, page, limit, lang } = await validateQuery(query)
