@@ -19,7 +19,7 @@ const slug = computed(() =>
 
 const { data } = await useContentPage(slug.value)
 
-if (!data.value) throw createError({ statusCode: 404, statusMessage: 'Page not found.' })
+if (!data.value?.content) throw createError({ statusCode: 404, statusMessage: 'Page not found.' })
 
 const commitLogUrl = computed(() => {
     if (!data.value?.content?.commitLogPath) return null
