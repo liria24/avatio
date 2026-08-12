@@ -4,6 +4,12 @@ import { admin, multiSession, username } from 'better-auth/plugins'
 const minUsernameLength = 3
 
 export const authSchemaOptions = {
+    account: {
+        fields: {
+            accountId: 'providerAccountId',
+        },
+    },
+
     user: {
         additionalFields: {
             bio: {
