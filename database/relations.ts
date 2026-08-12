@@ -4,6 +4,10 @@ import * as schema from './schema'
 
 export const relations = defineRelations(schema, (r) => ({
     users: {
+        sessions: r.many.sessions({
+            from: r.users.id,
+            to: r.sessions.userId,
+        }),
         accounts: r.many.accounts({
             from: r.users.id,
             to: r.accounts.userId,
@@ -71,6 +75,13 @@ export const relations = defineRelations(schema, (r) => ({
         followers: r.many.followUsers({
             from: r.users.id,
             to: r.followUsers.targetUserId,
+        }),
+    },
+    sessions: {
+        user: r.one.users({
+            from: r.sessions.userId,
+            to: r.users.id,
+            optional: false,
         }),
     },
     accounts: {
