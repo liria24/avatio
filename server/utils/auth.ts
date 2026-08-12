@@ -50,6 +50,7 @@ const options = {
     database: drizzleAdapter(dbProxy, {
         provider: 'pg',
         schema,
+        schemaName: 'user',
         usePlural: true,
     }),
 
@@ -176,9 +177,7 @@ const options = {
     },
 
     advanced: {
-        database: {
-            joins: true,
-        },
+        ...authSchemaOptions.advanced,
         ipAddress: {
             ipAddressHeaders: ['x-forwarded-for', 'x-real-ip', 'cf-connecting-ip'],
         },
