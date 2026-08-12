@@ -4,6 +4,13 @@ import { admin, multiSession, username } from 'better-auth/plugins'
 const minUsernameLength = 3
 
 export const authSchemaOptions = {
+    advanced: {
+        database: {
+            // ponytail: RC.4 crashes on plural one-to-one joins; re-enable after better-auth#10631 ships.
+            joins: false,
+        },
+    },
+
     account: {
         fields: {
             accountId: 'providerAccountId',

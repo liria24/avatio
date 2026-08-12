@@ -12,6 +12,7 @@ describe('Better Auth account schema', () => {
         const adapter = drizzleAdapter({ select } as never, {
             provider: 'pg',
             schema,
+            schemaName: 'user',
             usePlural: true,
         })(authSchemaOptions)
 
