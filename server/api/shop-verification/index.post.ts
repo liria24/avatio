@@ -49,7 +49,7 @@ export default authedSessionEventHandler(
             })
 
         // アイテムの詳細情報を取得
-        const itemData = await $fetch<Required<Item>>(`/api/items/${itemId.id}`, {
+        const itemData = await event.$fetch<Required<Item>>(`/api/items/${itemId.id}`, {
             query: { platform: itemId.platform },
         })
 

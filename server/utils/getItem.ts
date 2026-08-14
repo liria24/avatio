@@ -29,6 +29,12 @@ interface GithubReadmeResponse {
     markdown: string
 }
 
+interface GetItemOptions {
+    allowExternalResolution?: boolean
+    beforeExternalResolution?: () => Promise<void>
+    cache?: CacheContext
+}
+
 const getGithubResource = <T>(repo: string, path = ''): Promise<T | null> => {
     if (!/^[\w-]+\/[\w.-]+$/.test(repo)) return Promise.resolve(null)
     return $fetch<T>(`${UNGH_URL}/repos/${repo}${path}`).catch(() => null)
@@ -39,8 +45,9 @@ export default async (
     db: ReturnType<typeof useDB>,
     id: string,
     provider: Platform | undefined,
-    cache?: CacheContext,
+    options: GetItemOptions = {},
 ): Promise<Item> => {
+    const { cache } = options
     const persistence = {
         defer: Boolean(event),
         purge: event
@@ -54,6 +61,13 @@ export default async (
                     )
               : () => Promise.resolve(),
     }
+
+    if (!options.allowExternalResolution) {
+        const { cachedItem } = await resolveItemCache(db, id, provider, false)
+        if (cachedItem) return cachedItem
+        throw serverError.notFound({ responseMessage: 'Item not found or not allowed' })
+    }
+
     const { forceUpdateItem, allowedBoothCategoryId, specificItemCategories } = await getAppFlags()
 
     const { fresh, cachedItem } = await resolveItemCache(db, id, provider, forceUpdateItem)
@@ -62,6 +76,8 @@ export default async (
     const resolvedProvider = provider ?? cachedItem?.platform
     if (!resolvedProvider)
         throw serverError.notFound({ responseMessage: 'Item not found or not allowed' })
+
+    await options.beforeExternalResolution?.()
 
     if (resolvedProvider === 'booth') {
         const config = event ? useRuntimeConfig(event) : useRuntimeConfig()

@@ -59,7 +59,10 @@ describe('handleItemRevalidationMessage', () => {
         )
 
         await vi.waitFor(() => expect(getItem).toHaveBeenCalled())
-        expect(getItem).toHaveBeenCalledWith(undefined, db, message.id, message.platform, cache)
+        expect(getItem).toHaveBeenCalledWith(undefined, db, message.id, message.platform, {
+            allowExternalResolution: true,
+            cache,
+        })
         expect(purge).not.toHaveBeenCalled()
 
         finishPersistence({ id: message.id })
