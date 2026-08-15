@@ -11,23 +11,18 @@ const purge = vi.fn()
 const generateItemAttr = vi.fn()
 
 const makeDb = () => {
-    const tx = {
+    const db = {
+        batch: vi.fn().mockResolvedValue([]),
         update: vi.fn(() => ({
-            set: vi.fn(() => ({ where: vi.fn().mockResolvedValue(undefined) })),
+            set: vi.fn(() => ({ where: vi.fn(() => ({ kind: 'update' })) })),
         })),
         insert: vi.fn(() => ({
-            values: vi.fn(() => ({ onConflictDoUpdate: vi.fn().mockResolvedValue(undefined) })),
+            values: vi.fn(() => ({
+                onConflictDoUpdate: vi.fn(() => ({ kind: 'upsert' })),
+            })),
         })),
     }
-    const db = {
-        transaction: vi.fn(async (callback: (transaction: typeof tx) => Promise<void>) =>
-            callback(tx),
-        ),
-        update: vi.fn(() => ({
-            set: vi.fn(() => ({ where: vi.fn().mockResolvedValue(undefined) })),
-        })),
-    }
-    return { db, tx }
+    return { db }
 }
 
 const params = {
@@ -60,6 +55,11 @@ const params = {
 beforeEach(() => {
     vi.stubGlobal('logger', () => log)
     vi.stubGlobal('generateItemAttr', generateItemAttr)
+    vi.stubGlobal(
+        'executeD1Batch',
+        (db: { batch: (queries: unknown[]) => Promise<unknown[]> }, queries: unknown[]) =>
+            db.batch(queries),
+    )
     purge.mockReset().mockResolvedValue(undefined)
     generateItemAttr.mockReset()
 })
@@ -79,18 +79,18 @@ describe('persistItem', () => {
             'AI unavailable',
         )
 
-        expect(db.transaction).toHaveBeenCalledOnce()
+        expect(db.batch).toHaveBeenCalledOnce()
         expect(purge).toHaveBeenCalledOnce()
         expect(db.update).not.toHaveBeenCalled()
     })
 
     it('keeps HTTP persistence deferred', async () => {
-        let finishTransaction!: () => void
+        let finishBatch!: () => void
         const { db } = makeDb()
-        db.transaction.mockImplementation(
+        db.batch.mockImplementation(
             () =>
-                new Promise<void>((resolve) => {
-                    finishTransaction = resolve
+                new Promise<never[]>((resolve) => {
+                    finishBatch = () => resolve([])
                 }),
         )
         const backgroundTasks: Promise<unknown>[] = []
@@ -107,7 +107,7 @@ describe('persistItem', () => {
         expect(backgroundTasks).toHaveLength(1)
         expect(purge).not.toHaveBeenCalled()
 
-        finishTransaction()
+        finishBatch()
         await backgroundTasks[0]
         expect(purge).toHaveBeenCalledOnce()
     })

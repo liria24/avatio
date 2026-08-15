@@ -5,7 +5,7 @@ const body = feedbacksInsertSchema.pick({
     contextPath: true,
 })
 
-export default promiseEventHandler(async ({ db }) => {
+export default promiseEventHandler(async ({ event, db }) => {
     const { comment, contextPath } = await validateBody(body, {
         sanitize: true,
     })
@@ -16,11 +16,25 @@ export default promiseEventHandler(async ({ db }) => {
         key: `feedback:${fingerprint}`,
     })
 
-    await db.insert(feedbacks).values({
-        fingerprint,
-        comment,
-        contextPath,
+    const requestBody = { comment, contextPath }
+    const idempotency = await claimIdempotencyRequest({
+        event,
+        db,
+        scope: `fingerprint:${fingerprint}`,
+        route: '/api/feedbacks',
+        body: requestBody,
     })
+    if (idempotency.replay) return idempotency.response
+
+    await executeD1Batch(db, [
+        db.insert(feedbacks).values({
+            fingerprint,
+            comment,
+            contextPath,
+            idempotencyRequestId: idempotency.id,
+        }),
+        completeIdempotencyRequest(db, idempotency, null),
+    ])
 
     logger('feedback').log(`Feedback created: ${fingerprint}`)
 

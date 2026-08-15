@@ -10,9 +10,8 @@ describe('Better Auth account schema', () => {
         const from = vi.fn(() => ({ where }))
         const select = vi.fn(() => ({ from }))
         const adapter = drizzleAdapter({ select } as never, {
-            provider: 'pg',
+            provider: 'sqlite',
             schema,
-            schemaName: 'user',
             usePlural: true,
         })(authSchemaOptions)
 

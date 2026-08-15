@@ -43,11 +43,11 @@ export default adminSessionEventHandler(async ({ db }) => {
         where: {
             name:
                 searchValue && (!searchField || searchField === 'name')
-                    ? { ilike: searchPattern! }
+                    ? { like: searchPattern! }
                     : undefined,
-            email: searchValue && searchField === 'email' ? { ilike: searchPattern! } : undefined,
+            email: searchValue && searchField === 'email' ? { like: searchPattern! } : undefined,
             username:
-                searchValue && searchField === 'username' ? { ilike: searchPattern! } : undefined,
+                searchValue && searchField === 'username' ? { like: searchPattern! } : undefined,
             role:
                 role === 'user'
                     ? { OR: [{ isNull: true }, { eq: 'user' }] }

@@ -30,7 +30,7 @@ export default adminSessionEventHandler(async ({ db }) => {
                 // OR: [{ banned: { eq: false } }, { banned: { isNull: true } }],
                 username: username ? { eq: username } : undefined,
             },
-            name: q ? { ilike: `%${q}%` } : undefined,
+            name: q ? { like: `%${q}%` } : undefined,
             public: isPrivate !== undefined ? { eq: !isPrivate } : undefined,
             hidAt: hidden ? { isNotNull: true } : hidden === false ? { isNull: true } : undefined,
             banned: banned ? { eq: true } : banned === false ? { eq: false } : undefined,

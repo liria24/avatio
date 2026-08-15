@@ -1,5 +1,6 @@
 import { changelogAuthors, changelogs, changelogI18ns } from '@@/database/schema'
 import { generateText } from 'ai'
+import type { BatchItem } from 'drizzle-orm/batch'
 import { createInsertSchema } from 'drizzle-orm/zod'
 import { createWorkersAI } from 'workers-ai-provider'
 import { z } from 'zod'
@@ -17,8 +18,17 @@ const body = createInsertSchema(changelogI18ns)
         i18n: createInsertSchema(changelogI18ns).array().optional(),
     })
 
-export default adminSessionEventHandler(async ({ event, db }) => {
+export default adminSessionEventHandler(async ({ event, session, db }) => {
     const { slug, title, markdown, authors, i18n } = await validateBody(body, { sanitize: true })
+    const idempotency = await claimIdempotencyRequest({
+        event,
+        db,
+        scope: `user:${session.user.id}`,
+        route: '/api/admin/changelogs',
+        body: { slug, title, markdown, authors, i18n },
+    })
+    if (idempotency.replay) return idempotency.response
+
     let generatedSlug: string = ''
 
     const exists = await db.query.changelogs.findMany({
@@ -66,20 +76,8 @@ export default adminSessionEventHandler(async ({ event, db }) => {
     }
 
     const finalSlug = slug || generatedSlug
-
-    await db.insert(changelogs).values({
-        slug: finalSlug,
-        title,
-        markdown,
-    })
-
-    if (authors?.length)
-        await db.insert(changelogAuthors).values(
-            authors.map((author) => ({
-                changelogSlug: finalSlug,
-                userId: author,
-            })),
-        )
+    idempotency.resourceId = finalSlug
+    const translations: (typeof changelogI18ns.$inferInsert)[] = []
 
     // Handle i18n translations
     if (!i18n || i18n.length === 0) {
@@ -122,7 +120,7 @@ Please return the translation in the following JSON format:
             try {
                 const translated = parseChangelogTranslation(translationResult.text)
 
-                await db.insert(changelogI18ns).values({
+                translations.push({
                     changelogSlug: finalSlug,
                     locale,
                     title: translated.title,
@@ -131,12 +129,15 @@ Please return the translation in the following JSON format:
                 })
             } catch (error) {
                 log.error(`Failed to parse translation for locale ${locale}:`, error)
+                throw serverError.internalServerError({
+                    responseMessage: 'Failed to generate changelog translations.',
+                })
             }
         }
     } else {
         // Use provided i18n translations
-        await db.insert(changelogI18ns).values(
-            i18n.map((translation) => ({
+        translations.push(
+            ...i18n.map((translation) => ({
                 changelogSlug: finalSlug,
                 locale: translation.locale,
                 title: translation.title,
@@ -146,6 +147,28 @@ Please return the translation in the following JSON format:
             })),
         )
     }
+
+    const queries: BatchItem<'sqlite'>[] = [
+        db.insert(changelogs).values({
+            slug: finalSlug,
+            title,
+            markdown,
+            idempotencyRequestId: idempotency.id,
+        }),
+    ]
+    if (authors?.length)
+        queries.push(
+            db.insert(changelogAuthors).values(
+                authors.map((author) => ({
+                    changelogSlug: finalSlug,
+                    userId: author,
+                })),
+            ),
+        )
+    if (translations.length) queries.push(db.insert(changelogI18ns).values(translations))
+    queries.push(completeIdempotencyRequest(db, idempotency, { slug: finalSlug }))
+
+    await executeD1Batch(db, queries)
 
     await purgeEdgeCacheTags(event, [EDGE_CACHE_TAGS.changelogs], 'changelog create')
 

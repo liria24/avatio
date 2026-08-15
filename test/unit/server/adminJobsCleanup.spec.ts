@@ -58,6 +58,9 @@ const arrange = ({
     vi.stubGlobal('useRuntimeConfig', () => ({ cloudflare: {} }))
     vi.stubGlobal('storage', storage)
     vi.stubGlobal('useDB', () => ({
+        delete: vi.fn(() => ({
+            where: vi.fn().mockResolvedValue(undefined),
+        })),
         query: {
             setupImages: {
                 findMany: vi.fn().mockResolvedValue(rows.setupImages ?? []),

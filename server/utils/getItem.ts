@@ -1,6 +1,7 @@
 import { items, shops } from '@@/database/schema'
 import type { CacheContext } from '@cloudflare/workers-types'
 import { eq } from 'drizzle-orm'
+import type { BatchItem } from 'drizzle-orm/batch'
 import type { H3Event } from 'h3'
 import { joinURL, withHttps } from 'ufo'
 
@@ -268,19 +269,20 @@ export const persistItem = async (
     const fullItem = { ...item, category }
 
     const persist = async () => {
-        await db.transaction(async (tx) => {
-            if (idMigration)
-                await tx
-                    .update(items)
-                    .set({ id: idMigration.to })
-                    .where(eq(items.id, idMigration.from))
+        const queries: BatchItem<'sqlite'>[] = []
+        if (idMigration)
+            queries.push(
+                db.update(items).set({ id: idMigration.to }).where(eq(items.id, idMigration.from)),
+            )
 
-            await tx.insert(shops).values(shop).onConflictDoUpdate({ target: shops.id, set: shop })
-            await tx
+        queries.push(
+            db.insert(shops).values(shop).onConflictDoUpdate({ target: shops.id, set: shop }),
+            db
                 .insert(items)
                 .values(fullItem)
-                .onConflictDoUpdate({ target: items.id, set: fullItem })
-        })
+                .onConflictDoUpdate({ target: items.id, set: fullItem }),
+        )
+        await executeD1Batch(db, queries)
         await options.purge()
 
         if (!cachedItem) {

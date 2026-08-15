@@ -26,7 +26,7 @@ export default promiseEventHandler<PaginationResponse<Item[]>>(async ({ event, d
         offset,
         where: {
             outdated: { eq: false },
-            name: q ? { ilike: `%${q}%` } : undefined,
+            name: q ? { like: `%${q}%` } : undefined,
             category: category ? { in: category } : undefined,
         },
         orderBy: {

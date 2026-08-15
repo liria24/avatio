@@ -6,6 +6,7 @@ export const useAdmin = () => {
         url: (params: T) => string
         method: 'POST' | 'PUT' | 'PATCH' | 'DELETE'
         body?: (params: T) => Record<string, unknown>
+        headers?: (params: T) => Record<string, string>
         successTitle?: string | ((params: T) => string)
         errorTitle: string
         errorLog: string
@@ -18,6 +19,7 @@ export const useAdmin = () => {
             await $fetch(config.url(params as T), {
                 method: config.method,
                 body: config.body?.(params as T),
+                headers: config.headers?.(params as T),
                 onResponse({ response }) {
                     if (!response.ok) return
                     if (config.successTitle) {
@@ -150,10 +152,15 @@ export const useAdmin = () => {
         errorLog: 'Error banning user:',
     })
 
-    const createChangelog = defineAction<{ title: string; markdown: string }>({
+    const createChangelog = defineAction<{
+        title: string
+        markdown: string
+        idempotencyKey: string
+    }>({
         url: () => '/api/admin/changelogs',
         method: 'POST',
         body: ({ title, markdown }) => ({ title, markdown }),
+        headers: ({ idempotencyKey }) => ({ 'Idempotency-Key': idempotencyKey }),
         successTitle: t('toast.admin.changelogCreated'),
         errorTitle: t('toast.admin.changelogCreateFailed'),
         errorLog: 'Error creating changelog:',

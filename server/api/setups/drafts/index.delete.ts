@@ -1,5 +1,5 @@
 import { setupDrafts } from '@@/database/schema'
-import { inArray } from 'drizzle-orm'
+import { and, inArray, eq } from 'drizzle-orm'
 import { z } from 'zod'
 
 const query = z.object({
@@ -26,9 +26,12 @@ export default authedSessionEventHandler(
         const result = await db
             .delete(setupDrafts)
             .where(
-                inArray(
-                    setupDrafts.id,
-                    data.map((draft) => draft.id),
+                and(
+                    eq(setupDrafts.userId, session.user.id),
+                    inArray(
+                        setupDrafts.id,
+                        data.map((draft) => draft.id),
+                    ),
                 ),
             )
             .returning()

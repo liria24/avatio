@@ -15,7 +15,7 @@ export default adminSessionEventHandler(async ({ db }) => {
     const result = await db.query.items.findMany({
         limit,
         where: {
-            name: q ? { ilike: `%${q}%` } : undefined,
+            name: q ? { like: `%${q}%` } : undefined,
             platform: platform ? { eq: platform } : undefined,
             outdated: outdated ? { eq: true } : outdated === false ? { eq: false } : undefined,
         },

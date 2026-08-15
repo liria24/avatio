@@ -173,10 +173,16 @@ export default defineNuxtConfig({
 
     nitro: {
         preset: 'cloudflare-module',
+        prerender: {
+            // Only prerender routes explicitly marked in routeRules. Crawling dynamic pages
+            // would execute their API data loaders before Cloudflare bindings exist.
+            crawlLinks: false,
+        },
         cloudflare: {
             deployConfig: true,
             wrangler: {
                 name: 'avatio',
+                preview_urls: true,
                 ...workersCacheConfig,
                 compatibility_flags: ['no_handle_cross_request_promise_resolution'],
                 observability: {
@@ -294,9 +300,6 @@ export default defineNuxtConfig({
         },
         booth: {
             proxyUrl: process.env.NUXT_BOOTH_PROXY_URL,
-        },
-        neon: {
-            databaseUrl: process.env.NEON_DATABASE_URL,
         },
         email: {
             fromAddress: emailFromAddress,

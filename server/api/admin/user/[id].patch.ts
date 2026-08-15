@@ -18,6 +18,18 @@ export default adminSessionEventHandler(async ({ db }) => {
     const { id: userId } = await validateParams(params)
     const body = await validateBody(bodySchema)
     const { headers } = useEvent()
+    const currentUser = await db.query.users.findFirst({
+        where: { id: { eq: userId } },
+        columns: { role: true, banned: true },
+    })
+    if (!currentUser) throw serverError.notFound()
+    const getRevision = async () =>
+        (
+            await db.query.users.findFirst({
+                where: { id: { eq: userId } },
+                columns: { updatedAt: true },
+            })
+        )?.updatedAt.getTime() ?? 0
 
     if (body.revokeUserSessions)
         await auth.api.revokeUserSessions({
@@ -26,22 +38,24 @@ export default adminSessionEventHandler(async ({ db }) => {
         })
 
     if (body.role !== undefined && body.role !== null) {
-        await auth.api.setRole({
-            headers,
-            body: { userId, role: body.role },
-        })
-        await createNotification(db, {
-            userId,
-            type: 'user_role_changed',
-            payload: {
-                content: Array.isArray(body.role) ? body.role.join(', ') : body.role,
-            },
-            actionUrl: `/@${userId}`,
-        })
+        const role = Array.isArray(body.role) ? body.role.join(',') : body.role
+        if (currentUser.role !== role) {
+            await auth.api.setRole({
+                headers,
+                body: { userId, role: body.role },
+            })
+            await createNotification(db, {
+                userId,
+                type: 'user_role_changed',
+                dedupeKey: `admin:${userId}:role:${role}:${await getRevision()}`,
+                payload: { content: role },
+                actionUrl: `/@${userId}`,
+            })
+        }
     }
 
     if (body.ban !== undefined && body.ban !== null)
-        if (body.ban) {
+        if (body.ban && !currentUser.banned) {
             await auth.api.banUser({
                 headers,
                 body: {
@@ -53,13 +67,14 @@ export default adminSessionEventHandler(async ({ db }) => {
             await createNotification(db, {
                 userId,
                 type: 'user_banned',
+                dedupeKey: `admin:${userId}:banned:${await getRevision()}`,
                 payload: {
                     content: body.banReason || undefined,
                     banExpiresIn: body.banExpiresIn,
                 },
                 actionUrl: `/@${userId}`,
             })
-        } else {
+        } else if (!body.ban && currentUser.banned) {
             await auth.api.unbanUser({
                 headers,
                 body: {
@@ -69,6 +84,7 @@ export default adminSessionEventHandler(async ({ db }) => {
             await createNotification(db, {
                 userId,
                 type: 'user_unbanned',
+                dedupeKey: `admin:${userId}:unbanned:${await getRevision()}`,
                 payload: {},
                 actionUrl: `/@${userId}`,
             })

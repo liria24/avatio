@@ -15,7 +15,18 @@ export const promiseEventHandler = <T = unknown>(
 ) => {
     return eventHandler(async (event) => {
         const db = useDB()
-        return handler({ event, db })
+        try {
+            return await handler({ event, db })
+        } catch (error) {
+            if (isDatabaseUniqueConflict(error))
+                throw createError({
+                    statusCode: 409,
+                    statusMessage: 'Conflict',
+                    message: 'The requested database state conflicts with an existing resource.',
+                    cause: error,
+                })
+            throw error
+        }
     })
 }
 

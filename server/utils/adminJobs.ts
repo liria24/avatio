@@ -1,3 +1,7 @@
+import { lt } from 'drizzle-orm'
+
+import { idempotencyRequests } from '../../database/schema'
+
 const reportLog = logger('/api/admin/job/report')
 const cleanupLog = logger('/api/admin/job/cleanup')
 
@@ -366,6 +370,10 @@ export const runReportJob = async () => {
 export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) => {
     const thresholdDate = new Date(Date.now() - IMAGE_DELETION_THRESHOLD)
     const publicBaseUrl = getR2PublicBaseUrl()
+    const db = useDB()
+
+    if (!dryRun)
+        await db.delete(idempotencyRequests).where(lt(idempotencyRequests.expiresAt, new Date()))
 
     if (!publicBaseUrl) {
         const message = 'R2_PUBLIC_BASE_URL is not configured. Cleanup skipped.'
@@ -397,8 +405,6 @@ export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) 
                   },
               }
     }
-
-    const db = useDB()
 
     const [usedImageUrls, [allSetupImages, allUserImages]] = await Promise.all([
         getUsedImageUrls(db),

@@ -15,7 +15,7 @@ const query = z.object({
         .max(API_LIMIT_MAX)
         .optional()
         .default(CHANGELOGS_API_DEFAULT_LIMIT),
-    lang: z.enum(locales.enumValues).optional().default('ja'),
+    lang: z.enum(locales).optional().default('ja'),
 })
 
 const parse = createMarkdownParser({ plugins: [breaks()] })
@@ -35,7 +35,7 @@ export default promiseEventHandler(async ({ event, db }) => {
             createdAt: sort,
         },
         where: {
-            title: q ? { ilike: `%${q}%` } : undefined,
+            title: q ? { like: `%${q}%` } : undefined,
             authors: userId ? { userId: { eq: userId || undefined } } : undefined,
         },
         columns: {

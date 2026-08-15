@@ -28,6 +28,12 @@ export const useSetupCompose = () => {
     const editingSetupId = useState<Setup['id'] | null>('setup-compose-editing-id', () => null)
     const imageUploading = useState('setup-compose-image-uploading', () => false)
     const skipDraftSave = useState('setup-compose-skip-draft', () => false)
+    const publishIdempotencyKey = useState('setup-compose-publish-idempotency-key', () =>
+        crypto.randomUUID(),
+    )
+    const draftIdempotencyKey = useState('setup-compose-draft-idempotency-key', () =>
+        crypto.randomUUID(),
+    )
     const imageMetadata = useState<Record<string, SetupImageMetadata>>(
         'setup-compose-image-metadata',
         () => ({}),
@@ -335,7 +341,13 @@ export const useSetupCompose = () => {
             const isEditing = editingSetupId.value !== null
             const response = await $fetch<Setup>(
                 isEditing ? `/api/setups/${editingSetupId.value}` : '/api/setups',
-                { method: isEditing ? 'PUT' : 'POST', body },
+                {
+                    method: isEditing ? 'PUT' : 'POST',
+                    headers: isEditing
+                        ? undefined
+                        : { 'Idempotency-Key': publishIdempotencyKey.value },
+                    body,
+                },
             )
 
             if (draft.value.id) {
@@ -380,6 +392,8 @@ export const useSetupCompose = () => {
         draft.value = { id: null, status: 'new' }
         editingSetupId.value = null
         skipDraftSave.value = false
+        publishIdempotencyKey.value = crypto.randomUUID()
+        draftIdempotencyKey.value = crypto.randomUUID()
         void router.replace({ query: {} })
     }
 
@@ -423,8 +437,11 @@ export const useSetupCompose = () => {
                 items: items.length ? items : undefined,
             }
 
-            const response = await $fetch('/api/setups/drafts', {
+            const response = await $fetch<{ draftId: string } | null>('/api/setups/drafts', {
                 method: 'POST',
+                headers: draft.value.id
+                    ? undefined
+                    : { 'Idempotency-Key': draftIdempotencyKey.value },
                 body: {
                     id: draft.value.id ?? undefined,
                     setupId: editingSetupId.value ?? undefined,
@@ -433,6 +450,7 @@ export const useSetupCompose = () => {
             })
 
             if (response?.draftId) {
+                if (!draft.value.id) draftIdempotencyKey.value = crypto.randomUUID()
                 draft.value.id = response.draftId
                 updateRouterQuery({ draftId: response.draftId })
                 draft.value.status = 'saved'

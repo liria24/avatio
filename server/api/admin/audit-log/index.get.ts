@@ -33,7 +33,7 @@ export default adminSessionEventHandler<PaginationResponse<AuditLog[]>>(async ({
             createdAt: sort,
         },
         where: {
-            details: q ? { ilike: `%${q}%` } : undefined,
+            details: q ? { like: `%${q}%` } : undefined,
             userId: userId ? { eq: userId } : undefined,
             action: action ? { eq: action } : undefined,
             targetType: targetType ? { eq: targetType } : undefined,
