@@ -36,10 +36,14 @@ describe('D1 migration', () => {
         insertUser.run('user-1', 'One', 'one', 'One', 'one@example.com')
         insertUser.run('user-2', 'Two', 'two', 'Two', 'two@example.com')
         const follow = database.prepare(
-            'INSERT INTO follow_users (user_id, target_user_id) VALUES (?, ?)',
+            'INSERT INTO user_follows (user_id, followee_id) VALUES (?, ?)',
         )
         follow.run('user-1', 'user-2')
         expect(() => follow.run('user-1', 'user-2')).toThrow(/UNIQUE constraint failed/)
+
+        const mute = database.prepare('INSERT INTO user_mutes (user_id, mutee_id) VALUES (?, ?)')
+        mute.run('user-1', 'user-2')
+        expect(() => mute.run('user-1', 'user-2')).toThrow(/UNIQUE constraint failed/)
     })
 
     it('rolls back all business writes when a batch statement fails', () => {

@@ -134,6 +134,29 @@
                 "deleteFailed": "アカウントを削除できませんでした",
                 "deleteFailedDescription": "時間をおいて再度お試しください。"
             }
+        },
+        "privacy": {
+            "title": "プライバシー",
+            "publicFollowees": "フォローしているユーザーを公開",
+            "publicBookmarks": "ブックマークしたセットアップを公開"
+        },
+        "notifications": {
+            "title": "通知",
+            "destination": {
+                "title": "通知先",
+                "site": "サイト内",
+                "siteDescription": "アカウントの通知ボックスに通知を送信します。",
+                "push": "プッシュ通知",
+                "pushDescription": "現在は利用できません。",
+                "webhook": "Webhook",
+                "webhookDescription": "指定したURLに対してPOSTリクエストで通知を送信します。"
+            },
+            "types": {
+                "title": "通知の種類",
+                "followed": "フォローされたとき",
+                "followeePost": "フォロー中のユーザーが投稿したとき",
+                "coauthorAdded": "共同作者に自分が追加されたとき"
+            }
         }
     },
     "toast": {
@@ -141,6 +164,16 @@
             "added": "ブックマークしました",
             "removed": "ブックマークを解除しました",
             "toggleFailed": "ブックマークの変更に失敗しました"
+        },
+        "follow": {
+            "followFailed": "フォローに失敗しました",
+            "unfollowFailed": "フォロー解除に失敗しました"
+        },
+        "mute": {
+            "muted": "ユーザーをミュートしました",
+            "muteFailed": "ミュートに失敗しました",
+            "unmuted": "ユーザーのミュートを解除しました",
+            "unmuteFailed": "ミュート解除に失敗しました"
         },
         "reports": {
             "submitted": "報告が送信されました",
@@ -198,6 +231,7 @@
         },
         "tabs": {
             "latest": "最新",
+            "following": "フォロー中",
             "me": "自分の投稿",
             "bookmarks": "ブックマーク"
         },
@@ -423,6 +457,10 @@
             "confirm": "本当にアカウントを削除しますか？",
             "description": "削除したアカウントは復元できません。"
         },
+        "muteUser": {
+            "title": "ユーザーをミュートしますか？",
+            "description": "ミュートしたユーザーの投稿はタイムラインに表示されなくなり、通知も届かなくなります。"
+        },
         "report": {
             "setup": {
                 "title": "セットアップを報告",
@@ -550,9 +588,33 @@
         "objectToBan": "異議を申し立てる",
         "objectToBanSubject": "ユーザーBANへの異議申し立て",
         "editProfile": "プロフィールを編集",
-        "reportUser": "ユーザーを報告",
         "shops": "ショップ",
-        "setups": "セットアップ"
+        "setups": "セットアップ",
+        "joinedAt": "に登録",
+        "follow": {
+            "follow": "フォロー",
+            "following": "フォロー中",
+            "unfollow": "フォロー解除",
+            "followers": "フォロワー",
+            "followingCount": "フォロー",
+            "followersCount": "フォロワー",
+            "followingSeoTitle": "{name}さんのフォロー",
+            "followersSeoTitle": "{name}さんのフォロワー",
+            "followingDescription": "{count}人のユーザーをフォロー中",
+            "followersDescription": "{count}人のユーザーにフォローされています"
+        },
+        "mute": {
+            "mute": "ミュート",
+            "unmute": "ミュート解除"
+        },
+        "tabs": {
+            "posts": "投稿",
+            "bookmarks": "ブックマーク"
+        },
+        "visibility": {
+            "public": "公開",
+            "private": "非公開"
+        }
     },
     "badges": {
         "developer": "デベロッパー",

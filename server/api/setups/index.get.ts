@@ -3,32 +3,80 @@ import { sql } from 'drizzle-orm'
 import { z } from 'zod'
 
 const query = z.object({
+    id: z.union([z.string(), z.array(z.string())]).optional(),
     q: z.string().optional(),
     orderBy: z.enum(['createdAt', 'name']).optional(),
     sort: z.enum(['asc', 'desc']).optional().default('desc'),
     username: z.string().optional(),
     itemId: z.union([z.string(), z.array(z.string())]).optional(),
     tag: z.union([z.string(), z.array(z.string())]).optional(),
-    bookmarked: z.union([z.boolean(), z.stringbool()]).optional(),
     includePrivate: z.union([z.boolean(), z.stringbool()]).optional(),
+    bookmarkedBy: z.string().optional(),
+    following: z.union([z.boolean(), z.stringbool()]).optional(),
     page: z.coerce.number().min(1).optional().default(1),
     limit: z.coerce.number().min(1).max(API_LIMIT_MAX).optional().default(SETUPS_API_DEFAULT_LIMIT),
 })
 
 export default sessionEventHandler(async ({ event, session, db }) => {
-    const { q, orderBy, sort, username, itemId, tag, bookmarked, includePrivate, page, limit } =
-        await validateQuery(query)
+    const {
+        id,
+        q,
+        orderBy,
+        sort,
+        username,
+        itemId,
+        tag,
+        bookmarkedBy,
+        following,
+        includePrivate,
+        page,
+        limit,
+    } = await validateQuery(query)
 
-    if (bookmarked && !session) throw serverError.unauthorized()
+    if (following && !session) throw serverError.unauthorized()
 
-    // bookmarked === true かつ orderByが未指定の場合、bookmarks.createdAtでソート
-    const effectiveOrderBy = bookmarked && !orderBy ? 'bookmarkCreatedAt' : orderBy || 'createdAt'
+    const effectiveOrderBy = bookmarkedBy && !orderBy ? 'bookmarkCreatedAt' : orderBy || 'createdAt'
     const effectiveSort = sort
 
     const offset = (page - 1) * limit
+    const bookmarkedUser = bookmarkedBy
+        ? await db.query.users.findFirst({
+              where: {
+                  username: { eq: bookmarkedBy },
+                  OR: [{ banned: { eq: false } }, { banned: { isNull: true } }],
+              },
+              columns: {
+                  id: true,
+              },
+              with: {
+                  settings: {
+                      columns: {
+                          publicBookmarks: true,
+                      },
+                  },
+              },
+          })
+        : null
+
+    if (
+        bookmarkedBy &&
+        (!bookmarkedUser ||
+            (bookmarkedBy !== session?.user.username && !bookmarkedUser.settings?.publicBookmarks))
+    )
+        return {
+            data: [],
+            pagination: {
+                page,
+                limit,
+                total: 0,
+                totalPages: 0,
+                hasNext: false,
+                hasPrev: offset > 0,
+            },
+        }
 
     const shouldShowPrivate =
-        (bookmarked && session) ||
+        (bookmarkedBy && bookmarkedBy === session?.user.username) ||
         (username && session?.user.username === username && includePrivate === true)
 
     const data = await db.query.setups.findMany({
@@ -43,21 +91,28 @@ export default sessionEventHandler(async ({ event, session, db }) => {
             user: {
                 OR: [{ banned: { eq: false } }, { banned: { isNull: true } }],
                 username: username ? { eq: username } : undefined,
+                NOT: session ? { mutees: { userId: { eq: session.user.id } } } : undefined,
+                followers: session && following ? { userId: { eq: session.user.id } } : undefined,
             },
+            id: id ? { in: Array.isArray(id) ? id : [id] } : undefined,
             name: q ? { like: `%${q}%` } : undefined,
             items: {
                 itemId: itemId ? { in: Array.isArray(itemId) ? itemId : [itemId] } : undefined,
             },
             tags: tag ? { tag: { in: Array.isArray(tag) ? tag : [tag] } } : undefined,
-            bookmarks: bookmarked && session ? { userId: { eq: session.user.id } } : undefined,
+            bookmarks: bookmarkedBy
+                ? {
+                      userId: { eq: bookmarkedUser!.id },
+                  }
+                : undefined,
         },
         orderBy:
             effectiveOrderBy === 'bookmarkCreatedAt'
                 ? (table) => sql`(
-                    SELECT ${bookmarks.createdAt}
+                    SELECT MAX(${bookmarks.createdAt})
                     FROM ${bookmarks}
                     WHERE ${bookmarks.setupId} = ${table.id}
-                    AND ${bookmarks.userId} = ${session!.user.id}
+                    AND ${bookmarks.userId} = ${bookmarkedUser!.id}
                 ) ${effectiveSort === 'asc' ? sql`ASC` : sql`DESC`}`
                 : {
                       [effectiveOrderBy]: effectiveSort,
@@ -83,6 +138,12 @@ export default sessionEventHandler(async ({ event, session, db }) => {
                             badge: true,
                         },
                     },
+                    followers: session
+                        ? {
+                              where: { userId: { eq: session.user.id } },
+                              columns: { id: true },
+                          }
+                        : undefined,
                 },
             },
             items: {
@@ -127,6 +188,14 @@ export default sessionEventHandler(async ({ event, session, db }) => {
                             name: true,
                             image: true,
                         },
+                        with: {
+                            followers: session
+                                ? {
+                                      where: { userId: { eq: session.user.id } },
+                                      columns: { id: true },
+                                  }
+                                : undefined,
+                        },
                     },
                 },
             },
@@ -136,6 +205,19 @@ export default sessionEventHandler(async ({ event, session, db }) => {
     const setupData = await Promise.all(
         data.map(async (setup) => ({
             ...setup,
+            user: {
+                ...setup.user,
+                isFollowing: !!setup.user.followers?.length,
+                followers: undefined,
+            },
+            coauthors: setup.coauthors.map((coauthor) => ({
+                ...coauthor,
+                user: {
+                    ...coauthor.user,
+                    isFollowing: !!coauthor.user.followers?.length,
+                    followers: undefined,
+                },
+            })),
             images: await withSetupImageUrls(setup.images),
             items: setup.items
                 .filter((item) => !item.item.outdated)
@@ -160,7 +242,8 @@ export default sessionEventHandler(async ({ event, session, db }) => {
         },
     }
 
-    if (!bookmarked && !shouldShowPrivate) applyPublicEdgeCache(event, [EDGE_CACHE_TAGS.setups])
+    if (!session && !bookmarkedBy && !following && !includePrivate)
+        applyPublicEdgeCache(event, [EDGE_CACHE_TAGS.setups])
 
     return result
 })

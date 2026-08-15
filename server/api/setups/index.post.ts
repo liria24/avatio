@@ -106,6 +106,36 @@ export default authedSessionEventHandler(
 
         await executeD1Batch(db, queries)
 
+        runAfterResponse(
+            (async () => {
+                const followers = await db.query.userFollows.findMany({
+                    where: {
+                        followeeId: session.user.id,
+                    },
+                    columns: {
+                        userId: true,
+                    },
+                })
+                await Promise.all(
+                    followers.map((follower) =>
+                        createNotification(event, db, {
+                            userId: follower.userId,
+                            type: 'setup_created',
+                            actorId: session.user.id,
+                            dedupeKey: `setup:${setupId}:${follower.userId}`,
+                            payload: {
+                                user: {
+                                    username: session.user.username,
+                                    name: session.user.name,
+                                },
+                                setup: { id: setupId, name },
+                            },
+                        }),
+                    ),
+                )
+            })(),
+        )
+
         await purgeEdgeCacheTags(
             event,
             [EDGE_CACHE_TAGS.popularAvatars, EDGE_CACHE_TAGS.setups],

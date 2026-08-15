@@ -351,6 +351,27 @@ useSeo({
             </UCard>
         </section>
 
+        <section id="privacy" class="flex flex-col gap-4">
+            <h3 class="text-muted text-sm leading-none font-semibold text-nowrap">
+                {{ $t('settings.privacy.title') }}
+            </h3>
+
+            <UCard :ui="{ body: 'flex flex-col gap-4' }">
+                <USwitch
+                    :label="$t('settings.privacy.publicFollowees')"
+                    color="neutral"
+                    :default-value="userSettings?.publicFollowees"
+                    @update:modelValue="(value) => updateUserSettings({ publicFollowees: value })"
+                />
+                <USwitch
+                    :label="$t('settings.privacy.publicBookmarks')"
+                    color="neutral"
+                    :default-value="userSettings?.publicBookmarks"
+                    @update:modelValue="(value) => updateUserSettings({ publicBookmarks: value })"
+                />
+            </UCard>
+        </section>
+
         <section id="site" class="flex flex-col gap-4">
             <h3 class="text-muted text-sm leading-none font-semibold text-nowrap">
                 {{ $t('settings.general.site.title') }}

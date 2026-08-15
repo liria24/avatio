@@ -101,8 +101,13 @@ export const getDocumentCacheHeaders = (
 export const applyPublicEdgeCache = (
     event: H3Event,
     tags: Iterable<string>,
-    varyCookie = false,
+    varyCookie = true,
 ) => {
+    if (event.headers.get('cookie')) {
+        applyNoStoreCache(event)
+        return
+    }
+
     setResponseHeaders(event, getPublicEdgeCacheHeaders(tags, varyCookie))
 }
 

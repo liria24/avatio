@@ -291,6 +291,20 @@ export const userSettings = snakeCase.table(
             .notNull(),
         userId: text().notNull().unique(),
         showPrivateSetups: boolean().default(true).notNull(),
+        publicFollowees: boolean().default(true).notNull(),
+        publicBookmarks: boolean().default(false).notNull(),
+        notifSiteEnabled: boolean().default(true).notNull(),
+        notifSiteFollowed: boolean().default(true).notNull(),
+        notifSiteFolloweePost: boolean().default(true).notNull(),
+        notifSiteCoauthorAdded: boolean().default(true).notNull(),
+        notifPushFollowed: boolean().default(true).notNull(),
+        notifPushFolloweePost: boolean().default(true).notNull(),
+        notifPushCoauthorAdded: boolean().default(true).notNull(),
+        notifWebhookEnabled: boolean().default(false).notNull(),
+        notifWebhookUrl: text(),
+        notifWebhookFollowed: boolean().default(true).notNull(),
+        notifWebhookFolloweePost: boolean().default(true).notNull(),
+        notifWebhookCoauthorAdded: boolean().default(true).notNull(),
         showNSFW: boolean().default(false).notNull(),
     },
     (table) => [
@@ -298,6 +312,64 @@ export const userSettings = snakeCase.table(
         foreignKey({
             name: 'user_settings_user_id_fkey',
             columns: [table.userId],
+            foreignColumns: [users.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+    ],
+)
+
+export const userFollows = snakeCase.table(
+    'user_follows',
+    {
+        id: identity(),
+        createdAt: timestamp().default(now).notNull(),
+        userId: text().notNull(),
+        followeeId: text().notNull(),
+    },
+    (table) => [
+        index('user_follows_user_id_index').on(table.userId),
+        index('user_follows_followee_id_index').on(table.followeeId),
+        uniqueIndex('user_follows_user_followee_uidx').on(table.userId, table.followeeId),
+        foreignKey({
+            name: 'follow_users_user_id_fkey',
+            columns: [table.userId],
+            foreignColumns: [users.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+        foreignKey({
+            name: 'follow_users_target_user_id_fkey',
+            columns: [table.followeeId],
+            foreignColumns: [users.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+    ],
+)
+
+export const userMutes = snakeCase.table(
+    'user_mutes',
+    {
+        id: uuid().primaryKey(),
+        createdAt: timestamp().default(now).notNull(),
+        userId: text().notNull(),
+        muteeId: text().notNull(),
+    },
+    (table) => [
+        index('user_mutes_user_id_index').on(table.userId),
+        index('user_mutes_mutee_id_index').on(table.muteeId),
+        uniqueIndex('user_mutes_user_mutee_uidx').on(table.userId, table.muteeId),
+        foreignKey({
+            name: 'user_mutes_user_id_fkey',
+            columns: [table.userId],
+            foreignColumns: [users.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+        foreignKey({
+            name: 'user_mutes_mutee_id_fkey',
+            columns: [table.muteeId],
             foreignColumns: [users.id],
         })
             .onDelete('cascade')
@@ -587,36 +659,6 @@ export const setupCoauthors = snakeCase.table(
         foreignKey({
             name: 'setup_coauthors_user_id_fkey',
             columns: [table.userId],
-            foreignColumns: [users.id],
-        })
-            .onDelete('cascade')
-            .onUpdate('cascade'),
-    ],
-)
-
-export const followUsers = snakeCase.table(
-    'follow_users',
-    {
-        id: identity(),
-        createdAt: timestamp().default(now).notNull(),
-        userId: text().notNull(),
-        targetUserId: text().notNull(),
-    },
-    (table) => [
-        index('follow_users_id_index').on(table.id),
-        index('follow_users_user_id_index').on(table.userId),
-        index('follow_users_target_user_id_index').on(table.targetUserId),
-        uniqueIndex('follow_users_user_target_uidx').on(table.userId, table.targetUserId),
-        foreignKey({
-            name: 'follow_users_user_id_fkey',
-            columns: [table.userId],
-            foreignColumns: [users.id],
-        })
-            .onDelete('cascade')
-            .onUpdate('cascade'),
-        foreignKey({
-            name: 'follow_users_target_user_id_fkey',
-            columns: [table.targetUserId],
             foreignColumns: [users.id],
         })
             .onDelete('cascade')

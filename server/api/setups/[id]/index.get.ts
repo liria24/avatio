@@ -43,6 +43,12 @@ export default sessionEventHandler<Setup>(async ({ event, session, db }) => {
                             createdAt: true,
                         },
                     },
+                    followers: session
+                        ? {
+                              where: { userId: { eq: session.user.id } },
+                              columns: { id: true },
+                          }
+                        : undefined,
                 },
             },
             items: {
@@ -125,6 +131,12 @@ export default sessionEventHandler<Setup>(async ({ event, session, db }) => {
                                     createdAt: true,
                                 },
                             },
+                            followers: session
+                                ? {
+                                      where: { userId: { eq: session.user.id } },
+                                      columns: { id: true },
+                                  }
+                                : undefined,
                         },
                     },
                 },
@@ -170,10 +182,24 @@ export default sessionEventHandler<Setup>(async ({ event, session, db }) => {
 
     if (revalidationTasks.length) runAfterResponse(Promise.all(revalidationTasks))
 
-    if (data.public && !data.hidAt) applyPublicEdgeCache(event, [getSetupCacheTag(data.id)])
+    if (!session && data.public && !data.hidAt)
+        applyPublicEdgeCache(event, [getSetupCacheTag(data.id)])
 
     return {
         ...data,
+        user: {
+            ...data.user,
+            isFollowing: !!data.user.followers?.length,
+            followers: undefined,
+        },
+        coauthors: data.coauthors.map((coauthor) => ({
+            ...coauthor,
+            user: {
+                ...coauthor.user,
+                isFollowing: !!coauthor.user.followers?.length,
+                followers: undefined,
+            },
+        })),
         images: await withSetupImageUrls(data.images),
         items,
         tags: data.tags.map((tag) => tag.tag),

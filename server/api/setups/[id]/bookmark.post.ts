@@ -20,8 +20,13 @@ export default authedSessionEventHandler(
                     OR: [{ banned: { eq: false } }, { banned: { isNull: true } }],
                 },
             },
-            columns: { id: true, userId: true, public: true },
+            columns: {
+                id: true,
+                userId: true,
+                public: true,
+            },
         })
+
         if (!setup) throw serverError.notFound()
         if (!setup.public && setup.userId !== session.user.id) throw serverError.notFound()
 

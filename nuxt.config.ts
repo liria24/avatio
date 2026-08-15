@@ -505,6 +505,7 @@ export default defineNuxtConfig({
         disable: import.meta.test,
         registerWebManifestInRouteRules: true,
         registerType: 'autoUpdate',
+        strategies: 'generateSW',
         manifest: {
             id: 'liria.avatio',
             name: title,
@@ -525,22 +526,7 @@ export default defineNuxtConfig({
             ],
         },
         workbox: {
-            runtimeCaching: [
-                {
-                    urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-                    handler: 'CacheFirst',
-                    options: {
-                        cacheName: 'google-fonts-cache',
-                        expiration: {
-                            maxEntries: 10,
-                            maxAgeSeconds: 60 * 60 * 24 * 365, // 365 days
-                        },
-                        cacheableResponse: {
-                            statuses: [0, 200],
-                        },
-                    },
-                },
-            ],
+            globPatterns: ['**/*.{js,css,html,png,svg,ico,webmanifest}'],
         },
         devOptions: {
             enabled: false,

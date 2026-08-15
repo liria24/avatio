@@ -14,7 +14,7 @@ const bodySchema = z.object({
     banExpiresIn: z.number().optional(),
 })
 
-export default adminSessionEventHandler(async ({ db }) => {
+export default adminSessionEventHandler(async ({ event, db }) => {
     const { id: userId } = await validateParams(params)
     const body = await validateBody(bodySchema)
     const { headers } = useEvent()
@@ -44,7 +44,7 @@ export default adminSessionEventHandler(async ({ db }) => {
                 headers,
                 body: { userId, role: body.role },
             })
-            await createNotification(db, {
+            await createNotification(event, db, {
                 userId,
                 type: 'user_role_changed',
                 dedupeKey: `admin:${userId}:role:${role}:${await getRevision()}`,
@@ -64,7 +64,7 @@ export default adminSessionEventHandler(async ({ db }) => {
                     banExpiresIn: body.banExpiresIn,
                 },
             })
-            await createNotification(db, {
+            await createNotification(event, db, {
                 userId,
                 type: 'user_banned',
                 dedupeKey: `admin:${userId}:banned:${await getRevision()}`,
@@ -81,7 +81,7 @@ export default adminSessionEventHandler(async ({ db }) => {
                     userId,
                 },
             })
-            await createNotification(db, {
+            await createNotification(event, db, {
                 userId,
                 type: 'user_unbanned',
                 dedupeKey: `admin:${userId}:unbanned:${await getRevision()}`,

@@ -134,6 +134,29 @@
                 "deleteFailed": "Failed to delete account",
                 "deleteFailedDescription": "Please try again later."
             }
+        },
+        "privacy": {
+            "title": "Privacy",
+            "publicFollowees": "Show users you follow",
+            "publicBookmarks": "Show bookmarked setups"
+        },
+        "notifications": {
+            "title": "Notifications",
+            "destination": {
+                "title": "Destinations",
+                "site": "In-app",
+                "siteDescription": "Send notifications to your account notification box.",
+                "push": "Push notifications",
+                "pushDescription": "Currently unavailable.",
+                "webhook": "Webhook",
+                "webhookDescription": "Send notifications to the specified URL with POST requests."
+            },
+            "types": {
+                "title": "Notification types",
+                "followed": "When someone follows you",
+                "followeePost": "When a user you follow posts",
+                "coauthorAdded": "When you are added as a co-author"
+            }
         }
     },
     "toast": {
@@ -141,6 +164,16 @@
             "added": "Added to bookmarks",
             "removed": "Removed from bookmarks",
             "toggleFailed": "Failed to toggle bookmark"
+        },
+        "follow": {
+            "followFailed": "Failed to follow user",
+            "unfollowFailed": "Failed to unfollow user"
+        },
+        "mute": {
+            "muted": "User muted",
+            "muteFailed": "Failed to mute user",
+            "unmuted": "User unmuted",
+            "unmuteFailed": "Failed to unmute user"
         },
         "reports": {
             "submitted": "Report submitted",
@@ -198,6 +231,7 @@
         },
         "tabs": {
             "latest": "Latest",
+            "following": "Following",
             "me": "My Posts",
             "bookmarks": "Bookmarks"
         },
@@ -423,6 +457,10 @@
             "confirm": "Are you sure you want to delete your account?",
             "description": "Deleted accounts cannot be recovered."
         },
+        "muteUser": {
+            "title": "Mute this user?",
+            "description": "Posts from muted users will no longer appear in your timeline, and you will not receive notifications from them."
+        },
         "report": {
             "setup": {
                 "title": "Report Setup",
@@ -550,9 +588,33 @@
         "objectToBan": "Object to ban",
         "objectToBanSubject": "Appeal user ban",
         "editProfile": "Edit Profile",
-        "reportUser": "Report User",
         "shops": "Shops",
-        "setups": "Setups"
+        "setups": "Setups",
+        "joinedAt": "joined",
+        "follow": {
+            "follow": "Follow",
+            "following": "Following",
+            "unfollow": "Unfollow",
+            "followers": "Followers",
+            "followingCount": "Following",
+            "followersCount": "Followers",
+            "followingSeoTitle": "{name}'s following",
+            "followersSeoTitle": "{name}'s followers",
+            "followingDescription": "Following {count} users",
+            "followersDescription": "Followed by {count} users"
+        },
+        "mute": {
+            "mute": "Mute",
+            "unmute": "Unmute"
+        },
+        "tabs": {
+            "posts": "Posts",
+            "bookmarks": "Bookmarks"
+        },
+        "visibility": {
+            "public": "Public",
+            "private": "Private"
+        }
     },
     "badges": {
         "developer": "Developer",
