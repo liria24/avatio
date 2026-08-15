@@ -1,3 +1,4 @@
+import { Database } from 'bun:sqlite'
 import { mkdir, rm } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
@@ -32,7 +33,6 @@ const tablesBeforeRelations = [
     table('user', 'user_shops'),
     table('user', 'user_shop_verifications'),
     table('user', 'user_badges'),
-    table('user', 'user_settings'),
 ]
 
 const tablesAfterRelations = [
@@ -66,14 +66,28 @@ const developmentFollowTable: TableMapping = {
     }),
 }
 
+const developmentUserSettingsTable: TableMapping = {
+    sourceSchema: 'user',
+    sourceTable: 'user_settings',
+    targetTable: 'user_settings',
+    transform: (row) =>
+        Object.fromEntries(
+            ['id', 'created_at', 'updated_at', 'user_id', 'show_private_setups', 'show_nsfw'].map(
+                (column) => [column, row[column]],
+            ),
+        ),
+}
+
 const profileTables: Record<ImportProfile, TableMapping[]> = {
     development: [
         ...tablesBeforeRelations,
+        developmentUserSettingsTable,
         developmentFollowTable,
         ...tablesAfterRelations,
     ],
     feature: [
         ...tablesBeforeRelations,
+        table('user', 'user_settings'),
         table('user', 'user_follows'),
         table('user', 'user_mutes'),
         ...tablesAfterRelations,
@@ -160,7 +174,7 @@ const main = async () => {
     if (!neonUrl) throw new Error('NEON_DATABASE_URL is required for the one-time import.')
 
     const repositoryRoot = resolve(import.meta.dir, '..', '..')
-    const wranglerConfig = JSON.parse(
+    const wranglerConfig = Bun.JSONC.parse(
         await Bun.file(resolve(repositoryRoot, 'wrangler.jsonc')).text(),
     ) as { d1_databases?: { binding?: string; database_id?: string }[] }
     const configuredDatabase = wranglerConfig.d1_databases?.find(
@@ -206,38 +220,43 @@ const main = async () => {
             .join('\n'),
     )
 
-    const runWrangler = async (arguments_: string[], capture = false) => {
-        const child = Bun.spawn([process.execPath, 'x', 'wrangler', ...arguments_], {
-            cwd: repositoryRoot,
-            stdout: capture ? 'pipe' : 'inherit',
-            stderr: 'inherit',
-        })
-        const output = capture ? await new Response(child.stdout).text() : ''
-        const exitCode = await child.exited
-        if (exitCode !== 0) throw new Error(`Wrangler exited with code ${exitCode}.`)
-        return output
+    const runWrangler = (arguments_: string[], capture = false) => {
+        const child = Bun.spawnSync(
+            [
+                'node',
+                resolve(repositoryRoot, 'node_modules', 'wrangler', 'bin', 'wrangler.js'),
+                ...arguments_,
+            ],
+            {
+                cwd: repositoryRoot,
+                stdout: capture ? 'pipe' : 'inherit',
+                stderr: 'inherit',
+            },
+        )
+        if (child.exitCode !== 0) throw new Error(`Wrangler exited with code ${child.exitCode}.`)
+        return capture ? child.stdout.toString() : ''
     }
 
     try {
         await runWrangler(['d1', 'execute', D1_DATABASE_NAME, '--remote', '--file', resetFile])
         await runWrangler(['d1', 'execute', D1_DATABASE_NAME, '--remote', '--file', importFile])
 
-        const countQuery = tables
-            .map(
-                ({ targetTable }) =>
-                    `SELECT '${targetTable}' AS table_name, COUNT(*) AS row_count FROM ${quoteIdentifier(targetTable)}`,
+        const targetCounts = new Map<string, number>()
+        for (let index = 0; index < tables.length; index += 4) {
+            const countQuery = tables
+                .slice(index, index + 4)
+                .map(
+                    ({ targetTable }) =>
+                        `SELECT '${targetTable}' AS table_name, COUNT(*) AS row_count FROM ${quoteIdentifier(targetTable)}`,
+                )
+                .join(' UNION ALL ')
+            const countOutput = await runWrangler(
+                ['d1', 'execute', D1_DATABASE_NAME, '--remote', '--json', '--command', countQuery],
+                true,
             )
-            .join(' UNION ALL ')
-        const countOutput = await runWrangler(
-            ['d1', 'execute', D1_DATABASE_NAME, '--remote', '--json', '--command', countQuery],
-            true,
-        )
-        const targetCounts = new Map(
-            extractResults(JSON.parse(countOutput)).map((row) => [
-                String(row.table_name),
-                Number(row.row_count),
-            ]),
-        )
+            for (const row of extractResults(JSON.parse(countOutput)))
+                targetCounts.set(String(row.table_name), Number(row.row_count))
+        }
         const mismatches = tables.flatMap(({ targetTable }) => {
             const sourceCount = sourceRows.get(targetTable)?.length ?? 0
             const targetCount = targetCounts.get(targetTable)
@@ -263,21 +282,31 @@ const main = async () => {
         if (extractResults(JSON.parse(foreignKeyOutput)).length)
             throw new Error('D1 foreign_key_check returned violations.')
 
-        const integrityOutput = await runWrangler(
+        const exportFile = resolve(temporaryDirectory, 'remote-export.sql')
+        const sqliteFile = resolve(temporaryDirectory, 'remote-export.sqlite')
+        await runWrangler(
             [
                 'd1',
-                'execute',
+                'export',
                 D1_DATABASE_NAME,
                 '--remote',
-                '--json',
-                '--command',
-                'PRAGMA integrity_check;',
+                '--skip-confirmation',
+                '--output',
+                exportFile,
             ],
             true,
         )
-        const integrityRows = extractResults(JSON.parse(integrityOutput))
-        if (!integrityRows.some((row) => Object.values(row).includes('ok')))
-            throw new Error('SQLite integrity_check did not return ok.')
+        const exportedDatabase = new Database(sqliteFile, { create: true })
+        try {
+            exportedDatabase.exec(await Bun.file(exportFile).text())
+            const integrityRows = exportedDatabase
+                .query('PRAGMA integrity_check;')
+                .all() as SourceRow[]
+            if (!integrityRows.some((row) => Object.values(row).includes('ok')))
+                throw new Error('SQLite integrity_check did not return ok.')
+        } finally {
+            exportedDatabase.close()
+        }
 
         const total = [...sourceRows.values()].reduce((sum, rows) => sum + rows.length, 0)
         console.log(
