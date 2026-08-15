@@ -66,6 +66,22 @@ export default sessionEventHandler<User>(async ({ event, session, db }) => {
                     },
                 },
             },
+            followers: {
+                columns: {
+                    userId: true,
+                },
+            },
+            followees: {
+                columns: {
+                    userId: true,
+                },
+            },
+            settings: {
+                columns: {
+                    publicFollowees: true,
+                    publicBookmarks: true,
+                },
+            },
         },
     })
 
@@ -73,8 +89,43 @@ export default sessionEventHandler<User>(async ({ event, session, db }) => {
 
     const { banned, banReason, banExpires, publisherSourceOwnerships, ...user } = data
     const result = { ...user, publisherOwnerships: publisherSourceOwnerships }
-    if (!isPublic) return { ...result, banned, banReason, banExpires }
 
-    applyPublicEdgeCache(event, [EDGE_CACHE_TAGS.users])
-    return result
+    const mute = session
+        ? await db.query.userMutes.findFirst({
+              where: {
+                  userId: { eq: session.user.id },
+                  mutee: {
+                      username: { eq: username },
+                  },
+              },
+              columns: {
+                  createdAt: true,
+              },
+          })
+        : null
+
+    const followeesCount =
+        session?.user.id === user.id ||
+        (user.settings?.publicFollowees ?? userSettingsDefaults.publicFollowees)
+            ? user.followees.length
+            : undefined
+
+    applyNoStoreCache(event)
+
+    return {
+        ...result,
+        ...(isPublic ? {} : { banned, banReason, banExpires }),
+        settings: {
+            publicFollowees: user.settings?.publicFollowees ?? true,
+            publicBookmarks: user.settings?.publicBookmarks ?? false,
+        },
+        followersCount: user.followers.length,
+        followeesCount,
+        followers: undefined,
+        followees: undefined,
+        isFollowing: session
+            ? user.followers.some((follower) => follower.userId === session.user.id)
+            : false,
+        isMuted: !!mute,
+    }
 })

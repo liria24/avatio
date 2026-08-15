@@ -30,7 +30,7 @@ export const useViewerSetup = (id: Setup['id']) =>
     })
 
 export const useSetupsList = (
-    type?: 'latest' | 'owned' | 'bookmarked',
+    type?: 'latest' | 'following' | 'owned' | 'bookmarked',
     options?: {
         username?: User['username']
         query?: MaybeRef<Record<string, unknown>>
@@ -39,6 +39,7 @@ export const useSetupsList = (
     },
 ) => {
     const page = ref(1)
+    const { user: sessionUser } = useUserSession()
     const cacheKey = computed(
         () =>
             `setups-state-${type || 'custom'}-${options?.username || ''}-${JSON.stringify(unref(options?.query) || {})}`,
@@ -51,7 +52,6 @@ export const useSetupsList = (
         NonNullable<FetchResult<'/api/setups', 'get'>>['pagination'] | undefined
     >(`${cacheKey.value}-pagination`, () => undefined)
 
-    // Build query parameters
     const queryParams = computed(() => {
         const base: Record<string, unknown> = {
             page: page.value,
@@ -61,20 +61,22 @@ export const useSetupsList = (
         // typeが指定されている場合のみ、デフォルトのlimitを設定
         if (type) {
             // limitが明示的に指定されていない場合のみデフォルト値を使用
-            if (!base.limit) {
+            if (!base.limit)
                 base.limit =
                     type === 'latest'
                         ? LATEST_SETUPS_LIST_PER_PAGE
                         : type === 'owned'
                           ? USER_SETUPS_LIST_PER_PAGE
                           : BOOKMARKS_LIST_PER_PAGE
-            }
 
-            // Add username for owned type
             if (type === 'owned' && options?.username) base.username = options.username
-
-            // Add bookmarked flag for bookmarked type
-            if (type === 'bookmarked') base.bookmarked = true
+            if (type === 'latest' && sessionUser.value) base.viewer = true
+            if (type === 'following') base.following = true
+            if (type === 'bookmarked') {
+                const effectiveUsername = options?.username ?? sessionUser.value?.username
+                if (effectiveUsername) base.bookmarkedBy = effectiveUsername
+                else base.bookmarked = true
+            }
         }
 
         return base

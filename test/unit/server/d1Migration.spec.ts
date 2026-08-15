@@ -26,6 +26,38 @@ describe('D1 migration', () => {
 
     afterEach(() => database.close())
 
+    it('preserves existing follows and preferences when applying user relations', () => {
+        database.close()
+        database = new DatabaseSync(':memory:')
+        database.exec('PRAGMA foreign_keys = ON')
+        const migration = '20260908052031_user-relations'
+        for (const directory of readdirSync('drizzle').sort()) {
+            if (directory >= migration) break
+            database.exec(readFileSync(join('drizzle', directory, 'migration.sql'), 'utf8'))
+        }
+        database.exec(`
+            INSERT INTO users (id, name, username, display_username, email) VALUES
+                ('follower', 'Follower', 'follower', 'Follower', 'follower@example.com'),
+                ('author', 'Author', 'author', 'Author', 'author@example.com');
+            INSERT INTO follow_users (user_id, target_user_id) VALUES ('follower', 'author');
+            INSERT INTO user_settings (user_id, show_private_setups, show_nsfw) VALUES ('follower', 0, 1);
+            BEGIN;
+        `)
+        database.exec(readFileSync(join('drizzle', migration, 'migration.sql'), 'utf8'))
+        database.exec('COMMIT')
+        expect(
+            database.prepare('SELECT user_id, followee_id FROM user_follows').get(),
+        ).toMatchObject({ user_id: 'follower', followee_id: 'author' })
+        expect(database.prepare('SELECT * FROM user_settings').get()).toMatchObject({
+            show_private_setups: 0,
+            show_nsfw: 1,
+            public_bookmarks: 0,
+            public_followees: 1,
+            notif_site_enabled: 1,
+        })
+        expect(database.prepare('PRAGMA foreign_key_check').all()).toEqual([])
+    })
+
     it('preserves existing auth data and accepts provider-scoped accounts after 1.7.3 migration', () => {
         database.close()
         database = new DatabaseSync(':memory:')
@@ -363,10 +395,14 @@ describe('D1 migration', () => {
         insertUser.run('user-1', 'One', 'one', 'One', 'one@example.com')
         insertUser.run('user-2', 'Two', 'two', 'Two', 'two@example.com')
         const follow = database.prepare(
-            'INSERT INTO follow_users (user_id, target_user_id) VALUES (?, ?)',
+            'INSERT INTO user_follows (user_id, followee_id) VALUES (?, ?)',
         )
         follow.run('user-1', 'user-2')
         expect(() => follow.run('user-1', 'user-2')).toThrow(/UNIQUE constraint failed/)
+
+        const mute = database.prepare('INSERT INTO user_mutes (user_id, mutee_id) VALUES (?, ?)')
+        mute.run('user-1', 'user-2')
+        expect(() => mute.run('user-1', 'user-2')).toThrow(/UNIQUE constraint failed/)
     })
 
     it('rolls back all business writes when a batch statement fails', () => {

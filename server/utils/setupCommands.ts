@@ -112,7 +112,32 @@ export const createSetup = async (
         { collections: [EDGE_CACHE_TAGS.popularAvatars, EDGE_CACHE_TAGS.setups] },
         'setup create',
     )
-    return queryOwnerProjection(context, setupId)
+    const setup = await queryOwnerProjection(context, setupId)
+    if (setup.public)
+        runAfterResponse(
+            db.query.userFollows
+                .findMany({
+                    where: { followeeId: { eq: user.id } },
+                    columns: { userId: true },
+                })
+                .then((followers) =>
+                    Promise.all(
+                        followers.map((follower) =>
+                            createNotification(db, {
+                                userId: follower.userId,
+                                type: 'setup_created',
+                                actorId: user.id,
+                                dedupeKey: `setup:${setupId}:${follower.userId}`,
+                                payload: {
+                                    user: { username: setup.user.username, name: setup.user.name },
+                                    setup: { id: setupId, name: setup.name },
+                                },
+                            }),
+                        ),
+                    ),
+                ),
+        )
+    return setup
 }
 
 export const updateSetup = async (
