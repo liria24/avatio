@@ -53,7 +53,7 @@ export default adminSessionEventHandler(async ({ event, session, db }) => {
             })
         const workersai = createWorkersAI({ binding: aiBinding })
         const result = await generateText({
-            model: workersai('@cf/google/gemini-3.1-flash-lite'),
+            model: workersai('openai/gpt-5.6-luna'),
             messages: [
                 ...messages,
                 {
@@ -62,14 +62,6 @@ export default adminSessionEventHandler(async ({ event, session, db }) => {
                 },
             ],
             system: 'Please return only the slug as your answer.',
-            providerOptions: {
-                google: {
-                    thinkingConfig: {
-                        thinkingLevel: 'low',
-                        includeThoughts: false,
-                    },
-                },
-            },
         })
 
         generatedSlug = result.text.trim()
@@ -88,7 +80,7 @@ export default adminSessionEventHandler(async ({ event, session, db }) => {
             const targetLanguage = 'English'
 
             const translationResult = await generateText({
-                model: 'google/gemini-3.1-flash-lite-preview',
+                model: 'openai/gpt-5.6-luna',
                 messages: [
                     {
                         role: 'user',
@@ -107,14 +99,6 @@ Please return the translation in the following JSON format:
                     },
                 ],
                 system: `You are a professional translator. Translate the content to ${targetLanguage} while maintaining the markdown formatting. Return only valid JSON without any additional text or code block markers.`,
-                providerOptions: {
-                    google: {
-                        thinkingConfig: {
-                            thinkingLevel: 'medium',
-                            includeThoughts: false,
-                        },
-                    },
-                },
             })
 
             try {

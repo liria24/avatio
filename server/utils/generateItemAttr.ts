@@ -80,7 +80,7 @@ export default async (db: ReturnType<typeof useDB>, params: GenerateItemAttrPara
         })
     const workersai = createWorkersAI({ binding: aiBinding })
     const { output } = await generateText({
-        model: workersai('@cf/google/gemini-3.1-flash-lite'),
+        model: workersai('openai/gpt-5.6-luna'),
         system,
         messages,
         output: Output.object({
@@ -89,14 +89,6 @@ export default async (db: ReturnType<typeof useDB>, params: GenerateItemAttrPara
                 category: itemCategorySchema,
             }),
         }),
-        providerOptions: {
-            google: {
-                thinkingConfig: {
-                    thinkingLevel: 'low',
-                    includeThoughts: false,
-                },
-            },
-        },
     })
 
     return {
