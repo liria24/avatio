@@ -6,7 +6,9 @@ import {
     setups,
     setupTags,
 } from '@@/database/schema'
-import { eq, inArray } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
+import type { BatchItem } from 'drizzle-orm/batch'
+import { nanoid } from 'nanoid'
 import { z } from 'zod'
 
 const params = z.object({
@@ -64,104 +66,72 @@ export default authedSessionEventHandler(
                   })
                 : undefined
 
-        await db.transaction(async (tx) => {
-            if (Object.keys(updateData).length || hasRelationalChanges) {
-                updateData.updatedAt = new Date()
-                await tx.update(setups).set(updateData).where(eq(setups.id, id))
-            }
+        const setupItemData = items.map((item) => ({
+            id: nanoid(12),
+            setupId: id,
+            itemId: item.itemId,
+            category: item.category,
+            note: item.note,
+            unsupported: item.category === 'avatar' ? false : item.unsupported,
+        }))
+        const shapekeys = items.flatMap((item, index) =>
+            (item.shapekeys || []).map((shapekey) => ({
+                setupItemId: setupItemData[index]!.id,
+                name: shapekey.name,
+                value: shapekey.value,
+            })),
+        )
+        const queries: BatchItem<'sqlite'>[] = []
 
-            // アイテムの更新
-            // 既存のアイテムとシェイプキーを削除
-            await tx
-                .delete(setupItemShapekeys)
-                .where(
-                    inArray(
-                        setupItemShapekeys.setupItemId,
-                        tx
-                            .select({ id: setupItems.id })
-                            .from(setupItems)
-                            .where(eq(setupItems.setupId, id)),
-                    ),
+        if (Object.keys(updateData).length || hasRelationalChanges) {
+            updateData.updatedAt = new Date()
+            queries.push(
+                db
+                    .update(setups)
+                    .set(updateData)
+                    .where(and(eq(setups.id, id), eq(setups.userId, session.user.id)))
+                    .returning({ id: setups.id }),
+            )
+        }
+
+        queries.push(db.delete(setupItems).where(eq(setupItems.setupId, id)))
+        if (setupItemData.length) queries.push(db.insert(setupItems).values(setupItemData))
+        if (shapekeys.length) queries.push(db.insert(setupItemShapekeys).values(shapekeys))
+
+        if (images !== undefined && imageData !== undefined) {
+            queries.push(db.delete(setupImages).where(eq(setupImages.setupId, id)))
+            if (imageData.length)
+                queries.push(
+                    db
+                        .insert(setupImages)
+                        .values(imageData.map((image) => ({ setupId: id, ...image }))),
                 )
+        }
 
-            await tx.delete(setupItems).where(eq(setupItems.setupId, id))
+        if (tags !== undefined) {
+            queries.push(db.delete(setupTags).where(eq(setupTags.setupId, id)))
+            if (tags.length)
+                queries.push(
+                    db.insert(setupTags).values(tags.map((tag) => ({ setupId: id, tag: tag.tag }))),
+                )
+        }
 
-            // 新しいアイテムを挿入
-            if (items.length) {
-                const insertedItems = await tx
-                    .insert(setupItems)
-                    .values(
-                        items.map((item) => ({
-                            setupId: id,
-                            itemId: item.itemId,
-                            category: item.category,
-                            note: item.note,
-                            unsupported: item.category === 'avatar' ? false : item.unsupported,
-                        })),
-                    )
-                    .returning({
-                        id: setupItems.id,
-                        itemId: setupItems.itemId,
-                    })
-
-                // シェイプキーの挿入
-                if (items.some((item) => item.shapekeys?.length)) {
-                    const shapekeys = items.flatMap((item, index) => {
-                        const setupItemId = insertedItems[index]?.id
-                        if (!setupItemId) return []
-                        return (
-                            item.shapekeys?.map((shapekey) => ({
-                                setupItemId,
-                                name: shapekey.name,
-                                value: shapekey.value,
-                            })) || []
-                        )
-                    })
-
-                    if (shapekeys.length) await tx.insert(setupItemShapekeys).values(shapekeys)
-                }
-            }
-
-            // 画像の更新
-            if (images !== undefined && imageData !== undefined) {
-                await tx.delete(setupImages).where(eq(setupImages.setupId, id))
-
-                if (images.length)
-                    await tx.insert(setupImages).values(
-                        imageData.map((image) => ({
-                            setupId: id,
-                            ...image,
-                        })),
-                    )
-            }
-
-            // タグの更新
-            if (tags !== undefined) {
-                await tx.delete(setupTags).where(eq(setupTags.setupId, id))
-
-                if (tags.length)
-                    await tx.insert(setupTags).values(
-                        tags.map((tag) => ({
-                            setupId: id,
-                            tag: tag.tag,
-                        })),
-                    )
-            }
-
-            // 共同作者の更新
-            if (coauthors !== undefined) {
-                await tx.delete(setupCoauthors).where(eq(setupCoauthors.setupId, id))
-
-                if (coauthors.length)
-                    await tx.insert(setupCoauthors).values(
+        if (coauthors !== undefined) {
+            queries.push(db.delete(setupCoauthors).where(eq(setupCoauthors.setupId, id)))
+            if (coauthors.length)
+                queries.push(
+                    db.insert(setupCoauthors).values(
                         coauthors.map((coauthor) => ({
                             setupId: id,
                             userId: coauthor.userId,
                             note: coauthor.note,
                         })),
-                    )
-            }
-        })
+                    ),
+                )
+        }
+
+        const [updatedRows] = await executeD1Batch(db, queries)
+        if (!(updatedRows as { id: string }[] | undefined)?.[0]) throw serverError.notFound()
 
         await purgeEdgeCacheTags(
             event,

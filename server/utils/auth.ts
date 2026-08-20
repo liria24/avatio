@@ -48,9 +48,8 @@ const options = {
     },
 
     database: drizzleAdapter(dbProxy, {
-        provider: 'pg',
+        provider: 'sqlite',
         schema,
-        schemaName: 'user',
         usePlural: true,
     }),
 

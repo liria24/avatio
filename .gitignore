@@ -24,5 +24,4 @@ logs
 !.env.example
 .env*.local
 
-drizzle
 .wrangler

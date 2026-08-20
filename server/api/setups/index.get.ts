@@ -44,7 +44,7 @@ export default sessionEventHandler(async ({ event, session, db }) => {
                 OR: [{ banned: { eq: false } }, { banned: { isNull: true } }],
                 username: username ? { eq: username } : undefined,
             },
-            name: q ? { ilike: `%${q}%` } : undefined,
+            name: q ? { like: `%${q}%` } : undefined,
             items: {
                 itemId: itemId ? { in: Array.isArray(itemId) ? itemId : [itemId] } : undefined,
             },

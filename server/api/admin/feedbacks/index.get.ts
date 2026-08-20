@@ -15,7 +15,7 @@ export default adminSessionEventHandler<Feedback[]>(async ({ db }) => {
         limit,
         where: {
             fingerprint: fingerprint ? { eq: fingerprint } : undefined,
-            comment: q ? { ilike: `%${q}%` } : undefined,
+            comment: q ? { like: `%${q}%` } : undefined,
             isClosed:
                 status === 'open' ? { eq: false } : status === 'closed' ? { eq: true } : undefined,
         },

@@ -11,8 +11,7 @@ export default async (db: ReturnType<typeof useDB>, body: Body): Promise<{ id: s
     const log = logger('createNotification')
 
     try {
-        const { userId, type, payload, actionUrl, banner } = body
-
+        const { userId, type, payload, actionUrl, banner, dedupeKey } = body
         const [result] = await db
             .insert(notifications)
             .values({
@@ -21,7 +20,9 @@ export default async (db: ReturnType<typeof useDB>, body: Body): Promise<{ id: s
                 payload: destr(payload),
                 actionUrl,
                 banner,
+                dedupeKey,
             })
+            .onConflictDoNothing()
             .returning({ id: notifications.id })
 
         return result || null

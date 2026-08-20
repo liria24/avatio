@@ -31,7 +31,7 @@ EC サイトや GitHub で配布されているデジタル商品の情報から
 1. アイテムの名前と説明をもとに、最も適切なカテゴリを選択します。
 2. アイテムの名前と説明からカテゴリが明確に判断できない場合は、originalCategory を参照してください。
 3. カテゴリは以下から選択してください。
-    - ${itemCategory.enumValues.join(', ')}
+    - ${itemCategory.join(', ')}
 
 ## 注意
 - niceName は、大文字小文字やひらがなカタカナを確実に維持してください。
@@ -80,7 +80,7 @@ export default async (db: ReturnType<typeof useDB>, params: GenerateItemAttrPara
         })
     const workersai = createWorkersAI({ binding: aiBinding })
     const { output } = await generateText({
-        model: workersai('@cf/google/gemini-3.1-flash-lite'),
+        model: workersai('openai/gpt-5.6-luna'),
         system,
         messages,
         output: Output.object({
@@ -89,14 +89,6 @@ export default async (db: ReturnType<typeof useDB>, params: GenerateItemAttrPara
                 category: itemCategorySchema,
             }),
         }),
-        providerOptions: {
-            google: {
-                thinkingConfig: {
-                    thinkingLevel: 'low',
-                    includeThoughts: false,
-                },
-            },
-        },
     })
 
     return {

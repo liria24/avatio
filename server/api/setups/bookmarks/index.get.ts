@@ -42,7 +42,7 @@ export default authedSessionEventHandler<PaginationResponse<Bookmark[]>>(
                     hidAt: { isNull: true },
                     id: setupId ? { in: Array.isArray(setupId) ? setupId : [setupId] } : undefined,
                     userId: userId ? { eq: userId } : undefined,
-                    name: q ? { ilike: `%${q}%` } : undefined,
+                    name: q ? { like: `%${q}%` } : undefined,
                     tags: tag ? { tag: { in: Array.isArray(tag) ? tag : [tag] } } : undefined,
                 },
             },

@@ -67,7 +67,10 @@ export const handleItemRevalidationMessage = async (
     const db = useDB()
     let persistedItemId = message.id
     try {
-        const item = await getItem(undefined, db, message.id, message.platform, cache)
+        const item = await getItem(undefined, db, message.id, message.platform, {
+            allowExternalResolution: true,
+            cache,
+        })
         persistedItemId = item.id
     } catch (error) {
         if (

@@ -64,3 +64,19 @@ export const serverError = {
         })
     },
 }
+
+export const isDatabaseUniqueConflict = (error: unknown) => {
+    let current: unknown = error
+    for (let depth = 0; depth < 4 && current; depth += 1) {
+        const message =
+            current instanceof Error ? current.message : typeof current === 'string' ? current : ''
+        if (
+            message.includes('UNIQUE constraint failed') ||
+            message.includes('SQLITE_CONSTRAINT_UNIQUE') ||
+            message.includes('duplicate key value violates unique constraint')
+        )
+            return true
+        current = current instanceof Error ? current.cause : undefined
+    }
+    return false
+}

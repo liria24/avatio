@@ -1,14 +1,11 @@
 import { drizzleAdapter } from '@better-auth/drizzle-adapter/relations-v2'
-import { drizzle } from 'drizzle-orm/neon-serverless'
 import { describe, expect, it, vi } from 'vitest'
 
-import { relations } from '../../../database/relations'
 import * as schema from '../../../database/schema'
 import { authSchemaOptions } from '../../../server/utils/authSchemaOptions'
 
 describe('Better Auth relations', () => {
     it('falls back to separate session and user queries on RC.4', async () => {
-        const db = drizzle.mock({ relations })
         const rows = new Map([
             [
                 schema.sessions,
@@ -36,11 +33,9 @@ describe('Better Auth relations', () => {
                 where: async () => rows.get(table) ?? [],
             }),
         }))
-        db.select = select as typeof db.select
-        const adapter = drizzleAdapter(db, {
-            provider: 'pg',
+        const adapter = drizzleAdapter({ select } as never, {
+            provider: 'sqlite',
             schema,
-            schemaName: 'user',
             usePlural: true,
         })(authSchemaOptions)
 

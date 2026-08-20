@@ -1,5 +1,6 @@
 import { useNuxt } from '@nuxt/kit'
 import type { NitroRouteConfig } from 'nitropack'
+import { fileURLToPath } from 'node:url'
 import { defineOrganization } from 'nuxt-schema-org/schema'
 import { withLeadingSlash } from 'ufo'
 
@@ -173,10 +174,23 @@ export default defineNuxtConfig({
 
     nitro: {
         preset: 'cloudflare-module',
+        // Workerd's console.createTask getter throws when Unenv and Hookable probe it at import time.
+        alias: {
+            'node:console': fileURLToPath(new URL('./server/shims/node-console.ts', import.meta.url)),
+        },
+        replace: {
+            'console.createTask': 'undefined',
+        },
+        prerender: {
+            // Only prerender routes explicitly marked in routeRules. Crawling dynamic pages
+            // would execute their API data loaders before Cloudflare bindings exist.
+            crawlLinks: false,
+        },
         cloudflare: {
             deployConfig: true,
             wrangler: {
                 name: 'avatio',
+                preview_urls: true,
                 ...workersCacheConfig,
                 compatibility_flags: ['no_handle_cross_request_promise_resolution'],
                 observability: {
@@ -294,9 +308,6 @@ export default defineNuxtConfig({
         },
         booth: {
             proxyUrl: process.env.NUXT_BOOTH_PROXY_URL,
-        },
-        neon: {
-            databaseUrl: process.env.NEON_DATABASE_URL,
         },
         email: {
             fromAddress: emailFromAddress,

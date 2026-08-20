@@ -32,13 +32,13 @@ import {
 import { createInsertSchema, createSelectSchema, createUpdateSchema } from 'drizzle-orm/zod'
 import { z } from 'zod'
 
-export const userBadgeSchema = z.enum(userBadge.enumValues)
+export const userBadgeSchema = z.enum(userBadge)
 export type UserBadge = z.infer<typeof userBadgeSchema>
 
-export const platformSchema = z.enum(platform.enumValues)
+export const platformSchema = z.enum(platform)
 export type Platform = z.infer<typeof platformSchema>
 
-export const itemCategorySchema = z.enum(itemCategory.enumValues)
+export const itemCategorySchema = z.enum(itemCategory)
 export type ItemCategory = z.infer<typeof itemCategorySchema>
 
 export const shopsSelectSchema = createSelectSchema(shops)
@@ -73,7 +73,9 @@ export const userSettingsUpdateSchema = createUpdateSchema(userSettings).omit({
     updatedAt: true,
 })
 
-export const usersSelectSchema = createSelectSchema(users)
+export const usersSelectSchema = createSelectSchema(users, {
+    links: () => z.string().array().nullable(),
+})
 export const usersUpdateSchema = createUpdateSchema(users, {
     username: (schema) =>
         schema
@@ -85,7 +87,7 @@ export const usersUpdateSchema = createUpdateSchema(users, {
             .min(1, 'ユーザー名は 1 文字以上必要です。')
             .max(100, 'ユーザー名は最大 100 文字です。'),
     bio: (schema) => schema.max(300, 'bio は最大 300 文字です。').optional(),
-    links: (schema) => schema.max(8, 'リンクは最大 8 個です。').optional(),
+    links: () => z.string().array().max(8, 'リンクは最大 8 個です。').nullable().optional(),
 })
 export const usersPublicSchema = usersSelectSchema
     .pick({
@@ -189,7 +191,9 @@ export const setupTagsInsertSchema = createInsertSchema(setupTags, {
         schema.min(1, 'タグは 1 文字以上必要です。').max(32, 'タグは最大 32 文字です。'),
 })
 
-export const setupImagesSelectSchema = createSelectSchema(setupImages)
+export const setupImagesSelectSchema = createSelectSchema(setupImages, {
+    themeColors: () => z.string().array().nullable(),
+})
 export const setupImagesPublicSchema = setupImagesSelectSchema
     .pick({
         objectKey: true,
@@ -491,10 +495,10 @@ export const userReportsInsertSchema = createInsertSchema(userReports, {
     .refine((data) => data.spam || data.hate || data.infringe || data.badImage || data.other)
 export const userReportsUpdateSchema = createUpdateSchema(userReports)
 
-export const auditActionTypeSchema = z.enum(auditActionType.enumValues)
+export const auditActionTypeSchema = z.enum(auditActionType)
 export type AuditActionType = z.infer<typeof auditActionTypeSchema>
 
-export const auditTargetTypeSchema = z.enum(auditTargetType.enumValues)
+export const auditTargetTypeSchema = z.enum(auditTargetType)
 
 export const auditLogsSelectSchema = createSelectSchema(auditLogs)
 export const auditLogsInsertSchema = createInsertSchema(auditLogs)
@@ -528,7 +532,7 @@ export const emailsPublicSchema = emailsSelectSchema.pick({
 export type Email = z.infer<typeof emailsPublicSchema>
 export type EmailAttachment = EmailAttachmentMetadata
 
-export const notificationTypeSchema = z.enum(notificationType.enumValues)
+export const notificationTypeSchema = z.enum(notificationType)
 export type NotificationType = z.infer<typeof notificationTypeSchema>
 
 export const notificationsSelectSchema = createSelectSchema(notifications)

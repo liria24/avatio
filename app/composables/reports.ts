@@ -25,7 +25,7 @@ type ReportState = {
 
 const useReport = (
     subject: 'item' | 'setup' | 'user',
-    submitReport: (state: ReportState) => Promise<unknown>,
+    submitReport: (state: ReportState, idempotencyKey: string) => Promise<unknown>,
 ) => {
     const { t } = useI18n()
     const toast = useToast()
@@ -34,11 +34,12 @@ const useReport = (
         reportReason: [],
         comment: '',
     })
+    let idempotencyKey = crypto.randomUUID()
 
     const submit = async () => {
         try {
             await schema.parseAsync(state)
-            await submitReport(state)
+            await submitReport(state, idempotencyKey)
 
             toast.add({
                 icon: 'mingcute:check-line',
@@ -49,6 +50,7 @@ const useReport = (
 
             state.reportReason = []
             state.comment = ''
+            idempotencyKey = crypto.randomUUID()
             return true
         } catch (error) {
             console.error(`Error submitting ${subject} report:`, error)
@@ -73,9 +75,10 @@ const useReport = (
 }
 
 export const useItemReport = (itemId: Item['id']) =>
-    useReport('item', async (state) => {
+    useReport('item', async (state, idempotencyKey) => {
         await $fetch('/api/reports/item', {
             method: 'POST',
+            headers: { 'Idempotency-Key': idempotencyKey },
             body: {
                 itemId,
                 nameError: state.reportReason.includes('nameError'),
@@ -86,9 +89,15 @@ export const useItemReport = (itemId: Item['id']) =>
         })
     })
 
-const submitContentReport = (subject: 'setup' | 'user', id: string, state: ReportState) =>
+const submitContentReport = (
+    subject: 'setup' | 'user',
+    id: string,
+    state: ReportState,
+    idempotencyKey: string,
+) =>
     $fetch(`/api/reports/${subject}`, {
         method: 'POST',
+        headers: { 'Idempotency-Key': idempotencyKey },
         body: {
             ...(subject === 'setup' ? { setupId: id } : { reporteeId: id }),
             spam: state.reportReason.includes('spam'),
@@ -101,7 +110,11 @@ const submitContentReport = (subject: 'setup' | 'user', id: string, state: Repor
     })
 
 export const useSetupReport = (setupId: Setup['id']) =>
-    useReport('setup', (state) => submitContentReport('setup', setupId, state))
+    useReport('setup', (state, idempotencyKey) =>
+        submitContentReport('setup', setupId, state, idempotencyKey),
+    )
 
 export const useUserReport = (userId: User['id']) =>
-    useReport('user', (state) => submitContentReport('user', userId, state))
+    useReport('user', (state, idempotencyKey) =>
+        submitContentReport('user', userId, state, idempotencyKey),
+    )

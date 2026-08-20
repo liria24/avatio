@@ -1,0 +1,14 @@
+{
+    "$schema": "./node_modules/wrangler/config-schema.json",
+    "name": "avatio",
+    "compatibility_date": "2026-05-26",
+    "d1_databases": [
+        {
+            "binding": "APP_DB",
+            "database_name": "avatio",
+            "database_id": "3e7627f7-08e9-4875-875d-073c9ff0815e",
+            "migrations_dir": "drizzle",
+            "migrations_pattern": "drizzle/*/migration.sql",
+        },
+    ],
+}

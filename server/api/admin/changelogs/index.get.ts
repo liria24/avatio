@@ -6,7 +6,7 @@ const query = z.object({
     sort: z.enum(['asc', 'desc']).optional().default('desc'),
     userId: z.string().nullable().optional(),
     limit: z.coerce.number().min(1).max(API_LIMIT_MAX).optional(),
-    lang: z.enum(locales.enumValues).optional().default('ja'),
+    lang: z.enum(locales).optional().default('ja'),
     content: z.stringbool().optional().default(false),
 })
 
@@ -19,7 +19,7 @@ export default adminSessionEventHandler(async ({ db }) => {
             createdAt: sort,
         },
         where: {
-            title: q ? { ilike: `%${q}%` } : undefined,
+            title: q ? { like: `%${q}%` } : undefined,
             authors: userId ? { userId: { eq: userId || undefined } } : undefined,
         },
         columns: {

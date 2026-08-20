@@ -80,7 +80,9 @@ const unverify = async (shopId: string) => {
 watch(modalVerify, async (value) => {
     if (!value) return (code.value = null)
     try {
-        const data = await $fetch<{ code: string }>('/api/shop-verification/code')
+        const data = await $fetch<{ code: string }>('/api/shop-verification/code', {
+            method: 'POST',
+        })
         code.value = data.code
     } catch (error) {
         console.error('Error generating verification code:', error)

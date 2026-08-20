@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { locales } from '~~/database/schema'
 
 const query = z.object({
-    lang: z.enum(locales.enumValues).optional().default('ja'),
+    lang: z.enum(locales).optional().default('ja'),
 })
 
 export default promiseEventHandler(async ({ event, db }) => {

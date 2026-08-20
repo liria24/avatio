@@ -34,7 +34,6 @@ VRSNSユーザー向けのアバターセットアップ共有サービス。<br
 [![Nuxt badge][badge-nuxt]][nuxt]
 [![Tailwind badge][badge-tailwind]][tailwind]
 [![Better Auth badge][badge-better-auth]][better-auth]
-[![Neon badge][badge-neon]][neon]
 [![Drizzle ORM badge][badge-drizzle]][drizzle]
 [![Oxc badge][badge-oxc]][oxc]
 
@@ -79,10 +78,8 @@ Avatio は、ピクシブ株式会社 および BOOTH とは関係ありませ�
 [contributors]: https://github.com/liria24/avatio/graphs/contributors
 [contributors-image]: https://contrib.rocks/image?repo=liria24/avatio&anon=1
 [better-auth]: https://better-auth.com
-[neon]: https://neon.tech
 [drizzle]: https://orm.drizzle.team
 [badge-better-auth]: https://svgl-badge.vercel.app/api/Authentication/Better%20Auth?theme=dark
-[badge-neon]: https://svgl-badge.vercel.app/api/Database/Neon?theme=dark
 [badge-drizzle]: https://svgl-badge.vercel.app/api/Database/Drizzle%20ORM?theme=dark
 [oxc]: https://oxc.rs
 [badge-oxc]: https://svgl-badge.vercel.app/api/Devtool/Oxc?theme=dark

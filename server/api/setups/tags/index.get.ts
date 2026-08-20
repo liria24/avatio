@@ -1,4 +1,4 @@
-import { asc, desc, ilike, sql } from 'drizzle-orm'
+import { asc, desc, like, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { setupTags } from '~~/database/schema'
 
@@ -29,7 +29,7 @@ export default promiseEventHandler(async ({ event, db }) => {
         .groupBy(setupTags.tag)
         .limit(limit)
         .orderBy(sortFn(orderByFn))
-        .where(q ? ilike(setupTags.tag, `%${q}%`) : undefined)
+        .where(q ? like(setupTags.tag, `%${q}%`) : undefined)
 
     applyPublicEdgeCache(event, [EDGE_CACHE_TAGS.setups])
     return data

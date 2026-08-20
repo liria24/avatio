@@ -1,5 +1,5 @@
 import { users } from '@@/database/schema'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { z } from 'zod'
 
 const params = z.object({
@@ -42,7 +42,7 @@ export default authedSessionEventHandler(async ({ event, session, db }) => {
         if (!isUsernameAvailable) throw serverError.badRequest()
     }
 
-    await db
+    const [updated] = await db
         .update(users)
         .set({
             updatedAt: new Date(),
@@ -52,7 +52,13 @@ export default authedSessionEventHandler(async ({ event, session, db }) => {
             bio,
             links,
         })
-        .where(eq(users.id, data.id))
+        .where(
+            session.user.role === 'admin'
+                ? eq(users.id, data.id)
+                : and(eq(users.id, data.id), eq(users.id, session.user.id)),
+        )
+        .returning({ id: users.id })
+    if (!updated) throw serverError.notFound()
 
     log.success(`User ${username} updated successfully`)
 

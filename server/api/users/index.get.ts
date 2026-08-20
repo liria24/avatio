@@ -16,7 +16,7 @@ export default promiseEventHandler<User[]>(async ({ event, db }) => {
         where: {
             banned: { OR: [{ eq: false }, { isNull: true }] },
             setups: true,
-            OR: q ? [{ username: { ilike: `%${q}%` } }, { name: { ilike: `%${q}%` } }] : undefined,
+            OR: q ? [{ username: { like: `%${q}%` } }, { name: { like: `%${q}%` } }] : undefined,
         },
         columns: {
             id: true,

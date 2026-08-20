@@ -1,7 +1,6 @@
 const maintenanceLog = logger('maintenance')
 
 const ignoredMaintenancePaths = [
-    '/api',
     '/_nuxt',
     '/__nuxt',
     '/favicon.ico',
@@ -15,17 +14,29 @@ const ignoredMaintenancePaths = [
 
 export default defineEventHandler(async (event) => {
     const path = normalizeMaintenancePath(event.path)
+    if (path === '/api/admin/flags') return
     if (ignoredMaintenancePaths.some((prefix) => path.startsWith(prefix))) return
 
+    let isMaintenance: boolean
     try {
-        const isMaintenance = await getMaintenanceFlag()
-
-        if (isMaintenance && !isMaintenancePagePath(path))
-            return sendRedirect(event, getMaintenancePagePath(path), 307)
-
-        if (!isMaintenance && isMaintenancePagePath(path))
-            return sendRedirect(event, getMaintenanceExitPath(path), 307)
+        isMaintenance = await getMaintenanceFlag()
     } catch (error) {
         maintenanceLog.error('Failed to resolve maintenance flag:', error)
+        return
     }
+
+    if (isMaintenance && path.startsWith('/api')) {
+        setResponseHeader(event, 'Retry-After', 60)
+        throw createError({
+            statusCode: 503,
+            statusMessage: 'Service Unavailable',
+            message: 'The service is temporarily unavailable during maintenance.',
+        })
+    }
+
+    if (isMaintenance && !isMaintenancePagePath(path))
+        return sendRedirect(event, getMaintenancePagePath(path), 307)
+
+    if (!isMaintenance && isMaintenancePagePath(path))
+        return sendRedirect(event, getMaintenanceExitPath(path), 307)
 })

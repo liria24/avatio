@@ -1,6 +1,7 @@
 import { items, shops } from '@@/database/schema'
 import type { CacheContext } from '@cloudflare/workers-types'
 import { eq } from 'drizzle-orm'
+import type { BatchItem } from 'drizzle-orm/batch'
 import type { H3Event } from 'h3'
 import { joinURL, withHttps } from 'ufo'
 
@@ -29,6 +30,12 @@ interface GithubReadmeResponse {
     markdown: string
 }
 
+interface GetItemOptions {
+    allowExternalResolution?: boolean
+    beforeExternalResolution?: () => Promise<void>
+    cache?: CacheContext
+}
+
 const getGithubResource = <T>(repo: string, path = ''): Promise<T | null> => {
     if (!/^[\w-]+\/[\w.-]+$/.test(repo)) return Promise.resolve(null)
     return $fetch<T>(`${UNGH_URL}/repos/${repo}${path}`).catch(() => null)
@@ -39,8 +46,9 @@ export default async (
     db: ReturnType<typeof useDB>,
     id: string,
     provider: Platform | undefined,
-    cache?: CacheContext,
+    options: GetItemOptions = {},
 ): Promise<Item> => {
+    const { cache } = options
     const persistence = {
         defer: Boolean(event),
         purge: event
@@ -54,6 +62,13 @@ export default async (
                     )
               : () => Promise.resolve(),
     }
+
+    if (!options.allowExternalResolution) {
+        const { cachedItem } = await resolveItemCache(db, id, provider, false)
+        if (cachedItem) return cachedItem
+        throw serverError.notFound({ responseMessage: 'Item not found or not allowed' })
+    }
+
     const { forceUpdateItem, allowedBoothCategoryId, specificItemCategories } = await getAppFlags()
 
     const { fresh, cachedItem } = await resolveItemCache(db, id, provider, forceUpdateItem)
@@ -62,6 +77,8 @@ export default async (
     const resolvedProvider = provider ?? cachedItem?.platform
     if (!resolvedProvider)
         throw serverError.notFound({ responseMessage: 'Item not found or not allowed' })
+
+    await options.beforeExternalResolution?.()
 
     if (resolvedProvider === 'booth') {
         const config = event ? useRuntimeConfig(event) : useRuntimeConfig()
@@ -252,19 +269,20 @@ export const persistItem = async (
     const fullItem = { ...item, category }
 
     const persist = async () => {
-        await db.transaction(async (tx) => {
-            if (idMigration)
-                await tx
-                    .update(items)
-                    .set({ id: idMigration.to })
-                    .where(eq(items.id, idMigration.from))
+        const queries: BatchItem<'sqlite'>[] = []
+        if (idMigration)
+            queries.push(
+                db.update(items).set({ id: idMigration.to }).where(eq(items.id, idMigration.from)),
+            )
 
-            await tx.insert(shops).values(shop).onConflictDoUpdate({ target: shops.id, set: shop })
-            await tx
+        queries.push(
+            db.insert(shops).values(shop).onConflictDoUpdate({ target: shops.id, set: shop }),
+            db
                 .insert(items)
                 .values(fullItem)
-                .onConflictDoUpdate({ target: items.id, set: fullItem })
-        })
+                .onConflictDoUpdate({ target: items.id, set: fullItem }),
+        )
+        await executeD1Batch(db, queries)
         await options.purge()
 
         if (!cachedItem) {

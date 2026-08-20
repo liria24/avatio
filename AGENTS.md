@@ -24,7 +24,11 @@ Compact instruction for OpenCode sessions. If a fact is obvious from filenames, 
 | Unit tests only                    | `bun run test:unit`                             |
 | Nuxt tests only                    | `bun run test:nuxt`                             |
 | Watch tests                        | `bun run test:watch`                            |
-| Generate Drizzle migrations        | `bun run drizzle:generate`                      |
+| Generate Drizzle migrations        | `bun run db:generate`                           |
+| Apply local D1 migrations          | `bun run db:migrate:local`                      |
+| Apply remote D1 migrations         | `bun run db:migrate:remote`                     |
+| Deploy after remote migrations     | `bun run deploy`                                |
+| Upload Workers Builds preview      | `bun run deploy:preview`                        |
 | Generate Better Auth schema        | `bunx auth@rc generate --config auth.config.ts` |
 | Bump version + commit + tag + push | `bun run release`                               |
 
@@ -40,7 +44,7 @@ For deployment-related changes, also run **`bun run build`**. In this repo, the 
 - **Structure:**
   - `app/` — Vue frontend (pages, layouts, composables, components).
   - `server/` — Nitro API routes and server middleware.
-  - `database/schema.ts` — Drizzle ORM schema (PostgreSQL via Neon).
+  - `database/schema.ts` — Drizzle ORM schema (SQLite via Cloudflare D1).
   - `shared/` — Utilities shared between client and server.
   - `content/` — `@nuxt/content` pages, split by `en/` and `ja/`.
 
@@ -61,22 +65,25 @@ For deployment-related changes, also run **`bun run build`**. In this repo, the 
 
 ## Database (Drizzle)
 
-- **Dialect:** PostgreSQL (Neon).
+- **Dialect:** SQLite (Cloudflare D1), bound as `APP_DB`.
 - Schema file: `database/schema.ts`.
 - Config: `drizzle.config.ts`.
 - Migration output: `./drizzle`.
-- Schema namespaces: `public`, `user`, `feedback`, `admin`.
 - Naming convention: `snakeCase` (Drizzle `snakeCase` helper is used).
-- Do not edit generated migration SQL by hand; regenerate with `bun run drizzle:generate`.
+- Migrations use Drizzle v1 nested output under `./drizzle`.
+- Do not edit generated migration SQL by hand; regenerate with `bun run db:generate`.
+- `bun run dev` applies local migrations before starting Nuxt and persists SQLite data under `.wrangler/state`.
 
 ## Auth
 
 - Uses **Better Auth** with Drizzle adapter (`@better-auth/drizzle-adapter`).
-- Auth tables live in the `user` schema (`users`, `sessions`, `accounts`, `verifications`, etc.).
+- Better Auth uses its SQLite provider; auth tables share the D1 database with app tables.
 
 ## Deployment & infra quirks
 
 - **Cloudflare KV HTTP** drives app flags and maintenance mode (`server/middleware/maintenance.ts`). Key: `isMaintenance`.
+- Root `wrangler.jsonc` is the minimal D1 CLI config. Nuxt generates `.output/server/wrangler.json` for Worker deploys; do not use the generated file for pre-build D1 migrations.
+- Workers Builds runs `bun run deploy:preview` for non-production branches; only `development` applies remote D1 migrations before uploading its preview version.
 - **Workers Cron Triggers**:
   - `/api/admin/job/report` — daily at 22:00
   - `/api/admin/job/cleanup` — manual/admin only
@@ -109,8 +116,8 @@ Wrap every API handler with the appropriate factory from `server/utils/eventHand
 ### Database queries
 
 - Prefer Drizzle ORM query builder (`db.query.*`, `db.select()`, `db.insert()`, etc.) over raw `sql` template literals. Use `sql` only when the query builder cannot express the logic.
-- For multi-statement writes, wrap in `db.transaction(async (tx) => { ... })` and use `tx.*` (not `db.*`) for all operations inside the callback.
-- Group independent parallel inserts inside a transaction with `Promise.all([...].filter(Boolean))`.
+- D1 does not expose Drizzle callback transactions. Build all required statements first and pass them in order to `executeD1Batch(db, queries)` so the batch commits or rolls back atomically.
+- Generate parent and child IDs in the application before a batch when later statements need those IDs.
 
 ## Security
 
