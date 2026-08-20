@@ -44,7 +44,6 @@ const dominantColor = computed(() => firstImage.value?.themeColors?.[0] || '')
                 fit="cover"
                 placeholder
                 placeholder-class="is-loading opacity-60"
-                preload
                 class="size-full max-h-64 rounded-lg object-cover transition-all ease-in-out [clip-path:inset(0_round_var(--radius-lg))] sm:max-h-105 [&.is-loading]:blur-xl"
             />
             <div
