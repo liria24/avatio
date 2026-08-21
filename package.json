@@ -29,7 +29,6 @@
         "db:generate": "drizzle-kit generate",
         "db:migrate:local": "wrangler d1 migrations apply avatio --local",
         "db:migrate:remote": "wrangler d1 migrations apply avatio --remote",
-        "db:import:neon": "bun scripts/database/neon-to-d1.ts",
         "deploy": "bun run db:migrate:remote && wrangler deploy --config .output/server/wrangler.json",
         "deploy:preview": "bun scripts/deploy-preview.ts",
         "drizzle:generate": "bun run db:generate",
