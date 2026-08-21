@@ -13,7 +13,7 @@ const { isMobile } = useDevice()
 <template>
     <div class="flex w-full flex-col gap-3 self-center">
         <Icon
-            v-if="loading"
+            v-if="loading && !setups?.length"
             name="svg-spinners:ring-resize"
             size="24"
             class="mt-4 self-center bg-zinc-500"

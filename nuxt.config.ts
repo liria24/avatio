@@ -1,6 +1,7 @@
+import { fileURLToPath } from 'node:url'
+
 import { useNuxt } from '@nuxt/kit'
 import type { NitroRouteConfig } from 'nitropack'
-import { fileURLToPath } from 'node:url'
 import { defineOrganization } from 'nuxt-schema-org/schema'
 import { withLeadingSlash } from 'ufo'
 
@@ -116,11 +117,9 @@ const workersCacheConfig = {
 export default defineNuxtConfig({
     compatibilityDate: '2026-05-26',
 
-    future: {
-        compatibilityVersion: 5,
-    },
+    future: { compatibilityVersion: 5 },
 
-    devtools: { enabled: true, timeline: { enabled: true } },
+    devtools: { timeline: { enabled: true } },
 
     hooks: {
         'modules:done': normalizeRuntimeConfigForVitest,
@@ -154,11 +153,6 @@ export default defineNuxtConfig({
     css: ['~/assets/css/main.css'],
 
     vite: {
-        vue: {
-            features: {
-                optionsAPI: false,
-            },
-        },
         optimizeDeps: {
             include: [
                 '@nuxt/ui > prosemirror-state',
@@ -176,7 +170,9 @@ export default defineNuxtConfig({
         preset: 'cloudflare-module',
         // Workerd's console.createTask getter throws when Unenv and Hookable probe it at import time.
         alias: {
-            'node:console': fileURLToPath(new URL('./server/shims/node-console.ts', import.meta.url)),
+            'node:console': fileURLToPath(
+                new URL('./server/shims/node-console.ts', import.meta.url),
+            ),
         },
         replace: {
             'console.createTask': 'undefined',
@@ -329,8 +325,6 @@ export default defineNuxtConfig({
             htmlAttrs: { lang: 'ja', prefix: 'og: https://ogp.me/ns#' },
             title,
             meta: [
-                { charset: 'utf-8' },
-                { name: 'viewport', content: 'width=device-width, initial-scale=1' },
                 { property: 'og:site_name', content: title },
                 { property: 'og:type', content: 'website' },
                 { property: 'og:url', content: baseUrl },
@@ -409,11 +403,6 @@ export default defineNuxtConfig({
                 icon: 'twemoji:flag-japan',
             },
         ],
-        detectBrowserLanguage: {
-            redirectOn: 'root',
-            useCookie: true,
-            cookieKey: 'i18n_redirected',
-        },
         compilation: {
             strictMessage: false,
         },
@@ -598,18 +587,6 @@ export default defineNuxtConfig({
         nitro: {
             scheduledTasks: {
                 '0 22 * * *': ['job:report'],
-            },
-        },
-
-        scripts: {
-            assets: {
-                fallbackOnSrcOnBundleFail: true,
-            },
-            registry: {
-                umamiAnalytics: {
-                    websiteId: process.env.UMAMI_WEBSITE_ID,
-                    trigger: 'onNuxtReady',
-                },
             },
         },
     },
