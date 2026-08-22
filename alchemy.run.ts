@@ -279,7 +279,10 @@ export default Alchemy.Stack(
 
         if (names.production)
             yield* Cloudflare.Rum.Site('WebAnalytics', {
-                host: names.site,
+                zoneTag: 'dae79da2dd3dda74ec53220f91811a1d',
+                autoInstall: true,
+                enabled: true,
+                lite: true,
             })
 
         return {
