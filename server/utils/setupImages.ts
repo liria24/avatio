@@ -1,7 +1,6 @@
 import { setupImages } from '@@/database/schema'
 import type { SetupImageMetadata } from '@@/shared/types/database'
 import { and, eq, inArray } from 'drizzle-orm'
-import { withHttps } from 'ufo'
 
 interface ResolveSetupImageDataOptions {
     userId: string
@@ -16,7 +15,7 @@ export const withSetupImageUrls = async <T extends { objectKey: string }>(
     await Promise.all(
         images.map(async (image) => ({
             ...image,
-            url: withHttps(await storage.url(image.objectKey)),
+            url: await storage.url(image.objectKey),
         })),
     )
 

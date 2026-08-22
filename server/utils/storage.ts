@@ -2,12 +2,10 @@ import { Files } from 'files-sdk'
 import { r2 } from 'files-sdk/r2'
 import type { R2Bucket } from 'files-sdk/r2'
 
-import type { RuntimeEnv } from './runtimeEnv'
-
 type StorageClient = InstanceType<typeof Files>
 
-const requireEnv = (name: keyof RuntimeEnv) => {
-    const value = getRuntimeEnv()[name]
+const requireEnv = (name: 'R2_PUBLIC_BASE_URL' | 'SELF_URL') => {
+    const value = getRuntimeEnvString(name)
     if (typeof value !== 'string' || !value)
         throw new Error(
             `Missing required environment variable: ${name}. Ensure it is set before starting the server.`,
@@ -31,7 +29,10 @@ const getStorage = () => {
     storageClient = new Files({
         adapter: r2({
             binding,
-            publicBaseUrl: requireEnv('R2_PUBLIC_BASE_URL'),
+            publicBaseUrl:
+                import.meta.dev || process.env.NODE_ENV === 'test'
+                    ? `${requireEnv('SELF_URL')}/api/_local/r2`
+                    : requireEnv('R2_PUBLIC_BASE_URL'),
         }),
     })
     return storageClient

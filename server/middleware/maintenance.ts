@@ -1,5 +1,3 @@
-import { getMaintenanceFlag } from '../utils/appConfig'
-
 const maintenanceLog = logger('maintenance')
 
 const ignoredMaintenancePaths = [

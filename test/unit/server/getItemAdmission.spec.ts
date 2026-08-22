@@ -49,7 +49,7 @@ beforeEach(() => {
     findFirst.mockReset()
     getForceUpdateItemFlag.mockReset().mockResolvedValue(false)
     getItemAdmission.mockReset().mockResolvedValue({
-        allowedBoothCategories: new Set<number>(),
+        allowedBoothCategories: [],
         override: undefined,
     })
     externalFetch.mockReset()

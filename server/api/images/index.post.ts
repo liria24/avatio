@@ -1,5 +1,4 @@
 import { nanoid } from 'nanoid'
-import { withHttps } from 'ufo'
 import { z } from 'zod'
 
 const log = logger('/api/images:POST')
@@ -74,7 +73,7 @@ export default authedSessionEventHandler(
             throw serverError.internalServerError()
         }
 
-        const url = withHttps(await storage.url(objectKey))
+        const url = await storage.url(objectKey)
         await createAuditLog(db, {
             userId: session.user.id,
             action: 'image_upload_complete',

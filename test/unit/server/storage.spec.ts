@@ -23,10 +23,23 @@ describe('storage', () => {
         const { storage } = await loadStorage({
             R2: binding,
             R2_PUBLIC_BASE_URL: 'https://files.example.com',
+            SELF_URL: 'http://127.0.0.1:1337',
         })
 
         expect(storage.adapter.name).toBe('r2-binding')
         expect(storage.raw).toBe(binding)
+    })
+
+    it('uses the injected Alchemy self URL for local object URLs', async () => {
+        const { storage } = await loadStorage({
+            R2: {} as R2Bucket,
+            R2_PUBLIC_BASE_URL: 'https://files.example.com',
+            SELF_URL: 'http://127.0.0.1:1467',
+        })
+
+        await expect(storage.url('uploads/avatar.png')).resolves.toBe(
+            'http://127.0.0.1:1467/api/_local/r2/uploads/avatar.png',
+        )
     })
 
     it('fails closed when the R2 binding is unavailable', async () => {

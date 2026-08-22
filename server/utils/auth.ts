@@ -5,7 +5,6 @@ import { customSession } from 'better-auth/plugins'
 import type { H3Event } from 'h3'
 import { nanoid } from 'nanoid'
 import { useEvent, useStorage } from 'nitropack/runtime'
-import { withHttps } from 'ufo'
 
 const JPG_FILENAME_LENGTH = 16
 const authLog = logger('better-auth')
@@ -118,7 +117,7 @@ const createAuth = (event?: H3Event) => {
                                         contentType: 'image/jpeg',
                                     },
                                 )
-                                image = withHttps(await storage.url(`avatar/${imageId}.jpg`))
+                                image = await storage.url(`avatar/${imageId}.jpg`)
                             } catch {
                                 image = null
                             }
@@ -225,20 +224,10 @@ const createAuth = (event?: H3Event) => {
 export type Auth = ReturnType<typeof createAuth>
 
 let authInstance: Auth | undefined
-let authConfigKey: string | undefined
 
 /** Resolve Better Auth only after Cloudflare has installed the request env. */
 export const getAuth = (event?: H3Event): Auth => {
-    const secret = getRuntimeEnvString('BETTER_AUTH_SECRET', event) ?? ''
-    const clientId = getRuntimeEnvString('TWITTER_CLIENT_ID', event) ?? ''
-    const clientSecret = getRuntimeEnvString('TWITTER_CLIENT_SECRET', event) ?? ''
-    const configKey = `${secret}\u0000${clientId}\u0000${clientSecret}`
-
-    if (!authInstance || authConfigKey !== configKey) {
-        authInstance = createAuth(event)
-        authConfigKey = configKey
-    }
-
+    authInstance ??= createAuth(event)
     return authInstance
 }
 

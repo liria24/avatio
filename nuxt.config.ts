@@ -12,7 +12,7 @@ import {
 } from './shared/utils/i18nRouting'
 
 const baseUrl = process.env.PUBLIC_SITE_URL || 'http://localhost:3000'
-const publicUrl = 'https://avatio.me'
+const publicUrl = process.env.PUBLIC_SITE_URL || 'https://avatio.me'
 const r2PublicBaseUrl = process.env.NUXT_R2_PUBLIC_BASE_URL || process.env.R2_PUBLIC_BASE_URL
 const imageDomain = r2PublicBaseUrl ? new URL(r2PublicBaseUrl).hostname : undefined
 const emailFromAddress =

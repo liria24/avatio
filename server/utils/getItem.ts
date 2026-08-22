@@ -78,12 +78,7 @@ export default async (
         throw serverError.notFound({ responseMessage: 'Item not found or not allowed' })
 
     const admission = await getItemAdmission(db, resolvedProvider, id)
-    const allowedBoothCategoryId = [...admission.allowedBoothCategories]
-    const specificItemCategories: AppConfig['specificItemCategories'] = {
-        booth: {},
-        github: {},
-    }
-    if (admission.override) specificItemCategories[resolvedProvider][id] = admission.override
+    const allowedBoothCategoryId = admission.allowedBoothCategories
 
     await options.beforeExternalResolution?.()
 
@@ -139,7 +134,7 @@ export default async (
                           verified: Boolean(validItem.shop.verified),
                       },
                       cachedItem,
-                      specificItemCategories,
+                      categoryOverride: admission.override,
                       categoryFallback: BOOTH_CATEGORY_MAP[validItem.category.id] ?? 'other',
                       assignAttrParams: {
                           name: validItem.name,
@@ -189,7 +184,7 @@ export default async (
                               verified: false,
                           },
                           cachedItem,
-                          specificItemCategories,
+                          categoryOverride: admission.override,
                           categoryFallback: cachedItem?.category ?? 'other',
                           assignAttrParams: {
                               name: repoData.repo.name,
@@ -231,7 +226,7 @@ type PersistItemParams =
               name: string
           }
           cachedItem: { id: string } | null
-          specificItemCategories: AppConfig['specificItemCategories']
+          categoryOverride?: ItemCategory
           categoryFallback: ItemCategory
           assignAttrParams: Omit<GenerateItemAttrParams, 'originalCategory'>
           idMigration?: { from: string; to: string }
@@ -266,7 +261,7 @@ export const persistItem = async (
         item,
         shop,
         cachedItem,
-        specificItemCategories,
+        categoryOverride,
         categoryFallback,
         assignAttrParams,
         idMigration,
@@ -290,9 +285,7 @@ export const persistItem = async (
     const newOverride = migratedOverrides.find(({ itemId }) => itemId === idMigration?.to)
 
     const category =
-        specificItemCategories[item.platform]?.[item.id] ??
-        oldOverride?.category ??
-        categoryFallback
+        newOverride?.category ?? categoryOverride ?? oldOverride?.category ?? categoryFallback
     const fullItem = { ...item, category }
 
     const persist = async () => {

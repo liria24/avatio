@@ -1,4 +1,5 @@
-import { sql } from 'drizzle-orm'
+import { allowedBoothCategories, itemCategoryOverrides } from '@@/database/schema'
+import { asc, sql } from 'drizzle-orm'
 import type { H3Event } from 'h3'
 
 const flagship = (event?: H3Event) => {
@@ -6,7 +7,7 @@ const flagship = (event?: H3Event) => {
     return binding && typeof binding === 'object' ? binding : undefined
 }
 
-export const getFlag = async (key: 'is-maintenance' | 'force-update-item', event?: H3Event) => {
+const getFlag = async (key: 'is-maintenance' | 'force-update-item', event?: H3Event) => {
     const binding = flagship(event)
     if (!binding || typeof binding.getBooleanValue !== 'function') return false
     try {
@@ -22,8 +23,6 @@ export const getMaintenanceFlag = (event?: H3Event) => getFlag('is-maintenance',
 
 export const getForceUpdateItemFlag = (event?: H3Event) => getFlag('force-update-item', event)
 
-// Kept as a small helper for callers that need to check an override and the
-// category admission list together during one resolver pass.
 export const getItemAdmission = async (
     db: ReturnType<typeof useDB>,
     platform: Platform,
@@ -49,13 +48,42 @@ export const getItemAdmission = async (
     }
 
     return {
-        allowedBoothCategories: new Set(
-            Array.isArray(allowedBoothCategoryId)
-                ? allowedBoothCategoryId.filter((categoryId): categoryId is number =>
-                      Number.isInteger(categoryId),
-                  )
-                : [],
-        ),
+        allowedBoothCategories: Array.isArray(allowedBoothCategoryId)
+            ? allowedBoothCategoryId.filter((categoryId): categoryId is number =>
+                  Number.isInteger(categoryId),
+              )
+            : [],
         override: row?.override ?? undefined,
+    }
+}
+
+export const readAppConfig = async (db: ReturnType<typeof useDB>, event: H3Event) => {
+    const [categories, overrides] = await Promise.all([
+        db
+            .select({ categoryId: allowedBoothCategories.categoryId })
+            .from(allowedBoothCategories)
+            .orderBy(asc(allowedBoothCategories.categoryId)),
+        db
+            .select({
+                platform: itemCategoryOverrides.platform,
+                itemId: itemCategoryOverrides.itemId,
+                category: itemCategoryOverrides.category,
+            })
+            .from(itemCategoryOverrides)
+            .orderBy(asc(itemCategoryOverrides.platform), asc(itemCategoryOverrides.itemId)),
+    ])
+
+    const specificItemCategories: AppConfig['specificItemCategories'] = {
+        booth: {},
+        github: {},
+    }
+    for (const override of overrides)
+        specificItemCategories[override.platform][override.itemId] = override.category
+
+    return {
+        allowedBoothCategoryId: categories.map(({ categoryId }) => categoryId),
+        forceUpdateItem: await getForceUpdateItemFlag(event),
+        isMaintenance: await getMaintenanceFlag(event),
+        specificItemCategories,
     }
 }

@@ -50,7 +50,11 @@ const namesForStage = (stage: string): StageNames => {
     throw new Error('Alchemy stage must be development or production.')
 }
 
-const optionalSecret = (name: string) => Config.redacted(name).pipe(Config.withDefault(''))
+const requiredSecret = (name: string) => Config.redacted(name)
+
+const retainProduction = Alchemy.RemovalPolicy.retain(
+    Effect.map(Stage, (stage) => stage === 'production'),
+)
 
 export const AppDatabase = Cloudflare.D1.Database(
     'AppDatabase',
@@ -58,7 +62,7 @@ export const AppDatabase = Cloudflare.D1.Database(
         const names = namesForStage(yield* Stage)
         return { name: names.appDatabase, migrations: './drizzle' }
     }),
-)
+).pipe(retainProduction)
 
 export const ContentDatabase = Cloudflare.D1.Database(
     'ContentDatabase',
@@ -68,7 +72,7 @@ export const ContentDatabase = Cloudflare.D1.Database(
         // to APP_DB and must never be replayed against the content database.
         return { name: names.contentDatabase }
     }),
-)
+).pipe(retainProduction)
 
 export const Cache = Cloudflare.KV.Namespace(
     'Cache',
@@ -76,16 +80,25 @@ export const Cache = Cloudflare.KV.Namespace(
         const names = namesForStage(yield* Stage)
         return { title: names.cache }
     }),
-)
+).pipe(retainProduction)
 
 export const Files = Cloudflare.R2.Bucket(
     'Files',
     Effect.gen(function* () {
         const names = namesForStage(yield* Stage)
+        const domains = names.production
+            ? [
+                  {
+                      name: names.imageSite,
+                      enabled: true,
+                      minTLS: '1.0' as const,
+                  },
+              ]
+            : [{ name: names.imageSite }]
         return {
             name: names.bucket,
             forceDestroy: false,
-            domains: [{ name: names.imageSite }],
+            domains,
             lifecycleRules: [
                 {
                     id: 'delete-backups-after-three-days',
@@ -122,7 +135,7 @@ export const Files = Cloudflare.R2.Bucket(
             ],
         }
     }),
-)
+).pipe(retainProduction)
 
 export const ItemRevalidationQueue = Cloudflare.Queues.Queue(
     'ItemRevalidationQueue',
@@ -130,7 +143,7 @@ export const ItemRevalidationQueue = Cloudflare.Queues.Queue(
         const names = namesForStage(yield* Stage)
         return { name: names.queue }
     }),
-)
+).pipe(retainProduction)
 
 export const Flags = Cloudflare.Flagship.App(
     'Flags',
@@ -148,6 +161,7 @@ const makeWebsiteEnv = (names: StageNames) => ({
     DB: ContentDatabase,
     KV: Cache,
     R2: Files,
+    SELF_URL: Cloudflare.Workers.URL,
     ITEM_REVALIDATION_QUEUE: ItemRevalidationQueue,
     FLAGS: Flags,
     AI: Cloudflare.Workers.AI(),
@@ -160,30 +174,36 @@ const makeWebsiteEnv = (names: StageNames) => ({
     RATE_LIMIT_DRAFT: rateLimit('RATE_LIMIT_DRAFT', names.rateLimits[2], 120),
     PUBLIC_SITE_URL: `https://${names.site}`,
     R2_PUBLIC_BASE_URL: `https://${names.imageSite}`,
-    NUXT_BOOTH_PROXY_URL: optionalSecret('NUXT_BOOTH_PROXY_URL'),
-    OG_IMAGE_SECRET: optionalSecret('OG_IMAGE_SECRET'),
-    LIRIA_DISCORD_ENDPOINT: optionalSecret('LIRIA_DISCORD_ENDPOINT'),
-    LIRIA_DISCORD_ACCESS_TOKEN: optionalSecret('LIRIA_DISCORD_ACCESS_TOKEN'),
+    STAGE: names.production ? 'production' : 'development',
+    NUXT_BOOTH_PROXY_URL: requiredSecret('NUXT_BOOTH_PROXY_URL'),
+    OG_IMAGE_SECRET: requiredSecret('OG_IMAGE_SECRET'),
+    LIRIA_DISCORD_ENDPOINT: Config.redacted('LIRIA_DISCORD_ENDPOINT').pipe(Config.withDefault('')),
+    LIRIA_DISCORD_ACCESS_TOKEN: requiredSecret('LIRIA_DISCORD_ACCESS_TOKEN'),
     EMAIL_FROM: 'hello@avatio.me',
     NUXT_EMAIL_FROM_ADDRESS: 'hello@avatio.me',
-    BETTER_AUTH_SECRET: optionalSecret(
+    BETTER_AUTH_SECRET: requiredSecret(
         names.production ? 'BETTER_AUTH_SECRET' : 'BETTER_AUTH_SECRET_DEVELOPMENT',
     ),
-    TWITTER_CLIENT_ID: optionalSecret('TWITTER_CLIENT_ID'),
-    TWITTER_CLIENT_SECRET: optionalSecret('TWITTER_CLIENT_SECRET'),
+    TWITTER_CLIENT_ID: requiredSecret('TWITTER_CLIENT_ID'),
+    TWITTER_CLIENT_SECRET: requiredSecret('TWITTER_CLIENT_SECRET'),
 })
 
 export const Website = Cloudflare.Website.Nuxt(
     'Website',
     Effect.gen(function* () {
         const names = namesForStage(yield* Stage)
+        const siteUrl = `https://${names.site}`
         return {
             name: names.worker,
             domain: { name: names.site },
             workersDev: { enabled: true, previewsEnabled: true },
             compatibility: {
                 date: '2026-05-26',
-                flags: ['no_handle_cross_request_promise_resolution'],
+                flags: [
+                    'no_handle_cross_request_promise_resolution',
+                    'nodejs_compat',
+                    'no_nodejs_compat_v2',
+                ],
             },
             cache: { enabled: true },
             observability: {
@@ -194,6 +214,45 @@ export const Website = Cloudflare.Website.Nuxt(
             },
             crons: names.production ? ['0 22 * * *'] : [],
             env: makeWebsiteEnv(names),
+            nuxt: {
+                runtimeConfig: { public: { siteUrl } },
+                appConfig: { app: { site: siteUrl } },
+                site: { url: siteUrl },
+                i18n: { baseUrl: siteUrl },
+                socialShare: { baseUrl: siteUrl },
+                app: {
+                    head: {
+                        meta: [
+                            { property: 'og:site_name', content: 'Avatio' },
+                            { property: 'og:type', content: 'website' },
+                            { property: 'og:url', content: siteUrl },
+                            { property: 'og:title', content: 'Avatio' },
+                            { property: 'og:image', content: `${siteUrl}/ogp_2.png` },
+                            {
+                                name: 'description',
+                                content: 'アバター改変レシピの共有プラットフォーム',
+                            },
+                            {
+                                property: 'og:description',
+                                content: 'アバター改変レシピの共有プラットフォーム',
+                            },
+                            { name: 'twitter:site', content: '@liria_24' },
+                            { name: 'twitter:card', content: 'summary_large_image' },
+                        ],
+                    },
+                },
+                image: {
+                    cloudflare: { baseURL: siteUrl },
+                    domains: [
+                        names.imageSite,
+                        'booth.pximg.net',
+                        's2.booth.pm',
+                        'github.com',
+                        'avatars.githubusercontent.com',
+                    ],
+                    provider: 'cloudflare',
+                },
+            },
         }
     }),
 )
