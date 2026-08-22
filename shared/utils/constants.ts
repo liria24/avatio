@@ -27,7 +27,6 @@ export const LATEST_SETUPS_LIST_PER_PAGE = 64
 // Cache duration
 export const ITEM_CACHE_DURATION_MS = 24 * 60 * 60 * 1000 // 24 hours
 export const GITHUB_ITEM_CACHE_DURATION_MS = 60 * 60 * 1000 // 1 hour
-export const APP_FLAGS_CACHE_TTL = 5 // 5 seconds
 export const SESSION_COOKIE_CACHE_MAX_AGE = 5 * 60 // 5 minutes
 
 // Booth category map
@@ -44,7 +43,4 @@ export const RATE_LIMIT_SIGNIN = 10
 export const RATE_LIMIT_SESSION = 200
 
 // Image uploads
-export const MAX_IMAGE_UPLOAD_SIZE = 5 * 1024 * 1024
 export const IMAGE_UPLOAD_PATHS = ['setup', 'avatar'] as const
-export const IMAGE_CONTENT_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const
-export const IMAGE_KEY_ID_LENGTH = 16

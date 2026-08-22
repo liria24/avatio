@@ -6,7 +6,7 @@ type CategoryOverride = {
     category: ItemCategory
 }
 
-const { saveAppFlags } = useAdmin()
+const { saveAppConfig } = useAdmin()
 const toast = useToast()
 const itemCategory = useItemCategory()
 
@@ -30,15 +30,15 @@ const validationError = ref<string | null>(null)
 const saving = ref(false)
 let nextOverrideKey = 0
 
-const { data, status, refresh } = await useFetch<AppFlags>('/api/admin/flags', {
+const { data, status, refresh } = await useFetch<AppConfig>('/api/admin/config', {
     dedupe: 'defer',
 })
 
-const applyFlags = (flags: AppFlags) => {
-    state.isMaintenance = flags.isMaintenance
-    state.forceUpdateItem = flags.forceUpdateItem
-    state.allowedBoothCategoryId = flags.allowedBoothCategoryId.map(String)
-    state.categoryOverrides = Object.entries(flags.specificItemCategories).flatMap(
+const applyConfig = (config: AppConfig) => {
+    state.isMaintenance = config.isMaintenance
+    state.forceUpdateItem = config.forceUpdateItem
+    state.allowedBoothCategoryId = config.allowedBoothCategoryId.map(String)
+    state.categoryOverrides = Object.entries(config.specificItemCategories).flatMap(
         ([platform, categories]) =>
             Object.entries(categories).map(([itemId, category]) => ({
                 key: nextOverrideKey++,
@@ -49,7 +49,7 @@ const applyFlags = (flags: AppFlags) => {
     )
 }
 
-if (data.value) applyFlags(data.value)
+if (data.value) applyConfig(data.value)
 
 const addCategoryOverride = () => {
     state.categoryOverrides.push({
@@ -66,18 +66,18 @@ const removeCategoryOverride = (key: number) => {
 
 const reset = async () => {
     await refresh()
-    if (data.value) applyFlags(data.value)
+    if (data.value) applyConfig(data.value)
     validationError.value = null
 }
 
-const createPayload = (): AppFlags | null => {
+const createPayload = (): AppConfig | null => {
     const allowedBoothCategoryId = state.allowedBoothCategoryId.map((id) => Number(id.trim()))
     if (allowedBoothCategoryId.some((id) => !Number.isInteger(id))) {
         validationError.value = 'Allowed Booth category IDs must be integers.'
         return null
     }
 
-    const specificItemCategories: AppFlags['specificItemCategories'] = {
+    const specificItemCategories: AppConfig['specificItemCategories'] = {
         booth: {},
         github: {},
     }
@@ -117,8 +117,8 @@ const save = async () => {
 
     saving.value = true
     try {
-        const saved = await saveAppFlags(payload)
-        if (saved) applyFlags(saved)
+        const saved = await saveAppConfig(payload)
+        if (saved) applyConfig(saved)
     } finally {
         saving.value = false
     }
@@ -165,8 +165,8 @@ useSeo({
                     icon="mingcute:information-line"
                     color="neutral"
                     variant="subtle"
-                    title="Cloudflare KV persistence"
-                    description="Production values persist until explicitly overwritten or deleted. KV is eventually consistent, so changes may take 60 seconds or longer to become visible in other regions."
+                    title="D1 and Flagship persistence"
+                    description="Category configuration is replaced atomically in D1. Runtime flags are evaluated by Cloudflare Flagship and fail closed when unavailable."
                     class="shrink-0"
                 />
 
@@ -184,14 +184,16 @@ useSeo({
                         <USwitch
                             v-model="state.isMaintenance"
                             label="Maintenance mode"
-                            description="Redirect site pages to the maintenance page."
+                            description="Managed in Cloudflare Flagship; this value is read-only here."
                             color="neutral"
+                            disabled
                         />
                         <USwitch
                             v-model="state.forceUpdateItem"
                             label="Force update item info"
-                            description="Bypass cached item data when resolving item details."
+                            description="Managed in Cloudflare Flagship; this value is read-only here."
                             color="neutral"
+                            disabled
                         />
                     </div>
                 </UPageCard>

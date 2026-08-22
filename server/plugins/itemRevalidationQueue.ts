@@ -2,8 +2,6 @@ const log = logger('itemRevalidationQueue')
 
 export default defineNitroPlugin((nitroApp) => {
     nitroApp.hooks.hook('cloudflare:queue', async ({ batch, context }) => {
-        if (batch.queue !== 'item-revalidation') return
-
         for (const message of batch.messages)
             try {
                 await handleItemRevalidationMessage(

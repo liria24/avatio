@@ -36,7 +36,7 @@ export default authedSessionEventHandler(async ({ event, session, db }) => {
     if (data.id !== session.user.id && session.user.role !== 'admin') throw serverError.forbidden()
 
     if (username) {
-        const isUsernameAvailable = await auth.api.isUsernameAvailable({
+        const isUsernameAvailable = await getAuth(event).api.isUsernameAvailable({
             body: { username },
         })
         if (!isUsernameAvailable) throw serverError.badRequest()

@@ -1,6 +1,6 @@
-import { items, shops } from '@@/database/schema'
+import { itemCategoryOverrides, items, shops } from '@@/database/schema'
 import type { CacheContext } from '@cloudflare/workers-types'
-import { eq } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 import type { BatchItem } from 'drizzle-orm/batch'
 import type { H3Event } from 'h3'
 import { joinURL, withHttps } from 'ufo'
@@ -69,8 +69,7 @@ export default async (
         throw serverError.notFound({ responseMessage: 'Item not found or not allowed' })
     }
 
-    const { forceUpdateItem, allowedBoothCategoryId, specificItemCategories } = await getAppFlags()
-
+    const forceUpdateItem = await getForceUpdateItemFlag(event)
     const { fresh, cachedItem } = await resolveItemCache(db, id, provider, forceUpdateItem)
     if (fresh) return fresh
 
@@ -78,11 +77,14 @@ export default async (
     if (!resolvedProvider)
         throw serverError.notFound({ responseMessage: 'Item not found or not allowed' })
 
+    const admission = await getItemAdmission(db, resolvedProvider, id)
+    const allowedBoothCategoryId = admission.allowedBoothCategories
+
     await options.beforeExternalResolution?.()
 
     if (resolvedProvider === 'booth') {
         const config = event ? useRuntimeConfig(event) : useRuntimeConfig()
-        const proxyUrl = config.booth.proxyUrl
+        const proxyUrl = getRuntimeEnvString('NUXT_BOOTH_PROXY_URL', event) || config.booth.proxyUrl
 
         if (!proxyUrl)
             throw serverError.internalServerError({
@@ -132,7 +134,7 @@ export default async (
                           verified: Boolean(validItem.shop.verified),
                       },
                       cachedItem,
-                      specificItemCategories,
+                      categoryOverride: admission.override,
                       categoryFallback: BOOTH_CATEGORY_MAP[validItem.category.id] ?? 'other',
                       assignAttrParams: {
                           name: validItem.name,
@@ -182,7 +184,7 @@ export default async (
                               verified: false,
                           },
                           cachedItem,
-                          specificItemCategories,
+                          categoryOverride: admission.override,
                           categoryFallback: cachedItem?.category ?? 'other',
                           assignAttrParams: {
                               name: repoData.repo.name,
@@ -224,7 +226,7 @@ type PersistItemParams =
               name: string
           }
           cachedItem: { id: string } | null
-          specificItemCategories: AppFlags['specificItemCategories']
+          categoryOverride?: ItemCategory
           categoryFallback: ItemCategory
           assignAttrParams: Omit<GenerateItemAttrParams, 'originalCategory'>
           idMigration?: { from: string; to: string }
@@ -259,13 +261,31 @@ export const persistItem = async (
         item,
         shop,
         cachedItem,
-        specificItemCategories,
+        categoryOverride,
         categoryFallback,
         assignAttrParams,
         idMigration,
     } = params
 
-    const category = specificItemCategories[item.platform]?.[item.id] ?? categoryFallback
+    const migratedOverrides = idMigration
+        ? await db
+              .select({
+                  itemId: itemCategoryOverrides.itemId,
+                  category: itemCategoryOverrides.category,
+              })
+              .from(itemCategoryOverrides)
+              .where(
+                  and(
+                      eq(itemCategoryOverrides.platform, item.platform),
+                      inArray(itemCategoryOverrides.itemId, [idMigration.from, idMigration.to]),
+                  ),
+              )
+        : []
+    const oldOverride = migratedOverrides.find(({ itemId }) => itemId === idMigration?.from)
+    const newOverride = migratedOverrides.find(({ itemId }) => itemId === idMigration?.to)
+
+    const category =
+        newOverride?.category ?? categoryOverride ?? oldOverride?.category ?? categoryFallback
     const fullItem = { ...item, category }
 
     const persist = async () => {
@@ -273,6 +293,29 @@ export const persistItem = async (
         if (idMigration)
             queries.push(
                 db.update(items).set({ id: idMigration.to }).where(eq(items.id, idMigration.from)),
+            )
+
+        if (idMigration && oldOverride && !newOverride)
+            queries.push(
+                db
+                    .insert(itemCategoryOverrides)
+                    .values({
+                        platform: item.platform,
+                        itemId: idMigration.to,
+                        category: oldOverride.category,
+                    })
+                    .onConflictDoNothing(),
+            )
+        if (idMigration && oldOverride)
+            queries.push(
+                db
+                    .delete(itemCategoryOverrides)
+                    .where(
+                        and(
+                            eq(itemCategoryOverrides.platform, item.platform),
+                            eq(itemCategoryOverrides.itemId, idMigration.from),
+                        ),
+                    ),
             )
 
         queries.push(

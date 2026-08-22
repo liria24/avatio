@@ -23,31 +23,30 @@ describe('storage', () => {
         const { storage } = await loadStorage({
             R2: binding,
             R2_PUBLIC_BASE_URL: 'https://files.example.com',
+            SELF_URL: 'http://127.0.0.1:1337',
         })
 
         expect(storage.adapter.name).toBe('r2-binding')
         expect(storage.raw).toBe(binding)
     })
 
-    it('falls back to R2 HTTP mode when no binding is available', async () => {
+    it('uses the injected Alchemy self URL for local object URLs', async () => {
         const { storage } = await loadStorage({
-            R2_BUCKET: 'uploads',
-            R2_ACCOUNT_ID: 'account-id',
-            R2_ACCESS_KEY_ID: 'access-key-id',
-            R2_SECRET_ACCESS_KEY: 'secret-access-key',
+            R2: {} as R2Bucket,
             R2_PUBLIC_BASE_URL: 'https://files.example.com',
+            SELF_URL: 'http://127.0.0.1:1467',
         })
 
-        expect(storage.adapter.name).toBe('r2-http-fetch')
+        await expect(storage.url('uploads/avatar.png')).resolves.toBe(
+            'http://127.0.0.1:1467/api/_local/r2/uploads/avatar.png',
+        )
     })
 
-    it('reports missing HTTP fallback environment variables clearly', async () => {
+    it('fails closed when the R2 binding is unavailable', async () => {
         const { storage } = await loadStorage({
             R2_PUBLIC_BASE_URL: 'https://files.example.com',
         })
 
-        expect(() => storage.adapter).toThrowError(
-            'Missing required environment variable: R2_BUCKET',
-        )
+        expect(() => storage.adapter).toThrowError('Missing required Cloudflare R2 binding: R2')
     })
 })

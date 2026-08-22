@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const log = { error: vi.fn() }
-const storage = { del: vi.fn() }
+const storage = { del: vi.fn(), getItem: vi.fn(), setItem: vi.fn() }
 const purge = vi.fn()
 const getItem = vi.fn()
 
@@ -17,6 +17,8 @@ beforeEach(() => {
         setups: 'setups',
     })
     storage.del.mockReset().mockResolvedValue(undefined)
+    storage.getItem.mockReset().mockResolvedValue(undefined)
+    storage.setItem.mockReset().mockResolvedValue(undefined)
     purge.mockReset().mockResolvedValue(undefined)
     getItem.mockReset()
 })
@@ -27,6 +29,44 @@ afterEach(() => {
 })
 
 describe('handleItemRevalidationMessage', () => {
+    it('sends expired items through the local development queue', async () => {
+        const originalNodeEnv = process.env.NODE_ENV
+        process.env.NODE_ENV = 'development'
+        const send = vi.fn().mockResolvedValue(undefined)
+        const queue = { send }
+        vi.stubGlobal('getRuntimeEnv', () => ({ ITEM_REVALIDATION_QUEUE: queue }))
+
+        try {
+            const { enqueueItemRevalidation } =
+                await import('../../../server/utils/itemRevalidationQueue')
+            const item = {
+                id: 'owner/repo',
+                platform: 'github' as const,
+                updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+            }
+
+            await expect(enqueueItemRevalidation({} as never, item, 'setup-detail')).resolves.toBe(
+                true,
+            )
+
+            expect(send).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    id: item.id,
+                    platform: item.platform,
+                    reason: 'setup-detail',
+                }),
+            )
+            expect(storage.setItem).toHaveBeenCalledWith(
+                'item-revalidation:github:owner%2Frepo',
+                true,
+                { ttl: 60 * 30 },
+            )
+        } finally {
+            if (originalNodeEnv === undefined) delete process.env.NODE_ENV
+            else process.env.NODE_ENV = originalNodeEnv
+        }
+    })
+
     it('waits for item persistence before purging all affected cache tags', async () => {
         let finishPersistence!: (item: { id: string }) => void
         getItem.mockReturnValue(

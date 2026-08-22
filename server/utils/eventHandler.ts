@@ -44,7 +44,7 @@ export const sessionEventHandler = <T = unknown>(
 ) =>
     promiseEventHandler(async ({ event, db }) => {
         const session = hasBetterAuthSessionCookie(event.headers.get('cookie'))
-            ? await auth.api.getSession({ headers: event.headers })
+            ? await getAuth(event).api.getSession({ headers: event.headers })
             : null
 
         if (options?.rejectBannedUser) rejectBannedUser(session)

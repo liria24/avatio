@@ -21,7 +21,7 @@ const getQueue = (event?: H3Event) => getRuntimeEnv(event)[QUEUE_BINDING] as Que
 const getLockKey = (id: Item['id'], platform: Platform) =>
     `item-revalidation:${platform}:${encodeURIComponent(id)}`
 
-const shouldUseQueue = () => !import.meta.dev && process.env.NODE_ENV !== 'test'
+const shouldUseQueue = () => process.env.NODE_ENV !== 'test'
 
 export const isItemRevalidationDue = (item: Pick<RevalidatableItem, 'platform' | 'updatedAt'>) => {
     const maxAgeMs =

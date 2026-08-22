@@ -3,6 +3,7 @@ import {
     foreignKey,
     index,
     integer,
+    primaryKey,
     real,
     snakeCase,
     text,
@@ -425,6 +426,28 @@ export const items = snakeCase.table(
             .onDelete('cascade')
             .onUpdate('cascade'),
     ],
+)
+
+/** Booth categories admitted by the item resolver. */
+export const allowedBoothCategories = snakeCase.table('allowed_booth_categories', {
+    categoryId: integer().primaryKey(),
+    createdAt: timestamp().default(now).notNull(),
+})
+
+/** Per-item category overrides shared by the resolver and admin UI. */
+export const itemCategoryOverrides = snakeCase.table(
+    'item_category_overrides',
+    {
+        platform: text({ enum: platform }).notNull(),
+        itemId: text().notNull(),
+        category: text({ enum: itemCategory }).notNull(),
+        createdAt: timestamp().default(now).notNull(),
+        updatedAt: timestamp()
+            .default(now)
+            .$onUpdate(() => new Date())
+            .notNull(),
+    },
+    (table) => [primaryKey({ columns: [table.platform, table.itemId] })],
 )
 
 export const setups = snakeCase.table(

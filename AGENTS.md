@@ -11,26 +11,25 @@ Compact instruction for OpenCode sessions. If a fact is obvious from filenames, 
 
 ## Developer commands
 
-| Task                               | Command                                         |
-| ---------------------------------- | ----------------------------------------------- |
-| Dev server                         | `bun run dev`                                   |
-| Build                              | `bun run build`                                 |
-| Typecheck                          | `bun run typecheck`                             |
-| Lint                               | `bun run lint`                                  |
-| Fix lint                           | `bun run lint:fix`                              |
-| Format                             | `bun run fmt`                                   |
-| Check formatting                   | `bun run fmt:check`                             |
-| Run all tests                      | `bun run test`                                  |
-| Unit tests only                    | `bun run test:unit`                             |
-| Nuxt tests only                    | `bun run test:nuxt`                             |
-| Watch tests                        | `bun run test:watch`                            |
-| Generate Drizzle migrations        | `bun run db:generate`                           |
-| Apply local D1 migrations          | `bun run db:migrate:local`                      |
-| Apply remote D1 migrations         | `bun run db:migrate:remote`                     |
-| Deploy after remote migrations     | `bun run deploy`                                |
-| Upload Workers Builds preview      | `bun run deploy:preview`                        |
-| Generate Better Auth schema        | `bunx auth@rc generate --config auth.config.ts` |
-| Bump version + commit + tag + push | `bun run release`                               |
+| Task                        | Command                                         |
+| --------------------------- | ----------------------------------------------- |
+| Dev server                  | `bun run dev`                                   |
+| Build                       | `bun run build`                                 |
+| Typecheck                   | `bun run typecheck`                             |
+| Lint                        | `bun run lint`                                  |
+| Fix lint                    | `bun run lint:fix`                              |
+| Format                      | `bun run fmt`                                   |
+| Check formatting            | `bun run fmt:check`                             |
+| Run all tests               | `bun run test`                                  |
+| Unit tests only             | `bun run test:unit`                             |
+| Nuxt tests only             | `bun run test:nuxt`                             |
+| Watch tests                 | `bun run test:watch`                            |
+| Generate Drizzle migrations | `bun run db:generate`                           |
+| Development Alchemy plan    | `bun run plan:development`                      |
+| Production Alchemy plan     | `bun run plan:production`                       |
+| Development deploy          | `bun run deploy:development`                    |
+| Production deploy           | `bun run deploy:production`                     |
+| Generate Better Auth schema | `bunx auth@rc generate --config auth.config.ts` |
 
 ## After making changes
 
@@ -40,7 +39,7 @@ For deployment-related changes, also run **`bun run build`**. In this repo, the 
 ## Project architecture
 
 - **Framework:** Nuxt 4 (`compatibilityVersion: 5`).
-- **Deployment target:** Cloudflare Workers (`nitro.preset: 'cloudflare-module'`).
+- **Deployment target:** Cloudflare Workers, built and deployed by `Cloudflare.Website.Nuxt` in `alchemy.run.ts`.
 - **Structure:**
   - `app/` — Vue frontend (pages, layouts, composables, components).
   - `server/` — Nitro API routes and server middleware.
@@ -72,7 +71,7 @@ For deployment-related changes, also run **`bun run build`**. In this repo, the 
 - Naming convention: `snakeCase` (Drizzle `snakeCase` helper is used).
 - Migrations use Drizzle v1 nested output under `./drizzle`.
 - Do not edit generated migration SQL by hand; regenerate with `bun run db:generate`.
-- `bun run dev` applies local migrations before starting Nuxt and persists SQLite data under `.wrangler/state`.
+- `bun run dev` runs `alchemy dev --stage development`; Alchemy applies D1 migrations in its local workerd simulator.
 
 ## Auth
 
@@ -81,14 +80,15 @@ For deployment-related changes, also run **`bun run build`**. In this repo, the 
 
 ## Deployment & infra quirks
 
-- **Cloudflare KV HTTP** drives app flags and maintenance mode (`server/middleware/maintenance.ts`). Key: `isMaintenance`.
-- Root `wrangler.jsonc` is the minimal D1 CLI config. Nuxt generates `.output/server/wrangler.json` for Worker deploys; do not use the generated file for pre-build D1 migrations.
-- Workers Builds runs `bun run deploy:preview` for non-production branches; only `development` applies remote D1 migrations before uploading its preview version.
+- **Cloudflare Flagship** owns `is-maintenance` and `force-update-item`; an unavailable Flagship binding falls back to `false`. Category configuration is atomically replaced in D1 by `GET/PUT /api/admin/config`.
+- `alchemy.run.ts` is the only infrastructure, D1 migration, and Worker deployment entry point. Do not add a Wrangler config or direct Wrangler deployment script.
+- Workers Builds uses an empty build command, `bun run deploy:production` on `main`, and `bun run deploy:development` for the `development` preview branch.
 - **Workers Cron Triggers**:
   - `/api/admin/job/report` — daily at 22:00
   - `/api/admin/job/cleanup` — manual/admin only
 - **Images:** served through `@nuxt/image`. Allowed external domains are whitelisted in `nuxt.config.ts` (Booth, GitHub, R2 public domain).
-- **Storage:** Cloudflare R2 through `files-sdk/r2` for user-uploaded images. Workers use the `R2` binding; local environments fall back to HTTP mode.
+- **Storage:** Cloudflare R2 through `files-sdk/r2` for user-uploaded images. Workers use the native `R2` binding only; HTTP credentials and runtime Cloudflare tokens are intentionally unsupported.
+- **files-sdk build compatibility:** Keep the direct dependencies `@aws-sdk/client-s3`, `@aws-sdk/lib-storage`, `@aws-sdk/s3-presigned-post`, and `@aws-sdk/s3-request-presigner`. A known files-sdk build defect requires them even though application code must not import or use AWS SDK/R2 HTTP signing. `bun run build` is the regression check.
 - **PWA:** `@vite-pwa/nuxt` is enabled; `sw.js` and `manifest.webmanifest` are served with `must-revalidate`.
 
 ## i18n
@@ -97,9 +97,9 @@ For deployment-related changes, also run **`bun run build`**. In this repo, the 
 - Locale files: `i18n/locales/*.json`.
 - Route rules in `nuxt.config.ts` are **auto-localized** for every locale in `availableI18nLocales`. If you add a new locale, existing route rules (redirects, middleware, ISR, etc.) are cloned under that prefix automatically.
 
-## Version bumping
+## Versioning
 
-`bump.config.ts` bumps `package.json` **and** `app/app.config.ts` together. Keep the version in `app/app.config.ts` in sync with `package.json`; `bun run release` handles it.
+`package.json` is the sole version source. `app/app.config.ts` reads it at build time. Release PRs and tags are handled by the pinned `danielroe/uppt` workflow; no deploy job is part of the release workflow.
 
 ## Server conventions
 

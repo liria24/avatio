@@ -1,11 +1,15 @@
 {
     "version": "7",
     "dialect": "sqlite",
-    "id": "80ea8b2e-b4ed-4af0-b849-52dd1653703c",
-    "prevIds": ["00000000-0000-0000-0000-000000000000"],
+    "id": "2b3c8035-31d8-44a2-b86a-434d530abbde",
+    "prevIds": ["80ea8b2e-b4ed-4af0-b849-52dd1653703c"],
     "ddl": [
         {
             "name": "accounts",
+            "entityType": "tables"
+        },
+        {
+            "name": "allowed_booth_categories",
             "entityType": "tables"
         },
         {
@@ -42,6 +46,10 @@
         },
         {
             "name": "idempotency_requests",
+            "entityType": "tables"
+        },
+        {
+            "name": "item_category_overrides",
             "entityType": "tables"
         },
         {
@@ -271,6 +279,26 @@
             "name": "updated_at",
             "entityType": "columns",
             "table": "accounts"
+        },
+        {
+            "type": "integer",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "name": "category_id",
+            "entityType": "columns",
+            "table": "allowed_booth_categories"
+        },
+        {
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "name": "created_at",
+            "entityType": "columns",
+            "table": "allowed_booth_categories"
         },
         {
             "type": "integer",
@@ -951,6 +979,56 @@
             "name": "expires_at",
             "entityType": "columns",
             "table": "idempotency_requests"
+        },
+        {
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "name": "platform",
+            "entityType": "columns",
+            "table": "item_category_overrides"
+        },
+        {
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "name": "item_id",
+            "entityType": "columns",
+            "table": "item_category_overrides"
+        },
+        {
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "name": "category",
+            "entityType": "columns",
+            "table": "item_category_overrides"
+        },
+        {
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "name": "created_at",
+            "entityType": "columns",
+            "table": "item_category_overrides"
+        },
+        {
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "name": "updated_at",
+            "entityType": "columns",
+            "table": "item_category_overrides"
         },
         {
             "type": "integer",
@@ -3034,10 +3112,24 @@
             "table": "user_shops"
         },
         {
+            "columns": ["platform", "item_id"],
+            "nameExplicit": false,
+            "name": "item_category_overrides_pk",
+            "entityType": "pks",
+            "table": "item_category_overrides"
+        },
+        {
             "columns": ["id"],
             "nameExplicit": false,
             "name": "accounts_pk",
             "table": "accounts",
+            "entityType": "pks"
+        },
+        {
+            "columns": ["category_id"],
+            "nameExplicit": false,
+            "name": "allowed_booth_categories_pk",
+            "table": "allowed_booth_categories",
             "entityType": "pks"
         },
         {
