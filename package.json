@@ -10,7 +10,7 @@
     "type": "module",
     "scripts": {
         "build": "nuxt build",
-        "dev": "bun run db:migrate:local && nuxt dev",
+        "dev": "alchemy dev --stage development",
         "generate": "nuxt generate",
         "preview": "nuxt preview",
         "postinstall": "nuxt prepare",
@@ -23,16 +23,12 @@
         "test:watch": "vitest --watch",
         "test:unit": "vitest --project unit",
         "test:nuxt": "vitest --project nuxt",
-        "cf:types": "wrangler types --config .output/server/wrangler.json",
-        "cf:check": "wrangler deploy --dry-run --config .output/server/wrangler.json",
-        "release": "bumpp",
+        "plan:development": "alchemy plan --stage development",
+        "plan:production": "alchemy plan --stage production",
+        "deploy:development": "alchemy deploy --stage development --adopt",
+        "deploy:production": "alchemy deploy --stage production --adopt",
         "db:generate": "drizzle-kit generate",
-        "db:migrate:local": "wrangler d1 migrations apply avatio --local",
-        "db:migrate:remote": "wrangler d1 migrations apply avatio --remote",
-        "deploy": "bun run db:migrate:remote && wrangler deploy --config .output/server/wrangler.json",
-        "deploy:preview": "bun scripts/deploy-preview.ts",
-        "drizzle:generate": "bun run db:generate",
-        "changelogen": "changelogen --hideAuthorEmail"
+        "drizzle:generate": "bun run db:generate"
     },
     "dependencies": {
         "@aws-sdk/client-s3": "^3.1115.0",
@@ -84,7 +80,9 @@
         "zod": "4.4.3"
     },
     "devDependencies": {
+        "@alchemy.run/frontend-frameworks": "2.0.0-beta.74",
         "@cloudflare/workers-types": "^5.20260821.1",
+        "@effect/platform-bun": "4.0.0-rc.111",
         "@nuxt/a11y": "1.0.0-alpha.1",
         "@nuxt/hints": "1.1.4",
         "@nuxt/test-utils": "4.1.0",
@@ -93,9 +91,9 @@
         "@types/pngjs": "^6.0.5",
         "@types/sanitize-html": "2.16.1",
         "@vue/test-utils": "^2.4.11",
-        "bumpp": "12.2.1",
-        "changelogen": "^0.6.2",
+        "alchemy": "2.0.0-beta.74",
         "drizzle-kit": "1.0.0-rc.4",
+        "effect": "4.0.0-rc.111",
         "happy-dom": "^20.11.6",
         "oxfmt": "^0.64.0",
         "oxlint": "^1.79.0",
@@ -103,8 +101,7 @@
         "taze": "^21.1.0",
         "typescript": "6.0.3",
         "vitest": "^4.1.11",
-        "vue-tsc": "^3.3.10",
-        "wrangler": "^4.125.0"
+        "vue-tsc": "^3.3.10"
     },
     "packageManager": "bun@1.4.0"
 }

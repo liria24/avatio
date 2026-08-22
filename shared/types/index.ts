@@ -14,7 +14,7 @@ export interface PaginationResponse<T> {
     }
 }
 
-export interface AppFlags {
+export interface AppConfig {
     allowedBoothCategoryId: number[]
     forceUpdateItem: boolean
     isMaintenance: boolean

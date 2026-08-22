@@ -2,11 +2,11 @@ import { Files } from 'files-sdk'
 import { r2 } from 'files-sdk/r2'
 import type { R2Bucket } from 'files-sdk/r2'
 
-import { getRuntimeEnv } from './runtimeEnv'
+import type { RuntimeEnv } from './runtimeEnv'
 
 type StorageClient = InstanceType<typeof Files>
 
-const requireEnv = (name: string) => {
+const requireEnv = (name: keyof RuntimeEnv) => {
     const value = getRuntimeEnv()[name]
     if (typeof value !== 'string' || !value)
         throw new Error(
@@ -21,22 +21,18 @@ const getStorage = () => {
     if (storageClient) return storageClient
 
     const binding = getRuntimeEnv().R2 as R2Bucket | undefined
+    if (!binding || typeof binding !== 'object')
+        throw new Error('Missing required Cloudflare R2 binding: R2')
 
+    // files-sdk's HTTP adapter is intentionally not configured here. Runtime
+    // R2 credentials are not safe in a Worker; all reads and writes stay on
+    // the native binding. The direct AWS SDK dependencies remain in
+    // package.json solely for files-sdk's build-time compatibility bug.
     storageClient = new Files({
-        adapter:
-            binding && typeof binding === 'object'
-                ? r2({
-                      binding,
-                      publicBaseUrl: requireEnv('R2_PUBLIC_BASE_URL'),
-                  })
-                : r2({
-                      bucket: requireEnv('R2_BUCKET'),
-                      accountId: requireEnv('R2_ACCOUNT_ID'),
-                      accessKeyId: requireEnv('R2_ACCESS_KEY_ID'),
-                      secretAccessKey: requireEnv('R2_SECRET_ACCESS_KEY'),
-                      publicBaseUrl: requireEnv('R2_PUBLIC_BASE_URL'),
-                      client: 'fetch',
-                  }),
+        adapter: r2({
+            binding,
+            publicBaseUrl: requireEnv('R2_PUBLIC_BASE_URL'),
+        }),
     })
     return storageClient
 }

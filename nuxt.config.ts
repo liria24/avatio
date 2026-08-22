@@ -77,42 +77,6 @@ const routeRules: { [path: string]: NitroRouteConfig } = {
     ),
 }
 
-const rateLimitBindings = {
-    ratelimits: [
-        {
-            name: 'RATE_LIMIT_USER_ACTION',
-            namespace_id: '2101',
-            simple: {
-                limit: 5,
-                period: 60,
-            },
-        },
-        {
-            name: 'RATE_LIMIT_IMAGE',
-            namespace_id: '2102',
-            simple: {
-                limit: 30,
-                period: 60,
-            },
-        },
-        {
-            name: 'RATE_LIMIT_DRAFT',
-            namespace_id: '2103',
-            simple: {
-                limit: 120,
-                period: 60,
-            },
-        },
-    ],
-} as const
-
-// Nitro forwards this to the generated Wrangler config. Its bundled type has not yet added `cache`.
-const workersCacheConfig = {
-    cache: {
-        enabled: true,
-    },
-} as const
-
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
     compatibilityDate: '2026-05-26',
@@ -167,7 +131,6 @@ export default defineNuxtConfig({
     routeRules,
 
     nitro: {
-        preset: 'cloudflare-module',
         // Workerd's console.createTask getter throws when Unenv and Hookable probe it at import time.
         alias: {
             'node:console': fileURLToPath(
@@ -182,68 +145,6 @@ export default defineNuxtConfig({
             // would execute their API data loaders before Cloudflare bindings exist.
             crawlLinks: false,
         },
-        cloudflare: {
-            deployConfig: true,
-            wrangler: {
-                name: 'avatio',
-                preview_urls: true,
-                ...workersCacheConfig,
-                compatibility_flags: ['no_handle_cross_request_promise_resolution'],
-                observability: {
-                    enabled: true,
-                    head_sampling_rate: Number(
-                        process.env.CLOUDFLARE_OBSERVABILITY_HEAD_SAMPLING_RATE ?? 1,
-                    ),
-                },
-                account_id: process.env.CLOUDFLARE_ACCOUNT_ID,
-                d1_databases: [
-                    {
-                        binding: 'DB',
-                        database_name: 'avatio-content',
-                    },
-                ],
-                kv_namespaces: [
-                    {
-                        binding: 'KV',
-                        id: '8d93b5819aab49df9d3244c84a7741ed',
-                    },
-                ],
-                r2_buckets: [
-                    {
-                        binding: 'R2',
-                        bucket_name: 'avatio',
-                    },
-                ],
-                ai: {
-                    binding: 'AI',
-                },
-                send_email: [
-                    {
-                        name: 'EMAIL',
-                    },
-                ],
-                ...rateLimitBindings,
-                triggers: {
-                    crons: ['0 22 * * *'],
-                },
-                queues: {
-                    producers: [
-                        {
-                            queue: 'item-revalidation',
-                            binding: 'ITEM_REVALIDATION_QUEUE',
-                        },
-                    ],
-                    consumers: [
-                        {
-                            queue: 'item-revalidation',
-                            max_batch_size: 10,
-                            max_batch_timeout: 5,
-                            max_retries: 3,
-                        },
-                    ],
-                },
-            },
-        },
         compressPublicAssets: true,
         storage: {
             auth: {
@@ -256,11 +157,6 @@ export default defineNuxtConfig({
                 binding: 'KV',
                 base: 'cache',
             },
-            flags: {
-                driver: 'cloudflare-kv-binding',
-                binding: 'KV',
-                base: 'flags',
-            },
         },
         devStorage: {
             auth: {
@@ -269,10 +165,6 @@ export default defineNuxtConfig({
             },
             cache: {
                 driver: 'null',
-            },
-            flags: {
-                driver: 'fs-lite',
-                base: './.data/storage/flags',
             },
         },
         experimental: {
@@ -295,13 +187,6 @@ export default defineNuxtConfig({
     },
 
     runtimeConfig: {
-        cloudflare: {
-            accountId: process.env.CLOUDFLARE_ACCOUNT_ID,
-            apiToken: process.env.CLOUDFLARE_API_TOKEN,
-        },
-        betterAuth: {
-            secret: process.env.BETTER_AUTH_SECRET,
-        },
         booth: {
             proxyUrl: process.env.NUXT_BOOTH_PROXY_URL,
         },

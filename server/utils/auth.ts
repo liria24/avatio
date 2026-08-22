@@ -38,179 +38,209 @@ export const purgeUserSettingsSessionCache = async (userId: string) => {
 
 const productionCookies = process.env.NODE_ENV === 'production'
 
-const options = {
-    ...authSchemaOptions,
-    appName: 'Avatio',
-    secret: process.env.BETTER_AUTH_SECRET as string,
+const createAuth = (event?: H3Event) => {
+    const options = {
+        ...authSchemaOptions,
+        appName: 'Avatio',
+        // Cloudflare replaces process.env with an empty object in Workers.
+        // Resolve secrets from the typed WebsiteEnv binding at request time.
+        secret: getRuntimeEnvString('BETTER_AUTH_SECRET', event) ?? '',
 
-    baseURL: {
-        allowedHosts: ['localhost', 'localhost:*', 'dev.avatio.me', 'avatio.me', '*.workers.dev'],
-    },
-
-    database: drizzleAdapter(dbProxy, {
-        provider: 'sqlite',
-        schema,
-        usePlural: true,
-    }),
-
-    user: {
-        ...authSchemaOptions.user,
-        deleteUser: {
-            enabled: true,
+        baseURL: {
+            allowedHosts: [
+                'localhost',
+                'localhost:*',
+                'dev.avatio.me',
+                'avatio.me',
+                '*.workers.dev',
+            ],
         },
-    },
 
-    session: {
-        expiresIn: 60 * 60 * 24 * 30,
-        updateAge: 60 * 60 * 24,
-        cookieCache: {
-            enabled: true,
-            maxAge: SESSION_COOKIE_CACHE_MAX_AGE,
-        },
-    },
+        database: drizzleAdapter(dbProxy, {
+            provider: 'sqlite',
+            schema,
+            usePlural: true,
+        }),
 
-    emailAndPassword: {
-        enabled: import.meta.dev,
-    },
-
-    socialProviders: {
-        twitter: {
-            clientId: process.env.TWITTER_CLIENT_ID as string,
-            clientSecret: process.env.TWITTER_CLIENT_SECRET as string,
-            mapProfileToUser: async (profile) => ({
-                username: profile.data.username,
-                displayUsername: profile.data.username,
-                email: profile.data.email,
-                name: profile.data.name,
-                bio: profile.data.description,
-                image: profile.data.profile_image_url?.endsWith('_normal.jpg')
-                    ? profile.data.profile_image_url.replace(/_normal\.jpg$/, '_400x400.jpg')
-                    : profile.data.profile_image_url,
-                emailVerified: true,
-            }),
-        },
-    },
-
-    databaseHooks: {
         user: {
-            create: {
-                before: async (user) => {
-                    let image = user.image
+            ...authSchemaOptions.user,
+            deleteUser: {
+                enabled: true,
+            },
+        },
 
-                    if (image)
-                        try {
-                            const buffer = await $fetch<Blob>(image)
-                            const arrayBuffer = await buffer.arrayBuffer()
-                            const imageId = nanoid(JPG_FILENAME_LENGTH)
-                            await storage.upload(
-                                `avatar/${imageId}.jpg`,
-                                Buffer.from(arrayBuffer),
-                                {
-                                    contentType: 'image/jpeg',
-                                },
-                            )
-                            image = withHttps(await storage.url(`avatar/${imageId}.jpg`))
-                        } catch {
-                            image = null
+        session: {
+            expiresIn: 60 * 60 * 24 * 30,
+            updateAge: 60 * 60 * 24,
+            cookieCache: {
+                enabled: true,
+                maxAge: SESSION_COOKIE_CACHE_MAX_AGE,
+            },
+        },
+
+        emailAndPassword: {
+            enabled: import.meta.dev,
+        },
+
+        socialProviders: {
+            twitter: {
+                clientId: getRuntimeEnvString('TWITTER_CLIENT_ID', event) ?? '',
+                clientSecret: getRuntimeEnvString('TWITTER_CLIENT_SECRET', event) ?? '',
+                mapProfileToUser: async (profile) => ({
+                    username: profile.data.username,
+                    displayUsername: profile.data.username,
+                    email: profile.data.email,
+                    name: profile.data.name,
+                    bio: profile.data.description,
+                    image: profile.data.profile_image_url?.endsWith('_normal.jpg')
+                        ? profile.data.profile_image_url.replace(/_normal\.jpg$/, '_400x400.jpg')
+                        : profile.data.profile_image_url,
+                    emailVerified: true,
+                }),
+            },
+        },
+
+        databaseHooks: {
+            user: {
+                create: {
+                    before: async (user) => {
+                        let image = user.image
+
+                        if (image)
+                            try {
+                                const buffer = await $fetch<Blob>(image)
+                                const arrayBuffer = await buffer.arrayBuffer()
+                                const imageId = nanoid(JPG_FILENAME_LENGTH)
+                                await storage.upload(
+                                    `avatar/${imageId}.jpg`,
+                                    Buffer.from(arrayBuffer),
+                                    {
+                                        contentType: 'image/jpeg',
+                                    },
+                                )
+                                image = withHttps(await storage.url(`avatar/${imageId}.jpg`))
+                            } catch {
+                                image = null
+                            }
+
+                        return {
+                            data: {
+                                ...user,
+                                image,
+                            },
                         }
-
-                    return {
-                        data: {
-                            ...user,
-                            image,
-                        },
-                    }
+                    },
                 },
-            },
-            update: {
-                after: async (user) => {
-                    const event = getCurrentEvent()
-                    if (!event) return
+                update: {
+                    after: async (user) => {
+                        const event = getCurrentEvent()
+                        if (!event) return
 
-                    await purgeUserContentCache(
-                        event,
-                        useDB(),
-                        user.id,
-                        'better auth user update',
-                        { includePopularAvatars: true },
-                    )
+                        await purgeUserContentCache(
+                            event,
+                            useDB(),
+                            user.id,
+                            'better auth user update',
+                            { includePopularAvatars: true },
+                        )
+                    },
                 },
-            },
-            delete: {
-                before: async (user) => {
-                    const event = getCurrentEvent()
-                    if (!event) return
+                delete: {
+                    before: async (user) => {
+                        const event = getCurrentEvent()
+                        if (!event) return
 
-                    event.context.userDeletionCacheTags = await getUserContentCacheTags(
-                        useDB(),
-                        user.id,
-                    )
-                },
-                after: async (_user) => {
-                    const event = getCurrentEvent()
-                    if (!event) return
+                        event.context.userDeletionCacheTags = await getUserContentCacheTags(
+                            useDB(),
+                            user.id,
+                        )
+                    },
+                    after: async (_user) => {
+                        const event = getCurrentEvent()
+                        if (!event) return
 
-                    await purgeEdgeCacheTags(
-                        event,
-                        [
-                            ...(event.context.userDeletionCacheTags || []),
-                            EDGE_CACHE_TAGS.popularAvatars,
-                        ],
-                        'better auth user delete',
-                    )
+                        await purgeEdgeCacheTags(
+                            event,
+                            [
+                                ...(event.context.userDeletionCacheTags || []),
+                                EDGE_CACHE_TAGS.popularAvatars,
+                            ],
+                            'better auth user delete',
+                        )
+                    },
                 },
             },
         },
-    },
 
-    onAPIError: {
-        // Let Better Auth turn API errors into its expected response instead of
-        // rethrowing them past Nitro, where the original cause was discarded.
-        onError: (error) => logBetterAuthError('API error', [error]),
-    },
-
-    logger: {
-        level: 'error',
-        disableColors: true,
-        log: (_level, message, ...args) => logBetterAuthError(message, args),
-    },
-
-    advanced: {
-        ...authSchemaOptions.advanced,
-        ipAddress: {
-            ipAddressHeaders: ['x-forwarded-for', 'x-real-ip', 'cf-connecting-ip'],
+        onAPIError: {
+            // Let Better Auth turn API errors into its expected response instead of
+            // rethrowing them past Nitro, where the original cause was discarded.
+            onError: (error) => logBetterAuthError('API error', [error]),
         },
-        useSecureCookies: productionCookies,
-    },
-} satisfies BetterAuthOptions
 
-export const auth = betterAuth({
-    ...options,
-    plugins: [
-        ...options.plugins,
-        customSession(async ({ user, session }) => {
-            const settings = await getUserSettingsForSession(
-                useStorage('auth'),
-                user.id,
-                SESSION_COOKIE_CACHE_MAX_AGE,
-                async () =>
-                    (await dbProxy.query.userSettings.findFirst({
-                        where: { userId: { eq: user.id } },
-                        columns: {
-                            updatedAt: true,
-                            showPrivateSetups: true,
-                            showNSFW: true,
-                        },
-                    })) ?? undefined,
-            )
+        logger: {
+            level: 'error',
+            disableColors: true,
+            log: (_level, message, ...args) => logBetterAuthError(message, args),
+        },
 
-            return {
-                user: { ...user, settings },
-                session,
-            }
-        }, options),
-    ],
-})
+        advanced: {
+            ...authSchemaOptions.advanced,
+            ipAddress: {
+                ipAddressHeaders: ['x-forwarded-for', 'x-real-ip', 'cf-connecting-ip'],
+            },
+            useSecureCookies: productionCookies,
+        },
+    } satisfies BetterAuthOptions
 
-export type Session = typeof auth.$Infer.Session
-export type Sessions = Awaited<ReturnType<typeof auth.api.listDeviceSessions>>
+    return betterAuth({
+        ...options,
+        plugins: [
+            ...options.plugins,
+            customSession(async ({ user, session }) => {
+                const settings = await getUserSettingsForSession(
+                    useStorage('auth'),
+                    user.id,
+                    SESSION_COOKIE_CACHE_MAX_AGE,
+                    async () =>
+                        (await dbProxy.query.userSettings.findFirst({
+                            where: { userId: { eq: user.id } },
+                            columns: {
+                                updatedAt: true,
+                                showPrivateSetups: true,
+                                showNSFW: true,
+                            },
+                        })) ?? undefined,
+                )
+
+                return {
+                    user: { ...user, settings },
+                    session,
+                }
+            }, options),
+        ],
+    })
+}
+
+export type Auth = ReturnType<typeof createAuth>
+
+let authInstance: Auth | undefined
+let authConfigKey: string | undefined
+
+/** Resolve Better Auth only after Cloudflare has installed the request env. */
+export const getAuth = (event?: H3Event): Auth => {
+    const secret = getRuntimeEnvString('BETTER_AUTH_SECRET', event) ?? ''
+    const clientId = getRuntimeEnvString('TWITTER_CLIENT_ID', event) ?? ''
+    const clientSecret = getRuntimeEnvString('TWITTER_CLIENT_SECRET', event) ?? ''
+    const configKey = `${secret}\u0000${clientId}\u0000${clientSecret}`
+
+    if (!authInstance || authConfigKey !== configKey) {
+        authInstance = createAuth(event)
+        authConfigKey = configKey
+    }
+
+    return authInstance
+}
+
+export type Session = Auth['$Infer']['Session']
+export type Sessions = Awaited<ReturnType<Auth['api']['listDeviceSessions']>>

@@ -42,6 +42,9 @@ export interface SendEmailInput {
 const defaultEmailFrom = 'hello@avatio.me'
 
 export const getEmailFromAddress = () => {
+    const bindingAddress = getRuntimeEnvString('NUXT_EMAIL_FROM_ADDRESS')
+    if (bindingAddress) return bindingAddress
+
     try {
         const config = useRuntimeConfig()
         const fromAddress = config.email?.fromAddress

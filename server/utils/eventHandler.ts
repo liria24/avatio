@@ -1,6 +1,7 @@
 import type { H3Event } from 'h3'
 
 import { hasBetterAuthSessionCookie } from '../../shared/utils/authCookie'
+import { getAuth } from './auth'
 
 interface SessionEventHandlerOptions {
     rejectBannedUser?: boolean
@@ -44,7 +45,7 @@ export const sessionEventHandler = <T = unknown>(
 ) =>
     promiseEventHandler(async ({ event, db }) => {
         const session = hasBetterAuthSessionCookie(event.headers.get('cookie'))
-            ? await auth.api.getSession({ headers: event.headers })
+            ? await getAuth(event).api.getSession({ headers: event.headers })
             : null
 
         if (options?.rejectBannedUser) rejectBannedUser(session)

@@ -1,7 +1,9 @@
+import packageJson from '../package.json'
+
 export default defineAppConfig({
     app: {
         name: 'Avatio',
-        version: '1.10.3',
+        version: packageJson.version,
         site: 'https://avatio.me',
         repo: 'https://github.com/liria24/avatio',
         githubIssue: 'https://github.com/liria24/avatio/issues/new/choose',
