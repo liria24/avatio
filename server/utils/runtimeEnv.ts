@@ -7,7 +7,7 @@ type RuntimeEnv = Partial<WebsiteEnv>
 
 const getGlobalRuntimeEnv = (): RuntimeEnv | undefined => globalThis.__env__
 
-const getCloudflareRuntimeEnv = (event?: H3Event) => event?.context.cloudflare?.env
+const getCloudflareRuntimeEnv = (event?: H3Event) => event?.context?.cloudflare?.env
 
 const getCurrentEventRuntimeEnv = () => {
     try {

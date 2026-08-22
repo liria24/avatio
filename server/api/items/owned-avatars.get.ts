@@ -48,7 +48,7 @@ export default authedSessionEventHandler<Item[]>(async ({ event, session, db }) 
         }),
     ])
 
-    const { forceUpdateItem } = await getAppFlags()
+    const forceUpdateItem = await getForceUpdateItemFlag(event)
 
     runAfterResponse(
         Promise.all(

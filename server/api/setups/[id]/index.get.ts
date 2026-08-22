@@ -142,7 +142,7 @@ export default sessionEventHandler<Setup>(async ({ event, session, db }) => {
     const revalidationTasks: Promise<unknown>[] = []
     let failedItemsCount = 0
 
-    const { forceUpdateItem } = await getAppFlags()
+    const forceUpdateItem = await getForceUpdateItemFlag(event)
 
     for (const setupItem of data.items) {
         revalidationTasks.push(

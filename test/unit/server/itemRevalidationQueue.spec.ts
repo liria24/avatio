@@ -36,7 +36,7 @@ describe('handleItemRevalidationMessage', () => {
         process.env.NODE_ENV = 'development'
         const send = vi.fn().mockResolvedValue(undefined)
         const queue = { send }
-        vi.stubGlobal('getRuntimeEnv', () => ({ ITEM_REVALIDATION_QUEUE: queue }))
+        vi.stubGlobal('__env__', { ITEM_REVALIDATION_QUEUE: queue })
 
         try {
             const { enqueueItemRevalidation } =

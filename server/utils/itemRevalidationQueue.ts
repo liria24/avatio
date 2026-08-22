@@ -3,7 +3,7 @@ import type { H3Event } from 'h3'
 
 const log = logger('itemRevalidationQueue')
 const QUEUE_BINDING = 'ITEM_REVALIDATION_QUEUE'
-const REVALIDATION_LOCK_TTL = 60
+const REVALIDATION_LOCK_TTL = 60 * 30
 
 export interface ItemRevalidationMessage {
     id: Item['id']
@@ -65,10 +65,6 @@ export const enqueueItemRevalidation = async (
             force: options.force,
         } satisfies ItemRevalidationMessage)
 
-        log.info(
-            `Enqueued revalidation for ${item.platform}:${item.id}, force=${options.force === true}`,
-        )
-
         return true
     } catch (error) {
         await useStorage('cache').del(lockKey)
@@ -90,7 +86,14 @@ export const handleItemRevalidationMessage = async (
         })
         persistedItemId = item.id
     } catch (error) {
-        if (!(error instanceof PermanentItemResolutionError)) throw error
+        if (
+            typeof error !== 'object' ||
+            error === null ||
+            !('statusCode' in error) ||
+            error.statusCode !== 404 ||
+            !('reason' in error)
+        )
+            throw error
     }
 
     const relatedSetupItems = await db.query.setupItems.findMany({
