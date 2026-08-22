@@ -145,6 +145,7 @@ const copyWithConcurrency = async (images: ImageInfo[], backupDate: string) => {
 
 export const runReportJob = async () => {
     const db = useDB()
+    const stage = getRuntimeEnvString('STAGE') ?? 'development'
 
     const now = new Date()
     const yesterday = new Date()
@@ -268,7 +269,7 @@ export const runReportJob = async () => {
 
     if (contents.length > 0) {
         const embed = {
-            title: 'Avatio Report',
+            title: `Avatio Report [${stage}]`,
             color: 0xeeeeee,
             timestamp: now.toISOString(),
             fields: contents.map((content) => ({
@@ -306,6 +307,7 @@ export const runReportJob = async () => {
 }
 
 export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) => {
+    const stage = getRuntimeEnvString('STAGE') ?? 'development'
     const thresholdDate = new Date(Date.now() - IMAGE_DELETION_THRESHOLD)
     const publicBaseUrl = getR2PublicBaseUrl()
     const db = useDB()
@@ -409,7 +411,7 @@ export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) 
             await sendMessage({
                 embeds: [
                     {
-                        title: 'Avatio Data Cleanup',
+                        title: `Avatio Data Cleanup [${stage}]`,
                         description: message,
                         color: 0xeeeeee,
                         timestamp: new Date().toISOString(),

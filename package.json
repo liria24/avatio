@@ -25,8 +25,8 @@
         "test:nuxt": "vitest --project nuxt",
         "plan:development": "alchemy plan --stage development",
         "plan:production": "alchemy plan --stage production",
-        "deploy:development": "alchemy deploy --stage development --adopt",
-        "deploy:production": "alchemy deploy --stage production --adopt",
+        "deploy:development": "alchemy deploy --stage development --adopt --yes",
+        "deploy:production": "alchemy deploy --stage production --adopt --yes",
         "db:generate": "drizzle-kit generate",
         "drizzle:generate": "bun run db:generate"
     },

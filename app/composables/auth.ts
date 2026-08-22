@@ -10,7 +10,7 @@ import { withoutHost } from 'ufo'
 
 import { hasBetterAuthSessionCookie } from '#shared/utils/authCookie'
 
-import type { Auth } from '../../server/utils/auth'
+type Auth = ReturnType<typeof getAuth>
 
 const client = createAuthClient({
     plugins: [

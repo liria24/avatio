@@ -3,18 +3,14 @@ import type { H3Event } from 'h3'
 import type { WebsiteEnv } from '../../alchemy.run'
 
 /** Runtime bindings injected by the Alchemy Website resource. */
-export type RuntimeEnv = Partial<WebsiteEnv>
+type RuntimeEnv = Partial<WebsiteEnv>
 
-declare const useEvent: (() => H3Event) | undefined
-
-const getGlobalRuntimeEnv = (): RuntimeEnv | undefined =>
-    (globalThis as typeof globalThis & { __env__?: RuntimeEnv }).__env__
+const getGlobalRuntimeEnv = (): RuntimeEnv | undefined => globalThis.__env__
 
 const getCloudflareRuntimeEnv = (event?: H3Event) => event?.context.cloudflare?.env
 
 const getCurrentEventRuntimeEnv = () => {
     try {
-        if (typeof useEvent !== 'function') return undefined
         return getCloudflareRuntimeEnv(useEvent())
     } catch {
         // not inside a request context

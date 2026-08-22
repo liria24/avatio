@@ -91,6 +91,7 @@ describe('runCleanupJob', () => {
         vi.useFakeTimers()
         vi.setSystemTime(new Date('2026-06-07T12:00:00.000Z'))
         process.env.R2_PUBLIC_BASE_URL = publicBaseUrl
+        process.env.STAGE = 'development'
         process.env.LIRIA_DISCORD_ENDPOINT = `${discordEndpoint}/`
         process.env.LIRIA_DISCORD_ACCESS_TOKEN = 'test-token'
         discordFetch.mockReset()
@@ -108,6 +109,7 @@ describe('runCleanupJob', () => {
         vi.resetModules()
         vi.unstubAllGlobals()
         delete process.env.R2_PUBLIC_BASE_URL
+        delete process.env.STAGE
         delete process.env.LIRIA_DISCORD_ENDPOINT
         delete process.env.LIRIA_DISCORD_ACCESS_TOKEN
         delete runtimeGlobal.__env__
@@ -247,7 +249,11 @@ describe('runCleanupJob', () => {
             baseURL: discordEndpoint,
             method: 'POST',
             headers: { Authorization: 'Bearer test-token' },
-            body: expect.objectContaining({ embeds: expect.any(Array) }),
+            body: expect.objectContaining({
+                embeds: expect.arrayContaining([
+                    expect.objectContaining({ title: 'Avatio Data Cleanup [development]' }),
+                ]),
+            }),
         })
     })
 

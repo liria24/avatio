@@ -1,7 +1,6 @@
 import type { H3Event } from 'h3'
 
 import { hasBetterAuthSessionCookie } from '../../shared/utils/authCookie'
-import { getAuth } from './auth'
 
 interface SessionEventHandlerOptions {
     rejectBannedUser?: boolean

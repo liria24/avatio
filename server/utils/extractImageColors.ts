@@ -2,18 +2,12 @@ import { extractColorsFromImageData } from 'extract-colors'
 import { PNG } from 'pngjs/browser'
 
 const log = logger('extractImageColors')
-const MAX_SAMPLE_DIMENSION = 96
 const MAX_COLORS = 6
 
 interface ExtractedImageColors {
     colors: string[]
     width: number
     height: number
-}
-
-const createCloudflareImageUrl = (url: string) => {
-    const baseUrl = getRuntimeEnvString('PUBLIC_SITE_URL') || useRuntimeConfig().public.siteUrl
-    return `${baseUrl}/cdn-cgi/image/fit=scale-down,width=${MAX_SAMPLE_DIMENSION},format=png,quality=100/${encodeURIComponent(url)}`
 }
 
 const extractImageColorsFromPng = (pngBytes: ArrayBuffer | Uint8Array): ExtractedImageColors => {
@@ -51,13 +45,10 @@ const extractImageColorsFromPng = (pngBytes: ArrayBuffer | Uint8Array): Extracte
 }
 
 export const extractImageColors = async (
-    image: string | ArrayBuffer | Uint8Array,
+    image: ArrayBuffer | Uint8Array,
 ): Promise<ExtractedImageColors> => {
     try {
-        if (typeof image !== 'string') return extractImageColorsFromPng(image)
-        const response = await fetch(createCloudflareImageUrl(image))
-        if (!response.ok) return { colors: [], width: 0, height: 0 }
-        return extractImageColorsFromPng(await response.arrayBuffer())
+        return extractImageColorsFromPng(image)
     } catch (error) {
         log.warn('Failed to extract image colors:', error)
         return { colors: [], width: 0, height: 0 }
