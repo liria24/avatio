@@ -1,13 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@@/database/schema', () => ({
+    itemCategoryOverrides: {
+        platform: 'item_category_overrides.platform',
+        itemId: 'item_category_overrides.item_id',
+        category: 'item_category_overrides.category',
+    },
     items: { id: 'items.id' },
     shops: { id: 'shops.id' },
 }))
 vi.mock('drizzle-orm', () => ({ eq: vi.fn() }))
+const getForceUpdateItemFlag = vi.fn()
+const getItemAdmission = vi.fn()
+vi.mock('../../../server/utils/appConfig', () => ({ getForceUpdateItemFlag, getItemAdmission }))
 
 const findFirst = vi.fn()
-const getAppFlags = vi.fn()
 const externalFetch = vi.fn()
 const notFound = vi.fn(() => Object.assign(new Error('Not found'), { statusCode: 404 }))
 
@@ -40,17 +47,18 @@ const cachedItem = {
 
 beforeEach(() => {
     findFirst.mockReset()
-    getAppFlags.mockReset().mockResolvedValue({
-        forceUpdateItem: false,
-        allowedBoothCategoryId: [],
-        specificItemCategories: { booth: {}, github: {} },
+    getForceUpdateItemFlag.mockReset().mockResolvedValue(false)
+    getItemAdmission.mockReset().mockResolvedValue({
+        allowedBoothCategories: new Set<number>(),
+        override: undefined,
     })
     externalFetch.mockReset()
     notFound.mockClear()
     vi.stubGlobal('logger', () => ({ error: vi.fn(), info: vi.fn() }))
-    vi.stubGlobal('getAppFlags', getAppFlags)
     vi.stubGlobal('$fetch', externalFetch)
     vi.stubGlobal('serverError', { notFound })
+    vi.stubGlobal('getForceUpdateItemFlag', getForceUpdateItemFlag)
+    vi.stubGlobal('getItemAdmission', getItemAdmission)
 })
 
 afterEach(() => {
@@ -67,7 +75,7 @@ describe('getItem admission boundary', () => {
             cachedItem,
         )
 
-        expect(getAppFlags).not.toHaveBeenCalled()
+        expect(getForceUpdateItemFlag).not.toHaveBeenCalled()
         expect(externalFetch).not.toHaveBeenCalled()
     })
 
@@ -81,7 +89,7 @@ describe('getItem admission boundary', () => {
             },
         )
 
-        expect(getAppFlags).not.toHaveBeenCalled()
+        expect(getForceUpdateItemFlag).not.toHaveBeenCalled()
         expect(externalFetch).not.toHaveBeenCalled()
     })
 

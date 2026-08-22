@@ -28,8 +28,6 @@ const IMAGE_DELETION_THRESHOLD = 24 * 60 * 60 * 1000
 const STORAGE_OPERATION_CONCURRENCY = 8
 
 const BACKUP_PREFIX = 'backup'
-const BACKUP_RULE_ID = 'avatio-backup-cleanup'
-const BACKUP_RETENTION_SECONDS = 3 * 24 * 60 * 60 // 3 days
 
 const sendMessage = (message: { content?: string; embeds?: object[] }) =>
     $fetch('/admin/message', {
@@ -42,15 +40,6 @@ const sendMessage = (message: { content?: string; embeds?: object[] }) =>
         },
         body: message,
     })
-
-interface LifecycleRule {
-    id: string
-    conditions: { prefix: string }
-    enabled: boolean
-    deleteObjectsTransition?: {
-        condition: { maxAge: number; type: 'Age' }
-    }
-}
 
 const getR2PublicBaseUrl = () => getRuntimeEnvString('R2_PUBLIC_BASE_URL')?.replace(/\/+$/, '')
 
@@ -152,57 +141,6 @@ const copyWithConcurrency = async (images: ImageInfo[], backupDate: string) => {
     )
 
     return { backedUp, backupFailed }
-}
-
-const ensureBackupLifecycleRule = async () => {
-    const config = useRuntimeConfig()
-    const accountId = config.cloudflare?.accountId
-    const apiToken = config.cloudflare?.apiToken
-    const bucket = process.env.R2_BUCKET ?? 'avatio'
-
-    if (!accountId || !apiToken) {
-        cleanupLog.warn('Cloudflare credentials not configured; skipping lifecycle rule setup')
-        return
-    }
-
-    const baseUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}/r2/buckets/${bucket}/lifecycle`
-    const headers = {
-        Authorization: `Bearer ${apiToken}`,
-        'Content-Type': 'application/json',
-    }
-
-    let existingRules: LifecycleRule[] = []
-    try {
-        const res = await $fetch<{ result: { rules?: LifecycleRule[] }; success: boolean }>(
-            baseUrl,
-            { headers },
-        )
-        if (res.success) existingRules = res.result.rules ?? []
-    } catch (error) {
-        cleanupLog.warn('Failed to fetch existing lifecycle rules:', error)
-    }
-
-    const backupRule: LifecycleRule = {
-        id: BACKUP_RULE_ID,
-        conditions: { prefix: `${BACKUP_PREFIX}/` },
-        enabled: true,
-        deleteObjectsTransition: {
-            condition: { maxAge: BACKUP_RETENTION_SECONDS, type: 'Age' },
-        },
-    }
-
-    const mergedRules = [...existingRules.filter((r) => r.id !== BACKUP_RULE_ID), backupRule]
-
-    try {
-        await $fetch(baseUrl, {
-            method: 'PUT',
-            headers,
-            body: { rules: mergedRules },
-        })
-        cleanupLog.info('Backup lifecycle rule ensured on R2 bucket')
-    } catch (error) {
-        cleanupLog.warn('Failed to set lifecycle rules:', error)
-    }
 }
 
 export const runReportJob = async () => {
@@ -439,8 +377,6 @@ export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) 
             },
         }
     }
-
-    await ensureBackupLifecycleRule()
 
     const { backedUp, backupFailed: backupFailures } = await copyWithConcurrency(allImages, today)
     const backedUpSet = new Set(backedUp)

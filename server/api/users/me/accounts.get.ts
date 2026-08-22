@@ -1,3 +1,3 @@
 export default authedSessionEventHandler(async ({ event }) =>
-    auth.api.listUserAccounts({ headers: event.headers }),
+    getAuth(event).api.listUserAccounts({ headers: event.headers }),
 )

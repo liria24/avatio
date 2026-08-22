@@ -115,16 +115,16 @@ export const useAdmin = () => {
         errorLog: 'Error unhiding setup:',
     })
 
-    const saveAppFlags = async (flags: AppFlags): Promise<AppFlags | null> => {
+    const saveAppConfig = async (config: AppConfig): Promise<AppConfig | null> => {
         try {
-            const response = await $fetch<AppFlags>('/api/admin/flags', {
+            const response = await $fetch<AppConfig>('/api/admin/config', {
                 method: 'PUT',
-                body: flags,
+                body: config,
             })
             toast.add({ title: t('toast.admin.configSaved'), color: 'success' })
             return response
         } catch (error) {
-            console.error('Error saving app flags:', error)
+            console.error('Error saving app config:', error)
             toast.add({ title: t('toast.admin.configSaveFailed'), color: 'error' })
             return null
         }
@@ -177,7 +177,7 @@ export const useAdmin = () => {
         openFeedback,
         hideSetup,
         unhideSetup,
-        saveAppFlags,
+        saveAppConfig,
         changeItemNiceName,
         banUserWithReason,
         createChangelog,

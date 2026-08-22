@@ -10,13 +10,15 @@ import { withoutHost } from 'ufo'
 
 import { hasBetterAuthSessionCookie } from '#shared/utils/authCookie'
 
+import type { Auth } from '../../server/utils/auth'
+
 const client = createAuthClient({
     plugins: [
         usernameClient(),
         adminClient(),
         multiSessionClient(),
-        customSessionClient<typeof auth>(),
-        inferAdditionalFields<typeof auth>(),
+        customSessionClient<Auth>(),
+        inferAdditionalFields<Auth>(),
     ],
 })
 

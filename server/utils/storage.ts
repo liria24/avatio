@@ -4,9 +4,9 @@ import type { R2Bucket } from 'files-sdk/r2'
 
 type StorageClient = InstanceType<typeof Files>
 
-const requireEnv = (name: string) => {
+const requireEnv = (name: 'R2_PUBLIC_BASE_URL' | 'SELF_URL') => {
     const value = getRuntimeEnvString(name)
-    if (!value)
+    if (typeof value !== 'string' || !value)
         throw new Error(
             `Missing required environment variable: ${name}. Ensure it is set before starting the server.`,
         )
@@ -19,26 +19,21 @@ const getStorage = () => {
     if (storageClient) return storageClient
 
     const binding = getRuntimeEnv().R2 as R2Bucket | undefined
-    const r2Credentials = {
-        bucket: requireEnv('R2_BUCKET'),
-        accountId: requireEnv('CLOUDFLARE_ACCOUNT_ID'),
-        accessKeyId: requireEnv('R2_ACCESS_KEY_ID'),
-        secretAccessKey: requireEnv('R2_SECRET_ACCESS_KEY'),
-    }
+    if (!binding || typeof binding !== 'object')
+        throw new Error('Missing required Cloudflare R2 binding: R2')
 
+    // files-sdk's HTTP adapter is intentionally not configured here. Runtime
+    // R2 credentials are not safe in a Worker; all reads and writes stay on
+    // the native binding. The direct AWS SDK dependencies remain in
+    // package.json solely for files-sdk's build-time compatibility bug.
     storageClient = new Files({
-        adapter:
-            binding && typeof binding === 'object'
-                ? r2({
-                      binding,
-                      ...r2Credentials,
-                      publicBaseUrl: requireEnv('R2_PUBLIC_BASE_URL'),
-                  })
-                : r2({
-                      ...r2Credentials,
-                      publicBaseUrl: requireEnv('R2_PUBLIC_BASE_URL'),
-                      client: 'fetch',
-                  }),
+        adapter: r2({
+            binding,
+            publicBaseUrl:
+                import.meta.dev || process.env.NODE_ENV === 'test'
+                    ? `${requireEnv('SELF_URL')}/api/_local/r2`
+                    : requireEnv('R2_PUBLIC_BASE_URL'),
+        }),
     })
     return storageClient
 }
