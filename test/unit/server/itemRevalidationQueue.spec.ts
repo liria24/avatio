@@ -54,16 +54,16 @@ describe('handleItemRevalidationMessage', () => {
             platform: 'github' as const,
             reason: 'setup-detail' as const,
             requestedAt: new Date().toISOString(),
+            force: true,
         }
         const pending = import('../../../server/utils/itemRevalidationQueue').then(
-            ({ handleItemRevalidationMessage }) =>
-                handleItemRevalidationMessage(message, cache as never),
+            ({ handleItemRevalidationMessage }) => handleItemRevalidationMessage(message),
         )
 
         await vi.waitFor(() => expect(getItem).toHaveBeenCalled())
         expect(getItem).toHaveBeenCalledWith(undefined, db, message.id, message.platform, {
             allowExternalResolution: true,
-            cache,
+            forceRefresh: true,
         })
         expect(purge).not.toHaveBeenCalled()
 
@@ -97,15 +97,12 @@ describe('handleItemRevalidationMessage', () => {
         const { handleItemRevalidationMessage } =
             await import('../../../server/utils/itemRevalidationQueue')
 
-        await handleItemRevalidationMessage(
-            {
-                id: 'missing',
-                platform: 'booth',
-                reason: 'owned-avatars',
-                requestedAt: new Date().toISOString(),
-            },
-            cache as never,
-        )
+        await handleItemRevalidationMessage({
+            id: 'missing',
+            platform: 'booth',
+            reason: 'owned-avatars',
+            requestedAt: new Date().toISOString(),
+        })
 
         expect(purge).toHaveBeenCalledWith(
             cache,
@@ -128,20 +125,16 @@ describe('handleItemRevalidationMessage', () => {
             },
         }))
 
-        const cache = { purge: vi.fn() }
         const { handleItemRevalidationMessage } =
             await import('../../../server/utils/itemRevalidationQueue')
 
         await expect(
-            handleItemRevalidationMessage(
-                {
-                    id: 'missing',
-                    platform: 'booth',
-                    reason: 'owned-avatars',
-                    requestedAt: new Date().toISOString(),
-                },
-                cache as never,
-            ),
+            handleItemRevalidationMessage({
+                id: 'missing',
+                platform: 'booth',
+                reason: 'owned-avatars',
+                requestedAt: new Date().toISOString(),
+            }),
         ).rejects.toBe(error)
 
         expect(findMany).not.toHaveBeenCalled()
@@ -157,15 +150,12 @@ describe('handleItemRevalidationMessage', () => {
         const { handleItemRevalidationMessage } =
             await import('../../../server/utils/itemRevalidationQueue')
 
-        await handleItemRevalidationMessage(
-            {
-                id: 'owner/repo',
-                platform: 'github',
-                reason: 'setup-detail',
-                requestedAt: new Date().toISOString(),
-            },
-            cache as never,
-        )
+        await handleItemRevalidationMessage({
+            id: 'owner/repo',
+            platform: 'github',
+            reason: 'setup-detail',
+            requestedAt: new Date().toISOString(),
+        })
 
         expect(findMany).toHaveBeenCalledWith({
             where: { itemId: { eq: 'Owner/Repo' } },

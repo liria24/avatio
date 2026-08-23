@@ -82,6 +82,8 @@ export default async (
 
     await options.beforeExternalResolution?.()
 
+    log.info(`Processing item: ${id}, Platform: ${resolvedProvider}, force=${forceRefresh}`)
+
     if (resolvedProvider === 'booth') {
         const config = event ? useRuntimeConfig(event) : useRuntimeConfig()
         const proxyUrl = config.booth.proxyUrl
@@ -138,6 +140,8 @@ export default async (
                 },
                 responseMessage: 'Invalid BOOTH proxy response',
             })
+
+        log.info(`Resolved BOOTH item ${id}: category=${item.category.id}`)
 
         if (!allowedBoothCategoryId.includes(item.category.id))
             throw new PermanentItemResolutionError(

@@ -3,7 +3,7 @@ import type { H3Event } from 'h3'
 
 const log = logger('itemRevalidationQueue')
 const QUEUE_BINDING = 'ITEM_REVALIDATION_QUEUE'
-const REVALIDATION_LOCK_TTL = 60 * 30
+const REVALIDATION_LOCK_TTL = 60
 
 export interface ItemRevalidationMessage {
     id: Item['id']
@@ -49,7 +49,10 @@ export const enqueueItemRevalidation = async (
 
     const lockKey = getLockKey(item.id, item.platform)
     const existingLock = await useStorage('cache').getItem(lockKey)
-    if (existingLock) return false
+    if (existingLock) {
+        log.info(`Skipped revalidation for ${item.platform}:${item.id}: locked`)
+        return false
+    }
 
     await useStorage('cache').setItem(lockKey, true, { ttl: REVALIDATION_LOCK_TTL })
 
@@ -61,6 +64,10 @@ export const enqueueItemRevalidation = async (
             requestedAt: new Date().toISOString(),
             force: options.force,
         } satisfies ItemRevalidationMessage)
+
+        log.info(
+            `Enqueued revalidation for ${item.platform}:${item.id}, force=${options.force === true}`,
+        )
 
         return true
     } catch (error) {
