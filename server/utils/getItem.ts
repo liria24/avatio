@@ -32,6 +32,7 @@ interface GithubReadmeResponse {
 interface GetItemOptions {
     allowExternalResolution?: boolean
     beforeExternalResolution?: () => Promise<void>
+    forceRefresh?: boolean
 }
 
 const getGithubResource = <T>(repo: string, path = ''): Promise<T | null> => {
@@ -61,8 +62,19 @@ export default async (
 
     const { forceUpdateItem, allowedBoothCategoryId, specificItemCategories } = await getAppFlags()
 
-    const { fresh, cachedItem } = await resolveItemCache(db, id, provider, forceUpdateItem)
+    const forceRefresh = forceUpdateItem || options.forceRefresh === true
+
+    const { fresh, cachedItem, revalidationDue } = await resolveItemCache(
+        db,
+        id,
+        provider,
+        forceRefresh,
+    )
+
     if (fresh) return fresh
+
+    if (cachedItem && !revalidationDue)
+        throw serverError.notFound({ responseMessage: 'Item not found or not allowed' })
 
     const resolvedProvider = provider ?? cachedItem?.platform
     if (!resolvedProvider)
@@ -359,7 +371,7 @@ export const persistItem = async (
 export const resolveItemCache = async (
     db: ReturnType<typeof useDB>,
     id: string,
-    category: Platform | undefined,
+    platform: Platform | undefined,
     forceUpdate: boolean,
 ) => {
     const cachedItem =
@@ -393,25 +405,30 @@ export const resolveItemCache = async (
             },
         })) || null
 
-    if (cachedItem?.outdated && !forceUpdate)
-        throw serverError.notFound({
-            responseMessage: 'Item not found or not allowed',
-        })
+    const resolvedPlatform = platform ?? cachedItem?.platform
 
-    const resolvedCategory = category ?? cachedItem?.platform
+    const maxAgeMs = resolvedPlatform
+        ? resolvedPlatform === 'github'
+            ? GITHUB_ITEM_CACHE_DURATION_MS
+            : ITEM_CACHE_DURATION_MS
+        : undefined
 
-    const maxAgeMs = {
-        booth: ITEM_CACHE_DURATION_MS,
-        github: GITHUB_ITEM_CACHE_DURATION_MS,
-    }
+    const age =
+        cachedItem && maxAgeMs !== undefined
+            ? Date.now() - new Date(cachedItem.updatedAt).getTime()
+            : undefined
+
+    const revalidationDue =
+        forceUpdate ||
+        !cachedItem ||
+        (age !== undefined && maxAgeMs !== undefined && age >= maxAgeMs)
 
     const fresh =
-        !forceUpdate &&
-        resolvedCategory &&
-        cachedItem &&
-        Date.now() - new Date(cachedItem.updatedAt).getTime() < maxAgeMs[resolvedCategory]
-            ? cachedItem
-            : null
+        !forceUpdate && cachedItem && !cachedItem.outdated && !revalidationDue ? cachedItem : null
 
-    return { fresh, cachedItem }
+    return {
+        fresh,
+        cachedItem,
+        revalidationDue,
+    }
 }

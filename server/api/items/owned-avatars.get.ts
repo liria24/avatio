@@ -12,26 +12,51 @@ const query = z.object({
 export default authedSessionEventHandler<Item[]>(async ({ event, session, db }) => {
     const { limit } = await validateQuery(query)
 
-    const data = await db.query.items.findMany({
-        where: {
-            outdated: { eq: false },
-            category: { eq: 'avatar' },
-            setupItems: {
-                setup: {
-                    userId: { eq: session.user.id },
+    const [data, outdatedItems] = await Promise.all([
+        db.query.items.findMany({
+            where: {
+                outdated: { eq: false },
+                category: { eq: 'avatar' },
+                setupItems: {
+                    setup: {
+                        userId: { eq: session.user.id },
+                    },
                 },
             },
-        },
-        orderBy: {
-            createdAt: 'desc',
-        },
-        limit,
-    })
+            orderBy: {
+                createdAt: 'desc',
+            },
+            limit,
+        }),
 
-    if (data.length)
-        runAfterResponse(
-            Promise.all(data.map((item) => enqueueItemRevalidation(event, item, 'owned-avatars'))),
-        )
+        db.query.items.findMany({
+            where: {
+                outdated: { eq: true },
+                category: { eq: 'avatar' },
+                setupItems: {
+                    setup: {
+                        userId: { eq: session.user.id },
+                    },
+                },
+            },
+            columns: {
+                id: true,
+                platform: true,
+                updatedAt: true,
+            },
+            limit,
+        }),
+    ])
+
+    const { forceUpdateItem } = await getAppFlags()
+
+    runAfterResponse(
+        Promise.all(
+            [...data, ...outdatedItems].map((item) =>
+                enqueueItemRevalidation(event, item, 'owned-avatars', { force: forceUpdateItem }),
+            ),
+        ),
+    )
 
     return data
 })

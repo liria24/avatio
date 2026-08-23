@@ -142,13 +142,19 @@ export default sessionEventHandler<Setup>(async ({ event, session, db }) => {
     const revalidationTasks: Promise<unknown>[] = []
     let failedItemsCount = 0
 
+    const { forceUpdateItem } = await getAppFlags()
+
     for (const setupItem of data.items) {
+        revalidationTasks.push(
+            enqueueItemRevalidation(event, setupItem.item, 'setup-detail', {
+                force: forceUpdateItem,
+            }),
+        )
+
         if (setupItem.item.outdated) {
             failedItemsCount++
             continue
         }
-
-        revalidationTasks.push(enqueueItemRevalidation(event, setupItem.item, 'setup-detail'))
 
         items.push({
             id: setupItem.item.id,

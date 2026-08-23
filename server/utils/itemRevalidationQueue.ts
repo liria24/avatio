@@ -10,6 +10,7 @@ export interface ItemRevalidationMessage {
     platform: Platform
     reason: 'setup-detail' | 'owned-avatars'
     requestedAt: string
+    force?: boolean
 }
 
 type RevalidatableItem = Pick<Item, 'id' | 'platform'> & {
@@ -23,9 +24,15 @@ const getLockKey = (id: Item['id'], platform: Platform) =>
 
 const shouldUseQueue = () => !import.meta.dev && process.env.NODE_ENV !== 'test'
 
-export const isItemRevalidationDue = (item: Pick<RevalidatableItem, 'platform' | 'updatedAt'>) => {
+export const isItemRevalidationDue = (
+    item: Pick<RevalidatableItem, 'platform' | 'updatedAt'>,
+    force = false,
+) => {
+    if (force) return true
+
     const maxAgeMs =
         item.platform === 'github' ? GITHUB_ITEM_CACHE_DURATION_MS : ITEM_CACHE_DURATION_MS
+
     return Date.now() - new Date(item.updatedAt).getTime() >= maxAgeMs
 }
 
@@ -33,8 +40,9 @@ export const enqueueItemRevalidation = async (
     event: H3Event,
     item: RevalidatableItem,
     reason: ItemRevalidationMessage['reason'],
+    options: { force?: boolean } = {},
 ) => {
-    if (!shouldUseQueue() || !isItemRevalidationDue(item)) return false
+    if (!shouldUseQueue() || !isItemRevalidationDue(item, options.force)) return false
 
     const queue = getQueue(event)
     if (!queue) return false
@@ -51,7 +59,9 @@ export const enqueueItemRevalidation = async (
             platform: item.platform,
             reason,
             requestedAt: new Date().toISOString(),
+            force: options.force,
         } satisfies ItemRevalidationMessage)
+
         return true
     } catch (error) {
         await useStorage('cache').del(lockKey)
@@ -66,6 +76,7 @@ export const handleItemRevalidationMessage = async (message: ItemRevalidationMes
     try {
         const item = await getItem(undefined, db, message.id, message.platform, {
             allowExternalResolution: true,
+            forceRefresh: message.force === true,
         })
         persistedItemId = item.id
     } catch (error) {
