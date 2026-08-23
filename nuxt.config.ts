@@ -206,7 +206,7 @@ export default defineNuxtConfig({
                 kv_namespaces: [
                     {
                         binding: 'KV',
-                        id: '8d93b5819aab49df9d3244c84a7741ed',
+                        id: '9a4db36877e14aeba112fdd207a278e1',
                     },
                 ],
                 r2_buckets: [
