@@ -362,8 +362,6 @@ export const resolveItemCache = async (
     category: Platform | undefined,
     forceUpdate: boolean,
 ) => {
-    if (forceUpdate) return { fresh: null, cachedItem: null }
-
     const cachedItem =
         (await db.query.items.findFirst({
             where: {
@@ -395,8 +393,10 @@ export const resolveItemCache = async (
             },
         })) || null
 
-    if (cachedItem?.outdated)
-        throw serverError.notFound({ responseMessage: 'Item not found or not allowed' })
+    if (cachedItem?.outdated && !forceUpdate)
+        throw serverError.notFound({
+            responseMessage: 'Item not found or not allowed',
+        })
 
     const resolvedCategory = category ?? cachedItem?.platform
 
@@ -406,6 +406,7 @@ export const resolveItemCache = async (
     }
 
     const fresh =
+        !forceUpdate &&
         resolvedCategory &&
         cachedItem &&
         Date.now() - new Date(cachedItem.updatedAt).getTime() < maxAgeMs[resolvedCategory]
