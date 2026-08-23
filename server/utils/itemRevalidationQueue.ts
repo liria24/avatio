@@ -73,13 +73,7 @@ export const handleItemRevalidationMessage = async (
         })
         persistedItemId = item.id
     } catch (error) {
-        if (
-            typeof error !== 'object' ||
-            error === null ||
-            !('statusCode' in error) ||
-            error.statusCode !== 404
-        )
-            throw error
+        if (!(error instanceof PermanentItemResolutionError)) throw error
     }
 
     const relatedSetupItems = await db.query.setupItems.findMany({

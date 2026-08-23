@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { PermanentItemResolutionError } from '../../../server/utils/itemResolutionError'
+
 const log = { error: vi.fn() }
 const storage = { del: vi.fn() }
 const purge = vi.fn()
@@ -77,7 +79,12 @@ describe('handleItemRevalidationMessage', () => {
     })
 
     it('purges related caches after a permanent not-found revalidation', async () => {
-        getItem.mockRejectedValue({ statusCode: 404 })
+        getItem.mockRejectedValue(
+            new PermanentItemResolutionError(
+                'BOOTH item missing no longer exists',
+                'provider-not-found',
+            ),
+        )
         const db = {
             query: {
                 setupItems: {
@@ -106,6 +113,40 @@ describe('handleItemRevalidationMessage', () => {
             'item revalidation',
         )
         expect(storage.del).toHaveBeenCalledOnce()
+    })
+
+    it('rethrows a generic 404 so the queue can retry it', async () => {
+        const error = { statusCode: 404 }
+        getItem.mockRejectedValue(error)
+
+        const findMany = vi.fn()
+        vi.stubGlobal('useDB', () => ({
+            query: {
+                setupItems: {
+                    findMany,
+                },
+            },
+        }))
+
+        const cache = { purge: vi.fn() }
+        const { handleItemRevalidationMessage } =
+            await import('../../../server/utils/itemRevalidationQueue')
+
+        await expect(
+            handleItemRevalidationMessage(
+                {
+                    id: 'missing',
+                    platform: 'booth',
+                    reason: 'owned-avatars',
+                    requestedAt: new Date().toISOString(),
+                },
+                cache as never,
+            ),
+        ).rejects.toBe(error)
+
+        expect(findMany).not.toHaveBeenCalled()
+        expect(purge).not.toHaveBeenCalled()
+        expect(storage.del).not.toHaveBeenCalled()
     })
 
     it('finds related setups by the canonical item id after an id migration', async () => {
