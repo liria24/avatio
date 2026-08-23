@@ -176,7 +176,8 @@ export default sessionEventHandler<Setup>(async ({ event, session, db }) => {
 
     if (revalidationTasks.length) runAfterResponse(Promise.all(revalidationTasks))
 
-    if (data.public && !data.hidAt) applyPublicEdgeCache(event, [getSetupCacheTag(data.id)])
+    if (forceUpdateItem) applyNoStoreCache(event)
+    else if (data.public && !data.hidAt) applyPublicEdgeCache(event, [getSetupCacheTag(data.id)])
 
     return {
         ...data,
