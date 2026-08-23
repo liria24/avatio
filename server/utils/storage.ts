@@ -2,13 +2,11 @@ import { Files } from 'files-sdk'
 import { r2 } from 'files-sdk/r2'
 import type { R2Bucket } from 'files-sdk/r2'
 
-import { getRuntimeEnv } from './runtimeEnv'
-
 type StorageClient = InstanceType<typeof Files>
 
 const requireEnv = (name: string) => {
-    const value = getRuntimeEnv()[name]
-    if (typeof value !== 'string' || !value)
+    const value = getRuntimeEnvString(name)
+    if (!value)
         throw new Error(
             `Missing required environment variable: ${name}. Ensure it is set before starting the server.`,
         )

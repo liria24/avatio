@@ -1,5 +1,4 @@
 import { items, shops } from '@@/database/schema'
-import type { CacheContext } from '@cloudflare/workers-types'
 import { eq } from 'drizzle-orm'
 import type { BatchItem } from 'drizzle-orm/batch'
 import type { H3Event } from 'h3'
@@ -33,7 +32,6 @@ interface GithubReadmeResponse {
 interface GetItemOptions {
     allowExternalResolution?: boolean
     beforeExternalResolution?: () => Promise<void>
-    cache?: CacheContext
 }
 
 const getGithubResource = <T>(repo: string, path = ''): Promise<T | null> => {
@@ -48,19 +46,11 @@ export default async (
     provider: Platform | undefined,
     options: GetItemOptions = {},
 ): Promise<Item> => {
-    const { cache } = options
     const persistence = {
         defer: Boolean(event),
         purge: event
             ? () => purgeEdgeCacheTags(event, [EDGE_CACHE_TAGS.items], 'item persistence')
-            : cache
-              ? () =>
-                    purgeEdgeCacheTagsWithContext(
-                        cache,
-                        [EDGE_CACHE_TAGS.items],
-                        'item persistence',
-                    )
-              : () => Promise.resolve(),
+            : () => Promise.resolve(),
     }
 
     if (!options.allowExternalResolution) {
@@ -372,8 +362,6 @@ export const resolveItemCache = async (
     category: Platform | undefined,
     forceUpdate: boolean,
 ) => {
-    if (forceUpdate) return { fresh: null, cachedItem: null }
-
     const cachedItem =
         (await db.query.items.findFirst({
             where: {
@@ -405,8 +393,10 @@ export const resolveItemCache = async (
             },
         })) || null
 
-    if (cachedItem?.outdated)
-        throw serverError.notFound({ responseMessage: 'Item not found or not allowed' })
+    if (cachedItem?.outdated && !forceUpdate)
+        throw serverError.notFound({
+            responseMessage: 'Item not found or not allowed',
+        })
 
     const resolvedCategory = category ?? cachedItem?.platform
 
@@ -416,6 +406,7 @@ export const resolveItemCache = async (
     }
 
     const fresh =
+        !forceUpdate &&
         resolvedCategory &&
         cachedItem &&
         Date.now() - new Date(cachedItem.updatedAt).getTime() < maxAgeMs[resolvedCategory]
