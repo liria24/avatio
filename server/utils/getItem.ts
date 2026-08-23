@@ -1,5 +1,4 @@
 import { items, shops } from '@@/database/schema'
-import type { CacheContext } from '@cloudflare/workers-types'
 import { eq } from 'drizzle-orm'
 import type { BatchItem } from 'drizzle-orm/batch'
 import type { H3Event } from 'h3'
@@ -33,7 +32,6 @@ interface GithubReadmeResponse {
 interface GetItemOptions {
     allowExternalResolution?: boolean
     beforeExternalResolution?: () => Promise<void>
-    cache?: CacheContext
 }
 
 const getGithubResource = <T>(repo: string, path = ''): Promise<T | null> => {
@@ -48,19 +46,11 @@ export default async (
     provider: Platform | undefined,
     options: GetItemOptions = {},
 ): Promise<Item> => {
-    const { cache } = options
     const persistence = {
         defer: Boolean(event),
         purge: event
             ? () => purgeEdgeCacheTags(event, [EDGE_CACHE_TAGS.items], 'item persistence')
-            : cache
-              ? () =>
-                    purgeEdgeCacheTagsWithContext(
-                        cache,
-                        [EDGE_CACHE_TAGS.items],
-                        'item persistence',
-                    )
-              : () => Promise.resolve(),
+            : () => Promise.resolve(),
     }
 
     if (!options.allowExternalResolution) {

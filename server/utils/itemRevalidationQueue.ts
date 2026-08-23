@@ -1,4 +1,4 @@
-import type { CacheContext, Queue } from '@cloudflare/workers-types'
+import type { Queue } from '@cloudflare/workers-types'
 import type { H3Event } from 'h3'
 
 const log = logger('itemRevalidationQueue')
@@ -60,16 +60,12 @@ export const enqueueItemRevalidation = async (
     }
 }
 
-export const handleItemRevalidationMessage = async (
-    message: ItemRevalidationMessage,
-    cache?: CacheContext,
-) => {
+export const handleItemRevalidationMessage = async (message: ItemRevalidationMessage) => {
     const db = useDB()
     let persistedItemId = message.id
     try {
         const item = await getItem(undefined, db, message.id, message.platform, {
             allowExternalResolution: true,
-            cache,
         })
         persistedItemId = item.id
     } catch (error) {
@@ -86,17 +82,13 @@ export const handleItemRevalidationMessage = async (
     })
 
     const setupIds = [...new Set(relatedSetupItems.map((item) => item.setupId))]
-    if (cache)
-        await purgeEdgeCacheTagsWithContext(
-            cache,
-            [
-                EDGE_CACHE_TAGS.items,
-                EDGE_CACHE_TAGS.popularAvatars,
-                EDGE_CACHE_TAGS.setups,
-                ...setupIds.map((setupId) => getSetupCacheTag(setupId)),
-            ],
-            'item revalidation',
-        )
 
     await useStorage('cache').del(getLockKey(message.id, message.platform))
+
+    return [
+        EDGE_CACHE_TAGS.items,
+        EDGE_CACHE_TAGS.popularAvatars,
+        EDGE_CACHE_TAGS.setups,
+        ...setupIds.map((setupId) => getSetupCacheTag(setupId)),
+    ]
 }
