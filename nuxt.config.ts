@@ -187,6 +187,7 @@ export default defineNuxtConfig({
             wrangler: {
                 name: 'avatio',
                 preview_urls: true,
+                keep_vars: true,
                 ...workersCacheConfig,
                 compatibility_flags: ['no_handle_cross_request_promise_resolution'],
                 observability: {

@@ -96,52 +96,86 @@ export default async (
 
         const boothProxyUrl = joinURL(withHttps(proxyUrl), id)
 
-        const item = await $fetch<Booth | null>(boothProxyUrl, {
+        const response = await $fetch.raw<Booth | null>(boothProxyUrl, {
             ignoreResponseError: true,
-            onResponseError({ error }) {
-                log.error(`Failed to fetch booth item ${id}:`, error)
-            },
         })
 
-        const validItem = item && allowedBoothCategoryId.includes(item.category.id) ? item : null
+        if (response.status === 404 || response.status === 410) {
+            const reason = response.status === 410 ? 'provider-gone' : 'provider-not-found'
+
+            return await persistItem(
+                db,
+                {
+                    valid: false,
+                    cachedItem,
+                    error: new PermanentItemResolutionError(
+                        `BOOTH item ${id} returned ${response.status}`,
+                        reason,
+                    ),
+                },
+                persistence,
+            )
+        }
+
+        if (!response.ok)
+            throw serverError.internalServerError({
+                log: {
+                    tag: 'getItem',
+                    message: `BOOTH proxy returned ${response.status} for item ${id}`,
+                },
+                responseMessage: 'Failed to fetch BOOTH item',
+            })
+
+        const item = response._data
+
+        if (!item)
+            throw serverError.internalServerError({
+                log: {
+                    tag: 'getItem',
+                    message: `BOOTH proxy returned an empty successful response for item ${id}`,
+                },
+                responseMessage: 'Invalid BOOTH proxy response',
+            })
+
+        if (!allowedBoothCategoryId.includes(item.category.id))
+            throw new PermanentItemResolutionError(
+                `BOOTH item ${id} has disallowed category ${item.category.id}`,
+                'policy-rejected',
+            )
 
         return await persistItem(
             db,
-            validItem
-                ? {
-                      valid: true,
-                      item: {
-                          id: validItem.id,
-                          platform: 'booth' as const,
-                          name: validItem.name,
-                          niceName: cachedItem?.niceName || null,
-                          image: validItem.images[0]?.original || '',
-                          price: validItem.variations.some((v) => v.status === 'free_download')
-                              ? 'FREE'
-                              : validItem.price,
-                          likes: Number(validItem.wish_lists_count) || 0,
-                          nsfw: Boolean(validItem.is_adult),
-                          shopId: validItem.shop.subdomain,
-                          outdated: false,
-                      },
-                      shop: {
-                          id: validItem.shop.subdomain,
-                          platform: 'booth' as const,
-                          name: validItem.shop.name,
-                          image: validItem.shop.thumbnail_url || '',
-                          verified: Boolean(validItem.shop.verified),
-                      },
-                      cachedItem,
-                      specificItemCategories,
-                      categoryFallback: BOOTH_CATEGORY_MAP[validItem.category.id] ?? 'other',
-                      assignAttrParams: {
-                          name: validItem.name,
-                          description: validItem.description
-                              ? { description: validItem.description }
-                              : undefined,
-                      },
-                  }
-                : { valid: false, cachedItem },
+            {
+                valid: true,
+                item: {
+                    id: item.id,
+                    platform: 'booth' as const,
+                    name: item.name,
+                    niceName: cachedItem?.niceName || null,
+                    image: item.images[0]?.original || '',
+                    price: item.variations.some((v) => v.status === 'free_download')
+                        ? 'FREE'
+                        : item.price,
+                    likes: Number(item.wish_lists_count) || 0,
+                    nsfw: Boolean(item.is_adult),
+                    shopId: item.shop.subdomain,
+                    outdated: false,
+                },
+                shop: {
+                    id: item.shop.subdomain,
+                    platform: 'booth' as const,
+                    name: item.shop.name,
+                    image: item.shop.thumbnail_url || '',
+                    verified: Boolean(item.shop.verified),
+                },
+                cachedItem,
+                specificItemCategories,
+                categoryFallback: BOOTH_CATEGORY_MAP[item.category.id] ?? 'other',
+                assignAttrParams: {
+                    name: item.name,
+                    description: item.description ? { description: item.description } : undefined,
+                },
+            },
             persistence,
         )
     }
@@ -229,7 +263,11 @@ type PersistItemParams =
           assignAttrParams: Omit<GenerateItemAttrParams, 'originalCategory'>
           idMigration?: { from: string; to: string }
       }
-    | { valid: false; cachedItem: { id: string } | null }
+    | {
+          valid: false
+          cachedItem: { id: string } | null
+          error?: Error
+      }
 
 interface PersistenceOptions {
     defer: boolean
@@ -252,7 +290,12 @@ export const persistItem = async (
             if (options.defer) runAfterResponse(persist())
             else await persist()
         }
-        throw serverError.notFound({ responseMessage: 'Item not found or not allowed' })
+        throw (
+            params.error ??
+            serverError.notFound({
+                responseMessage: 'Item not found or not allowed',
+            })
+        )
     }
 
     const {

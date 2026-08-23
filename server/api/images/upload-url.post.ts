@@ -39,8 +39,6 @@ export default authedSessionEventHandler(
         const signed = await storage.signedUploadUrl(objectKey, {
             contentType,
             expiresIn: SIGNED_UPLOAD_EXPIRES_IN,
-            maxSize: MAX_IMAGE_UPLOAD_SIZE,
-            minSize: 1,
         })
         const uploadUrl =
             typeof signed === 'string'
