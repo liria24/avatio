@@ -166,6 +166,7 @@ export const Website = Cloudflare.Website.Nuxt(
             name: config.infrastructure.worker,
             domain: { name: siteHost },
             workersDev: { enabled: true, previewsEnabled: true },
+            dev: { port: 3000, strictPort: true },
             compatibility: {
                 date: '2026-05-26',
                 flags: [

@@ -110,19 +110,15 @@ useSeo({
             </template>
 
             <template #title>
-                <span
-                    style="animation-delay: 0.3s"
-                    class="fade-in-blur"
-                    v-html="$t('index.hero.title')"
-                />
+                <span style="animation-delay: 0.3s" class="fade-in-blur">
+                    {{ $t('index.hero.title') }}
+                </span>
             </template>
 
             <template #description>
-                <p
-                    style="animation-delay: 0.5s"
-                    class="fade-in-blur wrap-anywhere break-keep"
-                    v-html="$t('index.hero.description')"
-                />
+                <p style="animation-delay: 0.5s" class="fade-in-blur wrap-anywhere break-keep">
+                    {{ $t('index.hero.description') }}
+                </p>
             </template>
 
             <template #links>

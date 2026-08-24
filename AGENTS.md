@@ -8,6 +8,7 @@ Compact instruction for OpenCode sessions. If a fact is obvious from filenames, 
 
 - **Package manager:** `bun`. `bunfig.toml` uses `linker = "hoisted"`.
 - **Postinstall:** `bun run postinstall` runs `nuxt prepare` only.
+- **Development URL:** `bun run dev` serves the Alchemy local proxy at `http://localhost:3000`; the port is fixed and fails if already in use.
 
 ## Developer commands
 
