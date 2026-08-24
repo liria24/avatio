@@ -6,7 +6,8 @@ interface Props {
 }
 const { callbackURL } = defineProps<Props>()
 
-const { signIn } = useAuth()
+const signInEmail = useSignIn('email')
+const signInSocial = useSignIn('social')
 const route = useRoute()
 
 const emailLoginSchema = z.object({
@@ -32,7 +33,13 @@ const emailLoginSchema = z.object({
             variant="outline"
             color="neutral"
             class="mt-5 mb-6 rounded-xl py-4"
-            @click="signIn.twitter({ callbackURL: callbackURL || route.path })"
+            @click="
+                signInSocial.execute({
+                    provider: 'twitter',
+                    callbackURL: callbackURL || route.path,
+                    newUserCallbackURL: $localePath('/welcome'),
+                })
+            "
         />
 
         <DevOnly>
@@ -62,7 +69,7 @@ const emailLoginSchema = z.object({
                     }"
                     class="ring-muted mb-4 rounded-xl p-4 ring-1"
                     @submit="
-                        signIn.email({
+                        signInEmail.execute({
                             email: $event.data.email,
                             password: $event.data.password,
                             callbackURL: callbackURL || route.path,

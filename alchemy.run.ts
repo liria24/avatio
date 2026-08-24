@@ -4,53 +4,12 @@ import * as Cloudflare from 'alchemy/Cloudflare'
 import * as Config from 'effect/Config'
 import * as Effect from 'effect/Effect'
 
-type StageNames = {
-    production: boolean
-    worker: string
-    appDatabase: string
-    contentDatabase: string
-    cache: string
-    bucket: string
-    queue: string
-    site: string
-    imageSite: string
-    flags: string
-    rateLimits: readonly [number, number, number]
-}
+import { getStageConfig, type AvatioStageConfig } from './config/environment'
+import type { AvatioSecretName } from './config/secrets'
 
-const namesForStage = (stage: string): StageNames => {
-    if (stage === 'production')
-        return {
-            production: true,
-            worker: 'avatio',
-            appDatabase: 'avatio',
-            contentDatabase: 'avatio-content',
-            cache: 'avatio-cache',
-            bucket: 'avatio',
-            queue: 'item-revalidation',
-            site: 'avatio.me',
-            imageSite: 'images.avatio.me',
-            flags: 'avatio-production',
-            rateLimits: [2101, 2102, 2103],
-        }
-    if (stage === 'development')
-        return {
-            production: false,
-            worker: 'avatio-development',
-            appDatabase: 'avatio-development',
-            contentDatabase: 'avatio-content-development',
-            cache: 'avatio-cache-development',
-            bucket: 'avatio-development',
-            queue: 'item-revalidation-development',
-            site: 'dev.avatio.me',
-            imageSite: 'images-dev.avatio.me',
-            flags: 'avatio-development',
-            rateLimits: [2201, 2202, 2203],
-        }
-    throw new Error('Alchemy stage must be development or production.')
-}
-
-const requiredSecret = (name: string) => Config.redacted(name)
+const requiredSecret = (name: AvatioSecretName) => Config.redacted(name)
+const optionalSecret = (name: AvatioSecretName) =>
+    Config.redacted(name).pipe(Config.withDefault(''))
 
 const retainProduction = Alchemy.RemovalPolicy.retain(
     Effect.map(Stage, (stage) => stage === 'production'),
@@ -59,44 +18,46 @@ const retainProduction = Alchemy.RemovalPolicy.retain(
 export const AppDatabase = Cloudflare.D1.Database(
     'AppDatabase',
     Effect.gen(function* () {
-        const names = namesForStage(yield* Stage)
-        return { name: names.appDatabase, migrations: './drizzle' }
+        const config = getStageConfig(yield* Stage)
+        return { name: config.infrastructure.appDatabase, migrations: './drizzle' }
     }),
 ).pipe(retainProduction)
 
 export const ContentDatabase = Cloudflare.D1.Database(
     'ContentDatabase',
     Effect.gen(function* () {
-        const names = namesForStage(yield* Stage)
-        // Nuxt Content owns this database's schema. App migrations belong only
-        // to APP_DB and must never be replayed against the content database.
-        return { name: names.contentDatabase }
+        const config = getStageConfig(yield* Stage)
+        // Retention placeholder only: Nuxt Content is no longer active and this
+        // database is deliberately not bound to Website. Keep it until an
+        // operator explicitly approves reuse or deletion.
+        return { name: config.infrastructure.contentDatabase }
     }),
 ).pipe(retainProduction)
 
 export const Cache = Cloudflare.KV.Namespace(
     'Cache',
     Effect.gen(function* () {
-        const names = namesForStage(yield* Stage)
-        return { title: names.cache }
+        const config = getStageConfig(yield* Stage)
+        return { title: config.infrastructure.cache }
     }),
 ).pipe(retainProduction)
 
 export const Files = Cloudflare.R2.Bucket(
     'Files',
     Effect.gen(function* () {
-        const names = namesForStage(yield* Stage)
-        const domains = names.production
+        const config = getStageConfig(yield* Stage)
+        const imageHost = new URL(config.imageBaseUrl).hostname
+        const domains = config.production
             ? [
                   {
-                      name: names.imageSite,
+                      name: imageHost,
                       enabled: true,
                       minTLS: '1.0' as const,
                   },
               ]
-            : [{ name: names.imageSite }]
+            : [{ name: imageHost }]
         return {
-            name: names.bucket,
+            name: config.infrastructure.bucket,
             forceDestroy: false,
             domains,
             lifecycleRules: [
@@ -116,11 +77,11 @@ export const Files = Cloudflare.R2.Bucket(
             ],
             cors: [
                 {
-                    id: `${names.production ? 'production' : 'development'}-images`,
+                    id: `${config.production ? 'production' : 'development'}-images`,
                     allowedOrigins: [
-                        `https://${names.site}`,
-                        `https://${names.imageSite}`,
-                        ...(names.production ? [] : ['http://localhost:3000']),
+                        config.siteUrl,
+                        config.imageBaseUrl,
+                        ...(config.production ? [] : ['http://localhost:3000']),
                     ],
                     allowedMethods: ['GET', 'HEAD', 'PUT', 'POST'] as (
                         | 'GET'
@@ -140,62 +101,70 @@ export const Files = Cloudflare.R2.Bucket(
 export const ItemRevalidationQueue = Cloudflare.Queues.Queue(
     'ItemRevalidationQueue',
     Effect.gen(function* () {
-        const names = namesForStage(yield* Stage)
-        return { name: names.queue }
+        const config = getStageConfig(yield* Stage)
+        return { name: config.infrastructure.queue }
     }),
 ).pipe(retainProduction)
 
 export const Flags = Cloudflare.Flagship.App(
     'Flags',
     Effect.gen(function* () {
-        const names = namesForStage(yield* Stage)
-        return { name: names.flags }
+        const config = getStageConfig(yield* Stage)
+        return { name: config.infrastructure.flags }
     }),
 )
 
 const rateLimit = (name: string, namespaceId: number, limit: number) =>
     Cloudflare.RateLimit(name, { namespaceId, simple: { limit, period: 60 } })
 
-const makeWebsiteEnv = (names: StageNames) => ({
-    APP_DB: AppDatabase,
-    DB: ContentDatabase,
-    KV: Cache,
-    R2: Files,
-    SELF_URL: Cloudflare.Workers.URL,
-    ITEM_REVALIDATION_QUEUE: ItemRevalidationQueue,
-    FLAGS: Flags,
-    AI: Cloudflare.Workers.AI(),
-    IMAGES: Cloudflare.Images.Images('IMAGES'),
-    EMAIL: Cloudflare.Email.SendEmail('EMAIL', {
-        allowedSenderAddresses: ['hello@avatio.me'],
-    }),
-    RATE_LIMIT_USER_ACTION: rateLimit('RATE_LIMIT_USER_ACTION', names.rateLimits[0], 5),
-    RATE_LIMIT_IMAGE: rateLimit('RATE_LIMIT_IMAGE', names.rateLimits[1], 30),
-    RATE_LIMIT_DRAFT: rateLimit('RATE_LIMIT_DRAFT', names.rateLimits[2], 120),
-    PUBLIC_SITE_URL: `https://${names.site}`,
-    R2_PUBLIC_BASE_URL: `https://${names.imageSite}`,
-    STAGE: names.production ? 'production' : 'development',
-    NUXT_BOOTH_PROXY_URL: requiredSecret('NUXT_BOOTH_PROXY_URL'),
-    OG_IMAGE_SECRET: requiredSecret('OG_IMAGE_SECRET'),
-    LIRIA_DISCORD_ENDPOINT: Config.redacted('LIRIA_DISCORD_ENDPOINT').pipe(Config.withDefault('')),
-    LIRIA_DISCORD_ACCESS_TOKEN: requiredSecret('LIRIA_DISCORD_ACCESS_TOKEN'),
-    EMAIL_FROM: 'hello@avatio.me',
-    NUXT_EMAIL_FROM_ADDRESS: 'hello@avatio.me',
-    BETTER_AUTH_SECRET: requiredSecret(
-        names.production ? 'BETTER_AUTH_SECRET' : 'BETTER_AUTH_SECRET_DEVELOPMENT',
-    ),
-    TWITTER_CLIENT_ID: requiredSecret('TWITTER_CLIENT_ID'),
-    TWITTER_CLIENT_SECRET: requiredSecret('TWITTER_CLIENT_SECRET'),
-})
+const makeWebsiteEnv = (config: AvatioStageConfig) => {
+    const betterAuthSecret = requiredSecret('BETTER_AUTH_SECRET')
+    const boothProxyUrl = requiredSecret('BOOTH_PROXY_URL')
+    const rateLimits = config.infrastructure.rateLimitNamespaces
+
+    return {
+        APP_DB: AppDatabase,
+        R2: Files,
+        SELF_URL: Cloudflare.Workers.URL,
+        ITEM_REVALIDATION_QUEUE: ItemRevalidationQueue,
+        FLAGS: Flags,
+        AI: Cloudflare.Workers.AI(),
+        IMAGES: Cloudflare.Images.Images('IMAGES'),
+        EMAIL: Cloudflare.Email.SendEmail('EMAIL', {
+            allowedSenderAddresses: [config.emailFrom],
+        }),
+        RATE_LIMIT_USER_ACTION: rateLimit('RATE_LIMIT_USER_ACTION', rateLimits[0], 5),
+        RATE_LIMIT_IMAGE: rateLimit('RATE_LIMIT_IMAGE', rateLimits[1], 30),
+        RATE_LIMIT_DRAFT: rateLimit('RATE_LIMIT_DRAFT', rateLimits[2], 120),
+        PUBLIC_SITE_URL: config.siteUrl,
+        R2_PUBLIC_BASE_URL: config.imageBaseUrl,
+        STAGE: config.production ? 'production' : 'development',
+        BOOTH_PROXY_URL: boothProxyUrl,
+        OG_IMAGE_SECRET: requiredSecret('OG_IMAGE_SECRET'),
+        LIRIA_DISCORD_ENDPOINT: optionalSecret('LIRIA_DISCORD_ENDPOINT'),
+        LIRIA_DISCORD_ACCESS_TOKEN: optionalSecret('LIRIA_DISCORD_ACCESS_TOKEN'),
+        EMAIL_FROM: config.emailFrom,
+        BETTER_AUTH_SECRET: betterAuthSecret,
+        NUXT_BETTER_AUTH_SECRET: betterAuthSecret,
+        TWITTER_CLIENT_ID: config.twitterClientId,
+        TWITTER_CLIENT_SECRET: requiredSecret('TWITTER_CLIENT_SECRET'),
+        AI_MODEL_CATALOG_ENRICHMENT: config.aiModels.catalogEnrichment,
+        AI_MODEL_CHANGELOG_TRANSLATION: config.aiModels.changelogTranslation,
+        AI_MODEL_CHANGELOG_SLUG: config.aiModels.changelogSlug,
+        AUTH_TRUSTED_ORIGINS: JSON.stringify(config.trustedOrigins),
+    }
+}
 
 export const Website = Cloudflare.Website.Nuxt(
     'Website',
     Effect.gen(function* () {
-        const names = namesForStage(yield* Stage)
-        const siteUrl = `https://${names.site}`
+        const config = getStageConfig(yield* Stage)
+        const siteUrl = config.siteUrl
+        const siteHost = new URL(config.siteUrl).hostname
+        const imageHost = new URL(config.imageBaseUrl).hostname
         return {
-            name: names.worker,
-            domain: { name: names.site },
+            name: config.infrastructure.worker,
+            domain: { name: siteHost },
             workersDev: { enabled: true, previewsEnabled: true },
             compatibility: {
                 date: '2026-05-26',
@@ -212,8 +181,8 @@ export const Website = Cloudflare.Website.Nuxt(
                 logs: { enabled: true, invocationLogs: true, headSamplingRate: 1, persist: true },
                 traces: { enabled: false },
             },
-            crons: names.production ? ['0 22 * * *'] : [],
-            env: makeWebsiteEnv(names),
+            crons: config.production ? ['0 22 * * *'] : [],
+            env: makeWebsiteEnv(config),
             nuxt: {
                 runtimeConfig: { public: { siteUrl } },
                 appConfig: { app: { site: siteUrl } },
@@ -244,7 +213,7 @@ export const Website = Cloudflare.Website.Nuxt(
                 image: {
                     cloudflare: { baseURL: siteUrl },
                     domains: [
-                        names.imageSite,
+                        imageHost,
                         'booth.pximg.net',
                         's2.booth.pm',
                         'github.com',
@@ -267,7 +236,7 @@ export default Alchemy.Stack(
     },
     Effect.gen(function* () {
         const currentStage = yield* Stage
-        const names = namesForStage(currentStage)
+        const config = getStageConfig(currentStage)
         const website = yield* Website
         const queue = yield* ItemRevalidationQueue
 
@@ -277,7 +246,7 @@ export default Alchemy.Stack(
             settings: { batchSize: 10, maxWaitTimeMs: 5000, maxRetries: 3 },
         })
 
-        if (names.production)
+        if (config.production)
             yield* Cloudflare.Rum.Site('WebAnalytics', {
                 zoneTag: 'dae79da2dd3dda74ec53220f91811a1d',
                 autoInstall: true,
@@ -291,6 +260,9 @@ export default Alchemy.Stack(
             worker: website.workerName,
             appDatabase: (yield* AppDatabase).databaseId,
             contentDatabase: (yield* ContentDatabase).databaseId,
+            // The old Nitro cache KV stays provisioned but unbound. Yielding it
+            // prevents a naming-only cleanup from deleting production data.
+            legacyCache: (yield* Cache).namespaceId,
             bucket: (yield* Files).bucketName,
             queue: queue.queueName,
         }

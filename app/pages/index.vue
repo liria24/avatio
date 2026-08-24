@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { session } = useAuth()
+const { user, loggedIn, preferences } = useViewerContext()
 const login = useLoginModal()
 const { t, locale } = useI18n()
 const { update } = useUserSettingsUpdate()
@@ -8,7 +8,7 @@ const { data: latestChangelog } = useFetch('/api/changelogs/latest', {
     key: computed(() => `latest-changelog-${locale.value}`),
     query: { lang: locale.value },
     dedupe: 'defer',
-    immediate: !session.value,
+    immediate: !loggedIn.value,
 })
 
 type Tab = 'latest' | 'owned' | 'bookmarked'
@@ -30,22 +30,27 @@ const tab = computed<Tab>({
     },
 })
 
-const showPrivate = ref(session.value?.user.settings?.showPrivateSetups ?? true)
+const showPrivate = ref(preferences.value.showPrivateSetups)
 const showPrivateDebounced = refDebounced(showPrivate, 300)
+
+watch(
+    () => preferences.value.showPrivateSetups,
+    (value) => (showPrivate.value = value),
+)
 
 const setupsLatest = useSetupsList('latest', {
     immediate: tab.value === 'latest',
 })
 const setupsOwned = useSetupsList('owned', {
-    username: session.value?.user.username ?? undefined,
+    username: user.value?.username ?? undefined,
     query: computed(() => ({ includePrivate: showPrivateDebounced.value })),
-    immediate: !!session.value && tab.value === 'owned',
+    immediate: loggedIn.value && tab.value === 'owned',
 })
 const setupsBookmarked = useSetupsList('bookmarked', {
-    immediate: !!session.value && tab.value === 'bookmarked',
+    immediate: loggedIn.value && tab.value === 'bookmarked',
 })
 const setups = computed(() =>
-    session.value
+    loggedIn.value
         ? tab.value === 'owned'
             ? setupsOwned.setups.value
             : tab.value === 'bookmarked'
@@ -54,7 +59,7 @@ const setups = computed(() =>
         : setupsLatest.setups.value,
 )
 const loading = computed(() =>
-    session.value
+    loggedIn.value
         ? tab.value === 'owned'
             ? setupsOwned.status.value === 'pending'
             : tab.value === 'bookmarked'
@@ -66,7 +71,7 @@ const loading = computed(() =>
 watchDebounced(
     showPrivateDebounced,
     (val) => {
-        update({ showPrivateSetups: val })
+        if (val !== preferences.value.showPrivateSetups) update({ showPrivateSetups: val })
     },
     { debounce: 500 },
 )
@@ -86,7 +91,7 @@ useSeo({
 <template>
     <div class="flex w-full flex-col gap-6">
         <UPageHero
-            v-if="!session"
+            v-if="!loggedIn"
             :ui="{
                 container: 'py-12 sm:py-18 lg:py-26',
                 title: 'sm:text-6xl wrap-anywhere break-keep',
@@ -134,7 +139,7 @@ useSeo({
         </UPageHero>
 
         <div class="flex w-full flex-col items-start gap-5">
-            <div v-if="session" class="flex w-full items-center gap-1">
+            <div v-if="loggedIn" class="flex w-full items-center gap-1">
                 <UButton
                     :label="$t('index.tabs.latest')"
                     :active="tab === 'latest'"

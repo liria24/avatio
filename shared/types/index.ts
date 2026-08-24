@@ -16,7 +16,6 @@ export interface PaginationResponse<T> {
 
 export interface AppConfig {
     allowedBoothCategoryId: number[]
-    forceUpdateItem: boolean
     isMaintenance: boolean
     specificItemCategories: Record<Platform, Record<string, ItemCategory>>
 }

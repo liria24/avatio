@@ -8,8 +8,4 @@ declare module 'h3' {
     }
 }
 
-declare global {
-    var __env__: Partial<WebsiteEnv> | undefined
-}
-
 export {}

@@ -1,0 +1,15 @@
+{
+    "name": "@avatio/core",
+    "private": true,
+    "type": "module",
+    "exports": {
+        ".": "./src/index.ts",
+        "./catalog": "./src/catalog/index.ts",
+        "./contracts": "./src/contracts/index.ts",
+        "./setups": "./src/setups/index.ts",
+        "./users": "./src/users/index.ts"
+    },
+    "dependencies": {
+        "zod": "4.4.3"
+    }
+}

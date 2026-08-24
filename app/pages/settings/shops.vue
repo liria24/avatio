@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 definePageMeta({
-    middleware: 'authed',
+    auth: 'user',
 })
 
 const { locale, t } = useI18n()

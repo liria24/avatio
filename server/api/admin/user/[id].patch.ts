@@ -14,7 +14,8 @@ const bodySchema = z.object({
     banExpiresIn: z.number().optional(),
 })
 
-export default adminSessionEventHandler(async ({ db, event }) => {
+export default promiseEventHandler(async ({ db, event }) => {
+    await requireUserSession(event, { user: { role: 'admin' } })
     const { id: userId } = await validateParams(params)
     const body = await validateBody(bodySchema)
     const { headers } = event
@@ -32,7 +33,7 @@ export default adminSessionEventHandler(async ({ db, event }) => {
         )?.updatedAt.getTime() ?? 0
 
     if (body.revokeUserSessions)
-        await getAuth(event).api.revokeUserSessions({
+        await serverAuth(event).api.revokeUserSessions({
             headers,
             body: { userId },
         })
@@ -40,7 +41,7 @@ export default adminSessionEventHandler(async ({ db, event }) => {
     if (body.role !== undefined && body.role !== null) {
         const role = Array.isArray(body.role) ? body.role.join(',') : body.role
         if (currentUser.role !== role) {
-            await getAuth(event).api.setRole({
+            await serverAuth(event).api.setRole({
                 headers,
                 body: { userId, role: body.role },
             })
@@ -56,7 +57,7 @@ export default adminSessionEventHandler(async ({ db, event }) => {
 
     if (body.ban !== undefined && body.ban !== null)
         if (body.ban && !currentUser.banned) {
-            await getAuth(event).api.banUser({
+            await serverAuth(event).api.banUser({
                 headers,
                 body: {
                     userId,
@@ -75,7 +76,7 @@ export default adminSessionEventHandler(async ({ db, event }) => {
                 actionUrl: `/@${userId}`,
             })
         } else if (!body.ban && currentUser.banned) {
-            await getAuth(event).api.unbanUser({
+            await serverAuth(event).api.unbanUser({
                 headers,
                 body: {
                     userId,

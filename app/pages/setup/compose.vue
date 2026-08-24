@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 definePageMeta({
-    middleware: 'authed',
+    auth: 'user',
     layout: 'minimal',
 })
 
@@ -268,6 +268,6 @@ await initialize({
 
         <USeparator class="my-8 lg:hidden" />
 
-        <SetupsComposeItems v-model="state.items" />
+        <SetupsComposeItems />
     </UForm>
 </template>

@@ -9,7 +9,7 @@ const query = z.object({
         .default(OWNED_AVATARS_API_DEFAULT_LIMIT),
 })
 
-export default authedSessionEventHandler<Item[]>(async ({ event, session, db }) => {
+export default authedSessionEventHandler<Item[]>(async ({ session, db }) => {
     const { limit } = await validateQuery(query)
 
     const [data, outdatedItems] = await Promise.all([
@@ -48,13 +48,9 @@ export default authedSessionEventHandler<Item[]>(async ({ event, session, db }) 
         }),
     ])
 
-    const forceUpdateItem = await getForceUpdateItemFlag(event)
-
     runAfterResponse(
-        Promise.all(
-            [...data, ...outdatedItems].map((item) =>
-                enqueueItemRevalidation(event, item, 'owned-avatars', { force: forceUpdateItem }),
-            ),
+        enqueueReferencedCatalogSources(
+            [...data, ...outdatedItems].map(({ id, platform }) => ({ id, platform })),
         ),
     )
 

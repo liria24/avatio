@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-const { session } = await useAuth()
+const { loggedIn } = useUserSession()
 const route = useRoute()
 const login = useLoginModal()
 const routeBaseName = useRouteBaseName()
@@ -15,7 +15,7 @@ const baseRouteName = computed(() => routeBaseName(route))
                 <div class="flex items-center gap-1.5">
                     <div class="flex items-center gap-1">
                         <UButton
-                            v-if="session"
+                            v-if="loggedIn"
                             :to="$localePath('/setup/compose')"
                             icon="mingcute:add-line"
                             :label="$t('header.postSetup')"
@@ -33,12 +33,12 @@ const baseRouteName = computed(() => routeBaseName(route))
                             />
                         </UTooltip>
 
-                        <LazyHeaderThemeButton v-if="!session" />
-                        <LazyHeaderLanguageButton v-if="!session" />
+                        <LazyHeaderThemeButton v-if="!loggedIn" />
+                        <LazyHeaderLanguageButton v-if="!loggedIn" />
                     </div>
 
                     <template v-if="baseRouteName !== 'login'">
-                        <div v-if="session" class="flex items-center gap-2">
+                        <div v-if="loggedIn" class="flex items-center gap-2">
                             <LazyNotificationButton />
                             <LazyHeaderMenu />
                         </div>
@@ -54,14 +54,14 @@ const baseRouteName = computed(() => routeBaseName(route))
                 </div>
             </header>
 
-            <NotificationBanners v-if="session" />
+            <NotificationBanners v-if="loggedIn" />
 
             <main class="grid w-full grow">
                 <slot />
             </main>
 
             <UButton
-                v-if="session"
+                v-if="loggedIn"
                 :to="$localePath('/setup/compose')"
                 icon="mingcute:add-line"
                 :aria-label="$t('header.postSetup')"

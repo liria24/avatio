@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { getForceUpdateItemFlag, getMaintenanceFlag } from '../../../server/utils/appConfig'
+import { getMaintenanceFlag } from '../../../server/utils/appConfig'
 
 vi.mock('@@/database/schema', () => ({
     allowedBoothCategories: {},
@@ -22,6 +22,6 @@ describe('Flagship flags', () => {
             FLAGS: { getBooleanValue: vi.fn().mockRejectedValue(new Error('unavailable')) },
         })
 
-        await expect(getForceUpdateItemFlag()).resolves.toBe(false)
+        await expect(getMaintenanceFlag()).resolves.toBe(false)
     })
 })

@@ -5,7 +5,8 @@ import type { WebsiteEnv } from '../../alchemy.run'
 /** Runtime bindings injected by the Alchemy Website resource. */
 type RuntimeEnv = Partial<WebsiteEnv>
 
-const getGlobalRuntimeEnv = (): RuntimeEnv | undefined => globalThis.__env__
+const getGlobalRuntimeEnv = (): RuntimeEnv | undefined =>
+    (globalThis as typeof globalThis & { __env__?: RuntimeEnv }).__env__
 
 const getCloudflareRuntimeEnv = (event?: H3Event) => event?.context?.cloudflare?.env
 

@@ -2,26 +2,10 @@ import { allowedBoothCategories, itemCategoryOverrides } from '@@/database/schem
 import { asc, sql } from 'drizzle-orm'
 import type { H3Event } from 'h3'
 
-const flagship = (event?: H3Event) => {
-    const binding = getRuntimeEnv(event).FLAGS
-    return binding && typeof binding === 'object' ? binding : undefined
-}
+import { getFeatureFlags } from './infrastructure'
 
-const getFlag = async (key: 'is-maintenance' | 'force-update-item', event?: H3Event) => {
-    const binding = flagship(event)
-    if (!binding || typeof binding.getBooleanValue !== 'function') return false
-    try {
-        return await binding.getBooleanValue(key, false)
-    } catch {
-        // Flagship is deliberately fail-closed: an outage must not disable the
-        // request path or accidentally enable maintenance/update behavior.
-        return false
-    }
-}
-
-export const getMaintenanceFlag = (event?: H3Event) => getFlag('is-maintenance', event)
-
-export const getForceUpdateItemFlag = (event?: H3Event) => getFlag('force-update-item', event)
+export const getMaintenanceFlag = (event?: H3Event) =>
+    getFeatureFlags(event).isEnabled('maintenance')
 
 export const getItemAdmission = async (
     db: ReturnType<typeof useDB>,
@@ -82,7 +66,6 @@ export const readAppConfig = async (db: ReturnType<typeof useDB>, event: H3Event
 
     return {
         allowedBoothCategoryId: categories.map(({ categoryId }) => categoryId),
-        forceUpdateItem: await getForceUpdateItemFlag(event),
         isMaintenance: await getMaintenanceFlag(event),
         specificItemCategories,
     }

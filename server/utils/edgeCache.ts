@@ -1,3 +1,4 @@
+import type { CacheInvalidationInput, CacheInvalidator } from '@avatio/core'
 import type { CacheContext } from '@cloudflare/workers-types'
 import { eq, or } from 'drizzle-orm'
 import { setResponseHeader, setResponseHeaders } from 'h3'
@@ -5,6 +6,7 @@ import type { H3Event } from 'h3'
 
 import { setupCoauthors, setups } from '../../database/schema'
 import { hasBetterAuthSessionCookie } from '../../shared/utils/authCookie'
+import { createCacheInvalidator, getCacheInvalidator } from './infrastructure'
 import { runAfterResponse } from './waitUntil'
 
 const log = logger('edgeCache')
@@ -19,22 +21,11 @@ export const EDGE_CACHE_TAGS = {
 
 export const EDGE_CACHE_BROWSER_CONTROL = 'public, max-age=60'
 export const EDGE_CACHE_CONTROL =
-    'public, max-age=86400, stale-while-revalidate=3600, stale-if-error=3600'
+    'public, max-age=900, stale-while-revalidate=3600, stale-if-error=3600'
 export const NO_STORE_CACHE_CONTROL = 'private, no-store'
 
 const EDGE_CACHE_TAG_PATTERN = /^[\x21-\x7e]+$/
 const MAX_TAG_LENGTH = 1024
-
-type CloudflareEventContext = {
-    cloudflare?: {
-        context?: {
-            cache?: CacheContext
-        }
-    }
-}
-
-const getCacheContext = (event: H3Event) =>
-    (event.context as CloudflareEventContext).cloudflare?.context?.cache
 
 const normalizeTags = (tags: Iterable<string>) =>
     [...new Set(tags)].filter(
@@ -55,6 +46,7 @@ const appendVaryHeader = (headers: Record<string, string>, value: string) => {
 }
 
 export const getSetupCacheTag = (id: Setup['id']) => `setup:${id}`
+export const getCatalogItemCacheTag = (id: string) => `item:${id}`
 
 const getNormalizedPathname = (pathname: string) => {
     const normalized = pathname.replace(/^\/(?:en|ja)(?=\/|$)/, '')
@@ -110,82 +102,74 @@ export const applyNoStoreCache = (event: H3Event) => {
     setResponseHeader(event, 'Cache-Control', NO_STORE_CACHE_CONTROL)
 }
 
-const purgeWithContext = async (cache: CacheContext, tags: readonly string[]) => {
-    const result = await cache.purge({ tags: [...tags] })
-    if (!result.success)
-        throw new Error(
-            `Cache tag purge failed: ${result.errors.map((error) => error.message).join(', ')}`,
-        )
-}
-
-const retryPurge = async (cache: CacheContext, tags: readonly string[], operation: string) => {
+const retryInvalidation = async (
+    invalidator: CacheInvalidator,
+    input: CacheInvalidationInput,
+    operation: string,
+) => {
     for (let attempt = 1; attempt <= 2; attempt++)
         try {
-            await purgeWithContext(cache, tags)
+            await invalidator.invalidate(input)
             return
         } catch (error) {
             log.error(`Retry ${attempt} failed for ${operation}:`, error)
         }
 }
 
-export const purgeEdgeCacheTags = async (
+export const invalidateCacheResources = async (
     event: H3Event,
-    tags: Iterable<string>,
+    input: CacheInvalidationInput,
     operation: string,
 ) => {
-    const normalizedTags = normalizeTags(tags)
-    if (!normalizedTags.length) return
-
-    const cache = getCacheContext(event)
-    if (!cache) return
+    const invalidator = getCacheInvalidator(event)
 
     try {
-        await purgeWithContext(cache, normalizedTags)
+        await invalidator.invalidate(input)
     } catch (error) {
-        log.error(`Failed to purge cache for ${operation}:`, error)
-        runAfterResponse(retryPurge(cache, normalizedTags, operation))
+        log.error(`Failed to invalidate cache for ${operation}:`, error)
+        runAfterResponse(retryInvalidation(invalidator, input, operation))
     }
 }
 
-export const purgeEdgeCacheTagsWithContext = async (
+export const invalidateCacheResourcesWithContext = async (
     cache: CacheContext,
-    tags: Iterable<string>,
+    input: CacheInvalidationInput,
     operation: string,
 ) => {
-    const normalizedTags = normalizeTags(tags)
-    if (!normalizedTags.length) return
-
     try {
-        await purgeWithContext(cache, normalizedTags)
+        await createCacheInvalidator(cache).invalidate(input)
     } catch (error) {
-        log.error(`Failed to purge cache for ${operation}:`, error)
+        log.error(`Failed to invalidate cache for ${operation}:`, error)
         throw error
     }
 }
 
-export const getUserContentCacheTags = async (db: ReturnType<typeof useDB>, userId: string) => {
+export const getUserContentCacheResources = async (
+    db: ReturnType<typeof useDB>,
+    userId: string,
+): Promise<CacheInvalidationInput> => {
     const relatedSetups = await db
         .select({ id: setups.id })
         .from(setups)
         .leftJoin(setupCoauthors, eq(setupCoauthors.setupId, setups.id))
         .where(or(eq(setups.userId, userId), eq(setupCoauthors.userId, userId)))
 
-    return normalizeTags([
-        EDGE_CACHE_TAGS.changelogs,
-        EDGE_CACHE_TAGS.setups,
-        EDGE_CACHE_TAGS.users,
-        ...relatedSetups.map((setup) => getSetupCacheTag(setup.id)),
-    ])
+    return {
+        users: [userId],
+        setups: relatedSetups.map((setup) => setup.id),
+        collections: [EDGE_CACHE_TAGS.changelogs, EDGE_CACHE_TAGS.setups, EDGE_CACHE_TAGS.users],
+    }
 }
 
-export const purgeUserContentCache = async (
+export const invalidateUserContentCache = async (
     event: H3Event,
     db: ReturnType<typeof useDB>,
     userId: string,
     operation: string,
     options?: { includePopularAvatars?: boolean },
 ) => {
-    const tags = await getUserContentCacheTags(db, userId)
-    if (options?.includePopularAvatars) tags.push(EDGE_CACHE_TAGS.popularAvatars)
-    await purgeEdgeCacheTags(event, tags, operation)
+    const resources = await getUserContentCacheResources(db, userId)
+    if (options?.includePopularAvatars)
+        resources.collections = [...(resources.collections ?? []), EDGE_CACHE_TAGS.popularAvatars]
+    await invalidateCacheResources(event, resources, operation)
 }

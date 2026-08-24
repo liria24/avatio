@@ -1,21 +1,10 @@
 import type { z } from 'zod'
 
-import type { FetchResult } from '#app'
+import type { SetupComposeEntry } from './setupComposeEntries'
 
 type Schema = DeepNonNullable<z.infer<typeof setupsClientFormSchema>>
 
 type DraftStatus = 'new' | 'restoring' | 'restored' | 'unsaved' | 'saving' | 'saved' | 'error'
-
-const initializeItems = () => ({
-    avatar: [],
-    clothing: [],
-    accessory: [],
-    hair: [],
-    shader: [],
-    texture: [],
-    tool: [],
-    other: [],
-})
 
 export const useSetupCompose = () => {
     const route = useRoute()
@@ -54,8 +43,30 @@ export const useSetupCompose = () => {
         images: [],
         tags: [],
         coauthors: [],
-        items: initializeItems(),
+        entries: [],
     }))
+
+    const entryState = computed({
+        get: () => state.value.entries,
+        set: (entries: SetupComposeEntry[]) => (state.value.entries = entries),
+    })
+    const {
+        totalItemsCount,
+        addItem,
+        removeItem,
+        changeItemCategory,
+        addShapekey,
+        removeShapekey,
+    } = useSetupComposeEntries(entryState)
+    const imageState = computed({
+        get: () => state.value.images,
+        set: (images: string[]) => (state.value.images = images),
+    })
+    const { getSelectedImageMetadata, processImages, removeImage } = useSetupComposeImages(
+        imageState,
+        imageMetadata,
+        imageUploading,
+    )
 
     // Utilities
     const updateRouterQuery = (updates: Record<string, string | number | undefined>) => {
@@ -97,7 +108,7 @@ export const useSetupCompose = () => {
             (c): c is NonNullable<typeof c> => c !== null,
         )
 
-        state.value.items = initializeItems()
+        state.value.entries = []
 
         if (content.items?.length) {
             const items = await Promise.all(
@@ -121,11 +132,11 @@ export const useSetupCompose = () => {
 
             for (const item of items) {
                 if (!item) continue
-                const category = (item.category || 'other') as keyof typeof state.value.items
-                const targetCategory = state.value.items[category] ? category : 'other'
-                state.value.items[targetCategory].push({
+                const parsedCategory = itemCategorySchema.safeParse(item.category)
+                const category = parsedCategory.success ? parsedCategory.data : 'other'
+                state.value.entries.push({
                     ...item,
-                    category: targetCategory,
+                    category,
                     image: item.image ?? '',
                     niceName: item.niceName ?? '',
                     price: item.price ?? '',
@@ -178,9 +189,7 @@ export const useSetupCompose = () => {
     const loadSetup = async (setupId: Setup['id']) => {
         skipDraftSave.value = true
         try {
-            const setup = await $fetch<FetchResult<'/api/setups/:id', 'get'>>(
-                `/api/setups/${setupId}`,
-            )
+            const setup = await $fetch<Setup>(`/api/me/setups/${setupId}`)
             state.value.public = setup.public
             state.value.name = setup?.name || ''
             state.value.description = setup?.description || ''
@@ -212,12 +221,14 @@ export const useSetupCompose = () => {
                   }))
                 : []
 
-            state.value.items = initializeItems()
+            state.value.entries = []
             for (const item of setup?.items || []) {
-                const category = item.category as keyof typeof state.value.items
-                if (category in state.value.items) {
-                    state.value.items[category].push({
+                const parsedCategory = itemCategorySchema.safeParse(item.category)
+                const category = parsedCategory.success ? parsedCategory.data : 'other'
+                if (category) {
+                    state.value.entries.push({
                         ...item,
+                        category,
                         image: item.image ?? '',
                         niceName: item.niceName ?? '',
                         price: item.price ?? '',
@@ -232,8 +243,6 @@ export const useSetupCompose = () => {
                         note: item.note ?? undefined,
                         unsupported: item.unsupported ?? undefined,
                     })
-                } else {
-                    console.warn('Invalid item category:', item.category)
                 }
             }
             editingSetupId.value = setup?.id || null
@@ -300,8 +309,7 @@ export const useSetupCompose = () => {
 
         publishing.value = true
         try {
-            const items = Object.values(state.value.items)
-                .flat()
+            const items = state.value.entries
                 .filter((item) => item?.id)
                 .map((item) => ({
                     itemId: item.id,
@@ -387,7 +395,7 @@ export const useSetupCompose = () => {
         state.value.images = []
         state.value.tags = []
         state.value.coauthors = []
-        state.value.items = initializeItems()
+        state.value.entries = []
         imageMetadata.value = {}
         draft.value = { id: null, status: 'new' }
         editingSetupId.value = null
@@ -405,8 +413,7 @@ export const useSetupCompose = () => {
 
         draft.value.status = 'saving'
         try {
-            const items = Object.values(state.value.items)
-                .flat()
+            const items = state.value.entries
                 .filter((item) => item?.id)
                 .map((item) => ({
                     itemId: item.id,
@@ -471,7 +478,7 @@ export const useSetupCompose = () => {
             state.value.tags.length ||
             state.value.coauthors.length ||
             state.value.public !== true ||
-            Object.values(state.value.items).some((items) => items.length),
+            state.value.entries.length,
         ),
     )
 
@@ -521,184 +528,6 @@ export const useSetupCompose = () => {
     const removeCoauthor = (username: string) => {
         const index = state.value.coauthors.findIndex((c) => c.user.username === username)
         if (index !== -1) state.value.coauthors.splice(index, 1)
-    }
-
-    // Images
-    const getSelectedImageMetadata = () => {
-        const entries = state.value.images
-            .map((url) => {
-                const metadata = imageMetadata.value[url]
-                return metadata ? ([url, metadata] as const) : null
-            })
-            .filter((entry): entry is readonly [string, SetupImageMetadata] => entry !== null)
-        return entries.length ? Object.fromEntries(entries) : undefined
-    }
-
-    const processImages = async (files: FileList | File[] | null) => {
-        if (!files?.length) return
-
-        const file = files[0]
-        if (!file) return
-
-        imageUploading.value = true
-        try {
-            const image = await uploadImage(file, 'setup')
-            state.value.images.push(image.url)
-            imageMetadata.value[image.url] = {
-                objectKey: image.objectKey,
-                contentType: image.contentType,
-                size: image.size,
-                etag: image.etag,
-                width: image.width,
-                height: image.height,
-                themeColors: image.themeColors.length ? image.themeColors : null,
-            }
-        } catch (error) {
-            console.error('Error uploading image:', error)
-            toast.add({
-                icon: 'mingcute:close-line',
-                title: t('errors.imageUploadFailed'),
-                color: 'error',
-            })
-        } finally {
-            imageUploading.value = false
-        }
-    }
-
-    const removeImage = (index: number) => {
-        const [removed] =
-            index >= 0 && index < state.value.images.length
-                ? state.value.images.splice(index, 1)
-                : []
-        if (removed) {
-            const nextMetadata = { ...imageMetadata.value }
-            Reflect.deleteProperty(nextMetadata, removed)
-            imageMetadata.value = nextMetadata
-        }
-    }
-
-    // Items
-    const totalItemsCount = computed(() =>
-        Object.values(state.value.items).reduce((total, category) => total + category.length, 0),
-    )
-
-    const isItemAlreadyAdded = (itemId: Item['id']): boolean =>
-        Object.values(state.value.items).some((category) =>
-            category.some((item) => item.id === itemId),
-        )
-
-    const addItem = (item: Item) => {
-        if (!item?.id || !item?.category) {
-            console.error('Invalid item data:', item)
-            return
-        }
-
-        if (isItemAlreadyAdded(item.id)) {
-            toast.add({
-                id: 'item-duplicate',
-                icon: 'mingcute:warning-line',
-                title: t('setup.compose.itemAlreadyAdded'),
-                color: 'warning',
-            })
-            return
-        }
-
-        const itemCategory = item.category as keyof typeof state.value.items
-        const targetCategory = itemCategory in state.value.items ? itemCategory : 'other'
-
-        if (itemCategory !== targetCategory) {
-            console.warn('Invalid item category, using other:', item.category)
-        }
-
-        state.value.items[targetCategory].push({
-            ...item,
-            id: item.id.toString(),
-            category: targetCategory,
-            note: '',
-            unsupported: false,
-            image: item.image ?? '',
-            niceName: item.niceName ?? '',
-            price: item.price ?? '',
-            likes: item.likes ?? 0,
-            shop: item.shop ? { ...item.shop, image: item.shop.image ?? '' } : undefined,
-        })
-    }
-
-    const removeItem = (category: ItemCategory, id: Item['id']) => {
-        const categoryKey = category as keyof typeof state.value.items
-        if (!(categoryKey in state.value.items)) {
-            console.error('Invalid category:', category)
-            return
-        }
-
-        const index = state.value.items[categoryKey].findIndex((item) => item.id === id)
-        if (index !== -1) {
-            state.value.items[categoryKey].splice(index, 1)
-        } else {
-            console.warn('Item not found:', id)
-        }
-    }
-
-    const changeItemCategory = (id: Item['id'], newCategory: ItemCategory) => {
-        const newCategoryKey = newCategory as keyof typeof state.value.items
-        if (!(newCategoryKey in state.value.items)) {
-            console.error('Invalid new category:', newCategory)
-            return
-        }
-
-        for (const category of Object.keys(
-            state.value.items,
-        ) as (keyof typeof state.value.items)[]) {
-            const index = state.value.items[category].findIndex((item) => item.id === id)
-            if (index !== -1) {
-                const [item] = state.value.items[category].splice(index, 1)
-                if (item) {
-                    item.category = newCategory
-                    state.value.items[newCategoryKey].push(item)
-                }
-                return
-            }
-        }
-
-        console.warn('Item not found:', id)
-    }
-
-    const addShapekey = (opts: {
-        category: ItemCategory
-        id: Item['id']
-        name: string
-        value: number
-    }) => {
-        const categoryKey = opts.category as keyof typeof state.value.items
-        if (!(categoryKey in state.value.items)) {
-            console.error('Invalid category:', opts.category)
-            return
-        }
-
-        const item = state.value.items[categoryKey].find((item) => item.id === opts.id)
-        if (!item) {
-            console.warn('Item not found:', opts.id)
-            return
-        }
-
-        if (!item.shapekeys) item.shapekeys = []
-        item.shapekeys.push({ name: opts.name, value: opts.value })
-    }
-
-    const removeShapekey = (opts: { category: ItemCategory; id: Item['id']; index: number }) => {
-        const categoryKey = opts.category as keyof typeof state.value.items
-        if (!(categoryKey in state.value.items)) {
-            console.error('Invalid category:', opts.category)
-            return
-        }
-
-        const item = state.value.items[categoryKey].find((item) => item.id === opts.id)
-        if (!item?.shapekeys || opts.index < 0 || opts.index >= item.shapekeys.length) {
-            console.warn('Shapekey not found:', opts.id, opts.index)
-            return
-        }
-
-        item.shapekeys.splice(opts.index, 1)
     }
 
     // Drafts

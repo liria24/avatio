@@ -27,6 +27,9 @@ export const userBadge = [
     'idea_man',
 ] as const
 export const platform = ['booth', 'github'] as const
+export const sourceAvailability = ['available', 'withdrawn', 'policy_rejected', 'unknown'] as const
+export const sourceSyncState = ['fresh', 'stale', 'syncing', 'error'] as const
+export const categoryOverrideOrigin = ['ai', 'manual', 'rule', 'legacy'] as const
 export const itemCategory = [
     'avatar',
     'clothing',
@@ -450,6 +453,185 @@ export const itemCategoryOverrides = snakeCase.table(
     (table) => [primaryKey({ columns: [table.platform, table.itemId] })],
 )
 
+/** Avatio-owned publisher identity, independent from a provider account. */
+export const publishers = snakeCase.table(
+    'publishers',
+    {
+        id: uuid().primaryKey(),
+        createdAt: timestamp().default(now).notNull(),
+        updatedAt: timestamp()
+            .default(now)
+            .$onUpdate(() => new Date())
+            .notNull(),
+        displayNameOverride: text(),
+        imageOverride: text(),
+    },
+    (table) => [index('publishers_display_name_override_idx').on(table.displayNameOverride)],
+)
+
+/** Provider-specific publisher identity and snapshot. Provider keys intentionally have no enum. */
+export const publisherSources = snakeCase.table(
+    'publisher_sources',
+    {
+        id: uuid().primaryKey(),
+        createdAt: timestamp().default(now).notNull(),
+        updatedAt: timestamp()
+            .default(now)
+            .$onUpdate(() => new Date())
+            .notNull(),
+        publisherId: text().notNull(),
+        providerKey: text().notNull(),
+        externalId: text().notNull(),
+        canonicalUrl: text().notNull(),
+        name: text().notNull(),
+        image: text(),
+        providerVerified: boolean().default(false).notNull(),
+        metadata: text({ mode: 'json' }).$type<Record<string, unknown>>(),
+    },
+    (table) => [
+        index('publisher_sources_publisher_id_idx').on(table.publisherId),
+        uniqueIndex('publisher_sources_provider_external_uidx').on(
+            table.providerKey,
+            table.externalId,
+        ),
+        foreignKey({
+            name: 'publisher_sources_publisher_id_fkey',
+            columns: [table.publisherId],
+            foreignColumns: [publishers.id],
+        })
+            .onDelete('restrict')
+            .onUpdate('cascade'),
+    ],
+)
+
+/** Verified Avatio ownership of a Publisher. */
+export const userPublishers = snakeCase.table(
+    'user_publishers',
+    {
+        id: uuid().primaryKey(),
+        createdAt: timestamp().default(now).notNull(),
+        userId: text().notNull(),
+        publisherId: text().notNull(),
+    },
+    (table) => [
+        index('user_publishers_user_id_idx').on(table.userId),
+        index('user_publishers_publisher_id_idx').on(table.publisherId),
+        uniqueIndex('user_publishers_user_publisher_uidx').on(table.userId, table.publisherId),
+        foreignKey({
+            name: 'user_publishers_user_id_fkey',
+            columns: [table.userId],
+            foreignColumns: [users.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+        foreignKey({
+            name: 'user_publishers_publisher_id_fkey',
+            columns: [table.publisherId],
+            foreignColumns: [publishers.id],
+        })
+            .onDelete('restrict')
+            .onUpdate('cascade'),
+    ],
+)
+
+/** Pending ownership challenge; kept separate from identity and provider state. */
+export const publisherVerificationChallenges = snakeCase.table(
+    'publisher_verification_challenges',
+    {
+        id: uuid().primaryKey(),
+        code: text().notNull(),
+        createdAt: timestamp().default(now).notNull(),
+        userId: text().notNull(),
+    },
+    (table) => [
+        uniqueIndex('publisher_verification_challenges_user_id_uidx').on(table.userId),
+        foreignKey({
+            name: 'publisher_verification_challenges_user_id_fkey',
+            columns: [table.userId],
+            foreignColumns: [users.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+    ],
+)
+
+/** Stable Avatio catalog identity, independent from every provider external ID. */
+export const catalogItems = snakeCase.table(
+    'catalog_items',
+    {
+        id: uuid().primaryKey(),
+        createdAt: timestamp().default(now).notNull(),
+        updatedAt: timestamp()
+            .default(now)
+            .$onUpdate(() => new Date())
+            .notNull(),
+        displayNameOverride: text(),
+        categoryOverride: text({ enum: itemCategory }),
+        categoryOverrideOrigin: text({ enum: categoryOverrideOrigin }),
+    },
+    (table) => [index('catalog_items_display_name_override_idx').on(table.displayNameOverride)],
+)
+
+/** Provider source, provider snapshot, availability, and synchronization state. */
+export const itemSources = snakeCase.table(
+    'item_sources',
+    {
+        id: uuid().primaryKey(),
+        createdAt: timestamp().default(now).notNull(),
+        updatedAt: timestamp()
+            .default(now)
+            .$onUpdate(() => new Date())
+            .notNull(),
+        itemId: text().notNull(),
+        publisherSourceId: text(),
+        providerKey: text().notNull(),
+        externalId: text().notNull(),
+        canonicalUrl: text().notNull(),
+        primary: boolean().default(false).notNull(),
+        availability: text({ enum: sourceAvailability }).default('unknown').notNull(),
+        syncState: text({ enum: sourceSyncState }).default('stale').notNull(),
+        providerCategoryKey: text(),
+        providerCategoryLabel: text(),
+        mappedCategory: text({ enum: itemCategory }),
+        displayName: text().notNull(),
+        image: text(),
+        price: text(),
+        popularityCount: integer(),
+        nsfw: boolean().default(false).notNull(),
+        metadata: text({ mode: 'json' }).$type<Record<string, unknown>>(),
+        lastCheckedAt: timestamp(),
+        lastSuccessfulSyncAt: timestamp(),
+        nextCheckAt: timestamp(),
+        syncLeaseUntil: timestamp(),
+        syncLeaseToken: text(),
+        lastErrorKind: text(),
+        lastErrorAt: timestamp(),
+    },
+    (table) => [
+        index('item_sources_item_id_idx').on(table.itemId),
+        index('item_sources_publisher_source_id_idx').on(table.publisherSourceId),
+        index('item_sources_due_lease_idx').on(table.nextCheckAt, table.syncLeaseUntil),
+        uniqueIndex('item_sources_provider_external_uidx').on(table.providerKey, table.externalId),
+        uniqueIndex('item_sources_primary_item_uidx')
+            .on(table.itemId)
+            .where(sql`${table.primary} = 1`),
+        foreignKey({
+            name: 'item_sources_item_id_fkey',
+            columns: [table.itemId],
+            foreignColumns: [catalogItems.id],
+        })
+            .onDelete('restrict')
+            .onUpdate('cascade'),
+        foreignKey({
+            name: 'item_sources_publisher_source_id_fkey',
+            columns: [table.publisherSourceId],
+            foreignColumns: [publisherSources.id],
+        })
+            .onDelete('set null')
+            .onUpdate('cascade'),
+    ],
+)
+
 export const setups = snakeCase.table(
     'setups',
     {
@@ -532,6 +714,57 @@ export const setupItemShapekeys = snakeCase.table(
             name: 'setup_item_shapekeys_setup_item_id_fkey',
             columns: [table.setupItemId],
             foreignColumns: [setupItems.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+    ],
+)
+
+/** V2 Setup relation. Source withdrawal never deletes this relation. */
+export const setupEntries = snakeCase.table(
+    'setup_entries',
+    {
+        id: text().primaryKey(),
+        itemId: text().notNull(),
+        setupId: text().notNull(),
+        categoryOverride: text({ enum: itemCategory }),
+        unsupported: boolean().default(false).notNull(),
+        note: text(),
+    },
+    (table) => [
+        index('setup_entries_setup_id_idx').on(table.setupId),
+        index('setup_entries_item_id_idx').on(table.itemId),
+        foreignKey({
+            name: 'setup_entries_item_id_fkey',
+            columns: [table.itemId],
+            foreignColumns: [catalogItems.id],
+        })
+            .onDelete('restrict')
+            .onUpdate('cascade'),
+        foreignKey({
+            name: 'setup_entries_setup_id_fkey',
+            columns: [table.setupId],
+            foreignColumns: [setups.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+    ],
+)
+
+export const setupEntryShapekeys = snakeCase.table(
+    'setup_entry_shapekeys',
+    {
+        id: identity(),
+        setupEntryId: text().notNull(),
+        name: text().notNull(),
+        value: real().notNull(),
+    },
+    (table) => [
+        index('setup_entry_shapekeys_entry_id_idx').on(table.setupEntryId),
+        foreignKey({
+            name: 'setup_entry_shapekeys_entry_id_fkey',
+            columns: [table.setupEntryId],
+            foreignColumns: [setupEntries.id],
         })
             .onDelete('cascade')
             .onUpdate('cascade'),

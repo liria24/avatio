@@ -30,7 +30,7 @@ const getStorage = () => {
         adapter: r2({
             binding,
             publicBaseUrl:
-                import.meta.dev || process.env.NODE_ENV === 'test'
+                getRuntimeEnvString('STAGE') === 'development'
                     ? `${requireEnv('SELF_URL')}/api/_local/r2`
                     : requireEnv('R2_PUBLIC_BASE_URL'),
         }),

@@ -10,6 +10,14 @@ vi.mock('@@/database/schema', () => ({
     },
 }))
 vi.mock('drizzle-orm', () => ({ and: vi.fn(), eq: vi.fn(), inArray: vi.fn() }))
+vi.mock('../../../server/utils/catalogCompatibilityWrites', () => ({
+    buildCatalogCompatibilityStatements: vi.fn(async () => ({
+        catalogItemId: 'catalog-item-1',
+        statements: [],
+    })),
+    markCatalogCompatibilityWithdrawal: vi.fn(async () => 'catalog-item-1'),
+    updateCatalogCompatibilityEnrichment: vi.fn(async () => undefined),
+}))
 
 const log = { error: vi.fn(), info: vi.fn() }
 const purge = vi.fn()

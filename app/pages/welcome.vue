@@ -1,19 +1,19 @@
 <script lang="ts" setup>
 definePageMeta({
-    middleware: 'authed',
+    auth: 'user',
     layout: 'minimal',
 })
 
-const { auth, session } = useAuth()
+const { user, updateUser } = useUserSession()
 const localePath = useLocalePath()
 const { t } = useI18n()
 
-const input = ref<string>(session.value?.user.username || '')
+const input = ref<string>(user.value?.username || '')
 const available = ref<boolean>(false)
 
 const updateId = async (username: string) => {
-    const success = await auth.updateUser({ username })
-    if (success) await navigateTo(localePath('/'), { external: true })
+    await updateUser({ username })
+    await navigateTo(localePath('/'), { external: true })
 }
 
 useSeo({

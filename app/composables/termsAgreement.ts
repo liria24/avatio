@@ -1,39 +1,33 @@
 export const useTermsAgreement = () => {
-    const { session, auth, refreshSession } = useAuth()
+    const { user, updateUser, fetchSession } = useUserSession()
     const agreeTerms = useAgreeTermsModal()
 
-    const { data: contents } = useAsyncData('terms-agreement-check', async () => {
-        const [termsContent, privacyContent] = await Promise.all([
-            queryCollection('content_ja').path('/terms').first(),
-            queryCollection('content_ja').path('/privacy-policy').first(),
-        ])
-        return {
-            termsUpdatedAt: termsContent?.updatedAt ?? null,
-            privacyUpdatedAt: privacyContent?.updatedAt ?? null,
-        }
-    })
+    const { data: termsContent } = useAvatioContent('terms', 'ja')
+    const { data: privacyContent } = useAvatioContent('privacy-policy', 'ja')
+    const contents = computed(() => ({
+        termsUpdatedAt: termsContent.value?.frontmatter.updatedAt ?? null,
+        privacyUpdatedAt: privacyContent.value?.frontmatter.updatedAt ?? null,
+    }))
 
     const lastAgreed = computed(() =>
-        session.value?.user?.lastAgreedToTerms
-            ? new Date(session.value.user.lastAgreedToTerms)
-            : null,
+        user.value?.lastAgreedToTerms ? new Date(user.value.lastAgreedToTerms) : null,
     )
 
     const needsTerms = computed(() => {
-        if (!session.value?.user || !contents.value?.termsUpdatedAt) return false
+        if (!user.value || !contents.value?.termsUpdatedAt) return false
         return !lastAgreed.value || lastAgreed.value < new Date(contents.value.termsUpdatedAt)
     })
 
     const needsPrivacyPolicy = computed(() => {
-        if (!session.value?.user || !contents.value?.privacyUpdatedAt) return false
+        if (!user.value || !contents.value?.privacyUpdatedAt) return false
         return !lastAgreed.value || lastAgreed.value < new Date(contents.value.privacyUpdatedAt)
     })
 
     const needsAgreement = computed(() => needsTerms.value || needsPrivacyPolicy.value)
 
     const agree = async () => {
-        await auth.updateUser({ lastAgreedToTerms: new Date() })
-        await refreshSession()
+        await updateUser({ lastAgreedToTerms: new Date() })
+        await fetchSession({ force: true })
     }
 
     return {

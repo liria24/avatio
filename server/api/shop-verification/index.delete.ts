@@ -1,5 +1,5 @@
-import { userBadges, userShops } from '@@/database/schema'
-import { and, eq, notExists } from 'drizzle-orm'
+import { publisherSources, userBadges, userPublishers, userShops } from '@@/database/schema'
+import { and, eq, inArray, notExists } from 'drizzle-orm'
 import { z } from 'zod'
 
 const body = z.object({
@@ -9,11 +9,29 @@ const body = z.object({
 export default authedSessionEventHandler(async ({ event, session, db }) => {
     // リクエストボディの検証
     const { shopId } = await validateBody(body)
+    const publisherIds = (
+        await db
+            .select({ id: publisherSources.publisherId })
+            .from(publisherSources)
+            .where(eq(publisherSources.externalId, shopId))
+    ).map(({ id }) => id)
 
     await executeD1Batch(db, [
         db
             .delete(userShops)
             .where(and(eq(userShops.userId, session.user.id), eq(userShops.shopId, shopId))),
+        ...(publisherIds.length
+            ? [
+                  db
+                      .delete(userPublishers)
+                      .where(
+                          and(
+                              eq(userPublishers.userId, session.user.id),
+                              inArray(userPublishers.publisherId, publisherIds),
+                          ),
+                      ),
+              ]
+            : []),
         db
             .delete(userBadges)
             .where(
@@ -30,7 +48,7 @@ export default authedSessionEventHandler(async ({ event, session, db }) => {
             ),
     ])
 
-    await purgeUserContentCache(event, db, session.user.id, 'shop verification removal')
+    await invalidateUserContentCache(event, db, session.user.id, 'shop verification removal')
 
     return { success: true }
 })

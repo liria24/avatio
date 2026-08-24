@@ -10,7 +10,8 @@ const query = z.object({
     content: z.stringbool().optional().default(false),
 })
 
-export default adminSessionEventHandler(async ({ db }) => {
+export default promiseEventHandler(async ({ db, event }) => {
+    await requireUserSession(event, { user: { role: 'admin' } })
     const { q, sort, userId, limit, lang, content } = await validateQuery(query)
 
     const data = await db.query.changelogs.findMany({

@@ -1,1 +1,4 @@
-export default adminSessionEventHandler(({ db, event }) => readAppConfig(db, event))
+export default promiseEventHandler(async ({ db, event }) => {
+    await requireUserSession(event, { user: { role: 'admin' } })
+    return readAppConfig(db, event)
+})

@@ -13,10 +13,8 @@ import {
 
 const baseUrl = process.env.PUBLIC_SITE_URL || 'http://localhost:3000'
 const publicUrl = process.env.PUBLIC_SITE_URL || 'https://avatio.me'
-const r2PublicBaseUrl = process.env.NUXT_R2_PUBLIC_BASE_URL || process.env.R2_PUBLIC_BASE_URL
+const r2PublicBaseUrl = process.env.R2_PUBLIC_BASE_URL
 const imageDomain = r2PublicBaseUrl ? new URL(r2PublicBaseUrl).hostname : undefined
-const emailFromAddress =
-    process.env.NUXT_EMAIL_FROM_ADDRESS || process.env.EMAIL_FROM || 'hello@avatio.me'
 const title = 'Avatio'
 const description = 'アバター改変レシピの共有プラットフォーム'
 
@@ -27,10 +25,24 @@ const normalizeRuntimeConfigForVitest = () => {
     nuxt.options.runtimeConfig = JSON.parse(JSON.stringify(nuxt.options.runtimeConfig))
 }
 
+const finalizePrivateRuntimeConfig = () => {
+    const nuxt = useNuxt()
+
+    // @nuxtjs/better-auth reads this key at runtime before falling back to
+    // BETTER_AUTH_SECRET. Keep the deploy-time secret out of Nitro's inlined
+    // runtime config so Cloudflare's secret_text binding remains authoritative.
+    nuxt.options.runtimeConfig.betterAuthSecret = ''
+    normalizeRuntimeConfigForVitest()
+}
+
 const baseRouteRules: { [path: string]: NitroRouteConfig } = {
     '/admin/**': {
         appLayout: 'dashboard',
-        appMiddleware: 'admin',
+        auth: {
+            user: {
+                role: 'admin',
+            },
+        },
     },
     '/faq': {
         prerender: true,
@@ -86,11 +98,13 @@ export default defineNuxtConfig({
     devtools: { timeline: { enabled: true } },
 
     hooks: {
-        'modules:done': normalizeRuntimeConfigForVitest,
+        'modules:done': finalizePrivateRuntimeConfig,
         'vite:extendConfig': normalizeRuntimeConfigForVitest,
     },
 
     modules: [
+        '@avatio/nuxt',
+        '@nuxtjs/better-auth',
         '@comark/nuxt',
         '@nuxt/ui',
         '@nuxt/image',
@@ -101,7 +115,6 @@ export default defineNuxtConfig({
         'nuxt-link-checker',
         'nuxt-schema-org',
         'nuxt-seo-utils',
-        '@nuxt/content',
         '@nuxt/hints',
         '@nuxtjs/device',
         '@nuxtjs/i18n',
@@ -146,27 +159,6 @@ export default defineNuxtConfig({
             crawlLinks: false,
         },
         compressPublicAssets: true,
-        storage: {
-            auth: {
-                driver: 'cloudflare-kv-binding',
-                binding: 'KV',
-                base: 'auth',
-            },
-            cache: {
-                driver: 'cloudflare-kv-binding',
-                binding: 'KV',
-                base: 'cache',
-            },
-        },
-        devStorage: {
-            auth: {
-                driver: 'fs-lite',
-                base: './.data/storage/auth',
-            },
-            cache: {
-                driver: 'null',
-            },
-        },
         experimental: {
             asyncContext: true,
             tasks: true,
@@ -187,14 +179,27 @@ export default defineNuxtConfig({
     },
 
     runtimeConfig: {
-        booth: {
-            proxyUrl: process.env.NUXT_BOOTH_PROXY_URL,
-        },
-        email: {
-            fromAddress: emailFromAddress,
-        },
+        // Deliberately too short to be accepted by Better Auth. Cloudflare's
+        // NUXT_BETTER_AUTH_SECRET secret binding must replace it at runtime.
+        betterAuthSecret: '__runtime_binding_required__',
         public: {
             siteUrl: baseUrl,
+        },
+    },
+
+    auth: {
+        redirects: {
+            login: '/login',
+            guest: '/',
+        },
+        preserveRedirect: true,
+        redirectQueryKey: 'redirect',
+        session: {
+            skipHydratedSsrGetSession: true,
+        },
+        schema: {
+            usePlural: true,
+            casing: 'snake_case',
         },
     },
 
@@ -225,22 +230,6 @@ export default defineNuxtConfig({
                 { rel: 'apple-touch-icon', href: `/pwa-192x192.png`, sizes: '192x192' },
             ],
         },
-    },
-
-    content: {
-        renderer: {
-            anchorLinks: false,
-        },
-        build: {
-            markdown: {
-                contentHeading: false,
-            },
-        },
-        database: {
-            type: 'd1',
-            bindingName: 'DB',
-        },
-        experimental: { sqliteConnector: 'native' },
     },
 
     fonts: {

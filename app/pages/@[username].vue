@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-const { session } = useAuth()
+const { user: viewer } = useUserSession()
 const { app } = useAppConfig()
 const { locale, t } = useI18n()
 const overlay = useOverlay()
@@ -148,7 +148,7 @@ useSeo({
                 </div>
                 <div class="flex items-center gap-1 self-end sm:self-auto">
                     <UButton
-                        v-if="session?.user.username === user.username"
+                        v-if="viewer?.username === user.username"
                         :to="$localePath('/settings')"
                         :label="$t('user.editProfile')"
                         icon="mingcute:edit-3-fill"
@@ -163,7 +163,7 @@ useSeo({
                         variant="ghost"
                         size="sm"
                         class="self-end"
-                        @click="session ? reportUser.open({ userId: user.username }) : login.open()"
+                        @click="viewer ? reportUser.open({ userId: user.username }) : login.open()"
                     />
                 </div>
             </div>

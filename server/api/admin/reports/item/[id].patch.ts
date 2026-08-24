@@ -10,7 +10,8 @@ const body = itemReportsUpdateSchema.pick({
     isResolved: true,
 })
 
-export default adminSessionEventHandler(async ({ db }) => {
+export default promiseEventHandler(async ({ db, event }) => {
+    await requireUserSession(event, { user: { role: 'admin' } })
     const { id } = await validateParams(params)
     const { isResolved } = await validateBody(body)
 

@@ -22,6 +22,9 @@ logs
 # Local env files
 .env
 .env.*
+!.env.development
+!.env.production
+.env.keys
 .env*.local
 
 .wrangler

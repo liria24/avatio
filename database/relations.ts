@@ -20,6 +20,14 @@ export const relations = defineRelations(schema, (r) => ({
             from: r.users.id,
             to: r.userShopVerifications.userId,
         }),
+        publishers: r.many.userPublishers({
+            from: r.users.id,
+            to: r.userPublishers.userId,
+        }),
+        publisherVerificationChallenges: r.many.publisherVerificationChallenges({
+            from: r.users.id,
+            to: r.publisherVerificationChallenges.userId,
+        }),
         badges: r.many.userBadges({
             from: r.users.id,
             to: r.userBadges.userId,
@@ -173,6 +181,68 @@ export const relations = defineRelations(schema, (r) => ({
             to: r.setupItems.itemId,
         }),
     },
+    publishers: {
+        sources: r.many.publisherSources({
+            from: r.publishers.id,
+            to: r.publisherSources.publisherId,
+        }),
+        owners: r.many.userPublishers({
+            from: r.publishers.id,
+            to: r.userPublishers.publisherId,
+        }),
+    },
+    publisherSources: {
+        publisher: r.one.publishers({
+            from: r.publisherSources.publisherId,
+            to: r.publishers.id,
+            optional: false,
+        }),
+        itemSources: r.many.itemSources({
+            from: r.publisherSources.id,
+            to: r.itemSources.publisherSourceId,
+        }),
+    },
+    userPublishers: {
+        user: r.one.users({
+            from: r.userPublishers.userId,
+            to: r.users.id,
+            optional: false,
+        }),
+        publisher: r.one.publishers({
+            from: r.userPublishers.publisherId,
+            to: r.publishers.id,
+            optional: false,
+        }),
+    },
+    publisherVerificationChallenges: {
+        user: r.one.users({
+            from: r.publisherVerificationChallenges.userId,
+            to: r.users.id,
+            optional: false,
+        }),
+    },
+    catalogItems: {
+        sources: r.many.itemSources({
+            from: r.catalogItems.id,
+            to: r.itemSources.itemId,
+        }),
+        setupEntries: r.many.setupEntries({
+            from: r.catalogItems.id,
+            to: r.setupEntries.itemId,
+        }),
+    },
+    itemSources: {
+        item: r.one.catalogItems({
+            from: r.itemSources.itemId,
+            to: r.catalogItems.id,
+            optional: false,
+        }),
+        publisherSource: r.one.publisherSources({
+            from: r.itemSources.publisherSourceId,
+            to: r.publisherSources.id,
+            optional: true,
+        }),
+    },
     setups: {
         user: r.one.users({
             from: r.setups.userId,
@@ -182,6 +252,10 @@ export const relations = defineRelations(schema, (r) => ({
         items: r.many.setupItems({
             from: r.setups.id,
             to: r.setupItems.setupId,
+        }),
+        entries: r.many.setupEntries({
+            from: r.setups.id,
+            to: r.setupEntries.setupId,
         }),
         tags: r.many.setupTags({
             from: r.setups.id,
@@ -224,6 +298,29 @@ export const relations = defineRelations(schema, (r) => ({
         setupItem: r.one.setupItems({
             from: r.setupItemShapekeys.setupItemId,
             to: r.setupItems.id,
+            optional: false,
+        }),
+    },
+    setupEntries: {
+        item: r.one.catalogItems({
+            from: r.setupEntries.itemId,
+            to: r.catalogItems.id,
+            optional: false,
+        }),
+        setup: r.one.setups({
+            from: r.setupEntries.setupId,
+            to: r.setups.id,
+            optional: false,
+        }),
+        shapekeys: r.many.setupEntryShapekeys({
+            from: r.setupEntries.id,
+            to: r.setupEntryShapekeys.setupEntryId,
+        }),
+    },
+    setupEntryShapekeys: {
+        setupEntry: r.one.setupEntries({
+            from: r.setupEntryShapekeys.setupEntryId,
+            to: r.setupEntries.id,
             optional: false,
         }),
     },

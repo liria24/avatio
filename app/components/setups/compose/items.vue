@@ -14,12 +14,21 @@ const {
 
 const popoverItemSearch = ref(false)
 
-type ItemsState = typeof state.value.items
-type CategoryKey = keyof ItemsState
+type SetupComposeEntry = (typeof state.value.entries)[number]
+type CategoryKey = ItemCategory
 
-const itemCategories = Object.keys(state.value.items) as CategoryKey[]
+const itemCategories = itemCategorySchema.options
 
-const getItemsByCategory = (category: CategoryKey) => state.value.items[category]
+const getItemsByCategory = (category: CategoryKey) =>
+    state.value.entries.filter((entry) => entry.category === category)
+
+const setItemsByCategory = (category: CategoryKey, entries: SetupComposeEntry[]) => {
+    const grouped = Object.fromEntries(
+        itemCategories.map((key) => [key, getItemsByCategory(key)]),
+    ) as Record<CategoryKey, SetupComposeEntry[]>
+    grouped[category] = entries
+    state.value.entries = itemCategories.flatMap((key) => grouped[key])
+}
 
 const { data: ownedAvatars } = await useFetch('/api/items/owned-avatars', {
     query: { limit: 10 },
@@ -110,15 +119,16 @@ const addItem = async (item: Item) => {
                     </div>
 
                     <VueDraggable
-                        v-model="state.items[category]"
+                        :model-value="getItemsByCategory(category)"
                         :animation="150"
                         handle=".draggable"
                         drag-class="opacity-100"
                         ghost-class="opacity-0"
                         class="flex h-full w-full flex-col gap-2"
+                        @update:model-value="setItemsByCategory(category, $event)"
                     >
                         <SetupsComposeItem
-                            v-for="item in state.items[category]"
+                            v-for="item in getItemsByCategory(category)"
                             :key="`item-${item.id}`"
                             v-model:unsupported="item.unsupported"
                             v-model:shapekeys="item.shapekeys"

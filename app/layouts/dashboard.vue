@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 const { app } = useAppConfig()
-const { session, revoke } = await useAuth()
+const { user, signOut } = useUserSession()
+const revoke = () => signOut({ onSuccess: () => reloadNuxtApp() })
 const { getSummary } = useAdmin()
 
 const { data: openCounts } = await getSummary()
@@ -201,18 +202,18 @@ const dev = import.meta.dev
                         >
                             <UAvatar
                                 v-if="collapsed"
-                                :src="session?.user.image || undefined"
-                                :alt="session?.user.name || undefined"
+                                :src="user?.image || undefined"
+                                :alt="user?.name || undefined"
                                 icon="lucide:user-round"
                                 size="sm"
                             />
                             <UUser
                                 v-else
-                                :name="session?.user.name || undefined"
-                                :description="session?.user.email || undefined"
+                                :name="user?.name || undefined"
+                                :description="user?.email || undefined"
                                 :avatar="{
-                                    src: session?.user.image || undefined,
-                                    alt: session?.user.name || undefined,
+                                    src: user?.image || undefined,
+                                    alt: user?.name || undefined,
                                     icon: 'lucide:user-round',
                                 }"
                                 size="sm"

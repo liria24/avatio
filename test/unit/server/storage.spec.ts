@@ -24,6 +24,7 @@ describe('storage', () => {
             R2: binding,
             R2_PUBLIC_BASE_URL: 'https://files.example.com',
             SELF_URL: 'http://127.0.0.1:1337',
+            STAGE: 'development',
         })
 
         expect(storage.adapter.name).toBe('r2-binding')
@@ -35,6 +36,7 @@ describe('storage', () => {
             R2: {} as R2Bucket,
             R2_PUBLIC_BASE_URL: 'https://files.example.com',
             SELF_URL: 'http://127.0.0.1:1467',
+            STAGE: 'development',
         })
 
         await expect(storage.url('uploads/avatar.png')).resolves.toBe(

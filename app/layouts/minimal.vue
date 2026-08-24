@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-const { session } = await useAuth()
+const { loggedIn } = useUserSession()
 const route = useRoute()
 const login = useLoginModal()
 const routeBaseName = useRouteBaseName()
@@ -13,10 +13,10 @@ const baseRouteName = computed(() => routeBaseName(route))
                 <HeaderLeft />
 
                 <div class="flex items-center gap-1">
-                    <HeaderThemeButton v-if="!session" />
+                    <HeaderThemeButton v-if="!loggedIn" />
 
                     <template v-if="baseRouteName !== 'login'">
-                        <div v-if="session" class="flex items-center gap-2">
+                        <div v-if="loggedIn" class="flex items-center gap-2">
                             <LazyNotificationButton />
                             <LazyHeaderMenu />
                         </div>

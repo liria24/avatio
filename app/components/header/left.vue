@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const { app } = useAppConfig()
-const { session } = useAuth()
+const { user } = useUserSession()
 </script>
 
 <template>
@@ -19,7 +19,7 @@ const { session } = useAuth()
         />
 
         <UButton
-            v-if="session?.user.role === 'admin'"
+            v-if="user?.role === 'admin'"
             :to="$localePath('/admin')"
             :label="$t('admin.label')"
             variant="subtle"

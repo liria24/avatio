@@ -1,8 +1,6 @@
 import { changelogAuthors, changelogs, changelogI18ns } from '@@/database/schema'
-import { generateText } from 'ai'
 import type { BatchItem } from 'drizzle-orm/batch'
 import { createInsertSchema } from 'drizzle-orm/zod'
-import { createWorkersAI } from 'workers-ai-provider'
 import { z } from 'zod'
 
 const log = logger('/api/admin/changelogs:POST')
@@ -18,7 +16,8 @@ const body = createInsertSchema(changelogI18ns)
         i18n: createInsertSchema(changelogI18ns).array().optional(),
     })
 
-export default adminSessionEventHandler(async ({ event, session, db }) => {
+export default promiseEventHandler(async ({ event, db }) => {
+    const session = await requireUserSession(event, { user: { role: 'admin' } })
     const { slug, title, markdown, authors, i18n } = await validateBody(body, { sanitize: true })
     const idempotency = await claimIdempotencyRequest({
         event,
@@ -38,33 +37,15 @@ export default adminSessionEventHandler(async ({ event, session, db }) => {
     })
 
     if (!slug) {
-        const messages: { role: 'system' | 'user'; content: string }[] = []
-        if (exists.length > 0)
-            messages.push({
-                role: 'system',
-                content: `The short slug must not overlap with any of the existing slugs: ${exists.map((b) => b.slug).join(', ')}`,
-            })
-
-        const aiBinding = event.context.cloudflare?.env?.AI
-        if (!aiBinding)
-            throw createError({
-                statusCode: 503,
-                message: 'AI binding is unavailable. Provide a slug manually.',
-            })
-        const workersai = createWorkersAI({ binding: aiBinding })
-        const result = await generateText({
-            model: workersai('openai/gpt-5.6-luna'),
-            messages: [
-                ...messages,
-                {
-                    role: 'user',
-                    content: `Create a short slug for the blog with the title: ${title}`,
-                },
-            ],
-            system: 'Please return only the slug as your answer.',
+        const { changelogSlugGenerator } = useAiCapabilities(event)
+        generatedSlug = await changelogSlugGenerator.generate({
+            title,
+            reservedSlugs: exists.map((entry) => entry.slug),
         })
-
-        generatedSlug = result.text.trim()
+        if (exists.some((entry) => entry.slug === generatedSlug))
+            throw serverError.internalServerError({
+                responseMessage: 'AI generated a duplicate changelog slug. Provide one manually.',
+            })
     }
 
     const finalSlug = slug || generatedSlug
@@ -79,36 +60,20 @@ export default adminSessionEventHandler(async ({ event, session, db }) => {
         for (const locale of locales) {
             const targetLanguage = 'English'
 
-            const translationResult = await generateText({
-                model: 'openai/gpt-5.6-luna',
-                messages: [
-                    {
-                        role: 'user',
-                        content: `Translate the following changelog to ${targetLanguage}:
-
-Title: ${title}
-
-Content:
-${markdown}
-
-Please return the translation in the following JSON format:
-{
-  "title": "translated title",
-  "markdown": "translated markdown content"
-}`,
-                    },
-                ],
-                system: `You are a professional translator. Translate the content to ${targetLanguage} while maintaining the markdown formatting. Return only valid JSON without any additional text or code block markers.`,
-            })
-
             try {
-                const translated = parseChangelogTranslation(translationResult.text)
+                const { changelogTranslator } = useAiCapabilities(event)
+                const translated = await changelogTranslator.translate({
+                    title,
+                    content: markdown,
+                    sourceLocale: 'Japanese',
+                    targetLocale: targetLanguage,
+                })
 
                 translations.push({
                     changelogSlug: finalSlug,
                     locale,
                     title: translated.title,
-                    markdown: translated.markdown,
+                    markdown: translated.content,
                     aiGenerated: true,
                 })
             } catch (error) {
@@ -154,7 +119,11 @@ Please return the translation in the following JSON format:
 
     await executeD1Batch(db, queries)
 
-    await purgeEdgeCacheTags(event, [EDGE_CACHE_TAGS.changelogs], 'changelog create')
+    await invalidateCacheResources(
+        event,
+        { collections: [EDGE_CACHE_TAGS.changelogs] },
+        'changelog create',
+    )
 
     return {
         slug: finalSlug,

@@ -1,7 +1,8 @@
-import type { EmailAttachmentMetadata, emails } from '@@/database/schema'
+import type { emails } from '@@/database/schema'
 import type { InferInsertModel } from 'drizzle-orm'
 import PostalMime, { type Address, type Email as ParsedEmail } from 'postal-mime'
 
+import type { EmailAttachmentMetadata } from '../../shared/types/database'
 import { sanitizeEmailHtml } from './sanitizeEmailHtml'
 
 type EmailInsert = InferInsertModel<typeof emails>

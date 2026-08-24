@@ -21,7 +21,6 @@ const platformOptions = [
 
 const state = reactive({
     isMaintenance: false,
-    forceUpdateItem: false,
     allowedBoothCategoryId: [] as string[],
     categoryOverrides: [] as CategoryOverride[],
 })
@@ -36,7 +35,6 @@ const { data, status, refresh } = await useFetch<AppConfig>('/api/admin/config',
 
 const applyConfig = (config: AppConfig) => {
     state.isMaintenance = config.isMaintenance
-    state.forceUpdateItem = config.forceUpdateItem
     state.allowedBoothCategoryId = config.allowedBoothCategoryId.map(String)
     state.categoryOverrides = Object.entries(config.specificItemCategories).flatMap(
         ([platform, categories]) =>
@@ -98,7 +96,6 @@ const createPayload = (): AppConfig | null => {
     validationError.value = null
     return {
         allowedBoothCategoryId: [...new Set(allowedBoothCategoryId)],
-        forceUpdateItem: state.forceUpdateItem,
         isMaintenance: state.isMaintenance,
         specificItemCategories,
     }
@@ -184,13 +181,6 @@ useSeo({
                         <USwitch
                             v-model="state.isMaintenance"
                             label="Maintenance mode"
-                            description="Managed in Cloudflare Flagship; this value is read-only here."
-                            color="neutral"
-                            disabled
-                        />
-                        <USwitch
-                            v-model="state.forceUpdateItem"
-                            label="Force update item info"
                             description="Managed in Cloudflare Flagship; this value is read-only here."
                             color="neutral"
                             disabled

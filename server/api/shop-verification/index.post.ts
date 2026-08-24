@@ -1,4 +1,10 @@
-import { userBadges, userShops, userShopVerifications } from '@@/database/schema'
+import {
+    publisherVerificationChallenges,
+    userBadges,
+    userPublishers,
+    userShops,
+    userShopVerifications,
+} from '@@/database/schema'
 import { eq } from 'drizzle-orm'
 import { joinURL } from 'ufo'
 import { z } from 'zod'
@@ -16,14 +22,14 @@ export default authedSessionEventHandler(
             key: `shop-verification:${session.user.id}`,
         })
 
-        const config = useRuntimeConfig(event)
-
         // URLからアイテムIDを抽出
         const itemId = extractItemId(url)
         if (!itemId) throw serverError.badRequest()
 
         // Boothからアイテム情報を取得
-        const item = await $fetch<Booth>(joinURL(config.booth.proxyUrl, itemId.id))
+        const proxyUrl = getRuntimeEnvString('BOOTH_PROXY_URL', event)
+        if (!proxyUrl) throw serverError.internalServerError()
+        const item = await $fetch<Booth>(joinURL(proxyUrl, itemId.id))
 
         // ショップが既に登録されているか確認
         const existingShop = await db.query.userShops.findFirst({
@@ -34,7 +40,26 @@ export default authedSessionEventHandler(
             columns: { id: true },
         })
 
-        if (existingShop) return { success: true, shopId: item.shop.subdomain }
+        if (existingShop) {
+            const existingPublisherSource = await db.query.publisherSources.findFirst({
+                where: {
+                    providerKey: { eq: itemId.platform },
+                    externalId: { eq: item.shop.subdomain },
+                },
+                columns: { publisherId: true },
+            })
+            if (existingPublisherSource)
+                await db
+                    .insert(userPublishers)
+                    .values({
+                        userId: session.user.id,
+                        publisherId: existingPublisherSource.publisherId,
+                    })
+                    .onConflictDoNothing({
+                        target: [userPublishers.userId, userPublishers.publisherId],
+                    })
+            return { success: true, shopId: item.shop.subdomain }
+        }
 
         // ユーザーの検証コードを取得
         const verificationCode = await db.query.userShopVerifications.findFirst({
@@ -66,6 +91,13 @@ export default authedSessionEventHandler(
         })
 
         const shopId = itemData.shop!.id
+        const publisherSource = await db.query.publisherSources.findFirst({
+            where: {
+                providerKey: { eq: itemId.platform },
+                externalId: { eq: shopId },
+            },
+            columns: { publisherId: true },
+        })
         await executeD1Batch(db, [
             db
                 .insert(userShops)
@@ -81,9 +113,25 @@ export default authedSessionEventHandler(
             db
                 .delete(userShopVerifications)
                 .where(eq(userShopVerifications.userId, session.user.id)),
+            db
+                .delete(publisherVerificationChallenges)
+                .where(eq(publisherVerificationChallenges.userId, session.user.id)),
+            ...(publisherSource
+                ? [
+                      db
+                          .insert(userPublishers)
+                          .values({
+                              userId: session.user.id,
+                              publisherId: publisherSource.publisherId,
+                          })
+                          .onConflictDoNothing({
+                              target: [userPublishers.userId, userPublishers.publisherId],
+                          }),
+                  ]
+                : []),
         ])
 
-        await purgeUserContentCache(event, db, session.user.id, 'shop verification')
+        await invalidateUserContentCache(event, db, session.user.id, 'shop verification')
 
         return { success: true, shopId }
     },

@@ -40,12 +40,57 @@ For deployment-related changes, also run **`bun run build`**. In this repo, the 
 
 - **Framework:** Nuxt 4 (`compatibilityVersion: 5`).
 - **Deployment target:** Cloudflare Workers, built and deployed by `Cloudflare.Website.Nuxt` in `alchemy.run.ts`.
+- **Workspace:** Bun workspaces under `packages/*` with exactly three architectural packages:
+  - `@avatio/core` — pure domain, application ports, and explicit contracts. It must not import Nuxt, Nitro, Cloudflare, Drizzle, Better Auth, provider SDKs, or read `process.env`.
+  - `@avatio/nuxt` — Nuxt integration, content/routing build hooks, and catalog provider adapters. It may depend on core but never on `@avatio/cloudflare`.
+  - `@avatio/cloudflare` — D1/Drizzle, Queue, cache, Flagship, R2, Workers AI, and binding adapters. It may depend on core.
+- The root application is the composition root. Do not add a fourth package without concrete implementation evidence.
 - **Structure:**
   - `app/` — Vue frontend (pages, layouts, composables, components).
   - `server/` — Nitro API routes and server middleware.
   - `database/schema.ts` — Drizzle ORM schema (SQLite via Cloudflare D1).
   - `shared/` — Utilities shared between client and server.
-  - `content/` — `@nuxt/content` pages, split by `en/` and `ja/`.
+  - `content/` — canonical Markdown sources, split by `en/` and `ja/`. `@avatio/nuxt` parses them with Comark at build time; Nuxt Content is intentionally not active.
+
+## Architecture boundaries
+
+- Abstract at repositories and semantic capabilities, not through generic database/cloud/ORM wrappers.
+- Setup domain code references CatalogItem IDs and must not branch on BOOTH, GitHub, or other providers.
+- Cloudflare bindings and `event.context.cloudflare` stay in infrastructure/composition code.
+- Database schema types are not client/API contracts; use explicit core or shared HTTP contracts.
+- Root `types.d.ts` is intentionally absent. Do not re-add a root declaration that imports server or Alchemy types into app/shared type programs.
+- CatalogItem IDs are Avatio-owned and provider-independent. Provider keys remain strings with `UNIQUE(provider_key, external_id)` source identity.
+- Source availability (`available`/`withdrawn`/`policy_rejected`/`unknown`) and sync state (`fresh`/`stale`/`syncing`/`error`) are independent. Transient provider failures never mean withdrawal.
+- Effective category is resolved only through `SetupEntry override > CatalogItem override > primary source mapping > other`.
+- Catalog refresh is demand-driven. D1 source leases prevent duplicate v2 Queue messages; cold sources are never refreshed by a global schedule.
+- Queue v2 messages contain only a source ID. The old message decoder is temporary rollout compatibility and must not regain Setup-domain lookups.
+- Public Setup responses are cookie-independent and resource-tagged; viewer/private responses are `no-store`. D1 remains authoritative when caching or invalidation fails.
+- Nitro Storage currently has no mounts. Never restore one for catalog truth, leases, flags, Setup data, or other system-of-record state.
+- AI routes and use cases use semantic capabilities. Concrete per-task model IDs live only in typed stage composition.
+
+## V2 migration compatibility ledger
+
+The following compatibility is temporary unless explicitly marked permanent. Do not add new consumers to it.
+
+- **Legacy Catalog/Setup schema:** `items`, `shops`, `item_category_overrides`, `setup_items`, `setup_item_shapekeys`, `user_shops`, and `user_shop_verifications` remain during expand/backfill/switch. They cannot be contracted yet because Setup list/search/bookmark APIs, item/admin APIs, publisher verification/profile reads, and item reports still use them. In particular, migrate `item_reports.item_id` from provider external IDs to CatalogItem IDs before dropping `items`.
+- **Setup fallback and dual-write:** Setup detail reads use v2 only when every legacy relation has a matching SetupEntry; commands write both relation sets. Remove the fallback and legacy writes after production backfill verifies with zero pending rows and the rollback window closes. Do not prolong dual-write for convenience.
+- **Catalog bridge:** legacy `getItem()` currently writes v2 through `catalogCompatibilityWrites`, while v2 sync mirrors snapshots back to legacy tables. The target is one authoritative v2 write path, with at most a temporary one-way v2-to-legacy mirror for rollback. Migrate item resolution/search/admin, AI enrichment, publisher verification, and reports before deleting the old resolver and bridge.
+- **Legacy HTTP DTO:** `Platform`, `Item`, `Shop`, `SetupItem`, and the v2-to-legacy Setup projection remain because the bundled frontend consumes the old shape. Migrate the frontend to provider-neutral CatalogItem/SetupEntry contracts, verify whether production traffic has external API consumers, then delete the projection and `extractItemId` adapter together.
+- **Queue decoder:** accept old `{ id, platform, reason }` messages only until the retained physical queue is confirmed drained. If changed before then, translate the old identity to an ItemSource and use v2 sync; do not restore old Setup lookups or add old-message producers.
+- **Backfill tooling:** keep `POST /api/admin/catalog/migration` and its legacy mapping utilities through dry-run/apply/verify and production verification. Remove the endpoint and one-shot migration code in the later contract change.
+- **Runtime configuration bridge:** `getRuntimeEnv*` remains only at root composition/infrastructure boundaries. Replace string-key call sites with typed semantic settings as integrations are migrated; do not introduce new `NUXT_*` aliases for canonical application values.
+- **Retained unbound resources:** Content D1 and legacy cache KV declarations are data-safety placeholders, not runtime compatibility. Remove or adopt them only through an explicitly approved infrastructure plan.
+- **Permanent compatibility:** unchanged Setup IDs and `/setup/<id>` redirect/collision behavior are permanent product behavior, not contract-cleanup candidates.
+
+## Environment and secrets
+
+- Non-secret stage configuration is typed in `config/environment.ts`.
+- Canonical secret definitions and validation live in `config/secrets.ts`.
+- `.env.development` and `.env.production` contain committed dotenvx ciphertext. `.env.keys` contains local private keys and must never be committed.
+- Use `bun run config:check:development` or `bun run config:check:production` before plans/deploys. Stage selection is explicit and fails closed.
+- Production and development use the same application-facing secret names. In particular, use `BETTER_AUTH_SECRET`; do not restore `BETTER_AUTH_SECRET_DEVELOPMENT`.
+- Do not print decrypted values or expose secrets through public runtime config, app config, client payloads, logs, snapshots, or generated artifacts.
+- `process.env` access is limited to build/deploy/config tooling and unavoidable root composition. Domain/application code receives typed configuration or capabilities.
 
 ## Tooling constraints
 
@@ -75,13 +120,18 @@ For deployment-related changes, also run **`bun run build`**. In this repo, the 
 
 ## Auth
 
-- Uses **Better Auth** with Drizzle adapter (`@better-auth/drizzle-adapter`).
-- Better Auth uses its SQLite provider; auth tables share the D1 database with app tables.
+- `@nuxtjs/better-auth` owns Nuxt/Nitro routing, SSR hydration, client session state, and request session memoization.
+- `server/auth.config.ts` is the sole runtime Better Auth configuration; `app/auth.config.ts` configures client plugins. Root `auth.config.ts` exists only for Better Auth CLI schema generation and must not be imported at runtime.
+- Better Auth uses the relations-v2 Drizzle adapter with `usePlural: true`; keep `advanced.database.joins: false` until the relevant upstream fix is released and separately verified.
+- Use `useUserSession()`/module client helpers in the app and `getRequestSession()`/`requireUserSession()` on the server. Do not recreate `useAuth()` or another session state machine.
+- Protected APIs explicitly call `requireUserSession()`; route rules are navigation UX, not the API security boundary. Preserve banned-user policy independently from admin roles.
+- Better Auth tables share `APP_DB`. Do not change auth schema/migrations merely to change Nuxt integration.
 
 ## Deployment & infra quirks
 
-- **Cloudflare Flagship** owns `is-maintenance` and `force-update-item`; an unavailable Flagship binding falls back to `false`. Category configuration is atomically replaced in D1 by `GET/PUT /api/admin/config`.
+- **Cloudflare Flagship** owns true operational flags such as `is-maintenance`; unavailable evaluation fails closed. Catalog admission/category configuration lives in D1. Explicit catalog revalidation uses `POST /api/admin/catalog/revalidate` rather than a global force-update flag.
 - `alchemy.run.ts` is the only infrastructure, D1 migration, and Worker deployment entry point. Do not add a Wrangler config or direct Wrangler deployment script.
+- The old Content D1 and Nitro-cache KV resources remain declared only to preserve retained production resources; neither is bound to the Worker. Do not destroy or repurpose them without explicit operator approval.
 - Workers Builds uses an empty build command, `bun run deploy:production` on `main`, and `bun run deploy:development` for the `development` preview branch.
 - **Workers Cron Triggers**:
   - `/api/admin/job/report` — daily at 22:00
@@ -96,6 +146,14 @@ For deployment-related changes, also run **`bun run build`**. In this repo, the 
 - Default locale: `ja`. Secondary: `en`.
 - Locale files: `i18n/locales/*.json`.
 - Route rules in `nuxt.config.ts` are **auto-localized** for every locale in `availableI18nLocales`. If you add a new locale, existing route rules (redirects, middleware, ISR, etc.) are cloned under that prefix automatically.
+- Missing translations are intentional. Content requests fall back to Japanese with `isFallback: true`; do not create files merely to make locale trees symmetrical.
+
+## Setup URLs
+
+- Normal canonical Setup URLs are `/<existing-id>`; Setup IDs remain opaque and unchanged.
+- `/setup/<id>` is permanent compatibility. It redirects with 308 unless the ID collides with a static root route, in which case the legacy path remains canonical.
+- Static root reservations are generated by `@avatio/nuxt` from `pages:resolved`. Do not introduce a handwritten reserved-path list.
+- Use `useSetupPath()` in app code and `getSetupPath()` in server code. Do not concatenate Setup URLs manually.
 
 ## Versioning
 
@@ -110,8 +168,8 @@ Wrap every API handler with the appropriate factory from `server/utils/eventHand
 - `promiseEventHandler` — no auth required
 - `sessionEventHandler` — session available but optional (null-safe)
 - `authedSessionEventHandler` — login required (throws 401 if unauthenticated)
-- `adminSessionEventHandler` — admin only (throws 403)
-- `cronEventHandler` — cron jobs or admin
+
+Admin and cron routes use `promiseEventHandler` plus their explicit module-native server guard. The handler wrappers provide DB injection and conflict normalization; they do not own authorization.
 
 ### Database queries
 
@@ -153,7 +211,7 @@ Wrap every API handler with the appropriate factory from `server/utils/eventHand
 ## Common mistakes to avoid
 
 - Do not use Vue Options API (disabled in Vite config).
-- Admin pages live under `app/pages/admin/` and use the `dashboard` layout + `admin` middleware (configured in route rules, not per-page).
+- Admin pages live under `app/pages/admin/` and use the `dashboard` layout. Typed Better Auth route rules provide navigation authorization.
 
 ## Documentation maintenance
 

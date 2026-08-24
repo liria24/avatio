@@ -37,6 +37,8 @@ VRSNSユーザー向けのアバターセットアップ共有サービス。<br
 [![Drizzle ORM badge][badge-drizzle]][drizzle]
 [![Oxc badge][badge-oxc]][oxc]
 
+Avatio is a Bun workspace modular monolith. Pure domains live in `@avatio/core`, Nuxt integration in `@avatio/nuxt`, and current infrastructure adapters in `@avatio/cloudflare`. See [configuration and secret operations](docs/configuration.md) and the [v2 rollout runbook](docs/v2-rollout.md) before running plans or deployments.
+
 ## 🤝 Contributions
 
 Avatioはオープンソースプロジェクトです。

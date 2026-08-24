@@ -7,11 +7,12 @@ const body = z.object({
     role: z.enum(['user', 'admin']),
 })
 
-export default adminSessionEventHandler(async ({ event }) => {
+export default promiseEventHandler(async ({ event }) => {
+    await requireUserSession(event, { user: { role: 'admin' } })
     const { name, email, password, role } = await validateBody(body)
     const { headers } = event
 
-    const result = await getAuth(event).api.createUser({
+    const result = await serverAuth(event).api.createUser({
         headers,
         body: {
             name,

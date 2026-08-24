@@ -10,6 +10,7 @@ type SendEmailMock = (message: EmailMessage) => Promise<{ messageId: string }>
 
 type RuntimeGlobal = typeof globalThis & {
     __env__?: {
+        EMAIL_FROM?: string
         EMAIL?: {
             send: SendEmailMock
         }
@@ -28,15 +29,10 @@ describe('email', () => {
     })
 
     it('sends with the default sender', async () => {
-        vi.stubGlobal('useRuntimeConfig', () => ({
-            email: {
-                fromAddress: 'support@avatio.me',
-            },
-        }))
         const send = vi.fn<SendEmailMock>().mockResolvedValue({
             messageId: 'sent-1',
         })
-        runtimeGlobal.__env__ = { EMAIL: { send } }
+        runtimeGlobal.__env__ = { EMAIL_FROM: 'support@avatio.me', EMAIL: { send } }
 
         const { sendEmail } = await loadEmail()
         await expect(
