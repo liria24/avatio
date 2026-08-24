@@ -68,9 +68,15 @@ For deployment-related changes, also run **`bun run build`**. In this repo, the 
 - Nitro Storage currently has no mounts. Never restore one for catalog truth, leases, flags, Setup data, or other system-of-record state.
 - AI routes and use cases use semantic capabilities. Concrete per-task model IDs live only in typed stage composition.
 
-## V2 migration compatibility ledger
+## V2 migration rollout (temporary)
 
-The following compatibility is temporary unless explicitly marked permanent. Do not add new consumers to it.
+This section is an operator-gated migration runbook, not permanent architecture documentation. Automated coding sessions may prepare plans, code, migrations, and tests, but must not deploy production or invoke the catalog migration `apply` mode without explicit operator authorization.
+
+Delete this entire rollout section from `AGENTS.md` once production verification reports zero pending rows, the retained Queue has drained, the freshness and rollback observation windows have closed, and the separate contract migration has removed the resolved legacy paths. Do not retain completed migration history here. If an unrelated deferral is still active at that point, move only that invariant to its owning section before deleting this one.
+
+### Compatibility ledger
+
+The following compatibility is temporary. Do not add new consumers to it.
 
 - **Legacy Catalog/Setup schema:** `items`, `shops`, `item_category_overrides`, `setup_items`, `setup_item_shapekeys`, `user_shops`, and `user_shop_verifications` remain during expand/backfill/switch. They cannot be contracted yet because Setup list/search/bookmark APIs, item/admin APIs, publisher verification/profile reads, and item reports still use them. In particular, migrate `item_reports.item_id` from provider external IDs to CatalogItem IDs before dropping `items`.
 - **Setup fallback and dual-write:** Setup detail reads use v2 only when every legacy relation has a matching SetupEntry; commands write both relation sets. Remove the fallback and legacy writes after production backfill verifies with zero pending rows and the rollback window closes. Do not prolong dual-write for convenience.
@@ -80,17 +86,50 @@ The following compatibility is temporary unless explicitly marked permanent. Do 
 - **Backfill tooling:** keep `POST /api/admin/catalog/migration` and its legacy mapping utilities through dry-run/apply/verify and production verification. Remove the endpoint and one-shot migration code in the later contract change.
 - **Runtime configuration bridge:** `getRuntimeEnv*` remains only at root composition/infrastructure boundaries. Replace string-key call sites with typed semantic settings as integrations are migrated; do not introduce new `NUXT_*` aliases for canonical application values.
 - **Retained unbound resources:** Content D1 and legacy cache KV declarations are data-safety placeholders, not runtime compatibility. Remove or adopt them only through an explicitly approved infrastructure plan.
-- **Permanent compatibility:** unchanged Setup IDs and `/setup/<id>` redirect/collision behavior are permanent product behavior, not contract-cleanup candidates.
+
+### Production sequence
+
+1. Run the full test/type/lint/format/build matrix and both stage config checks.
+2. Review the production Alchemy plan and confirm retained D1, R2, KV, Queue, and Flagship resources are not being replaced.
+3. Deploy development and verify content, Setup routes, OAuth/session behavior, request-time D1 resolution, preview-origin rejection, Queue consumption, and cache tags.
+4. As an authenticated admin, call `POST /api/admin/catalog/migration` with `{ "mode": "dry-run" }`. Resolve every error. Nonstandard historical Setup ID warnings require route preflight, never ID rewriting.
+5. Obtain explicit production authorization, then deploy the expand-compatible application and generated migration.
+6. Call the same endpoint with `{ "mode": "apply" }`. The backfill is resumable/idempotent and preserves legacy IDs and relations.
+7. Call it with `{ "mode": "verify" }`; require `verified: true` and zero pending rows.
+8. Exercise BOOTH, GitHub, legacy `outdated=true`, publisher verification, notes, categories, shapekeys, private/hidden owner reads, and withdrawal/restoration behavior against production-like data.
+9. Observe at least one freshness window and verify v2 Queue messages, lease expiry/release, and item-tag cache invalidation.
+10. After the rollback window closes and the retained Queue drains, generate a separate contract migration that removes legacy tables/fields, dual writes, migration tooling, and the old Queue decoder.
 
 ## Environment and secrets
 
+- The canonical path is `.env.<stage>` ciphertext -> dotenvx -> shared validation -> Alchemy -> Worker bindings. Do not maintain parallel secret inventories.
 - Non-secret stage configuration is typed in `config/environment.ts`.
 - Canonical secret definitions and validation live in `config/secrets.ts`.
 - `.env.development` and `.env.production` contain committed dotenvx ciphertext. `.env.keys` contains local private keys and must never be committed.
 - Use `bun run config:check:development` or `bun run config:check:production` before plans/deploys. Stage selection is explicit and fails closed.
 - Production and development use the same application-facing secret names. In particular, use `BETTER_AUTH_SECRET`; do not restore `BETTER_AUTH_SECRET_DEVELOPMENT`.
+- Workers Builds directly retains only `DOTENV_PRIVATE_KEY_PRODUCTION`, `DOTENV_PRIVATE_KEY_DEVELOPMENT`, and required provider deployment/bootstrap credentials. `scripts/stage.ts` selects exactly one stage file. `NUXT_BETTER_AUTH_SECRET` is derived from canonical `BETTER_AUTH_SECRET`, never managed separately.
 - Do not print decrypted values or expose secrets through public runtime config, app config, client payloads, logs, snapshots, or generated artifacts.
 - `process.env` access is limited to build/deploy/config tooling and unavoidable root composition. Domain/application code receives typed configuration or capabilities.
+
+### Local configuration
+
+1. Obtain the managed development dotenv private key.
+2. Store it only in gitignored `.env.keys` using dotenvx's standard key format.
+3. Run `bun run config:check:development`; failures must report names/reasons only.
+4. Run `bun run dev`, which uses the same canonical development names and Alchemy resources as deployment.
+
+### Secret rotation
+
+- For an externally issued secret, obtain the replacement, update only the intended encrypted `.env.<stage>` value through dotenvx, run config check and Alchemy plan, commit ciphertext, obtain deployment authorization, deploy/verify, then revoke the old credential.
+- For Better Auth or another persistent signing key, first establish a multi-key/versioned compatibility plan and preserve sessions where practical. Never replace it with `Alchemy.Random` casually.
+- Rotate dotenv encryption keys only through dotenvx's supported re-encryption workflow. Commit the resulting ciphertext/public-key changes together and keep managed offline backups of both private keys; `.env.keys` is not a backup.
+
+### Dashboard parity and cleanup
+
+Do not remove legacy Worker variables/secrets until the encrypted stage file is complete, config check passes, the Alchemy plan emits secret bindings, development and production-like workerd verification pass, and the production deployment is explicitly authorized and verified.
+
+After cutover, remove manually mirrored runtime values for `BETTER_AUTH_SECRET`, obsolete `BETTER_AUTH_SECRET_DEVELOPMENT`, `BOOTH_PROXY_URL`, `TWITTER_CLIENT_SECRET`, `OG_IMAGE_SECRET`, `LIRIA_DISCORD_ENDPOINT`, and `LIRIA_DISCORD_ACCESS_TOKEN`, plus manual copies of Git-owned site/image URLs and sender address. Alchemy-owned resource IDs (`APP_DB`, R2, Queue, AI, Flagship, Images, Email, and rate limits) must not be reintroduced as application environment variables.
 
 ## Tooling constraints
 
@@ -121,11 +160,12 @@ The following compatibility is temporary unless explicitly marked permanent. Do 
 ## Auth
 
 - `@nuxtjs/better-auth` owns Nuxt/Nitro routing, SSR hydration, client session state, and request session memoization.
-- `server/auth.config.ts` is the sole runtime Better Auth configuration; `app/auth.config.ts` configures client plugins. Root `auth.config.ts` exists only for Better Auth CLI schema generation and must not be imported at runtime.
+- `server/auth.config.ts` is the sole runtime Better Auth configuration; `app/auth.config.ts` configures client plugins. Root `auth.config.ts` exists only for Better Auth CLI schema generation and must not be imported at runtime. Remove it only after the Nuxt module proves equivalent custom D1/Drizzle schema generation directly from `server/auth.config.ts`.
 - Better Auth uses the relations-v2 Drizzle adapter with `usePlural: true`; keep `advanced.database.joins: false` until the relevant upstream fix is released and separately verified.
 - Use `useUserSession()`/module client helpers in the app and `getRequestSession()`/`requireUserSession()` on the server. Do not recreate `useAuth()` or another session state machine.
 - Protected APIs explicitly call `requireUserSession()`; route rules are navigation UX, not the API security boundary. Preserve banned-user policy independently from admin roles.
 - Better Auth tables share `APP_DB`. Do not change auth schema/migrations merely to change Nuxt integration.
+- Versioned terms acceptance remains deferred because legacy `lastAgreedToTerms` timestamps have no defensible legal-version mapping. Never fabricate one during auth cleanup.
 
 ## Deployment & infra quirks
 
