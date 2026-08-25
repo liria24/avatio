@@ -1,4 +1,5 @@
 import { resolveEffectiveCategory } from '@avatio/core/catalog'
+import { projectCatalogSourceToLegacySetupItem } from '~~/server/migration/catalog/compatibility'
 
 export interface SetupQueryViewer {
     userId: string

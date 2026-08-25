@@ -5,7 +5,7 @@ import {
     migrateLegacyItemState,
     migrateLegacySetupEntry,
     migrateLegacyShapekey,
-} from '../../../server/utils/catalogLegacyMigration'
+} from '../../../server/migration/catalog/legacy'
 
 const updatedAt = new Date('2026-08-20T00:00:00.000Z')
 

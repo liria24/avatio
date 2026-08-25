@@ -1,17 +1,11 @@
 import { syncCatalogSource } from '@avatio/core/catalog'
 import { catalogSyncMessageSchema } from '@avatio/core/contracts'
+import {
+    handleItemRevalidationMessage,
+    isLegacyItemRevalidationMessage,
+} from '~~/server/migration/catalog/queueCompatibility'
 
 const log = logger('itemRevalidationQueue')
-
-const isLegacyMessage = (value: unknown): value is ItemRevalidationMessage => {
-    if (!value || typeof value !== 'object') return false
-    const candidate = value as Partial<ItemRevalidationMessage>
-    return (
-        typeof candidate.id === 'string' &&
-        (candidate.platform === 'booth' || candidate.platform === 'github') &&
-        (candidate.reason === 'setup-detail' || candidate.reason === 'owned-avatars')
-    )
-}
 
 export default defineNitroPlugin((nitroApp) => {
     nitroApp.hooks.hook('cloudflare:queue', async ({ batch, context }) => {
@@ -31,7 +25,7 @@ export default defineNitroPlugin((nitroApp) => {
                         log.warn(
                             `Catalog source ${v2Message.data.sourceId} synced; cache purge failed`,
                         )
-                } else if (isLegacyMessage(message.body)) {
+                } else if (isLegacyItemRevalidationMessage(message.body)) {
                     await handleItemRevalidationMessage(message.body, context.cache)
                 } else {
                     throw new Error('Unsupported catalog synchronization message')

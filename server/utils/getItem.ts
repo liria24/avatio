@@ -3,6 +3,11 @@ import type { BatchItem } from 'drizzle-orm/batch'
 import type { H3Event } from 'h3'
 import { joinURL, withHttps } from 'ufo'
 import { itemCategoryOverrides, items, shops } from '~~/database/schema'
+import {
+    buildCatalogCompatibilityStatements,
+    markCatalogCompatibilityWithdrawal,
+    updateCatalogCompatibilityEnrichment,
+} from '~~/server/migration/catalog/compatibility'
 
 const log = logger('getItem')
 const UNGH_URL = 'https://ungh.cc'
@@ -40,6 +45,10 @@ const getGithubResource = <T>(repo: string, path = ''): Promise<T | null> => {
     return $fetch<T>(`${UNGH_URL}/repos/${repo}${path}`).catch(() => null)
 }
 
+/**
+ * Temporary legacy Catalog resolver retained for rollout compatibility.
+ * Canonical v2 provider resolution and source synchronization live behind the Catalog adapters.
+ */
 export default async (
     event: H3Event | undefined,
     db: ReturnType<typeof useDB>,

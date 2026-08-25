@@ -1,5 +1,7 @@
 import type { ItemCategory } from '@avatio/core/catalog'
 
+/** Migration-only conversion from retained legacy Catalog rows into v2 state. */
+
 export const LEGACY_SOURCE_FRESHNESS_MS = 24 * 60 * 60 * 1000
 
 export interface LegacyItemMigrationInput {

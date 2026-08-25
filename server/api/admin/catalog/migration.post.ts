@@ -1,4 +1,9 @@
 import { z } from 'zod'
+import {
+    applyCatalogV2Backfill,
+    inspectCatalogV2Backfill,
+    verifyCatalogV2Backfill,
+} from '~~/server/migration/catalog/migration'
 
 const log = logger('/api/admin/catalog/migration:POST')
 

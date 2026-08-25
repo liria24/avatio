@@ -17,6 +17,16 @@ import {
     userShops,
 } from '@@/database/schema'
 import type { BatchItem } from 'drizzle-orm/batch'
+import type { AppDatabase } from '~~/server/utils/database'
+import { executeD1Batch } from '~~/server/utils/executeD1Batch'
+
+import {
+    legacyItemCanonicalUrl,
+    legacyPublisherCanonicalUrl,
+    migrateLegacyItemState,
+    migrateLegacySetupEntry,
+    migrateLegacyShapekey,
+} from './legacy'
 
 const MAX_D1_BATCH_STATEMENTS = 90
 

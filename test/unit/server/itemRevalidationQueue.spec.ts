@@ -2,15 +2,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { PermanentItemResolutionError } from '../../../server/utils/itemResolutionError'
 
-const getItem = vi.fn()
-const findSourceByExternalId = vi.fn()
-const invalidate = vi.fn()
+const { getItem, findSourceByExternalId, invalidate } = vi.hoisted(() => ({
+    getItem: vi.fn(),
+    findSourceByExternalId: vi.fn(),
+    invalidate: vi.fn(),
+}))
+
+vi.mock('~~/server/utils/getItem', () => ({ default: getItem }))
+vi.mock('~~/server/utils/database', () => ({ useDB: () => ({ marker: 'db' }) }))
+vi.mock('~~/server/utils/catalogRuntime', () => ({
+    getCatalogRepository: () => ({ findSourceByExternalId }),
+    getCatalogCacheInvalidator: () => ({ invalidate }),
+}))
 
 beforeEach(() => {
-    vi.stubGlobal('getItem', getItem)
-    vi.stubGlobal('useDB', () => ({ marker: 'db' }))
-    vi.stubGlobal('getCatalogRepository', () => ({ findSourceByExternalId }))
-    vi.stubGlobal('getCatalogCacheInvalidator', () => ({ invalidate }))
     getItem.mockReset()
     findSourceByExternalId.mockReset()
     invalidate.mockReset().mockResolvedValue(undefined)
@@ -22,6 +27,27 @@ afterEach(() => {
 })
 
 describe('legacy item revalidation queue compatibility', () => {
+    it('recognizes only the retained old queue message shape', async () => {
+        const { isLegacyItemRevalidationMessage } =
+            await import('../../../server/migration/catalog/queueCompatibility')
+
+        expect(
+            isLegacyItemRevalidationMessage({
+                id: 'owner/repo',
+                platform: 'github',
+                reason: 'setup-detail',
+                requestedAt: new Date().toISOString(),
+            }),
+        ).toBe(true)
+        expect(
+            isLegacyItemRevalidationMessage({
+                version: 2,
+                type: 'catalog.sync-source',
+                sourceId: 'source-1',
+            }),
+        ).toBe(false)
+    })
+
     it('waits for persistence and invalidates only the CatalogItem resource', async () => {
         let finishPersistence!: (item: { id: string }) => void
         getItem.mockReturnValue(
@@ -37,7 +63,7 @@ describe('legacy item revalidation queue compatibility', () => {
             requestedAt: new Date().toISOString(),
             force: true,
         }
-        const pending = import('../../../server/utils/itemRevalidationQueue').then(
+        const pending = import('../../../server/migration/catalog/queueCompatibility').then(
             ({ handleItemRevalidationMessage }) =>
                 handleItemRevalidationMessage(message, {} as never),
         )
@@ -57,7 +83,7 @@ describe('legacy item revalidation queue compatibility', () => {
         )
         findSourceByExternalId.mockResolvedValue({ itemId: 'catalog-item-2' })
         const { handleItemRevalidationMessage } =
-            await import('../../../server/utils/itemRevalidationQueue')
+            await import('../../../server/migration/catalog/queueCompatibility')
 
         await handleItemRevalidationMessage({
             id: 'missing',
@@ -73,7 +99,7 @@ describe('legacy item revalidation queue compatibility', () => {
         const error = { statusCode: 404 }
         getItem.mockRejectedValue(error)
         const { handleItemRevalidationMessage } =
-            await import('../../../server/utils/itemRevalidationQueue')
+            await import('../../../server/migration/catalog/queueCompatibility')
 
         await expect(
             handleItemRevalidationMessage({

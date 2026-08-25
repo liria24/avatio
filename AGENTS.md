@@ -81,7 +81,7 @@ The following compatibility is temporary. Do not add new consumers to it.
 
 - **Legacy Catalog/Setup schema:** `items`, `shops`, `item_category_overrides`, `setup_items`, `setup_item_shapekeys`, `user_shops`, and `user_shop_verifications` remain during expand/backfill/switch. They cannot be contracted yet because Setup list/search/bookmark APIs, item/admin APIs, publisher verification/profile reads, and item reports still use them. In particular, migrate `item_reports.item_id` from provider external IDs to CatalogItem IDs before dropping `items`.
 - **Setup fallback and dual-write:** Setup detail reads use v2 only when every legacy relation has a matching SetupEntry; commands write both relation sets. Remove the fallback and legacy writes after production backfill verifies with zero pending rows and the rollback window closes. Do not prolong dual-write for convenience.
-- **Catalog bridge:** legacy `getItem()` currently writes v2 through `catalogCompatibilityWrites`, while v2 sync mirrors snapshots back to legacy tables. The target is one authoritative v2 write path, with at most a temporary one-way v2-to-legacy mirror for rollback. Migrate item resolution/search/admin, AI enrichment, publisher verification, and reports before deleting the old resolver and bridge.
+- **Catalog bridge:** legacy `getItem()` currently writes v2 through the explicit `server/migration/catalog/compatibility.ts` rollout bridge, while v2 sync mirrors snapshots back to legacy tables. The target is one authoritative v2 write path, with at most a temporary one-way v2-to-legacy mirror for rollback. Migrate item resolution/search/admin, AI enrichment, publisher verification, and reports before deleting the old resolver and bridge.
 - **Legacy HTTP DTO:** `Platform`, `Item`, `Shop`, `SetupItem`, and the v2-to-legacy Setup projection remain because the bundled frontend consumes the old shape. Migrate the frontend to provider-neutral CatalogItem/SetupEntry contracts, verify whether production traffic has external API consumers, then delete the projection and `extractItemId` adapter together.
 - **Queue decoder:** accept old `{ id, platform, reason }` messages only until the retained physical queue is confirmed drained. If changed before then, translate the old identity to an ItemSource and use v2 sync; do not restore old Setup lookups or add old-message producers.
 - **Backfill tooling:** keep `POST /api/admin/catalog/migration` and its legacy mapping utilities through dry-run/apply/verify and production verification. Remove the endpoint and one-shot migration code in the later contract change.
@@ -201,6 +201,14 @@ After cutover, remove manually mirrored runtime values for `BETTER_AUTH_SECRET`,
 `package.json` is the sole version source. `app/app.config.ts` reads it at build time. Release PRs and tags are handled by the pinned `danielroe/uppt` workflow; no deploy job is part of the release workflow.
 
 ## Server conventions
+
+### Runtime and migration organization
+
+- `server/utils` is Avatio's formal Nuxt/Nitro server runtime integration and continues to use framework auto-imports.
+- Organize runtime utilities by one coherent responsibility per file; one exported function per file is not required. Never introduce catch-all names such as `misc.ts`, `helpers.ts`, or `common.ts`.
+- Migration-only, rollout compatibility, and backfill implementations must not live in `server/utils`.
+- `server/migration` contains temporary rollout code and is explicit-import only. Permanent features must not add new dependencies on it, and it must not collect utilities unrelated to the migration lifecycle.
+- Remove `server/migration` after production migration verification, Queue drain, observation, and rollback windows are complete and the legacy contract migration has landed.
 
 ### API handlers
 

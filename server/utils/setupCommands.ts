@@ -13,6 +13,7 @@ import {
     setups,
     setupTags,
 } from '~~/database/schema'
+import { mapV2SetupEntryWrites } from '~~/server/migration/catalog/compatibility'
 
 type CreateSetupInput = z.infer<typeof setupsInsertSchema>
 type UpdateSetupInput = z.infer<typeof setupsUpdateSchema>

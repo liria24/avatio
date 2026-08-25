@@ -10,7 +10,7 @@ vi.mock('@@/database/schema', () => ({
     },
 }))
 vi.mock('drizzle-orm', () => ({ and: vi.fn(), eq: vi.fn(), inArray: vi.fn() }))
-vi.mock('../../../server/utils/catalogCompatibilityWrites', () => ({
+vi.mock('../../../server/migration/catalog/compatibility', () => ({
     buildCatalogCompatibilityStatements: vi.fn(async () => ({
         catalogItemId: 'catalog-item-1',
         statements: [],

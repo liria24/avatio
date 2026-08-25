@@ -2,10 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 beforeEach(() => {
     vi.stubGlobal('logger', () => ({ error: vi.fn() }))
+    vi.stubGlobal('runAfterResponse', (promise: Promise<unknown>) => void promise)
 })
 
 afterEach(() => {
-    vi.doUnmock('../../../server/utils/waitUntil')
     vi.resetModules()
     vi.unstubAllGlobals()
 })
@@ -112,9 +112,6 @@ describe('edge cache purge', () => {
     })
 
     it('retries a failed request purge after the response', async () => {
-        vi.doMock('../../../server/utils/waitUntil', () => ({
-            runAfterResponse: (promise: Promise<unknown>) => void promise,
-        }))
         const { invalidateCacheResources } = await import('../../../server/utils/edgeCache')
         const invalidate = vi
             .fn()

@@ -17,14 +17,30 @@ type QueuePluginApp = {
     }
 }
 
+const { handleMessage, isLegacyMessage } = vi.hoisted(() => ({
+    handleMessage: vi.fn(),
+    isLegacyMessage: vi.fn(),
+}))
 const log = { error: vi.fn() }
-const handleMessage = vi.fn()
+
+vi.mock('~~/server/migration/catalog/queueCompatibility', () => ({
+    handleItemRevalidationMessage: handleMessage,
+    isLegacyItemRevalidationMessage: isLegacyMessage,
+}))
 
 beforeEach(() => {
     vi.stubGlobal('logger', () => log)
-    vi.stubGlobal('handleItemRevalidationMessage', handleMessage)
     vi.stubGlobal('defineNitroPlugin', (plugin: (app: QueuePluginApp) => void) => plugin)
     handleMessage.mockReset().mockResolvedValue(undefined)
+    isLegacyMessage.mockReset().mockImplementation((value: unknown) => {
+        if (!value || typeof value !== 'object') return false
+        const message = value as { id?: unknown; platform?: unknown; reason?: unknown }
+        return (
+            typeof message.id === 'string' &&
+            (message.platform === 'booth' || message.platform === 'github') &&
+            (message.reason === 'setup-detail' || message.reason === 'owned-avatars')
+        )
+    })
     log.error.mockReset()
 })
 

@@ -21,6 +21,8 @@ const importedModules = (source: string) =>
         (match) => match[1] ?? '',
     )
 
+const normalizedRelativePath = (path: string) => path.replaceAll('\\', '/')
+
 describe('workspace architecture boundaries', () => {
     it('keeps @avatio/core framework and infrastructure independent', async () => {
         const root = join(process.cwd(), 'packages/core/src')
@@ -147,5 +149,50 @@ describe('workspace architecture boundaries', () => {
         const source = await readFile(join(process.cwd(), 'server/utils/setupQuery.ts'), 'utf8')
 
         expect(source).not.toMatch(/['"]booth['"]|['"]github['"]|platformSchema/)
+    })
+
+    it('isolates temporary Catalog migration code from server/utils auto-imports', () => {
+        const removedUtils = [
+            'catalogMigration.ts',
+            'catalogLegacyMigration.ts',
+            'catalogCompatibilityProjection.ts',
+            'catalogCompatibilityWrites.ts',
+        ]
+
+        for (const file of removedUtils)
+            expect(existsSync(join(process.cwd(), 'server/utils', file))).toBe(false)
+
+        const migrationRoot = join(process.cwd(), 'server/migration/catalog')
+        expect(existsSync(migrationRoot)).toBe(true)
+        expect(existsSync(join(migrationRoot, 'migration.ts'))).toBe(true)
+        expect(existsSync(join(migrationRoot, 'legacy.ts'))).toBe(true)
+        expect(existsSync(join(migrationRoot, 'compatibility.ts'))).toBe(true)
+        expect(existsSync(join(migrationRoot, 'queueCompatibility.ts'))).toBe(true)
+    })
+
+    it('allows migration imports only from the audited rollout consumers', async () => {
+        const serverRoot = join(process.cwd(), 'server')
+        const allowedMigrationConsumers = new Set([
+            'server/api/admin/catalog/migration.post.ts',
+            'server/plugins/itemRevalidationQueue.ts',
+            'server/utils/getItem.ts',
+            'server/utils/setupCommands.ts',
+            'server/utils/setupQuery.ts',
+        ])
+        const violations: string[] = []
+
+        for (const file of await sourceFiles(serverRoot)) {
+            const relativePath = normalizedRelativePath(relative(process.cwd(), file))
+            if (relativePath.startsWith('server/migration/')) continue
+
+            const source = await readFile(file, 'utf8')
+            const importsMigration = importedModules(source).some((module) =>
+                module.startsWith('~~/server/migration/'),
+            )
+            if (importsMigration && !allowedMigrationConsumers.has(relativePath))
+                violations.push(relativePath)
+        }
+
+        expect(violations).toEqual([])
     })
 })
