@@ -1,14 +1,6 @@
 import type { BetterAuthOptions } from 'better-auth/minimal'
 import { admin, multiSession, username } from 'better-auth/plugins'
 
-import { authAdditionalFields } from '../../shared/utils/authAdditionalFields'
-import {
-    RATE_LIMIT_DEFAULT,
-    RATE_LIMIT_SESSION,
-    RATE_LIMIT_SIGNIN,
-    RATE_LIMIT_WINDOW,
-} from '../../shared/utils/constants'
-
 const minUsernameLength = 3
 
 export const authSchemaOptions = {

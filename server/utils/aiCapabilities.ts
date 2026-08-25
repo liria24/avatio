@@ -1,8 +1,6 @@
 import { createWorkersAiCapabilities, type AiTaskModels } from '@avatio/cloudflare'
 import type { H3Event } from 'h3'
-
-import { itemCategory } from '../../database/schema'
-import { getRuntimeEnv, getRuntimeEnvString } from './runtimeEnv'
+import { itemCategory } from '~~/database/schema'
 
 const modelBindings = {
     catalogEnrichment: 'AI_MODEL_CATALOG_ENRICHMENT',

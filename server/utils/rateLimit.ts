@@ -1,5 +1,3 @@
-import { serverError } from './error'
-
 type RateLimitBindingName = 'RATE_LIMIT_USER_ACTION' | 'RATE_LIMIT_IMAGE' | 'RATE_LIMIT_DRAFT'
 
 interface RateLimitBinding {

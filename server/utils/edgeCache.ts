@@ -3,11 +3,7 @@ import type { CacheContext } from '@cloudflare/workers-types'
 import { eq, or } from 'drizzle-orm'
 import { setResponseHeader, setResponseHeaders } from 'h3'
 import type { H3Event } from 'h3'
-
-import { setupCoauthors, setups } from '../../database/schema'
-import { hasBetterAuthSessionCookie } from '../../shared/utils/authCookie'
-import { createCacheInvalidator, getCacheInvalidator } from './infrastructure'
-import { runAfterResponse } from './waitUntil'
+import { setupCoauthors, setups } from '~~/database/schema'
 
 const log = logger('edgeCache')
 

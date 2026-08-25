@@ -1,8 +1,6 @@
-import { allowedBoothCategories, itemCategoryOverrides } from '@@/database/schema'
 import { asc, sql } from 'drizzle-orm'
 import type { H3Event } from 'h3'
-
-import { getFeatureFlags } from './infrastructure'
+import { allowedBoothCategories, itemCategoryOverrides } from '~~/database/schema'
 
 export const getMaintenanceFlag = (event?: H3Event) =>
     getFeatureFlags(event).isEnabled('maintenance')

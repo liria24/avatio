@@ -14,10 +14,7 @@ import {
     type ProviderHttpClient,
 } from '@avatio/nuxt/runtime/server/catalog/providers'
 import type { CacheContext, Queue } from '@cloudflare/workers-types'
-
-import { allowedBoothCategories } from '../../database/schema'
-import { BOOTH_CATEGORY_MAP } from '../../shared/utils/constants'
-import { getDatabaseBinding, useDB } from './database'
+import { allowedBoothCategories } from '~~/database/schema'
 
 const catalogHttpClient: ProviderHttpClient = {
     async get<T>(url: string) {

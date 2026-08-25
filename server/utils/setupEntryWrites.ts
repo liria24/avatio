@@ -1,7 +1,5 @@
-import { items, itemSources } from '@@/database/schema'
 import { inArray } from 'drizzle-orm'
-
-import type { AppDatabase } from './database'
+import { items, itemSources } from '~~/database/schema'
 
 export interface LegacySetupItemWrite {
     id: string

@@ -2,9 +2,6 @@ import { catalogItems, itemSources, publisherSources, publishers } from '@@/data
 import { and, eq, inArray } from 'drizzle-orm'
 import type { BatchItem } from 'drizzle-orm/batch'
 
-import { legacyItemCanonicalUrl, legacyPublisherCanonicalUrl } from './catalogLegacyMigration'
-import type { AppDatabase } from './database'
-
 const SOURCE_FRESHNESS_MS = 24 * 60 * 60 * 1000
 
 export interface CatalogCompatibilityWriteInput {

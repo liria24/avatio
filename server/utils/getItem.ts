@@ -1,14 +1,8 @@
-import { itemCategoryOverrides, items, shops } from '@@/database/schema'
 import { and, eq, inArray } from 'drizzle-orm'
 import type { BatchItem } from 'drizzle-orm/batch'
 import type { H3Event } from 'h3'
 import { joinURL, withHttps } from 'ufo'
-
-import {
-    buildCatalogCompatibilityStatements,
-    markCatalogCompatibilityWithdrawal,
-    updateCatalogCompatibilityEnrichment,
-} from './catalogCompatibilityWrites'
+import { itemCategoryOverrides, items, shops } from '~~/database/schema'
 
 const log = logger('getItem')
 const UNGH_URL = 'https://ungh.cc'

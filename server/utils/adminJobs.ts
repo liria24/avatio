@@ -1,6 +1,5 @@
 import { lt } from 'drizzle-orm'
-
-import { idempotencyRequests } from '../../database/schema'
+import { idempotencyRequests } from '~~/database/schema'
 
 const reportLog = logger('/api/admin/job/report')
 const cleanupLog = logger('/api/admin/job/cleanup')

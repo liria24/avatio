@@ -1,6 +1,3 @@
-import type { ItemCategory, SetupItem } from '../../shared/types/database'
-import { platformSchema } from '../../shared/types/database'
-
 const metadataNumber = (metadata: Record<string, unknown> | null, key: string) => {
     const value = metadata?.[key]
     return typeof value === 'number' ? value : undefined

@@ -1,8 +1,5 @@
 import { resolveEffectiveCategory } from '@avatio/core/catalog'
 
-import { projectCatalogSourceToLegacySetupItem } from './catalogCompatibilityProjection'
-import type { AppDatabase } from './database'
-
 export interface SetupQueryViewer {
     userId: string
     role?: string | null

@@ -18,16 +18,6 @@ import {
 } from '@@/database/schema'
 import type { BatchItem } from 'drizzle-orm/batch'
 
-import {
-    legacyItemCanonicalUrl,
-    legacyPublisherCanonicalUrl,
-    migrateLegacyItemState,
-    migrateLegacySetupEntry,
-    migrateLegacyShapekey,
-} from './catalogLegacyMigration'
-import type { AppDatabase } from './database'
-import { executeD1Batch } from './executeD1Batch'
-
 const MAX_D1_BATCH_STATEMENTS = 90
 
 type Statement = BatchItem<'sqlite'>

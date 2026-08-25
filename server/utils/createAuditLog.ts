@@ -1,5 +1,5 @@
-import { auditLogs } from '@@/database/schema'
 import type { z } from 'zod'
+import { auditLogs } from '~~/database/schema'
 
 type Body = z.infer<typeof auditLogsInsertSchema>
 

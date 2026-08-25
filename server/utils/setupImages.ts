@@ -1,6 +1,5 @@
-import { setupImages } from '@@/database/schema'
-import type { SetupImageMetadata } from '@@/shared/types/database'
 import { and, eq, inArray } from 'drizzle-orm'
+import { setupImages } from '~~/database/schema'
 
 interface ResolveSetupImageDataOptions {
     userId: string

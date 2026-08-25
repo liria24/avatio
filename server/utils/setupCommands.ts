@@ -1,3 +1,8 @@
+import { and, eq } from 'drizzle-orm'
+import type { BatchItem } from 'drizzle-orm/batch'
+import type { H3Event } from 'h3'
+import { nanoid } from 'nanoid'
+import type { z } from 'zod'
 import {
     setupCoauthors,
     setupEntries,
@@ -7,14 +12,7 @@ import {
     setupItemShapekeys,
     setups,
     setupTags,
-} from '@@/database/schema'
-import { and, eq } from 'drizzle-orm'
-import type { BatchItem } from 'drizzle-orm/batch'
-import type { H3Event } from 'h3'
-import { nanoid } from 'nanoid'
-import type { z } from 'zod'
-
-import type { IdempotencyClaim } from './idempotency'
+} from '~~/database/schema'
 
 type CreateSetupInput = z.infer<typeof setupsInsertSchema>
 type UpdateSetupInput = z.infer<typeof setupsUpdateSchema>

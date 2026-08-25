@@ -7,8 +7,6 @@ import type { CacheInvalidator, FileStorage } from '@avatio/core'
 import type { CacheContext, R2Bucket } from '@cloudflare/workers-types'
 import type { H3Event } from 'h3'
 
-import { getRuntimeEnv, getRuntimeEnvString } from './runtimeEnv'
-
 type CloudflareRequestContext = {
     cloudflare?: {
         context?: {
