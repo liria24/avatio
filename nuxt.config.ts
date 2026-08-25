@@ -194,9 +194,6 @@ export default defineNuxtConfig({
         },
         preserveRedirect: true,
         redirectQueryKey: 'redirect',
-        session: {
-            skipHydratedSsrGetSession: true,
-        },
         schema: {
             usePlural: true,
             casing: 'snake_case',
