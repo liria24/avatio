@@ -30,6 +30,7 @@ Compact instruction for OpenCode sessions. If a fact is obvious from filenames, 
 | Production Alchemy plan     | `bun run plan:production`                       |
 | Development deploy          | `bun run deploy:development`                    |
 | Production deploy           | `bun run deploy:production`                     |
+| Seed local App D1           | `bun run db:seed:local -- --yes`                |
 | Generate Better Auth schema | `bunx auth@rc generate --config auth.config.ts` |
 
 ## After making changes
@@ -157,6 +158,7 @@ After cutover, remove manually mirrored runtime values for `BETTER_AUTH_SECRET`,
 - Migrations use Drizzle v1 nested output under `./drizzle`.
 - Do not edit generated migration SQL by hand; regenerate with `bun run db:generate`.
 - `bun run dev` runs `alchemy dev --stage development`; Alchemy applies D1 migrations in its local workerd simulator.
+- `bun run db:seed:local -- --yes` copies the remote `avatio-development` D1 into that local simulator; authenticate Wrangler separately with D1 read permission. Its `--source production --allow-production` form requires explicit operator approval and is only for one-off local seeding. It does not deploy infrastructure, create a remote D1, or write to a remote D1. If the development D1 has not been provisioned, obtain authorization for the normal Alchemy development deploy first.
 
 ## Auth
 

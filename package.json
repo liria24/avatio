@@ -33,6 +33,7 @@
         "plan:production": "bun scripts/stage.ts plan production",
         "deploy:development": "bun scripts/stage.ts deploy development",
         "deploy:production": "bun scripts/stage.ts deploy production",
+        "db:seed:local": "bun scripts/seedLocalD1.ts",
         "db:generate": "drizzle-kit generate",
         "drizzle:generate": "bun run db:generate"
     },
