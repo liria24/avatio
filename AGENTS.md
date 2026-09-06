@@ -122,7 +122,7 @@ The following compatibility is temporary. Do not add new consumers to it.
 - `.env.development` and `.env.production` contain committed dotenvx ciphertext. `.env.keys` contains local private keys and must never be committed.
 - Use `bun run config:check:development` or `bun run config:check:production` before plans/deploys. Stage selection is explicit and fails closed.
 - Production and development use the same application-facing secret names. In particular, use `BETTER_AUTH_SECRET`; do not restore `BETTER_AUTH_SECRET_DEVELOPMENT`.
-- Workers Builds directly retains only `DOTENV_PRIVATE_KEY_PRODUCTION`, `DOTENV_PRIVATE_KEY_DEVELOPMENT`, and required provider deployment/bootstrap credentials. `scripts/stage.ts` selects exactly one stage file. `NUXT_BETTER_AUTH_SECRET` is derived from canonical `BETTER_AUTH_SECRET`, never managed separately.
+- Each Worker's Workers Builds settings retain only its stage's dotenv private key and required provider deployment/bootstrap credentials. `scripts/stage.ts` selects exactly one stage file. `NUXT_BETTER_AUTH_SECRET` is derived from canonical `BETTER_AUTH_SECRET`, never managed separately.
 - OG image runtime configuration uses Nitro environment expansion to read the canonical `OG_IMAGE_SECRET` binding. Builds must work without that secret and must never inline its value.
 - Clear Better Auth's build-time secret in `nitro:config`, after the module's `modules:done` initialization, so only the runtime Worker binding supplies the key.
 - Do not print decrypted values or expose secrets through public runtime config, app config, client payloads, logs, snapshots, or generated artifacts.
@@ -197,7 +197,7 @@ After cutover, remove manually mirrored runtime values for `BETTER_AUTH_SECRET`,
 - **Cloudflare Flagship** owns true operational flags such as `is-maintenance`; unavailable evaluation fails closed. Catalog admission/category configuration lives in D1. Explicit catalog revalidation uses `POST /api/admin/catalog/revalidate` rather than a global force-update flag.
 - `alchemy.run.ts` is the only infrastructure, D1 migration, and Worker deployment entry point. Do not add a Wrangler config or direct Wrangler deployment script.
 - Content D1 remains unbound. The retained production Cache KV is named `avatio` and bound as `CONTENT_CACHE` for authored content; preserve its identity and existing keys through the prefixed cache driver.
-- Workers Builds uses an empty build command, `bun run deploy:production` on `main`, and `bun run deploy:development` for the `development` preview branch.
+- Workers Builds uses an empty build command on both Workers. The `avatio` Worker builds only `main` with `bun run deploy:production`; `avatio-development` builds only `development` with `bun run deploy:development`. Non-production branch builds are disabled on both Workers.
 - Production deploy/adoption requires a clean `main` checkout. CI additionally checks branch/ref metadata and the actual checked-out commit SHA; detached HEAD is permitted only with matching main CI metadata. Normal deploy never passes `--adopt`. Use the explicit `infra:adopt:*` command only after reviewing the infrastructure plan and obtaining applicable operator authorization.
 - **Workers Cron Triggers**:
   - `/api/admin/job/report` — daily at 22:00
