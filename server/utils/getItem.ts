@@ -169,7 +169,7 @@ export default async (
             {
                 valid: true,
                 item: {
-                    id: item.id,
+                    id: String(item.id),
                     platform: 'booth' as const,
                     name: item.name,
                     niceName: cachedItem?.niceName || null,

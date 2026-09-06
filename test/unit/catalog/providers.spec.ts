@@ -60,14 +60,14 @@ describe('BOOTH CatalogProvider', () => {
         expect(provider.matchUrl(new URL('https://evilbooth.pm/items/12345'))).toBeNull()
     })
 
-    it('normalizes an admitted provider snapshot', async () => {
+    it.each(['12345', 12345])('normalizes an admitted provider snapshot with ID %s', async (id) => {
         const provider = new BoothCatalogProvider({
             proxyBaseUrl: 'https://proxy.example/api',
             allowedCategoryKeys: new Set(['208']),
             categoryMap: { '208': 'avatar' },
             http: createHttp(async (url) => {
                 expect(url).toBe('https://proxy.example/api/12345')
-                return response(200, boothItem)
+                return response(200, { ...boothItem, id })
             }),
             resolvePublisherSource,
         })
@@ -78,6 +78,7 @@ describe('BOOTH CatalogProvider', () => {
         })
         expect(result.status).toBe('available')
         if (result.status !== 'available') return
+        expect(result.snapshot.reference.externalId).toBe('12345')
         expect(result.snapshot.category).toEqual({
             rawKey: '208',
             rawLabel: '3D Characters',
