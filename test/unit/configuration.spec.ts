@@ -67,6 +67,14 @@ describe('stage configuration', () => {
         expect(source).not.toContain('BETTER_AUTH_SECRET_DEVELOPMENT')
     })
 
+    it('defers the OG image secret to runtime so secret-free builds remain possible', async () => {
+        const source = await readFile(join(process.cwd(), 'nuxt.config.ts'), 'utf8')
+
+        expect(source).toContain("secret: '{{OG_IMAGE_SECRET}}'")
+        expect(source).toContain('envExpansion: true')
+        expect(source).not.toContain('process.env.OG_IMAGE_SECRET')
+    })
+
     it('reports names and reasons without exposing supplied values', () => {
         const sensitiveValue = 'never-print-this-secret-value'
         const result = validateSecrets({

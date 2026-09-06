@@ -121,6 +121,7 @@ The following compatibility is temporary. Do not add new consumers to it.
 - Use `bun run config:check:development` or `bun run config:check:production` before plans/deploys. Stage selection is explicit and fails closed.
 - Production and development use the same application-facing secret names. In particular, use `BETTER_AUTH_SECRET`; do not restore `BETTER_AUTH_SECRET_DEVELOPMENT`.
 - Workers Builds directly retains only `DOTENV_PRIVATE_KEY_PRODUCTION`, `DOTENV_PRIVATE_KEY_DEVELOPMENT`, and required provider deployment/bootstrap credentials. `scripts/stage.ts` selects exactly one stage file. `NUXT_BETTER_AUTH_SECRET` is derived from canonical `BETTER_AUTH_SECRET`, never managed separately.
+- OG image runtime configuration uses Nitro environment expansion to read the canonical `OG_IMAGE_SECRET` binding. Builds must work without that secret and must never inline its value.
 - Do not print decrypted values or expose secrets through public runtime config, app config, client payloads, logs, snapshots, or generated artifacts.
 - `process.env` access is limited to build/deploy/config tooling and unavoidable root composition. Domain/application code receives typed configuration or capabilities.
 

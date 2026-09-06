@@ -164,6 +164,7 @@ export default defineNuxtConfig({
         experimental: {
             asyncContext: true,
             tasks: true,
+            envExpansion: true,
         },
         unenv: {
             external: ['node:async_hooks'],
@@ -373,7 +374,8 @@ export default defineNuxtConfig({
 
     ogImage: {
         preset: 'avatio',
-        secret: process.env.OG_IMAGE_SECRET,
+        // Nitro resolves the canonical Worker binding at runtime, keeping it out of builds.
+        secret: '{{OG_IMAGE_SECRET}}',
         routes: {
             revoke: {
                 requireToken: true,
