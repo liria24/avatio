@@ -9,13 +9,20 @@ import type { H3Event } from 'h3'
 import type { z } from 'zod'
 import { legalAcceptances, users } from '~~/database/schema'
 
+const log = logger('legalDocuments')
+
 export const getCurrentLegalDocuments = async (
     event: H3Event,
     locale: string,
 ): Promise<LegalDocumentMetadata[]> => {
     try {
         return await (await getContentService(event)).getLegalDocuments(locale)
-    } catch {
+    } catch (error) {
+        log.error('Legal metadata lookup failed', {
+            locale,
+            error: String(error),
+            cause: error instanceof Error ? String(error.cause) : undefined,
+        })
         throw createError({
             statusCode: 503,
             message: 'Legal documents are temporarily unavailable.',
