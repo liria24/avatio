@@ -1,5 +1,6 @@
 import { execFile } from 'node:child_process'
-import { readFile } from 'node:fs/promises'
+import { copyFile, mkdtemp, readFile, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
 
@@ -114,6 +115,28 @@ describe('stage configuration', () => {
         expect(output).toContain('BOOTH_PROXY_URL')
         expect(output).not.toContain(sensitiveValue)
     })
+
+    it('stops stage commands when the dotenv private key cannot decrypt the stage file', async () => {
+        const directory = await mkdtemp(join(tmpdir(), 'avatio-dotenv-'))
+        try {
+            await copyFile('.env.development', join(directory, '.env.development'))
+            await expect(
+                promisify(execFile)(
+                    'bun',
+                    [join(process.cwd(), 'scripts/stage.ts'), 'check', 'development'],
+                    {
+                        cwd: directory,
+                        env: { ...process.env, DOTENV_PRIVATE_KEY_DEVELOPMENT: '0'.repeat(64) },
+                    },
+                ),
+            ).rejects.toMatchObject({
+                code: 1,
+                stderr: expect.stringContaining('DECRYPTION_FAILED'),
+            })
+        } finally {
+            await rm(directory, { recursive: true, force: true })
+        }
+    }, 30_000)
 
     it('requires both optional Discord settings together', () => {
         const result = validateSecrets({

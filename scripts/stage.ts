@@ -65,6 +65,7 @@ if (!loaded) {
         'dotenvx',
         'run',
         '--quiet',
+        '--strict',
         '-f',
         envFile,
         '--overload',
