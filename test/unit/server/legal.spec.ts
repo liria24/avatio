@@ -12,6 +12,10 @@ import {
 } from '../../../server/utils/legal'
 import { createTestD1 } from '../../helpers/d1'
 
+vi.hoisted(() => {
+    vi.stubGlobal('logger', () => ({ error: vi.fn() }))
+})
+
 const current: LegalDocumentMetadata[] = ['terms', 'privacy-policy'].map((document) => ({
     document: document as LegalDocumentMetadata['document'],
     version: '2026-01-01',
