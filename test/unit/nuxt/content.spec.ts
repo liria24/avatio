@@ -13,6 +13,15 @@ const markdown = (body = 'Original') =>
     `---\ntitle: Terms\nversion: '2026-01-01'\neffectiveDate: '2026-01-01'\n---\n## Heading\n${body}\n`
 const requestUrl = (input: string | URL | Request) =>
     input instanceof Request ? input.url : String(input)
+const gitPacket = (text: string) =>
+    (new TextEncoder().encode(text).length + 4).toString(16).padStart(4, '0') + text
+const gitReferences = (commit: string) =>
+    gitPacket('# service=git-upload-pack\n') +
+    '0000' +
+    gitPacket(`${commit} HEAD\0symref=HEAD:refs/heads/main\n`) +
+    gitPacket(`${'c'.repeat(40)} refs/heads/日本語\n`) +
+    gitPacket(`${commit} refs/heads/main\n`) +
+    '0000'
 afterEach(() => {
     vi.unstubAllGlobals()
     vi.restoreAllMocks()
@@ -72,12 +81,12 @@ describe('comark authored content', () => {
         let commit = 'a'.repeat(40)
         const fetcher = vi.fn(async (input: string | URL | Request) => {
             const url = requestUrl(input)
-            if (url.includes('/commits/main')) return Response.json({ sha: commit })
-            if (url.includes('/git/trees/'))
+            if (url.includes('/info/refs?service=git-upload-pack'))
+                return new Response(gitReferences(commit))
+            if (url.startsWith('https://ungh.cc/') && url.endsWith(`/files/${commit}`))
                 return Response.json({
-                    tree: ['terms', 'privacy-policy'].map((slug) => ({
+                    files: ['terms', 'privacy-policy'].map((slug) => ({
                         path: `content/ja/${slug}.md`,
-                        type: 'blob',
                     })),
                 })
             if (new URL(url).hostname === 'raw.githubusercontent.com')
@@ -86,9 +95,12 @@ describe('comark authored content', () => {
         })
         vi.stubGlobal('fetch', fetcher)
         const values = new Map<string, string>()
+        const writes = new Set<string>()
         const binding = {
             get: vi.fn(async (key: string) => values.get(key) ?? null),
             put: vi.fn(async (key: string, value: string) => {
+                if (writes.has(key)) throw new Error('KV key written twice in one request')
+                writes.add(key)
                 values.set(key, value)
             }),
             delete: vi.fn(async (key: string) => {
@@ -129,15 +141,45 @@ describe('comark authored content', () => {
         expect(values.size).toBeGreaterThan(0)
 
         for (const [key, value] of values) {
+            if (!key.endsWith('manifest')) continue
             const envelope = JSON.parse(value)
             values.set(key, JSON.stringify({ ...envelope, time: 0 }))
         }
+        writes.clear()
         commit = 'b'.repeat(40)
         const refreshed = await create().getPage('terms', 'en')
         expect(refreshed?.source.sourceCommit).toBe(commit)
         expect(refreshed?.source.sourceRevision).not.toBe(page?.source.sourceRevision)
         expect(refreshed?.frontmatter.version).toBe(page?.frontmatter.version)
+
+        for (const [key, value] of values) {
+            if (key.endsWith('manifest')) continue
+            values.set(key, JSON.stringify({ ...JSON.parse(value), time: 0 }))
+        }
+        writes.clear()
+        commit = 'd'.repeat(40)
+        const corrected = await create().getPage('terms', 'en')
+        expect(corrected?.source.sourceCommit).toBe(commit)
+        expect((await create().getLegalDocuments('en'))[0]?.sourceRevision).toBe(
+            corrected?.source.sourceRevision,
+        )
     })
+
+    it.each(['0003', 'xxxx', '000aabc', gitPacket(`${'a'.repeat(40)} refs/heads/other\n`)])(
+        'rejects malformed or missing Git branch advertisements: %s',
+        async (advertisement) => {
+            vi.stubGlobal(
+                'fetch',
+                vi.fn(async () => new Response(advertisement)),
+            )
+            const { source } = createGithubContentSource({
+                repo: 'liria24/avatio',
+                branch: 'main',
+                path: 'content',
+            })
+            await expect(source.keys()).rejects.toThrow()
+        },
+    )
 
     it('fails closed when the content source or persistent cache fails', async () => {
         const source = {
