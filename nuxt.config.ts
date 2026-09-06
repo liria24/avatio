@@ -466,7 +466,6 @@ export default defineNuxtConfig({
     experimental: {
         crossOriginPrefetch: true,
         sharedPrerenderData: true,
-        extractAsyncDataHandlers: true,
         typescriptPlugin: true,
         inlineRouteRules: true,
         componentIslands: true,
