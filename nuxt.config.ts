@@ -1,7 +1,7 @@
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import { useNuxt } from '@nuxt/kit'
-import type { NitroRouteConfig } from 'nitropack'
+import type { NitroConfig, NitroRouteConfig } from 'nitropack'
 import { defineOrganization } from 'nuxt-schema-org/schema'
 import { withLeadingSlash } from 'ufo'
 
@@ -24,16 +24,6 @@ const normalizeRuntimeConfigForVitest = () => {
 
     const nuxt = useNuxt()
     nuxt.options.runtimeConfig = JSON.parse(JSON.stringify(nuxt.options.runtimeConfig))
-}
-
-const finalizePrivateRuntimeConfig = () => {
-    const nuxt = useNuxt()
-
-    // @nuxtjs/better-auth reads this key at runtime before falling back to
-    // BETTER_AUTH_SECRET. Keep the deploy-time secret out of Nitro's inlined
-    // runtime config so Cloudflare's secret_text binding remains authoritative.
-    nuxt.options.runtimeConfig.betterAuthSecret = ''
-    normalizeRuntimeConfigForVitest()
 }
 
 const baseRouteRules: { [path: string]: NitroRouteConfig } = {
@@ -93,7 +83,14 @@ export default defineNuxtConfig({
     devtools: { timeline: { enabled: true } },
 
     hooks: {
-        'modules:done': finalizePrivateRuntimeConfig,
+        'modules:done': normalizeRuntimeConfigForVitest,
+        'nitro:config': (config) => {
+            // Better Auth populates this during modules:done. Clear it afterwards
+            // so the Cloudflare secret binding remains authoritative at runtime.
+            const nitroConfig = config as NitroConfig
+            nitroConfig.runtimeConfig ??= {}
+            nitroConfig.runtimeConfig.betterAuthSecret = ''
+        },
         'vite:extendConfig': normalizeRuntimeConfigForVitest,
     },
 

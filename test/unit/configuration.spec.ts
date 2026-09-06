@@ -1,5 +1,7 @@
+import { execFile } from 'node:child_process'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { promisify } from 'node:util'
 
 import { getStageConfig, parseAvatioStage } from '../../config/environment'
 import { secretDefinitions, validateSecrets } from '../../config/secrets'
@@ -74,6 +76,27 @@ describe('stage configuration', () => {
         expect(source).toContain('envExpansion: true')
         expect(source).not.toContain('process.env.OG_IMAGE_SECRET')
     })
+
+    it('removes build-time auth secrets after Better Auth initializes', async () => {
+        await promisify(execFile)(process.execPath, [
+            '--input-type=module',
+            '-e',
+            `
+            import assert from 'node:assert/strict'
+            import { loadNuxt } from '@nuxt/kit'
+            const secret = 'synthetic-build-secret-never-inline-123456789'
+            process.env.BETTER_AUTH_SECRET = secret
+            process.env.NUXT_BETTER_AUTH_SECRET = secret
+            const nuxt = await loadNuxt({ cwd: process.cwd(), dev: false, ready: true })
+            try {
+                assert.equal(nuxt._nitro.options.runtimeConfig.betterAuthSecret, '')
+                assert.ok(!JSON.stringify(nuxt._nitro.options.runtimeConfig).includes(secret))
+            } finally {
+                await nuxt.close()
+            }
+        `,
+        ])
+    }, 30_000)
 
     it('reports names and reasons without exposing supplied values', () => {
         const sensitiveValue = 'never-print-this-secret-value'
