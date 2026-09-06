@@ -5,6 +5,10 @@ import * as schema from '../../../database/schema'
 import { authSchemaOptions } from '../../../server/utils/authSchemaOptions'
 
 describe('Better Auth relations', () => {
+    it('enables database joins with Better Auth 1.7.3', () => {
+        expect(authSchemaOptions.advanced.database.joins).toBe(true)
+    })
+
     it('falls back to separate session and user queries on RC.4', async () => {
         const rows = new Map([
             [

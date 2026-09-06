@@ -7,14 +7,14 @@ const { setupId } = defineProps<Props>()
 const emit = defineEmits(['close'])
 
 const { t } = useI18n()
-const { session } = useAuth()
+const { user } = useUserSession()
 const toast = useToast()
 const { hideSetup: hideSetupAction } = useAdmin()
 
 const hideReason = ref('')
 
 const hideSetup = async () => {
-    if (session.value?.user.role !== 'admin') {
+    if (user.value?.role !== 'admin') {
         toast.add({
             title: t('errors.unauthorized'),
             description: t('errors.adminRequired'),

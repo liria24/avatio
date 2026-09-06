@@ -2,8 +2,7 @@ import { and, eq, lt } from 'drizzle-orm'
 import type { H3Event } from 'h3'
 import { getHeader, setResponseHeader } from 'h3'
 import { z } from 'zod'
-
-import { idempotencyRequests } from '../../database/schema'
+import { idempotencyRequests } from '~~/database/schema'
 
 const IDEMPOTENCY_LEASE_MS = 5 * 60 * 1000
 const IDEMPOTENCY_RETENTION_MS = 7 * 24 * 60 * 60 * 1000

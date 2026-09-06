@@ -14,12 +14,12 @@ const ignoredMaintenancePaths = [
 
 export default defineEventHandler(async (event) => {
     const path = normalizeMaintenancePath(event.path)
-    if (path === '/api/admin/flags') return
+    if (path === '/api/admin/config') return
     if (ignoredMaintenancePaths.some((prefix) => path.startsWith(prefix))) return
 
     let isMaintenance: boolean
     try {
-        isMaintenance = await getMaintenanceFlag()
+        isMaintenance = await getMaintenanceFlag(event)
     } catch (error) {
         maintenanceLog.error('Failed to resolve maintenance flag:', error)
         return

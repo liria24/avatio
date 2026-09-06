@@ -1,11 +1,11 @@
 import type { z } from 'zod'
 
-export const useUserSettings = () =>
+export const useUserSettings = (options: { immediate?: boolean } = {}) =>
     useFetch('/api/users/me/settings', {
         key: 'user-settings',
         dedupe: 'defer',
         lazy: false,
-        immediate: true,
+        immediate: options.immediate ?? true,
     })
 
 export const useUserSettingsUpdate = () => {

@@ -24,9 +24,12 @@ export default authedSessionEventHandler(
             .returning({ id: setups.id })
         if (!deleted) throw serverError.notFound()
 
-        await purgeEdgeCacheTags(
+        await invalidateCacheResources(
             event,
-            [getSetupCacheTag(id), EDGE_CACHE_TAGS.popularAvatars, EDGE_CACHE_TAGS.setups],
+            {
+                setups: [id],
+                collections: [EDGE_CACHE_TAGS.popularAvatars, EDGE_CACHE_TAGS.setups],
+            },
             'setup delete',
         )
 

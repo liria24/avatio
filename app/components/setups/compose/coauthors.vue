@@ -1,23 +1,25 @@
 <script lang="ts" setup>
 import { VueDraggable } from 'vue-draggable-plus'
 
-const { state, addCoauthor, removeCoauthor } = useSetupCompose()
+const { coauthors, addCoauthor, removeCoauthor, setCoauthors, updateCoauthorNote } =
+    useSetupCompose()
 </script>
 
 <template>
     <UFormField name="coauthors" :label="$t('setup.compose.coauthors.title')">
         <div class="flex flex-col gap-2">
             <VueDraggable
-                v-model="state.coauthors"
+                :model-value="coauthors"
                 :animation="150"
                 handle=".draggable"
                 drag-class="opacity-100"
                 ghost-class="opacity-0"
                 class="flex h-full w-full flex-col gap-2 empty:hidden"
+                @update:model-value="setCoauthors"
             >
                 <div
-                    v-for="coauthor in state.coauthors"
-                    :key="`coauthor-${coauthor.user.username}`"
+                    v-for="coauthor in coauthors"
+                    :key="`coauthor-${coauthor.userId}`"
                     class="ring-accented flex items-stretch gap-2 rounded-md p-2 ring-1"
                 >
                     <div
@@ -45,13 +47,14 @@ const { state, addCoauthor, removeCoauthor } = useSetupCompose()
                                 icon="mingcute:close-line"
                                 variant="ghost"
                                 size="xs"
-                                @click="removeCoauthor(coauthor.user.username)"
+                                @click="removeCoauthor(coauthor.userId)"
                             />
                         </div>
                         <UInput
-                            v-model="coauthor.note"
+                            :model-value="coauthor.note"
                             :placeholder="$t('setup.compose.coauthors.note')"
                             size="sm"
+                            @update:model-value="updateCoauthorNote(coauthor.userId, $event)"
                         />
                     </div>
                 </div>
@@ -61,9 +64,7 @@ const { state, addCoauthor, removeCoauthor } = useSetupCompose()
                 <UButton
                     icon="mingcute:add-line"
                     :label="
-                        state.coauthors.length
-                            ? undefined
-                            : $t('setup.compose.coauthors.placeholder')
+                        coauthors.length ? undefined : $t('setup.compose.coauthors.placeholder')
                     "
                     variant="soft"
                     block

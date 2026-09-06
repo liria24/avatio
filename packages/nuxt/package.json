@@ -1,0 +1,27 @@
+{
+    "name": "@avatio/nuxt",
+    "private": true,
+    "type": "module",
+    "exports": {
+        ".": "./src/module.ts",
+        "./build/routes": "./src/build/routes.ts",
+        "./runtime/catalog/references": "./src/runtime/catalog/references.ts",
+        "./runtime/content": "./src/runtime/content.ts",
+        "./runtime/server/content/service": "./src/runtime/server/content/service.ts",
+        "./runtime/server/content/github": "./src/runtime/server/content/github.ts",
+        "./runtime/server/content/local": "./src/runtime/server/content/local.ts",
+        "./runtime/server/catalog/providers": "./src/runtime/server/catalog/providers/index.ts",
+        "./runtime/server/publishers/providers": "./src/runtime/server/publishers/providers/index.ts"
+    },
+    "dependencies": {
+        "@avatio/core": "workspace:*",
+        "@nuxt/kit": "^4.5.2",
+        "@nuxt/schema": "^4.5.2",
+        "comark": "0.6.2",
+        "comark-content": "0.3.0",
+        "zod": "4.5.4"
+    },
+    "peerDependencies": {
+        "nuxt": "^4.5.2"
+    }
+}

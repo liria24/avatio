@@ -3,7 +3,7 @@ title: 利用規約
 description: Avatioでの利用規約
 updatedAt: '2026-03-10'
 effectiveDate: '2026-04-01'
-commitLogPath: 'content/ja/terms.md'
+version: '2026-04-01'
 ---
 
 ## 第1条（目的）

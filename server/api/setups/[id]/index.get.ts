@@ -1,189 +1,32 @@
+import { enqueueDueCatalogSources } from '@avatio/core/catalog'
 import { z } from 'zod'
 
-const params = z.object({
-    id: z.string(),
-})
+const params = z.object({ id: z.string() })
 
-export default sessionEventHandler<Setup>(async ({ event, session, db }) => {
+export default promiseEventHandler<Setup>(async ({ event, db }) => {
     const { id } = await validateParams(params)
+    const result = await querySetupProjection(db, id)
+    if (!result) throw serverError.notFound()
 
-    const data = await db.query.setups.findFirst({
-        where: {
-            id: { eq: id },
-            user: {
-                OR: [{ banned: { eq: false } }, { banned: { isNull: true } }],
-            },
-        },
-        columns: {
-            id: true,
-            userId: true,
-            createdAt: true,
-            updatedAt: true,
-            public: true,
-            name: true,
-            description: true,
-            hidAt: true,
-            hidReason: true,
-        },
-        with: {
-            user: {
-                columns: {
-                    id: true,
-                    username: true,
-                    createdAt: true,
-                    name: true,
-                    image: true,
-                    bio: true,
-                    links: true,
-                },
-                with: {
-                    badges: {
-                        columns: {
-                            badge: true,
-                            createdAt: true,
-                        },
-                    },
-                },
-            },
-            items: {
-                columns: {
-                    category: true,
-                    unsupported: true,
-                    note: true,
-                },
-                with: {
-                    item: {
-                        columns: {
-                            id: true,
-                            updatedAt: true,
-                            platform: true,
-                            category: true,
-                            name: true,
-                            niceName: true,
-                            image: true,
-                            price: true,
-                            likes: true,
-                            nsfw: true,
-                            outdated: true,
-                        },
-                        with: {
-                            shop: {
-                                columns: {
-                                    id: true,
-                                    platform: true,
-                                    name: true,
-                                    image: true,
-                                    verified: true,
-                                },
-                            },
-                        },
-                    },
-                    shapekeys: {
-                        columns: {
-                            name: true,
-                            value: true,
-                        },
-                    },
-                },
-            },
-            images: {
-                columns: {
-                    objectKey: true,
-                    width: true,
-                    height: true,
-                },
-            },
-            tags: {
-                columns: {
-                    tag: true,
-                },
-            },
-            coauthors: {
-                where: {
-                    user: {
-                        OR: [{ banned: { eq: false } }, { banned: { isNull: true } }],
-                    },
-                },
-                columns: {
-                    note: true,
-                },
-                with: {
-                    user: {
-                        columns: {
-                            id: true,
-                            username: true,
-                            createdAt: true,
-                            name: true,
-                            image: true,
-                            bio: true,
-                            links: true,
-                        },
-                        with: {
-                            badges: {
-                                columns: {
-                                    badge: true,
-                                    createdAt: true,
-                                },
-                            },
-                        },
-                    },
-                },
-            },
-        },
-    })
-
-    if (!data) throw serverError.notFound()
-
-    const canViewHidden =
-        !data.hidAt || session?.user.role === 'admin' || session?.user.id === data.userId
-    if (!canViewHidden) throw serverError.notFound()
-
-    const items: SetupItem[] = []
-    const revalidationTasks: Promise<unknown>[] = []
-    let failedItemsCount = 0
-
-    const { forceUpdateItem } = await getAppFlags()
-
-    for (const setupItem of data.items) {
-        revalidationTasks.push(
-            enqueueItemRevalidation(event, setupItem.item, 'setup-detail', {
-                force: forceUpdateItem,
-            }),
-        )
-
-        if (setupItem.item.outdated) {
-            failedItemsCount++
-            continue
-        }
-
-        items.push({
-            id: setupItem.item.id,
-            platform: setupItem.item.platform,
-            category: setupItem.category || setupItem.item.category,
-            name: setupItem.item.name,
-            niceName: setupItem.item.niceName,
-            image: setupItem.item.image,
-            price: setupItem.item.price,
-            likes: setupItem.item.likes,
-            nsfw: setupItem.item.nsfw,
-            outdated: setupItem.item.outdated,
-            shop: setupItem.item.shop,
-            unsupported: setupItem.unsupported,
-            note: setupItem.note,
-            shapekeys: setupItem.shapekeys,
-        })
+    if (result.v2) {
+        const queue = getCatalogSyncQueue()
+        if (queue && result.sourceIds.length)
+            runAfterResponse(
+                enqueueDueCatalogSources({
+                    sourceIds: result.sourceIds,
+                    repository: getCatalogRepository(),
+                    queue,
+                }),
+            )
+        applyPublicEdgeCache(event, [
+            getSetupCacheTag(id),
+            ...result.catalogItemIds.map(getCatalogItemCacheTag),
+        ])
+    } else {
+        if (result.legacyRevalidationItems.length)
+            runAfterResponse(enqueueReferencedCatalogSources(result.legacyRevalidationItems))
+        applyPublicEdgeCache(event, [getSetupCacheTag(id)])
     }
 
-    if (revalidationTasks.length) runAfterResponse(Promise.all(revalidationTasks))
-
-    if (forceUpdateItem) applyNoStoreCache(event)
-    else if (data.public && !data.hidAt) applyPublicEdgeCache(event, [getSetupCacheTag(data.id)])
-
-    return {
-        ...data,
-        images: await withSetupImageUrls(data.images),
-        items,
-        tags: data.tags.map((tag) => tag.tag),
-        failedItemsCount,
-    }
+    return result.setup
 })

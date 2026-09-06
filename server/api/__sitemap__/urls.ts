@@ -40,7 +40,7 @@ export default defineSitemapEventHandler(async (event) => {
     return [
         ...(await Promise.all(
             setups.map(async (setup): Promise<SitemapUrlInput> => ({
-                loc: `/setup/${setup.id}`,
+                loc: getSetupPath(setup.id),
                 lastmod: setup.updatedAt,
                 images: setup.images?.length
                     ? (await withSetupImageUrls(setup.images)).map((image) => ({

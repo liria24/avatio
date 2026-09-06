@@ -1,168 +1,145 @@
-import type { z } from 'zod'
+import {
+    createDefaultSetupComposeForm,
+    isEmptySetupComposeForm,
+    type SetupComposeForm,
+    type SetupDraftContent,
+} from '@avatio/core/setups'
+import type { InjectionKey } from 'vue'
 
-import type { FetchResult } from '#app'
+type ComposeUser = Pick<User, 'id' | 'username' | 'name' | 'image'>
+type ComposeCoauthor = SetupComposeForm['coauthors'][number] & { user: ComposeUser }
 
-type Schema = DeepNonNullable<z.infer<typeof setupsClientFormSchema>>
-
-type DraftStatus = 'new' | 'restoring' | 'restored' | 'unsaved' | 'saving' | 'saved' | 'error'
-
-const initializeItems = () => ({
-    avatar: [],
-    clothing: [],
-    accessory: [],
-    hair: [],
-    shader: [],
-    texture: [],
-    tool: [],
-    other: [],
-})
-
-export const useSetupCompose = () => {
+const createSetupCompose = () => {
     const route = useRoute()
     const router = useRouter()
     const toast = useToast()
     const { t } = useI18n()
+    const publishing = ref(false)
+    const restoring = ref(false)
+    const loadFailed = ref(false)
+    const editingSetupId = ref<Setup['id'] | null>(null)
+    const imageUploading = ref(false)
+    const imageMetadata = ref<Record<string, SetupImageMetadata>>({})
+    const itemEntities = ref<Record<string, Item>>({})
+    const userEntities = ref<Record<string, ComposeUser>>({})
+    const publishIdempotencyKey = ref(crypto.randomUUID())
 
-    // State - using useState for cross-component sharing
-    const publishing = useState('setup-compose-publishing', () => false)
-    const editingSetupId = useState<Setup['id'] | null>('setup-compose-editing-id', () => null)
-    const imageUploading = useState('setup-compose-image-uploading', () => false)
-    const skipDraftSave = useState('setup-compose-skip-draft', () => false)
-    const publishIdempotencyKey = useState('setup-compose-publish-idempotency-key', () =>
-        crypto.randomUUID(),
-    )
-    const draftIdempotencyKey = useState('setup-compose-draft-idempotency-key', () =>
-        crypto.randomUUID(),
-    )
-    const imageMetadata = useState<Record<string, SetupImageMetadata>>(
-        'setup-compose-image-metadata',
-        () => ({}),
-    )
-
-    const draft = useState<{ id: string | null; status: DraftStatus }>(
-        'setup-compose-draft',
-        () => ({
-            id: null,
-            status: 'new',
-        }),
-    )
-
-    const state = useState<Schema>('setup-compose-state', () => ({
-        public: true,
-        name: '',
-        description: '',
-        images: [],
-        tags: [],
-        coauthors: [],
-        items: initializeItems(),
-    }))
-
-    // Utilities
-    const updateRouterQuery = (updates: Record<string, string | number | undefined>) => {
+    const updateRouterQuery = (updates: Record<string, string | undefined>) => {
         void router.replace({ query: { ...route.query, ...updates } })
     }
-
-    const applyDraftData = async (content: SetupDraftContent) => {
-        state.value.public = content.public ?? true
-        state.value.name = content.name || ''
-        state.value.description = content.description || ''
-        state.value.images = content.images || []
-        imageMetadata.value = content.imageMetadata || {}
-        state.value.tags = content.tags ? content.tags.map((tag) => tag.tag) : []
-
-        const coauthorResults = content.coauthors
-            ? await Promise.all(
-                  content.coauthors.map(async (coauthor) => {
-                      try {
-                          const user = await $fetch(`/api/users/${coauthor.username}`)
-                          return {
-                              userId: user.id,
-                              user: {
-                                  ...user,
-                                  createdAt: new Date(user.createdAt ?? ''),
-                                  name: user.name ?? '',
-                                  image: user.image ?? '',
-                              },
-                              note: coauthor.note || '',
-                          }
-                      } catch {
-                          console.error('Failed to load coauthor.')
-                          return null
-                      }
-                  }),
-              )
-            : []
-
-        state.value.coauthors = coauthorResults.filter(
-            (c): c is NonNullable<typeof c> => c !== null,
+    const draftController = useSetupDraftController((id) =>
+        updateRouterQuery({ draftId: id ?? undefined }),
+    )
+    const { form, values } = useSetupComposeForm((next) => {
+        if (restoring.value || publishing.value) return
+        loadFailed.value = false
+        draftController.schedule(
+            { ...next, imageMetadata: getSelectedImageMetadata() },
+            editingSetupId.value,
         )
+    })
 
-        state.value.items = initializeItems()
+    const setItems = (items: SetupComposeForm['items']) => form.setFieldValue('items', items)
+    const {
+        entries,
+        totalItemsCount,
+        addItem,
+        updateItem,
+        removeItem,
+        changeItemCategory,
+        addShapekey,
+        removeShapekey,
+        reorderCategory,
+    } = useSetupComposeEntries(
+        computed(() => values.value.items),
+        setItems,
+        itemEntities,
+    )
+    const { getSelectedImageMetadata, processImages, removeImage } = useSetupComposeImages(
+        computed(() => values.value.images),
+        (images) => form.setFieldValue('images', images),
+        imageMetadata,
+        imageUploading,
+    )
+    const coauthors = computed<ComposeCoauthor[]>(() =>
+        values.value.coauthors.map((coauthor) => ({
+            ...coauthor,
+            user: userEntities.value[coauthor.userId] ?? {
+                id: coauthor.userId,
+                username: coauthor.username,
+                name: coauthor.username,
+                image: null,
+            },
+        })),
+    )
+    const draft = computed(() => ({
+        id: draftController.state.id,
+        status: loadFailed.value
+            ? ('error' as const)
+            : restoring.value
+              ? ('restoring' as const)
+              : draftController.state.status,
+    }))
+    const changed = computed(() => !isEmptySetupComposeForm(values.value))
 
-        if (content.items?.length) {
-            const items = await Promise.all(
-                content.items.map(async (draftItem) => {
+    const resetFormOnce = async (content: SetupDraftContent) => {
+        restoring.value = true
+        imageMetadata.value = content.imageMetadata ?? {}
+        const { imageMetadata: _, ...formValues } = content
+        form.reset(formValues)
+        await nextTick()
+        restoring.value = false
+    }
+
+    const hydrateDraftReferences = async (content: SetupDraftContent) => {
+        const [items, users] = await Promise.all([
+            Promise.all(
+                content.items.map(async ({ itemId }) => {
                     try {
-                        const itemData = await $fetch<Item>(`/api/items/${draftItem.itemId}`)
-                        return {
-                            ...itemData,
-                            id: itemData.id.toString(),
-                            category: draftItem.category,
-                            note: draftItem.note || '',
-                            unsupported: draftItem.unsupported || false,
-                            shapekeys: draftItem.shapekeys || [],
-                        }
+                        return await $fetch<Item>(`/api/items/${itemId}`)
                     } catch (error) {
-                        console.error('Failed to load item:', draftItem.itemId, error)
+                        console.error('Failed to hydrate draft item:', itemId, error)
                         return null
                     }
                 }),
-            )
-
-            for (const item of items) {
-                if (!item) continue
-                const category = (item.category || 'other') as keyof typeof state.value.items
-                const targetCategory = state.value.items[category] ? category : 'other'
-                state.value.items[targetCategory].push({
-                    ...item,
-                    category: targetCategory,
-                    image: item.image ?? '',
-                    niceName: item.niceName ?? '',
-                    price: item.price ?? '',
-                    likes: item.likes ?? 0,
-                    shop: item.shop ? { ...item.shop, image: item.shop.image ?? '' } : undefined,
-                })
-            }
-        }
+            ),
+            Promise.all(
+                content.coauthors.map(async ({ userId, username }) => {
+                    try {
+                        return await $fetch<ComposeUser>(`/api/users/${username}`)
+                    } catch (error) {
+                        console.error('Failed to hydrate draft coauthor:', userId, error)
+                        return null
+                    }
+                }),
+            ),
+        ])
+        draftController.requireOwner()
+        itemEntities.value = Object.fromEntries(
+            items.flatMap((item) => (item ? [[item.id, item]] : [])),
+        )
+        userEntities.value = Object.fromEntries(
+            users.flatMap((user) => (user ? [[user.id, user]] : [])),
+        )
+        await resetFormOnce(content)
     }
 
-    // Load operations
-    const loadDraft = async (draftId: string) => {
+    const loadDraft = async (id: string) => {
+        restoring.value = true
+        loadFailed.value = false
         try {
-            draft.value.status = 'restoring'
-            skipDraftSave.value = true
+            await draftController.flush()
+            const draftData = await draftController.load(id)
 
-            const { data: drafts } = await useFetch('/api/setups/drafts', {
-                query: { id: draftId },
-                default: () => [],
-                dedupe: 'defer',
+            await hydrateDraftReferences(draftData.content)
+            editingSetupId.value = draftData.setupId ?? null
+            await draftController.switchSession(draftData.id, draftData.revision)
+            updateRouterQuery({
+                draftId: draftData.id,
+                edit: draftData.setupId ?? undefined,
             })
-
-            const draftData = drafts.value[0]
-            if (!draftData) throw new Error('Draft not found')
-
-            await applyDraftData(draftData.content)
-            draft.value.id = draftData.id
-            updateRouterQuery({ draftId: draftData.id })
-
-            if (draftData.setupId && editingSetupId.value !== draftData.setupId) {
-                editingSetupId.value = draftData.setupId
-                updateRouterQuery({ edit: draftData.setupId })
-            }
-
-            draft.value.status = 'restored'
         } catch (error) {
-            draft.value.status = 'error'
+            loadFailed.value = true
             console.error('Failed to load draft:', error)
             toast.add({
                 icon: 'mingcute:close-line',
@@ -171,22 +148,34 @@ export const useSetupCompose = () => {
             })
             updateRouterQuery({ draftId: undefined })
         } finally {
-            skipDraftSave.value = false
+            restoring.value = false
         }
     }
 
     const loadSetup = async (setupId: Setup['id']) => {
-        skipDraftSave.value = true
-        try {
-            const setup = await $fetch<FetchResult<'/api/setups/:id', 'get'>>(
-                `/api/setups/${setupId}`,
-            )
-            state.value.public = setup.public
-            state.value.name = setup?.name || ''
-            state.value.description = setup?.description || ''
-            state.value.images = setup?.images?.map((image) => image.url) || []
-            imageMetadata.value = Object.fromEntries(
-                (setup?.images || []).map((image) => [
+        const setup = await $fetch<Setup>(`/api/me/setups/${setupId}`)
+        draftController.requireOwner()
+        const content: SetupDraftContent = {
+            public: setup.public,
+            name: setup.name,
+            description: setup.description ?? '',
+            images: setup.images?.map(({ url }) => url) ?? [],
+            tags: setup.tags ?? [],
+            coauthors:
+                setup.coauthors?.map(({ user, note }) => ({
+                    userId: user.id,
+                    username: user.username,
+                    note: note ?? '',
+                })) ?? [],
+            items: setup.items.map((item) => ({
+                itemId: item.id,
+                category: item.category,
+                note: item.note ?? '',
+                unsupported: item.unsupported ?? false,
+                shapekeys: item.shapekeys ?? [],
+            })),
+            imageMetadata: Object.fromEntries(
+                (setup.images ?? []).map((image) => [
                     image.url,
                     {
                         objectKey: image.objectKey,
@@ -195,184 +184,106 @@ export const useSetupCompose = () => {
                         etag: image.etag ?? undefined,
                         width: image.width,
                         height: image.height,
-                        themeColors: image.themeColors || null,
+                        themeColors: image.themeColors ?? null,
                     },
                 ]),
-            )
-            state.value.tags = setup?.tags || []
-            state.value.coauthors = setup?.coauthors
-                ? setup.coauthors.map((coauthor) => ({
-                      userId: coauthor.user.id,
-                      user: {
-                          ...coauthor.user,
-                          name: coauthor.user.name ?? '',
-                          image: coauthor.user.image ?? '',
-                      },
-                      note: coauthor.note || '',
-                  }))
-                : []
-
-            state.value.items = initializeItems()
-            for (const item of setup?.items || []) {
-                const category = item.category as keyof typeof state.value.items
-                if (category in state.value.items) {
-                    state.value.items[category].push({
-                        ...item,
-                        image: item.image ?? '',
-                        niceName: item.niceName ?? '',
-                        price: item.price ?? '',
-                        likes: item.likes ?? 0,
-                        shop: item.shop
-                            ? { ...item.shop, image: item.shop.image ?? '' }
-                            : undefined,
-                        shapekeys: item.shapekeys?.map((sk) => ({
-                            name: sk.name,
-                            value: sk.value,
-                        })),
-                        note: item.note ?? undefined,
-                        unsupported: item.unsupported ?? undefined,
-                    })
-                } else {
-                    console.warn('Invalid item category:', item.category)
-                }
-            }
-            editingSetupId.value = setup?.id || null
-        } finally {
-            skipDraftSave.value = false
+            ),
         }
+        itemEntities.value = Object.fromEntries(setup.items.map((item) => [item.id, item]))
+        userEntities.value = Object.fromEntries(
+            (setup.coauthors ?? []).map(({ user }) => [user.id, user]),
+        )
+        await resetFormOnce(content)
+        editingSetupId.value = setup.id
     }
 
     const initialize = async (args: { draftId?: string; edit?: Setup['id'] }) => {
-        // Load from draft
-        if (args.draftId) {
-            await loadDraft(args.draftId)
-            return
-        }
+        if (args.draftId) return loadDraft(args.draftId)
+        if (!args.edit) return
 
-        // Edit mode
-        if (args.edit) {
-            // Check for existing draft
-            try {
-                const { data: drafts } = await useFetch('/api/setups/drafts', {
-                    query: { setupId: args.edit },
-                    default: () => [],
-                    dedupe: 'defer',
-                })
-
-                if (drafts.value.length && drafts.value[0]) {
-                    draft.value.status = 'restoring'
-                    skipDraftSave.value = true
-                    await applyDraftData(drafts.value[0].content)
-                    editingSetupId.value = args.edit
-                    draft.value.id = drafts.value[0].id
-                    updateRouterQuery({ draftId: drafts.value[0].id })
-                    draft.value.status = 'restored'
-                    skipDraftSave.value = false
-
-                    toast.add({
-                        icon: 'mingcute:back-line',
-                        title: t('setup.compose.draftRestored'),
-                        color: 'secondary',
-                    })
-                    return
-                }
-            } catch (error) {
-                console.warn('Failed to load drafts:', error)
-            }
-
-            // Load setup
-            try {
-                await loadSetup(args.edit)
-            } catch (error) {
-                console.error('Setup not found:', args.edit, error)
+        try {
+            const drafts = await $fetch<SetupDraftSummary[]>('/api/setup-drafts', {
+                query: { setupId: args.edit },
+            })
+            if (drafts[0]) {
+                await loadDraft(drafts[0].id)
                 toast.add({
-                    icon: 'mingcute:close-line',
-                    title: t('setup.compose.editModeFailed'),
-                    description: t('setup.compose.setupNotFound'),
-                    color: 'error',
+                    icon: 'mingcute:back-line',
+                    title: t('setup.compose.draftRestored'),
+                    color: 'secondary',
                 })
+                return
             }
+            await loadSetup(args.edit)
+        } catch (error) {
+            console.error('Failed to initialize setup editor:', error)
+            toast.add({
+                icon: 'mingcute:close-line',
+                title: t('setup.compose.editModeFailed'),
+                description: t('setup.compose.setupNotFound'),
+                color: 'error',
+            })
         }
+    }
+
+    const clearForm = async () => {
+        restoring.value = true
+        form.reset(createDefaultSetupComposeForm())
+        imageMetadata.value = {}
+        itemEntities.value = {}
+        userEntities.value = {}
+        editingSetupId.value = null
+        publishIdempotencyKey.value = crypto.randomUUID()
+        await nextTick()
+        restoring.value = false
+        void router.replace({ query: {} })
     }
 
     const publish = async (): Promise<Setup['id'] | undefined> => {
         if (publishing.value) return
-
         publishing.value = true
         try {
-            const items = Object.values(state.value.items)
-                .flat()
-                .filter((item) => item?.id)
-                .map((item) => ({
-                    itemId: item.id,
-                    category: item.category,
-                    note: item.note || undefined,
-                    unsupported: item.unsupported || false,
-                    shapekeys: item.shapekeys?.length ? item.shapekeys : undefined,
-                }))
-
+            await draftController.flush()
+            draftController.requireOwner()
             const body = {
-                public: state.value.public,
-                name: state.value.name,
-                description: state.value.description,
-                items,
-                images: state.value.images.length ? state.value.images : undefined,
+                public: values.value.public,
+                name: values.value.name,
+                description: values.value.description,
+                items: values.value.items,
+                images: values.value.images.length ? values.value.images : undefined,
                 imageMetadata: getSelectedImageMetadata(),
-                tags: state.value.tags.length
-                    ? state.value.tags.map((tag) => ({ tag }))
+                tags: values.value.tags.length
+                    ? values.value.tags.map((tag) => ({ tag }))
                     : undefined,
-                coauthors: state.value.coauthors.length
-                    ? state.value.coauthors.map((c) => ({
-                          userId: c.userId,
-                          username: c.user.username,
-                          note: c.note || undefined,
+                coauthors: values.value.coauthors.length
+                    ? values.value.coauthors.map(({ userId, note }) => ({
+                          userId,
+                          note: note || undefined,
                       }))
                     : undefined,
             }
+            if (!setupsInsertSchema.safeParse(body).success) throw new Error('Validation failed')
 
-            if (import.meta.dev) console.log('Publishing setup:', body)
-
-            const validationResult = setupsInsertSchema.safeParse(body)
-            if (!validationResult.success) {
-                console.error('Validation failed:', validationResult.error.issues)
-                throw new Error('Validation failed')
-            }
-
-            const isEditing = editingSetupId.value !== null
             const response = await $fetch<Setup>(
-                isEditing ? `/api/setups/${editingSetupId.value}` : '/api/setups',
+                editingSetupId.value ? `/api/setups/${editingSetupId.value}` : '/api/setups',
                 {
-                    method: isEditing ? 'PUT' : 'POST',
-                    headers: isEditing
+                    method: editingSetupId.value ? 'PUT' : 'POST',
+                    headers: editingSetupId.value
                         ? undefined
                         : { 'Idempotency-Key': publishIdempotencyKey.value },
                     body,
                 },
             )
-
-            if (draft.value.id) {
-                await $fetch('/api/setups/drafts', {
-                    method: 'DELETE',
-                    query: { id: draft.value.id },
-                })
-            }
-
-            const setupId = response.id
-            reset()
-            return setupId
+            await draftController.discard()
+            await clearForm()
+            return response.id
         } catch (error) {
-            const isEditing = editingSetupId.value !== null
-            console.error(isEditing ? 'Failed to update setup:' : 'Failed to submit setup:', error)
-
+            console.error('Failed to publish setup:', error)
             toast.add({
                 icon: 'mingcute:close-line',
-                title: isEditing
+                title: editingSetupId.value
                     ? t('setup.compose.updateFailed')
                     : t('setup.compose.publishFailed'),
-                description:
-                    error instanceof Error && error.message === 'Validation failed'
-                        ? t('setup.compose.refreshAndRetry')
-                        : undefined,
                 color: 'error',
             })
         } finally {
@@ -380,106 +291,14 @@ export const useSetupCompose = () => {
         }
     }
 
-    const reset = () => {
-        state.value.public = true
-        state.value.name = ''
-        state.value.description = ''
-        state.value.images = []
-        state.value.tags = []
-        state.value.coauthors = []
-        state.value.items = initializeItems()
-        imageMetadata.value = {}
-        draft.value = { id: null, status: 'new' }
-        editingSetupId.value = null
-        skipDraftSave.value = false
-        publishIdempotencyKey.value = crypto.randomUUID()
-        draftIdempotencyKey.value = crypto.randomUUID()
-        void router.replace({ query: {} })
+    const reset = async () => {
+        await draftController.discard()
+        await clearForm()
     }
 
-    const saveDraft = useDebounceFn(async () => {
-        if (skipDraftSave.value || publishing.value) {
-            if (skipDraftSave.value) draft.value.status = 'restored'
-            return
-        }
-
-        draft.value.status = 'saving'
-        try {
-            const items = Object.values(state.value.items)
-                .flat()
-                .filter((item) => item?.id)
-                .map((item) => ({
-                    itemId: item.id,
-                    category: item.category,
-                    note: item.note || undefined,
-                    unsupported: item.unsupported || false,
-                    shapekeys: item.shapekeys?.length ? item.shapekeys : undefined,
-                }))
-
-            const content: SetupDraftContent = {
-                public: state.value.public,
-                name: state.value.name || undefined,
-                description: state.value.description || undefined,
-                images: state.value.images.length ? state.value.images : undefined,
-                imageMetadata: getSelectedImageMetadata(),
-                tags: state.value.tags.length
-                    ? state.value.tags.map((tag) => ({ tag }))
-                    : undefined,
-                coauthors: state.value.coauthors.length
-                    ? state.value.coauthors
-                          .filter((c) => c.userId)
-                          .map((c) => ({
-                              userId: c.userId,
-                              username: c.user.username,
-                              note: c.note || undefined,
-                          }))
-                    : undefined,
-                items: items.length ? items : undefined,
-            }
-
-            const response = await $fetch<{ draftId: string } | null>('/api/setups/drafts', {
-                method: 'POST',
-                headers: draft.value.id
-                    ? undefined
-                    : { 'Idempotency-Key': draftIdempotencyKey.value },
-                body: {
-                    id: draft.value.id ?? undefined,
-                    setupId: editingSetupId.value ?? undefined,
-                    content,
-                },
-            })
-
-            if (response?.draftId) {
-                if (!draft.value.id) draftIdempotencyKey.value = crypto.randomUUID()
-                draft.value.id = response.draftId
-                updateRouterQuery({ draftId: response.draftId })
-                draft.value.status = 'saved'
-            } else {
-                draft.value.status = 'new'
-            }
-        } catch (error) {
-            console.error('Error saving draft:', error)
-            draft.value.status = 'error'
-        }
-    }, 2000)
-
-    const changed = computed(() =>
-        Boolean(
-            state.value.name.length ||
-            state.value.description?.length ||
-            state.value.images.length ||
-            state.value.tags.length ||
-            state.value.coauthors.length ||
-            state.value.public !== true ||
-            Object.values(state.value.items).some((items) => items.length),
-        ),
-    )
-
-    // Tags
     const addTag = (tag: string) => {
         if (!tag.trim()) return
-
-        if (state.value.tags.includes(tag)) {
+        if (values.value.tags.includes(tag)) {
             toast.add({
                 id: 'tag-duplicate',
                 icon: 'mingcute:close-line',
@@ -488,236 +307,61 @@ export const useSetupCompose = () => {
             })
             return
         }
-
-        state.value.tags.push(tag)
+        form.setFieldValue('tags', [...values.value.tags, tag])
     }
-
-    const removeTag = (tag: string) => {
-        const index = state.value.tags.indexOf(tag)
-        if (index !== -1) state.value.tags.splice(index, 1)
-    }
-
-    // Coauthors
-    const addCoauthor = (user: Serialized<User>) => {
-        if (!user?.username) return
-
-        if (state.value.coauthors.some((c) => c.user.username === user.username)) {
-            toast.add({
-                id: 'coauthor-duplicate',
-                icon: 'mingcute:close-line',
-                title: t('setup.compose.coauthorDuplicate'),
-                color: 'warning',
-            })
-            return
-        }
-
-        state.value.coauthors.push({
-            userId: user.id,
-            user: { ...user, name: user.name ?? '', image: user.image ?? '' },
-            note: '',
-        })
-    }
-
-    const removeCoauthor = (username: string) => {
-        const index = state.value.coauthors.findIndex((c) => c.user.username === username)
-        if (index !== -1) state.value.coauthors.splice(index, 1)
-    }
-
-    // Images
-    const getSelectedImageMetadata = () => {
-        const entries = state.value.images
-            .map((url) => {
-                const metadata = imageMetadata.value[url]
-                return metadata ? ([url, metadata] as const) : null
-            })
-            .filter((entry): entry is readonly [string, SetupImageMetadata] => entry !== null)
-        return entries.length ? Object.fromEntries(entries) : undefined
-    }
-
-    const processImages = async (files: FileList | File[] | null) => {
-        if (!files?.length) return
-
-        const file = files[0]
-        if (!file) return
-
-        imageUploading.value = true
-        try {
-            const image = await uploadImage(file, 'setup')
-            state.value.images.push(image.url)
-            imageMetadata.value[image.url] = {
-                objectKey: image.objectKey,
-                contentType: image.contentType,
-                size: image.size,
-                etag: image.etag,
-                width: image.width,
-                height: image.height,
-                themeColors: image.themeColors.length ? image.themeColors : null,
-            }
-        } catch (error) {
-            console.error('Error uploading image:', error)
-            toast.add({
-                icon: 'mingcute:close-line',
-                title: t('errors.imageUploadFailed'),
-                color: 'error',
-            })
-        } finally {
-            imageUploading.value = false
-        }
-    }
-
-    const removeImage = (index: number) => {
-        const [removed] =
-            index >= 0 && index < state.value.images.length
-                ? state.value.images.splice(index, 1)
-                : []
-        if (removed) {
-            const nextMetadata = { ...imageMetadata.value }
-            Reflect.deleteProperty(nextMetadata, removed)
-            imageMetadata.value = nextMetadata
-        }
-    }
-
-    // Items
-    const totalItemsCount = computed(() =>
-        Object.values(state.value.items).reduce((total, category) => total + category.length, 0),
-    )
-
-    const isItemAlreadyAdded = (itemId: Item['id']): boolean =>
-        Object.values(state.value.items).some((category) =>
-            category.some((item) => item.id === itemId),
+    const removeTag = (tag: string) =>
+        form.setFieldValue(
+            'tags',
+            values.value.tags.filter((candidate) => candidate !== tag),
         )
 
-    const addItem = (item: Item) => {
-        if (!item?.id || !item?.category) {
-            console.error('Invalid item data:', item)
+    const addCoauthor = (user: ComposeUser) => {
+        if (!user?.username || values.value.coauthors.some(({ userId }) => userId === user.id))
             return
-        }
-
-        if (isItemAlreadyAdded(item.id)) {
-            toast.add({
-                id: 'item-duplicate',
-                icon: 'mingcute:warning-line',
-                title: t('setup.compose.itemAlreadyAdded'),
-                color: 'warning',
-            })
-            return
-        }
-
-        const itemCategory = item.category as keyof typeof state.value.items
-        const targetCategory = itemCategory in state.value.items ? itemCategory : 'other'
-
-        if (itemCategory !== targetCategory) {
-            console.warn('Invalid item category, using other:', item.category)
-        }
-
-        state.value.items[targetCategory].push({
-            ...item,
-            id: item.id.toString(),
-            category: targetCategory,
-            note: '',
-            unsupported: false,
-            image: item.image ?? '',
-            niceName: item.niceName ?? '',
-            price: item.price ?? '',
-            likes: item.likes ?? 0,
-            shop: item.shop ? { ...item.shop, image: item.shop.image ?? '' } : undefined,
-        })
+        userEntities.value = { ...userEntities.value, [user.id]: user }
+        form.setFieldValue('coauthors', [
+            ...values.value.coauthors,
+            { userId: user.id, username: user.username, note: '' },
+        ])
     }
+    const removeCoauthor = (userId: string) =>
+        form.setFieldValue(
+            'coauthors',
+            values.value.coauthors.filter((coauthor) => coauthor.userId !== userId),
+        )
+    const setCoauthors = (next: ComposeCoauthor[]) =>
+        form.setFieldValue(
+            'coauthors',
+            next.map(({ userId, username, note }) => ({ userId, username, note })),
+        )
+    const updateCoauthorNote = (userId: string, note: string) =>
+        form.setFieldValue(
+            'coauthors',
+            values.value.coauthors.map((coauthor) =>
+                coauthor.userId === userId ? { ...coauthor, note } : coauthor,
+            ),
+        )
 
-    const removeItem = (category: ItemCategory, id: Item['id']) => {
-        const categoryKey = category as keyof typeof state.value.items
-        if (!(categoryKey in state.value.items)) {
-            console.error('Invalid category:', category)
-            return
-        }
-
-        const index = state.value.items[categoryKey].findIndex((item) => item.id === id)
-        if (index !== -1) {
-            state.value.items[categoryKey].splice(index, 1)
-        } else {
-            console.warn('Item not found:', id)
-        }
-    }
-
-    const changeItemCategory = (id: Item['id'], newCategory: ItemCategory) => {
-        const newCategoryKey = newCategory as keyof typeof state.value.items
-        if (!(newCategoryKey in state.value.items)) {
-            console.error('Invalid new category:', newCategory)
-            return
-        }
-
-        for (const category of Object.keys(
-            state.value.items,
-        ) as (keyof typeof state.value.items)[]) {
-            const index = state.value.items[category].findIndex((item) => item.id === id)
-            if (index !== -1) {
-                const [item] = state.value.items[category].splice(index, 1)
-                if (item) {
-                    item.category = newCategory
-                    state.value.items[newCategoryKey].push(item)
-                }
-                return
-            }
-        }
-
-        console.warn('Item not found:', id)
-    }
-
-    const addShapekey = (opts: {
-        category: ItemCategory
-        id: Item['id']
-        name: string
-        value: number
-    }) => {
-        const categoryKey = opts.category as keyof typeof state.value.items
-        if (!(categoryKey in state.value.items)) {
-            console.error('Invalid category:', opts.category)
-            return
-        }
-
-        const item = state.value.items[categoryKey].find((item) => item.id === opts.id)
-        if (!item) {
-            console.warn('Item not found:', opts.id)
-            return
-        }
-
-        if (!item.shapekeys) item.shapekeys = []
-        item.shapekeys.push({ name: opts.name, value: opts.value })
-    }
-
-    const removeShapekey = (opts: { category: ItemCategory; id: Item['id']; index: number }) => {
-        const categoryKey = opts.category as keyof typeof state.value.items
-        if (!(categoryKey in state.value.items)) {
-            console.error('Invalid category:', opts.category)
-            return
-        }
-
-        const item = state.value.items[categoryKey].find((item) => item.id === opts.id)
-        if (!item?.shapekeys || opts.index < 0 || opts.index >= item.shapekeys.length) {
-            console.warn('Shapekey not found:', opts.id, opts.index)
-            return
-        }
-
-        item.shapekeys.splice(opts.index, 1)
-    }
-
-    // Drafts
     const {
         data: drafts,
         status: draftsStatus,
         refresh: refreshDrafts,
-    } = useFetch('/api/setups/drafts', { default: () => [], dedupe: 'defer' })
-
-    const deleteDrafts = async (draftIds: string[]) => {
-        if (!draftIds.length) return
-        await $fetch('/api/setups/drafts', { method: 'DELETE', query: { id: draftIds } })
+    } = useFetch<SetupDraftSummary[]>('/api/setup-drafts', { default: () => [], dedupe: 'defer' })
+    const deleteDrafts = async (ids: string[]) => {
+        for (const id of ids) {
+            await $fetch(`/api/setup-drafts/${id}`, { method: 'DELETE' })
+            await draftController.deleteRecovery(id).catch(() => null)
+        }
+        if (ids.includes(draftController.state.id)) await reset()
         await refreshDrafts()
     }
 
     return {
-        // Core
+        form,
+        values,
+        entries,
+        coauthors,
         initialize,
-        state,
         publish,
         reset,
         changed,
@@ -725,29 +369,37 @@ export const useSetupCompose = () => {
         publishing,
         draft,
         loadDraft,
-        skipDraftSave,
-        saveDraft,
-        // Tags
         addTag,
         removeTag,
-        // Coauthors
         addCoauthor,
         removeCoauthor,
-        // Images
+        setCoauthors,
+        updateCoauthorNote,
         imageUploading,
         processImages,
         removeImage,
-        // Items
         totalItemsCount,
         addItem,
+        updateItem,
         removeItem,
         changeItemCategory,
         addShapekey,
         removeShapekey,
-        // Drafts
+        reorderCategory,
         drafts,
         draftsStatus,
         refreshDrafts,
         deleteDrafts,
     }
+}
+
+type SetupComposeContext = ReturnType<typeof createSetupCompose>
+const setupComposeKey: InjectionKey<SetupComposeContext> = Symbol('setup-compose')
+
+export const useSetupCompose = () => {
+    const existing = inject(setupComposeKey, null)
+    if (existing) return existing
+    const created = createSetupCompose()
+    provide(setupComposeKey, created)
+    return created
 }

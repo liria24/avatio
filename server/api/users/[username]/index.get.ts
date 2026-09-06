@@ -46,19 +46,22 @@ export default sessionEventHandler<User>(async ({ event, session, db }) => {
                     createdAt: true,
                 },
             },
-            shops: {
+            publisherSourceOwnerships: {
                 columns: {
                     id: true,
-                    createdAt: true,
+                    method: true,
+                    verifiedAt: true,
                 },
                 with: {
-                    shop: {
+                    publisherSource: {
                         columns: {
                             id: true,
-                            platform: true,
+                            providerKey: true,
+                            externalId: true,
+                            canonicalUrl: true,
                             name: true,
                             image: true,
-                            verified: true,
+                            providerVerified: true,
                         },
                     },
                 },
@@ -68,9 +71,10 @@ export default sessionEventHandler<User>(async ({ event, session, db }) => {
 
     if (!data) throw serverError.notFound()
 
-    const { banned, banReason, banExpires, ...user } = data
-    if (!isPublic) return { ...user, banned, banReason, banExpires }
+    const { banned, banReason, banExpires, publisherSourceOwnerships, ...user } = data
+    const result = { ...user, publisherOwnerships: publisherSourceOwnerships }
+    if (!isPublic) return { ...result, banned, banReason, banExpires }
 
     applyPublicEdgeCache(event, [EDGE_CACHE_TAGS.users])
-    return user
+    return result
 })

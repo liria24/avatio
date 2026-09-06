@@ -14,6 +14,12 @@ export default defineConfig({
     test: {
         projects: [
             {
+                resolve: {
+                    alias: {
+                        '@@': process.cwd(),
+                        '~~': process.cwd(),
+                    },
+                },
                 test: {
                     name: 'unit',
                     include: ['test/unit/**/*.{test,spec}.ts'],

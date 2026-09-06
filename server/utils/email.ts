@@ -42,13 +42,8 @@ export interface SendEmailInput {
 const defaultEmailFrom = 'hello@avatio.me'
 
 export const getEmailFromAddress = () => {
-    try {
-        const config = useRuntimeConfig()
-        const fromAddress = config.email?.fromAddress
-        if (typeof fromAddress === 'string' && fromAddress) return fromAddress
-    } catch {
-        // runtime config is unavailable in isolated unit tests
-    }
+    const bindingAddress = getRuntimeEnvString('EMAIL_FROM')
+    if (bindingAddress) return bindingAddress
 
     return defaultEmailFrom
 }

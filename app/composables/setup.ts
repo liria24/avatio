@@ -20,6 +20,15 @@ export const useSetup = <
         ...options,
     })
 
+export const useViewerSetup = (id: Setup['id']) =>
+    useFetch<SetupRes>(`/api/me/setups/${id}`, {
+        key: computed(() => `viewer-setup-${id}`),
+        dedupe: 'defer',
+        lazy: false,
+        immediate: true,
+        headers: useRequestHeaders(['cookie']),
+    })
+
 export const useSetupsList = (
     type?: 'latest' | 'owned' | 'bookmarked',
     options?: {

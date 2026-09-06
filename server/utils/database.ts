@@ -3,13 +3,14 @@ import { drizzle } from 'drizzle-orm/d1'
 import { relations } from '~~/database/relations'
 import * as schema from '~~/database/schema'
 
-const getDatabaseBinding = () => {
+export const getDatabaseBinding = () => {
     const binding = getRuntimeEnv().APP_DB
     if (!binding) throw new Error('Missing required Cloudflare D1 binding: APP_DB')
     return binding as D1Database
 }
 
 const useDB = () => drizzle(getDatabaseBinding(), { relations })
+export type AppDatabase = ReturnType<typeof useDB>
 
 // Better Auth is initialized at module scope, while Nitro injects bindings at request time.
 const dbProxy = new Proxy({} as ReturnType<typeof useDB>, {

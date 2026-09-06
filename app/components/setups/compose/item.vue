@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import type { SetupComposeEntry } from '~/composables/setupComposeEntries'
+
 const unsupported = defineModel<boolean>('unsupported', {
     default: false,
 })
@@ -10,7 +12,7 @@ const note = defineModel<string | undefined>('note', {
 })
 
 interface Props {
-    item: SetupItem
+    item: SetupComposeEntry
 }
 const props = defineProps<Props>()
 
@@ -33,7 +35,7 @@ const inputShapekeyValue = ref(0)
         <div class="flex grow flex-col gap-2">
             <div class="flex items-start gap-1">
                 <NuxtLink
-                    v-if="props.item.image"
+                    v-if="props.item.image && props.item.platform"
                     :to="resolveItemUrl(props.item.id, props.item.platform)"
                     target="_blank"
                     external
@@ -81,6 +83,7 @@ const inputShapekeyValue = ref(0)
                         </UTooltip>
 
                         <NuxtLink
+                            v-if="props.item.platform"
                             :to="resolveItemUrl(props.item.id, props.item.platform)"
                             target="_blank"
                             external
@@ -88,6 +91,12 @@ const inputShapekeyValue = ref(0)
                         >
                             {{ props.item.name }}
                         </NuxtLink>
+                        <span
+                            v-else
+                            class="text-muted line-clamp-2 py-1 font-mono text-sm tracking-wider"
+                        >
+                            {{ props.item.name }}
+                        </span>
                     </div>
                     <div class="flex items-center gap-2">
                         <UPopover

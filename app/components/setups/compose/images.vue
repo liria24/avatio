@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-const { state, imageUploading, processImages, removeImage } = useSetupCompose()
+const { values, imageUploading, processImages, removeImage } = useSetupCompose()
 
 const dropZoneRef = ref<HTMLDivElement>()
 
@@ -23,7 +23,7 @@ onChange(async (files) => {
 </script>
 
 <template>
-    <div v-if="!state.images.length && !imageUploading" ref="dropZoneRef">
+    <div v-if="!values.images.length && !imageUploading" ref="dropZoneRef">
         <UButton
             :icon="isOverDropZone ? 'mingcute:download-fill' : 'mingcute:pic-fill'"
             :label="
@@ -45,7 +45,7 @@ onChange(async (files) => {
     </div>
 
     <div v-else class="grid grid-cols-3 gap-2">
-        <div v-for="(image, index) in state.images" :key="`image-${index}`" class="relative grid">
+        <div v-for="(image, index) in values.images" :key="`image-${index}`" class="relative grid">
             <NuxtImg
                 v-slot="{ isLoaded, src, imgAttrs }"
                 :src="image"

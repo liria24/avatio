@@ -11,7 +11,8 @@ const query = z.object({
     banned: z.stringbool().optional(),
 })
 
-export default adminSessionEventHandler(async ({ db }) => {
+export default promiseEventHandler(async ({ db, event }) => {
+    await requireUserSession(event, { user: { role: 'admin' } })
     const {
         q,
         orderBy,

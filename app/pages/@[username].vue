@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-const { session } = useAuth()
+const { user: viewer } = useUserSession()
 const { app } = useAppConfig()
 const { locale, t } = useI18n()
 const overlay = useOverlay()
@@ -148,7 +148,7 @@ useSeo({
                 </div>
                 <div class="flex items-center gap-1 self-end sm:self-auto">
                     <UButton
-                        v-if="session?.user.username === user.username"
+                        v-if="viewer?.username === user.username"
                         :to="$localePath('/settings')"
                         :label="$t('user.editProfile')"
                         icon="mingcute:edit-3-fill"
@@ -163,7 +163,7 @@ useSeo({
                         variant="ghost"
                         size="sm"
                         class="self-end"
-                        @click="session ? reportUser.open({ userId: user.username }) : login.open()"
+                        @click="viewer ? reportUser.open({ userId: user.username }) : login.open()"
                     />
                 </div>
             </div>
@@ -196,27 +196,27 @@ useSeo({
             </div>
         </div>
 
-        <div v-if="user.shops?.length" class="mb-4 flex w-full flex-col gap-5 px-2">
+        <div v-if="user.publisherOwnerships?.length" class="mb-4 flex w-full flex-col gap-5 px-2">
             <div class="flex items-center gap-2">
                 <Icon name="mingcute:store-fill" size="22" class="text-muted" />
                 <h2 class="text-xl leading-none font-semibold text-nowrap">
-                    {{ $t('user.shops') }}
+                    {{ $t('user.publishers') }}
                 </h2>
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
                 <UButton
-                    v-for="(shop, index) in user.shops"
-                    :key="'shop-' + index"
-                    :to="`https://${shop.shop.id}.booth.pm`"
+                    v-for="ownership in user.publisherOwnerships"
+                    :key="ownership.id"
+                    :to="ownership.publisherSource.canonicalUrl"
                     target="_blank"
                     external
                     variant="ghost"
                     class="gap-3 p-3"
                 >
-                    <div v-if="shop.shop.image" class="relative">
+                    <div v-if="ownership.publisherSource.image" class="relative">
                         <NuxtImg
-                            :src="shop.shop.image"
+                            :src="ownership.publisherSource.image"
                             alt=""
                             :width="48"
                             :height="48"
@@ -236,7 +236,11 @@ useSeo({
                         class="bg-muted flex aspect-square size-22 items-center justify-center rounded-lg sm:size-28"
                     >
                         <Icon
-                            :name="getPlatformData(shop.shop.platform)?.icon"
+                            :name="
+                                ownership.publisherSource.providerKey === 'booth'
+                                    ? 'avatio:booth'
+                                    : 'mingcute:store-fill'
+                            "
                             size="24"
                             class="text-muted"
                         />
@@ -246,12 +250,12 @@ useSeo({
                         <span
                             class="text-sm leading-none font-semibold text-zinc-800 dark:text-zinc-300"
                         >
-                            {{ shop.shop.name }}
+                            {{ ownership.publisherSource.name }}
                         </span>
                         <span
                             class="text-xs leading-none font-normal text-zinc-500 dark:text-zinc-500"
                         >
-                            {{ shop.shop.id }}.booth.pm
+                            {{ ownership.publisherSource.externalId }}
                         </span>
                     </div>
                 </UButton>

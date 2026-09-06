@@ -1,34 +1,67 @@
 <script lang="ts" setup>
+import type { LegalDocument } from '@avatio/core/legal'
+import type { AvatioContentPage } from '@avatio/nuxt/runtime/content'
+
 interface Props {
-    needsTerms?: boolean
-    needsPrivacyPolicy?: boolean
+    documents: LegalDocument[]
 }
-const { needsTerms = true, needsPrivacyPolicy = false } = defineProps<Props>()
+const { documents } = defineProps<Props>()
+const needsTerms = computed(() => documents.includes('terms'))
+const needsPrivacyPolicy = computed(() => documents.includes('privacy-policy'))
 
 const emit = defineEmits(['close'])
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const { agree } = useTermsAgreement()
 const isAgreeing = ref(false)
+const failure = ref(false)
+const requestFetch = useRequestFetch()
+const {
+    data: pages,
+    error,
+    status,
+    refresh,
+} = useAsyncData(
+    () => `legal-review:${locale.value}:${documents.join(',')}`,
+    () =>
+        Promise.all(
+            documents.map(async (document) => ({
+                document,
+                page: await requestFetch<AvatioContentPage>(`/api/avatio/content/${document}`, {
+                    query: { locale: locale.value },
+                }),
+            })),
+        ),
+)
 
 const title = computed(() => {
-    if (needsTerms && needsPrivacyPolicy) return t('modal.agreeTerms.title.both')
-    if (needsPrivacyPolicy) return t('modal.agreeTerms.title.privacy')
+    if (needsTerms.value && needsPrivacyPolicy.value) return t('modal.agreeTerms.title.both')
+    if (needsPrivacyPolicy.value) return t('modal.agreeTerms.title.privacy')
     return t('modal.agreeTerms.title.terms')
 })
 const description = computed(() => {
-    if (needsTerms && needsPrivacyPolicy) return t('modal.agreeTerms.description.both')
-    if (needsPrivacyPolicy) return t('modal.agreeTerms.description.privacy')
+    if (needsTerms.value && needsPrivacyPolicy.value) return t('modal.agreeTerms.description.both')
+    if (needsPrivacyPolicy.value) return t('modal.agreeTerms.description.privacy')
     return t('modal.agreeTerms.description.terms')
 })
 
 const agreeAndClose = async () => {
     isAgreeing.value = true
+    failure.value = false
     try {
-        await agree()
+        if (!pages.value?.length) return
+        await agree(
+            pages.value.map(({ document, page }) => ({
+                document,
+                version: page.frontmatter.version ?? '',
+                sourceRevision: page.source.sourceRevision,
+            })),
+        )
         emit('close')
     } catch (error) {
         console.error('Failed to update terms agreement:', error)
+        failure.value = true
+        await refresh()
     } finally {
         isAgreeing.value = false
     }
@@ -72,6 +105,19 @@ const agreeAndClose = async () => {
                 color="neutral"
                 class="p-0"
             />
+            <UAlert v-if="error || failure" :title="$t('content.loadError')" color="error" />
+            <UButton v-if="error" :label="$t('content.retry')" @click="refresh()" />
+            <div class="max-h-72 w-full overflow-y-auto">
+                <details v-for="{ document, page } in pages" :key="document" class="py-2">
+                    <summary class="cursor-pointer font-medium">
+                        {{ page.frontmatter.title }} · {{ page.frontmatter.version }}
+                    </summary>
+                    <p v-if="page.isFallback" class="text-muted my-2 text-sm">
+                        {{ $t('content.fallbackDescription') }}
+                    </p>
+                    <MarkdownDocument :value="page.document" class="sentence text-sm" />
+                </details>
+            </div>
         </template>
 
         <template #footer>
@@ -81,6 +127,7 @@ const agreeAndClose = async () => {
                 size="lg"
                 block
                 :loading="isAgreeing"
+                :disabled="status !== 'success' || !pages?.length || !!error"
                 @click="agreeAndClose"
             />
         </template>

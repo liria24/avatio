@@ -1,5 +1,6 @@
 <script setup lang="ts">
-const { auth, session, sessions, getSessions, revoke } = useAuth()
+const { user, loggedIn, signOut, fetchSession } = useUserSession()
+const { data: sessions, load: loadSessions, setActive } = useDeviceSessions()
 const toast = useToast()
 const colorMode = useColorMode()
 const login = useLoginModal()
@@ -8,11 +9,12 @@ const { t, locales, setLocale } = useI18n()
 const open = ref(false)
 
 watch(open, async (value) => {
-    if (value && session.value && sessions.value === undefined) await getSessions()
+    if (value && loggedIn.value && sessions.value === undefined) await loadSessions()
 })
 
 const switchAccount = async (sessionToken: string) => {
-    await auth.multiSession.setActive({ sessionToken })
+    await setActive(sessionToken)
+    await fetchSession({ force: true })
     toast.add({
         id: 'switching-account',
         icon: 'svg-spinners:ring-resize',
@@ -22,6 +24,8 @@ const switchAccount = async (sessionToken: string) => {
     })
     reloadNuxtApp()
 }
+
+const revoke = () => signOut({ onSuccess: () => reloadNuxtApp() })
 </script>
 
 <template>
@@ -30,7 +34,7 @@ const switchAccount = async (sessionToken: string) => {
         :items="[
             [
                 {
-                    to: $localePath(`/@${session?.user.username}`),
+                    to: $localePath(`/@${user?.username}`),
                     slot: 'user',
                 },
             ],
@@ -126,19 +130,19 @@ const switchAccount = async (sessionToken: string) => {
             class="ring-accented size-8 cursor-pointer rounded-full ring-0 transition-all select-none hover:ring-4"
         >
             <UAvatar
-                :src="session?.user.image || undefined"
-                :alt="session?.user.name"
+                :src="user?.image || undefined"
+                :alt="user?.name"
                 icon="mingcute:user-3-fill"
             />
         </button>
 
         <template #user>
             <UUser
-                :name="session?.user.name"
-                :description="`@${session?.user.username}`"
+                :name="user?.name"
+                :description="`@${user?.username}`"
                 :avatar="{
-                    src: session?.user.image || undefined,
-                    alt: session?.user.name,
+                    src: user?.image || undefined,
+                    alt: user?.name,
                     icon: 'mingcute:user-3-fill',
                 }"
                 :ui="{ description: 'font-mono max-w-32 break-all line-clamp-1' }"

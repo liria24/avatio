@@ -1,46 +1,40 @@
 import { Files } from 'files-sdk'
 import { r2 } from 'files-sdk/r2'
 import type { R2Bucket } from 'files-sdk/r2'
+import type { H3Event } from 'h3'
+
+import { createLocalStorage } from '../storage/local'
 
 type StorageClient = InstanceType<typeof Files>
 
-const requireEnv = (name: string) => {
-    const value = getRuntimeEnvString(name)
-    if (!value)
+const requireEnv = (name: 'R2_PUBLIC_BASE_URL', event?: H3Event) => {
+    const value = getRuntimeEnvString(name, event)
+    if (typeof value !== 'string' || !value)
         throw new Error(
             `Missing required environment variable: ${name}. Ensure it is set before starting the server.`,
         )
     return value
 }
 
-let storageClient: StorageClient | null = null
+const localStorage = import.meta.dev ? createLocalStorage('.data/uploads') : null
 
-const getStorage = () => {
-    if (storageClient) return storageClient
+export const getStorage = (event?: H3Event): StorageClient => {
+    if (localStorage) return localStorage
 
-    const binding = getRuntimeEnv().R2 as R2Bucket | undefined
-    const r2Credentials = {
-        bucket: requireEnv('R2_BUCKET'),
-        accountId: requireEnv('CLOUDFLARE_ACCOUNT_ID'),
-        accessKeyId: requireEnv('R2_ACCESS_KEY_ID'),
-        secretAccessKey: requireEnv('R2_SECRET_ACCESS_KEY'),
-    }
+    const binding = getRuntimeEnv(event).R2 as R2Bucket | undefined
+    if (!binding || typeof binding !== 'object')
+        throw new Error('Missing required Cloudflare R2 binding: R2')
 
-    storageClient = new Files({
-        adapter:
-            binding && typeof binding === 'object'
-                ? r2({
-                      binding,
-                      ...r2Credentials,
-                      publicBaseUrl: requireEnv('R2_PUBLIC_BASE_URL'),
-                  })
-                : r2({
-                      ...r2Credentials,
-                      publicBaseUrl: requireEnv('R2_PUBLIC_BASE_URL'),
-                      client: 'fetch',
-                  }),
+    // files-sdk's HTTP adapter is intentionally not configured here. Runtime
+    // R2 credentials are not safe in a Worker; all reads and writes stay on
+    // the native binding. The direct AWS SDK dependencies remain in
+    // package.json solely for files-sdk's build-time compatibility bug.
+    return new Files({
+        adapter: r2({
+            binding,
+            publicBaseUrl: requireEnv('R2_PUBLIC_BASE_URL', event),
+        }),
     })
-    return storageClient
 }
 
 export const storage = new Proxy({} as StorageClient, {

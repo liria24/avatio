@@ -7,7 +7,7 @@ const { app } = useAppConfig()
 const route = useRoute()
 const { t } = useI18n()
 const toast = useToast()
-const { session } = useAuth()
+const { user, loggedIn, preferences } = useViewerContext()
 const { share, isSupported: shareSupported } = useShare()
 const location = useBrowserLocation()
 const { copy, copied } = useClipboard({ source: location.value.href })
@@ -19,6 +19,7 @@ const reportItem = useReportItemModal()
 const setupHide = useSetupHideModal({ props: { setupId: id.value } })
 const setupUnhide = useSetupUnhideModal({ props: { setupId: id.value } })
 const { toggle: toggleBookmarkAction, getBookmarkStatus } = useBookmarks()
+const setupPath = useSetupPath()
 
 if (!id.value)
     throw showError({
@@ -26,7 +27,16 @@ if (!id.value)
         statusText: t('errors.invalidId'),
     })
 
-const { data: setup, status } = await useSetup(id.value)
+const canonicalPath = setupPath(id.value)
+if (route.path !== canonicalPath)
+    await navigateTo(
+        { path: canonicalPath, query: route.query },
+        { redirectCode: 308, replace: true },
+    )
+
+const { data: setup, status } = loggedIn.value
+    ? await useViewerSetup(id.value)
+    : await useSetup(id.value)
 
 if (status.value === 'error' || (status.value === 'success' && !setup.value))
     throw showError({
@@ -38,7 +48,7 @@ const {
     isBookmarked,
     status: bookmarkStatus,
     refresh: bookmarkRefresh,
-} = await getBookmarkStatus(setup.value!.id, !!session.value)
+} = await getBookmarkStatus(setup.value!.id, loggedIn.value)
 
 const toggleBookmark = async () => {
     const success = await toggleBookmarkAction(setup.value!.id, isBookmarked.value)
@@ -113,7 +123,7 @@ useSeo({
             },
             breadcrumb: [
                 { name: setup.value?.user.name || '', item: `/@${setup.value?.user.username}` },
-                { name: setup.value?.name || '', item: `/setup/${id}` },
+                { name: setup.value?.name || '', item: canonicalPath },
             ],
         },
     },
@@ -206,7 +216,7 @@ useSeo({
                             base: 'ring-muted p-2 rounded-lg',
                             leadingIcon: 'size-4.5',
                         }"
-                        @click="session ? toggleBookmark() : login.open()"
+                        @click="loggedIn ? toggleBookmark() : login.open()"
                     />
                 </div>
             </div>
@@ -245,8 +255,8 @@ useSeo({
                         v-for="(item, index) in items"
                         :key="`item-${key}-${index}`"
                         :item
-                        :show-nsfw="session?.user.settings?.showNSFW"
-                        @report-item="session ? reportItem.open({ itemId: $event }) : login.open()"
+                        :show-nsfw="preferences.showNsfw"
+                        @report-item="loggedIn ? reportItem.open({ itemId: $event }) : login.open()"
                     />
                 </template>
             </div>
@@ -321,7 +331,7 @@ useSeo({
             </UFieldGroup>
 
             <UButton
-                v-if="session?.user.role === 'admin'"
+                v-if="user?.role === 'admin'"
                 :icon="setup.hidAt ? 'mingcute:eye-2-fill' : 'mingcute:eye-close-fill'"
                 :label="setup.hidAt ? $t('setup.viewer.show') : $t('setup.viewer.hide')"
                 variant="ghost"
@@ -334,7 +344,7 @@ useSeo({
                 :label="$t('report')"
                 variant="ghost"
                 size="sm"
-                @click="session ? reportSetup.open() : login.open()"
+                @click="loggedIn ? reportSetup.open() : login.open()"
             />
         </div>
 
