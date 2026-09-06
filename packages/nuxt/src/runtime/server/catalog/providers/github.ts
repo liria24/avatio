@@ -4,7 +4,7 @@ import {
     matchGithubCatalogUrl,
 } from '@avatio/nuxt/runtime/catalog/references'
 
-import type { ProviderHttpClient, ProviderHttpResponse } from './http'
+import type { ProviderHttpClient, ProviderHttpResponse, ResolvePublisherSource } from './http'
 import { isConfirmedWithdrawalStatus, withdrawalErrorKind } from './http'
 
 interface GithubRepoResponse {
@@ -32,6 +32,7 @@ interface GithubReadmeResponse {
 export interface GithubProviderOptions {
     http: ProviderHttpClient
     apiBaseUrl?: string
+    resolvePublisherSource: ResolvePublisherSource
 }
 
 const optionalData = <T>(result: PromiseSettledResult<ProviderHttpResponse<T>>) =>
@@ -87,6 +88,16 @@ export class GithubCatalogProvider implements CatalogProvider {
         if (!owner)
             return { status: 'transient_error', errorKind: 'provider-invalid-success-response' }
 
+        const publisherSourceId = await this.options.resolvePublisherSource({
+            providerKey: this.key,
+            externalId: owner,
+            canonicalUrl: `https://github.com/${owner}`,
+            name: owner,
+            image: `https://github.com/${owner}.png`,
+            providerVerified: false,
+            metadata: {},
+        })
+
         return {
             status: 'available',
             snapshot: {
@@ -118,14 +129,7 @@ export class GithubCatalogProvider implements CatalogProvider {
                                 contributions,
                             })) ?? [],
                 },
-                publisher: {
-                    externalId: owner,
-                    canonicalUrl: `https://github.com/${owner}`,
-                    name: owner,
-                    image: `https://github.com/${owner}.png`,
-                    providerVerified: false,
-                    metadata: {},
-                },
+                publisherSourceId,
             },
         }
     }

@@ -1,115 +1,84 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { PermanentItemResolutionError } from '../../../server/utils/itemResolutionError'
-
-const { getItem, findSourceByExternalId, invalidate } = vi.hoisted(() => ({
-    getItem: vi.fn(),
-    findSourceByExternalId: vi.fn(),
-    invalidate: vi.fn(),
+import {
+    handleItemRevalidationMessage,
+    isLegacyItemRevalidationMessage,
+    isUnfencedCatalogMessage,
+} from '../../../server/migration/catalog/queueCompatibility'
+const { ensureSource, findSource, claim, release, sync, schedule } = vi.hoisted(() => ({
+    ensureSource: vi.fn(),
+    findSource: vi.fn(),
+    claim: vi.fn(),
+    release: vi.fn(),
+    sync: vi.fn(),
+    schedule: vi.fn(),
 }))
-
-vi.mock('~~/server/utils/getItem', () => ({ default: getItem }))
-vi.mock('~~/server/utils/database', () => ({ useDB: () => ({ marker: 'db' }) }))
+vi.mock('@avatio/core/catalog', () => ({ syncCatalogSource: sync }))
+vi.mock('~~/server/migration/catalog/migration', () => ({
+    ensureLegacyCatalogSource: ensureSource,
+}))
+vi.mock('~~/server/utils/database', () => ({ useDB: () => ({}) }))
 vi.mock('~~/server/utils/catalogRuntime', () => ({
-    getCatalogRepository: () => ({ findSourceByExternalId }),
-    getCatalogCacheInvalidator: () => ({ invalidate }),
+    getCatalogRepository: () => ({
+        findSource,
+        claimDueSource: claim,
+        releaseSourceLease: release,
+        scheduleSourceCheck: schedule,
+    }),
+    getCatalogCacheInvalidator: () => ({}),
+    getCatalogProviderRegistry: async () => ({}),
 }))
-
+const legacy = {
+    id: '123',
+    platform: 'booth' as const,
+    reason: 'setup-detail' as const,
+    force: true,
+}
 beforeEach(() => {
-    getItem.mockReset()
-    findSourceByExternalId.mockReset()
-    invalidate.mockReset().mockResolvedValue(undefined)
+    vi.resetAllMocks()
+    ensureSource.mockResolvedValue({ id: 'source', syncLeaseUntil: null })
+    claim.mockResolvedValue({ sourceId: 'source', token: 'new-token' })
 })
-
-afterEach(() => {
-    vi.resetModules()
-    vi.unstubAllGlobals()
-})
-
-describe('legacy item revalidation queue compatibility', () => {
-    it('recognizes only the retained old queue message shape', async () => {
-        const { isLegacyItemRevalidationMessage } =
-            await import('../../../server/migration/catalog/queueCompatibility')
-
+afterEach(() => vi.restoreAllMocks())
+describe('retained Queue translation', () => {
+    it('accepts retained shapes without treating malformed current tokens as legacy', () => {
+        expect(isLegacyItemRevalidationMessage(legacy)).toBe(true)
         expect(
-            isLegacyItemRevalidationMessage({
-                id: 'owner/repo',
-                platform: 'github',
-                reason: 'setup-detail',
-                requestedAt: new Date().toISOString(),
+            isUnfencedCatalogMessage({
+                version: 2,
+                type: 'catalog.sync-source',
+                sourceId: 'source',
             }),
         ).toBe(true)
         expect(
-            isLegacyItemRevalidationMessage({
+            isUnfencedCatalogMessage({
                 version: 2,
                 type: 'catalog.sync-source',
-                sourceId: 'source-1',
+                sourceId: 'source',
+                leaseToken: '',
             }),
         ).toBe(false)
     })
-
-    it('waits for persistence and invalidates only the CatalogItem resource', async () => {
-        let finishPersistence!: (item: { id: string }) => void
-        getItem.mockReturnValue(
-            new Promise<{ id: string }>((resolve) => {
-                finishPersistence = resolve
-            }),
+    it('maps one source and routes only through a newly fenced v2 sync', async () => {
+        await handleItemRevalidationMessage(legacy)
+        expect(ensureSource).toHaveBeenCalledWith({}, 'booth', '123')
+        expect(sync).toHaveBeenCalledWith(
+            expect.objectContaining({ sourceId: 'source', leaseToken: 'new-token' }),
         )
-        findSourceByExternalId.mockResolvedValue({ itemId: 'catalog-item-1' })
-        const message = {
-            id: 'owner/repo',
-            platform: 'github' as const,
-            reason: 'setup-detail' as const,
-            requestedAt: new Date().toISOString(),
-            force: true,
-        }
-        const pending = import('../../../server/migration/catalog/queueCompatibility').then(
-            ({ handleItemRevalidationMessage }) =>
-                handleItemRevalidationMessage(message, {} as never),
-        )
-
-        await vi.waitFor(() => expect(getItem).toHaveBeenCalled())
-        expect(invalidate).not.toHaveBeenCalled()
-        finishPersistence({ id: 'Owner/Repo' })
-        await pending
-
-        expect(findSourceByExternalId).toHaveBeenCalledWith('github', 'Owner/Repo')
-        expect(invalidate).toHaveBeenCalledWith({ items: ['catalog-item-1'] })
     })
-
-    it('keeps confirmed missing items eligible for CatalogItem invalidation', async () => {
-        getItem.mockRejectedValue(
-            new PermanentItemResolutionError('Item missing', 'provider-not-found'),
-        )
-        findSourceByExternalId.mockResolvedValue({ itemId: 'catalog-item-2' })
-        const { handleItemRevalidationMessage } =
-            await import('../../../server/migration/catalog/queueCompatibility')
-
-        await handleItemRevalidationMessage({
-            id: 'missing',
-            platform: 'booth',
-            reason: 'owned-avatars',
-            requestedAt: new Date().toISOString(),
+    it('does not borrow a live lease or mutate its schedule', async () => {
+        ensureSource.mockResolvedValue({
+            id: 'source',
+            syncLeaseUntil: new Date(Date.now() + 60_000),
         })
-
-        expect(invalidate).toHaveBeenCalledWith({ items: ['catalog-item-2'] })
+        await handleItemRevalidationMessage(legacy)
+        expect(claim).not.toHaveBeenCalled()
+        expect(schedule).not.toHaveBeenCalled()
+        expect(sync).not.toHaveBeenCalled()
     })
-
-    it('retries an unclassified 404', async () => {
-        const error = { statusCode: 404 }
-        getItem.mockRejectedValue(error)
-        const { handleItemRevalidationMessage } =
-            await import('../../../server/migration/catalog/queueCompatibility')
-
-        await expect(
-            handleItemRevalidationMessage({
-                id: 'missing',
-                platform: 'booth',
-                reason: 'owned-avatars',
-                requestedAt: new Date().toISOString(),
-            }),
-        ).rejects.toBe(error)
-        expect(findSourceByExternalId).not.toHaveBeenCalled()
-        expect(invalidate).not.toHaveBeenCalled()
+    it('releases only its newly acquired lease if provider initialization fails', async () => {
+        sync.mockRejectedValue(new Error('failure'))
+        await expect(handleItemRevalidationMessage(legacy)).rejects.toThrow('failure')
+        expect(release).toHaveBeenCalledWith({ sourceId: 'source', token: 'new-token' })
     })
 })

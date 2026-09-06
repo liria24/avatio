@@ -12,31 +12,35 @@ Compact instruction for OpenCode sessions. If a fact is obvious from filenames, 
 
 ## Developer commands
 
-| Task                        | Command                                         |
-| --------------------------- | ----------------------------------------------- |
-| Dev server                  | `bun run dev`                                   |
-| Build                       | `bun run build`                                 |
-| Typecheck                   | `bun run typecheck`                             |
-| Lint                        | `bun run lint`                                  |
-| Fix lint                    | `bun run lint:fix`                              |
-| Format                      | `bun run fmt`                                   |
-| Check formatting            | `bun run fmt:check`                             |
-| Run all tests               | `bun run test`                                  |
-| Unit tests only             | `bun run test:unit`                             |
-| Nuxt tests only             | `bun run test:nuxt`                             |
-| Watch tests                 | `bun run test:watch`                            |
-| Generate Drizzle migrations | `bun run db:generate`                           |
-| Development Alchemy plan    | `bun run plan:development`                      |
-| Production Alchemy plan     | `bun run plan:production`                       |
-| Development deploy          | `bun run deploy:development`                    |
-| Production deploy           | `bun run deploy:production`                     |
-| Seed local App D1           | `bun run db:seed:local -- --yes`                |
-| Generate Better Auth schema | `bunx auth@rc generate --config auth.config.ts` |
+| Task                          | Command                                                                                |
+| ----------------------------- | -------------------------------------------------------------------------------------- |
+| Dev server                    | `bun run dev`                                                                          |
+| Build                         | `bun run build`                                                                        |
+| Typecheck                     | `bun run typecheck`                                                                    |
+| Lint                          | `bun run lint`                                                                         |
+| Fix lint                      | `bun run lint:fix`                                                                     |
+| Format                        | `bun run fmt`                                                                          |
+| Check formatting              | `bun run fmt:check`                                                                    |
+| Run all tests                 | `bun run test`                                                                         |
+| Unit tests only               | `bun run test:unit`                                                                    |
+| Nuxt tests only               | `bun run test:nuxt`                                                                    |
+| Watch tests                   | `bun run test:watch`                                                                   |
+| Generate Drizzle migrations   | `bun run db:generate`                                                                  |
+| Development Alchemy plan      | `bun run plan:development`                                                             |
+| Production Alchemy plan       | `bun run plan:production`                                                              |
+| Development deploy            | `bun run deploy:development`                                                           |
+| Production deploy             | `bun run deploy:production`                                                            |
+| Explicit development adoption | `bun run infra:adopt:development`                                                      |
+| Explicit production adoption  | `bun run infra:adopt:production`                                                       |
+| Seed local App D1             | `bun run db:seed:local -- --yes`                                                       |
+| Generate Better Auth schema   | `bunx --bun auth@1.7.3 generate --config auth.config.ts --output .data/auth-schema.ts` |
 
 ## After making changes
 
 Run **`bun run typecheck`** and **`bun run lint`** to verify there are no errors before finishing.
 For deployment-related changes, also run **`bun run build`**. In this repo, the production build is expected to complete successfully even though Nuxt/Rolldown may still print non-fatal warnings during the build; treat the command exit code as the source of truth.
+
+PRs into `main` require the `lint`, `typecheck`, `test`, and `build` checks from `.github/workflows/quality.yml`. These checks use no production secrets. Tests use Node 26 for the SQLite-backed D1 regression checks.
 
 ## Project architecture
 
@@ -52,7 +56,7 @@ For deployment-related changes, also run **`bun run build`**. In this repo, the 
   - `server/` — Nitro API routes and server middleware.
   - `database/schema.ts` — Drizzle ORM schema (SQLite via Cloudflare D1).
   - `shared/` — Utilities shared between client and server.
-  - `content/` — canonical Markdown sources, split by `en/` and `ja/`. `@avatio/nuxt` parses them with Comark at build time; Nuxt Content is intentionally not active.
+  - `content/` — canonical Markdown sources, split by `en/` and `ja/`. `@avatio/nuxt` uses `comark-content` with filesystem sources in local dev and commit-pinned GitHub sources in deployed Workers. Nuxt Content is intentionally not active.
 
 ## Architecture boundaries
 
@@ -65,7 +69,7 @@ For deployment-related changes, also run **`bun run build`**. In this repo, the 
 - Source availability (`available`/`withdrawn`/`policy_rejected`/`unknown`) and sync state (`fresh`/`stale`/`syncing`/`error`) are independent. Transient provider failures never mean withdrawal.
 - Effective category is resolved only through `SetupEntry override > CatalogItem override > primary source mapping > other`.
 - Catalog refresh is demand-driven. D1 source leases prevent duplicate v2 Queue messages; cold sources are never refreshed by a global schedule.
-- Queue v2 messages contain only a source ID. The old message decoder is temporary rollout compatibility and must not regain Setup-domain lookups.
+- Queue v2 messages contain a source ID and its claimed lease token. Every sync write, legacy mirror, and release is fenced by that token. The old message decoder is temporary rollout compatibility and must not regain Setup-domain lookups.
 - Public Setup responses are cookie-independent and resource-tagged; viewer/private responses are `no-store`. D1 remains authoritative when caching or invalidation fails.
 - Nitro Storage currently has no mounts. Never restore one for catalog truth, leases, flags, Setup data, or other system-of-record state.
 - AI routes and use cases use semantic capabilities. Concrete per-task model IDs live only in typed stage composition.
@@ -84,10 +88,10 @@ The following compatibility is temporary. Do not add new consumers to it.
 - **Setup fallback and dual-write:** Setup detail reads use v2 only when every legacy relation has a matching SetupEntry; commands write both relation sets. Remove the fallback and legacy writes after production backfill verifies with zero pending rows and the rollback window closes. Do not prolong dual-write for convenience.
 - **Catalog bridge:** legacy `getItem()` currently writes v2 through the explicit `server/migration/catalog/compatibility.ts` rollout bridge, while v2 sync mirrors snapshots back to legacy tables. The target is one authoritative v2 write path, with at most a temporary one-way v2-to-legacy mirror for rollback. Migrate item resolution/search/admin, AI enrichment, publisher verification, and reports before deleting the old resolver and bridge.
 - **Legacy HTTP DTO:** `Platform`, `Item`, `Shop`, `SetupItem`, and the v2-to-legacy Setup projection remain because the bundled frontend consumes the old shape. Migrate the frontend to provider-neutral CatalogItem/SetupEntry contracts, verify whether production traffic has external API consumers, then delete the projection and `extractItemId` adapter together.
-- **Queue decoder:** accept old `{ id, platform, reason }` messages only until the retained physical queue is confirmed drained. If changed before then, translate the old identity to an ItemSource and use v2 sync; do not restore old Setup lookups or add old-message producers.
-- **Backfill tooling:** keep `POST /api/admin/catalog/migration` and its legacy mapping utilities through dry-run/apply/verify and production verification. Remove the endpoint and one-shot migration code in the later contract change.
+- **Queue decoder:** accept old `{ id, platform, reason }` and pre-token v2 messages only until the retained physical queue is confirmed drained. Translate legacy identity to an ItemSource and acquire a fresh lease before v2 sync. Never borrow a live lease token or add old-message producers.
+- **Backfill tooling:** `POST /api/admin/catalog/migration` supports `dry-run`, `apply`, `status`, and `verify`. `apply` starts/resumes the persisted `catalog_migration_runs` journal and returns 202; the existing Queue processes at most 20 rows per chunk. Publishers, Catalog, confirmed ownerships, Setup entries, and shapekeys run in that order. Unfinished legacy ownership challenges require a new proof. Keep this tooling and the journal until the later contract change.
 - **Runtime configuration bridge:** `getRuntimeEnv*` remains only at root composition/infrastructure boundaries. Replace string-key call sites with typed semantic settings as integrations are migrated; do not introduce new `NUXT_*` aliases for canonical application values.
-- **Retained unbound resources:** Content D1 and legacy cache KV declarations are data-safety placeholders, not runtime compatibility. Remove or adopt them only through an explicitly approved infrastructure plan.
+- **Retained resources:** Content D1 remains unbound for data safety. The existing Cache KV is reused only for authored content through `CONTENT_CACHE`; it is not Catalog/Setup truth. Preserve both physical resources.
 
 ### Production sequence
 
@@ -96,11 +100,13 @@ The following compatibility is temporary. Do not add new consumers to it.
 3. Deploy development and verify content, Setup routes, OAuth/session behavior, request-time D1 resolution, preview-origin rejection, Queue consumption, and cache tags.
 4. As an authenticated admin, call `POST /api/admin/catalog/migration` with `{ "mode": "dry-run" }`. Resolve every error. Nonstandard historical Setup ID warnings require route preflight, never ID rewriting.
 5. Obtain explicit production authorization, then deploy the expand-compatible application and generated migration.
-6. Call the same endpoint with `{ "mode": "apply" }`. The backfill is resumable/idempotent and preserves legacy IDs and relations.
-7. Call it with `{ "mode": "verify" }`; require `verified: true` and zero pending rows.
+6. Call the same endpoint with `{ "mode": "apply" }`. Inspect `{ "mode": "status" }` for stage, cursor, processed rows, timestamps, lease, and last error. A failed chunk preserves completed work; resolve the cause in Worker logs and call `apply` again to resume. If a worker was interrupted, Queue redelivery reclaims its 60-second expired lease. If Queue delivery was exhausted or sending failed, `apply` enqueues again.
+7. Once status is `awaiting-verification`, call `{ "mode": "verify" }`; require `verified: true` and zero pending rows before status becomes `complete`. Verification does not mutate Catalog mappings. Resolve inconsistent mappings explicitly; `apply` from `awaiting-verification` rescans idempotently to fill missing rows, including rows inserted behind a previous cursor.
 8. Exercise BOOTH, GitHub, legacy `outdated=true`, publisher verification, notes, categories, shapekeys, private/hidden owner reads, and withdrawal/restoration behavior against production-like data.
-9. Observe at least one freshness window and verify v2 Queue messages, lease expiry/release, and item-tag cache invalidation.
+9. Observe at least one freshness window and verify v2 Queue messages, lease expiry/release, and item-tag cache invalidation. Count `catalog.setup.legacy_fallback` events from the `setupProjection` logger by `reason` (`entry-count-mismatch`, `entry-id-mismatch`, `missing-catalog-source`) and `setupId`. Worker logs have sampling rate 1. Public response contracts never expose this internal projection metadata.
 10. After the rollback window closes and the retained Queue drains, generate a separate contract migration that removes legacy tables/fields, dual writes, migration tooling, and the old Queue decoder.
+
+**Fallback removal gate:** require zero fallback events for seven consecutive production days, covering at least one 24-hour freshness window, with successful traffic/preflight reads across public, private-owner, and hidden-owner Setups. No traffic is not evidence of zero fallback. Any fallback restarts this window. Also require zero pending rows in final verification, drained retained Queue messages, a closed operator rollback window, and migration of remaining consumers in the compatibility ledger. Never remove legacy paths based only on a zero log count.
 
 ## Environment and secrets
 
@@ -164,23 +170,32 @@ After cutover, remove manually mirrored runtime values for `BETTER_AUTH_SECRET`,
 
 - `@nuxtjs/better-auth` owns Nuxt/Nitro routing, SSR hydration, client session state, and request session memoization.
 - `server/auth.config.ts` is the sole runtime Better Auth configuration; `app/auth.config.ts` configures client plugins. Root `auth.config.ts` exists only for Better Auth CLI schema generation and must not be imported at runtime. Remove it only after the Nuxt module proves equivalent custom D1/Drizzle schema generation directly from `server/auth.config.ts`.
-- Better Auth uses the relations-v2 Drizzle adapter with `usePlural: true`; keep `advanced.database.joins: false` until the relevant upstream fix is released and separately verified.
+- Better Auth 1.7.3 uses the relations-v2 Drizzle adapter with `usePlural: true` and `advanced.database.joins: true`. Account identity is `(providerId, providerAccountId)`; the nullable legacy `issuer` column is retained only through auth rollout verification. Generate the auth schema separately, review it against `database/schema.ts`, and generate migrations with Drizzle; never overwrite the full application schema with the auth-only output.
 - Use `useUserSession()`/module client helpers in the app and `getRequestSession()`/`requireUserSession()` on the server. Do not recreate `useAuth()` or another session state machine.
 - Protected APIs explicitly call `requireUserSession()`; route rules are navigation UX, not the API security boundary. Preserve banned-user policy independently from admin roles.
 - Better Auth tables share `APP_DB`. Do not change auth schema/migrations merely to change Nuxt integration.
-- Versioned terms acceptance remains deferred because legacy `lastAgreedToTerms` timestamps have no defensible legal-version mapping. Never fabricate one during auth cleanup.
+- Deployed client IP resolution trusts only `cf-connecting-ip`, even before bindings are available; forwarded headers are local development compatibility only.
+- Terms and Privacy have independent `version` and `effectiveDate` frontmatter. `updatedAt` is presentation-only. Append-only `legal_acceptances` records are unique per user/document/version and preserve the server-resolved source hash, commit, locale, and acceptance timestamp. Never fabricate records from `lastAgreedToTerms`; it remains a read-only timestamp fallback. New users start with that fallback unset.
+
+## Authored content
+
+- Deployed content uses the stage's GitHub repository/branch/path from `config/environment.ts`, with the existing `CONTENT_CACHE` KV binding and a five-minute blocking refresh interval. Content-only changes do not require an app build. Local requests read `content/` through the filesystem source without a generated all-pages payload.
+- Legal status reads manifest metadata only and returns no Markdown document bodies. Pages/modal load the actual document. Acceptance checks the reviewed version/hash against the current server source and returns 409 on mismatch, 503 if source/cache is unavailable.
+- Only a `version` change triggers re-agreement; source corrections and unrelated commits do not. Versions activate at 00:00 UTC on `effectiveDate`. Translations must match the Japanese canonical version/effective date; missing translations fall back with the actual Japanese source provenance.
+- Changelog remains in D1/Drizzle and is outside the authored-content service.
 
 ## Deployment & infra quirks
 
 - **Cloudflare Flagship** owns true operational flags such as `is-maintenance`; unavailable evaluation fails closed. Catalog admission/category configuration lives in D1. Explicit catalog revalidation uses `POST /api/admin/catalog/revalidate` rather than a global force-update flag.
 - `alchemy.run.ts` is the only infrastructure, D1 migration, and Worker deployment entry point. Do not add a Wrangler config or direct Wrangler deployment script.
-- The old Content D1 and Nitro-cache KV resources remain declared only to preserve retained production resources; neither is bound to the Worker. Do not destroy or repurpose them without explicit operator approval.
+- Content D1 remains unbound. The retained Cache KV is bound as `CONTENT_CACHE` for authored content; preserve its identity and existing keys through the prefixed cache driver.
 - Workers Builds uses an empty build command, `bun run deploy:production` on `main`, and `bun run deploy:development` for the `development` preview branch.
+- Production deploy/adoption requires a clean `main` checkout. CI additionally checks branch/ref metadata and the actual checked-out commit SHA; detached HEAD is permitted only with matching main CI metadata. Normal deploy never passes `--adopt`. Use the explicit `infra:adopt:*` command only after reviewing the infrastructure plan and obtaining applicable operator authorization.
 - **Workers Cron Triggers**:
   - `/api/admin/job/report` — daily at 22:00
   - `/api/admin/job/cleanup` — manual/admin only
 - **Images:** served through `@nuxt/image`. Allowed external domains are whitelisted in `nuxt.config.ts` (Booth, GitHub, R2 public domain).
-- **Storage:** Cloudflare R2 through `files-sdk/r2` for user-uploaded images. Workers use the native `R2` binding only; HTTP credentials and runtime Cloudflare tokens are intentionally unsupported.
+- **Storage:** local `bun run dev` uses `files-sdk/fs` under gitignored `.data/uploads`, served at `/api/_local/files/*`, including imported OAuth avatars. Local Nuxt Image uses direct URLs. Deployed development/production Workers use `files-sdk/r2` with the native stage-specific `R2` binding and public domain; R2 HTTP credentials remain unsupported. The local file route returns 404 in deployed builds.
 - **files-sdk build compatibility:** Keep the direct dependencies `@aws-sdk/client-s3`, `@aws-sdk/lib-storage`, `@aws-sdk/s3-presigned-post`, and `@aws-sdk/s3-request-presigner`. A known files-sdk build defect requires them even though application code must not import or use AWS SDK/R2 HTTP signing. `bun run build` is the regression check.
 - **PWA:** `@vite-pwa/nuxt` is enabled; `sw.js` and `manifest.webmanifest` are served with `must-revalidate`.
 

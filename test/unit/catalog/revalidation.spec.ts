@@ -77,6 +77,7 @@ describe('demand-driven Catalog source enqueueing', () => {
             version: 2,
             type: 'catalog.sync-source',
             sourceId: 'source-1',
+            leaseToken: 'lease-1',
         })
     })
 
@@ -119,6 +120,7 @@ describe('demand-driven Catalog source enqueueing', () => {
             version: 2,
             type: 'catalog.sync-source',
             sourceId: 'source-1',
+            leaseToken: 'lease-1',
         })
     })
 })
@@ -133,6 +135,7 @@ describe('Catalog synchronization state machine', () => {
         const invalidate = vi.fn(async () => undefined)
         const result = await syncCatalogSource({
             sourceId: initial.id,
+            leaseToken: 'lease-1',
             repository: repo,
             providers: new CatalogProviderRegistry([provider]),
             cacheInvalidator: { invalidate },
@@ -147,6 +150,8 @@ describe('Catalog synchronization state machine', () => {
             matchUrl: () => null,
             fetch: async () => ({ status: 'transient_error', errorKind: 'provider-http-500' }),
         })
+        expect(result.stale).toBe(false)
+        if (result.stale) throw new Error('Unexpected stale result')
         expect(result.result.status).toBe('transient_error')
         expect(completeSourceSync).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -186,7 +191,7 @@ describe('Catalog synchronization state machine', () => {
                         nsfw: false,
                         category: null,
                         metadata: {},
-                        publisher: null,
+                        publisherSourceId: null,
                     },
                 }),
             },
@@ -201,6 +206,7 @@ describe('Catalog synchronization state machine', () => {
         const repo = repository({ completeSourceSync: vi.fn(async () => 'catalog-item-1') })
         const result = await syncCatalogSource({
             sourceId: 'source-1',
+            leaseToken: 'lease-1',
             repository: repo,
             providers: new CatalogProviderRegistry([
                 {
@@ -216,6 +222,24 @@ describe('Catalog synchronization state machine', () => {
             },
         })
         expect(result.cacheInvalidationFailed).toBe(true)
+    })
+
+    it('does not fetch or invalidate a stale lease', async () => {
+        const markSyncStarted = vi.fn(async () => null)
+        const completeSourceSync = vi.fn(async () => null)
+        const repo = repository({ markSyncStarted, completeSourceSync })
+        const invalidate = vi.fn()
+        const result = await syncCatalogSource({
+            sourceId: 'source-1',
+            leaseToken: 'old',
+            repository: repo,
+            providers: new CatalogProviderRegistry([]),
+            cacheInvalidator: { invalidate },
+        })
+        expect(result.stale).toBe(true)
+        expect(markSyncStarted).toHaveBeenCalledWith('source-1', 'old', expect.any(Date))
+        expect(completeSourceSync).not.toHaveBeenCalled()
+        expect(invalidate).not.toHaveBeenCalled()
     })
 })
 

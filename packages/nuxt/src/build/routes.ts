@@ -8,18 +8,21 @@ const joinPagePath = (parentPath: string, path: string) => {
     return `${parentPath.replace(/\/$/, '')}/${path}`
 }
 
-export const deriveReservedRootPaths = (
+export const derivePageRoutePolicy = (
     pages: readonly NuxtPage[],
     locales: readonly string[],
-): string[] => {
+): { rootPaths: string[]; staticPaths: string[] } => {
     const localeSet = new Set(locales.map((locale) => locale.toLowerCase()))
     const reserved = new Set<string>()
+    const staticPaths = new Set<string>()
 
     const inspectPath = (path: string) => {
         const segments = path.split('/').filter(Boolean)
         if (segments[0] && localeSet.has(segments[0].toLowerCase())) segments.shift()
         const first = segments[0]
         if (first && !isDynamicSegment(first)) reserved.add(first.toLowerCase())
+        if (segments.every((segment) => !isDynamicSegment(segment)))
+            staticPaths.add(`/${segments.join('/')}`.toLowerCase())
     }
 
     const visit = (entries: readonly NuxtPage[], parentPath = '') => {
@@ -33,5 +36,8 @@ export const deriveReservedRootPaths = (
     }
 
     visit(pages)
-    return [...reserved].sort()
+    return { rootPaths: [...reserved].sort(), staticPaths: [...staticPaths].sort() }
 }
+
+export const deriveReservedRootPaths = (pages: readonly NuxtPage[], locales: readonly string[]) =>
+    derivePageRoutePolicy(pages, locales).rootPaths

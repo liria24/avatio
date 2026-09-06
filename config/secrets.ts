@@ -31,6 +31,26 @@ export const secretDefinitions = [
         required: false,
         purpose: 'Optional Discord integration credential',
     },
+    {
+        key: 'CLOUDFLARE_ANALYTICS_READ_TOKEN',
+        required: false,
+        purpose: 'Optional Cloudflare Web Analytics read access',
+    },
+    {
+        key: 'GOOGLE_SEARCH_CONSOLE_CLIENT_ID',
+        required: false,
+        purpose: 'Optional Google Search Console OAuth client ID',
+    },
+    {
+        key: 'GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET',
+        required: false,
+        purpose: 'Optional Google Search Console OAuth client secret',
+    },
+    {
+        key: 'GOOGLE_SEARCH_CONSOLE_REFRESH_TOKEN',
+        required: false,
+        purpose: 'Optional Google Search Console OAuth refresh token',
+    },
 ] as const
 
 export type AvatioSecretName = (typeof secretDefinitions)[number]['key']
@@ -49,6 +69,10 @@ export const avatioSecretsSchema = z
         OG_IMAGE_SECRET: z.string().min(16, 'must contain at least 16 characters'),
         LIRIA_DISCORD_ENDPOINT: optionalNonEmpty.pipe(z.url('must be a valid URL').optional()),
         LIRIA_DISCORD_ACCESS_TOKEN: optionalNonEmpty,
+        CLOUDFLARE_ANALYTICS_READ_TOKEN: optionalNonEmpty,
+        GOOGLE_SEARCH_CONSOLE_CLIENT_ID: optionalNonEmpty,
+        GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET: optionalNonEmpty,
+        GOOGLE_SEARCH_CONSOLE_REFRESH_TOKEN: optionalNonEmpty,
     })
     .superRefine((value, context) => {
         if (Boolean(value.LIRIA_DISCORD_ENDPOINT) === Boolean(value.LIRIA_DISCORD_ACCESS_TOKEN)) {

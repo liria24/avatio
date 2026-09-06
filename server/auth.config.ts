@@ -131,6 +131,7 @@ export const createAvatioAuthOptions = ({ runtimeConfig }: ServerAuthContext) =>
                             data: {
                                 ...user,
                                 image,
+                                lastAgreedToTerms: null,
                             },
                         }
                     },
@@ -197,7 +198,9 @@ export const createAvatioAuthOptions = ({ runtimeConfig }: ServerAuthContext) =>
         advanced: {
             ...authSchemaOptions.advanced,
             ipAddress: {
-                ipAddressHeaders: ['x-forwarded-for', 'x-real-ip', 'cf-connecting-ip'],
+                ipAddressHeaders: import.meta.dev
+                    ? ['cf-connecting-ip', 'x-forwarded-for', 'x-real-ip']
+                    : ['cf-connecting-ip'],
             },
             useSecureCookies: !import.meta.dev,
         },

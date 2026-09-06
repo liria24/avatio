@@ -8,7 +8,7 @@ import type {
     SourceLease,
 } from '@avatio/core/catalog'
 import type { D1Database } from '@cloudflare/workers-types'
-import { and, eq, isNull, lte, or } from 'drizzle-orm'
+import { and, eq, exists, isNull, lte, or, sql } from 'drizzle-orm'
 import type { BatchItem } from 'drizzle-orm/batch'
 import { drizzle } from 'drizzle-orm/d1'
 
@@ -17,18 +17,11 @@ import {
     items as legacyItems,
     itemSources,
     publisherSources,
-    publishers,
     shops as legacyShops,
 } from '../../../../database/schema'
 
 type Database = ReturnType<typeof drizzle>
 type Statement = BatchItem<'sqlite'>
-
-const runBatch = async (db: Database, statements: Statement[]) => {
-    const first = statements[0]
-    if (!first) return
-    await db.batch([first, ...statements.slice(1)])
-}
 
 const mapSnapshot = (row: typeof itemSources.$inferSelect): ItemSourceSnapshot => ({
     name: row.displayName,
@@ -132,7 +125,12 @@ export class D1CatalogRepository implements CatalogRepository {
         return Boolean(scheduled)
     }
 
-    async claimDueSource(id: string, now: Date, leaseUntil: Date): Promise<SourceLease | null> {
+    async claimDueSource(
+        id: string,
+        now: Date,
+        leaseUntil: Date,
+        force = false,
+    ): Promise<SourceLease | null> {
         const token = crypto.randomUUID()
         const [claimed] = await this.#db
             .update(itemSources)
@@ -144,7 +142,7 @@ export class D1CatalogRepository implements CatalogRepository {
             .where(
                 and(
                     eq(itemSources.id, id),
-                    lte(itemSources.nextCheckAt, now),
+                    force ? undefined : lte(itemSources.nextCheckAt, now),
                     or(isNull(itemSources.syncLeaseUntil), lte(itemSources.syncLeaseUntil, now)),
                 ),
             )
@@ -164,26 +162,34 @@ export class D1CatalogRepository implements CatalogRepository {
             )
     }
 
-    async markSyncStarted(id: string, now: Date): Promise<ItemSource | null> {
+    async markSyncStarted(id: string, leaseToken: string, now: Date): Promise<ItemSource | null> {
         const [source] = await this.#db
             .update(itemSources)
             .set({ syncState: 'syncing', lastCheckedAt: now })
-            .where(eq(itemSources.id, id))
+            .where(and(eq(itemSources.id, id), eq(itemSources.syncLeaseToken, leaseToken)))
             .returning()
         return source ? mapSource(source) : null
     }
 
     async completeSourceSync(input: {
         sourceId: string
+        leaseToken: string
         availability?: ItemSource['availability']
         snapshot?: ProviderSnapshot
         checkedAt: Date
         nextCheckAt: Date
         successful: boolean
         errorKind?: string
-    }): Promise<CatalogItemId> {
+    }): Promise<CatalogItemId | null> {
         const source = await this.findSource(input.sourceId)
-        if (!source) throw new Error(`Catalog source not found: ${input.sourceId}`)
+        if (!source || source.syncLeaseToken !== input.leaseToken) return null
+        const ownsLease = and(
+            eq(itemSources.id, input.sourceId),
+            eq(itemSources.syncLeaseToken, input.leaseToken),
+        )
+        const leaseExists = exists(
+            this.#db.select({ id: itemSources.id }).from(itemSources).where(ownsLease),
+        )
         const [catalogItem] = await this.#db
             .select()
             .from(catalogItems)
@@ -192,53 +198,14 @@ export class D1CatalogRepository implements CatalogRepository {
         if (!catalogItem) throw new Error(`Catalog item not found: ${source.itemId}`)
 
         const statements: Statement[] = []
-        let publisherSourceId = source.publisherSourceId
-        const publisher = input.snapshot?.publisher
-        if (publisher) {
-            const [existingPublisherSource] = await this.#db
-                .select()
-                .from(publisherSources)
-                .where(
-                    and(
-                        eq(publisherSources.providerKey, source.providerKey),
-                        eq(publisherSources.externalId, publisher.externalId),
-                    ),
-                )
-                .limit(1)
-
-            if (existingPublisherSource) {
-                publisherSourceId = existingPublisherSource.id
-                statements.push(
-                    this.#db
-                        .update(publisherSources)
-                        .set({
-                            canonicalUrl: publisher.canonicalUrl,
-                            name: publisher.name,
-                            image: publisher.image,
-                            providerVerified: publisher.providerVerified,
-                            metadata: publisher.metadata,
-                        })
-                        .where(eq(publisherSources.id, existingPublisherSource.id)),
-                )
-            } else {
-                const publisherId = crypto.randomUUID()
-                publisherSourceId = crypto.randomUUID()
-                statements.push(
-                    this.#db.insert(publishers).values({ id: publisherId }),
-                    this.#db.insert(publisherSources).values({
-                        id: publisherSourceId,
-                        publisherId,
-                        providerKey: source.providerKey,
-                        externalId: publisher.externalId,
-                        canonicalUrl: publisher.canonicalUrl,
-                        name: publisher.name,
-                        image: publisher.image,
-                        providerVerified: publisher.providerVerified,
-                        metadata: publisher.metadata,
-                    }),
-                )
-            }
-        }
+        const publisherSourceId = input.snapshot?.publisherSourceId ?? source.publisherSourceId
+        const [publisher] = publisherSourceId
+            ? await this.#db
+                  .select()
+                  .from(publisherSources)
+                  .where(eq(publisherSources.id, publisherSourceId))
+                  .limit(1)
+            : []
 
         const snapshot = input.snapshot
         statements.push(
@@ -269,12 +236,10 @@ export class D1CatalogRepository implements CatalogRepository {
                         ? input.checkedAt
                         : source.lastSuccessfulSyncAt,
                     nextCheckAt: input.nextCheckAt,
-                    syncLeaseUntil: null,
-                    syncLeaseToken: null,
                     lastErrorKind: input.errorKind ?? null,
                     lastErrorAt: input.errorKind ? input.checkedAt : null,
                 })
-                .where(eq(itemSources.id, input.sourceId)),
+                .where(ownsLease),
         )
 
         const legacyProvider =
@@ -287,54 +252,76 @@ export class D1CatalogRepository implements CatalogRepository {
                     this.#db
                         .update(legacyItems)
                         .set({ id: snapshot.reference.externalId })
-                        .where(eq(legacyItems.id, source.externalId)),
+                        .where(and(eq(legacyItems.id, source.externalId), leaseExists)),
                 )
-            if (snapshot.publisher)
+            if (publisher)
                 statements.push(
                     this.#db
                         .insert(legacyShops)
-                        .values({
-                            id: snapshot.publisher.externalId,
-                            platform: legacyProvider,
-                            name: snapshot.publisher.name,
-                            image: snapshot.publisher.image,
-                            verified: snapshot.publisher.providerVerified,
-                        })
+                        .select(
+                            this.#db
+                                .select({
+                                    id: sql<string>`${publisher.externalId}`.as('id'),
+                                    platform: sql<typeof legacyProvider>`${legacyProvider}`.as(
+                                        'platform',
+                                    ),
+                                    name: sql<string>`${publisher.name}`.as('name'),
+                                    image: sql<string | null>`${publisher.image}`.as('image'),
+                                    verified:
+                                        sql<boolean>`${Number(publisher.providerVerified)}`.as(
+                                            'verified',
+                                        ),
+                                })
+                                .from(itemSources)
+                                .where(ownsLease),
+                        )
                         .onConflictDoUpdate({
                             target: legacyShops.id,
                             set: {
                                 platform: legacyProvider,
-                                name: snapshot.publisher.name,
-                                image: snapshot.publisher.image,
-                                verified: snapshot.publisher.providerVerified,
+                                name: publisher.name,
+                                image: publisher.image,
+                                verified: publisher.providerVerified,
                             },
                         }),
                 )
             statements.push(
                 this.#db
                     .insert(legacyItems)
-                    .values({
-                        id: snapshot.reference.externalId,
-                        platform: legacyProvider,
-                        outdated: false,
-                        shopId: snapshot.publisher?.externalId ?? null,
-                        name: snapshot.name,
-                        niceName: catalogItem.displayNameOverride,
-                        category:
-                            catalogItem.categoryOverride ??
-                            snapshot.category?.mappedCategory ??
-                            'other',
-                        image: snapshot.image,
-                        price: snapshot.price,
-                        likes: snapshot.popularityCount,
-                        nsfw: snapshot.nsfw,
-                    })
+                    .select(
+                        this.#db
+                            .select({
+                                id: sql<string>`${snapshot.reference.externalId}`.as('id'),
+                                platform: sql<typeof legacyProvider>`${legacyProvider}`.as(
+                                    'platform',
+                                ),
+                                outdated: sql<boolean>`0`.as('outdated'),
+                                shopId: sql<string | null>`${publisher?.externalId ?? null}`.as(
+                                    'shop_id',
+                                ),
+                                name: sql<string>`${snapshot.name}`.as('name'),
+                                niceName: sql<string | null>`${catalogItem.displayNameOverride}`.as(
+                                    'nice_name',
+                                ),
+                                category: sql<
+                                    typeof legacyItems.$inferSelect.category
+                                >`${catalogItem.categoryOverride ?? snapshot.category?.mappedCategory ?? 'other'}`.as(
+                                    'category',
+                                ),
+                                image: sql<string | null>`${snapshot.image}`.as('image'),
+                                price: sql<string | null>`${snapshot.price}`.as('price'),
+                                likes: sql<number | null>`${snapshot.popularityCount}`.as('likes'),
+                                nsfw: sql<boolean>`${Number(snapshot.nsfw)}`.as('nsfw'),
+                            })
+                            .from(itemSources)
+                            .where(ownsLease),
+                    )
                     .onConflictDoUpdate({
                         target: legacyItems.id,
                         set: {
                             platform: legacyProvider,
                             outdated: false,
-                            shopId: snapshot.publisher?.externalId ?? null,
+                            shopId: publisher?.externalId ?? null,
                             name: snapshot.name,
                             niceName: catalogItem.displayNameOverride,
                             category:
@@ -356,11 +343,20 @@ export class D1CatalogRepository implements CatalogRepository {
                 this.#db
                     .update(legacyItems)
                     .set({ outdated: true })
-                    .where(eq(legacyItems.id, source.externalId)),
+                    .where(and(eq(legacyItems.id, source.externalId), leaseExists)),
             )
         }
 
-        await runBatch(this.#db, statements)
-        return source.itemId
+        // Keep the token until every guarded mirror write has run in the same atomic batch.
+        const release = this.#db
+            .update(itemSources)
+            .set({ syncLeaseUntil: null, syncLeaseToken: null })
+            .where(ownsLease)
+            .returning({ itemId: itemSources.itemId })
+        const first = statements[0]
+        if (!first) return null
+        const results = await this.#db.batch([first, ...statements.slice(1), release])
+        const released = results.at(-1) as { itemId: string }[]
+        return released[0]?.itemId ?? null
     }
 }

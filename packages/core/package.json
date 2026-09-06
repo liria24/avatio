@@ -6,6 +6,8 @@
         ".": "./src/index.ts",
         "./catalog": "./src/catalog/index.ts",
         "./contracts": "./src/contracts/index.ts",
+        "./legal": "./src/legal.ts",
+        "./publishers": "./src/publishers/index.ts",
         "./setups": "./src/setups/index.ts",
         "./users": "./src/users/index.ts"
     },

@@ -1,11 +1,9 @@
-import {
-    CloudflareCacheInvalidator,
-    CloudflareFeatureFlags,
-    R2FileStorage,
-} from '@avatio/cloudflare'
+import { CloudflareCacheInvalidator, CloudflareFeatureFlags } from '@avatio/cloudflare'
 import type { CacheInvalidator, FileStorage } from '@avatio/core'
-import type { CacheContext, R2Bucket } from '@cloudflare/workers-types'
+import type { CacheContext } from '@cloudflare/workers-types'
 import type { H3Event } from 'h3'
+
+import { getStorage } from './storage'
 
 type CloudflareRequestContext = {
     cloudflare?: {
@@ -19,12 +17,20 @@ export const getFeatureFlags = (event?: H3Event) =>
     new CloudflareFeatureFlags(getRuntimeEnv(event).FLAGS)
 
 export const getFileStorage = (event?: H3Event): FileStorage => {
-    const env = getRuntimeEnv(event)
-    const bucket = env.R2 as R2Bucket | undefined
-    const publicBaseUrl = getRuntimeEnvString('R2_PUBLIC_BASE_URL', event)
-    if (!bucket) throw new Error('Missing required Cloudflare R2 binding: R2')
-    if (!publicBaseUrl) throw new Error('Missing required R2_PUBLIC_BASE_URL runtime setting.')
-    return new R2FileStorage({ bucket, publicBaseUrl })
+    const files = getStorage(event)
+    return {
+        async importFromUrl({ sourceUrl, destinationKey }) {
+            const response = await fetch(sourceUrl)
+            if (!response.ok) throw new Error(`File import failed with status ${response.status}.`)
+            await files.upload(destinationKey, await response.blob(), {
+                contentType: response.headers.get('content-type') ?? undefined,
+            })
+            return { key: destinationKey, url: await files.url(destinationKey) }
+        },
+        async delete(key) {
+            await files.delete(key)
+        },
+    }
 }
 
 export const getRequestCacheContext = (event: H3Event) =>

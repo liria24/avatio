@@ -38,7 +38,12 @@ export const enqueueDueCatalogSources = async ({
         claimed.push(lease)
 
         try {
-            await queue.enqueue({ version: 2, type: 'catalog.sync-source', sourceId })
+            await queue.enqueue({
+                version: 2,
+                type: 'catalog.sync-source',
+                sourceId,
+                leaseToken: lease.token,
+            })
             enqueued.push(sourceId)
         } catch {
             failed.push(sourceId)

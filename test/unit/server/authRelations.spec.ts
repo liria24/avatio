@@ -5,8 +5,8 @@ import * as schema from '../../../database/schema'
 import { authSchemaOptions } from '../../../server/utils/authSchemaOptions'
 
 describe('Better Auth relations', () => {
-    it('keeps database joins disabled while upstream #10631 is open', () => {
-        expect(authSchemaOptions.advanced.database.joins).toBe(false)
+    it('enables database joins with Better Auth 1.7.3', () => {
+        expect(authSchemaOptions.advanced.database.joins).toBe(true)
     })
 
     it('falls back to separate session and user queries on RC.4', async () => {

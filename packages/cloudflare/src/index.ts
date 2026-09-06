@@ -1,6 +1,6 @@
 export * from './ai/workers-ai'
 export * from './cache/cache-invalidator'
 export * from './database/catalog-repository'
+export * from './database/publisher-repository'
 export * from './flagship/feature-flags'
 export * from './queue/catalog-sync-queue'
-export * from './storage/r2-file-storage'

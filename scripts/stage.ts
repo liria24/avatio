@@ -1,14 +1,18 @@
+import { execFileSync } from 'node:child_process'
 import { join } from 'node:path'
 
+import {
+    alchemyCommand,
+    stageActions,
+    validateDeployment,
+    type StageAction,
+} from '../config/deployment'
 import { getStageConfig, parseAvatioStage, type AvatioStage } from '../config/environment'
 import { validateSecrets } from '../config/secrets'
 
-const actions = ['check', 'dev', 'plan', 'deploy'] as const
-type StageAction = (typeof actions)[number]
-
 const parseAction = (value: string | undefined): StageAction => {
-    if (actions.includes(value as StageAction)) return value as StageAction
-    throw new Error(`Action must be one of: ${actions.join(', ')}`)
+    if (stageActions.includes(value as StageAction)) return value as StageAction
+    throw new Error(`Action must be one of: ${stageActions.join(', ')}`)
 }
 
 const run = async (command: string[], env = process.env) => {
@@ -24,20 +28,35 @@ const run = async (command: string[], env = process.env) => {
 }
 
 const validateBranchPolicy = (action: StageAction, stage: AvatioStage) => {
-    if (action !== 'deploy') return
-    const branch = process.env.WORKERS_CI_BRANCH
-    if (!branch) return
-    const expectedBranch = stage === 'production' ? 'main' : 'development'
-    if (branch !== expectedBranch) {
-        throw new Error(
-            `Refusing ${stage} deploy from branch ${branch}; expected ${expectedBranch}.`,
-        )
+    if (action !== 'deploy' && action !== 'adopt') return
+    const workersBranch = process.env.WORKERS_CI_BRANCH
+    if (stage === 'development') {
+        if (workersBranch && workersBranch !== 'development')
+            throw new Error('Development CI deployment requires the development branch.')
+        return
     }
+    const git = (...args: string[]) => execFileSync('git', args, { encoding: 'utf8' }).trim()
+    const branch = git('rev-parse', '--abbrev-ref', 'HEAD')
+    const isCI = Boolean(process.env.CI || workersBranch || process.env.GITHUB_ACTIONS)
+    validateDeployment(stage, {
+        branch: branch === 'HEAD' ? null : branch,
+        commit: git('rev-parse', 'HEAD'),
+        dirty: Boolean(git('status', '--porcelain', '--untracked-files=normal')),
+        ci: isCI
+            ? {
+                  branch: workersBranch,
+                  ref: process.env.GITHUB_REF,
+                  commit: process.env.WORKERS_CI_COMMIT_SHA ?? process.env.GITHUB_SHA,
+              }
+            : undefined,
+    })
 }
 
 const action = parseAction(Bun.argv[2])
 const stage = parseAvatioStage(Bun.argv[3] ?? '')
 const loaded = Bun.argv[4] === '--validated-env'
+
+validateBranchPolicy(action, stage)
 
 if (!loaded) {
     const envFile = join(process.cwd(), `.env.${stage}`)
@@ -66,15 +85,11 @@ if (!secrets.success) {
     process.exit(1)
 }
 
-validateBranchPolicy(action, stage)
-
 if (action === 'check') {
     console.info(`${stage} configuration is valid.`)
 } else if (action === 'dev') {
     if (stage !== 'development') throw new Error('The dev command only supports development.')
-    await run(['bunx', 'alchemy', 'dev', '--stage', stage])
-} else if (action === 'plan') {
-    await run(['bunx', 'alchemy', 'plan', '--stage', stage])
+    await run(alchemyCommand(action, stage))
 } else {
-    await run(['bunx', 'alchemy', 'deploy', '--stage', stage, '--adopt', '--yes'])
+    await run(alchemyCommand(action, stage))
 }

@@ -20,7 +20,6 @@ const platformOptions = [
 ] satisfies { label: string; value: Platform }[]
 
 const state = reactive({
-    isMaintenance: false,
     allowedBoothCategoryId: [] as string[],
     categoryOverrides: [] as CategoryOverride[],
 })
@@ -34,7 +33,6 @@ const { data, status, refresh } = await useFetch<AppConfig>('/api/admin/config',
 })
 
 const applyConfig = (config: AppConfig) => {
-    state.isMaintenance = config.isMaintenance
     state.allowedBoothCategoryId = config.allowedBoothCategoryId.map(String)
     state.categoryOverrides = Object.entries(config.specificItemCategories).flatMap(
         ([platform, categories]) =>
@@ -68,7 +66,7 @@ const reset = async () => {
     validationError.value = null
 }
 
-const createPayload = (): AppConfig | null => {
+const createPayload = (): WritableAppConfig | null => {
     const allowedBoothCategoryId = state.allowedBoothCategoryId.map((id) => Number(id.trim()))
     if (allowedBoothCategoryId.some((id) => !Number.isInteger(id))) {
         validationError.value = 'Allowed Booth category IDs must be integers.'
@@ -96,7 +94,6 @@ const createPayload = (): AppConfig | null => {
     validationError.value = null
     return {
         allowedBoothCategoryId: [...new Set(allowedBoothCategoryId)],
-        isMaintenance: state.isMaintenance,
         specificItemCategories,
     }
 }
@@ -179,7 +176,7 @@ useSeo({
                 <UPageCard title="Runtime flags" variant="subtle">
                     <div class="flex flex-col gap-4">
                         <USwitch
-                            v-model="state.isMaintenance"
+                            :model-value="data?.isMaintenance"
                             label="Maintenance mode"
                             description="Managed in Cloudflare Flagship; this value is read-only here."
                             color="neutral"

@@ -25,7 +25,6 @@ const configSchema = z.object({
         .array()
         .transform((ids) => [...new Set(ids)].sort((a, b) => a - b))
         .default([]),
-    isMaintenance: z.boolean().default(false),
     specificItemCategories: z
         .object({
             booth: z.record(z.string(), itemCategorySchema).default({}),

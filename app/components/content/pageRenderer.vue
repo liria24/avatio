@@ -1,22 +1,23 @@
 <script lang="ts" setup>
 import type { AvatioContentPage } from '@avatio/nuxt/runtime/content'
-import { joinURL } from 'ufo'
 
 const props = defineProps<{ slug: string }>()
-const { app } = useAppConfig()
 const { locale, localeProperties } = useI18n()
 
 const { data, error } = await useAvatioContent(() => props.slug, locale)
-if (error.value || !data.value)
-    throw createError({ statusCode: 404, statusMessage: 'Page not found.' })
+if (error.value)
+    throw createError({
+        statusCode: error.value.statusCode ?? 503,
+        statusMessage:
+            error.value.statusCode === 404
+                ? 'Page not found.'
+                : 'Content is temporarily unavailable.',
+    })
+if (!data.value) throw createError({ statusCode: 404, statusMessage: 'Page not found.' })
 
 const page = computed(() => data.value as AvatioContentPage)
 const frontmatter = computed(() => page.value.frontmatter)
-const commitLogUrl = computed(() =>
-    frontmatter.value.commitLogPath
-        ? joinURL(app.repo, 'commits/main', frontmatter.value.commitLogPath)
-        : null,
-)
+const commitLogUrl = computed(() => page.value.source.historyUrl)
 
 const ogImage = await useOgImage({
     title: frontmatter.value.title,
@@ -57,7 +58,13 @@ if (schemaOrg) {
             {{ frontmatter.title }}
         </h1>
 
-        <div class="flex items-center gap-2 empty:hidden">
+        <div class="flex flex-wrap items-center gap-2 empty:hidden">
+            <UBadge
+                v-if="frontmatter.version"
+                :label="$t('content.version', { version: frontmatter.version })"
+                variant="soft"
+                color="neutral"
+            />
             <UBadge
                 v-if="frontmatter.updatedAt"
                 :label="$t('content.updatedAt', { date: frontmatter.updatedAt })"
@@ -81,6 +88,20 @@ if (schemaOrg) {
                 color="neutral"
                 size="xs"
             />
+            <UButton
+                v-if="frontmatter.version && page.source.sourceUrl"
+                :to="page.source.sourceUrl"
+                target="_blank"
+                external
+                :label="$t('content.sourceRevision')"
+                :title="page.source.sourceRevision"
+                variant="ghost"
+                color="neutral"
+                size="xs"
+            />
+            <code v-if="frontmatter.version" class="text-muted text-xs break-all">{{
+                page.source.sourceRevision
+            }}</code>
         </div>
 
         <MarkdownDocument

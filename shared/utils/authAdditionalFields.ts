@@ -10,5 +10,6 @@ export const authAdditionalFields = {
     lastAgreedToTerms: {
         type: 'date',
         required: false,
+        input: false,
     },
 } as const

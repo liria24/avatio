@@ -2,7 +2,6 @@ import { resolve } from 'node:path'
 
 import {
     addImportsDir,
-    addServerHandler,
     addTemplate,
     addTypeTemplate,
     createResolver,
@@ -10,8 +9,7 @@ import {
     updateTemplates,
 } from '@nuxt/kit'
 
-import { loadContentPages } from './build/content'
-import { deriveReservedRootPaths } from './build/routes'
+import { derivePageRoutePolicy } from './build/routes'
 
 export interface AvatioNuxtModuleOptions {
     contentDirectory: string
@@ -33,43 +31,44 @@ export default defineNuxtModule<AvatioNuxtModuleOptions>({
         const resolver = createResolver(import.meta.url)
         const contentDirectory = resolve(nuxt.options.rootDir, options.contentDirectory)
         let reservedRootPaths: string[] = []
+        let staticPagePaths: string[] = []
 
-        const contentTemplate = addTemplate({
-            filename: 'avatio/content.mjs',
+        const contentConfigTemplate = addTemplate({
+            filename: 'avatio/content-config.mjs',
             write: true,
-            getContents: async () => {
-                const pages = await loadContentPages(contentDirectory, options.locales)
-                return [
-                    `export const contentPages = ${JSON.stringify(pages)}`,
-                    `export const contentLocales = ${JSON.stringify(options.locales)}`,
-                    `export const fallbackLocale = ${JSON.stringify(options.fallbackLocale)}`,
-                ].join('\n')
-            },
+            getContents: () =>
+                `export const contentConfig = ${JSON.stringify({
+                    contentDirectory: nuxt.options.dev ? contentDirectory : '',
+                    locales: options.locales,
+                    fallbackLocale: options.fallbackLocale,
+                })}`,
         })
         const routesTemplate = addTemplate({
             filename: 'avatio/reserved-root-paths.mjs',
             write: true,
             getContents: () =>
-                `export const reservedRootPaths = new Set(${JSON.stringify(reservedRootPaths)})`,
+                [
+                    `export const reservedRootPaths = new Set(${JSON.stringify(reservedRootPaths)})`,
+                    `export const staticPagePaths = new Set(${JSON.stringify(staticPagePaths)})`,
+                    `export const routeLocales = ${JSON.stringify(options.locales)}`,
+                ].join('\n'),
         })
 
-        nuxt.options.alias['#avatio/content'] = contentTemplate.dst
+        nuxt.options.alias['#avatio/content-config'] = contentConfigTemplate.dst
         nuxt.options.alias['#avatio/routes'] = routesTemplate.dst
-        nuxt.options.watch.push(contentDirectory)
 
         addTypeTemplate(
             {
                 filename: 'types/avatio-generated.d.ts',
                 getContents: () => `
-declare module '#avatio/content' {
-    import type { AvatioSourceContentPage } from '@avatio/nuxt/runtime/content'
-    export const contentPages: Record<string, AvatioSourceContentPage>
-    export const contentLocales: string[]
-    export const fallbackLocale: string
+declare module '#avatio/content-config' {
+    export const contentConfig: { contentDirectory: string; locales: string[]; fallbackLocale: string }
 }
 
 declare module '#avatio/routes' {
     export const reservedRootPaths: Set<string>
+    export const staticPagePaths: Set<string>
+    export const routeLocales: string[]
 }
 `,
             },
@@ -77,19 +76,19 @@ declare module '#avatio/routes' {
         )
 
         addImportsDir(resolver.resolve('./runtime/app/composables'))
-        addServerHandler({
-            route: '/api/avatio/content/:slug',
-            handler: resolver.resolve('./runtime/server/api/content.get'),
-        })
 
         nuxt.hook('pages:resolved', async (pages) => {
-            reservedRootPaths = deriveReservedRootPaths(pages, options.locales)
+            const policy = derivePageRoutePolicy(
+                [
+                    ...pages,
+                    { path: '/api/avatio/content' },
+                    { path: nuxt.options.app.buildAssetsDir },
+                ],
+                options.locales,
+            )
+            reservedRootPaths = policy.rootPaths
+            staticPagePaths = policy.staticPaths
             await updateTemplates({ filter: (template) => template.dst === routesTemplate.dst })
-        })
-
-        nuxt.hook('builder:watch', async (_event, path) => {
-            if (!resolve(nuxt.options.rootDir, path).startsWith(contentDirectory)) return
-            await updateTemplates({ filter: (template) => template.dst === contentTemplate.dst })
         })
     },
 })

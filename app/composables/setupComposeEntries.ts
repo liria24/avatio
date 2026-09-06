@@ -1,23 +1,40 @@
-import type { WritableComputedRef } from 'vue'
-import type { z } from 'zod'
+import type { SetupComposeForm } from '@avatio/core/setups'
+import type { Ref } from 'vue'
 
-type EditorSchema = DeepNonNullable<z.infer<typeof setupsClientFormSchema>>
-export type SetupComposeEntry = EditorSchema['entries'][number]
+export type SetupComposeEntry = SetupComposeForm['items'][number] & {
+    id: string
+    platform: Platform | null
+    name: string
+    image: string | null
+}
 
-export const useSetupComposeEntries = (entries: WritableComputedRef<SetupComposeEntry[]>) => {
+export const useSetupComposeEntries = (
+    items: Readonly<Ref<SetupComposeForm['items']>>,
+    setItems: (items: SetupComposeForm['items']) => void,
+    entities: Ref<Record<string, Item>>,
+) => {
     const toast = useToast()
     const { t } = useI18n()
-    const totalItemsCount = computed(() => entries.value.length)
-
-    const isItemAlreadyAdded = (itemId: Item['id']) =>
-        entries.value.some((item) => item.id === itemId)
+    const entries = computed<SetupComposeEntry[]>(() =>
+        items.value.map((item) => ({
+            ...(entities.value[item.itemId] ?? {
+                id: item.itemId,
+                platform: null,
+                name: item.itemId,
+                image: null,
+            }),
+            ...item,
+            id: item.itemId,
+        })),
+    )
+    const totalItemsCount = computed(() => items.value.length)
 
     const addItem = (item: Item) => {
         if (!item?.id || !item?.category) {
             console.error('Invalid item data:', item)
             return
         }
-        if (isItemAlreadyAdded(item.id)) {
+        if (items.value.some(({ itemId }) => itemId === item.id)) {
             toast.add({
                 id: 'item-duplicate',
                 icon: 'mingcute:warning-line',
@@ -28,75 +45,80 @@ export const useSetupComposeEntries = (entries: WritableComputedRef<SetupCompose
         }
 
         const parsedCategory = itemCategorySchema.safeParse(item.category)
-        const category = parsedCategory.success ? parsedCategory.data : 'other'
-        if (!parsedCategory.success)
-            console.warn('Invalid item category, using other:', item.category)
-
-        entries.value.push({
-            ...item,
-            id: item.id.toString(),
-            category,
-            note: '',
-            unsupported: false,
-            image: item.image ?? '',
-            niceName: item.niceName ?? '',
-            price: item.price ?? '',
-            likes: item.likes ?? 0,
-            shop: item.shop ? { ...item.shop, image: item.shop.image ?? '' } : undefined,
-        })
+        entities.value = { ...entities.value, [item.id]: item }
+        setItems([
+            ...items.value,
+            {
+                itemId: item.id,
+                category: parsedCategory.success ? parsedCategory.data : 'other',
+                note: '',
+                unsupported: false,
+                shapekeys: [],
+            },
+        ])
     }
 
-    const removeItem = (category: ItemCategory, id: Item['id']) => {
-        const index = entries.value.findIndex(
-            (item) => item.id === id && item.category === category,
+    const updateItem = (itemId: string, update: Partial<SetupComposeForm['items'][number]>) =>
+        setItems(
+            items.value.map((item) => (item.itemId === itemId ? { ...item, ...update } : item)),
         )
-        if (index !== -1) entries.value.splice(index, 1)
-        else console.warn('Item not found:', id)
-    }
 
-    const changeItemCategory = (id: Item['id'], category: ItemCategory) => {
-        if (!itemCategorySchema.safeParse(category).success) {
-            console.error('Invalid new category:', category)
-            return
-        }
-        const item = entries.value.find((entry) => entry.id === id)
-        if (item) item.category = category
-        else console.warn('Item not found:', id)
-    }
+    const removeItem = (category: ItemCategory, itemId: string) =>
+        setItems(items.value.filter((item) => item.itemId !== itemId || item.category !== category))
 
-    const findEntry = (category: ItemCategory, id: Item['id']) =>
-        entries.value.find((item) => item.id === id && item.category === category)
+    const changeItemCategory = (itemId: string, category: ItemCategory) => {
+        if (itemCategorySchema.safeParse(category).success) updateItem(itemId, { category })
+    }
 
     const addShapekey = (input: {
         category: ItemCategory
-        id: Item['id']
+        id: string
         name: string
         value: number
     }) => {
-        const item = findEntry(input.category, input.id)
-        if (!item) {
-            console.warn('Item not found:', input.id)
-            return
-        }
-        item.shapekeys ??= []
-        item.shapekeys.push({ name: input.name, value: input.value })
+        const item = items.value.find(
+            ({ itemId, category }) => itemId === input.id && category === input.category,
+        )
+        if (item)
+            updateItem(input.id, {
+                shapekeys: [...item.shapekeys, { name: input.name, value: input.value }],
+            })
     }
 
-    const removeShapekey = (input: { category: ItemCategory; id: Item['id']; index: number }) => {
-        const item = findEntry(input.category, input.id)
-        if (!item?.shapekeys || input.index < 0 || input.index >= item.shapekeys.length) {
-            console.warn('Shapekey not found:', input.id, input.index)
-            return
-        }
-        item.shapekeys.splice(input.index, 1)
+    const removeShapekey = (input: { category: ItemCategory; id: string; index: number }) => {
+        const item = items.value.find(
+            ({ itemId, category }) => itemId === input.id && category === input.category,
+        )
+        if (item)
+            updateItem(input.id, {
+                shapekeys: item.shapekeys.filter((_, index) => index !== input.index),
+            })
+    }
+
+    const reorderCategory = (category: ItemCategory, reordered: SetupComposeEntry[]) => {
+        const byCategory = Object.fromEntries(
+            itemCategorySchema.options.map((key) => [
+                key,
+                key === category
+                    ? reordered.flatMap(({ itemId }) => {
+                          const item = items.value.find((candidate) => candidate.itemId === itemId)
+                          return item ? [item] : []
+                      })
+                    : items.value.filter((item) => item.category === key),
+            ]),
+        ) as Record<ItemCategory, SetupComposeForm['items']>
+        setItems(itemCategorySchema.options.flatMap((key) => byCategory[key]))
     }
 
     return {
+        entries,
         totalItemsCount,
         addItem,
+        updateItem,
         removeItem,
         changeItemCategory,
         addShapekey,
         removeShapekey,
+        reorderCategory,
     }
 }

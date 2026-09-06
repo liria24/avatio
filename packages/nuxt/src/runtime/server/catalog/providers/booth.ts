@@ -6,10 +6,10 @@ import type {
 } from '@avatio/core/catalog'
 import { matchBoothCatalogUrl } from '@avatio/nuxt/runtime/catalog/references'
 
-import type { ProviderHttpClient } from './http'
+import type { ProviderHttpClient, ResolvePublisherSource } from './http'
 import { isConfirmedWithdrawalStatus, withdrawalErrorKind } from './http'
 
-interface BoothResponse {
+export interface BoothResponse {
     id: string
     url: string
     name: string
@@ -35,6 +35,7 @@ export interface BoothProviderOptions {
     allowedCategoryKeys: ReadonlySet<string>
     categoryMap: Readonly<Record<string, ItemCategory>>
     http: ProviderHttpClient
+    resolvePublisherSource: ResolvePublisherSource
 }
 
 export class BoothCatalogProvider implements CatalogProvider {
@@ -78,6 +79,16 @@ export class BoothCatalogProvider implements CatalogProvider {
         if (!this.options.allowedCategoryKeys.has(rawCategoryKey))
             return { status: 'policy_rejected', errorKind: 'provider-category-not-admitted' }
 
+        const publisherSourceId = await this.options.resolvePublisherSource({
+            providerKey: this.key,
+            externalId: item.shop.subdomain,
+            canonicalUrl: item.shop.url || `https://${item.shop.subdomain}.booth.pm/`,
+            name: item.shop.name,
+            image: item.shop.thumbnail_url || null,
+            providerVerified: Boolean(item.shop.verified),
+            metadata: {},
+        })
+
         return {
             status: 'available',
             snapshot: {
@@ -99,14 +110,7 @@ export class BoothCatalogProvider implements CatalogProvider {
                     mappedCategory: this.options.categoryMap[rawCategoryKey] ?? null,
                 },
                 metadata: { description: item.description, tags: item.tags },
-                publisher: {
-                    externalId: item.shop.subdomain,
-                    canonicalUrl: item.shop.url || `https://${item.shop.subdomain}.booth.pm/`,
-                    name: item.shop.name,
-                    image: item.shop.thumbnail_url || null,
-                    providerVerified: Boolean(item.shop.verified),
-                    metadata: {},
-                },
+                publisherSourceId,
             },
         }
     }

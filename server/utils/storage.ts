@@ -1,11 +1,14 @@
 import { Files } from 'files-sdk'
 import { r2 } from 'files-sdk/r2'
 import type { R2Bucket } from 'files-sdk/r2'
+import type { H3Event } from 'h3'
+
+import { createLocalStorage } from '../storage/local'
 
 type StorageClient = InstanceType<typeof Files>
 
-const requireEnv = (name: 'R2_PUBLIC_BASE_URL' | 'SELF_URL') => {
-    const value = getRuntimeEnvString(name)
+const requireEnv = (name: 'R2_PUBLIC_BASE_URL', event?: H3Event) => {
+    const value = getRuntimeEnvString(name, event)
     if (typeof value !== 'string' || !value)
         throw new Error(
             `Missing required environment variable: ${name}. Ensure it is set before starting the server.`,
@@ -13,12 +16,12 @@ const requireEnv = (name: 'R2_PUBLIC_BASE_URL' | 'SELF_URL') => {
     return value
 }
 
-let storageClient: StorageClient | null = null
+const localStorage = import.meta.dev ? createLocalStorage('.data/uploads') : null
 
-const getStorage = () => {
-    if (storageClient) return storageClient
+export const getStorage = (event?: H3Event): StorageClient => {
+    if (localStorage) return localStorage
 
-    const binding = getRuntimeEnv().R2 as R2Bucket | undefined
+    const binding = getRuntimeEnv(event).R2 as R2Bucket | undefined
     if (!binding || typeof binding !== 'object')
         throw new Error('Missing required Cloudflare R2 binding: R2')
 
@@ -26,16 +29,12 @@ const getStorage = () => {
     // R2 credentials are not safe in a Worker; all reads and writes stay on
     // the native binding. The direct AWS SDK dependencies remain in
     // package.json solely for files-sdk's build-time compatibility bug.
-    storageClient = new Files({
+    return new Files({
         adapter: r2({
             binding,
-            publicBaseUrl:
-                getRuntimeEnvString('STAGE') === 'development'
-                    ? `${requireEnv('SELF_URL')}/api/_local/r2`
-                    : requireEnv('R2_PUBLIC_BASE_URL'),
+            publicBaseUrl: requireEnv('R2_PUBLIC_BASE_URL', event),
         }),
     })
-    return storageClient
 }
 
 export const storage = new Proxy({} as StorageClient, {

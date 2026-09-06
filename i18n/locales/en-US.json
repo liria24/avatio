@@ -28,7 +28,11 @@
         "fallbackDescription": "Showing Japanese version as fallback.",
         "updatedAt": "Last updated: {date}",
         "effectiveDate": "Effective date: {date}",
-        "changeLog": "Changelog"
+        "changeLog": "Changelog",
+        "version": "Version: {version}",
+        "sourceRevision": "View source revision",
+        "retry": "Try again",
+        "loadError": "Could not load the legal documents. Please try again."
     },
     "itemCategory": {
         "avatar": "Base Avatar",
@@ -94,24 +98,23 @@
                 "linkExistsDescription": "Cannot add the same link."
             }
         },
-        "shop": {
-            "title": "Shop Verification",
-            "step1": "1. Select one item from your shop and enter its URL",
-            "step2": "2. Add the following code to the item description",
-            "stepDescription": "Only items that can be registered in Avatio are eligible for verification. Private items and items from unsupported platforms cannot be used. GitHub shops are currently not supported.",
-            "generatingCode": "Generating code...",
-            "verify": "Verify Shop",
-            "newShop": "Verify New Shop",
-            "unverify": "Unverify Shop",
-            "unverifyConfirm": "Are you sure you want to unverify this shop?",
-            "deleteCodeNote": "Please delete the code from the item description after verification is complete",
-            "notVerifiable": "This URL is not a verifiable item",
-            "noVerifiedShops": "No verified shops",
+        "publisher": {
+            "title": "Publisher Verification",
+            "step1": "1. Enter an item URL that proves the publisher source",
+            "step2": "2. Add this code using the provider instruction",
+            "createChallenge": "Create verification challenge",
+            "instruction": "For BOOTH, add this code to the item description, save it, then verify.",
+            "verify": "Verify Publisher",
+            "newPublisher": "Verify New Publisher",
+            "unverify": "Remove Verification",
+            "unverifyConfirm": "Remove ownership verification for this publisher source?",
+            "none": "No verified publisher sources",
             "toast": {
-                "verified": "Shop verified",
-                "verifyFailed": "Failed to verify shop",
-                "unverified": "Shop unverified",
-                "unverifyFailed": "Failed to unverify shop"
+                "challengeFailed": "Failed to create verification challenge",
+                "verified": "Publisher verified",
+                "verifyFailed": "Failed to verify publisher",
+                "unverified": "Publisher verification removed",
+                "unverifyFailed": "Failed to remove publisher verification"
             }
         },
         "account": {
@@ -549,7 +552,7 @@
         "objectToBanSubject": "Appeal user ban",
         "editProfile": "Edit Profile",
         "reportUser": "Report User",
-        "shops": "Shops",
+        "publishers": "Publishers",
         "setups": "Setups"
     },
     "badges": {
@@ -557,7 +560,7 @@
         "contributor": "Contributor",
         "translator": "Translator",
         "alphaTester": "Alpha Tester",
-        "shopOwner": "Shop Owner",
+        "publisherOwner": "Publisher Owner",
         "patrol": "Patrol",
         "ideaMan": "Idea Man"
     },

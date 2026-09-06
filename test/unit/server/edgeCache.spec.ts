@@ -1,8 +1,30 @@
+import { matchSetupPath } from '@avatio/core/setups'
+import { derivePageRoutePolicy } from '@avatio/nuxt/build/routes'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+const routes = derivePageRoutePolicy(
+    [
+        { path: '/admin' },
+        { path: '/api' },
+        { path: '/settings' },
+        { path: '/setup/compose' },
+        { path: '/setup/:id' },
+        { path: '/:id' },
+    ],
+    ['ja', 'en'],
+)
 
 beforeEach(() => {
     vi.stubGlobal('logger', () => ({ error: vi.fn() }))
     vi.stubGlobal('runAfterResponse', (promise: Promise<unknown>) => void promise)
+    vi.stubGlobal('getSetupIdFromPath', (path: string) =>
+        matchSetupPath(
+            path,
+            { isReserved: (id) => routes.rootPaths.includes(id.toLowerCase()) },
+            ['ja', 'en'],
+            new Set(routes.staticPaths),
+        ),
+    )
 })
 
 afterEach(() => {
@@ -11,6 +33,25 @@ afterEach(() => {
 })
 
 describe('edge cache policy', () => {
+    it.each(['/Abc_123-', '/en/Abc_123-', '/ja/Abc_123-', '/setup/admin', '/en/setup/admin'])(
+        'caches canonical Setup documents at %s',
+        async (path) => {
+            const { getDocumentCacheHeaders } = await import('../../../server/utils/edgeCache')
+            expect(getDocumentCacheHeaders(path, 200)).toMatchObject({
+                'Cache-Control': 'public, max-age=60',
+                'Cache-Tag': `setup:${path.endsWith('admin') ? 'admin' : 'Abc_123-'}`,
+            })
+        },
+    )
+    it.each(['/admin', '/api', '/en/admin', '/en/api', '/en/setup/compose', '/setup/%63ompose'])(
+        'does not classify reserved routes as Setups: %s',
+        async (path) => {
+            const { getDocumentCacheHeaders } = await import('../../../server/utils/edgeCache')
+            expect(getDocumentCacheHeaders(path, 200)).toEqual({
+                'Cache-Control': 'private, no-store',
+            })
+        },
+    )
     it('marks anonymous public documents as edge-cacheable and varies on cookies', async () => {
         const { EDGE_CACHE_CONTROL, getDocumentCacheHeaders } =
             await import('../../../server/utils/edgeCache')

@@ -68,6 +68,18 @@ describe('workspace architecture boundaries', () => {
         expect(violations).toEqual([])
     })
 
+    it('keeps Catalog coupled to Publishers only by PublisherSourceId', async () => {
+        const root = join(process.cwd(), 'packages/core/src/catalog')
+        const violations: string[] = []
+
+        for (const file of await sourceFiles(root)) {
+            const source = await readFile(file, 'utf8')
+            if (/Publisher(?!SourceId)/.test(source)) violations.push(relative(process.cwd(), file))
+        }
+
+        expect(violations).toEqual([])
+    })
+
     it('keeps concrete AI model IDs out of routes and application code', async () => {
         const roots = ['app', 'server', 'packages/core/src', 'packages/nuxt/src'].map((path) =>
             join(process.cwd(), path),

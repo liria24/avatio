@@ -1,9 +1,8 @@
+import type { PublisherSourceId } from '../../publishers/domain/publisher'
 import type { CategoryOverrideOrigin, ItemCategory } from './category'
 
 export type CatalogItemId = string
 export type ItemSourceId = string
-export type PublisherId = string
-export type PublisherSourceId = string
 
 export const sourceAvailabilities = [
     'available',
@@ -60,24 +59,4 @@ export interface ItemSource {
     syncLeaseToken: string | null
     lastErrorKind: string | null
     lastErrorAt: Date | null
-}
-
-export interface Publisher {
-    id: PublisherId
-    displayNameOverride: string | null
-    imageOverride: string | null
-    createdAt: Date
-    updatedAt: Date
-}
-
-export interface PublisherSource {
-    id: PublisherSourceId
-    publisherId: PublisherId
-    providerKey: string
-    externalId: string
-    canonicalUrl: string
-    name: string
-    image: string | null
-    providerVerified: boolean
-    metadata: Record<string, unknown>
 }

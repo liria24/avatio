@@ -1,33 +1,32 @@
 <script lang="ts" setup>
 import { VueDraggable } from 'vue-draggable-plus'
 
+import type { SetupComposeEntry } from '~/composables/setupComposeEntries'
+
 const itemCategory = useItemCategory()
 const {
-    state,
+    entries,
     totalItemsCount,
     addItem: add,
     removeItem,
     changeItemCategory,
     addShapekey,
     removeShapekey,
+    updateItem,
+    reorderCategory,
 } = useSetupCompose()
 
 const popoverItemSearch = ref(false)
 
-type SetupComposeEntry = (typeof state.value.entries)[number]
 type CategoryKey = ItemCategory
 
 const itemCategories = itemCategorySchema.options
 
 const getItemsByCategory = (category: CategoryKey) =>
-    state.value.entries.filter((entry) => entry.category === category)
+    entries.value.filter((entry) => entry.category === category)
 
 const setItemsByCategory = (category: CategoryKey, entries: SetupComposeEntry[]) => {
-    const grouped = Object.fromEntries(
-        itemCategories.map((key) => [key, getItemsByCategory(key)]),
-    ) as Record<CategoryKey, SetupComposeEntry[]>
-    grouped[category] = entries
-    state.value.entries = itemCategories.flatMap((key) => grouped[key])
+    reorderCategory(category, entries)
 }
 
 const { data: ownedAvatars } = await useFetch('/api/items/owned-avatars', {
@@ -130,14 +129,16 @@ const addItem = async (item: Item) => {
                         <SetupsComposeItem
                             v-for="item in getItemsByCategory(category)"
                             :key="`item-${item.id}`"
-                            v-model:unsupported="item.unsupported"
-                            v-model:shapekeys="item.shapekeys"
-                            v-model:note="item.note"
+                            :unsupported="item.unsupported"
+                            :shapekeys="item.shapekeys"
+                            :note="item.note"
                             :item="item"
                             @change-category="changeItemCategory(item.id, $event)"
                             @remove-item="removeItem(item.category, item.id)"
                             @shapekey-add="addShapekey($event)"
                             @shapekey-remove="removeShapekey($event)"
+                            @update:unsupported="updateItem(item.itemId, { unsupported: $event })"
+                            @update:note="updateItem(item.itemId, { note: $event || '' })"
                         />
                     </VueDraggable>
                 </template>

@@ -24,6 +24,10 @@ export const relations = defineRelations(schema, (r) => ({
             from: r.users.id,
             to: r.userPublishers.userId,
         }),
+        publisherSourceOwnerships: r.many.publisherSourceOwnerships({
+            from: r.users.id,
+            to: r.publisherSourceOwnerships.userId,
+        }),
         publisherVerificationChallenges: r.many.publisherVerificationChallenges({
             from: r.users.id,
             to: r.publisherVerificationChallenges.userId,
@@ -201,6 +205,14 @@ export const relations = defineRelations(schema, (r) => ({
             from: r.publisherSources.id,
             to: r.itemSources.publisherSourceId,
         }),
+        ownerships: r.many.publisherSourceOwnerships({
+            from: r.publisherSources.id,
+            to: r.publisherSourceOwnerships.publisherSourceId,
+        }),
+        verificationChallenges: r.many.publisherVerificationChallenges({
+            from: r.publisherSources.id,
+            to: r.publisherVerificationChallenges.publisherSourceId,
+        }),
     },
     userPublishers: {
         user: r.one.users({
@@ -214,10 +226,27 @@ export const relations = defineRelations(schema, (r) => ({
             optional: false,
         }),
     },
+    publisherSourceOwnerships: {
+        user: r.one.users({
+            from: r.publisherSourceOwnerships.userId,
+            to: r.users.id,
+            optional: false,
+        }),
+        publisherSource: r.one.publisherSources({
+            from: r.publisherSourceOwnerships.publisherSourceId,
+            to: r.publisherSources.id,
+            optional: false,
+        }),
+    },
     publisherVerificationChallenges: {
         user: r.one.users({
             from: r.publisherVerificationChallenges.userId,
             to: r.users.id,
+            optional: false,
+        }),
+        publisherSource: r.one.publisherSources({
+            from: r.publisherVerificationChallenges.publisherSourceId,
+            to: r.publisherSources.id,
             optional: false,
         }),
     },

@@ -115,7 +115,7 @@ export const useAdmin = () => {
         errorLog: 'Error unhiding setup:',
     })
 
-    const saveAppConfig = async (config: AppConfig): Promise<AppConfig | null> => {
+    const saveAppConfig = async (config: WritableAppConfig): Promise<AppConfig | null> => {
         try {
             const response = await $fetch<AppConfig>('/api/admin/config', {
                 method: 'PUT',

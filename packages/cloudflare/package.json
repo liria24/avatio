@@ -6,6 +6,7 @@
         ".": "./src/index.ts"
     },
     "dependencies": {
+        "@ai-sdk/openai": "4.0.60",
         "@avatio/core": "workspace:*",
         "ai": "7.0.92",
         "drizzle-orm": "1.0.0-rc.4",

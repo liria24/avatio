@@ -1,7 +1,8 @@
-import type { Ref, WritableComputedRef } from 'vue'
+import type { Ref } from 'vue'
 
 export const useSetupComposeImages = (
-    images: WritableComputedRef<string[]>,
+    images: Readonly<Ref<string[]>>,
+    setImages: (images: string[]) => void,
     metadata: Ref<Record<string, SetupImageMetadata>>,
     uploading: Ref<boolean>,
 ) => {
@@ -25,7 +26,6 @@ export const useSetupComposeImages = (
         uploading.value = true
         try {
             const image = await uploadImage(file, 'setup')
-            images.value.push(image.url)
             metadata.value[image.url] = {
                 objectKey: image.objectKey,
                 contentType: image.contentType,
@@ -35,6 +35,7 @@ export const useSetupComposeImages = (
                 height: image.height,
                 themeColors: image.themeColors.length ? image.themeColors : null,
             }
+            setImages([...images.value, image.url])
         } catch (error) {
             console.error('Error uploading image:', error)
             toast.add({
@@ -48,12 +49,12 @@ export const useSetupComposeImages = (
     }
 
     const removeImage = (index: number) => {
-        const [removed] =
-            index >= 0 && index < images.value.length ? images.value.splice(index, 1) : []
+        const removed = images.value[index]
         if (!removed) return
         const nextMetadata = { ...metadata.value }
         Reflect.deleteProperty(nextMetadata, removed)
         metadata.value = nextMetadata
+        setImages(images.value.filter((_, imageIndex) => imageIndex !== index))
     }
 
     return { getSelectedImageMetadata, processImages, removeImage }

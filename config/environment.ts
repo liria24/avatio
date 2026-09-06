@@ -17,6 +17,11 @@ export const avatioStageConfigSchema = z.object({
     twitterClientId: z.string().min(1),
     trustedOrigins: z.url().array(),
     aiModels: aiTaskConfigSchema,
+    content: z.object({
+        repo: z.string().min(1),
+        branch: z.string().min(1),
+        path: z.string().min(1),
+    }),
     infrastructure: z.object({
         worker: z.string().min(1),
         appDatabase: z.string().min(1),
@@ -48,6 +53,7 @@ export const stageConfig = {
         siteUrl: 'https://avatio.me',
         imageBaseUrl: 'https://images.avatio.me',
         trustedOrigins: ['https://avatio.me'],
+        content: { repo: 'liria24/avatio', branch: 'main', path: 'content' },
         infrastructure: {
             worker: 'avatio',
             appDatabase: 'avatio',
@@ -65,6 +71,7 @@ export const stageConfig = {
         siteUrl: 'https://dev.avatio.me',
         imageBaseUrl: 'https://images-dev.avatio.me',
         trustedOrigins: ['http://localhost:3000', 'http://127.0.0.1:3000', 'https://dev.avatio.me'],
+        content: { repo: 'liria24/avatio', branch: 'development', path: 'content' },
         infrastructure: {
             worker: 'avatio-development',
             appDatabase: 'avatio-development',

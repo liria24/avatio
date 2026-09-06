@@ -57,8 +57,8 @@ export const getPublicDocumentCacheTags = (pathname: string) => {
     if (path === '/changelogs') return [EDGE_CACHE_TAGS.changelogs]
     if (/^\/@[^/]+$/.test(path)) return [EDGE_CACHE_TAGS.setups, EDGE_CACHE_TAGS.users]
 
-    const setup = path.match(/^\/setup\/([^/]+)$/)
-    if (setup?.[1] && setup[1] !== 'compose') return [getSetupCacheTag(setup[1])]
+    const setupId = getSetupIdFromPath(pathname)
+    if (setupId) return [getSetupCacheTag(setupId)]
 }
 
 export const getPublicEdgeCacheHeaders = (tags: Iterable<string>, varyCookie = false) => {

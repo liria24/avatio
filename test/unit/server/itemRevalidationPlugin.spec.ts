@@ -26,6 +26,7 @@ const log = { error: vi.fn() }
 vi.mock('~~/server/migration/catalog/queueCompatibility', () => ({
     handleItemRevalidationMessage: handleMessage,
     isLegacyItemRevalidationMessage: isLegacyMessage,
+    isUnfencedCatalogMessage: () => false,
 }))
 
 beforeEach(() => {
@@ -50,6 +51,38 @@ afterEach(() => {
 })
 
 describe('item revalidation queue plugin', () => {
+    it('acknowledges a stale fenced message without retrying or fetching', async () => {
+        const markSyncStarted = vi.fn(async () => null)
+        vi.stubGlobal('getCatalogRepository', () => ({ markSyncStarted }))
+        vi.stubGlobal('getCatalogProviderRegistry', async () => ({}))
+        vi.stubGlobal('getCatalogCacheInvalidator', () => ({}))
+        const { default: plugin } = await import('../../../server/plugins/itemRevalidationQueue')
+        let handler!: QueueHandler
+        plugin({
+            hooks: {
+                hook: (_name, callback) => {
+                    handler = callback
+                },
+            },
+        })
+        const message = {
+            body: {
+                version: 2,
+                type: 'catalog.sync-source',
+                sourceId: 'source',
+                leaseToken: 'old',
+            },
+            ack: vi.fn(),
+            retry: vi.fn(),
+        }
+        await handler({
+            batch: { queue: 'item-revalidation', messages: [message] },
+            context: { cache: {} },
+        })
+        expect(markSyncStarted).toHaveBeenCalledWith('source', 'old', expect.any(Date))
+        expect(message.ack).toHaveBeenCalledOnce()
+        expect(message.retry).not.toHaveBeenCalled()
+    })
     it('handles the stage-specific development queue', async () => {
         const { default: plugin } = await import('../../../server/plugins/itemRevalidationQueue')
         let queueHandler!: QueueHandler

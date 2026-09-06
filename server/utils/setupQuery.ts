@@ -1,6 +1,15 @@
 import { resolveEffectiveCategory } from '@avatio/core/catalog'
 import { projectCatalogSourceToLegacySetupItem } from '~~/server/migration/catalog/compatibility'
 
+const log = logger('setupProjection')
+
+export type SetupProjectionSource =
+    | { mode: 'v2' }
+    | {
+          mode: 'legacy-fallback'
+          reason: 'entry-count-mismatch' | 'entry-id-mismatch' | 'missing-catalog-source'
+      }
+
 export interface SetupQueryViewer {
     userId: string
     role?: string | null
@@ -12,6 +21,7 @@ export interface SetupQueryResult {
     sourceIds: string[]
     legacyRevalidationItems: { id: string; platform: Platform; updatedAt: Date }[]
     v2: boolean
+    projectionSource: SetupProjectionSource
 }
 
 export const querySetupProjection = async (
@@ -158,9 +168,19 @@ export const querySetupProjection = async (
     if (!canView) return null
 
     const legacyEntryIds = new Set(data.items.map((entry) => entry.id))
-    const useV2 =
-        data.entries.length === data.items.length &&
-        data.entries.every((entry) => legacyEntryIds.has(entry.id))
+    const reason =
+        data.entries.length !== data.items.length
+            ? 'entry-count-mismatch'
+            : data.entries.some((entry) => !legacyEntryIds.has(entry.id))
+              ? 'entry-id-mismatch'
+              : data.entries.some((entry) => !entry.item.sources.some((source) => source.primary))
+                ? 'missing-catalog-source'
+                : null
+    const projectionSource: SetupProjectionSource = reason
+        ? { mode: 'legacy-fallback', reason }
+        : { mode: 'v2' }
+    const useV2 = projectionSource.mode === 'v2'
+    if (reason) log.warn({ event: 'catalog.setup.legacy_fallback', setupId: id, reason })
     const catalogItemIds = useV2 ? [...new Set(data.entries.map((entry) => entry.item.id))] : []
     const sourceIds = useV2
         ? [
@@ -239,5 +259,6 @@ export const querySetupProjection = async (
                   updatedAt: item.updatedAt,
               })),
         v2: useV2,
+        projectionSource,
     }
 }

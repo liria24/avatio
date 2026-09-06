@@ -45,6 +45,15 @@ export const serverError = {
             message: options?.responseMessage,
         })
     },
+    /** 409 */
+    conflict(options?: ServerErrorOptions): never {
+        if (options?.log) logger(options.log.tag ?? 'server:error').error(options.log.message)
+        throw createError({
+            status: StatusCodes.CONFLICT,
+            statusText: getReasonPhrase(StatusCodes.CONFLICT),
+            message: options?.responseMessage,
+        })
+    },
     /** 429 */
     tooManyRequests(options?: ServerErrorOptions): never {
         if (options?.log) logger(options.log.tag ?? 'server:error').error(options.log.message)

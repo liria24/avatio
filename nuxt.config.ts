@@ -1,4 +1,4 @@
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import { useNuxt } from '@nuxt/kit'
 import type { NitroRouteConfig } from 'nitropack'
@@ -17,6 +17,7 @@ const r2PublicBaseUrl = process.env.R2_PUBLIC_BASE_URL
 const imageDomain = r2PublicBaseUrl ? new URL(r2PublicBaseUrl).hostname : undefined
 const title = 'Avatio'
 const description = 'アバター改変レシピの共有プラットフォーム'
+const insightConfigPath = fileURLToPath(new URL('./app/server/insight.config.ts', import.meta.url))
 
 const normalizeRuntimeConfigForVitest = () => {
     if (!process.env.VITEST) return
@@ -44,15 +45,6 @@ const baseRouteRules: { [path: string]: NitroRouteConfig } = {
             },
         },
     },
-    '/faq': {
-        prerender: true,
-    },
-    '/terms': {
-        prerender: true,
-    },
-    '/privacy-policy': {
-        prerender: true,
-    },
     '/on-maintenance': {
         prerender: true,
     },
@@ -64,6 +56,9 @@ const baseRouteRules: { [path: string]: NitroRouteConfig } = {
     },
     '/bookmarks': {
         redirect: '/?tab=bookmarked',
+    },
+    '/settings/shops': {
+        redirect: '/settings/publishers',
     },
     '/api/**': {
         cors: true,
@@ -104,6 +99,7 @@ export default defineNuxtConfig({
 
     modules: [
         '@avatio/nuxt',
+        'insight-ts/nuxt',
         '@nuxtjs/better-auth',
         '@comark/nuxt',
         '@nuxt/ui',
@@ -149,6 +145,8 @@ export default defineNuxtConfig({
             'node:console': fileURLToPath(
                 new URL('./server/shims/node-console.ts', import.meta.url),
             ),
+            // insight-ts alpha emits this Windows file URL; Nitro resolves filesystem paths.
+            [pathToFileURL(insightConfigPath).href]: insightConfigPath,
         },
         replace: {
             'console.createTask': 'undefined',
@@ -182,8 +180,22 @@ export default defineNuxtConfig({
         // Deliberately too short to be accepted by Better Auth. Cloudflare's
         // NUXT_BETTER_AUTH_SECRET secret binding must replace it at runtime.
         betterAuthSecret: '__runtime_binding_required__',
+        cloudflare: {
+            accountId: '',
+            apiToken: '',
+            host: '',
+            siteTag: '',
+        },
         public: {
             siteUrl: baseUrl,
+        },
+    },
+
+    insight: {
+        providers: {
+            cloudflare: {
+                webAnalytics: true,
+            },
         },
     },
 
@@ -325,6 +337,10 @@ export default defineNuxtConfig({
             scan: true,
             includeCustomCollections: true,
         },
+    },
+
+    $development: {
+        image: { provider: 'none' },
     },
 
     image: {

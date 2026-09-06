@@ -1,3 +1,4 @@
+import type { PublisherSourceId } from '../../publishers/domain/publisher'
 import type { ItemSourceSnapshot } from '../domain/catalog'
 
 export interface ExternalReference {
@@ -6,18 +7,9 @@ export interface ExternalReference {
     canonicalUrl: string
 }
 
-export interface ProviderPublisherSnapshot {
-    externalId: string
-    canonicalUrl: string
-    name: string
-    image: string | null
-    providerVerified: boolean
-    metadata: Record<string, unknown>
-}
-
 export interface ProviderSnapshot extends ItemSourceSnapshot {
     reference: ExternalReference
-    publisher: ProviderPublisherSnapshot | null
+    publisherSourceId: PublisherSourceId | null
 }
 
 export type ProviderFetchResult =

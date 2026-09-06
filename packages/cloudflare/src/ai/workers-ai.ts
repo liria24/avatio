@@ -3,6 +3,8 @@ import { generateText, Output } from 'ai'
 import { createWorkersAI } from 'workers-ai-provider'
 import { z } from 'zod'
 
+import { openaiProvider } from './openai-provider'
+
 export type AiTaskKey = 'catalogEnrichment' | 'changelogTranslation' | 'changelogSlug'
 
 export type AiTaskModels = Record<AiTaskKey, string>
@@ -33,7 +35,7 @@ export const getAiTaskModel = (models: AiTaskModels, task: AiTaskKey) => models[
 export const createWorkersAiCapabilities = (
     options: WorkersAiCapabilitiesOptions,
 ): WorkersAiCapabilities => {
-    const workersAi = createWorkersAI({ binding: options.binding })
+    const workersAi = createWorkersAI({ binding: options.binding, providers: [openaiProvider] })
     const catalogResultSchema = z.object({
         displayName: z.string().min(1),
         category: z.enum(options.itemCategories),

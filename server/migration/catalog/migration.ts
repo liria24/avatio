@@ -1,10 +1,11 @@
 import {
     catalogItems,
+    catalogMigrationRuns,
     itemCategoryOverrides,
     items,
     itemSources,
+    publisherSourceOwnerships,
     publisherSources,
-    publisherVerificationChallenges,
     publishers,
     setupEntries,
     setupEntryShapekeys,
@@ -13,9 +14,9 @@ import {
     setups,
     shops,
     userPublishers,
-    userShopVerifications,
     userShops,
 } from '@@/database/schema'
+import { and, count, eq, gt, isNull, lte, or, sql } from 'drizzle-orm'
 import type { BatchItem } from 'drizzle-orm/batch'
 import type { AppDatabase } from '~~/server/utils/database'
 import { executeD1Batch } from '~~/server/utils/executeD1Batch'
@@ -28,141 +29,241 @@ import {
     migrateLegacyShapekey,
 } from './legacy'
 
-const MAX_D1_BATCH_STATEMENTS = 90
-
+export const CATALOG_MIGRATION_ID = 'catalog-v2'
+export const CATALOG_MIGRATION_CHUNK_SIZE = 20
+const stages = [
+    'publishers',
+    'catalog',
+    'ownerships',
+    'setup-entries',
+    'shapekeys',
+    'verification',
+] as const
+type Run = typeof catalogMigrationRuns.$inferSelect
 type Statement = BatchItem<'sqlite'>
 
-interface BackfillIssue {
-    severity: 'error' | 'warning'
-    kind: string
-    legacyId: string
-    reason: string
-}
+export const getCatalogMigrationRun = async (db: AppDatabase) =>
+    (
+        await db
+            .select()
+            .from(catalogMigrationRuns)
+            .where(eq(catalogMigrationRuns.id, CATALOG_MIGRATION_ID))
+            .limit(1)
+    )[0] ?? null
 
-interface BackfillPlan {
-    publisherPairs: Statement[][]
-    catalogPairs: Statement[][]
-    userPublisherStatements: Statement[]
-    challengeStatements: Statement[]
-    setupEntryStatements: Statement[]
-    shapekeyStatements: Statement[]
-    issues: BackfillIssue[]
-    expected: {
-        publishers: number
-        catalogItems: number
-        userPublishers: number
-        challenges: number
-        setupEntries: number
-        shapekeys: number
+// Aggregate in D1; only bounded diagnostic samples cross the Worker boundary.
+const inspect = async (db: AppDatabase, mode: 'dry-run' | 'verification') => {
+    const checks = [
+        {
+            name: 'publishers',
+            table: shops,
+            missing: sql`NOT EXISTS (SELECT 1 FROM publisher_sources p WHERE p.provider_key = ${shops.platform} AND p.external_id = ${shops.id})`,
+        },
+        {
+            name: 'catalogItems',
+            table: items,
+            missing: sql`NOT EXISTS (SELECT 1 FROM item_sources s WHERE s.provider_key = ${items.platform} AND s.external_id = ${items.id})`,
+        },
+        {
+            name: 'userPublishers',
+            table: userShops,
+            missing: sql`NOT EXISTS (SELECT 1 FROM shops s JOIN publisher_sources p ON p.provider_key = s.platform AND p.external_id = s.id JOIN user_publishers u ON u.publisher_id = p.publisher_id AND u.user_id = ${userShops.userId} WHERE s.id = ${userShops.shopId})`,
+        },
+        {
+            name: 'publisherSourceOwnerships',
+            table: userShops,
+            missing: sql`NOT EXISTS (SELECT 1 FROM shops s JOIN publisher_sources p ON p.provider_key = s.platform AND p.external_id = s.id JOIN publisher_source_ownerships u ON u.publisher_source_id = p.id AND u.user_id = ${userShops.userId} WHERE s.id = ${userShops.shopId})`,
+        },
+        {
+            name: 'setupEntries',
+            table: setupItems,
+            missing: sql`NOT EXISTS (SELECT 1 FROM setup_entries e WHERE e.id = ${setupItems.id})`,
+        },
+        {
+            name: 'shapekeys',
+            table: setupItemShapekeys,
+            missing: sql`NOT EXISTS (SELECT 1 FROM setup_entry_shapekeys s WHERE s.id = ${setupItemShapekeys.id})`,
+        },
+    ] as const
+    const pending: Record<string, number> = {}
+    const expected: Record<string, number> = {}
+    for (const check of checks) {
+        const [total] = await db.select({ count: count() }).from(check.table)
+        const [missing] = await db.select({ count: count() }).from(check.table).where(check.missing)
+        expected[check.name] = total!.count
+        pending[check.name] = missing!.count
     }
-}
-
-export interface CatalogBackfillReport {
-    mode: 'dry-run' | 'applied' | 'verification'
-    pending: {
-        publishers: number
-        catalogItems: number
-        userPublishers: number
-        challenges: number
-        setupEntries: number
-        shapekeys: number
+    const invalidChecks = [
+        {
+            kind: 'publisher-reference',
+            table: items,
+            id: items.id,
+            condition: sql`${items.shopId} IS NOT NULL AND NOT EXISTS (SELECT 1 FROM shops s WHERE s.id = ${items.shopId} AND s.platform = ${items.platform})`,
+        },
+        {
+            kind: 'catalog-identity',
+            table: itemSources,
+            id: itemSources.id,
+            condition: eq(itemSources.itemId, itemSources.externalId),
+        },
+        {
+            kind: 'availability',
+            table: itemSources,
+            id: itemSources.id,
+            condition: and(
+                eq(itemSources.availability, 'withdrawn'),
+                eq(itemSources.lastErrorKind, 'legacy-unconfirmed-outdated'),
+            ),
+        },
+        {
+            kind: 'setup-entry',
+            table: setupItems,
+            id: setupItems.id,
+            condition: sql`NOT EXISTS (SELECT 1 FROM items i WHERE i.id = ${setupItems.itemId}) OR EXISTS (SELECT 1 FROM setup_entries e WHERE e.id = ${setupItems.id} AND (e.setup_id IS NOT ${setupItems.setupId} OR e.note IS NOT ${setupItems.note} OR e.category_override IS NOT ${setupItems.category} OR e.unsupported IS NOT ${setupItems.unsupported} OR NOT EXISTS (SELECT 1 FROM items i JOIN item_sources s ON s.external_id = i.id AND s.provider_key = i.platform WHERE i.id = ${setupItems.itemId} AND s.item_id = e.item_id)))`,
+        },
+        {
+            kind: 'shapekey',
+            table: setupItemShapekeys,
+            id: setupItemShapekeys.id,
+            condition: sql`NOT EXISTS (SELECT 1 FROM setup_items e WHERE e.id = ${setupItemShapekeys.setupItemId}) OR EXISTS (SELECT 1 FROM setup_entry_shapekeys s WHERE s.id = ${setupItemShapekeys.id} AND (s.setup_entry_id IS NOT ${setupItemShapekeys.setupItemId} OR s.name IS NOT ${setupItemShapekeys.name} OR s.value IS NOT ${setupItemShapekeys.value}))`,
+        },
+    ] as const
+    const issues: {
+        severity: 'error' | 'warning'
+        kind: string
+        legacyId: string
+        reason: string
+    }[] = []
+    let errorCount = 0
+    for (const check of invalidChecks) {
+        const [total] = await db.select({ count: count() }).from(check.table).where(check.condition)
+        errorCount += total!.count
+        if (issues.length >= 100) continue
+        const sample = await db
+            .select({ id: check.id })
+            .from(check.table)
+            .where(check.condition)
+            .limit(100 - issues.length)
+        issues.push(
+            ...sample.map((row) => ({
+                severity: 'error' as const,
+                kind: check.kind,
+                legacyId: String(row.id),
+                reason: 'Legacy and v2 mapping is inconsistent.',
+            })),
+        )
     }
-    expected: BackfillPlan['expected']
-    issues: BackfillIssue[]
-    verified: boolean
-}
-
-const externalKey = (providerKey: string, externalId: string) => `${providerKey}\u0000${externalId}`
-
-const pairKey = (left: string, right: string) => `${left}\u0000${right}`
-
-const runStatementGroups = async (db: AppDatabase, groups: Statement[][]) => {
-    let batch: Statement[] = []
-    for (const group of groups) {
-        if (batch.length && batch.length + group.length > MAX_D1_BATCH_STATEMENTS) {
-            await executeD1Batch(db, batch)
-            batch = []
-        }
-        batch.push(...group)
-    }
-    if (batch.length) await executeD1Batch(db, batch)
-}
-
-const runStatements = async (db: AppDatabase, statements: Statement[]) => {
-    for (let offset = 0; offset < statements.length; offset += MAX_D1_BATCH_STATEMENTS) {
-        await executeD1Batch(db, statements.slice(offset, offset + MAX_D1_BATCH_STATEMENTS))
-    }
-}
-
-const createBackfillPlan = async (db: AppDatabase): Promise<BackfillPlan> => {
-    const [
-        legacyShops,
-        legacyItems,
-        legacyOverrides,
-        legacyUserShops,
-        legacyChallenges,
-        legacySetupItems,
-        legacyShapekeys,
-        existingPublisherSources,
-        existingItemSources,
-        existingUserPublishers,
-        existingChallenges,
-        existingSetupEntries,
-        existingShapekeys,
-        existingSetups,
-    ] = await Promise.all([
-        db.select().from(shops),
-        db.select().from(items),
-        db.select().from(itemCategoryOverrides),
-        db.select().from(userShops),
-        db.select().from(userShopVerifications),
-        db.select().from(setupItems),
-        db.select().from(setupItemShapekeys),
-        db.select().from(publisherSources),
-        db.select().from(itemSources),
-        db.select().from(userPublishers),
-        db.select().from(publisherVerificationChallenges),
-        db.select().from(setupEntries),
-        db.select().from(setupEntryShapekeys),
-        db.select({ id: setups.id }).from(setups),
-    ])
-
-    const issues: BackfillIssue[] = []
-    const publisherPairs: Statement[][] = []
-    const catalogPairs: Statement[][] = []
-    const userPublisherStatements: Statement[] = []
-    const challengeStatements: Statement[] = []
-    const setupEntryStatements: Statement[] = []
-    const shapekeyStatements: Statement[] = []
-
-    const publisherSourceByExternal = new Map(
-        existingPublisherSources.map((source) => [
-            externalKey(source.providerKey, source.externalId),
-            { id: source.id, publisherId: source.publisherId },
-        ]),
+    const unusualIds = await db
+        .select({ id: setups.id })
+        .from(setups)
+        .where(sql`length(${setups.id}) != 8 OR ${setups.id} GLOB '*[^A-Za-z0-9_-]*'`)
+        .limit(Math.max(0, 100 - issues.length))
+    issues.push(
+        ...unusualIds.map(({ id }) => ({
+            severity: 'warning' as const,
+            kind: 'setup-id-shape',
+            legacyId: id,
+            reason: 'Preflight this existing route; preserve its ID.',
+        })),
     )
-    const legacyShopById = new Map(legacyShops.map((shop) => [shop.id, shop]))
+    return {
+        mode,
+        pending,
+        expected,
+        issues,
+        errorCount,
+        verified: errorCount === 0 && Object.values(pending).every((value) => value === 0),
+    }
+}
 
-    for (const shop of legacyShops) {
-        const key = externalKey(shop.platform, shop.id)
-        if (publisherSourceByExternal.has(key)) continue
+export const inspectCatalogV2Backfill = (db: AppDatabase) => inspect(db, 'dry-run')
 
-        const publisherId = crypto.randomUUID()
-        const sourceId = crypto.randomUUID()
-        publisherSourceByExternal.set(key, { id: sourceId, publisherId })
-        publisherPairs.push([
-            db.insert(publishers).values({
-                id: publisherId,
-                createdAt: shop.createdAt,
-                updatedAt: shop.updatedAt,
-                displayNameOverride: null,
-                imageOverride: null,
-            }),
+export const verifyCatalogV2Backfill = async (db: AppDatabase) => {
+    const report = await inspect(db, 'verification')
+    const now = new Date()
+    await db
+        .update(catalogMigrationRuns)
+        .set({
+            verification: report,
+            verifiedAt: now,
+            updatedAt: now,
+            ...(report.verified
+                ? { status: 'complete' as const, stage: 'complete' as const, completedAt: now }
+                : {
+                      status: 'awaiting-verification' as const,
+                      stage: 'verification' as const,
+                      completedAt: null,
+                  }),
+        })
+        .where(
+            and(
+                eq(catalogMigrationRuns.id, CATALOG_MIGRATION_ID),
+                or(
+                    eq(catalogMigrationRuns.status, 'awaiting-verification'),
+                    eq(catalogMigrationRuns.status, 'complete'),
+                ),
+            ),
+        )
+    return report
+}
+
+/** Starts/resumes the journal only. The Queue owns execution. */
+export const startCatalogV2Backfill = async (db: AppDatabase) => {
+    const now = new Date()
+    await db
+        .insert(catalogMigrationRuns)
+        .values({
+            id: CATALOG_MIGRATION_ID,
+            stage: 'publishers',
+            status: 'running',
+            startedAt: now,
+            updatedAt: now,
+        })
+        .onConflictDoNothing()
+    await db
+        .update(catalogMigrationRuns)
+        .set({ status: 'running', lastError: null, updatedAt: now })
+        .where(
+            and(
+                eq(catalogMigrationRuns.id, CATALOG_MIGRATION_ID),
+                eq(catalogMigrationRuns.status, 'failed'),
+            ),
+        )
+    await db
+        .update(catalogMigrationRuns)
+        .set({
+            status: 'running',
+            stage: 'publishers',
+            cursor: null,
+            processed: 0,
+            verification: null,
+            verifiedAt: null,
+            completedAt: null,
+            updatedAt: now,
+        })
+        .where(
+            and(
+                eq(catalogMigrationRuns.id, CATALOG_MIGRATION_ID),
+                eq(catalogMigrationRuns.status, 'awaiting-verification'),
+            ),
+        )
+    return (await getCatalogMigrationRun(db))!
+}
+
+const publisherStatements = (db: AppDatabase, shop: typeof shops.$inferSelect) => {
+    const publisherId = crypto.randomUUID()
+    const sourceId = crypto.randomUUID()
+    return {
+        sourceId,
+        statements: [
+            db
+                .insert(publishers)
+                .values({ id: publisherId, createdAt: shop.createdAt, updatedAt: shop.updatedAt }),
             db.insert(publisherSources).values({
                 id: sourceId,
+                publisherId,
                 createdAt: shop.createdAt,
                 updatedAt: shop.updatedAt,
-                publisherId,
                 providerKey: shop.platform,
                 externalId: shop.id,
                 canonicalUrl: legacyPublisherCanonicalUrl(shop.platform, shop.id),
@@ -170,267 +271,337 @@ const createBackfillPlan = async (db: AppDatabase): Promise<BackfillPlan> => {
                 image: shop.image,
                 providerVerified: shop.verified,
             }),
-        ])
-    }
-
-    const overrideByItem = new Map(
-        legacyOverrides.map((override) => [
-            externalKey(override.platform, override.itemId),
-            override.category,
-        ]),
-    )
-    const itemSourceByExternal = new Map(
-        existingItemSources.map((source) => [
-            externalKey(source.providerKey, source.externalId),
-            {
-                id: source.id,
-                itemId: source.itemId,
-                availability: source.availability,
-                lastErrorKind: source.lastErrorKind,
-            },
-        ]),
-    )
-    const legacyItemById = new Map(legacyItems.map((item) => [item.id, item]))
-
-    for (const item of legacyItems) {
-        const key = externalKey(item.platform, item.id)
-        const existing = itemSourceByExternal.get(key)
-        if (existing) {
-            if (existing.itemId === item.id) {
-                issues.push({
-                    severity: 'error',
-                    kind: 'catalog-identity',
-                    legacyId: item.id,
-                    reason: 'CatalogItem ID must be independent from the provider external ID.',
-                })
-            }
-            if (
-                item.outdated &&
-                existing.availability === 'withdrawn' &&
-                existing.lastErrorKind === 'legacy-unconfirmed-outdated'
-            ) {
-                issues.push({
-                    severity: 'error',
-                    kind: 'availability',
-                    legacyId: item.id,
-                    reason: 'Legacy outdated=true was mapped to withdrawn.',
-                })
-            }
-            continue
-        }
-
-        const catalogItemId = crypto.randomUUID()
-        const sourceId = crypto.randomUUID()
-        const publisherSource = item.shopId
-            ? publisherSourceByExternal.get(externalKey(item.platform, item.shopId))
-            : undefined
-        if (item.shopId && !publisherSource) {
-            issues.push({
-                severity: 'error',
-                kind: 'publisher-reference',
-                legacyId: item.id,
-                reason: `Legacy shop ${item.shopId} does not exist for provider ${item.platform}.`,
-            })
-        }
-
-        const explicitOverride = overrideByItem.get(key)
-        const migrated = migrateLegacyItemState(item, explicitOverride)
-        itemSourceByExternal.set(key, {
-            id: sourceId,
-            itemId: catalogItemId,
-            availability: item.outdated ? 'unknown' : 'available',
-            lastErrorKind: item.outdated ? 'legacy-unconfirmed-outdated' : null,
-        })
-        catalogPairs.push([
-            db.insert(catalogItems).values({
-                id: catalogItemId,
-                createdAt: item.createdAt,
-                updatedAt: item.updatedAt,
-                ...migrated.catalog,
-            }),
-            db.insert(itemSources).values({
-                id: sourceId,
-                createdAt: item.createdAt,
-                updatedAt: item.updatedAt,
-                itemId: catalogItemId,
-                publisherSourceId: publisherSource?.id ?? null,
-                providerKey: item.platform,
-                externalId: item.id,
-                canonicalUrl: legacyItemCanonicalUrl(item.platform, item.id),
-                primary: true,
-                availability: migrated.source.availability,
-                syncState: migrated.source.syncState,
-                providerCategoryKey: null,
-                providerCategoryLabel: null,
-                mappedCategory: null,
-                displayName: migrated.source.displayName,
-                image: migrated.source.image,
-                price: migrated.source.price,
-                popularityCount: migrated.source.popularityCount,
-                nsfw: migrated.source.nsfw,
-                lastCheckedAt: migrated.source.lastCheckedAt,
-                lastSuccessfulSyncAt: migrated.source.lastSuccessfulSyncAt,
-                nextCheckAt: migrated.source.nextCheckAt,
-                syncLeaseUntil: null,
-                lastErrorKind: migrated.source.lastErrorKind,
-                lastErrorAt: migrated.source.lastErrorAt,
-            }),
-        ])
-    }
-
-    const existingUserPublisherKeys = new Set(
-        existingUserPublishers.map((owner) => pairKey(owner.userId, owner.publisherId)),
-    )
-    for (const owner of legacyUserShops) {
-        const shop = legacyShopById.get(owner.shopId)
-        if (!shop) {
-            issues.push({
-                severity: 'error',
-                kind: 'publisher-owner',
-                legacyId: owner.id.toString(),
-                reason: `Legacy shop ${owner.shopId} does not exist.`,
-            })
-            continue
-        }
-        const publisherSource = publisherSourceByExternal.get(externalKey(shop.platform, shop.id))
-        if (!publisherSource) continue
-        const key = pairKey(owner.userId, publisherSource.publisherId)
-        if (existingUserPublisherKeys.has(key)) continue
-        existingUserPublisherKeys.add(key)
-        userPublisherStatements.push(
-            db.insert(userPublishers).values({
-                id: crypto.randomUUID(),
-                createdAt: owner.createdAt,
-                userId: owner.userId,
-                publisherId: publisherSource.publisherId,
-            }),
-        )
-    }
-
-    const existingChallengeUsers = new Set(existingChallenges.map((challenge) => challenge.userId))
-    for (const challenge of legacyChallenges) {
-        if (existingChallengeUsers.has(challenge.userId)) continue
-        existingChallengeUsers.add(challenge.userId)
-        challengeStatements.push(
-            db.insert(publisherVerificationChallenges).values({
-                id: challenge.id,
-                code: challenge.code,
-                createdAt: challenge.createdAt,
-                userId: challenge.userId,
-            }),
-        )
-    }
-
-    const existingEntryIds = new Set(existingSetupEntries.map((entry) => entry.id))
-    const mappedEntryIds = new Set(existingEntryIds)
-    for (const entry of legacySetupItems) {
-        if (existingEntryIds.has(entry.id)) continue
-        const legacyItem = legacyItemById.get(entry.itemId)
-        const source = legacyItem
-            ? itemSourceByExternal.get(externalKey(legacyItem.platform, legacyItem.id))
-            : undefined
-        if (!legacyItem || !source) {
-            issues.push({
-                severity: 'error',
-                kind: 'setup-entry',
-                legacyId: entry.id,
-                reason: `Legacy item ${entry.itemId} cannot be mapped to a CatalogItem.`,
-            })
-            continue
-        }
-        mappedEntryIds.add(entry.id)
-        setupEntryStatements.push(
-            db.insert(setupEntries).values(migrateLegacySetupEntry(entry, source.itemId)),
-        )
-    }
-
-    const existingShapekeyIds = new Set(existingShapekeys.map((shapekey) => shapekey.id))
-    for (const shapekey of legacyShapekeys) {
-        if (existingShapekeyIds.has(shapekey.id)) continue
-        if (!mappedEntryIds.has(shapekey.setupItemId)) {
-            issues.push({
-                severity: 'error',
-                kind: 'setup-entry-shapekey',
-                legacyId: shapekey.id.toString(),
-                reason: `SetupEntry ${shapekey.setupItemId} is unavailable.`,
-            })
-            continue
-        }
-        shapekeyStatements.push(
-            db.insert(setupEntryShapekeys).values(migrateLegacyShapekey(shapekey)),
-        )
-    }
-
-    for (const setup of existingSetups) {
-        if (!/^[A-Za-z0-9_-]{8}$/.test(setup.id)) {
-            issues.push({
-                severity: 'warning',
-                kind: 'setup-id-shape',
-                legacyId: setup.id,
-                reason: 'Existing Setup ID is not the expected opaque 8-character format.',
-            })
-        }
-    }
-
-    return {
-        publisherPairs,
-        catalogPairs,
-        userPublisherStatements,
-        challengeStatements,
-        setupEntryStatements,
-        shapekeyStatements,
-        issues,
-        expected: {
-            publishers: legacyShops.length,
-            catalogItems: legacyItems.length,
-            userPublishers: legacyUserShops.length,
-            challenges: legacyChallenges.length,
-            setupEntries: legacySetupItems.length,
-            shapekeys: legacyShapekeys.length,
-        },
+        ] satisfies Statement[],
     }
 }
 
-const reportFromPlan = (
-    plan: BackfillPlan,
-    mode: CatalogBackfillReport['mode'],
-): CatalogBackfillReport => {
-    const pending = {
-        publishers: plan.publisherPairs.length,
-        catalogItems: plan.catalogPairs.length,
-        userPublishers: plan.userPublisherStatements.length,
-        challenges: plan.challengeStatements.length,
-        setupEntries: plan.setupEntryStatements.length,
-        shapekeys: plan.shapekeyStatements.length,
+const catalogStatements = async (
+    db: AppDatabase,
+    item: typeof items.$inferSelect,
+    publisherSourceId: string | null,
+) => {
+    const [override] = await db
+        .select()
+        .from(itemCategoryOverrides)
+        .where(
+            and(
+                eq(itemCategoryOverrides.itemId, item.id),
+                eq(itemCategoryOverrides.platform, item.platform),
+            ),
+        )
+        .limit(1)
+    const migrated = migrateLegacyItemState(item, override?.category)
+    const itemId = crypto.randomUUID()
+    return [
+        db.insert(catalogItems).values({
+            id: itemId,
+            createdAt: item.createdAt,
+            updatedAt: item.updatedAt,
+            ...migrated.catalog,
+        }),
+        db.insert(itemSources).values({
+            id: crypto.randomUUID(),
+            itemId,
+            createdAt: item.createdAt,
+            updatedAt: item.updatedAt,
+            publisherSourceId,
+            canonicalUrl: legacyItemCanonicalUrl(item.platform, item.id),
+            primary: true,
+            ...migrated.source,
+        }),
+    ] satisfies Statement[]
+}
+
+/** Retained Queue identities get a bounded mapping, never the legacy resolver. */
+export const ensureLegacyCatalogSource = async (
+    db: AppDatabase,
+    providerKey: 'booth' | 'github',
+    externalId: string,
+) => {
+    const find = async () =>
+        (
+            await db
+                .select()
+                .from(itemSources)
+                .where(
+                    and(
+                        eq(itemSources.providerKey, providerKey),
+                        eq(itemSources.externalId, externalId),
+                    ),
+                )
+                .limit(1)
+        )[0]
+    const existing = await find()
+    if (existing) return existing
+    const [item] = await db
+        .select()
+        .from(items)
+        .where(and(eq(items.id, externalId), eq(items.platform, providerKey)))
+        .limit(1)
+    if (!item) return null
+    const statements: Statement[] = []
+    let publisherSourceId: string | null = null
+    if (item.shopId) {
+        const [source] = await db
+            .select()
+            .from(publisherSources)
+            .where(
+                and(
+                    eq(publisherSources.providerKey, providerKey),
+                    eq(publisherSources.externalId, item.shopId),
+                ),
+            )
+            .limit(1)
+        publisherSourceId = source?.id ?? null
+        if (!source) {
+            const [shop] = await db
+                .select()
+                .from(shops)
+                .where(and(eq(shops.id, item.shopId), eq(shops.platform, item.platform)))
+                .limit(1)
+            if (!shop) throw new Error(`Missing publisher for legacy item ${item.id}`)
+            const pair = publisherStatements(db, shop)
+            publisherSourceId = pair.sourceId
+            statements.push(...pair.statements)
+        }
     }
+    statements.push(...(await catalogStatements(db, item, publisherSourceId)))
+    try {
+        await executeD1Batch(db, statements)
+    } catch (error) {
+        if (!(await find())) throw error
+    }
+    return (await find()) ?? null
+}
+
+const planChunk = async (db: AppDatabase, run: Run) => {
+    const statements: Statement[] = []
+    let ids: (string | number)[] = []
+    if (run.stage === 'publishers') {
+        const rows = await db
+            .select()
+            .from(shops)
+            .where(run.cursor ? gt(shops.id, run.cursor) : undefined)
+            .orderBy(shops.id)
+            .limit(CATALOG_MIGRATION_CHUNK_SIZE)
+        ids = rows.map((row) => row.id)
+        for (const shop of rows) {
+            const [source] = await db
+                .select({ id: publisherSources.id })
+                .from(publisherSources)
+                .where(
+                    and(
+                        eq(publisherSources.providerKey, shop.platform),
+                        eq(publisherSources.externalId, shop.id),
+                    ),
+                )
+                .limit(1)
+            if (!source) statements.push(...publisherStatements(db, shop).statements)
+        }
+    } else if (run.stage === 'catalog') {
+        const rows = await db
+            .select()
+            .from(items)
+            .where(run.cursor ? gt(items.id, run.cursor) : undefined)
+            .orderBy(items.id)
+            .limit(CATALOG_MIGRATION_CHUNK_SIZE)
+        ids = rows.map((row) => row.id)
+        for (const item of rows) {
+            const [existing] = await db
+                .select({ id: itemSources.id })
+                .from(itemSources)
+                .where(
+                    and(
+                        eq(itemSources.providerKey, item.platform),
+                        eq(itemSources.externalId, item.id),
+                    ),
+                )
+                .limit(1)
+            if (existing) continue
+            const [publisher] = item.shopId
+                ? await db
+                      .select({ id: publisherSources.id })
+                      .from(publisherSources)
+                      .where(
+                          and(
+                              eq(publisherSources.providerKey, item.platform),
+                              eq(publisherSources.externalId, item.shopId),
+                          ),
+                      )
+                      .limit(1)
+                : []
+            if (item.shopId && !publisher)
+                throw new Error(`Missing publisher for legacy item ${item.id}`)
+            statements.push(...(await catalogStatements(db, item, publisher?.id ?? null)))
+        }
+    } else if (run.stage === 'ownerships') {
+        const rows = await db
+            .select()
+            .from(userShops)
+            .where(run.cursor ? gt(userShops.id, Number(run.cursor)) : undefined)
+            .orderBy(userShops.id)
+            .limit(CATALOG_MIGRATION_CHUNK_SIZE)
+        ids = rows.map((row) => row.id)
+        for (const owner of rows) {
+            const [source] = await db
+                .select({ id: publisherSources.id, publisherId: publisherSources.publisherId })
+                .from(shops)
+                .innerJoin(
+                    publisherSources,
+                    and(
+                        eq(publisherSources.externalId, shops.id),
+                        eq(publisherSources.providerKey, shops.platform),
+                    ),
+                )
+                .where(eq(shops.id, owner.shopId))
+                .limit(1)
+            if (!source) throw new Error(`Missing publisher for ownership ${owner.id}`)
+            statements.push(
+                db
+                    .insert(userPublishers)
+                    .values({
+                        id: crypto.randomUUID(),
+                        userId: owner.userId,
+                        publisherId: source.publisherId,
+                        createdAt: owner.createdAt,
+                    })
+                    .onConflictDoNothing(),
+                db
+                    .insert(publisherSourceOwnerships)
+                    .values({
+                        id: crypto.randomUUID(),
+                        userId: owner.userId,
+                        publisherSourceId: source.id,
+                        method: 'legacy-shop-verification',
+                        verifiedAt: owner.createdAt,
+                    })
+                    .onConflictDoNothing(),
+            )
+        }
+        // Pending legacy challenges are intentionally not portable; users restart proof of control.
+    } else if (run.stage === 'setup-entries') {
+        const rows = await db
+            .select()
+            .from(setupItems)
+            .where(run.cursor ? gt(setupItems.id, run.cursor) : undefined)
+            .orderBy(setupItems.id)
+            .limit(CATALOG_MIGRATION_CHUNK_SIZE)
+        ids = rows.map((row) => row.id)
+        for (const entry of rows) {
+            const [source] = await db
+                .select({ itemId: itemSources.itemId })
+                .from(items)
+                .innerJoin(
+                    itemSources,
+                    and(
+                        eq(itemSources.externalId, items.id),
+                        eq(itemSources.providerKey, items.platform),
+                    ),
+                )
+                .where(eq(items.id, entry.itemId))
+                .limit(1)
+            if (!source) throw new Error(`Missing CatalogItem for SetupEntry ${entry.id}`)
+            statements.push(
+                db
+                    .insert(setupEntries)
+                    .values(migrateLegacySetupEntry(entry, source.itemId))
+                    .onConflictDoNothing(),
+            )
+        }
+    } else if (run.stage === 'shapekeys') {
+        const rows = await db
+            .select()
+            .from(setupItemShapekeys)
+            .where(run.cursor ? gt(setupItemShapekeys.id, Number(run.cursor)) : undefined)
+            .orderBy(setupItemShapekeys.id)
+            .limit(CATALOG_MIGRATION_CHUNK_SIZE)
+        ids = rows.map((row) => row.id)
+        statements.push(
+            ...rows.map((row) =>
+                db
+                    .insert(setupEntryShapekeys)
+                    .values(migrateLegacyShapekey(row))
+                    .onConflictDoNothing(),
+            ),
+        )
+    }
+    const last = ids.at(-1)
+    const stage =
+        last === undefined
+            ? (stages[stages.indexOf(run.stage as (typeof stages)[number]) + 1] ?? 'verification')
+            : run.stage
     return {
-        mode,
-        pending,
-        expected: plan.expected,
-        issues: plan.issues.slice(0, 100),
-        verified:
-            Object.values(pending).every((value) => value === 0) &&
-            plan.issues.every((issue) => issue.severity === 'warning'),
+        statements,
+        cursor: last === undefined ? null : String(last),
+        stage,
+        processed: run.processed + ids.length,
     }
 }
 
-export const inspectCatalogV2Backfill = async (db: AppDatabase) =>
-    reportFromPlan(await createBackfillPlan(db), 'dry-run')
-
-export const verifyCatalogV2Backfill = async (db: AppDatabase) =>
-    reportFromPlan(await createBackfillPlan(db), 'verification')
-
-export const applyCatalogV2Backfill = async (db: AppDatabase) => {
-    const plan = await createBackfillPlan(db)
-    if (plan.issues.some((issue) => issue.severity === 'error'))
-        return reportFromPlan(plan, 'dry-run')
-
-    await runStatementGroups(db, plan.publisherPairs)
-    await runStatementGroups(db, plan.catalogPairs)
-    await runStatements(db, plan.userPublisherStatements)
-    await runStatements(db, plan.challengeStatements)
-    await runStatements(db, plan.setupEntryStatements)
-    await runStatements(db, plan.shapekeyStatements)
-
-    return reportFromPlan(await createBackfillPlan(db), 'applied')
+/** One leased, atomic chunk per delivery. Retry after an expired lease resumes its checkpoint. */
+export const runCatalogMigrationChunk = async (db: AppDatabase, now = new Date()) => {
+    const token = crypto.randomUUID()
+    const [run] = await db
+        .update(catalogMigrationRuns)
+        .set({ leaseToken: token, leaseUntil: new Date(now.getTime() + 60_000), updatedAt: now })
+        .where(
+            and(
+                eq(catalogMigrationRuns.id, CATALOG_MIGRATION_ID),
+                eq(catalogMigrationRuns.status, 'running'),
+                or(
+                    isNull(catalogMigrationRuns.leaseUntil),
+                    lte(catalogMigrationRuns.leaseUntil, now),
+                ),
+            ),
+        )
+        .returning()
+    if (!run) {
+        const current = await getCatalogMigrationRun(db)
+        return { more: current?.status === 'running', run: current }
+    }
+    const ownsLease = and(
+        eq(catalogMigrationRuns.id, run.id),
+        eq(catalogMigrationRuns.leaseToken, token),
+    )
+    try {
+        const chunk = await planChunk(db, run)
+        const awaitingVerification = chunk.stage === 'verification'
+        await executeD1Batch(db, [
+            // D1 has no callback transactions. This NOT NULL assertion aborts the entire
+            // batch if another worker reclaimed the lock while this chunk was reading.
+            db
+                .update(catalogMigrationRuns)
+                .set({
+                    stage: sql`CASE WHEN ${catalogMigrationRuns.leaseToken} = ${token} THEN ${catalogMigrationRuns.stage} ELSE NULL END`,
+                })
+                .where(eq(catalogMigrationRuns.id, run.id)),
+            ...chunk.statements,
+            db
+                .update(catalogMigrationRuns)
+                .set({
+                    stage: chunk.stage,
+                    cursor: chunk.cursor,
+                    processed: chunk.processed,
+                    status: awaitingVerification ? 'awaiting-verification' : 'running',
+                    leaseToken: null,
+                    leaseUntil: null,
+                    lastError: null,
+                    updatedAt: new Date(),
+                })
+                .where(ownsLease),
+        ])
+        return { more: !awaitingVerification, run: await getCatalogMigrationRun(db) }
+    } catch (error) {
+        await db
+            .update(catalogMigrationRuns)
+            .set({
+                status: 'failed',
+                leaseToken: null,
+                leaseUntil: null,
+                lastError: `Chunk failed at ${run.stage}/${run.cursor ?? 'start'}; inspect Worker logs.`,
+                updatedAt: new Date(),
+            })
+            .where(ownsLease)
+        throw error
+    }
 }

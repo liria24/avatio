@@ -1,2 +1,2 @@
-setups.@nuxt/test-utils="4.1.0"
-setups.@nuxtjs/better-auth="0.2.0"
+setups.@nuxt/test-utils="4.2.0"
+setups.@nuxtjs/better-auth="0.2.4"

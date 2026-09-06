@@ -1,44 +1,38 @@
+import type { LegalDocument, LegalStatus } from '@avatio/core/legal'
+
 export const useTermsAgreement = () => {
-    const { user, updateUser, fetchSession } = useUserSession()
-    const agreeTerms = useAgreeTermsModal()
-
-    const { data: termsContent } = useAvatioContent('terms', 'ja')
-    const { data: privacyContent } = useAvatioContent('privacy-policy', 'ja')
-    const contents = computed(() => ({
-        termsUpdatedAt: termsContent.value?.frontmatter.updatedAt ?? null,
-        privacyUpdatedAt: privacyContent.value?.frontmatter.updatedAt ?? null,
-    }))
-
-    const lastAgreed = computed(() =>
-        user.value?.lastAgreedToTerms ? new Date(user.value.lastAgreedToTerms) : null,
+    const { user } = useUserSession()
+    const { locale } = useI18n()
+    const modal = useAgreeTermsModal()
+    const requestFetch = useRequestFetch()
+    const key = computed(() => `legal-status:${user.value?.id ?? 'anonymous'}:${locale.value}`)
+    const { data, refresh, error } = useAsyncData(
+        key,
+        () =>
+            user.value
+                ? requestFetch<LegalStatus>('/api/avatio/legal/status', {
+                      query: { locale: locale.value },
+                  })
+                : Promise.resolve(null),
+        { server: false },
     )
-
-    const needsTerms = computed(() => {
-        if (!user.value || !contents.value?.termsUpdatedAt) return false
-        return !lastAgreed.value || lastAgreed.value < new Date(contents.value.termsUpdatedAt)
-    })
-
-    const needsPrivacyPolicy = computed(() => {
-        if (!user.value || !contents.value?.privacyUpdatedAt) return false
-        return !lastAgreed.value || lastAgreed.value < new Date(contents.value.privacyUpdatedAt)
-    })
-
-    const needsAgreement = computed(() => needsTerms.value || needsPrivacyPolicy.value)
-
-    const agree = async () => {
-        await updateUser({ lastAgreedToTerms: new Date() })
-        await fetchSession({ force: true })
+    const pending = computed(
+        () =>
+            data.value?.documents.filter((document) => document.active && !document.accepted) ?? [],
+    )
+    const agree = async (
+        documents: { document: LegalDocument; version: string; sourceRevision: string }[],
+    ) => {
+        data.value = await $fetch<LegalStatus>('/api/avatio/legal/accept', {
+            method: 'POST',
+            body: { locale: locale.value, documents },
+        })
     }
-
     return {
-        needsTerms,
-        needsPrivacyPolicy,
-        needsAgreement,
+        needsAgreement: computed(() => Boolean(user.value && data.value?.needsAgreement)),
+        error,
+        refresh,
         agree,
-        open: () =>
-            agreeTerms.open({
-                needsTerms: needsTerms.value,
-                needsPrivacyPolicy: needsPrivacyPolicy.value,
-            }),
+        open: () => modal.open({ documents: pending.value.map((document) => document.document) }),
     }
 }

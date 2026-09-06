@@ -34,7 +34,13 @@ onMounted(() => {
             },
         })
 
-    if (needsAgreement.value) openTermsAgreement()
+    watch(
+        needsAgreement,
+        (needed) => {
+            if (needed) openTermsAgreement()
+        },
+        { immediate: true },
+    )
 })
 </script>
 

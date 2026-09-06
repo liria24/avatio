@@ -1,5 +1,7 @@
 import sanitizeHtml from 'sanitize-html'
 
+const unsafeKeys = new Set(['__proto__', 'constructor', 'prototype'])
+
 const sanitizeObject = <T>(obj: T): T => {
     if (typeof obj === 'string')
         return sanitizeHtml(obj, {
@@ -48,7 +50,9 @@ const sanitizeObject = <T>(obj: T): T => {
 
     if (obj && typeof obj === 'object' && obj !== null) {
         const sanitizedObj = {} as Record<string, unknown>
-        for (const [key, value] of Object.entries(obj)) sanitizedObj[key] = sanitizeObject(value)
+        for (const [key, value] of Object.entries(obj)) {
+            if (!unsafeKeys.has(key)) sanitizedObj[key] = sanitizeObject(value)
+        }
 
         return sanitizedObj as T
     }

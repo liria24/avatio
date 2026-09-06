@@ -11,21 +11,9 @@ import {
 import {
     BoothCatalogProvider,
     GithubCatalogProvider,
-    type ProviderHttpClient,
 } from '@avatio/nuxt/runtime/server/catalog/providers'
 import type { CacheContext, Queue } from '@cloudflare/workers-types'
 import { allowedBoothCategories } from '~~/database/schema'
-
-const catalogHttpClient: ProviderHttpClient = {
-    async get<T>(url: string) {
-        const response = await $fetch.raw<T | null>(url, { ignoreResponseError: true })
-        return {
-            status: response.status,
-            ok: response.ok,
-            data: response._data ?? null,
-        }
-    },
-}
 
 export const getCatalogRepository = () => new D1CatalogRepository(getDatabaseBinding())
 
@@ -34,6 +22,10 @@ export const getCatalogProviderRegistry = async () => {
     const admittedCategories = await db.select().from(allowedBoothCategories)
     const proxyBaseUrl = getRuntimeEnvString('BOOTH_PROXY_URL')
     if (!proxyBaseUrl) throw new Error('Missing required BOOTH_PROXY_URL runtime secret.')
+    const publisherRepository = getPublisherRepository()
+    const resolvePublisherSource = async (
+        snapshot: Parameters<typeof publisherRepository.upsertSource>[0],
+    ) => (await publisherRepository.upsertSource(snapshot)).id
 
     return new CatalogProviderRegistry([
         new BoothCatalogProvider({
@@ -44,9 +36,10 @@ export const getCatalogProviderRegistry = async () => {
             categoryMap: Object.fromEntries(
                 Object.entries(BOOTH_CATEGORY_MAP).map(([key, category]) => [key, category]),
             ),
-            http: catalogHttpClient,
+            http: providerHttpClient,
+            resolvePublisherSource,
         }),
-        new GithubCatalogProvider({ http: catalogHttpClient }),
+        new GithubCatalogProvider({ http: providerHttpClient, resolvePublisherSource }),
     ])
 }
 

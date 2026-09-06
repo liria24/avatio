@@ -28,7 +28,11 @@
         "fallbackDescription": "日本語にフォールバックされています。",
         "updatedAt": "最終更新日: {date}",
         "effectiveDate": "効力発生日: {date}",
-        "changeLog": "変更履歴"
+        "changeLog": "変更履歴",
+        "version": "バージョン: {version}",
+        "sourceRevision": "この版のソースを表示",
+        "retry": "再試行",
+        "loadError": "規約を読み込めませんでした。再度お試しください。"
     },
     "itemCategory": {
         "avatar": "ベースアバター",
@@ -94,24 +98,23 @@
                 "linkExistsDescription": "同じリンクは追加できません。"
             }
         },
-        "shop": {
-            "title": "ショップ認証",
-            "step1": "1. 認証するショップで販売しているアイテムを1つ選定し、URLを入力してください",
-            "step2": "2. 選定したアイテムの説明文に以下のコードを追記してください",
-            "stepDescription": "認証に使用できるアイテムは、Avatioに登録できるアイテムのみです。非公開アイテムや、非対応プラットフォームのアイテムは使用できません。また、現在GitHubはショップ認証に対応していません。",
-            "generatingCode": "コードを生成中...",
-            "verify": "ショップを認証",
-            "newShop": "新しくショップを認証",
-            "unverify": "ショップの認証を解除",
-            "unverifyConfirm": "本当にショップの認証を解除しますか？",
-            "deleteCodeNote": "認証が完了した後、追記したコードは削除してください",
-            "notVerifiable": "このURLは認証可能なアイテムではありません",
-            "noVerifiedShops": "認証済みのショップはありません",
+        "publisher": {
+            "title": "パブリッシャー認証",
+            "step1": "1. パブリッシャーソースを証明するアイテムURLを入力してください",
+            "step2": "2. プロバイダーの案内に従って以下のコードを追加してください",
+            "createChallenge": "認証チャレンジを作成",
+            "instruction": "BOOTHではこのコードをアイテムの説明文に追加して保存した後、認証してください。",
+            "verify": "パブリッシャーを認証",
+            "newPublisher": "新しいパブリッシャーを認証",
+            "unverify": "認証を解除",
+            "unverifyConfirm": "このパブリッシャーソースの所有者認証を解除しますか？",
+            "none": "認証済みのパブリッシャーソースはありません",
             "toast": {
-                "verified": "ショップを認証しました",
-                "verifyFailed": "ショップの認証に失敗しました",
-                "unverified": "ショップの認証を解除しました",
-                "unverifyFailed": "ショップの認証解除に失敗しました"
+                "challengeFailed": "認証チャレンジの作成に失敗しました",
+                "verified": "パブリッシャーを認証しました",
+                "verifyFailed": "パブリッシャーの認証に失敗しました",
+                "unverified": "パブリッシャー認証を解除しました",
+                "unverifyFailed": "パブリッシャー認証の解除に失敗しました"
             }
         },
         "account": {
@@ -549,7 +552,7 @@
         "objectToBanSubject": "ユーザーBANへの異議申し立て",
         "editProfile": "プロフィールを編集",
         "reportUser": "ユーザーを報告",
-        "shops": "ショップ",
+        "publishers": "パブリッシャー",
         "setups": "セットアップ"
     },
     "badges": {
@@ -557,7 +560,7 @@
         "contributor": "コントリビューター",
         "translator": "翻訳者",
         "alphaTester": "アルファテスター",
-        "shopOwner": "ショップオーナー",
+        "publisherOwner": "パブリッシャーオーナー",
         "patrol": "パトロール",
         "ideaMan": "アイデアマン"
     },

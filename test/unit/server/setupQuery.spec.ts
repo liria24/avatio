@@ -1,7 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+const warn = vi.fn()
+
 beforeEach(() => {
     vi.stubGlobal('withSetupImageUrls', async (images: unknown[]) => images)
+    vi.stubGlobal('logger', () => ({ warn }))
+    warn.mockClear()
 })
 
 afterEach(() => vi.unstubAllGlobals())
@@ -99,6 +103,8 @@ describe('Setup v2 compatibility projection', () => {
         const result = await querySetupProjection(database(baseSetup()), 'AbCd1234')
 
         expect(result?.v2).toBe(true)
+        expect(result?.projectionSource).toEqual({ mode: 'v2' })
+        expect(warn).not.toHaveBeenCalled()
         expect(result?.catalogItemIds).toEqual(['catalog-item-1'])
         expect(result?.sourceIds).toEqual(['source-1'])
         expect(result?.setup.items[0]).toMatchObject({
@@ -131,9 +137,32 @@ describe('Setup v2 compatibility projection', () => {
         const result = await querySetupProjection(database(value), 'AbCd1234')
 
         expect(result?.v2).toBe(false)
+        expect(result?.projectionSource).toEqual({
+            mode: 'legacy-fallback',
+            reason: 'entry-count-mismatch',
+        })
+        expect(warn).toHaveBeenCalledWith({
+            event: 'catalog.setup.legacy_fallback',
+            setupId: 'AbCd1234',
+            reason: 'entry-count-mismatch',
+        })
         expect(result?.setup.items[0]).toMatchObject({ id: '12345', category: 'accessory' })
         expect(result?.legacyRevalidationItems).toHaveLength(1)
     })
+
+    it.each(['entry-id-mismatch', 'missing-catalog-source'] as const)(
+        'records %s without exposing diagnostics in the Setup DTO',
+        async (reason) => {
+            const value = baseSetup()
+            if (reason === 'entry-id-mismatch') value.entries[0]!.id = 'unmapped'
+            else value.entries[0]!.item.sources = []
+            const { querySetupProjection } = await import('../../../server/utils/setupQuery')
+            const result = await querySetupProjection(database(value), 'AbCd1234')
+            expect(result?.projectionSource).toEqual({ mode: 'legacy-fallback', reason })
+            expect(warn).toHaveBeenCalledWith(expect.objectContaining({ reason }))
+            expect(result?.setup).not.toHaveProperty('projectionSource')
+        },
+    )
 
     it('keeps private/hidden access out of the public projection', async () => {
         const value = { ...baseSetup(), public: false }

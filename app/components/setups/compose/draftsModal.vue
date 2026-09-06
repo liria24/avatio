@@ -77,11 +77,11 @@ watch(deleteMode, (value) => {
                     v-if="deleteMode"
                     v-model="selectedDrafts"
                     :items="
-                        drafts.map((draft: any) => ({
+                        drafts.map((draft) => ({
                             value: draft.id,
-                            label: draft.content?.name,
-                            description: draft.content?.description || undefined,
-                            items: draft.content?.items || [],
+                            label: draft.name,
+                            description: draft.description || undefined,
+                            itemCount: draft.itemCount,
                             updatedAt: draft.updatedAt,
                         }))
                     "
@@ -117,7 +117,7 @@ watch(deleteMode, (value) => {
                                 <div class="text-muted flex items-center gap-1">
                                     <Icon name="mingcute:package-2-fill" size="16" />
                                     <span class="font-mono text-xs">
-                                        {{ item.items?.length || 0 }}
+                                        {{ item.itemCount }}
                                     </span>
                                 </div>
                             </div>
@@ -150,18 +150,18 @@ watch(deleteMode, (value) => {
                                     </span>
 
                                     <span
-                                        :data-notitle="!draft.content.name"
+                                        :data-notitle="!draft.name"
                                         class="data-[notitle=true]:text-dimmed text-left"
                                     >
-                                        {{ draft.content.name || $t('setup.viewer.untitled') }}
+                                        {{ draft.name || $t('setup.viewer.untitled') }}
                                     </span>
                                 </div>
 
                                 <p
-                                    v-if="draft.content.description"
+                                    v-if="draft.description"
                                     class="text-muted line-clamp-2 text-left text-xs break-all"
                                 >
-                                    {{ draft.content.description }}
+                                    {{ draft.description }}
                                 </p>
                             </div>
 
@@ -175,7 +175,7 @@ watch(deleteMode, (value) => {
                                 <div class="text-muted flex items-center gap-1">
                                     <Icon name="mingcute:package-2-fill" size="16" />
                                     <span class="font-mono text-xs">
-                                        {{ draft.content.items?.length || 0 }}
+                                        {{ draft.itemCount }}
                                     </span>
                                 </div>
                             </div>

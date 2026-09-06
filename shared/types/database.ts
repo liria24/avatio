@@ -1,4 +1,9 @@
 import { itemCategorySchema } from '@avatio/core/catalog'
+import {
+    setupComposeFormSchema,
+    setupDraftContentSchema,
+    type SetupDraftContent,
+} from '@avatio/core/setups'
 import { z } from 'zod'
 
 // Compatibility HTTP contracts. These are intentionally explicit and must not
@@ -9,6 +14,7 @@ export const userBadgeSchema = z.enum([
     'translator',
     'alpha_tester',
     'shop_owner',
+    'publisher_owner',
     'patrol',
     'idea_man',
 ])
@@ -34,9 +40,21 @@ export const userBadgesPublicSchema = z.object({
     badge: userBadgeSchema,
 })
 
-export const userShopsPublicSchema = z.object({
-    createdAt: z.date(),
-    shop: shopsPublicSchema,
+export const publisherSourcePublicSchema = z.object({
+    id: z.string(),
+    providerKey: z.string(),
+    externalId: z.string(),
+    canonicalUrl: z.url(),
+    name: z.string(),
+    image: z.string().nullable(),
+    providerVerified: z.boolean(),
+})
+
+export const publisherOwnershipPublicSchema = z.object({
+    id: z.string(),
+    method: z.string(),
+    verifiedAt: z.date(),
+    publisherSource: publisherSourcePublicSchema,
 })
 
 export const userSettingsUpdateSchema = z.object({
@@ -74,7 +92,7 @@ export const usersPublicSchema = z.object({
     banReason: z.string().nullable().optional(),
     banExpires: z.date().nullable().optional(),
     badges: userBadgesPublicSchema.array().optional(),
-    shops: userShopsPublicSchema.array().optional(),
+    publisherOwnerships: publisherOwnershipPublicSchema.array().optional(),
 })
 export type User = z.infer<typeof usersPublicSchema>
 
@@ -237,28 +255,11 @@ export const setupsPublicSchema = z.object({
 })
 export type Setup = z.infer<typeof setupsPublicSchema>
 
-export const setupDraftContentSchema = setupsInsertSchema
-    .pick({
-        public: true,
-        name: true,
-        description: true,
-        tags: true,
-        images: true,
-        imageMetadata: true,
-        items: true,
-    })
-    .partial()
-    .extend({
-        coauthors: setupCoauthorsInsertSchema
-            .extend({ username: z.string() })
-            .array()
-            .max(8)
-            .optional(),
-    })
+export { setupComposeFormSchema, setupDraftContentSchema }
 
-export const setupDraftsInsertSchema = z.object({
-    id: z.uuid().optional(),
-    setupId: z.string().nullable().optional(),
+export const setupDraftsUpdateSchema = z.object({
+    expectedRevision: z.number().int().min(0),
+    setupId: z.string().nullable(),
     content: setupDraftContentSchema,
 })
 export const setupDraftsPublicSchema = z.object({
@@ -266,10 +267,15 @@ export const setupDraftsPublicSchema = z.object({
     createdAt: z.date(),
     updatedAt: z.date(),
     setupId: z.string().nullable(),
+    revision: z.number().int().min(1),
     content: setupDraftContentSchema,
 })
-export type SetupDraftContent = z.infer<typeof setupDraftContentSchema>
+export const setupDraftSummarySchema = setupDraftsPublicSchema
+    .omit({ content: true })
+    .extend({ name: z.string(), description: z.string(), itemCount: z.number().int().min(0) })
+export type { SetupDraftContent }
 export type SetupDraft = z.infer<typeof setupDraftsPublicSchema>
+export type SetupDraftSummary = z.infer<typeof setupDraftSummarySchema>
 
 export const bookmarksPublicSchema = z.object({
     createdAt: z.date(),

@@ -36,6 +36,8 @@ const boothItem = {
 const createHttp = (implementation: ProviderHttpClient['get']): ProviderHttpClient => ({
     get: implementation,
 })
+const resolvePublisherSource = async (snapshot: { providerKey: string; externalId: string }) =>
+    `${snapshot.providerKey}:${snapshot.externalId}`
 
 describe('BOOTH CatalogProvider', () => {
     it.each([
@@ -48,6 +50,7 @@ describe('BOOTH CatalogProvider', () => {
             allowedCategoryKeys: new Set(['208']),
             categoryMap: { '208': 'avatar' },
             http: createHttp(async () => response(200, boothItem)),
+            resolvePublisherSource,
         })
         expect(provider.matchUrl(new URL(value))).toEqual({
             providerKey: 'booth',
@@ -66,6 +69,7 @@ describe('BOOTH CatalogProvider', () => {
                 expect(url).toBe('https://proxy.example/api/12345')
                 return response(200, boothItem)
             }),
+            resolvePublisherSource,
         })
         const result = await provider.fetch({
             providerKey: 'booth',
@@ -80,7 +84,7 @@ describe('BOOTH CatalogProvider', () => {
             mappedCategory: 'avatar',
         })
         expect(result.snapshot.price).toBe('FREE')
-        expect(result.snapshot.publisher?.externalId).toBe('creator')
+        expect(result.snapshot.publisherSourceId).toBe('booth:creator')
     })
 
     it.each([
@@ -94,6 +98,7 @@ describe('BOOTH CatalogProvider', () => {
             allowedCategoryKeys: new Set(['208']),
             categoryMap: { '208': 'avatar' },
             http: createHttp(async () => response(status, null)),
+            resolvePublisherSource,
         })
         const result = await provider.fetch({
             providerKey: 'booth',
@@ -109,6 +114,7 @@ describe('BOOTH CatalogProvider', () => {
             allowedCategoryKeys: new Set(),
             categoryMap: {},
             http: createHttp(async () => response(200, boothItem)),
+            resolvePublisherSource,
         })
         const result = await provider.fetch({
             providerKey: 'booth',
@@ -129,6 +135,7 @@ describe('GitHub CatalogProvider', () => {
     it('matches only a GitHub owner/repository URL', () => {
         const provider = new GithubCatalogProvider({
             http: createHttp(async () => response(404, null)),
+            resolvePublisherSource,
         })
         expect(provider.matchUrl(new URL('https://github.com/owner/repository/'))).toEqual(
             reference,
@@ -146,6 +153,7 @@ describe('GitHub CatalogProvider', () => {
     ] as const)('maps repository HTTP %i to %s', async (status, expected) => {
         const provider = new GithubCatalogProvider({
             http: createHttp(async () => response(status, null)),
+            resolvePublisherSource,
         })
         expect((await provider.fetch(reference)).status).toBe(expected)
     })
@@ -155,9 +163,11 @@ describe('GitHub CatalogProvider', () => {
             http: createHttp(async () => {
                 throw new Error('network unavailable')
             }),
+            resolvePublisherSource,
         })
         const empty = new GithubCatalogProvider({
             http: createHttp(async () => response(200, null)),
+            resolvePublisherSource,
         })
         expect((await throwing.fetch(reference)).status).toBe('transient_error')
         expect((await empty.fetch(reference)).status).toBe('transient_error')
@@ -179,6 +189,7 @@ describe('GitHub CatalogProvider', () => {
                     },
                 })
             }),
+            resolvePublisherSource,
         })
         const result = await provider.fetch(reference)
         expect(result.status).toBe('available')

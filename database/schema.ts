@@ -23,6 +23,7 @@ export const userBadge = [
     'translator',
     'alpha_tester',
     'shop_owner',
+    'publisher_owner',
     'patrol',
     'idea_man',
 ] as const
@@ -136,6 +137,55 @@ export const users = snakeCase.table(
     (table) => [index('user_email_index').on(table.email)],
 )
 
+export const legalAcceptances = snakeCase.table(
+    'legal_acceptances',
+    {
+        id: uuid().primaryKey(),
+        userId: text()
+            .notNull()
+            .references(() => users.id, { onDelete: 'cascade' }),
+        document: text({ enum: ['terms', 'privacy-policy'] }).notNull(),
+        version: text().notNull(),
+        sourceRevision: text().notNull(),
+        sourceCommit: text(),
+        sourceLocale: text().notNull(),
+        acceptedAt: timestamp().notNull(),
+    },
+    (table) => [
+        uniqueIndex('legal_acceptances_user_document_version_uidx').on(
+            table.userId,
+            table.document,
+            table.version,
+        ),
+    ],
+)
+
+export const catalogMigrationRuns = snakeCase.table('catalog_migration_runs', {
+    id: text().primaryKey(),
+    stage: text({
+        enum: [
+            'publishers',
+            'catalog',
+            'ownerships',
+            'setup-entries',
+            'shapekeys',
+            'verification',
+            'complete',
+        ],
+    }).notNull(),
+    cursor: text(),
+    processed: integer().default(0).notNull(),
+    status: text({ enum: ['running', 'failed', 'awaiting-verification', 'complete'] }).notNull(),
+    startedAt: timestamp().notNull(),
+    updatedAt: timestamp().notNull(),
+    completedAt: timestamp(),
+    lastError: text(),
+    leaseToken: text(),
+    leaseUntil: timestamp(),
+    verification: text({ mode: 'json' }).$type<unknown>(),
+    verifiedAt: timestamp(),
+})
+
 export const sessions = snakeCase.table(
     'sessions',
     {
@@ -166,7 +216,8 @@ export const accounts = snakeCase.table(
     'accounts',
     {
         id: text().primaryKey(),
-        issuer: text().notNull(),
+        // Preserve 1.7.0–1.7.2 values during the auth rollout; 1.7.3 no longer writes issuer.
+        issuer: text(),
         providerAccountId: text().notNull(),
         providerId: text().notNull(),
         userId: text()
@@ -184,8 +235,8 @@ export const accounts = snakeCase.table(
     },
     (table) => [
         index('account_user_id_index').on(table.userId),
-        uniqueIndex('accounts_issuer_providerAccountId_uidx').on(
-            table.issuer,
+        uniqueIndex('accounts_providerId_providerAccountId_uidx').on(
+            table.providerId,
             table.providerAccountId,
         ),
     ],
@@ -534,21 +585,67 @@ export const userPublishers = snakeCase.table(
     ],
 )
 
+/** Authorization truth for ownership of one provider-specific PublisherSource. */
+export const publisherSourceOwnerships = snakeCase.table(
+    'publisher_source_ownerships',
+    {
+        id: uuid().primaryKey(),
+        userId: text().notNull(),
+        publisherSourceId: text().notNull(),
+        method: text().notNull(),
+        verifiedAt: timestamp().notNull(),
+    },
+    (table) => [
+        index('publisher_source_ownerships_user_id_idx').on(table.userId),
+        index('publisher_source_ownerships_source_id_idx').on(table.publisherSourceId),
+        uniqueIndex('publisher_source_ownerships_user_source_uidx').on(
+            table.userId,
+            table.publisherSourceId,
+        ),
+        foreignKey({
+            name: 'publisher_source_ownerships_user_id_fkey',
+            columns: [table.userId],
+            foreignColumns: [users.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+        foreignKey({
+            name: 'publisher_source_ownerships_source_id_fkey',
+            columns: [table.publisherSourceId],
+            foreignColumns: [publisherSources.id],
+        })
+            .onDelete('restrict')
+            .onUpdate('cascade'),
+    ],
+)
+
 /** Pending ownership challenge; kept separate from identity and provider state. */
 export const publisherVerificationChallenges = snakeCase.table(
-    'publisher_verification_challenges',
+    'publisher_source_verification_challenges',
     {
         id: uuid().primaryKey(),
         code: text().notNull(),
         createdAt: timestamp().default(now).notNull(),
         userId: text().notNull(),
+        publisherSourceId: text().notNull(),
+        method: text().notNull(),
+        expiresAt: timestamp().notNull(),
     },
     (table) => [
-        uniqueIndex('publisher_verification_challenges_user_id_uidx').on(table.userId),
+        index('publisher_verification_challenges_user_id_idx').on(table.userId),
+        index('publisher_verification_challenges_source_id_idx').on(table.publisherSourceId),
+        index('publisher_verification_challenges_expires_at_idx').on(table.expiresAt),
         foreignKey({
             name: 'publisher_verification_challenges_user_id_fkey',
             columns: [table.userId],
             foreignColumns: [users.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+        foreignKey({
+            name: 'publisher_verification_challenges_source_id_fkey',
+            columns: [table.publisherSourceId],
+            foreignColumns: [publisherSources.id],
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
@@ -891,10 +988,8 @@ export const setupDrafts = snakeCase.table(
             .notNull(),
         userId: text().notNull(),
         setupId: text(),
+        revision: integer().default(1).notNull(),
         content: text({ mode: 'json' }).notNull(),
-        idempotencyRequestId: text()
-            .unique()
-            .references(() => idempotencyRequests.id, { onDelete: 'set null' }),
     },
     (table) => [
         index('setup_drafts_id_index').on(table.id),

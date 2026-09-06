@@ -124,6 +124,7 @@ const makeWebsiteEnv = (config: AvatioStageConfig) => {
 
     return {
         APP_DB: AppDatabase,
+        CONTENT_CACHE: Cache,
         R2: Files,
         SELF_URL: Cloudflare.Workers.URL,
         ITEM_REVALIDATION_QUEUE: ItemRevalidationQueue,
@@ -143,6 +144,10 @@ const makeWebsiteEnv = (config: AvatioStageConfig) => {
         OG_IMAGE_SECRET: requiredSecret('OG_IMAGE_SECRET'),
         LIRIA_DISCORD_ENDPOINT: optionalSecret('LIRIA_DISCORD_ENDPOINT'),
         LIRIA_DISCORD_ACCESS_TOKEN: optionalSecret('LIRIA_DISCORD_ACCESS_TOKEN'),
+        CLOUDFLARE_ANALYTICS_READ_TOKEN: optionalSecret('CLOUDFLARE_ANALYTICS_READ_TOKEN'),
+        GOOGLE_SEARCH_CONSOLE_CLIENT_ID: optionalSecret('GOOGLE_SEARCH_CONSOLE_CLIENT_ID'),
+        GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET: optionalSecret('GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET'),
+        GOOGLE_SEARCH_CONSOLE_REFRESH_TOKEN: optionalSecret('GOOGLE_SEARCH_CONSOLE_REFRESH_TOKEN'),
         EMAIL_FROM: config.emailFrom,
         BETTER_AUTH_SECRET: betterAuthSecret,
         NUXT_BETTER_AUTH_SECRET: betterAuthSecret,
@@ -162,6 +167,14 @@ export const Website = Cloudflare.Website.Nuxt(
         const siteUrl = config.siteUrl
         const siteHost = new URL(config.siteUrl).hostname
         const imageHost = new URL(config.imageBaseUrl).hostname
+        const webAnalytics = config.production
+            ? yield* Cloudflare.Rum.Site('WebAnalytics', {
+                  zoneTag: 'dae79da2dd3dda74ec53220f91811a1d',
+                  autoInstall: true,
+                  enabled: true,
+                  lite: true,
+              })
+            : undefined
         return {
             name: config.infrastructure.worker,
             domain: { name: siteHost },
@@ -183,7 +196,12 @@ export const Website = Cloudflare.Website.Nuxt(
                 traces: { enabled: false },
             },
             crons: config.production ? ['0 22 * * *'] : [],
-            env: makeWebsiteEnv(config),
+            env: {
+                ...makeWebsiteEnv(config),
+                CLOUDFLARE_ANALYTICS_ACCOUNT_ID: webAnalytics?.accountId ?? '',
+                CLOUDFLARE_ANALYTICS_SITE_TAG: webAnalytics?.siteTag ?? '',
+                CLOUDFLARE_ANALYTICS_HOST: siteHost,
+            },
             nuxt: {
                 runtimeConfig: { public: { siteUrl } },
                 appConfig: { app: { site: siteUrl } },
@@ -237,7 +255,6 @@ export default Alchemy.Stack(
     },
     Effect.gen(function* () {
         const currentStage = yield* Stage
-        const config = getStageConfig(currentStage)
         const website = yield* Website
         const queue = yield* ItemRevalidationQueue
 
@@ -247,22 +264,13 @@ export default Alchemy.Stack(
             settings: { batchSize: 10, maxWaitTimeMs: 5000, maxRetries: 3 },
         })
 
-        if (config.production)
-            yield* Cloudflare.Rum.Site('WebAnalytics', {
-                zoneTag: 'dae79da2dd3dda74ec53220f91811a1d',
-                autoInstall: true,
-                enabled: true,
-                lite: true,
-            })
-
         return {
             stage: currentStage,
             url: website.url,
             worker: website.workerName,
             appDatabase: (yield* AppDatabase).databaseId,
             contentDatabase: (yield* ContentDatabase).databaseId,
-            // The old Nitro cache KV stays provisioned but unbound. Yielding it
-            // prevents a naming-only cleanup from deleting production data.
+            // Reuse the retained namespace for authored content, under its own key prefix.
             legacyCache: (yield* Cache).namespaceId,
             bucket: (yield* Files).bucketName,
             queue: queue.queueName,

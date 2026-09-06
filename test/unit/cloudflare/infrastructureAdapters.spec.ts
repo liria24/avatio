@@ -1,5 +1,8 @@
-import { CloudflareFeatureFlags, R2FileStorage } from '@avatio/cloudflare'
-import type { R2Bucket } from '@cloudflare/workers-types'
+import { CloudflareFeatureFlags } from '@avatio/cloudflare'
+
+import { getFileStorage } from '../../../server/utils/infrastructure'
+
+afterEach(() => vi.unstubAllGlobals())
 
 describe('Cloudflare infrastructure adapters', () => {
     it('maps semantic flags and fails closed', async () => {
@@ -22,16 +25,20 @@ describe('Cloudflare infrastructure adapters', () => {
     it('imports external files into R2 and exposes the configured public URL', async () => {
         const put = vi.fn(async () => null)
         const remove = vi.fn(async () => undefined)
-        const storage = new R2FileStorage({
-            bucket: { put, delete: remove } as unknown as R2Bucket,
-            publicBaseUrl: 'https://images.example.com/',
-            fetch: vi.fn(
+        vi.stubGlobal('__env__', {
+            R2: { put, delete: remove },
+            R2_PUBLIC_BASE_URL: 'https://images.example.com/',
+        })
+        vi.stubGlobal(
+            'fetch',
+            vi.fn(
                 async () =>
                     new Response(new Uint8Array([1, 2, 3]), {
                         headers: { 'content-type': 'image/jpeg' },
                     }),
             ),
-        })
+        )
+        const storage = getFileStorage()
 
         await expect(
             storage.importFromUrl({
@@ -42,9 +49,13 @@ describe('Cloudflare infrastructure adapters', () => {
             key: 'avatar/user image.jpg',
             url: 'https://images.example.com/avatar/user%20image.jpg',
         })
-        expect(put).toHaveBeenCalledWith('avatar/user image.jpg', expect.any(ArrayBuffer), {
-            httpMetadata: { contentType: 'image/jpeg' },
-        })
+        expect(put).toHaveBeenCalledWith(
+            'avatar/user image.jpg',
+            expect.anything(),
+            expect.objectContaining({
+                httpMetadata: expect.objectContaining({ contentType: 'image/jpeg' }),
+            }),
+        )
 
         await storage.delete('avatar/user image.jpg')
         expect(remove).toHaveBeenCalledWith('avatar/user image.jpg')
