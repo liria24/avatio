@@ -58,7 +58,7 @@ export const stageConfig = {
             worker: 'avatio',
             appDatabase: 'avatio',
             contentDatabase: 'avatio-content',
-            cache: 'avatio-cache',
+            cache: 'avatio',
             bucket: 'avatio',
             queue: 'item-revalidation',
             flags: 'avatio-production',
