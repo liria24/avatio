@@ -1,7 +1,6 @@
 import {
     createDefaultSetupComposeForm,
     isEmptySetupComposeForm,
-    setupDraftContentSchema,
     type SetupComposeForm,
     type SetupDraftContent,
 } from '@avatio/core/setups'
@@ -115,6 +114,7 @@ const createSetupCompose = () => {
                 }),
             ),
         ])
+        draftController.requireOwner()
         itemEntities.value = Object.fromEntries(
             items.flatMap((item) => (item ? [[item.id, item]] : [])),
         )
@@ -129,23 +129,7 @@ const createSetupCompose = () => {
         loadFailed.value = false
         try {
             await draftController.flush()
-            let draftData: SetupDraft | null = null
-            try {
-                draftData = await $fetch<SetupDraft>(`/api/setup-drafts/${id}`)
-            } catch (error) {
-                const local = await draftController.loadRecovery(id)
-                if (local)
-                    draftData = {
-                        id: local.id,
-                        revision: local.revision,
-                        setupId: local.setupId,
-                        content: setupDraftContentSchema.parse(local.content),
-                        createdAt: new Date(local.updatedAt),
-                        updatedAt: new Date(local.updatedAt),
-                    }
-                else if ((error as { statusCode?: number }).statusCode !== 404) throw error
-            }
-            if (!draftData) throw new Error('Draft not found')
+            const draftData = await draftController.load(id)
 
             await hydrateDraftReferences(draftData.content)
             editingSetupId.value = draftData.setupId ?? null
@@ -170,6 +154,7 @@ const createSetupCompose = () => {
 
     const loadSetup = async (setupId: Setup['id']) => {
         const setup = await $fetch<Setup>(`/api/me/setups/${setupId}`)
+        draftController.requireOwner()
         const content: SetupDraftContent = {
             public: setup.public,
             name: setup.name,
@@ -259,6 +244,7 @@ const createSetupCompose = () => {
         publishing.value = true
         try {
             await draftController.flush()
+            draftController.requireOwner()
             const body = {
                 public: values.value.public,
                 name: values.value.name,
@@ -364,7 +350,7 @@ const createSetupCompose = () => {
     const deleteDrafts = async (ids: string[]) => {
         for (const id of ids) {
             await $fetch(`/api/setup-drafts/${id}`, { method: 'DELETE' })
-            await deleteSetupDraftRecovery(id).catch(() => null)
+            await draftController.deleteRecovery(id).catch(() => null)
         }
         if (ids.includes(draftController.state.id)) await reset()
         await refreshDrafts()

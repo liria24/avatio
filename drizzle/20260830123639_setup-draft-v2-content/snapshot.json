@@ -1,6 +1,6 @@
 {
-    "id": "e3cb619f-6d5a-4cf7-99f4-5c2b7c4b8ce1",
-    "prevIds": ["dfba1418-9b43-40b3-a91b-d33f0b29ea4c"],
+    "id": "caa37269-1389-41cc-be4e-017ed46cf1bc",
+    "prevIds": ["ae005f06-85a6-488b-9f9b-b9c8c44c7366"],
     "version": "7",
     "dialect": "sqlite",
     "ddl": [
@@ -2272,6 +2272,16 @@
             "autoincrement": false,
             "default": null,
             "generated": null,
+            "name": "idempotency_request_id",
+            "entityType": "columns",
+            "table": "setup_drafts"
+        },
+        {
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
             "name": "id",
             "entityType": "columns",
             "table": "setup_entries"
@@ -3742,6 +3752,17 @@
             "name": "setup_draft_images_setup_draft_id_fkey",
             "entityType": "fks",
             "table": "setup_draft_images"
+        },
+        {
+            "columns": ["idempotency_request_id"],
+            "tableTo": "idempotency_requests",
+            "columnsTo": ["id"],
+            "onUpdate": "NO ACTION",
+            "onDelete": "SET NULL",
+            "nameExplicit": false,
+            "name": "fk_setup_drafts_idempotency_request_id_idempotency_requests_id_fk",
+            "entityType": "fks",
+            "table": "setup_drafts"
         },
         {
             "columns": ["setup_id"],
@@ -5847,6 +5868,13 @@
             "name": "sessions_token_unique",
             "entityType": "uniques",
             "table": "sessions"
+        },
+        {
+            "columns": ["idempotency_request_id"],
+            "nameExplicit": false,
+            "name": "setup_drafts_idempotency_request_id_unique",
+            "entityType": "uniques",
+            "table": "setup_drafts"
         },
         {
             "columns": ["idempotency_request_id"],

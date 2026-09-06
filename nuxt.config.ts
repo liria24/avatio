@@ -126,6 +126,7 @@ export default defineNuxtConfig({
     css: ['~/assets/css/main.css'],
 
     vite: {
+        vue: { features: { optionsAPI: false } },
         optimizeDeps: {
             include: [
                 '@nuxt/ui > prosemirror-state',
@@ -139,14 +140,17 @@ export default defineNuxtConfig({
 
     routeRules,
 
+    // insight-ts emits a file URL; map it for both Nitro and generated TypeScript imports.
+    alias: {
+        [pathToFileURL(insightConfigPath).href]: insightConfigPath,
+    },
+
     nitro: {
         // Workerd's console.createTask getter throws when Unenv and Hookable probe it at import time.
         alias: {
             'node:console': fileURLToPath(
                 new URL('./server/shims/node-console.ts', import.meta.url),
             ),
-            // insight-ts alpha emits this Windows file URL; Nitro resolves filesystem paths.
-            [pathToFileURL(insightConfigPath).href]: insightConfigPath,
         },
         replace: {
             'console.createTask': 'undefined',

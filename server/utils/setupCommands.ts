@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 import type { BatchItem } from 'drizzle-orm/batch'
 import type { H3Event } from 'h3'
 import { nanoid } from 'nanoid'
@@ -33,7 +33,7 @@ const queryOwnerProjection = async (context: SetupCommandContext, id: string) =>
     return projection.setup
 }
 
-const buildEntryData = async (
+const buildEntryStatements = async (
     db: ReturnType<typeof useDB>,
     setupId: string,
     input: Pick<CreateSetupInput, 'items'>,
@@ -52,11 +52,34 @@ const buildEntryData = async (
             ...shapekey,
         })),
     )
-    return {
-        legacyEntries,
-        shapekeys,
-        v2: await mapV2SetupEntryWrites(db, legacyEntries, shapekeys),
+    const v2Entries = await mapV2SetupEntryWrites(db, legacyEntries)
+    const queries: BatchItem<'sqlite'>[] = []
+    if (legacyEntries.length) queries.push(db.insert(setupItems).values(legacyEntries))
+    if (shapekeys.length) queries.push(db.insert(setupItemShapekeys).values(shapekeys))
+    if (v2Entries?.length) {
+        queries.push(db.insert(setupEntries).values(v2Entries))
+        if (shapekeys.length)
+            queries.push(
+                // Read the IDs allocated by the preceding legacy insert in this same batch.
+                db.insert(setupEntryShapekeys).select(
+                    db
+                        .select({
+                            id: setupItemShapekeys.id,
+                            setupEntryId: setupItemShapekeys.setupItemId,
+                            name: setupItemShapekeys.name,
+                            value: setupItemShapekeys.value,
+                        })
+                        .from(setupItemShapekeys)
+                        .where(
+                            inArray(
+                                setupItemShapekeys.setupItemId,
+                                legacyEntries.map((entry) => entry.id),
+                            ),
+                        ),
+                ),
+            )
     }
+    return queries
 }
 
 export const createSetup = async (
@@ -71,7 +94,7 @@ export const createSetup = async (
         images: input.images,
         imageMetadata: input.imageMetadata,
     })
-    const entries = await buildEntryData(db, setupId, input)
+    const entryStatements = await buildEntryStatements(db, setupId, input)
     const queries: BatchItem<'sqlite'>[] = [
         db.insert(setups).values({
             id: setupId,
@@ -83,13 +106,7 @@ export const createSetup = async (
         }),
     ]
 
-    if (entries.legacyEntries.length)
-        queries.push(db.insert(setupItems).values(entries.legacyEntries))
-    if (entries.shapekeys.length)
-        queries.push(db.insert(setupItemShapekeys).values(entries.shapekeys))
-    if (entries.v2?.entries.length) queries.push(db.insert(setupEntries).values(entries.v2.entries))
-    if (entries.v2?.shapekeys.length)
-        queries.push(db.insert(setupEntryShapekeys).values(entries.v2.shapekeys))
+    queries.push(...entryStatements)
     if (imageData.length)
         queries.push(
             db.insert(setupImages).values(imageData.map((image) => ({ ...image, setupId }))),
@@ -150,7 +167,7 @@ export const updateSetup = async (
                   images: input.images,
                   imageMetadata: input.imageMetadata,
               })
-    const entries = await buildEntryData(db, id, input)
+    const entryStatements = await buildEntryStatements(db, id, input)
     const queries: BatchItem<'sqlite'>[] = []
 
     if (Object.keys(updateData).length || hasRelationalChanges) {
@@ -168,13 +185,7 @@ export const updateSetup = async (
         db.delete(setupItems).where(eq(setupItems.setupId, id)),
         db.delete(setupEntries).where(eq(setupEntries.setupId, id)),
     )
-    if (entries.legacyEntries.length)
-        queries.push(db.insert(setupItems).values(entries.legacyEntries))
-    if (entries.shapekeys.length)
-        queries.push(db.insert(setupItemShapekeys).values(entries.shapekeys))
-    if (entries.v2?.entries.length) queries.push(db.insert(setupEntries).values(entries.v2.entries))
-    if (entries.v2?.shapekeys.length)
-        queries.push(db.insert(setupEntryShapekeys).values(entries.v2.shapekeys))
+    queries.push(...entryStatements)
 
     if (input.images !== undefined && imageData !== undefined) {
         queries.push(db.delete(setupImages).where(eq(setupImages.setupId, id)))

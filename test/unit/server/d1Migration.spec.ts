@@ -72,6 +72,56 @@ describe('D1 migration', () => {
         expect(database.prepare('PRAGMA foreign_key_check').all()).toEqual([])
     })
 
+    it('preserves existing drafts and image references through transactional schema and content migrations', () => {
+        database.close()
+        database = new DatabaseSync(':memory:')
+        database.exec('PRAGMA foreign_keys = ON')
+        const draftSchemaMigration = '20260830123630_normal_piledriver'
+        const directories = readdirSync('drizzle').sort()
+        for (const directory of directories) {
+            if (directory >= draftSchemaMigration) break
+            database.exec(readFileSync(join('drizzle', directory, 'migration.sql'), 'utf8'))
+        }
+        database.exec(`
+            INSERT INTO users (id, name, username, display_username, email)
+            VALUES ('draft-owner', 'Owner', 'draft_owner', 'Owner', 'owner@example.com');
+            INSERT INTO setups (id, user_id, name) VALUES ('draft-setup', 'draft-owner', 'Setup');
+            INSERT INTO idempotency_requests (id, scope, route, key, request_hash, lease_expires_at, expires_at)
+            VALUES ('draft-request', 'draft-owner', '/api/setup-drafts', 'key', 'hash', 1, 2);
+            INSERT INTO setup_drafts (id, user_id, setup_id, idempotency_request_id, content)
+            VALUES ('draft', 'draft-owner', 'draft-setup', 'draft-request', '{"name":"Draft","images":["https://images.avatio.me/setup/draft.png"],"tags":[{"tag":"avatar"}]}');
+            INSERT INTO setup_draft_images (id, setup_draft_id, object_key)
+            VALUES ('draft-image', 'draft', 'setup/draft.png');
+        `)
+        for (const directory of directories.filter((entry) => entry >= draftSchemaMigration)) {
+            // D1 keeps foreign keys enabled for every migration transaction.
+            database.exec('BEGIN')
+            database.exec(readFileSync(join('drizzle', directory, 'migration.sql'), 'utf8'))
+            database.exec('COMMIT')
+        }
+
+        const draft = database.prepare('SELECT * FROM setup_drafts WHERE id = ?').get('draft')
+        expect(draft).toMatchObject({
+            user_id: 'draft-owner',
+            setup_id: 'draft-setup',
+            idempotency_request_id: 'draft-request',
+            revision: 1,
+        })
+        expect(setupDraftContentSchema.parse(JSON.parse(String(draft?.content)))).toMatchObject({
+            name: 'Draft',
+            images: ['https://images.avatio.me/setup/draft.png'],
+            tags: ['avatar'],
+        })
+        expect(database.prepare('SELECT * FROM setup_draft_images').all()).toEqual([
+            { id: 'draft-image', setup_draft_id: 'draft', object_key: 'setup/draft.png' },
+        ])
+        expect(database.prepare('PRAGMA foreign_key_check').all()).toEqual([])
+
+        database.exec("DELETE FROM setups WHERE id = 'draft-setup'")
+        expect(database.prepare('SELECT * FROM setup_drafts').all()).toEqual([])
+        expect(database.prepare('SELECT * FROM setup_draft_images').all()).toEqual([])
+    })
+
     it('enforces idempotency and relation uniqueness', () => {
         const insertRequest = database.prepare(`
             INSERT INTO idempotency_requests

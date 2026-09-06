@@ -50,7 +50,7 @@ const baseSetup = () => ({
                 outdated: false,
                 shop: null,
             },
-            shapekeys: [{ name: 'Smile', value: 1 }],
+            shapekeys: [{ id: 1, name: 'Smile', value: 1 }],
         },
     ],
     entries: [
@@ -86,7 +86,7 @@ const baseSetup = () => ({
                     },
                 ],
             },
-            shapekeys: [{ name: 'Smile', value: 1 }],
+            shapekeys: [{ id: 1, name: 'Smile', value: 1 }],
         },
     ],
     images: [],
@@ -163,6 +163,63 @@ describe('Setup v2 compatibility projection', () => {
             expect(result?.setup).not.toHaveProperty('projectionSource')
         },
     )
+
+    it.each([
+        { reason: 'missing', shapekeys: [] },
+        { reason: 'partial', shapekeys: [{ id: 1, name: 'Smile', value: 1 }] },
+        {
+            reason: 'wrong identity',
+            shapekeys: [
+                { id: 3, name: 'Smile', value: 1 },
+                { id: 2, name: 'Blink', value: 0.5 },
+            ],
+        },
+        {
+            reason: 'wrong name',
+            shapekeys: [
+                { id: 1, name: 'Other', value: 1 },
+                { id: 2, name: 'Blink', value: 0.5 },
+            ],
+        },
+        {
+            reason: 'wrong value',
+            shapekeys: [
+                { id: 1, name: 'Smile', value: 0 },
+                { id: 2, name: 'Blink', value: 0.5 },
+            ],
+        },
+    ])('preserves legacy shapekeys when migration has $reason keys', async ({ shapekeys }) => {
+        const value = baseSetup()
+        value.items[0]!.shapekeys.push({ id: 2, name: 'Blink', value: 0.5 })
+        value.entries[0]!.shapekeys = shapekeys
+        const { querySetupProjection } = await import('../../../server/utils/setupQuery')
+        const result = await querySetupProjection(database(value), value.id, {
+            userId: value.userId,
+        })
+
+        expect(result?.projectionSource).toEqual({
+            mode: 'legacy-fallback',
+            reason: 'shapekey-mismatch',
+        })
+        expect(result?.setup.items[0]?.shapekeys).toEqual([
+            { name: 'Smile', value: 1 },
+            { name: 'Blink', value: 0.5 },
+        ])
+    })
+
+    it('switches to v2 when all shapekeys match regardless of query order without exposing IDs', async () => {
+        const value = baseSetup()
+        value.items[0]!.shapekeys.push({ id: 2, name: 'Blink', value: 0.5 })
+        value.entries[0]!.shapekeys = [...value.items[0]!.shapekeys].reverse()
+        const { querySetupProjection } = await import('../../../server/utils/setupQuery')
+        const result = await querySetupProjection(database(value), value.id)
+
+        expect(result?.projectionSource).toEqual({ mode: 'v2' })
+        expect(result?.setup.items[0]?.shapekeys).toEqual([
+            { name: 'Blink', value: 0.5 },
+            { name: 'Smile', value: 1 },
+        ])
+    })
 
     it('keeps private/hidden access out of the public projection', async () => {
         const value = { ...baseSetup(), public: false }

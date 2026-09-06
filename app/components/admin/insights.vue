@@ -43,7 +43,13 @@ const { data, error, refresh, status } = await useFetch<AdminInsightsResponse>(
 )
 
 const metric = (result: MetricQueryResult, name: string): MetricQueryResult => ({
-    data: { [name]: result.data[name] } as MetricQueryResult['data'],
+    data: {
+        values: { [name]: result.data.values[name] ?? null },
+        points: result.data.points?.map((point) => ({
+            ...point,
+            values: { [name]: point.values[name] ?? null },
+        })),
+    },
     meta: result.meta,
 })
 const percentage = (value: number) =>

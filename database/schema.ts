@@ -990,6 +990,9 @@ export const setupDrafts = snakeCase.table(
         setupId: text(),
         revision: integer().default(1).notNull(),
         content: text({ mode: 'json' }).notNull(),
+        idempotencyRequestId: text()
+            .unique()
+            .references(() => idempotencyRequests.id, { onDelete: 'set null' }),
     },
     (table) => [
         index('setup_drafts_id_index').on(table.id),

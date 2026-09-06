@@ -7,7 +7,11 @@ export type SetupProjectionSource =
     | { mode: 'v2' }
     | {
           mode: 'legacy-fallback'
-          reason: 'entry-count-mismatch' | 'entry-id-mismatch' | 'missing-catalog-source'
+          reason:
+              | 'entry-count-mismatch'
+              | 'entry-id-mismatch'
+              | 'missing-catalog-source'
+              | 'shapekey-mismatch'
       }
 
 export interface SetupQueryViewer {
@@ -87,7 +91,7 @@ export const querySetupProjection = async (
                             },
                         },
                     },
-                    shapekeys: { columns: { name: true, value: true } },
+                    shapekeys: { columns: { id: true, name: true, value: true } },
                 },
             },
             entries: {
@@ -133,7 +137,7 @@ export const querySetupProjection = async (
                             },
                         },
                     },
-                    shapekeys: { columns: { name: true, value: true } },
+                    shapekeys: { columns: { id: true, name: true, value: true } },
                 },
             },
             images: { columns: { objectKey: true, width: true, height: true } },
@@ -167,15 +171,29 @@ export const querySetupProjection = async (
         : !data.hidAt && data.public
     if (!canView) return null
 
-    const legacyEntryIds = new Set(data.items.map((entry) => entry.id))
+    const legacyEntries = new Map(data.items.map((entry) => [entry.id, entry]))
     const reason =
         data.entries.length !== data.items.length
             ? 'entry-count-mismatch'
-            : data.entries.some((entry) => !legacyEntryIds.has(entry.id))
+            : data.entries.some((entry) => !legacyEntries.has(entry.id))
               ? 'entry-id-mismatch'
               : data.entries.some((entry) => !entry.item.sources.some((source) => source.primary))
                 ? 'missing-catalog-source'
-                : null
+                : data.entries.some((entry) => {
+                        const legacyShapekeys = legacyEntries.get(entry.id)?.shapekeys ?? []
+                        const migrated = new Map(entry.shapekeys.map((key) => [key.id, key]))
+                        return (
+                            legacyShapekeys.length !== entry.shapekeys.length ||
+                            legacyShapekeys.some((key) => {
+                                const match = migrated.get(key.id)
+                                return (
+                                    !match || match.name !== key.name || match.value !== key.value
+                                )
+                            })
+                        )
+                    })
+                  ? 'shapekey-mismatch'
+                  : null
     const projectionSource: SetupProjectionSource = reason
         ? { mode: 'legacy-fallback', reason }
         : { mode: 'v2' }
@@ -210,7 +228,7 @@ export const querySetupProjection = async (
                 }),
                 unsupported: entry.unsupported,
                 note: entry.note,
-                shapekeys: entry.shapekeys,
+                shapekeys: entry.shapekeys.map(({ name, value }) => ({ name, value })),
             })
             if (projected) projectedItems.push(projected)
             else failedItemsCount++
@@ -235,7 +253,7 @@ export const querySetupProjection = async (
                 shop: entry.item.shop,
                 unsupported: entry.unsupported,
                 note: entry.note,
-                shapekeys: entry.shapekeys,
+                shapekeys: entry.shapekeys.map(({ name, value }) => ({ name, value })),
             })
         }
     }

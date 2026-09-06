@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { createLocalStorage } from '../../../server/storage/local'
+
 interface StorageObject {
     key: string
     lastModified: number
@@ -31,6 +33,7 @@ const storage = {
     copy: vi.fn(),
     delete: vi.fn(),
     listAll: vi.fn(),
+    url: vi.fn(),
 }
 
 const discordFetch = vi.fn()
@@ -99,6 +102,12 @@ describe('runCleanupJob', () => {
         storage.copy.mockReset()
         storage.delete.mockReset()
         storage.listAll.mockReset()
+        storage.url.mockReset()
+        storage.url.mockImplementation(async (key: string) => {
+            const base = runtimeGlobal.__env__?.R2_PUBLIC_BASE_URL ?? process.env.R2_PUBLIC_BASE_URL
+            if (!base) throw new Error('Storage URL is unavailable')
+            return `${base.replace(/\/+$/, '')}/${key}`
+        })
         log.error.mockReset()
         log.info.mockReset()
         log.warn.mockReset()
@@ -160,6 +169,28 @@ describe('runCleanupJob', () => {
         })
     })
 
+    it('keeps referenced local avatars using the active storage URL instead of the R2 origin', async () => {
+        const files = createLocalStorage('.data/uploads')
+        const image = await files.url('avatar/local-used.jpg')
+        storage.url.mockImplementation((key: string) => files.url(key))
+        arrange({
+            rows: { users: [{ image }] },
+            avatarObjects: [
+                { key: 'avatar/local-used.jpg', lastModified: oldDate },
+                { key: 'avatar/local-orphan.jpg', lastModified: oldDate },
+            ],
+        })
+
+        const result = await runCleanupJob(true)
+
+        expect(result.data).toMatchObject({
+            candidates: ['avatar/local-orphan.jpg'],
+            totalWouldProcess: 1,
+        })
+        expect(storage.copy).not.toHaveBeenCalled()
+        expect(storage.delete).not.toHaveBeenCalled()
+    })
+
     it('ignores external profile URLs when deriving used R2 keys', async () => {
         arrange({
             rows: {
@@ -194,7 +225,7 @@ describe('runCleanupJob', () => {
         })
     })
 
-    it('skips cleanup when R2 public base URL is unavailable', async () => {
+    it('skips cleanup when the active storage URL is unavailable', async () => {
         delete process.env.R2_PUBLIC_BASE_URL
         arrange({
             rows: {
@@ -208,7 +239,7 @@ describe('runCleanupJob', () => {
         expect(result).toMatchObject({
             success: false,
             dryRun: true,
-            message: 'R2_PUBLIC_BASE_URL is not configured. Cleanup skipped.',
+            message: 'Storage public base URL is unavailable. Cleanup skipped.',
             data: {
                 candidates: [],
                 wouldDelete: [],

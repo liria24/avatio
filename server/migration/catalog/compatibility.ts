@@ -335,19 +335,9 @@ export interface LegacySetupItemWrite {
     note?: string | null
 }
 
-export interface LegacySetupShapekeyWrite {
-    setupItemId: string
-    name: string
-    value: number
-}
-
 /** Temporary rollout dual-write bridge from legacy Setup inputs to SetupEntry rows. */
-export const mapV2SetupEntryWrites = async (
-    db: AppDatabase,
-    entries: LegacySetupItemWrite[],
-    shapekeys: LegacySetupShapekeyWrite[],
-) => {
-    if (!entries.length) return { entries: [], shapekeys: [] }
+export const mapV2SetupEntryWrites = async (db: AppDatabase, entries: LegacySetupItemWrite[]) => {
+    if (!entries.length) return []
     const externalIds = [...new Set(entries.map((entry) => entry.itemId))]
     const [legacyItems, sources] = await Promise.all([
         db
@@ -373,19 +363,12 @@ export const mapV2SetupEntryWrites = async (
     )
     if (entries.some((entry) => !catalogItemByExternalId.has(entry.itemId))) return null
 
-    return {
-        entries: entries.map((entry) => ({
-            id: entry.id,
-            setupId: entry.setupId,
-            itemId: catalogItemByExternalId.get(entry.itemId)!,
-            categoryOverride: entry.category ?? null,
-            unsupported: entry.unsupported ?? false,
-            note: entry.note ?? null,
-        })),
-        shapekeys: shapekeys.map((shapekey) => ({
-            setupEntryId: shapekey.setupItemId,
-            name: shapekey.name,
-            value: shapekey.value,
-        })),
-    }
+    return entries.map((entry) => ({
+        id: entry.id,
+        setupId: entry.setupId,
+        itemId: catalogItemByExternalId.get(entry.itemId)!,
+        categoryOverride: entry.category ?? null,
+        unsupported: entry.unsupported ?? false,
+        note: entry.note ?? null,
+    }))
 }

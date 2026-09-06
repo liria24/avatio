@@ -32,7 +32,7 @@ export default promiseEventHandler(async ({ event }) => {
     const [application, traffic, search] = await Promise.all([
         loadSection('application', true, async () => {
             const result = await insight.query((query) => ({
-                application: query.source('avatio.application', {
+                application: query.metrics({
                     metrics: ['totalUsers', 'activeSetups'],
                     time: { ...time, grain: 'day' },
                 }),
@@ -41,33 +41,33 @@ export default promiseEventHandler(async ({ event }) => {
         }),
         loadSection('Cloudflare Web Analytics', cloudflareConfigured, () =>
             insight.query((query) => ({
-                totals: query.source('cloudflare.webAnalytics', {
+                totals: query.metrics({
                     metrics: ['pageViews', 'visits'],
                     time,
                 }),
-                series: query.source('cloudflare.webAnalytics', {
+                series: query.metrics({
                     metrics: ['pageViews', 'visits'],
                     time: { ...time, grain: 'day' },
                 }),
-                pages: query.source('cloudflare.webAnalytics', {
+                pages: query.metrics({
                     metrics: ['pageViews'],
                     dimensions: ['path'],
                     limit: 10,
                     time,
                 }),
-                countries: query.source('cloudflare.webAnalytics', {
+                countries: query.metrics({
                     metrics: ['pageViews'],
                     dimensions: ['country'],
                     limit: 10,
                     time,
                 }),
-                devices: query.source('cloudflare.webAnalytics', {
+                devices: query.metrics({
                     metrics: ['pageViews'],
                     dimensions: ['device'],
                     limit: 10,
                     time,
                 }),
-                referrers: query.source('cloudflare.webAnalytics', {
+                referrers: query.metrics({
                     metrics: ['pageViews'],
                     dimensions: ['referer'],
                     limit: 10,
@@ -78,21 +78,21 @@ export default promiseEventHandler(async ({ event }) => {
         loadSection('Google Search Console', searchConfigured, async () => {
             await getGoogleSearchConsoleAccessToken()
             return insight.query((query) => ({
-                totals: query.source('googleSearchConsole.searchAnalytics', {
+                totals: query.metrics({
                     metrics: ['clicks', 'impressions', 'ctr', 'averagePosition'],
                     time,
                 }),
-                series: query.source('googleSearchConsole.searchAnalytics', {
+                series: query.metrics({
                     metrics: ['clicks', 'impressions', 'ctr', 'averagePosition'],
                     time: { ...time, grain: 'day' },
                 }),
-                queries: query.source('googleSearchConsole.searchAnalytics', {
+                queries: query.metrics({
                     metrics: ['clicks', 'impressions'],
                     dimensions: ['query'],
                     limit: 10,
                     time,
                 }),
-                pages: query.source('googleSearchConsole.searchAnalytics', {
+                pages: query.metrics({
                     metrics: ['clicks', 'impressions'],
                     dimensions: ['page'],
                     limit: 10,

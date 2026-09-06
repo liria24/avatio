@@ -40,14 +40,15 @@ const sendMessage = (message: { content?: string; embeds?: object[] }) =>
         body: message,
     })
 
-const getR2PublicBaseUrl = () => getRuntimeEnvString('R2_PUBLIC_BASE_URL')?.replace(/\/+$/, '')
+const getStoragePublicBaseUrl = async () => {
+    try {
+        return new URL('.', await storage.url('cleanup')).href
+    } catch {
+        return null
+    }
+}
 
-const extractStorageKeyFromUrl = (
-    url: string,
-    publicBaseUrl = getR2PublicBaseUrl(),
-): string | null => {
-    if (!publicBaseUrl) return null
-
+const extractStorageKeyFromUrl = (url: string, publicBaseUrl: string): string | null => {
     try {
         const parsedUrl = new URL(url)
         const parsedBaseUrl = new URL(publicBaseUrl)
@@ -308,14 +309,14 @@ export const runReportJob = async () => {
 export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) => {
     const stage = getRuntimeEnvString('STAGE') ?? 'development'
     const thresholdDate = new Date(Date.now() - IMAGE_DELETION_THRESHOLD)
-    const publicBaseUrl = getR2PublicBaseUrl()
+    const publicBaseUrl = await getStoragePublicBaseUrl()
     const db = useDB()
 
     if (!dryRun)
         await db.delete(idempotencyRequests).where(lt(idempotencyRequests.expiresAt, new Date()))
 
     if (!publicBaseUrl) {
-        const message = 'R2_PUBLIC_BASE_URL is not configured. Cleanup skipped.'
+        const message = 'Storage public base URL is unavailable. Cleanup skipped.'
         cleanupLog.error(message)
         return dryRun
             ? {

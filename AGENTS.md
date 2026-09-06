@@ -9,6 +9,7 @@ Compact instruction for OpenCode sessions. If a fact is obvious from filenames, 
 - **Package manager:** `bun`. `bunfig.toml` uses `linker = "hoisted"`.
 - **Postinstall:** `bun run postinstall` runs `nuxt prepare` only.
 - **Development URL:** `bun run dev` serves the Alchemy local proxy at `http://localhost:3000`; the port is fixed and fails if already in use.
+- **Alchemy state:** Local `dev` uses gitignored `.alchemy/state`; plans and deployments use the Cloudflare state store. Keep them separate so starting the simulator cannot replace deployed development resources.
 
 ## Developer commands
 
@@ -85,6 +86,7 @@ Delete this entire rollout section from `AGENTS.md` once production verification
 The following compatibility is temporary. Do not add new consumers to it.
 
 - **Legacy Catalog/Setup schema:** `items`, `shops`, `item_category_overrides`, `setup_items`, `setup_item_shapekeys`, `user_shops`, and `user_shop_verifications` remain during expand/backfill/switch. They cannot be contracted yet because Setup list/search/bookmark APIs, item/admin APIs, publisher verification/profile reads, and item reports still use them. In particular, migrate `item_reports.item_id` from provider external IDs to CatalogItem IDs before dropping `items`.
+- **Draft schema:** Retain the unused nullable `setup_drafts.idempotency_request_id` column until a separate contract migration preserves `setup_draft_images` across any parent-table rebuild. D1 transactions keep foreign keys enabled, so dropping `setup_drafts` can cascade-delete its image references.
 - **Setup fallback and dual-write:** Setup detail reads use v2 only when every legacy relation has a matching SetupEntry; commands write both relation sets. Remove the fallback and legacy writes after production backfill verifies with zero pending rows and the rollback window closes. Do not prolong dual-write for convenience.
 - **Catalog bridge:** legacy `getItem()` currently writes v2 through the explicit `server/migration/catalog/compatibility.ts` rollout bridge, while v2 sync mirrors snapshots back to legacy tables. The target is one authoritative v2 write path, with at most a temporary one-way v2-to-legacy mirror for rollback. Migrate item resolution/search/admin, AI enrichment, publisher verification, and reports before deleting the old resolver and bridge.
 - **Legacy HTTP DTO:** `Platform`, `Item`, `Shop`, `SetupItem`, and the v2-to-legacy Setup projection remain because the bundled frontend consumes the old shape. Migrate the frontend to provider-neutral CatalogItem/SetupEntry contracts, verify whether production traffic has external API consumers, then delete the projection and `extractItemId` adapter together.
@@ -103,10 +105,12 @@ The following compatibility is temporary. Do not add new consumers to it.
 6. Call the same endpoint with `{ "mode": "apply" }`. Inspect `{ "mode": "status" }` for stage, cursor, processed rows, timestamps, lease, and last error. A failed chunk preserves completed work; resolve the cause in Worker logs and call `apply` again to resume. If a worker was interrupted, Queue redelivery reclaims its 60-second expired lease. If Queue delivery was exhausted or sending failed, `apply` enqueues again.
 7. Once status is `awaiting-verification`, call `{ "mode": "verify" }`; require `verified: true` and zero pending rows before status becomes `complete`. Verification does not mutate Catalog mappings. Resolve inconsistent mappings explicitly; `apply` from `awaiting-verification` rescans idempotently to fill missing rows, including rows inserted behind a previous cursor.
 8. Exercise BOOTH, GitHub, legacy `outdated=true`, publisher verification, notes, categories, shapekeys, private/hidden owner reads, and withdrawal/restoration behavior against production-like data.
-9. Observe at least one freshness window and verify v2 Queue messages, lease expiry/release, and item-tag cache invalidation. Count `catalog.setup.legacy_fallback` events from the `setupProjection` logger by `reason` (`entry-count-mismatch`, `entry-id-mismatch`, `missing-catalog-source`) and `setupId`. Worker logs have sampling rate 1. Public response contracts never expose this internal projection metadata.
+9. Observe at least one freshness window and verify v2 Queue messages, lease expiry/release, and item-tag cache invalidation. Count `catalog.setup.legacy_fallback` events from the `setupProjection` logger by `reason` (`entry-count-mismatch`, `entry-id-mismatch`, `missing-catalog-source`, `shapekey-mismatch`) and `setupId`. Worker logs have sampling rate 1. Public response contracts never expose this internal projection metadata.
 10. After the rollback window closes and the retained Queue drains, generate a separate contract migration that removes legacy tables/fields, dual writes, migration tooling, and the old Queue decoder.
 
 **Fallback removal gate:** require zero fallback events for seven consecutive production days, covering at least one 24-hour freshness window, with successful traffic/preflight reads across public, private-owner, and hidden-owner Setups. No traffic is not evidence of zero fallback. Any fallback restarts this window. Also require zero pending rows in final verification, drained retained Queue messages, a closed operator rollback window, and migration of remaining consumers in the compatibility ledger. Never remove legacy paths based only on a zero log count.
+
+**Catalog configuration cutover:** Preserve the old KV `flags:app` admission categories and per-item category overrides. After the expand deployment, transfer them through the authenticated `PUT /api/admin/config` endpoint and verify D1 parity before catalog backfill or refresh checks. An empty D1 configuration is not evidence that the old configuration was empty; do not invent default categories.
 
 ## Environment and secrets
 

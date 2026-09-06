@@ -1,3 +1,5 @@
+import type { NuxtInsightServerConfig } from 'insight-ts/nuxt'
+
 import {
     applicationInsightProvider,
     googleSearchConsoleProvider,
@@ -5,4 +7,4 @@ import {
 
 export default {
     providers: [applicationInsightProvider, googleSearchConsoleProvider] as const,
-} as const
+} satisfies NuxtInsightServerConfig

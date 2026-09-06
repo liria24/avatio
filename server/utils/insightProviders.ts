@@ -1,9 +1,9 @@
 import { setups, users } from '@@/database/schema'
 import { and, count, gte, isNull, lt, sql } from 'drizzle-orm'
 import type { H3Event } from 'h3'
+import { defineProvider } from 'insight-ts'
 import { googleSearchConsole } from 'insight-ts/google-search-console'
-import { defineMetricSource } from 'insight-ts/metrics'
-import { defineProvider } from 'insight-ts/provider'
+import { defineMetricAdapter } from 'insight-ts/metrics'
 
 import { useDB } from './database'
 import { getRuntimeEnvString } from './runtimeEnv'
@@ -41,7 +41,7 @@ export const cumulativeDailySeries = (
     return points
 }
 
-const applicationSource = defineMetricSource({
+const applicationMetrics = defineMetricAdapter({
     metrics: {
         totalUsers: {
             label: 'Total Users',
@@ -119,8 +119,8 @@ const applicationSource = defineMetricSource({
 
 export const applicationInsightProvider = defineProvider({
     id: 'avatio',
-    sources: {
-        application: applicationSource,
+    adapters: {
+        application: applicationMetrics,
     },
 })
 

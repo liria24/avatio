@@ -3,6 +3,8 @@ import { Stage } from 'alchemy'
 import * as Cloudflare from 'alchemy/Cloudflare'
 import * as Config from 'effect/Config'
 import * as Effect from 'effect/Effect'
+import * as Layer from 'effect/Layer'
+import * as Option from 'effect/Option'
 
 import { getStageConfig, type AvatioStageConfig } from './config/environment'
 import type { AvatioSecretName } from './config/secrets'
@@ -251,7 +253,11 @@ export default Alchemy.Stack(
     'Avatio',
     {
         providers: Cloudflare.providers(),
-        state: Cloudflare.state(),
+        state: Layer.unwrap(
+            Effect.map(Effect.serviceOption(Alchemy.AlchemyContext), (context) =>
+                Option.getOrNull(context)?.dev ? Alchemy.localState() : Cloudflare.state(),
+            ),
+        ),
     },
     Effect.gen(function* () {
         const currentStage = yield* Stage
