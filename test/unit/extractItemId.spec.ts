@@ -46,8 +46,21 @@ describe('extractItemId', () => {
                 { id: 'user/repo', platform: 'github' },
             ],
             ['profile URL (no repo)', 'https://github.com/user', null],
+            ['internal double slash', 'https://github.com/user//repo', null],
+            [
+                'multiple edge slashes',
+                'https://github.com///user/repo///',
+                { id: 'user/repo', platform: 'github' },
+            ],
         ])('%s', (_label, url, expected) => {
             expect(extractItemId(url)).toEqual(expected)
+        })
+
+        it('rejects a long invalid slash suffix without excessive backtracking', () => {
+            const url = `https://github.com/user/repo${'/'.repeat(100_000)}!`
+            const started = performance.now()
+            expect(extractItemId(url)).toBeNull()
+            expect(performance.now() - started).toBeLessThan(1_000)
         })
     })
 

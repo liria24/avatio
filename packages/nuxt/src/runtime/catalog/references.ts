@@ -26,8 +26,8 @@ export const isGithubRepositoryId = (value: string) => githubRepositoryPattern.t
 export const matchGithubCatalogUrl: CatalogReferenceMatcher = (url) => {
     if (url.hostname.toLowerCase() !== 'github.com') return null
 
-    const externalId = url.pathname.replace(/^\/+|\/+$/g, '')
-    if (!isGithubRepositoryId(externalId)) return null
+    const externalId = url.pathname.match(/^\/+([\w-]+\/[\w.-]+)\/*$/)?.[1]
+    if (!externalId) return null
 
     return {
         providerKey: 'github',

@@ -80,7 +80,8 @@ describe('comark authored content', () => {
                         type: 'blob',
                     })),
                 })
-            if (url.includes('raw.githubusercontent.com')) return new Response(markdown(commit))
+            if (new URL(url).hostname === 'raw.githubusercontent.com')
+                return new Response(markdown(commit))
             throw new Error(`Unexpected content URL: ${url}`)
         })
         vi.stubGlobal('fetch', fetcher)
@@ -117,7 +118,9 @@ describe('comark authored content', () => {
         expect(page?.source.sourceUrl).toContain(`/blob/${commit}/content/ja/terms.md`)
         expect(
             fetcher.mock.calls
-                .filter(([url]) => requestUrl(url).includes('raw.githubusercontent.com'))
+                .filter(
+                    ([url]) => new URL(requestUrl(url)).hostname === 'raw.githubusercontent.com',
+                )
                 .every(([url]) => requestUrl(url).includes(commit)),
         ).toBe(true)
         fetcher.mockClear()
