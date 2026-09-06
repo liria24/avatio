@@ -7,6 +7,7 @@ Compact instruction for OpenCode sessions. If a fact is obvious from filenames, 
 ## Package manager & runtime
 
 - **Package manager:** `bun`. `bunfig.toml` uses `linker = "hoisted"`.
+- **Deployment runtime:** Node 26 runs the installed Alchemy CLI and its Nuxt build child. Workers Builds uses `NODE_OPTIONS=--max-old-space-size=4096` to leave memory for the remaining build processes.
 - **Postinstall:** `bun run postinstall` runs `nuxt prepare` only.
 - **Development URL:** `bun run dev` serves the Alchemy local proxy at `http://localhost:3000`; the port is fixed and fails if already in use.
 - **Alchemy state:** Local `dev` uses gitignored `.alchemy/state`; plans and deployments use the Cloudflare state store. Keep them separate so starting the simulator cannot replace deployed development resources.

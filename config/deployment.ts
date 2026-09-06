@@ -29,8 +29,9 @@ export const validateDeployment = (stage: AvatioStage, state: DeploymentState) =
 }
 
 export const alchemyCommand = (action: Exclude<StageAction, 'check'>, stage: AvatioStage) => [
-    'bunx',
-    'alchemy',
+    // Keep Nuxt's production build on Node in memory-limited Workers Builds containers.
+    'node',
+    'node_modules/alchemy/bin/alchemy.js',
     action === 'adopt' ? 'deploy' : action,
     '--stage',
     stage,

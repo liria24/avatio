@@ -34,3 +34,6 @@ jobs:
           bun-version-file: package.json
       - run: bun install --frozen-lockfile
       - run: bun run ${{ matrix.check }}
+        env:
+          NITRO_PRESET: ${{ matrix.check == 'build' && 'cloudflare_module' || '' }}
+          NODE_OPTIONS: --max-old-space-size=4096
