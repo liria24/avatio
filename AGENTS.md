@@ -115,6 +115,7 @@ The following compatibility is temporary. Do not add new consumers to it.
 ## Environment and secrets
 
 - The canonical path is `.env.<stage>` ciphertext -> dotenvx -> shared validation -> Alchemy -> Worker bindings. Do not maintain parallel secret inventories.
+- Stage commands run dotenvx with `--strict`; any decryption failure must stop before validation or Alchemy, even when legacy environment values exist.
 - Non-secret stage configuration is typed in `config/environment.ts`.
 - Canonical secret definitions and validation live in `config/secrets.ts`.
 - `.env.development` and `.env.production` contain committed dotenvx ciphertext. `.env.keys` contains local private keys and must never be committed.
