@@ -6,7 +6,7 @@ import * as Effect from 'effect/Effect'
 import * as Layer from 'effect/Layer'
 import * as Option from 'effect/Option'
 
-import { getStageConfig, type AvatioStageConfig } from './config/environment'
+import { getStageConfig, type AvatioStageConfig } from './config/environment.ts'
 import type { AvatioSecretName } from './config/secrets'
 
 const requiredSecret = (name: AvatioSecretName) => Config.redacted(name)

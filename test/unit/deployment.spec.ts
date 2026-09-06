@@ -43,16 +43,16 @@ describe('production deployment policy', () => {
     })
     it('requires a separate, interactive adoption command', () => {
         expect(alchemyCommand('deploy', 'production')).toEqual([
-            'bunx',
-            'alchemy',
+            'node',
+            'node_modules/alchemy/bin/alchemy.js',
             'deploy',
             '--stage',
             'production',
             '--yes',
         ])
         expect(alchemyCommand('adopt', 'production')).toEqual([
-            'bunx',
-            'alchemy',
+            'node',
+            'node_modules/alchemy/bin/alchemy.js',
             'deploy',
             '--stage',
             'production',
