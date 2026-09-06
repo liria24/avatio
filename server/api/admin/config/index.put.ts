@@ -77,7 +77,7 @@ export default promiseEventHandler(async ({ db, event }) => {
                           ON override.platform = source.provider_key
                          AND override.item_id = source.external_id
                         WHERE source.item_id = ${catalogItems.id}
-                        ORDER BY source.primary DESC LIMIT 1
+                        ORDER BY source."primary" DESC LIMIT 1
                     )
                     ELSE (
                         SELECT legacy.category FROM item_sources source
@@ -85,7 +85,7 @@ export default promiseEventHandler(async ({ db, event }) => {
                           ON legacy.platform = source.provider_key
                          AND legacy.id = source.external_id
                         WHERE source.item_id = ${catalogItems.id}
-                        ORDER BY source.primary DESC LIMIT 1
+                        ORDER BY source."primary" DESC LIMIT 1
                     )
                 END`,
                 categoryOverrideOrigin: sql<'manual' | 'legacy' | null>`CASE
