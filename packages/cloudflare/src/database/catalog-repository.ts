@@ -277,6 +277,7 @@ export class D1CatalogRepository implements CatalogRepository {
                         )
                         .onConflictDoUpdate({
                             target: legacyShops.id,
+                            setWhere: eq(legacyShops.platform, legacyProvider),
                             set: {
                                 platform: legacyProvider,
                                 name: publisher.name,
@@ -285,6 +286,18 @@ export class D1CatalogRepository implements CatalogRepository {
                             },
                         }),
                 )
+            // ponytail: global legacy shop IDs omit colliding links; remove this with the mirror.
+            const legacyShopId = publisher
+                ? sql<string | null>`(${this.#db
+                      .select({ id: legacyShops.id })
+                      .from(legacyShops)
+                      .where(
+                          and(
+                              eq(legacyShops.id, publisher.externalId),
+                              eq(legacyShops.platform, legacyProvider),
+                          ),
+                      )})`
+                : sql<null>`NULL`
             statements.push(
                 this.#db
                     .insert(legacyItems)
@@ -296,9 +309,7 @@ export class D1CatalogRepository implements CatalogRepository {
                                     'platform',
                                 ),
                                 outdated: sql<boolean>`0`.as('outdated'),
-                                shopId: sql<string | null>`${publisher?.externalId ?? null}`.as(
-                                    'shop_id',
-                                ),
+                                shopId: legacyShopId.as('shop_id'),
                                 name: sql<string>`${snapshot.name}`.as('name'),
                                 niceName: sql<string | null>`${catalogItem.displayNameOverride}`.as(
                                     'nice_name',
@@ -321,7 +332,7 @@ export class D1CatalogRepository implements CatalogRepository {
                         set: {
                             platform: legacyProvider,
                             outdated: false,
-                            shopId: publisher?.externalId ?? null,
+                            shopId: legacyShopId,
                             name: snapshot.name,
                             niceName: catalogItem.displayNameOverride,
                             category:

@@ -9,7 +9,7 @@ vi.mock('@@/database/schema', () => ({
         category: 'itemCategoryOverrides.category',
     },
 }))
-vi.mock('drizzle-orm', () => ({ and: vi.fn(), eq: vi.fn(), inArray: vi.fn() }))
+vi.mock('drizzle-orm', () => ({ and: vi.fn(), eq: vi.fn(), inArray: vi.fn(), sql: vi.fn() }))
 vi.mock('../../../server/migration/catalog/compatibility', () => ({
     buildCatalogCompatibilityStatements: vi.fn(async () => ({
         catalogItemId: 'catalog-item-1',
