@@ -10,7 +10,7 @@ import type { ProviderHttpClient, ResolvePublisherSource } from './http'
 import { isConfirmedWithdrawalStatus, withdrawalErrorKind } from './http'
 
 export interface BoothResponse {
-    id: string
+    id: string | number
     url: string
     name: string
     description: string | null
@@ -94,7 +94,7 @@ export class BoothCatalogProvider implements CatalogProvider {
             snapshot: {
                 reference: {
                     providerKey: this.key,
-                    externalId: item.id,
+                    externalId: String(item.id),
                     canonicalUrl: `https://booth.pm/items/${item.id}`,
                 },
                 name: item.name,
