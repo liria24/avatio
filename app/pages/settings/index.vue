@@ -2,21 +2,21 @@
 import { en, ja } from '@nuxt/ui/locale'
 
 definePageMeta({
-    middleware: 'authed',
+    auth: 'user',
 })
 
 const { app } = useAppConfig()
 const { t, locale, localeProperties, setLocale } = useI18n()
 const toast = useToast()
-const { auth, session, refreshSession } = useAuth()
+const { user, updateUser, fetchSession } = useUserSession()
 const { data: userSettings } = await useUserSettings()
 const { update: updateUserSettings } = useUserSettingsUpdate()
 
 const updating = ref(false)
-const username = ref(session.value!.user.username || '')
-const name = ref(session.value!.user.name || '')
-const bio = ref(session.value!.user.bio || '')
-const links = ref([...(session.value!.user.links || [])])
+const username = ref(user.value!.username || '')
+const name = ref(user.value!.name || '')
+const bio = ref(user.value!.bio || '')
+const links = ref([...(user.value!.links || [])])
 const newLink = ref('')
 
 const processImage = async (file: File) => {
@@ -27,7 +27,7 @@ const processImage = async (file: File) => {
     try {
         const image = await uploadImage(file, 'avatar')
 
-        await auth.updateUser({ image: image.url })
+        await updateUser({ image: image.url })
     } catch (error) {
         console.error('Failed to upload image:', error)
     } finally {
@@ -35,16 +35,16 @@ const processImage = async (file: File) => {
     }
 }
 
-const saveProfile = async (data: Parameters<typeof auth.updateUser>[0]) => {
+const saveProfile = async (data: Parameters<typeof updateUser>[0]) => {
     try {
-        await auth.updateUser(data)
+        await updateUser(data)
         toast.add({
             id: 'profile-saved',
             icon: 'mingcute:check-line',
             title: t('settings.general.toast.profileSaved'),
             color: 'success',
         })
-        await refreshSession()
+        await fetchSession({ force: true })
     } catch (error) {
         console.error('Failed to save profile:', error)
         toast.add({
@@ -125,8 +125,8 @@ useSeo({
                     class="flex w-full shrink-0 items-center gap-4 md:w-fit md:flex-col md:items-stretch"
                 >
                     <NuxtImg
-                        v-if="session?.user.image"
-                        :src="session?.user.image"
+                        v-if="user?.image"
+                        :src="user?.image"
                         :alt="$t('settings.general.profile.avatarAlt')"
                         :width="256"
                         :height="256"
@@ -185,7 +185,7 @@ useSeo({
                     >
                         <template #trailing="{ available }">
                             <UButton
-                                v-if="username !== session?.user.username"
+                                v-if="username !== user?.username"
                                 :label="$t('save')"
                                 color="neutral"
                                 :disabled="!available || !username.trim()"
@@ -209,7 +209,7 @@ useSeo({
                             class="w-full"
                         />
                         <UButton
-                            v-if="name.trim() !== session?.user.name"
+                            v-if="name.trim() !== user?.name"
                             :label="$t('save')"
                             size="lg"
                             color="neutral"
@@ -232,7 +232,7 @@ useSeo({
                             class="w-full"
                         />
                         <UButton
-                            v-if="bio.trim() !== (session?.user.bio || '')"
+                            v-if="bio.trim() !== (user?.bio || '')"
                             :label="$t('save')"
                             color="neutral"
                             loading-auto
@@ -321,10 +321,7 @@ useSeo({
                                 </template>
                             </UPopover>
                             <UButton
-                                v-if="
-                                    JSON.stringify(links) !==
-                                    JSON.stringify(session?.user.links || [])
-                                "
+                                v-if="JSON.stringify(links) !== JSON.stringify(user?.links || [])"
                                 :label="$t('save')"
                                 color="neutral"
                                 loading-auto

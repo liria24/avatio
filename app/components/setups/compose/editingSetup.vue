@@ -1,20 +1,19 @@
 <script setup lang="ts">
-import type { FetchResult } from '#app'
-
 interface Props {
     setupId: Setup['id']
 }
 const { setupId } = defineProps<Props>()
+const setupPath = useSetupPath()
 
-const { data: setup, status } = await useFetch<FetchResult<'/api/setups/:id', 'get'>>(
-    `/api/setups/${setupId}`,
-    { dedupe: 'defer' },
-)
+const { data: setup, status } = await useFetch<Setup>(`/api/me/setups/${setupId}`, {
+    dedupe: 'defer',
+    headers: useRequestHeaders(['cookie']),
+})
 </script>
 
 <template>
     <UButton
-        :to="`/setup/${setupId}`"
+        :to="setupPath(setupId)"
         target="_blank"
         :disabled="status === 'pending'"
         variant="outline"

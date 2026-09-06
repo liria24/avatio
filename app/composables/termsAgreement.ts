@@ -1,50 +1,38 @@
+import type { LegalDocument, LegalStatus } from '@avatio/core/legal'
+
 export const useTermsAgreement = () => {
-    const { session, auth, refreshSession } = useAuth()
-    const agreeTerms = useAgreeTermsModal()
-
-    const { data: contents } = useAsyncData('terms-agreement-check', async () => {
-        const [termsContent, privacyContent] = await Promise.all([
-            queryCollection('content_ja').path('/terms').first(),
-            queryCollection('content_ja').path('/privacy-policy').first(),
-        ])
-        return {
-            termsUpdatedAt: termsContent?.updatedAt ?? null,
-            privacyUpdatedAt: privacyContent?.updatedAt ?? null,
-        }
-    })
-
-    const lastAgreed = computed(() =>
-        session.value?.user?.lastAgreedToTerms
-            ? new Date(session.value.user.lastAgreedToTerms)
-            : null,
+    const { user } = useUserSession()
+    const { locale } = useI18n()
+    const modal = useAgreeTermsModal()
+    const requestFetch = useRequestFetch()
+    const key = computed(() => `legal-status:${user.value?.id ?? 'anonymous'}:${locale.value}`)
+    const { data, refresh, error } = useAsyncData(
+        key,
+        () =>
+            user.value
+                ? requestFetch<LegalStatus>('/api/avatio/legal/status', {
+                      query: { locale: locale.value },
+                  })
+                : Promise.resolve(null),
+        { server: false },
     )
-
-    const needsTerms = computed(() => {
-        if (!session.value?.user || !contents.value?.termsUpdatedAt) return false
-        return !lastAgreed.value || lastAgreed.value < new Date(contents.value.termsUpdatedAt)
-    })
-
-    const needsPrivacyPolicy = computed(() => {
-        if (!session.value?.user || !contents.value?.privacyUpdatedAt) return false
-        return !lastAgreed.value || lastAgreed.value < new Date(contents.value.privacyUpdatedAt)
-    })
-
-    const needsAgreement = computed(() => needsTerms.value || needsPrivacyPolicy.value)
-
-    const agree = async () => {
-        await auth.updateUser({ lastAgreedToTerms: new Date() })
-        await refreshSession()
+    const pending = computed(
+        () =>
+            data.value?.documents.filter((document) => document.active && !document.accepted) ?? [],
+    )
+    const agree = async (
+        documents: { document: LegalDocument; version: string; sourceRevision: string }[],
+    ) => {
+        data.value = await $fetch<LegalStatus>('/api/avatio/legal/accept', {
+            method: 'POST',
+            body: { locale: locale.value, documents },
+        })
     }
-
     return {
-        needsTerms,
-        needsPrivacyPolicy,
-        needsAgreement,
+        needsAgreement: computed(() => Boolean(user.value && data.value?.needsAgreement)),
+        error,
+        refresh,
         agree,
-        open: () =>
-            agreeTerms.open({
-                needsTerms: needsTerms.value,
-                needsPrivacyPolicy: needsPrivacyPolicy.value,
-            }),
+        open: () => modal.open({ documents: pending.value.map((document) => document.document) }),
     }
 }

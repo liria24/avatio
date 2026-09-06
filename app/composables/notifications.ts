@@ -1,11 +1,11 @@
 const _useNotifications = () => {
-    const { session } = useAuth()
+    const { loggedIn } = useUserSession()
     const localePath = useLocalePath()
 
     const _asyncData = useFetch('/api/notifications', {
         key: 'notifications',
         dedupe: 'defer',
-        immediate: !!session.value,
+        immediate: loggedIn.value,
         transform: (response) => response,
         default: () => ({ data: [], unread: 0 }),
         getCachedData: (key, n, ctx) =>

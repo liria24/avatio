@@ -1,4 +1,4 @@
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import { useNuxt } from '@nuxt/kit'
 import type { NitroRouteConfig } from 'nitropack'
@@ -12,13 +12,12 @@ import {
 } from './shared/utils/i18nRouting'
 
 const baseUrl = process.env.PUBLIC_SITE_URL || 'http://localhost:3000'
-const publicUrl = 'https://avatio.me'
-const r2PublicBaseUrl = process.env.NUXT_R2_PUBLIC_BASE_URL || process.env.R2_PUBLIC_BASE_URL
+const publicUrl = process.env.PUBLIC_SITE_URL || 'https://avatio.me'
+const r2PublicBaseUrl = process.env.R2_PUBLIC_BASE_URL
 const imageDomain = r2PublicBaseUrl ? new URL(r2PublicBaseUrl).hostname : undefined
-const emailFromAddress =
-    process.env.NUXT_EMAIL_FROM_ADDRESS || process.env.EMAIL_FROM || 'hello@avatio.me'
 const title = 'Avatio'
 const description = 'アバター改変レシピの共有プラットフォーム'
+const insightConfigPath = fileURLToPath(new URL('./app/server/insight.config.ts', import.meta.url))
 
 const normalizeRuntimeConfigForVitest = () => {
     if (!process.env.VITEST) return
@@ -27,19 +26,24 @@ const normalizeRuntimeConfigForVitest = () => {
     nuxt.options.runtimeConfig = JSON.parse(JSON.stringify(nuxt.options.runtimeConfig))
 }
 
+const finalizePrivateRuntimeConfig = () => {
+    const nuxt = useNuxt()
+
+    // @nuxtjs/better-auth reads this key at runtime before falling back to
+    // BETTER_AUTH_SECRET. Keep the deploy-time secret out of Nitro's inlined
+    // runtime config so Cloudflare's secret_text binding remains authoritative.
+    nuxt.options.runtimeConfig.betterAuthSecret = ''
+    normalizeRuntimeConfigForVitest()
+}
+
 const baseRouteRules: { [path: string]: NitroRouteConfig } = {
     '/admin/**': {
         appLayout: 'dashboard',
-        appMiddleware: 'admin',
-    },
-    '/faq': {
-        prerender: true,
-    },
-    '/terms': {
-        prerender: true,
-    },
-    '/privacy-policy': {
-        prerender: true,
+        auth: {
+            user: {
+                role: 'admin',
+            },
+        },
     },
     '/on-maintenance': {
         prerender: true,
@@ -52,6 +56,9 @@ const baseRouteRules: { [path: string]: NitroRouteConfig } = {
     },
     '/bookmarks': {
         redirect: '/?tab=bookmarked',
+    },
+    '/settings/shops': {
+        redirect: '/settings/publishers',
     },
     '/api/**': {
         cors: true,
@@ -77,42 +84,6 @@ const routeRules: { [path: string]: NitroRouteConfig } = {
     ),
 }
 
-const rateLimitBindings = {
-    ratelimits: [
-        {
-            name: 'RATE_LIMIT_USER_ACTION',
-            namespace_id: '2101',
-            simple: {
-                limit: 5,
-                period: 60,
-            },
-        },
-        {
-            name: 'RATE_LIMIT_IMAGE',
-            namespace_id: '2102',
-            simple: {
-                limit: 30,
-                period: 60,
-            },
-        },
-        {
-            name: 'RATE_LIMIT_DRAFT',
-            namespace_id: '2103',
-            simple: {
-                limit: 120,
-                period: 60,
-            },
-        },
-    ],
-} as const
-
-// Nitro forwards this to the generated Wrangler config. Its bundled type has not yet added `cache`.
-const workersCacheConfig = {
-    cache: {
-        enabled: true,
-    },
-} as const
-
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
     compatibilityDate: '2026-05-26',
@@ -122,11 +93,14 @@ export default defineNuxtConfig({
     devtools: { timeline: { enabled: true } },
 
     hooks: {
-        'modules:done': normalizeRuntimeConfigForVitest,
+        'modules:done': finalizePrivateRuntimeConfig,
         'vite:extendConfig': normalizeRuntimeConfigForVitest,
     },
 
     modules: [
+        '@avatio/nuxt',
+        'insight-ts/nuxt',
+        '@nuxtjs/better-auth',
         '@comark/nuxt',
         '@nuxt/ui',
         '@nuxt/image',
@@ -137,7 +111,6 @@ export default defineNuxtConfig({
         'nuxt-link-checker',
         'nuxt-schema-org',
         'nuxt-seo-utils',
-        '@nuxt/content',
         '@nuxt/hints',
         '@nuxtjs/device',
         '@nuxtjs/i18n',
@@ -153,6 +126,7 @@ export default defineNuxtConfig({
     css: ['~/assets/css/main.css'],
 
     vite: {
+        vue: { features: { optionsAPI: false } },
         optimizeDeps: {
             include: [
                 '@nuxt/ui > prosemirror-state',
@@ -166,8 +140,12 @@ export default defineNuxtConfig({
 
     routeRules,
 
+    // insight-ts emits a file URL; map it for both Nitro and generated TypeScript imports.
+    alias: {
+        [pathToFileURL(insightConfigPath).href]: insightConfigPath,
+    },
+
     nitro: {
-        preset: 'cloudflare-module',
         // Workerd's console.createTask getter throws when Unenv and Hookable probe it at import time.
         alias: {
             'node:console': fileURLToPath(
@@ -182,103 +160,11 @@ export default defineNuxtConfig({
             // would execute their API data loaders before Cloudflare bindings exist.
             crawlLinks: false,
         },
-        cloudflare: {
-            deployConfig: true,
-            wrangler: {
-                name: 'avatio',
-                preview_urls: true,
-                keep_vars: true,
-                ...workersCacheConfig,
-                compatibility_flags: ['no_handle_cross_request_promise_resolution'],
-                observability: {
-                    enabled: true,
-                    head_sampling_rate: Number(
-                        process.env.CLOUDFLARE_OBSERVABILITY_HEAD_SAMPLING_RATE ?? 1,
-                    ),
-                },
-                account_id: process.env.CLOUDFLARE_ACCOUNT_ID,
-                d1_databases: [
-                    {
-                        binding: 'DB',
-                        database_name: 'avatio-content',
-                    },
-                ],
-                kv_namespaces: [
-                    {
-                        binding: 'KV',
-                        id: '9a4db36877e14aeba112fdd207a278e1',
-                    },
-                ],
-                r2_buckets: [
-                    {
-                        binding: 'R2',
-                        bucket_name: 'avatio',
-                    },
-                ],
-                ai: {
-                    binding: 'AI',
-                },
-                send_email: [
-                    {
-                        name: 'EMAIL',
-                    },
-                ],
-                ...rateLimitBindings,
-                triggers: {
-                    crons: ['0 22 * * *'],
-                },
-                queues: {
-                    producers: [
-                        {
-                            queue: 'item-revalidation',
-                            binding: 'ITEM_REVALIDATION_QUEUE',
-                        },
-                    ],
-                    consumers: [
-                        {
-                            queue: 'item-revalidation',
-                            max_batch_size: 10,
-                            max_batch_timeout: 5,
-                            max_retries: 3,
-                        },
-                    ],
-                },
-            },
-        },
         compressPublicAssets: true,
-        storage: {
-            auth: {
-                driver: 'cloudflare-kv-binding',
-                binding: 'KV',
-                base: 'auth',
-            },
-            cache: {
-                driver: 'cloudflare-kv-binding',
-                binding: 'KV',
-                base: 'cache',
-            },
-            flags: {
-                driver: 'cloudflare-kv-binding',
-                binding: 'KV',
-                base: 'flags',
-            },
-        },
-        devStorage: {
-            auth: {
-                driver: 'fs-lite',
-                base: './.data/storage/auth',
-            },
-            cache: {
-                driver: 'null',
-            },
-            flags: {
-                driver: 'fs-lite',
-                base: './.data/storage/flags',
-            },
-        },
         experimental: {
             asyncContext: true,
             tasks: true,
+            envExpansion: true,
         },
         unenv: {
             external: ['node:async_hooks'],
@@ -296,21 +182,38 @@ export default defineNuxtConfig({
     },
 
     runtimeConfig: {
+        // Deliberately too short to be accepted by Better Auth. Cloudflare's
+        // NUXT_BETTER_AUTH_SECRET secret binding must replace it at runtime.
+        betterAuthSecret: '__runtime_binding_required__',
         cloudflare: {
-            accountId: process.env.CLOUDFLARE_ACCOUNT_ID,
-            apiToken: process.env.CLOUDFLARE_API_TOKEN,
-        },
-        betterAuth: {
-            secret: process.env.BETTER_AUTH_SECRET,
-        },
-        booth: {
-            proxyUrl: process.env.NUXT_BOOTH_PROXY_URL,
-        },
-        email: {
-            fromAddress: emailFromAddress,
+            accountId: '',
+            apiToken: '',
+            host: '',
+            siteTag: '',
         },
         public: {
             siteUrl: baseUrl,
+        },
+    },
+
+    insight: {
+        providers: {
+            cloudflare: {
+                webAnalytics: true,
+            },
+        },
+    },
+
+    auth: {
+        redirects: {
+            login: '/login',
+            guest: '/',
+        },
+        preserveRedirect: true,
+        redirectQueryKey: 'redirect',
+        schema: {
+            usePlural: true,
+            casing: 'snake_case',
         },
     },
 
@@ -341,22 +244,6 @@ export default defineNuxtConfig({
                 { rel: 'apple-touch-icon', href: `/pwa-192x192.png`, sizes: '192x192' },
             ],
         },
-    },
-
-    content: {
-        renderer: {
-            anchorLinks: false,
-        },
-        build: {
-            markdown: {
-                contentHeading: false,
-            },
-        },
-        database: {
-            type: 'd1',
-            bindingName: 'DB',
-        },
-        experimental: { sqliteConnector: 'native' },
     },
 
     fonts: {
@@ -457,6 +344,10 @@ export default defineNuxtConfig({
         },
     },
 
+    $development: {
+        image: { provider: 'none' },
+    },
+
     image: {
         provider: 'cloudflare',
         cloudflare: { baseURL: publicUrl },
@@ -483,7 +374,8 @@ export default defineNuxtConfig({
 
     ogImage: {
         preset: 'avatio',
-        secret: process.env.OG_IMAGE_SECRET,
+        // Nitro resolves the canonical Worker binding at runtime, keeping it out of builds.
+        secret: '{{OG_IMAGE_SECRET}}',
         routes: {
             revoke: {
                 requireToken: true,

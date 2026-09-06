@@ -21,6 +21,6 @@ export const useUser = <
     })
 
 export const useCurrentUser = () => {
-    const { session } = useAuth()
-    return useUser(session.value?.user.username || '')
+    const { user } = useUserSession()
+    return useUser(user.value?.username || '')
 }

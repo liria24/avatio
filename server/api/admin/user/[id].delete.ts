@@ -4,11 +4,12 @@ const params = z.object({
     id: z.string(),
 })
 
-export default adminSessionEventHandler(async () => {
+export default promiseEventHandler(async ({ event }) => {
+    await requireUserSession(event, { user: { role: 'admin' } })
     const { id: userId } = await validateParams(params)
-    const { headers } = useEvent()
+    const { headers } = event
 
-    const result = await auth.api.removeUser({ headers, body: { userId } })
+    const result = await serverAuth(event).api.removeUser({ headers, body: { userId } })
 
     return result
 })

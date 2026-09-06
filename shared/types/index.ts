@@ -14,11 +14,13 @@ export interface PaginationResponse<T> {
     }
 }
 
-export interface AppFlags {
+export interface WritableAppConfig {
     allowedBoothCategoryId: number[]
-    forceUpdateItem: boolean
-    isMaintenance: boolean
     specificItemCategories: Record<Platform, Record<string, ItemCategory>>
+}
+
+export interface AppConfig extends WritableAppConfig {
+    readonly isMaintenance: boolean
 }
 
 export type DeepWritable<T> = {

@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 definePageMeta({
-    middleware: 'authed',
+    auth: 'user',
     layout: 'minimal',
 })
 
@@ -9,7 +9,8 @@ const overlay = useOverlay()
 const { t } = useI18n()
 
 const {
-    state,
+    form,
+    values,
     publish,
     reset,
     changed,
@@ -18,21 +19,7 @@ const {
     draft,
     loadDraft,
     initialize,
-    skipDraftSave,
-    saveDraft,
 } = useSetupCompose()
-
-// Watch for state changes and save draft
-watch(
-    state,
-    () => {
-        if (!skipDraftSave.value) {
-            draft.value.status = 'unsaved'
-            saveDraft()
-        }
-    },
-    { deep: true, flush: 'post' },
-)
 
 const publishedSetupId = ref<Setup['id'] | null>(null)
 const modalNewSetupConfirm = ref(false)
@@ -63,6 +50,14 @@ const draftStatusBadge = computed(() => ({
         icon: 'mingcute:close-line',
         label: t('setup.compose.draftStatus.error'),
     },
+    offline: {
+        icon: 'mingcute:wifi-off-line',
+        label: t('setup.compose.draftStatus.error'),
+    },
+    conflict: {
+        icon: 'mingcute:warning-fill',
+        label: t('setup.compose.draftStatus.error'),
+    },
 }))
 
 const onSubmit = async () => {
@@ -70,12 +65,12 @@ const onSubmit = async () => {
     if (!setupId) return
     publishedSetupId.value = setupId
     const result = await publishCompleteModal.open({ setupId })
-    if (result === 'continue') resetForm()
+    if (result === 'continue') await resetForm()
 }
 
-const resetForm = () => {
+const resetForm = async () => {
     publishedSetupId.value = null
-    reset()
+    await reset()
 }
 
 onBeforeRouteLeave((to, from, next) => {
@@ -113,7 +108,7 @@ await initialize({
 </script>
 
 <template>
-    <UForm :state class="relative size-full pb-5 lg:pl-92" @submit="onSubmit">
+    <UForm :state="values" class="relative size-full pb-5 lg:pl-92" @submit="onSubmit">
         <div
             :class="
                 cn(
@@ -201,25 +196,36 @@ await initialize({
                 <div class="flex flex-col gap-4">
                     <SetupsComposeImages />
 
-                    <UFormField name="name" :label="$t('setup.compose.nameLabel')" required>
-                        <UInput
-                            v-model="state.name"
-                            :placeholder="$t('setup.compose.namePlaceholder')"
-                            variant="subtle"
-                            class="w-full"
-                            @keydown.enter.prevent
-                        />
-                    </UFormField>
+                    <form.Field v-slot="{ field }" name="name">
+                        <UFormField name="name" :label="$t('setup.compose.nameLabel')" required>
+                            <UInput
+                                :model-value="field.value"
+                                :placeholder="$t('setup.compose.namePlaceholder')"
+                                variant="subtle"
+                                class="w-full"
+                                @blur="field.handleBlur"
+                                @keydown.enter.prevent
+                                @update:model-value="field.handleChange"
+                            />
+                        </UFormField>
+                    </form.Field>
 
-                    <UFormField name="description" :label="$t('setup.compose.descriptionLabel')">
-                        <UTextarea
-                            v-model="state.description"
-                            :placeholder="$t('setup.compose.descriptionPlaceholder')"
-                            autoresize
-                            variant="soft"
-                            class="w-full"
-                        />
-                    </UFormField>
+                    <form.Field v-slot="{ field }" name="description">
+                        <UFormField
+                            name="description"
+                            :label="$t('setup.compose.descriptionLabel')"
+                        >
+                            <UTextarea
+                                :model-value="field.value"
+                                :placeholder="$t('setup.compose.descriptionPlaceholder')"
+                                autoresize
+                                variant="soft"
+                                class="w-full"
+                                @blur="field.handleBlur"
+                                @update:model-value="field.handleChange"
+                            />
+                        </UFormField>
+                    </form.Field>
                 </div>
 
                 <div class="flex flex-col gap-4">
@@ -227,15 +233,17 @@ await initialize({
 
                     <SetupsComposeCoauthors />
 
-                    <USwitch
-                        :model-value="!state.public"
-                        :label="$t('setup.compose.limitedPublic')"
-                        :description="$t('setup.compose.limitedPublicDescription')"
-                        color="neutral"
-                        :ui="{ description: 'text-xs mt-1' }"
-                        class="mt-auto"
-                        @update:model-value="(val) => (state.public = !val)"
-                    />
+                    <form.Field v-slot="{ field }" name="public">
+                        <USwitch
+                            :model-value="!field.value"
+                            :label="$t('setup.compose.limitedPublic')"
+                            :description="$t('setup.compose.limitedPublicDescription')"
+                            color="neutral"
+                            :ui="{ description: 'text-xs mt-1' }"
+                            class="mt-auto"
+                            @update:model-value="(value) => field.handleChange(!value)"
+                        />
+                    </form.Field>
                 </div>
             </div>
 
@@ -251,7 +259,7 @@ await initialize({
                 />
 
                 <SetupsComposeDraftsModal
-                    :referenced-draft-id="draft.id || undefined"
+                    :referenced-draft-id="draft.status === 'new' ? undefined : draft.id"
                     @load="loadDraft($event)"
                 >
                     <UButton
@@ -268,6 +276,6 @@ await initialize({
 
         <USeparator class="my-8 lg:hidden" />
 
-        <SetupsComposeItems v-model="state.items" />
+        <SetupsComposeItems />
     </UForm>
 </template>

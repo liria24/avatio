@@ -1,9 +1,8 @@
 import { destr } from 'destr'
 import type { z } from 'zod'
-import type { NotificationPayload } from '~~/database/schema'
 import { notifications } from '~~/database/schema'
 
-type Body = Omit<z.infer<typeof notificationsInsertSchema>, 'payload'> & {
+type Body = Omit<z.input<typeof notificationsInsertSchema>, 'payload'> & {
     payload: NotificationPayload
 }
 

@@ -5,6 +5,7 @@ const { locale } = useI18n()
 const setupHide = useSetupHideModal()
 const setupUnhide = useSetupUnhideModal()
 const modalImageViewer = useImageViewerModal()
+const setupPath = useSetupPath()
 
 const rowSelection = ref<Record<string, boolean>>({})
 const filter = ref(['hidden', 'unhidden', 'public', 'private'])
@@ -60,7 +61,7 @@ useSeo({
                     (row) => [
                         [
                             {
-                                to: `/setup/${row.original.id}`,
+                                to: setupPath(row.original.id),
                                 label: 'View',
                                 icon: 'mingcute:sparkles-fill',
                             },
@@ -118,7 +119,7 @@ useSeo({
                 class="max-h-[calc(99dvh-var(--ui-header-height))] grow"
             >
                 <template #name-cell="{ row }">
-                    <ULink :to="`/setup/${row.original.id}`" class="flex w-fit items-center gap-1">
+                    <ULink :to="setupPath(row.original.id)" class="flex w-fit items-center gap-1">
                         <span class="underline underline-offset-4">
                             {{ row.original.name }}
                         </span>

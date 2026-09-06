@@ -4,7 +4,8 @@ const params = z.object({
     id: z.union([z.string().transform((val) => Number(val)), z.number()]),
 })
 
-export default adminSessionEventHandler(async ({ db }) => {
+export default promiseEventHandler(async ({ db, event }) => {
+    await requireUserSession(event, { user: { role: 'admin' } })
     const { id } = await validateParams(params)
 
     const email = await db.query.emails.findFirst({

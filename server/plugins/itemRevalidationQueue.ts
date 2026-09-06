@@ -1,51 +1,55 @@
-import type { Message } from '@cloudflare/workers-types'
+import { syncCatalogSource } from '@avatio/core/catalog'
+import { catalogSyncMessageSchema } from '@avatio/core/contracts'
+import { runCatalogMigrationChunk } from '~~/server/migration/catalog/migration'
+import {
+    catalogMigrationMessageSchema,
+    enqueueCatalogMigration,
+} from '~~/server/migration/catalog/queue'
+import {
+    handleItemRevalidationMessage,
+    isLegacyItemRevalidationMessage,
+    isUnfencedCatalogMessage,
+} from '~~/server/migration/catalog/queueCompatibility'
 
 const log = logger('itemRevalidationQueue')
-const MAX_PURGE_TAGS = 100
 
 export default defineNitroPlugin((nitroApp) => {
     nitroApp.hooks.hook('cloudflare:queue', async ({ batch, context }) => {
-        if (batch.queue !== 'item-revalidation') return
+        if (!batch.queue.startsWith('item-revalidation')) return
 
-        const results = await Promise.allSettled(
-            batch.messages.map((message) =>
-                handleItemRevalidationMessage(message.body as ItemRevalidationMessage),
-            ),
-        )
-
-        const tags = new Set<string>()
-        const succeeded: Message<unknown>[] = []
-
-        results.forEach((result, index) => {
-            const message = batch.messages[index]
-            if (!message) return
-
-            if (result.status === 'rejected') {
-                log.error('Failed to revalidate item from queue:', result.reason)
-                message.retry()
-                return
-            }
-
-            succeeded.push(message)
-
-            for (const tag of result.value) tags.add(tag)
-        })
-
-        if (context.cache && tags.size) {
-            const allTags = [...tags]
-
-            for (let i = 0; i < allTags.length; i += MAX_PURGE_TAGS)
-                try {
-                    await purgeEdgeCacheTagsWithContext(
-                        context.cache,
-                        allTags.slice(i, i + MAX_PURGE_TAGS),
-                        'item revalidation batch',
-                    )
-                } catch (error) {
-                    log.error('Failed to purge revalidation batch cache:', error)
+        for (const message of batch.messages)
+            try {
+                if (catalogMigrationMessageSchema.safeParse(message.body).success) {
+                    const result = await runCatalogMigrationChunk(useDB())
+                    if (result.more) await enqueueCatalogMigration(result.run?.leaseToken ? 60 : 0)
+                    message.ack()
+                    continue
                 }
-        }
-
-        for (const message of succeeded) message.ack()
+                const v2Message = catalogSyncMessageSchema.safeParse(message.body)
+                if (v2Message.success) {
+                    const result = await syncCatalogSource({
+                        sourceId: v2Message.data.sourceId,
+                        leaseToken: v2Message.data.leaseToken,
+                        repository: getCatalogRepository(),
+                        providers: await getCatalogProviderRegistry(),
+                        cacheInvalidator: getCatalogCacheInvalidator(context.cache),
+                    })
+                    if (result.cacheInvalidationFailed)
+                        log.warn(
+                            `Catalog source ${v2Message.data.sourceId} synced; cache purge failed`,
+                        )
+                } else if (
+                    isLegacyItemRevalidationMessage(message.body) ||
+                    isUnfencedCatalogMessage(message.body)
+                ) {
+                    await handleItemRevalidationMessage(message.body, context.cache)
+                } else {
+                    throw new Error('Unsupported catalog synchronization message')
+                }
+                message.ack()
+            } catch (error) {
+                log.error('Failed to revalidate item from queue:', error)
+                message.retry()
+            }
     })
 })

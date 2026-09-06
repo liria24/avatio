@@ -1,12 +1,15 @@
 <script lang="ts" setup>
 definePageMeta({
-    middleware: 'authed',
+    auth: 'user',
 })
 
 const toast = useToast()
 const { t, localeProperties } = useI18n()
 const localePath = useLocalePath()
-const { auth, session, sessions, signOut } = useAuth()
+const { user, signOut } = useUserSession()
+const auth = useAuthClient()
+const { data: sessions, load: loadSessions, revokeOtherSessions } = useDeviceSessions()
+await loadSessions()
 
 const modalDeleteUser = ref(false)
 
@@ -25,6 +28,7 @@ const providers: Record<string, { name: string; icon: string }> = {
 
 const deleteUser = async () => {
     try {
+        if (!auth) throw new Error('Auth client is unavailable.')
         await auth.deleteUser({ callbackURL: localePath('/') })
 
         toast.add({
@@ -54,7 +58,7 @@ useSeo({
 <template>
     <NuxtLayout name="settings" :title="$t('settings.account.title')">
         <UAlert
-            v-if="session?.user.role === 'admin'"
+            v-if="user?.role === 'admin'"
             icon="mingcute:shield-shape-fill"
             :title="$t('settings.account.adminBanner')"
             variant="soft"
@@ -113,7 +117,7 @@ useSeo({
                     variant="subtle"
                     block
                     class="ml-auto w-fit min-w-48"
-                    @click="auth.revokeOtherSessions()"
+                    @click="revokeOtherSessions()"
                 />
             </UPageCard>
 

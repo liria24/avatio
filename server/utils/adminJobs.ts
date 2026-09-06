@@ -1,6 +1,5 @@
 import { lt } from 'drizzle-orm'
-
-import { idempotencyRequests } from '../../database/schema'
+import { idempotencyRequests } from '~~/database/schema'
 
 const reportLog = logger('/api/admin/job/report')
 const cleanupLog = logger('/api/admin/job/cleanup')
@@ -28,8 +27,6 @@ const IMAGE_DELETION_THRESHOLD = 24 * 60 * 60 * 1000
 const STORAGE_OPERATION_CONCURRENCY = 8
 
 const BACKUP_PREFIX = 'backup'
-const BACKUP_RULE_ID = 'avatio-backup-cleanup'
-const BACKUP_RETENTION_SECONDS = 3 * 24 * 60 * 60 // 3 days
 
 const sendMessage = (message: { content?: string; embeds?: object[] }) =>
     $fetch('/admin/message', {
@@ -43,23 +40,15 @@ const sendMessage = (message: { content?: string; embeds?: object[] }) =>
         body: message,
     })
 
-interface LifecycleRule {
-    id: string
-    conditions: { prefix: string }
-    enabled: boolean
-    deleteObjectsTransition?: {
-        condition: { maxAge: number; type: 'Age' }
+const getStoragePublicBaseUrl = async () => {
+    try {
+        return new URL('.', await storage.url('cleanup')).href
+    } catch {
+        return null
     }
 }
 
-const getR2PublicBaseUrl = () => getRuntimeEnvString('R2_PUBLIC_BASE_URL')?.replace(/\/+$/, '')
-
-const extractStorageKeyFromUrl = (
-    url: string,
-    publicBaseUrl = getR2PublicBaseUrl(),
-): string | null => {
-    if (!publicBaseUrl) return null
-
+const extractStorageKeyFromUrl = (url: string, publicBaseUrl: string): string | null => {
     try {
         const parsedUrl = new URL(url)
         const parsedBaseUrl = new URL(publicBaseUrl)
@@ -154,59 +143,9 @@ const copyWithConcurrency = async (images: ImageInfo[], backupDate: string) => {
     return { backedUp, backupFailed }
 }
 
-const ensureBackupLifecycleRule = async () => {
-    const config = useRuntimeConfig()
-    const accountId = config.cloudflare?.accountId
-    const apiToken = config.cloudflare?.apiToken
-    const bucket = process.env.R2_BUCKET ?? 'avatio'
-
-    if (!accountId || !apiToken) {
-        cleanupLog.warn('Cloudflare credentials not configured; skipping lifecycle rule setup')
-        return
-    }
-
-    const baseUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}/r2/buckets/${bucket}/lifecycle`
-    const headers = {
-        Authorization: `Bearer ${apiToken}`,
-        'Content-Type': 'application/json',
-    }
-
-    let existingRules: LifecycleRule[] = []
-    try {
-        const res = await $fetch<{ result: { rules?: LifecycleRule[] }; success: boolean }>(
-            baseUrl,
-            { headers },
-        )
-        if (res.success) existingRules = res.result.rules ?? []
-    } catch (error) {
-        cleanupLog.warn('Failed to fetch existing lifecycle rules:', error)
-    }
-
-    const backupRule: LifecycleRule = {
-        id: BACKUP_RULE_ID,
-        conditions: { prefix: `${BACKUP_PREFIX}/` },
-        enabled: true,
-        deleteObjectsTransition: {
-            condition: { maxAge: BACKUP_RETENTION_SECONDS, type: 'Age' },
-        },
-    }
-
-    const mergedRules = [...existingRules.filter((r) => r.id !== BACKUP_RULE_ID), backupRule]
-
-    try {
-        await $fetch(baseUrl, {
-            method: 'PUT',
-            headers,
-            body: { rules: mergedRules },
-        })
-        cleanupLog.info('Backup lifecycle rule ensured on R2 bucket')
-    } catch (error) {
-        cleanupLog.warn('Failed to set lifecycle rules:', error)
-    }
-}
-
 export const runReportJob = async () => {
     const db = useDB()
+    const stage = getRuntimeEnvString('STAGE') ?? 'development'
 
     const now = new Date()
     const yesterday = new Date()
@@ -330,7 +269,7 @@ export const runReportJob = async () => {
 
     if (contents.length > 0) {
         const embed = {
-            title: 'Avatio Report',
+            title: `Avatio Report [${stage}]`,
             color: 0xeeeeee,
             timestamp: now.toISOString(),
             fields: contents.map((content) => ({
@@ -368,15 +307,16 @@ export const runReportJob = async () => {
 }
 
 export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) => {
+    const stage = getRuntimeEnvString('STAGE') ?? 'development'
     const thresholdDate = new Date(Date.now() - IMAGE_DELETION_THRESHOLD)
-    const publicBaseUrl = getR2PublicBaseUrl()
+    const publicBaseUrl = await getStoragePublicBaseUrl()
     const db = useDB()
 
     if (!dryRun)
         await db.delete(idempotencyRequests).where(lt(idempotencyRequests.expiresAt, new Date()))
 
     if (!publicBaseUrl) {
-        const message = 'R2_PUBLIC_BASE_URL is not configured. Cleanup skipped.'
+        const message = 'Storage public base URL is unavailable. Cleanup skipped.'
         cleanupLog.error(message)
         return dryRun
             ? {
@@ -440,8 +380,6 @@ export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) 
         }
     }
 
-    await ensureBackupLifecycleRule()
-
     const { backedUp, backupFailed: backupFailures } = await copyWithConcurrency(allImages, today)
     const backedUpSet = new Set(backedUp)
     const imagesToDelete = allImages.filter((image) => backedUpSet.has(image.key))
@@ -473,7 +411,7 @@ export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) 
             await sendMessage({
                 embeds: [
                     {
-                        title: 'Avatio Data Cleanup',
+                        title: `Avatio Data Cleanup [${stage}]`,
                         description: message,
                         color: 0xeeeeee,
                         timestamp: new Date().toISOString(),

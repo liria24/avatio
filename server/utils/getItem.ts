@@ -1,8 +1,13 @@
-import { items, shops } from '@@/database/schema'
-import { eq } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 import type { BatchItem } from 'drizzle-orm/batch'
 import type { H3Event } from 'h3'
 import { joinURL, withHttps } from 'ufo'
+import { itemCategoryOverrides, items, shops } from '~~/database/schema'
+import {
+    buildCatalogCompatibilityStatements,
+    markCatalogCompatibilityWithdrawal,
+    updateCatalogCompatibilityEnrichment,
+} from '~~/server/migration/catalog/compatibility'
 
 const log = logger('getItem')
 const UNGH_URL = 'https://ungh.cc'
@@ -40,6 +45,10 @@ const getGithubResource = <T>(repo: string, path = ''): Promise<T | null> => {
     return $fetch<T>(`${UNGH_URL}/repos/${repo}${path}`).catch(() => null)
 }
 
+/**
+ * Temporary legacy Catalog resolver retained for rollout compatibility.
+ * Canonical v2 provider resolution and source synchronization live behind the Catalog adapters.
+ */
 export default async (
     event: H3Event | undefined,
     db: ReturnType<typeof useDB>,
@@ -50,7 +59,15 @@ export default async (
     const persistence = {
         defer: Boolean(event),
         purge: event
-            ? () => purgeEdgeCacheTags(event, [EDGE_CACHE_TAGS.items], 'item persistence')
+            ? (catalogItemId?: string) =>
+                  invalidateCacheResources(
+                      event,
+                      {
+                          items: catalogItemId ? [catalogItemId] : undefined,
+                          collections: [EDGE_CACHE_TAGS.items],
+                      },
+                      'item persistence',
+                  )
             : () => Promise.resolve(),
     }
 
@@ -60,9 +77,7 @@ export default async (
         throw serverError.notFound({ responseMessage: 'Item not found or not allowed' })
     }
 
-    const { forceUpdateItem, allowedBoothCategoryId, specificItemCategories } = await getAppFlags()
-
-    const forceRefresh = forceUpdateItem || options.forceRefresh === true
+    const forceRefresh = options.forceRefresh === true
 
     const { fresh, cachedItem, revalidationDue } = await resolveItemCache(
         db,
@@ -70,7 +85,6 @@ export default async (
         provider,
         forceRefresh,
     )
-
     if (fresh) return fresh
 
     if (cachedItem && !revalidationDue)
@@ -80,20 +94,21 @@ export default async (
     if (!resolvedProvider)
         throw serverError.notFound({ responseMessage: 'Item not found or not allowed' })
 
+    const admission = await getItemAdmission(db, resolvedProvider, id)
+    const allowedBoothCategoryId = admission.allowedBoothCategories
+
     await options.beforeExternalResolution?.()
 
     log.info(`Processing item: ${id}, Platform: ${resolvedProvider}, force=${forceRefresh}`)
 
     if (resolvedProvider === 'booth') {
-        const config = event ? useRuntimeConfig(event) : useRuntimeConfig()
-        const proxyUrl = config.booth.proxyUrl
+        const proxyUrl = getRuntimeEnvString('BOOTH_PROXY_URL', event)
 
         if (!proxyUrl)
             throw serverError.internalServerError({
                 log: {
                     tag: 'getItem',
-                    message:
-                        'Missing BOOTH proxy URL. Set NUXT_BOOTH_PROXY_URL in Workers secrets.',
+                    message: 'Missing BOOTH proxy URL binding.',
                 },
                 responseMessage: 'BOOTH proxy is not configured',
             })
@@ -175,8 +190,14 @@ export default async (
                     verified: Boolean(item.shop.verified),
                 },
                 cachedItem,
-                specificItemCategories,
+                categoryOverride: admission.override,
                 categoryFallback: BOOTH_CATEGORY_MAP[item.category.id] ?? 'other',
+                providerCategory: {
+                    rawKey: String(item.category.id),
+                    rawLabel: item.category.name,
+                    mappedCategory: BOOTH_CATEGORY_MAP[item.category.id] ?? null,
+                },
+                sourceMetadata: { description: item.description, tags: item.tags },
                 assignAttrParams: {
                     name: item.name,
                     description: item.description ? { description: item.description } : undefined,
@@ -222,8 +243,20 @@ export default async (
                               verified: false,
                           },
                           cachedItem,
-                          specificItemCategories,
+                          categoryOverride: admission.override,
                           categoryFallback: cachedItem?.category ?? 'other',
+                          providerCategory: null,
+                          sourceMetadata: {
+                              description: repoData.repo.description || '',
+                              readme: readme?.markdown || '',
+                              forks: repoData.repo.forks,
+                              version: latestRelease?.release.tag,
+                              contributors:
+                                  contributors?.contributors.map((contributor) => ({
+                                      name: contributor.username,
+                                      contributions: contributor.contributions,
+                                  })) ?? [],
+                          },
                           assignAttrParams: {
                               name: repoData.repo.name,
                               description: {
@@ -264,20 +297,26 @@ type PersistItemParams =
               name: string
           }
           cachedItem: { id: string } | null
-          specificItemCategories: AppFlags['specificItemCategories']
+          categoryOverride?: ItemCategory
           categoryFallback: ItemCategory
-          assignAttrParams: Omit<GenerateItemAttrParams, 'originalCategory'>
+          providerCategory?: {
+              rawKey: string
+              rawLabel?: string
+              mappedCategory: ItemCategory | null
+          } | null
+          sourceMetadata?: Record<string, unknown>
+          assignAttrParams: Omit<GenerateItemAttrParams, 'originalCategory' | 'sourceId'>
           idMigration?: { from: string; to: string }
       }
     | {
           valid: false
-          cachedItem: { id: string } | null
+          cachedItem: { id: string; platform?: Platform } | null
           error?: Error
       }
 
 interface PersistenceOptions {
     defer: boolean
-    purge: () => Promise<void>
+    purge: (catalogItemId?: string) => Promise<void>
 }
 
 export const persistItem = async (
@@ -290,7 +329,17 @@ export const persistItem = async (
             const cachedItemId = params.cachedItem.id
             const persist = async () => {
                 await db.update(items).set({ outdated: true }).where(eq(items.id, cachedItemId))
-                await options.purge()
+                const catalogItemId =
+                    params.error instanceof PermanentItemResolutionError &&
+                    params.error.reason !== 'policy-rejected' &&
+                    params.cachedItem?.platform
+                        ? await markCatalogCompatibilityWithdrawal(db, {
+                              providerKey: params.cachedItem.platform,
+                              externalId: cachedItemId,
+                              errorKind: params.error.reason,
+                          })
+                        : undefined
+                await options.purge(catalogItemId)
             }
 
             if (options.defer) runAfterResponse(persist())
@@ -308,14 +357,56 @@ export const persistItem = async (
         item,
         shop,
         cachedItem,
-        specificItemCategories,
+        categoryOverride,
         categoryFallback,
+        providerCategory,
+        sourceMetadata,
         assignAttrParams,
         idMigration,
     } = params
 
-    const category = specificItemCategories[item.platform]?.[item.id] ?? categoryFallback
+    const migratedOverrides = idMigration
+        ? await db
+              .select({
+                  itemId: itemCategoryOverrides.itemId,
+                  category: itemCategoryOverrides.category,
+              })
+              .from(itemCategoryOverrides)
+              .where(
+                  and(
+                      eq(itemCategoryOverrides.platform, item.platform),
+                      inArray(itemCategoryOverrides.itemId, [idMigration.from, idMigration.to]),
+                  ),
+              )
+        : []
+    const oldOverride = migratedOverrides.find(({ itemId }) => itemId === idMigration?.from)
+    const newOverride = migratedOverrides.find(({ itemId }) => itemId === idMigration?.to)
+
+    const category =
+        newOverride?.category ?? categoryOverride ?? oldOverride?.category ?? categoryFallback
     const fullItem = { ...item, category }
+    const manualCategory = newOverride?.category ?? categoryOverride ?? oldOverride?.category
+    const catalogWrite = await buildCatalogCompatibilityStatements(db, {
+        providerKey: item.platform,
+        externalId: item.id,
+        previousExternalId: idMigration?.from,
+        name: item.name,
+        image: item.image ?? null,
+        price: item.price ?? null,
+        popularityCount: item.likes ?? null,
+        nsfw: item.nsfw ?? false,
+        displayNameOverride: item.niceName,
+        categoryOverride: manualCategory,
+        categoryOverrideOrigin: manualCategory ? 'manual' : undefined,
+        providerCategory,
+        metadata: sourceMetadata,
+        publisher: {
+            externalId: shop.id,
+            name: shop.name,
+            image: shop.image ?? null,
+            providerVerified: shop.verified ?? false,
+        },
+    })
 
     const persist = async () => {
         const queries: BatchItem<'sqlite'>[] = []
@@ -324,26 +415,57 @@ export const persistItem = async (
                 db.update(items).set({ id: idMigration.to }).where(eq(items.id, idMigration.from)),
             )
 
+        if (idMigration && oldOverride && !newOverride)
+            queries.push(
+                db
+                    .insert(itemCategoryOverrides)
+                    .values({
+                        platform: item.platform,
+                        itemId: idMigration.to,
+                        category: oldOverride.category,
+                    })
+                    .onConflictDoNothing(),
+            )
+        if (idMigration && oldOverride)
+            queries.push(
+                db
+                    .delete(itemCategoryOverrides)
+                    .where(
+                        and(
+                            eq(itemCategoryOverrides.platform, item.platform),
+                            eq(itemCategoryOverrides.itemId, idMigration.from),
+                        ),
+                    ),
+            )
+
         queries.push(
             db.insert(shops).values(shop).onConflictDoUpdate({ target: shops.id, set: shop }),
             db
                 .insert(items)
                 .values(fullItem)
                 .onConflictDoUpdate({ target: items.id, set: fullItem }),
+            ...catalogWrite.statements,
         )
         await executeD1Batch(db, queries)
-        await options.purge()
+        await options.purge(catalogWrite.catalogItemId)
 
         if (!cachedItem) {
             const { niceName, category: resolvedCategory } = await generateItemAttr(db, {
                 ...assignAttrParams,
+                sourceId: catalogWrite.sourceId,
                 originalCategory: category,
             })
             await db
                 .update(items)
                 .set({ niceName, category: resolvedCategory })
                 .where(eq(items.id, item.id))
-            await options.purge()
+            await updateCatalogCompatibilityEnrichment(db, {
+                providerKey: item.platform,
+                externalId: item.id,
+                displayNameOverride: niceName,
+                categoryOverride: manualCategory ? undefined : resolvedCategory,
+            })
+            await options.purge(catalogWrite.catalogItemId)
             log.info(`Item info defined for item ${item.id}: ${niceName}, ${resolvedCategory}`)
         }
     }

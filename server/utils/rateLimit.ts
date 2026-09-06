@@ -1,5 +1,3 @@
-import { serverError } from './error'
-
 type RateLimitBindingName = 'RATE_LIMIT_USER_ACTION' | 'RATE_LIMIT_IMAGE' | 'RATE_LIMIT_DRAFT'
 
 interface RateLimitBinding {
@@ -11,9 +9,6 @@ interface RateLimitOptions {
     key: string
 }
 
-const isProduction =
-    process.env.NODE_ENV === 'production' || process.env.CLOUDFLARE_ENV === 'production'
-
 const isRateLimitBinding = (binding: unknown): binding is RateLimitBinding =>
     typeof binding === 'object' &&
     binding !== null &&
@@ -24,7 +19,7 @@ export const enforceRateLimit = async ({ binding, key }: RateLimitOptions) => {
     const limiter = getRuntimeEnv()[binding]
 
     if (!isRateLimitBinding(limiter)) {
-        if (isProduction)
+        if (getRuntimeEnvString('STAGE') === 'production')
             throw serverError.internalServerError({
                 log: {
                     tag: 'rateLimit',

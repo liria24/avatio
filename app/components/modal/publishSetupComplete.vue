@@ -11,8 +11,10 @@ const emit = defineEmits<{
 }>()
 
 const { app } = useAppConfig()
+const setupPath = useSetupPath()
 
-const link = `${app.site}/setup/${setupId}`
+const path = setupPath(setupId)
+const link = new URL(path, app.site).toString()
 
 const { data } = await useSetup(setupId)
 
@@ -88,7 +90,7 @@ onMounted(() => {
                     @click="emit('close', 'continue')"
                 />
                 <UButton
-                    :to="setupId ? `/setup/${setupId}` : undefined"
+                    :to="setupId ? path : undefined"
                     :disabled="!setupId"
                     trailing-icon="mingcute:arrow-right-line"
                     :label="$t('modal.publishComplete.viewSetup')"

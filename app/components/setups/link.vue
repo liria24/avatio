@@ -5,6 +5,7 @@ interface Props {
 const { setup } = defineProps<Props>()
 
 const { locale, t } = useI18n()
+const setupPath = useSetupPath()
 
 const avatarName = computed(() =>
     setup.items.length && setup.items[0]
@@ -20,7 +21,7 @@ const dominantColor = computed(() => firstImage.value?.themeColors?.[0] || '')
 <template>
     <NuxtLink
         tabindex="0"
-        :to="setup.id ? $localePath(`/setup/${setup.id}`) : undefined"
+        :to="setup.id ? setupPath(setup.id) : undefined"
         :aria-label="setup.name"
         :data-has-images="hasImages"
         :class="

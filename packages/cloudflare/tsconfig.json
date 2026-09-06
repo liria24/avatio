@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+        "target": "ESNext",
+        "module": "ESNext",
+        "moduleResolution": "Bundler",
+        "lib": ["ESNext", "WebWorker"],
+        "types": ["@cloudflare/workers-types"],
+        "strict": true,
+        "noEmit": true,
+        "skipLibCheck": true,
+        "noUncheckedIndexedAccess": true,
+        "verbatimModuleSyntax": true
+    },
+    "include": ["src/**/*.ts"]
+}

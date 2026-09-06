@@ -1,170 +1,84 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { PermanentItemResolutionError } from '../../../server/utils/itemResolutionError'
-
-const log = { error: vi.fn() }
-const storage = { del: vi.fn() }
-const purge = vi.fn()
-const getItem = vi.fn()
-
+import {
+    handleItemRevalidationMessage,
+    isLegacyItemRevalidationMessage,
+    isUnfencedCatalogMessage,
+} from '../../../server/migration/catalog/queueCompatibility'
+const { ensureSource, findSource, claim, release, sync, schedule } = vi.hoisted(() => ({
+    ensureSource: vi.fn(),
+    findSource: vi.fn(),
+    claim: vi.fn(),
+    release: vi.fn(),
+    sync: vi.fn(),
+    schedule: vi.fn(),
+}))
+vi.mock('@avatio/core/catalog', () => ({ syncCatalogSource: sync }))
+vi.mock('~~/server/migration/catalog/migration', () => ({
+    ensureLegacyCatalogSource: ensureSource,
+}))
+vi.mock('~~/server/utils/database', () => ({ useDB: () => ({}) }))
+vi.mock('~~/server/utils/catalogRuntime', () => ({
+    getCatalogRepository: () => ({
+        findSource,
+        claimDueSource: claim,
+        releaseSourceLease: release,
+        scheduleSourceCheck: schedule,
+    }),
+    getCatalogCacheInvalidator: () => ({}),
+    getCatalogProviderRegistry: async () => ({}),
+}))
+const legacy = {
+    id: '123',
+    platform: 'booth' as const,
+    reason: 'setup-detail' as const,
+    force: true,
+}
 beforeEach(() => {
-    vi.stubGlobal('logger', () => log)
-    vi.stubGlobal('getItem', getItem)
-    vi.stubGlobal('useStorage', () => storage)
-    vi.stubGlobal('purgeEdgeCacheTagsWithContext', purge)
-    vi.stubGlobal('getSetupCacheTag', (id: string) => `setup:${id}`)
-    vi.stubGlobal('EDGE_CACHE_TAGS', {
-        items: 'items',
-        popularAvatars: 'popular-avatars',
-        setups: 'setups',
-    })
-    storage.del.mockReset().mockResolvedValue(undefined)
-    purge.mockReset().mockResolvedValue(undefined)
-    getItem.mockReset()
+    vi.resetAllMocks()
+    ensureSource.mockResolvedValue({ id: 'source', syncLeaseUntil: null })
+    claim.mockResolvedValue({ sourceId: 'source', token: 'new-token' })
 })
-
-afterEach(() => {
-    vi.resetModules()
-    vi.unstubAllGlobals()
-})
-
-describe('handleItemRevalidationMessage', () => {
-    it('waits for item persistence before purging all affected cache tags', async () => {
-        let finishPersistence!: (item: { id: string }) => void
-        getItem.mockReturnValue(
-            new Promise<{ id: string }>((resolve) => {
-                finishPersistence = resolve
+afterEach(() => vi.restoreAllMocks())
+describe('retained Queue translation', () => {
+    it('accepts retained shapes without treating malformed current tokens as legacy', () => {
+        expect(isLegacyItemRevalidationMessage(legacy)).toBe(true)
+        expect(
+            isUnfencedCatalogMessage({
+                version: 2,
+                type: 'catalog.sync-source',
+                sourceId: 'source',
             }),
-        )
-
-        const db = {
-            query: {
-                setupItems: {
-                    findMany: vi
-                        .fn()
-                        .mockResolvedValue([{ setupId: 'a' }, { setupId: 'a' }, { setupId: 'b' }]),
-                },
-            },
-        }
-        vi.stubGlobal('useDB', () => db)
-
-        const cache = { purge: vi.fn() }
-        const message = {
-            id: 'owner/repo',
-            platform: 'github' as const,
-            reason: 'setup-detail' as const,
-            requestedAt: new Date().toISOString(),
-            force: true,
-        }
-        const pending = import('../../../server/utils/itemRevalidationQueue').then(
-            ({ handleItemRevalidationMessage }) => handleItemRevalidationMessage(message),
-        )
-
-        await vi.waitFor(() => expect(getItem).toHaveBeenCalled())
-        expect(getItem).toHaveBeenCalledWith(undefined, db, message.id, message.platform, {
-            allowExternalResolution: true,
-            forceRefresh: true,
-        })
-        expect(purge).not.toHaveBeenCalled()
-
-        finishPersistence({ id: message.id })
-        await pending
-
-        expect(purge).toHaveBeenCalledWith(
-            cache,
-            ['items', 'popular-avatars', 'setups', 'setup:a', 'setup:b'],
-            'item revalidation',
-        )
-        expect(storage.del).toHaveBeenCalledOnce()
-    })
-
-    it('purges related caches after a permanent not-found revalidation', async () => {
-        getItem.mockRejectedValue(
-            new PermanentItemResolutionError(
-                'BOOTH item missing no longer exists',
-                'provider-not-found',
-            ),
-        )
-        const db = {
-            query: {
-                setupItems: {
-                    findMany: vi.fn().mockResolvedValue([{ setupId: 'a' }]),
-                },
-            },
-        }
-        vi.stubGlobal('useDB', () => db)
-        const cache = { purge: vi.fn() }
-        const { handleItemRevalidationMessage } =
-            await import('../../../server/utils/itemRevalidationQueue')
-
-        await handleItemRevalidationMessage({
-            id: 'missing',
-            platform: 'booth',
-            reason: 'owned-avatars',
-            requestedAt: new Date().toISOString(),
-        })
-
-        expect(purge).toHaveBeenCalledWith(
-            cache,
-            ['items', 'popular-avatars', 'setups', 'setup:a'],
-            'item revalidation',
-        )
-        expect(storage.del).toHaveBeenCalledOnce()
-    })
-
-    it('rethrows a generic 404 so the queue can retry it', async () => {
-        const error = { statusCode: 404 }
-        getItem.mockRejectedValue(error)
-
-        const findMany = vi.fn()
-        vi.stubGlobal('useDB', () => ({
-            query: {
-                setupItems: {
-                    findMany,
-                },
-            },
-        }))
-
-        const { handleItemRevalidationMessage } =
-            await import('../../../server/utils/itemRevalidationQueue')
-
-        await expect(
-            handleItemRevalidationMessage({
-                id: 'missing',
-                platform: 'booth',
-                reason: 'owned-avatars',
-                requestedAt: new Date().toISOString(),
+        ).toBe(true)
+        expect(
+            isUnfencedCatalogMessage({
+                version: 2,
+                type: 'catalog.sync-source',
+                sourceId: 'source',
+                leaseToken: '',
             }),
-        ).rejects.toBe(error)
-
-        expect(findMany).not.toHaveBeenCalled()
-        expect(purge).not.toHaveBeenCalled()
-        expect(storage.del).not.toHaveBeenCalled()
+        ).toBe(false)
     })
-
-    it('finds related setups by the canonical item id after an id migration', async () => {
-        getItem.mockResolvedValue({ id: 'Owner/Repo' })
-        const findMany = vi.fn().mockResolvedValue([{ setupId: 'a' }])
-        vi.stubGlobal('useDB', () => ({ query: { setupItems: { findMany } } }))
-        const cache = { purge: vi.fn() }
-        const { handleItemRevalidationMessage } =
-            await import('../../../server/utils/itemRevalidationQueue')
-
-        await handleItemRevalidationMessage({
-            id: 'owner/repo',
-            platform: 'github',
-            reason: 'setup-detail',
-            requestedAt: new Date().toISOString(),
-        })
-
-        expect(findMany).toHaveBeenCalledWith({
-            where: { itemId: { eq: 'Owner/Repo' } },
-            columns: { setupId: true },
-        })
-        expect(purge).toHaveBeenCalledWith(
-            cache,
-            ['items', 'popular-avatars', 'setups', 'setup:a'],
-            'item revalidation',
+    it('maps one source and routes only through a newly fenced v2 sync', async () => {
+        await handleItemRevalidationMessage(legacy)
+        expect(ensureSource).toHaveBeenCalledWith({}, 'booth', '123')
+        expect(sync).toHaveBeenCalledWith(
+            expect.objectContaining({ sourceId: 'source', leaseToken: 'new-token' }),
         )
+    })
+    it('does not borrow a live lease or mutate its schedule', async () => {
+        ensureSource.mockResolvedValue({
+            id: 'source',
+            syncLeaseUntil: new Date(Date.now() + 60_000),
+        })
+        await handleItemRevalidationMessage(legacy)
+        expect(claim).not.toHaveBeenCalled()
+        expect(schedule).not.toHaveBeenCalled()
+        expect(sync).not.toHaveBeenCalled()
+    })
+    it('releases only its newly acquired lease if provider initialization fails', async () => {
+        sync.mockRejectedValue(new Error('failure'))
+        await expect(handleItemRevalidationMessage(legacy)).rejects.toThrow('failure')
+        expect(release).toHaveBeenCalledWith({ sourceId: 'source', token: 'new-token' })
     })
 })

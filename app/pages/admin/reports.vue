@@ -3,6 +3,7 @@ const { locale } = useI18n()
 const { resolveReport } = useAdmin()
 const itemCategory = useItemCategory()
 const changeItemNiceName = useChangeItemNiceNameModal()
+const setupPath = useSetupPath()
 
 type Tab = 'user' | 'setup' | 'item'
 
@@ -344,7 +345,7 @@ useSeo({
 
                         <div class="grid w-full grid-cols-1 items-start gap-4 sm:grid-cols-2">
                             <UPageCard
-                                :to="report.setup?.id ? `/setup/${report.setup.id}` : undefined"
+                                :to="report.setup?.id ? setupPath(report.setup.id) : undefined"
                                 target="_blank"
                                 :ui="{ container: 'p-2 sm:p-2' }"
                             >

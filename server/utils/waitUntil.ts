@@ -1,5 +1,3 @@
-import { useEvent } from 'nitropack/runtime/internal/context'
-
 const waitUntilLog = logger('waitUntil')
 
 export const runAfterResponse = (promise: Promise<unknown>) => {

@@ -36,7 +36,7 @@ export default authedSessionEventHandler(async ({ event, session, db }) => {
     if (data.id !== session.user.id && session.user.role !== 'admin') throw serverError.forbidden()
 
     if (username) {
-        const isUsernameAvailable = await auth.api.isUsernameAvailable({
+        const isUsernameAvailable = await serverAuth(event).api.isUsernameAvailable({
             body: { username },
         })
         if (!isUsernameAvailable) throw serverError.badRequest()
@@ -62,7 +62,7 @@ export default authedSessionEventHandler(async ({ event, session, db }) => {
 
     log.success(`User ${username} updated successfully`)
 
-    await purgeUserContentCache(event, db, data.id, 'user profile update')
+    await invalidateUserContentCache(event, db, data.id, 'user profile update')
 
     return null
 })
