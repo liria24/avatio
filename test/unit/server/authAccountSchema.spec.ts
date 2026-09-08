@@ -60,9 +60,15 @@ describe('Better Auth account schema', () => {
                 }),
             })
             expect(session?.user.id).toBe(registered.user.id)
+            expect(database.sqlite.prepare('SELECT provider_id FROM accounts').get()).toMatchObject(
+                { provider_id: 'credential' },
+            )
             expect(
-                database.sqlite.prepare('SELECT issuer, provider_id FROM accounts').get(),
-            ).toMatchObject({ issuer: null, provider_id: 'credential' })
+                database.sqlite
+                    .prepare('PRAGMA table_info(accounts)')
+                    .all()
+                    .map((row) => row.name),
+            ).not.toContain('issuer')
         } finally {
             database.sqlite.close()
         }
