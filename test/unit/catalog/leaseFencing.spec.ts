@@ -75,6 +75,45 @@ describe('Catalog D1 lease fencing', () => {
         expect((await repository.findSource('source'))?.syncLeaseToken).toBe(second?.token)
     })
 
+    it('adopts an unclaimed canonical identity without changing the CatalogItem ID', async () => {
+        const renamed = {
+            ...snapshot,
+            reference: {
+                ...snapshot.reference,
+                externalId: '456',
+                canonicalUrl: 'https://booth.pm/items/456',
+            },
+        }
+        const lease = await repository.claimDueSource('source', new Date(0), new Date(1000))
+        await repository.completeSourceSync({
+            sourceId: 'source',
+            leaseToken: lease!.token,
+            successful: true,
+            snapshot: renamed,
+            availability: 'available',
+            checkedAt: new Date(1),
+            nextCheckAt: new Date(3000),
+        })
+        expect(await repository.findSourceByExternalId('booth', '456')).toMatchObject({
+            id: 'source',
+            itemId: 'item',
+            canonicalUrl: renamed.reference.canonicalUrl,
+        })
+        await repository.completeSourceSync({
+            sourceId: 'source',
+            leaseToken: lease!.token,
+            successful: true,
+            snapshot,
+            availability: 'available',
+            checkedAt: new Date(2),
+            nextCheckAt: new Date(3000),
+        })
+        expect(await repository.findSource('source')).toMatchObject({
+            externalId: '456',
+            canonicalUrl: renamed.reference.canonicalUrl,
+        })
+    })
+
     it('claims a forced refresh atomically without rewriting its schedule first', async () => {
         database.sqlite.exec('UPDATE item_sources SET next_check_at = 2000')
         expect(await repository.claimDueSource('source', new Date(0), new Date(1000))).toBeNull()

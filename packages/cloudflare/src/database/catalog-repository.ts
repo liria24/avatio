@@ -9,7 +9,7 @@ import type {
     SourceLease,
 } from '@avatio/core/catalog'
 import type { D1Database } from '@cloudflare/workers-types'
-import { and, eq, isNull, lte, or } from 'drizzle-orm'
+import { and, eq, isNull, lte, or, sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 
 import { catalogItems, itemSources } from '../../../../database/schema'
@@ -216,6 +216,13 @@ export class D1CatalogRepository implements CatalogRepository {
                 syncState: input.successful ? 'fresh' : 'error',
                 ...(snapshot
                     ? {
+                          // Preserve existing aliases when another source owns the canonical key.
+                          externalId: sql`CASE WHEN NOT EXISTS (
+                              SELECT 1 FROM item_sources AS canonical
+                              WHERE canonical.provider_key = ${itemSources.providerKey}
+                                AND canonical.external_id = ${snapshot.reference.externalId}
+                                AND canonical.id <> ${input.sourceId}
+                          ) THEN ${snapshot.reference.externalId} ELSE ${itemSources.externalId} END`,
                           canonicalUrl: snapshot.reference.canonicalUrl,
                           publisherSourceId: snapshot.publisherSourceId,
                           providerCategoryKey: snapshot.category?.rawKey ?? null,
