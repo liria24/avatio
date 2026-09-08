@@ -16,7 +16,7 @@ export interface PaginationResponse<T> {
 
 export interface WritableAppConfig {
     allowedBoothCategoryId: number[]
-    specificItemCategories: Record<Platform, Record<string, ItemCategory>>
+    catalogCategoryOverrides: Record<string, ItemCategory>
 }
 
 export interface AppConfig extends WritableAppConfig {

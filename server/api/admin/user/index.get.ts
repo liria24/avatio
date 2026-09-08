@@ -68,7 +68,7 @@ export default promiseEventHandler(async ({ db, event }) => {
                     createdAt: true,
                 },
             },
-            shops: {
+            publisherSourceOwnerships: {
                 extras: {
                     count: sql<number>`CAST(COUNT(*) OVER() AS INTEGER)`,
                 },

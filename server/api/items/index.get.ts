@@ -1,4 +1,3 @@
-import { sql } from 'drizzle-orm'
 import { z } from 'zod'
 
 const query = z.object({
@@ -13,63 +12,18 @@ const query = z.object({
     limit: z.coerce.number().min(1).max(API_LIMIT_MAX).optional().default(ITEMS_API_DEFAULT_LIMIT),
 })
 
-export default promiseEventHandler<PaginationResponse<Item[]>>(async ({ event, db }) => {
+export default promiseEventHandler<PaginationResponse<CatalogItemView[]>>(async ({ event, db }) => {
     const { q, orderBy, sort, category, page, limit } = await validateQuery(query)
 
-    const offset = (page - 1) * limit
-
-    const data = await db.query.items.findMany({
-        extras: {
-            count: sql<number>`CAST(COUNT(*) OVER() AS INTEGER)`,
-        },
+    const result = await queryCatalogItems(db, {
+        q,
+        orderBy,
+        sort,
+        category,
+        page,
         limit,
-        offset,
-        where: {
-            outdated: { eq: false },
-            name: q ? { like: `%${q}%` } : undefined,
-            category: category ? { in: category } : undefined,
-        },
-        orderBy: {
-            [orderBy]: sort,
-        },
-        columns: {
-            id: true,
-            createdAt: true,
-            updatedAt: true,
-            platform: true,
-            category: true,
-            name: true,
-            niceName: true,
-            image: true,
-            price: true,
-            likes: true,
-            nsfw: true,
-            outdated: true,
-        },
-        with: {
-            shop: {
-                columns: {
-                    id: true,
-                    platform: true,
-                    name: true,
-                    image: true,
-                    verified: true,
-                },
-            },
-        },
+        availability: ['available'],
     })
-
     applyPublicEdgeCache(event, [EDGE_CACHE_TAGS.items])
-
-    return {
-        data,
-        pagination: {
-            page,
-            limit,
-            total: data[0]?.count || 0,
-            totalPages: Math.ceil((data[0]?.count || 0) / limit),
-            hasNext: offset + limit < (data[0]?.count || 0),
-            hasPrev: offset > 0,
-        },
-    }
+    return result
 })

@@ -11,7 +11,7 @@ const tags = defineModel<string[]>('tags', {
 
 const popoverItemSearch = ref(false)
 
-const onSelectItemSearch = async (item: Partial<Item> & Pick<Item, 'id'>) => {
+const onSelectItemSearch = async (item: Partial<CatalogItemView> & Pick<CatalogItemView, 'id'>) => {
     if (!items.value.includes(item.id)) items.value.push(item.id)
 
     popoverItemSearch.value = false

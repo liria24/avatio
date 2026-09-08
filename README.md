@@ -37,7 +37,7 @@ VRSNSユーザー向けのアバターセットアップ共有サービス。<br
 [![Drizzle ORM badge][badge-drizzle]][drizzle]
 [![Oxc badge][badge-oxc]][oxc]
 
-Avatio is a Bun workspace modular monolith. Pure domains live in `@avatio/core`, Nuxt integration in `@avatio/nuxt`, and current infrastructure adapters in `@avatio/cloudflare`. Configuration/secret operations and the temporary v2 rollout runbook are maintained in [AGENTS.md](AGENTS.md); follow its deletion gate instead of retaining completed migration documentation.
+Avatio is a Bun workspace modular monolith. Pure domains live in `@avatio/core`, Nuxt integration in `@avatio/nuxt`, and current infrastructure adapters in `@avatio/cloudflare`. Items and publishers use Avatio-owned identities across providers. Setup entries preserve category overrides, notes, and shapekeys; provider availability and refresh errors remain separate. Configuration, secret operations, and the remaining database contract procedure are maintained in [AGENTS.md](AGENTS.md).
 
 `bun run dev` serves `http://localhost:3000`, reads authored Markdown from `content/`, and saves uploads to gitignored `.data/uploads`. Its Alchemy state stays in `.alchemy/state`, separate from deployed resources in the Cloudflare state store. Deployed Workers read authored content from GitHub through the existing KV cache and store uploads in R2. Terms and Privacy keep independent versions and append-only acceptance history. PR quality checks run lint, typecheck, tests, and build without production secrets.
 

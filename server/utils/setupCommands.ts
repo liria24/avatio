@@ -4,16 +4,14 @@ import type { H3Event } from 'h3'
 import { nanoid } from 'nanoid'
 import type { z } from 'zod'
 import {
+    catalogItems,
     setupCoauthors,
     setupEntries,
     setupEntryShapekeys,
     setupImages,
-    setupItems,
-    setupItemShapekeys,
     setups,
     setupTags,
 } from '~~/database/schema'
-import { mapV2SetupEntryWrites } from '~~/server/migration/catalog/compatibility'
 
 type CreateSetupInput = z.infer<typeof setupsInsertSchema>
 type UpdateSetupInput = z.infer<typeof setupsUpdateSchema>
@@ -38,47 +36,32 @@ const buildEntryStatements = async (
     setupId: string,
     input: Pick<CreateSetupInput, 'items'>,
 ) => {
-    const legacyEntries = input.items.map((item) => ({
+    const itemIds = [...new Set(input.items.map((item) => item.itemId))]
+    const found = itemIds.length
+        ? await db
+              .select({ id: catalogItems.id })
+              .from(catalogItems)
+              .where(inArray(catalogItems.id, itemIds))
+        : []
+    if (found.length !== itemIds.length)
+        throw serverError.badRequest({ responseMessage: 'Unknown CatalogItem ID.' })
+    const entries = input.items.map((item) => ({
         id: nanoid(12),
         setupId,
         itemId: item.itemId,
-        category: item.category,
+        categoryOverride: item.category ?? null,
         note: item.note,
         unsupported: item.category === 'avatar' ? false : item.unsupported,
     }))
     const shapekeys = input.items.flatMap((item, index) =>
-        (item.shapekeys || []).map((shapekey) => ({
-            setupItemId: legacyEntries[index]!.id,
+        (item.shapekeys ?? []).map((shapekey) => ({
+            setupEntryId: entries[index]!.id,
             ...shapekey,
         })),
     )
-    const v2Entries = await mapV2SetupEntryWrites(db, legacyEntries)
     const queries: BatchItem<'sqlite'>[] = []
-    if (legacyEntries.length) queries.push(db.insert(setupItems).values(legacyEntries))
-    if (shapekeys.length) queries.push(db.insert(setupItemShapekeys).values(shapekeys))
-    if (v2Entries?.length) {
-        queries.push(db.insert(setupEntries).values(v2Entries))
-        if (shapekeys.length)
-            queries.push(
-                // Read the IDs allocated by the preceding legacy insert in this same batch.
-                db.insert(setupEntryShapekeys).select(
-                    db
-                        .select({
-                            id: setupItemShapekeys.id,
-                            setupEntryId: setupItemShapekeys.setupItemId,
-                            name: setupItemShapekeys.name,
-                            value: setupItemShapekeys.value,
-                        })
-                        .from(setupItemShapekeys)
-                        .where(
-                            inArray(
-                                setupItemShapekeys.setupItemId,
-                                legacyEntries.map((entry) => entry.id),
-                            ),
-                        ),
-                ),
-            )
-    }
+    if (entries.length) queries.push(db.insert(setupEntries).values(entries))
+    if (shapekeys.length) queries.push(db.insert(setupEntryShapekeys).values(shapekeys))
     return queries
 }
 
@@ -181,10 +164,7 @@ export const updateSetup = async (
         )
     }
 
-    queries.push(
-        db.delete(setupItems).where(eq(setupItems.setupId, id)),
-        db.delete(setupEntries).where(eq(setupEntries.setupId, id)),
-    )
+    queries.push(db.delete(setupEntries).where(eq(setupEntries.setupId, id)))
     queries.push(...entryStatements)
 
     if (input.images !== undefined && imageData !== undefined) {

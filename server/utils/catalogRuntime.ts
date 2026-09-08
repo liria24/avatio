@@ -13,7 +13,8 @@ import {
     GithubCatalogProvider,
 } from '@avatio/nuxt/runtime/server/catalog/providers'
 import type { CacheContext, Queue } from '@cloudflare/workers-types'
-import { allowedBoothCategories } from '~~/database/schema'
+import { inArray } from 'drizzle-orm'
+import { allowedBoothCategories, itemSources } from '~~/database/schema'
 
 export const getCatalogRepository = () => new D1CatalogRepository(getDatabaseBinding())
 
@@ -51,18 +52,17 @@ export const getCatalogSyncQueue = (): CatalogSyncQueue | null => {
 export const getCatalogCacheInvalidator = (cache?: CacheContext) =>
     new CloudflareCacheInvalidator(cache)
 
-export const enqueueReferencedCatalogSources = async (
-    references: readonly { id: string; platform: Platform }[],
-) => {
+export const enqueueReferencedCatalogSources = async (catalogItemIds: readonly string[]) => {
     const queue = getCatalogSyncQueue()
-    if (!queue) return null
+    if (!queue || !catalogItemIds.length) return null
 
     const repository = getCatalogRepository()
-    const sources = await Promise.all(
-        references.map(({ id, platform }) => repository.findSourceByExternalId(platform, id)),
-    )
+    const sources = await useDB()
+        .select({ id: itemSources.id })
+        .from(itemSources)
+        .where(inArray(itemSources.itemId, [...catalogItemIds]))
     return enqueueDueCatalogSources({
-        sourceIds: sources.flatMap((source) => (source ? [source.id] : [])),
+        sourceIds: sources.map((source) => source.id),
         repository,
         queue,
     })

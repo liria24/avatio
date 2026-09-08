@@ -17,31 +17,11 @@ type QueuePluginApp = {
     }
 }
 
-const { handleMessage, isLegacyMessage } = vi.hoisted(() => ({
-    handleMessage: vi.fn(),
-    isLegacyMessage: vi.fn(),
-}))
 const log = { error: vi.fn() }
-
-vi.mock('~~/server/migration/catalog/queueCompatibility', () => ({
-    handleItemRevalidationMessage: handleMessage,
-    isLegacyItemRevalidationMessage: isLegacyMessage,
-    isUnfencedCatalogMessage: () => false,
-}))
 
 beforeEach(() => {
     vi.stubGlobal('logger', () => log)
     vi.stubGlobal('defineNitroPlugin', (plugin: (app: QueuePluginApp) => void) => plugin)
-    handleMessage.mockReset().mockResolvedValue(undefined)
-    isLegacyMessage.mockReset().mockImplementation((value: unknown) => {
-        if (!value || typeof value !== 'object') return false
-        const message = value as { id?: unknown; platform?: unknown; reason?: unknown }
-        return (
-            typeof message.id === 'string' &&
-            (message.platform === 'booth' || message.platform === 'github') &&
-            (message.reason === 'setup-detail' || message.reason === 'owned-avatars')
-        )
-    })
     log.error.mockReset()
 })
 
@@ -83,7 +63,7 @@ describe('item revalidation queue plugin', () => {
         expect(message.ack).toHaveBeenCalledOnce()
         expect(message.retry).not.toHaveBeenCalled()
     })
-    it('handles the stage-specific development queue', async () => {
+    it('rejects an unfenced retained message without fetching', async () => {
         const { default: plugin } = await import('../../../server/plugins/itemRevalidationQueue')
         let queueHandler!: QueueHandler
         plugin({
@@ -111,8 +91,8 @@ describe('item revalidation queue plugin', () => {
             context: { cache },
         })
 
-        expect(handleMessage).toHaveBeenCalledWith(message.body, cache)
-        expect(message.ack).toHaveBeenCalledOnce()
-        expect(message.retry).not.toHaveBeenCalled()
+        expect(message.ack).not.toHaveBeenCalled()
+        expect(message.retry).toHaveBeenCalledOnce()
+        expect(log.error).toHaveBeenCalledOnce()
     })
 })

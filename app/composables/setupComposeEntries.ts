@@ -3,7 +3,7 @@ import type { Ref } from 'vue'
 
 export type SetupComposeEntry = SetupComposeForm['items'][number] & {
     id: string
-    platform: Platform | null
+    primarySource: CatalogItemView['primarySource']
     name: string
     image: string | null
 }
@@ -11,7 +11,7 @@ export type SetupComposeEntry = SetupComposeForm['items'][number] & {
 export const useSetupComposeEntries = (
     items: Readonly<Ref<SetupComposeForm['items']>>,
     setItems: (items: SetupComposeForm['items']) => void,
-    entities: Ref<Record<string, Item>>,
+    entities: Ref<Record<string, CatalogItemView>>,
 ) => {
     const toast = useToast()
     const { t } = useI18n()
@@ -19,7 +19,7 @@ export const useSetupComposeEntries = (
         items.value.map((item) => ({
             ...(entities.value[item.itemId] ?? {
                 id: item.itemId,
-                platform: null,
+                primarySource: null,
                 name: item.itemId,
                 image: null,
             }),
@@ -29,7 +29,7 @@ export const useSetupComposeEntries = (
     )
     const totalItemsCount = computed(() => items.value.length)
 
-    const addItem = (item: Item) => {
+    const addItem = (item: CatalogItemView) => {
         if (!item?.id || !item?.category) {
             console.error('Invalid item data:', item)
             return

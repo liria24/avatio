@@ -5,50 +5,31 @@ const query = z.object({
     orderBy: z.enum(['createdAt', 'name']).optional().default('createdAt'),
     sort: z.enum(['asc', 'desc']).optional().default('desc'),
     limit: z.coerce.number().min(1).max(API_LIMIT_MAX).optional(),
-    platform: platformSchema.optional(),
-    outdated: z.stringbool().optional(),
+    providerKey: z.string().optional(),
+    availability: z
+        .union([
+            z.enum(['available', 'withdrawn', 'policy_rejected', 'unknown']),
+            z.enum(['available', 'withdrawn', 'policy_rejected', 'unknown']).array(),
+        ])
+        .optional(),
 })
 
 export default promiseEventHandler(async ({ db, event }) => {
     await requireUserSession(event, { user: { role: 'admin' } })
-    const { q, orderBy, sort, limit, platform, outdated } = await validateQuery(query)
+    const { q, orderBy, sort, limit, providerKey, availability } = await validateQuery(query)
 
-    const result = await db.query.items.findMany({
-        limit,
-        where: {
-            name: q ? { like: `%${q}%` } : undefined,
-            platform: platform ? { eq: platform } : undefined,
-            outdated: outdated ? { eq: true } : outdated === false ? { eq: false } : undefined,
-        },
-        orderBy: {
-            [orderBy]: sort,
-        },
-        columns: {
-            id: true,
-            createdAt: true,
-            updatedAt: true,
-            platform: true,
-            category: true,
-            name: true,
-            niceName: true,
-            image: true,
-            price: true,
-            likes: true,
-            nsfw: true,
-            outdated: true,
-        },
-        with: {
-            shop: {
-                columns: {
-                    id: true,
-                    platform: true,
-                    name: true,
-                    image: true,
-                    verified: true,
-                },
-            },
-        },
+    applyNoStoreCache(event)
+    const result = await queryCatalogItems(db, {
+        q,
+        orderBy,
+        sort,
+        limit: limit ?? API_LIMIT_MAX,
+        providerKey,
+        availability: availability
+            ? Array.isArray(availability)
+                ? availability
+                : [availability]
+            : undefined,
     })
-
-    return result
+    return result.data
 })

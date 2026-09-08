@@ -455,7 +455,7 @@ useSeo({
                                         @click="
                                             changeItemNiceName.open({
                                                 itemId: report.item.id,
-                                                current: report.item.niceName || '',
+                                                current: report.item.displayNameOverride || '',
                                             })
                                         "
                                     />
@@ -485,7 +485,7 @@ useSeo({
 
                         <div class="grid w-full grid-cols-1 items-start gap-4 sm:grid-cols-2">
                             <UPageCard
-                                :to="resolveItemUrl(report.item.id, report.item.platform)"
+                                :to="report.item.primarySource?.canonicalUrl"
                                 target="_blank"
                                 :ui="{ container: 'p-2 sm:p-2' }"
                             >
@@ -498,7 +498,9 @@ useSeo({
 
                                     <div class="flex flex-col gap-1 px-2">
                                         <p class="text-sm leading-tight font-medium">
-                                            {{ report.item.niceName || report.item.name }}
+                                            {{
+                                                report.item.displayNameOverride || report.item.name
+                                            }}
                                         </p>
 
                                         <p
@@ -509,7 +511,7 @@ useSeo({
 
                                         <div class="flex items-center gap-1">
                                             <UBadge
-                                                :label="report.item.platform"
+                                                :label="report.item.primarySource?.providerKey"
                                                 variant="outline"
                                                 size="sm"
                                                 class="rounded-full px-2.5"

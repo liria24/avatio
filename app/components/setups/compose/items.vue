@@ -35,7 +35,7 @@ const { data: ownedAvatars } = await useFetch('/api/items/owned-avatars', {
     default: () => [],
 })
 
-const addItem = async (item: Item) => {
+const addItem = async (item: CatalogItemView) => {
     add(item)
     popoverItemSearch.value = false
 }
@@ -83,14 +83,14 @@ const addItem = async (item: Item) => {
             variant="naked"
             :actions="
                 ownedAvatars.map((ownedAvatar) => ({
-                    label: ownedAvatar.niceName || avatarShortName(ownedAvatar.name),
+                    label: ownedAvatar.displayNameOverride || avatarShortName(ownedAvatar.name),
                     avatar: { src: ownedAvatar.image || undefined },
                     variant: 'soft',
                     ui: {
                         label: 'whitespace-normal line-clamp-1',
                         leadingAvatar: 'rounded-md [&>img]:rounded-md',
                     },
-                    onClick: () => addItem(ownedAvatar),
+                    onClick: () => addItem({ ...ownedAvatar, category: 'avatar' }),
                 }))
             "
             class="lg:mt-[30cqh] lg:p-0"

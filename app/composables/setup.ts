@@ -43,12 +43,10 @@ export const useSetupsList = (
         () =>
             `setups-state-${type || 'custom'}-${options?.username || ''}-${JSON.stringify(unref(options?.query) || {})}`,
     )
-    const setups = useState<
-        Extract<
-            NonNullable<FetchResult<'/api/setups', 'get'>>['data'][number],
-            { items: unknown }
-        >[]
-    >(cacheKey.value, () => [])
+    const setups = useState<NonNullable<FetchResult<'/api/setups', 'get'>>['data']>(
+        cacheKey.value,
+        () => [],
+    )
 
     // Build query parameters
     const queryParams = computed(() => {

@@ -130,10 +130,10 @@ export const useAdmin = () => {
         }
     }
 
-    const changeItemNiceName = defineAction<{ itemId: string; niceName: string }>({
+    const changeItemNiceName = defineAction<{ itemId: string; displayNameOverride: string }>({
         url: ({ itemId }) => `/api/admin/items/${itemId}`,
         method: 'PUT',
-        body: ({ niceName }) => ({ niceName }),
+        body: ({ displayNameOverride }) => ({ displayNameOverride }),
         successTitle: t('toast.admin.itemNiceNameChanged'),
         errorTitle: t('toast.admin.itemNiceNameChangeFailed'),
         errorLog: 'Error changing item nice name:',

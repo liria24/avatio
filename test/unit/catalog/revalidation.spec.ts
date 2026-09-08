@@ -35,6 +35,7 @@ const repository = (implementations: Partial<CatalogRepository> = {}): CatalogRe
     findItem: vi.fn(async () => null),
     findSource: vi.fn(async () => source()),
     findSourceByExternalId: vi.fn(async () => null),
+    ensureSource: vi.fn(async () => source()),
     scheduleSourceCheck: vi.fn(async () => true),
     claimDueSource: vi.fn(async () => null),
     releaseSourceLease: vi.fn(async () => undefined),

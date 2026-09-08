@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-const props = defineProps<{ itemId: Item['id'] }>()
+const props = defineProps<{ itemId: CatalogItemView['id'] }>()
 
 const emit = defineEmits(['close'])
 

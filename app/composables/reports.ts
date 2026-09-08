@@ -74,7 +74,7 @@ const useReport = (
     }
 }
 
-export const useItemReport = (itemId: Item['id']) =>
+export const useItemReport = (itemId: CatalogItemView['id']) =>
     useReport('item', async (state, idempotencyKey) => {
         await $fetch('/api/reports/item', {
             method: 'POST',
