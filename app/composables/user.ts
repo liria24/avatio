@@ -24,3 +24,157 @@ export const useCurrentUser = () => {
     const { user } = useUserSession()
     return useUser(user.value?.username || '')
 }
+
+export const useUserFollowees = (username: string) =>
+    useFetch(`/api/users/${username}/followees`, {
+        key: computed(() => `user-${unref(username)}-followees`),
+        dedupe: 'defer',
+        lazy: false,
+        immediate: true,
+    })
+
+export const useUserFollowers = (username: string) =>
+    useFetch(`/api/users/${username}/followers`, {
+        key: computed(() => `user-${unref(username)}-followers`),
+        dedupe: 'defer',
+        lazy: false,
+        immediate: true,
+    })
+
+export const useUserFollow = (username: string, initialIsFollowing?: boolean) => {
+    const toast = useToast()
+    const { t } = useI18n()
+    const { user: viewer } = useUserSession()
+
+    const _asyncData = useFetch(`/api/users/${username}/follow`, {
+        key: computed(() => `user-${unref(username)}-isFollowing-${viewer.value?.id ?? ''}`),
+        dedupe: 'defer',
+        lazy: false,
+        immediate: !!viewer.value,
+        transform: (data) => data.isFollowing,
+    })
+
+    const followLocalOverride = useState<boolean | null>(
+        `follow-${unref(username)}-${viewer.value?.id ?? ''}`,
+        () => null,
+    )
+    const isFollowing = computed(() =>
+        followLocalOverride.value !== null
+            ? followLocalOverride.value
+            : (_asyncData.data.value ?? initialIsFollowing ?? false),
+    )
+
+    const follow = async () => {
+        const previous = isFollowing.value
+        followLocalOverride.value = true
+        try {
+            await $fetch(`/api/users/${unref(username)}/follow`, { method: 'POST' })
+        } catch (error) {
+            console.error('Error following user:', error)
+            followLocalOverride.value = previous
+            toast.add({
+                icon: 'mingcute:close-line',
+                title: t('toast.follow.followFailed'),
+                color: 'error',
+            })
+        }
+    }
+
+    const unfollow = async () => {
+        const previous = isFollowing.value
+        followLocalOverride.value = false
+        try {
+            await $fetch(`/api/users/${unref(username)}/follow`, { method: 'DELETE' })
+        } catch (error) {
+            console.error('Error unfollowing user:', error)
+            followLocalOverride.value = previous
+            toast.add({
+                icon: 'mingcute:close-line',
+                title: t('toast.follow.unfollowFailed'),
+                color: 'error',
+            })
+        }
+    }
+
+    const awaitableResult = Object.assign(_asyncData, {
+        follow,
+        unfollow,
+        isFollowing,
+    })
+
+    return awaitableResult
+}
+
+export const useUserMute = (username: string) => {
+    const toast = useToast()
+    const { user: sessionUser } = useUserSession()
+    const { t } = useI18n()
+
+    const _asyncData = useFetch(`/api/users/${username}/mute`, {
+        key: computed(() => `user-${unref(username)}-isMuted-${sessionUser.value?.id ?? ''}`),
+        dedupe: 'defer',
+        lazy: false,
+        immediate: !!sessionUser.value && username !== sessionUser.value.username,
+        transform: (data) => data.isMuted,
+    })
+
+    const muteLocalOverride = useState<boolean | null>(
+        `mute-${unref(username)}-${sessionUser.value?.id ?? ''}`,
+        () => null,
+    )
+    const isMuted = computed(() =>
+        muteLocalOverride.value !== null
+            ? muteLocalOverride.value
+            : (_asyncData.data.value ?? false),
+    )
+
+    const mute = async () => {
+        const previous = isMuted.value
+        muteLocalOverride.value = true
+        try {
+            await $fetch(`/api/users/${unref(username)}/mute`, { method: 'POST' })
+            toast.add({
+                icon: 'mingcute:check-line',
+                title: t('toast.mute.muted'),
+                color: 'success',
+            })
+        } catch (error) {
+            console.error('Error muting user:', error)
+            muteLocalOverride.value = previous
+            toast.add({
+                icon: 'mingcute:close-line',
+                title: t('toast.mute.muteFailed'),
+                color: 'error',
+            })
+        }
+    }
+
+    const unmute = async () => {
+        const previous = isMuted.value
+        muteLocalOverride.value = false
+        try {
+            await $fetch(`/api/users/${unref(username)}/mute`, { method: 'DELETE' })
+            toast.add({
+                icon: 'mingcute:check-line',
+                title: t('toast.mute.unmuted'),
+                color: 'success',
+            })
+        } catch (error) {
+            console.error('Error unmuting user:', error)
+            muteLocalOverride.value = previous
+            toast.add({
+                icon: 'mingcute:close-line',
+                title: t('toast.mute.unmuteFailed'),
+                color: 'error',
+            })
+        }
+    }
+
+    const awaitableResult = Object.assign(_asyncData, {
+        mute,
+        unmute,
+        isMuted,
+    })
+
+    return awaitableResult
+}

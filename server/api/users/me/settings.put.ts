@@ -5,8 +5,8 @@ const request = {
 }
 
 export default authedSessionEventHandler(
-    async ({ session, db }) => {
-        const body = await validateBody(request.body)
+    async ({ event, session, db }) => {
+        const body = await validateBody(request.body, { sanitize: true })
 
         await db
             .insert(userSettings)
@@ -19,6 +19,7 @@ export default authedSessionEventHandler(
                 set: body,
             })
 
+        await invalidateUserContentCache(event, db, session.user.id, 'user settings update')
         return { success: true }
     },
     { rejectBannedUser: true },

@@ -1,0 +1,29 @@
+import { z } from 'zod'
+
+const params = z.object({
+    username: z.string(),
+})
+
+export default sessionEventHandler(async ({ event, session, db }) => {
+    applyNoStoreCache(event)
+    const { username } = await validateParams(params)
+
+    if (!session)
+        return {
+            isFollowing: false,
+        }
+
+    const data = await db.query.userFollows.findFirst({
+        where: {
+            followee: { username: { eq: username } },
+            userId: { eq: session.user.id },
+        },
+        columns: {
+            createdAt: true,
+        },
+    })
+
+    return {
+        isFollowing: !!data,
+    }
+})

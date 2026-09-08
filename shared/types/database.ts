@@ -46,10 +46,30 @@ export const publisherOwnershipPublicSchema = z.object({
     publisherSource: publisherSourcePublicSchema,
 })
 
+export const userSettingsPublicSchema = z.object({
+    publicFollowees: z.boolean(),
+    publicBookmarks: z.boolean(),
+})
 export const userSettingsUpdateSchema = z.object({
+    publicFollowees: z.boolean().optional(),
+    publicBookmarks: z.boolean().optional(),
+    notifSiteEnabled: z.boolean().optional(),
+    notifSiteFollowed: z.boolean().optional(),
+    notifSiteFolloweePost: z.boolean().optional(),
+    notifSiteCoauthorAdded: z.boolean().optional(),
+    notifPushFollowed: z.boolean().optional(),
+    notifPushFolloweePost: z.boolean().optional(),
+    notifPushCoauthorAdded: z.boolean().optional(),
+    notifWebhookEnabled: z.boolean().optional(),
+    notifWebhookUrl: z.url().max(2048).nullable().optional(),
+    notifWebhookFollowed: z.boolean().optional(),
+    notifWebhookFolloweePost: z.boolean().optional(),
+    notifWebhookCoauthorAdded: z.boolean().optional(),
     showPrivateSetups: z.boolean().optional(),
     showNSFW: z.boolean().optional(),
 })
+
+export type UserSettings = z.infer<typeof userSettingsUpdateSchema>
 
 const usernameSchema = z
     .string()
@@ -82,6 +102,11 @@ export const usersPublicSchema = z.object({
     banExpires: z.date().nullable().optional(),
     badges: userBadgesPublicSchema.array().optional(),
     publisherOwnerships: publisherOwnershipPublicSchema.array().optional(),
+    followersCount: z.number().optional(),
+    followeesCount: z.number().optional(),
+    isFollowing: z.boolean().optional(),
+    isMuted: z.boolean().optional(),
+    settings: userSettingsPublicSchema.optional(),
 })
 export type User = z.infer<typeof usersPublicSchema>
 

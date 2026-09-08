@@ -25,6 +25,7 @@ beforeEach(() => {
         sessionEventHandler: (handler: unknown) => handler,
         authedSessionEventHandler: (handler: unknown) => handler,
         applyPublicEdgeCache: vi.fn(),
+        applyNoStoreCache: vi.fn(),
         EDGE_CACHE_TAGS: { setups: 'setups' },
     }).forEach(([key, value]) => vi.stubGlobal(key, value))
     database.sqlite.exec(`
@@ -122,9 +123,13 @@ describe('provider-neutral Catalog and Setup queries', () => {
             .default as unknown as (input: {
             db: AppDatabase
             event: H3Event
-            session: { user: { id: string } }
+            session: { user: { id: string; username?: string } }
         }) => Promise<{ data: { id: string; images: unknown[] }[] }>
-        const result = await route({ db, event: {} as H3Event, session: { user: { id: 'other' } } })
+        const result = await route({
+            db,
+            event: {} as H3Event,
+            session: { user: { id: 'other', username: 'other' } },
+        })
         expect(result.data.map((setup) => setup.id)).toEqual(['public'])
         expect(result.data[0]?.images).toEqual([
             {
@@ -148,5 +153,30 @@ describe('provider-neutral Catalog and Setup queries', () => {
             session: { user: { id: 'other' } },
         })
         expect(bookmarked.data).toHaveLength(1)
+    })
+    it('keeps public lists cookie-independent and applies mutes only to explicit viewer feeds', async () => {
+        database.sqlite.exec(
+            "INSERT INTO user_follows (user_id, followee_id) VALUES ('other', 'owner'); INSERT INTO user_mutes (id, user_id, mutee_id) VALUES ('mute', 'other', 'owner')",
+        )
+        const route = (await import('../../../server/api/setups/index.get'))
+            .default as unknown as (input: {
+            db: AppDatabase
+            event: H3Event
+            session: { user: { id: string } } | null
+        }) => Promise<{ data: { id: string }[] }>
+        const input = { db, event: {} as H3Event, session: { user: { id: 'other' } } }
+        vi.stubGlobal('validateQuery', async () => ({ page: 1, limit: 20, sort: 'desc' }))
+        expect((await route(input)).data).toEqual((await route({ ...input, session: null })).data)
+        expect(applyPublicEdgeCache).toHaveBeenCalledTimes(2)
+        vi.stubGlobal('validateQuery', async () => ({
+            page: 1,
+            limit: 20,
+            sort: 'desc',
+            following: true,
+        }))
+        expect((await route(input)).data).toEqual([])
+        expect(applyNoStoreCache).toHaveBeenCalled()
+        database.sqlite.exec('DELETE FROM user_mutes')
+        expect((await route(input)).data.map((s) => s.id)).toEqual(['public'])
     })
 })

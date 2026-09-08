@@ -38,6 +38,11 @@ const openSidebar = ref(true)
                             label: $t('settings.account.title'),
                             icon: 'mingcute:safe-lock-fill',
                         },
+                        {
+                            to: $localePath('/settings/notifications'),
+                            label: $t('settings.notifications.title'),
+                            icon: 'mingcute:notification-fill',
+                        },
                     ],
                 ]"
                 orientation="vertical"
