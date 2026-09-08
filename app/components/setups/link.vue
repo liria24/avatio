@@ -1,8 +1,9 @@
 <script lang="ts" setup>
 interface Props {
     setup: ReturnType<typeof useSetupsList>['setups']['value'][number]
+    index: number
 }
-const { setup } = defineProps<Props>()
+const { setup, index } = defineProps<Props>()
 
 const { locale, t } = useI18n()
 const setupPath = useSetupPath()
@@ -42,18 +43,23 @@ const dominantColor = computed(() => firstImage.value?.themeColors?.[0] || '')
         "
         :style="dominantColor ? { '--dominant-color': dominantColor } : undefined"
     >
-        <div v-if="hasImages" class="relative w-full">
+        <div
+            v-if="hasImages"
+            class="relative w-full rounded-lg"
+            :style="{ backgroundColor: dominantColor || undefined }"
+        >
             <NuxtImg
                 :src="firstImage!.url"
                 :alt="setup.name"
-                width="640"
-                sizes="sm:100vw md:50vw lg:33vw"
+                :width="firstImage!.width"
+                :height="firstImage!.height"
+                sizes="50vw md:33vw"
+                :loading="index < 2 ? 'eager' : 'lazy'"
+                :fetchpriority="index === 0 ? 'high' : undefined"
                 format="avif"
                 quality="80"
                 fit="cover"
-                placeholder
-                placeholder-class="is-loading opacity-60"
-                class="size-full max-h-64 rounded-lg object-cover transition-all ease-in-out [clip-path:inset(0_round_var(--radius-lg))] sm:max-h-105 [&.is-loading]:blur-xl"
+                class="block h-auto max-h-64 w-full rounded-lg object-cover [clip-path:inset(0_round_var(--radius-lg))] sm:max-h-105"
             />
             <div
                 :class="[
@@ -92,10 +98,8 @@ const dominantColor = computed(() => firstImage.value?.themeColors?.[0] || '')
                     :width="88"
                     :height="88"
                     format="avif"
-                    :placeholder="[50, 50, 50, 10]"
-                    preload
-                    placeholder-class="is-loading opacity-60"
-                    class="aspect-square size-14 shrink-0 rounded-lg object-cover transition-all ease-in-out [clip-path:inset(0_round_var(--radius-lg))] md:size-20 [&.is-loading]:blur-xl"
+                    loading="lazy"
+                    class="aspect-square size-14 shrink-0 rounded-lg object-cover [clip-path:inset(0_round_var(--radius-lg))] md:size-20"
                 />
                 <div
                     v-else

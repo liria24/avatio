@@ -99,6 +99,8 @@ export default sessionEventHandler(async ({ event, session, db }) => {
                 columns: {
                     objectKey: true,
                     themeColors: true,
+                    width: true,
+                    height: true,
                 },
             },
             coauthors: {

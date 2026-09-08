@@ -22,7 +22,7 @@ export const ADMIN_AUDIT_LOG_API_DEFAULT_LIMIT = 24
 export const SETUP_SEARCH_PER_PAGE = 50
 export const USER_SETUPS_LIST_PER_PAGE = 50
 export const BOOKMARKS_LIST_PER_PAGE = 50
-export const LATEST_SETUPS_LIST_PER_PAGE = 64
+export const LATEST_SETUPS_LIST_PER_PAGE = 24
 
 // Cache duration
 export const ITEM_CACHE_DURATION_MS = 24 * 60 * 60 * 1000 // 24 hours

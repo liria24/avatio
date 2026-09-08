@@ -166,6 +166,7 @@ export const Website = Cloudflare.Website.Nuxt(
     'Website',
     Effect.gen(function* () {
         const config = getStageConfig(yield* Stage)
+        const context = yield* Effect.serviceOption(Alchemy.AlchemyContext)
         const siteUrl = config.siteUrl
         const siteHost = new URL(config.siteUrl).hostname
         const imageHost = new URL(config.imageBaseUrl).hostname
@@ -240,7 +241,7 @@ export const Website = Cloudflare.Website.Nuxt(
                         'github.com',
                         'avatars.githubusercontent.com',
                     ],
-                    provider: 'cloudflare',
+                    provider: Option.getOrNull(context)?.dev ? 'none' : 'cloudflare',
                 },
             },
         }

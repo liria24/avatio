@@ -33,15 +33,7 @@ const { isMobile } = useDevice()
             :ssr-columns="isMobile ? 2 : 3"
         >
             <template #default="{ item, index }">
-                <div
-                    :style="{
-                        'transition-property': 'translate, opacity, filter',
-                        'transition-delay': `${40 * index}ms, ${40 * index}ms, ${40 * index}ms`,
-                    }"
-                    class="transition-discrete duration-400 starting:translate-y-3 starting:opacity-0 starting:blur-sm"
-                >
-                    <SetupsLink :setup="item" />
-                </div>
+                <SetupsLink :setup="item" :index />
             </template>
         </MasonryWall>
     </div>
