@@ -1,9 +1,7 @@
 import { D1CatalogRepository } from '@avatio/cloudflare'
 import type { ProviderSnapshot } from '@avatio/core/catalog'
-import { drizzle } from 'drizzle-orm/d1'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { relations } from '../../../database/relations'
 import { createTestD1 } from '../../helpers/d1'
 
 describe('Catalog D1 lease fencing', () => {
@@ -31,7 +29,6 @@ describe('Catalog D1 lease fencing', () => {
             INSERT INTO catalog_items (id) VALUES ('item');
             INSERT INTO item_sources (id, item_id, provider_key, external_id, canonical_url, next_check_at, display_name)
             VALUES ('source', 'item', 'booth', '123', 'https://booth.pm/ja/items/123', 0, 'Original');
-            INSERT INTO items (id, platform, name, category) VALUES ('123', 'booth', 'Original', 'other');
         `)
     })
     afterEach(() => {
@@ -39,84 +36,30 @@ describe('Catalog D1 lease fencing', () => {
         vi.unstubAllGlobals()
     })
 
-    it.each(['queue', 'legacy'])(
-        'keeps publisher identity separate when legacy shop IDs collide (%s)',
-        async (path) => {
-            database.sqlite.exec(`
-                INSERT INTO shops (id, platform, name, verified) VALUES ('shared', 'booth', 'BOOTH creator', 1);
-                UPDATE items SET shop_id = 'shared' WHERE id = '123';
-                INSERT INTO publishers (id) VALUES ('github-publisher');
-                INSERT INTO publisher_sources (id, publisher_id, provider_key, external_id, canonical_url, name)
-                VALUES ('github-publisher-source', 'github-publisher', 'github', 'shared', 'https://github.com/shared', 'GitHub creator');
-                INSERT INTO catalog_items (id) VALUES ('github-item');
-                INSERT INTO item_sources (id, item_id, provider_key, external_id, canonical_url, next_check_at, display_name)
-                VALUES ('github-source', 'github-item', 'github', 'shared/repo', 'https://github.com/shared/repo', 0, 'Repository');
-                INSERT INTO items (id, platform, name, category) VALUES ('shared/repo', 'github', 'Repository', 'other');
-            `)
-            if (path === 'queue') {
-                const lease = await repository.claimDueSource(
-                    'github-source',
-                    new Date(0),
-                    new Date(1000),
-                )
-                await repository.completeSourceSync({
-                    sourceId: 'github-source',
-                    leaseToken: lease!.token,
-                    successful: true,
-                    availability: 'available',
-                    snapshot: {
-                        ...snapshot,
-                        reference: {
-                            providerKey: 'github',
-                            externalId: 'shared/repo',
-                            canonicalUrl: 'https://github.com/shared/repo',
-                        },
-                        publisherSourceId: 'github-publisher-source',
-                    },
-                    checkedAt: new Date(1),
-                    nextCheckAt: new Date(3000),
-                })
-            } else {
-                vi.stubGlobal('logger', () => ({ info: vi.fn(), error: vi.fn() }))
-                vi.stubGlobal(
-                    'executeD1Batch',
-                    (db: { batch: (queries: never[]) => unknown }, queries: never[]) =>
-                        db.batch(queries),
-                )
-                const { persistItem } = await import('../../../server/utils/getItem')
-                await persistItem(
-                    drizzle(database.binding, { relations }) as never,
-                    {
-                        valid: true,
-                        item: {
-                            id: 'shared/repo',
-                            platform: 'github',
-                            name: 'Repository',
-                            shopId: 'shared',
-                        },
-                        shop: { id: 'shared', platform: 'github', name: 'GitHub creator' },
-                        cachedItem: { id: 'shared/repo' },
-                        categoryFallback: 'other',
-                        assignAttrParams: { name: 'Repository' },
-                    },
-                    { defer: false, purge: async () => {} },
-                )
-            }
-            expect(
-                database.sqlite
-                    .prepare("SELECT platform, name, verified FROM shops WHERE id = 'shared'")
-                    .get(),
-            ).toMatchObject({ platform: 'booth', name: 'BOOTH creator', verified: 1 })
-            expect(
-                database.sqlite.prepare("SELECT shop_id FROM items WHERE id = 'shared/repo'").get()
-                    ?.shop_id,
-            ).toBeNull()
-            expect((await repository.findSource('github-source'))?.publisherSourceId).toBe(
-                'github-publisher-source',
-            )
-            expect(database.sqlite.prepare('PRAGMA foreign_key_check').all()).toEqual([])
-        },
-    )
+    it('refreshes an existing alias without replacing its identity or colliding with a canonical source', async () => {
+        database.sqlite.exec(`
+            INSERT INTO catalog_items (id) VALUES ('alias-item');
+            INSERT INTO item_sources (id, item_id, provider_key, external_id, canonical_url, next_check_at, display_name)
+            VALUES ('alias', 'alias-item', 'booth', '123.0', 'https://booth.pm/items/123.0', 0, 'Alias');
+        `)
+        const lease = await repository.claimDueSource('alias', new Date(0), new Date(1000))
+        await repository.completeSourceSync({
+            sourceId: 'alias',
+            leaseToken: lease!.token,
+            successful: true,
+            snapshot,
+            availability: 'available',
+            checkedAt: new Date(1),
+            nextCheckAt: new Date(3000),
+        })
+        expect(await repository.findSource('alias')).toMatchObject({
+            externalId: '123.0',
+            canonicalUrl: snapshot.reference.canonicalUrl,
+            syncLeaseToken: null,
+            syncState: 'fresh',
+            snapshot: { name: 'New snapshot' },
+        })
+    })
 
     it('claims once while valid and reclaims expired leases with a new token', async () => {
         const first = await repository.claimDueSource('source', new Date(0), new Date(1000))
@@ -142,16 +85,12 @@ describe('Catalog D1 lease fencing', () => {
     })
 
     it.each([true, false])(
-        'fences completion (successful=%s), including a reclaim immediately before the atomic batch',
+        'fences completion (successful=%s), after another worker reclaims the lease',
         async (successful) => {
             const lease = await repository.claimDueSource('source', new Date(0), new Date(1000))
-            const batch = database.binding.batch.bind(database.binding)
-            vi.spyOn(database.binding, 'batch').mockImplementationOnce((statements) => {
-                database.sqlite.exec(
-                    "UPDATE item_sources SET sync_lease_token = 'new-owner', sync_lease_until = 2000",
-                )
-                return batch(statements)
-            })
+            database.sqlite.exec(
+                "UPDATE item_sources SET sync_lease_token = 'new-owner', sync_lease_until = 2000",
+            )
             expect(
                 await repository.completeSourceSync({
                     sourceId: 'source',
@@ -169,13 +108,10 @@ describe('Catalog D1 lease fencing', () => {
                 snapshot: { name: 'Original' },
                 lastErrorKind: null,
             })
-            expect(
-                database.sqlite.prepare("SELECT name FROM items WHERE id = '123'").get()?.name,
-            ).toBe('Original')
         },
     )
 
-    it('commits a current snapshot and mirror together and releases only that lease', async () => {
+    it('commits a current snapshot atomically and releases only that lease', async () => {
         const lease = await repository.claimDueSource('source', new Date(0), new Date(1000))
         expect(
             await repository.completeSourceSync({
@@ -193,9 +129,6 @@ describe('Catalog D1 lease fencing', () => {
             syncState: 'fresh',
             snapshot: { name: 'New snapshot' },
         })
-        expect(database.sqlite.prepare("SELECT name FROM items WHERE id = '123'").get()?.name).toBe(
-            'New snapshot',
-        )
         expect(
             await repository.completeSourceSync({
                 sourceId: 'source',

@@ -1,32 +1,10 @@
 import { z } from 'zod'
 
-const params = z.object({
-    id: z.string(),
-})
-
-const query = z.object({
-    platform: platformSchema.optional(),
-})
-
-export default sessionEventHandler<Item>(async ({ event, session, db }) => {
-    const { id } = await validateParams(params)
-    const { platform } = await validateQuery(query)
-    const userId = session?.user.banned ? undefined : session?.user.id
-
-    return await getItem(
-        event,
-        db,
-        id,
-        platform,
-        userId
-            ? {
-                  allowExternalResolution: true,
-                  beforeExternalResolution: () =>
-                      enforceRateLimit({
-                          binding: 'RATE_LIMIT_USER_ACTION',
-                          key: `item-resolution:${userId}`,
-                      }),
-              }
-            : { allowExternalResolution: false },
-    )
+export default promiseEventHandler(async ({ event, db }) => {
+    const { id } = await validateParams(z.object({ id: z.string().min(1) }))
+    const item = await queryCatalogItem(db, id)
+    if (!item) throw serverError.notFound()
+    runAfterResponse(enqueueReferencedCatalogSources([item.id]))
+    applyPublicEdgeCache(event, [getCatalogItemCacheTag(item.id)])
+    return item
 })

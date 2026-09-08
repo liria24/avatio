@@ -50,7 +50,7 @@ export const parseChangelogTranslation = (value: string) => {
     return changelogTranslationSchema.parse(sanitizeObject(parsed))
 }
 
-export interface GenerateItemAttrParams {
+export interface GenerateCatalogAttributesParams {
     sourceId: string
     name: string
     description?: {
@@ -60,18 +60,23 @@ export interface GenerateItemAttrParams {
     originalCategory?: string
 }
 
-export const generateItemAttr = async (
+export const generateCatalogAttributes = async (
     db: ReturnType<typeof useDB>,
-    params: GenerateItemAttrParams,
+    params: GenerateCatalogAttributesParams,
 ) => {
-    const previousItems = await db.query.items.findMany({
+    const previousItems = await db.query.catalogItems.findMany({
         where: {
-            niceName: { isNotNull: true },
+            displayNameOverride: { isNotNull: true },
         },
         columns: {
-            name: true,
-            niceName: true,
-            category: true,
+            displayNameOverride: true,
+            categoryOverride: true,
+        },
+        with: {
+            sources: {
+                where: { primary: { eq: true } },
+                columns: { displayName: true, mappedCategory: true },
+            },
         },
         limit: MAX_ITEMS_PER_SETUP,
     })
@@ -84,14 +89,14 @@ export const generateItemAttr = async (
         readme: params.description?.readme,
         originalCategory: params.originalCategory,
         examples: previousItems.map((item) => ({
-            name: item.name,
-            displayName: item.niceName,
-            category: item.category,
+            name: item.sources[0]?.displayName ?? item.displayNameOverride ?? '',
+            displayName: item.displayNameOverride,
+            category: item.categoryOverride ?? item.sources[0]?.mappedCategory ?? 'other',
         })),
     })
 
     return {
-        niceName: enriched.displayName ?? params.name,
+        displayName: enriched.displayName ?? params.name,
         category: itemCategorySchema.parse(enriched.category),
     }
 }

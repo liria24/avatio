@@ -7,9 +7,17 @@ const { setup } = defineProps<Props>()
 const { locale, t } = useI18n()
 const setupPath = useSetupPath()
 
+const avatar = computed(
+    () =>
+        setup.entries.find(
+            (entry) =>
+                entry.category === 'avatar' &&
+                entry.catalogItem.primarySource?.availability === 'available',
+        )?.catalogItem,
+)
 const avatarName = computed(() =>
-    setup.items.length && setup.items[0]
-        ? setup.items[0].niceName || avatarShortName(setup.items[0].name)
+    avatar.value
+        ? avatar.value.displayNameOverride || avatarShortName(avatar.value.name)
         : t('unknownAvatar'),
 )
 
@@ -78,8 +86,8 @@ const dominantColor = computed(() => firstImage.value?.themeColors?.[0] || '')
         <div class="flex w-full items-center gap-2">
             <UTooltip v-if="!hasImages" :text="avatarName" :delay-duration="100">
                 <NuxtImg
-                    v-if="setup.items[0]"
-                    :src="setup.items[0].image || undefined"
+                    v-if="avatar"
+                    :src="avatar.image || undefined"
                     alt=""
                     :width="88"
                     :height="88"

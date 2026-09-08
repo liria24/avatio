@@ -2,22 +2,25 @@
 import { withoutProtocol, withoutTrailingSlash } from 'ufo'
 
 interface Props {
-    item: SetupItem
+    entry: SetupEntryView
     showNsfw?: boolean
 }
-const { item, showNsfw = false } = defineProps<Props>()
+const { entry, showNsfw = false } = defineProps<Props>()
 
 const emit = defineEmits<{
     'report-item': [itemId: string]
 }>()
 
-const nsfwMask = createRef(item.nsfw && !showNsfw)
+const item = computed(() => entry.catalogItem)
+const source = computed(() => item.value.primarySource)
+const publisher = computed(() => source.value?.publisher)
+const nsfwMask = createRef(entry.catalogItem.nsfw && !showNsfw)
 
 const shopPath = computed(() =>
-    withoutTrailingSlash(withoutProtocol(resolveShopUrl(item.shop?.id, item.shop?.platform) || '')),
+    withoutTrailingSlash(withoutProtocol(publisher.value?.canonicalUrl || '')),
 )
 
-const providerIcon = computed(() => getPlatformData(item.platform).icon)
+const providerIcon = computed(() => getCatalogProviderData(source.value?.providerKey).icon)
 </script>
 
 <template>
@@ -47,14 +50,14 @@ const providerIcon = computed(() => getPlatformData(item.platform).icon)
         </UDropdownMenu>
 
         <NuxtLink
-            :to="resolveItemUrl(item.id, item.platform)"
+            :to="source?.canonicalUrl"
             target="_blank"
             external
             :aria-label="item.name"
             :class="
                 cn(
                     'group relative row-span-2 size-fit shrink-0 overflow-hidden rounded-lg select-none',
-                    (item.note?.length || item.unsupported || item.shapekeys?.length) &&
+                    (entry.note?.length || entry.unsupported || entry.shapekeys?.length) &&
                         'row-span-1 sm:row-span-2',
                 )
             "
@@ -97,13 +100,13 @@ const providerIcon = computed(() => getPlatformData(item.platform).icon)
             :class="
                 cn(
                     'order-last row-span-2 flex flex-col justify-center gap-2 sm:order-0',
-                    (item.note?.length || item.unsupported || item.shapekeys?.length) &&
+                    (entry.note?.length || entry.unsupported || entry.shapekeys?.length) &&
                         'row-span-1 sm:pt-1',
                 )
             "
         >
             <NuxtLink
-                :to="resolveItemUrl(item.id, item.platform)"
+                :to="source?.canonicalUrl"
                 target="_blank"
                 external
                 prefetch
@@ -121,22 +124,22 @@ const providerIcon = computed(() => getPlatformData(item.platform).icon)
                 "
             >
                 <UTooltip
-                    v-if="item.shop"
+                    v-if="publisher"
                     :delay-duration="100"
                     :content="{ side: 'top' }"
                     :ui="{ content: 'flex flex-col items-start h-fit px-4 py-3 rounded-lg' }"
                 >
                     <NuxtLink
-                        :to="resolveShopUrl(item.shop.id, item.shop.platform)"
+                        :to="publisher.canonicalUrl"
                         target="_blank"
                         external
                         prefetch
                         class="flex shrink-0 items-center justify-center pr-2"
                     >
-                        <div v-if="item.shop.image" class="relative">
+                        <div v-if="publisher.image" class="relative">
                             <NuxtImg
-                                :src="item.shop.image"
-                                :alt="item.shop.name || ''"
+                                :src="publisher.image"
+                                :alt="publisher.name || ''"
                                 :width="24"
                                 :height="24"
                                 format="avif"
@@ -153,7 +156,7 @@ const providerIcon = computed(() => getPlatformData(item.platform).icon)
 
                     <template #content>
                         <p class="text-sm">
-                            {{ item.shop.name }}
+                            {{ publisher.name }}
                         </p>
                         <p class="text-muted">
                             {{ shopPath }}
@@ -162,15 +165,18 @@ const providerIcon = computed(() => getPlatformData(item.platform).icon)
                 </UTooltip>
 
                 <span
-                    v-if="item.price"
+                    v-if="source?.price"
                     class="text-muted px-2 font-mono text-xs leading-none text-nowrap"
                 >
-                    {{ item.price }}
+                    {{ source?.price }}
                 </span>
 
-                <div v-if="item.likes !== null" class="flex w-fit items-center gap-1.5 px-2">
+                <div
+                    v-if="source?.popularityCount != null"
+                    class="flex w-fit items-center gap-1.5 px-2"
+                >
                     <Icon
-                        v-if="item.platform === 'github'"
+                        v-if="source?.providerKey === 'github'"
                         name="mingcute:star-line"
                         :size="15"
                         class="text-muted shrink-0"
@@ -182,30 +188,32 @@ const providerIcon = computed(() => getPlatformData(item.platform).icon)
                         class="text-muted shrink-0"
                     />
                     <span class="text-muted font-mono text-xs leading-none text-nowrap">
-                        {{ item.likes.toLocaleString() }}
+                        {{ source?.popularityCount.toLocaleString() }}
                     </span>
                 </div>
 
-                <div
-                    v-if="item.forks !== null && item.forks !== undefined"
-                    class="flex w-fit items-center gap-1.5 px-2"
-                >
+                <div v-if="source?.forks != null" class="flex w-fit items-center gap-1.5 px-2">
                     <Icon name="mingcute:git-branch-line" :size="15" class="text-muted shrink-0" />
                     <span class="text-muted font-mono text-xs leading-none text-nowrap">
-                        {{ item.forks.toLocaleString() }}
+                        {{ source?.forks.toLocaleString() }}
                     </span>
                 </div>
 
-                <div v-if="item.version" class="flex w-fit items-center gap-1.5 px-2">
+                <div v-if="source?.version" class="flex w-fit items-center gap-1.5 px-2">
                     <Icon name="mingcute:tag-line" :size="15" class="text-muted shrink-0" />
                     <span class="text-muted font-mono text-xs leading-none text-nowrap">
-                        {{ item.version }}
+                        {{ source?.version }}
                     </span>
                 </div>
 
-                <LazyUAvatarGroup v-if="item.contributors?.length" :max="3" size="2xs" class="px-2">
+                <LazyUAvatarGroup
+                    v-if="source?.contributors?.length"
+                    :max="3"
+                    size="2xs"
+                    class="px-2"
+                >
                     <UTooltip
-                        v-for="contributor in item.contributors"
+                        v-for="contributor in source?.contributors"
                         :key="encodeURIComponent(contributor.name)"
                         :text="contributor.name"
                         :delay-duration="100"
@@ -229,22 +237,22 @@ const providerIcon = computed(() => getPlatformData(item.platform).icon)
         </div>
 
         <div
-            :data-noted="!!item.note?.length"
+            :data-noted="!!entry.note?.length"
             class="border-muted/60 col-span-2 flex items-end justify-end gap-1.5 border-t pt-2 empty:hidden sm:col-span-1 sm:mt-auto"
         >
-            <div v-if="item.note?.length" class="my-auto flex grow items-start gap-2">
+            <div v-if="entry.note?.length" class="my-auto flex grow items-start gap-2">
                 <Icon
                     name="mingcute:edit-3-fill"
                     :size="15"
                     class="text-muted/60 mt-[0.2rem] shrink-0"
                 />
                 <p class="sentence text-xs/relaxed whitespace-pre-wrap">
-                    {{ item.note }}
+                    {{ entry.note }}
                 </p>
             </div>
 
             <UTooltip
-                v-if="item.unsupported"
+                v-if="entry.unsupported"
                 :text="$t('setup.viewer.unavailableForAvatar')"
                 :delay-duration="100"
             >
@@ -261,9 +269,9 @@ const providerIcon = computed(() => getPlatformData(item.platform).icon)
                 }"
             >
                 <UButton
-                    v-if="item.shapekeys?.length"
+                    v-if="entry.shapekeys?.length"
                     icon="mingcute:union-fill"
-                    :label="item.shapekeys.length.toString()"
+                    :label="entry.shapekeys.length.toString()"
                     variant="soft"
                     size="sm"
                     class="rounded-lg p-2"
@@ -277,7 +285,7 @@ const providerIcon = computed(() => getPlatformData(item.platform).icon)
 
                         <div class="flex flex-col rounded-lg">
                             <div
-                                v-for="(key, index) in item.shapekeys"
+                                v-for="(key, index) in entry.shapekeys"
                                 :key="'shapekey-' + index"
                                 class="odd:bg-muted/40 flex items-center justify-between gap-3 rounded-md px-2 py-1"
                             >

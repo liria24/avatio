@@ -12,20 +12,15 @@ export default authedSessionEventHandler(async ({ event, session, db }) => {
     if (!result) throw serverError.notFound()
 
     applyNoStoreCache(event)
-    if (result.v2) {
-        const queue = getCatalogSyncQueue()
-        if (queue && result.sourceIds.length)
-            runAfterResponse(
-                enqueueDueCatalogSources({
-                    sourceIds: result.sourceIds,
-                    repository: getCatalogRepository(),
-                    queue,
-                }),
-            )
-    } else {
-        if (result.legacyRevalidationItems.length)
-            runAfterResponse(enqueueReferencedCatalogSources(result.legacyRevalidationItems))
-    }
+    const queue = getCatalogSyncQueue()
+    if (queue && result.sourceIds.length)
+        runAfterResponse(
+            enqueueDueCatalogSources({
+                sourceIds: result.sourceIds,
+                repository: getCatalogRepository(),
+                queue,
+            }),
+        )
 
     return result.setup
 })

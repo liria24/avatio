@@ -3,7 +3,6 @@ import {
     foreignKey,
     index,
     integer,
-    primaryKey,
     real,
     snakeCase,
     text,
@@ -27,7 +26,6 @@ export const userBadge = [
     'patrol',
     'idea_man',
 ] as const
-export const platform = ['booth', 'github'] as const
 export const sourceAvailability = ['available', 'withdrawn', 'policy_rejected', 'unknown'] as const
 export const sourceSyncState = ['fresh', 'stale', 'syncing', 'error'] as const
 export const categoryOverrideOrigin = ['ai', 'manual', 'rule', 'legacy'] as const
@@ -160,32 +158,6 @@ export const legalAcceptances = snakeCase.table(
     ],
 )
 
-export const catalogMigrationRuns = snakeCase.table('catalog_migration_runs', {
-    id: text().primaryKey(),
-    stage: text({
-        enum: [
-            'publishers',
-            'catalog',
-            'ownerships',
-            'setup-entries',
-            'shapekeys',
-            'verification',
-            'complete',
-        ],
-    }).notNull(),
-    cursor: text(),
-    processed: integer().default(0).notNull(),
-    status: text({ enum: ['running', 'failed', 'awaiting-verification', 'complete'] }).notNull(),
-    startedAt: timestamp().notNull(),
-    updatedAt: timestamp().notNull(),
-    completedAt: timestamp(),
-    lastError: text(),
-    leaseToken: text(),
-    leaseUntil: timestamp(),
-    verification: text({ mode: 'json' }).$type<unknown>(),
-    verifiedAt: timestamp(),
-})
-
 export const sessions = snakeCase.table(
     'sessions',
     {
@@ -216,8 +188,6 @@ export const accounts = snakeCase.table(
     'accounts',
     {
         id: text().primaryKey(),
-        // Preserve 1.7.0–1.7.2 values during the auth rollout; 1.7.3 no longer writes issuer.
-        issuer: text(),
         providerAccountId: text().notNull(),
         providerId: text().notNull(),
         userId: text()
@@ -264,55 +234,6 @@ export const rateLimits = snakeCase.table('rate_limits', {
     count: integer().notNull(),
     lastRequest: integer().notNull(),
 })
-
-export const userShops = snakeCase.table(
-    'user_shops',
-    {
-        id: identity(),
-        createdAt: timestamp().default(now).notNull(),
-        userId: text().notNull(),
-        shopId: text().notNull(),
-    },
-    (table) => [
-        index('user_shops_user_id_index').on(table.userId),
-        index('user_shops_shop_id_index').on(table.shopId),
-        uniqueIndex('user_shops_user_shop_uidx').on(table.userId, table.shopId),
-        foreignKey({
-            name: 'user_shops_user_id_fkey',
-            columns: [table.userId],
-            foreignColumns: [users.id],
-        })
-            .onDelete('cascade')
-            .onUpdate('cascade'),
-        foreignKey({
-            name: 'user_shops_shop_id_fkey',
-            columns: [table.shopId],
-            foreignColumns: [shops.id],
-        })
-            .onDelete('cascade')
-            .onUpdate('cascade'),
-    ],
-)
-
-export const userShopVerifications = snakeCase.table(
-    'user_shop_verifications',
-    {
-        id: uuid().primaryKey(),
-        code: text().notNull(),
-        createdAt: timestamp().default(now).notNull(),
-        userId: text().notNull(),
-    },
-    (table) => [
-        uniqueIndex('user_shop_verifications_user_id_uidx').on(table.userId),
-        foreignKey({
-            name: 'user_shop_verifications_user_id_fkey',
-            columns: [table.userId],
-            foreignColumns: [users.id],
-        })
-            .onDelete('cascade')
-            .onUpdate('cascade'),
-    ],
-)
 
 export const userBadges = snakeCase.table(
     'user_badges',
@@ -432,77 +353,11 @@ export const changelogAuthors = snakeCase.table(
     ],
 )
 
-export const shops = snakeCase.table(
-    'shops',
-    {
-        id: text().primaryKey(),
-        createdAt: timestamp().default(now).notNull(),
-        updatedAt: timestamp()
-            .default(now)
-            .$onUpdate(() => new Date())
-            .notNull(),
-        platform: text({ enum: platform }).notNull(),
-        name: text().notNull(),
-        image: text(),
-        verified: boolean().default(false).notNull(),
-    },
-    (table) => [index('shops_id_index').on(table.id), index('shops_name_index').on(table.name)],
-)
-
-export const items = snakeCase.table(
-    'items',
-    {
-        id: text().primaryKey(),
-        createdAt: timestamp().default(now).notNull(),
-        updatedAt: timestamp()
-            .default(now)
-            .$onUpdate(() => new Date())
-            .notNull(),
-        platform: text({ enum: platform }).notNull(),
-        outdated: boolean().default(false).notNull(),
-        shopId: text(),
-        name: text().notNull(),
-        niceName: text(),
-        category: text({ enum: itemCategory }).notNull(),
-        image: text(),
-        price: text(),
-        likes: integer(),
-        nsfw: boolean().default(false).notNull(),
-    },
-    (table) => [
-        index('items_id_index').on(table.id),
-        index('items_name_index').on(table.name),
-        foreignKey({
-            name: 'items_shop_id_fkey',
-            columns: [table.shopId],
-            foreignColumns: [shops.id],
-        })
-            .onDelete('cascade')
-            .onUpdate('cascade'),
-    ],
-)
-
 /** Booth categories admitted by the item resolver. */
 export const allowedBoothCategories = snakeCase.table('allowed_booth_categories', {
     categoryId: integer().primaryKey(),
     createdAt: timestamp().default(now).notNull(),
 })
-
-/** Per-item category overrides shared by the resolver and admin UI. */
-export const itemCategoryOverrides = snakeCase.table(
-    'item_category_overrides',
-    {
-        platform: text({ enum: platform }).notNull(),
-        itemId: text().notNull(),
-        category: text({ enum: itemCategory }).notNull(),
-        createdAt: timestamp().default(now).notNull(),
-        updatedAt: timestamp()
-            .default(now)
-            .$onUpdate(() => new Date())
-            .notNull(),
-    },
-    (table) => [primaryKey({ columns: [table.platform, table.itemId] })],
-)
 
 /** Avatio-owned publisher identity, independent from a provider account. */
 export const publishers = snakeCase.table(
@@ -764,59 +619,6 @@ export const setups = snakeCase.table(
     ],
 )
 
-export const setupItems = snakeCase.table(
-    'setup_items',
-    {
-        id: text()
-            .primaryKey()
-            .$defaultFn(() => nanoid(12)),
-        itemId: text().notNull(),
-        setupId: text().notNull(),
-        category: text({ enum: itemCategory }),
-        unsupported: boolean().default(false).notNull(),
-        note: text(),
-    },
-    (table) => [
-        index('setup_items_id_index').on(table.id),
-        index('setup_items_setup_id_index').on(table.setupId),
-        foreignKey({
-            name: 'setup_items_item_id_fkey',
-            columns: [table.itemId],
-            foreignColumns: [items.id],
-        })
-            .onDelete('cascade')
-            .onUpdate('cascade'),
-        foreignKey({
-            name: 'setup_items_setup_id_fkey',
-            columns: [table.setupId],
-            foreignColumns: [setups.id],
-        })
-            .onDelete('cascade')
-            .onUpdate('cascade'),
-    ],
-)
-
-export const setupItemShapekeys = snakeCase.table(
-    'setup_item_shapekeys',
-    {
-        id: identity(),
-        setupItemId: text().notNull(),
-        name: text().notNull(),
-        value: real().notNull(),
-    },
-    (table) => [
-        index('setup_item_shapekeys_id_index').on(table.id),
-        index('setup_item_shapekeys_setup_item_id_index').on(table.setupItemId),
-        foreignKey({
-            name: 'setup_item_shapekeys_setup_item_id_fkey',
-            columns: [table.setupItemId],
-            foreignColumns: [setupItems.id],
-        })
-            .onDelete('cascade')
-            .onUpdate('cascade'),
-    ],
-)
-
 /** V2 Setup relation. Source withdrawal never deletes this relation. */
 export const setupEntries = snakeCase.table(
     'setup_entries',
@@ -990,9 +792,6 @@ export const setupDrafts = snakeCase.table(
         setupId: text(),
         revision: integer().default(1).notNull(),
         content: text({ mode: 'json' }).notNull(),
-        idempotencyRequestId: text()
-            .unique()
-            .references(() => idempotencyRequests.id, { onDelete: 'set null' }),
     },
     (table) => [
         index('setup_drafts_id_index').on(table.id),
@@ -1129,7 +928,9 @@ export const itemReports = snakeCase.table(
         id: identity(),
         createdAt: timestamp().default(now).notNull(),
         reporterId: text().notNull(),
-        itemId: text().notNull(),
+        catalogItemId: text()
+            .notNull()
+            .references(() => catalogItems.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
         nameError: boolean().default(false).notNull(),
         irrelevant: boolean().default(false).notNull(),
         other: boolean().default(false).notNull(),
@@ -1141,19 +942,12 @@ export const itemReports = snakeCase.table(
     },
     (table) => [
         index('item_reports_id_index').on(table.id),
-        index('item_reports_item_id_index').on(table.itemId),
+        index('item_reports_catalog_item_id_index').on(table.catalogItemId),
         index('item_reports_reporter_id_index').on(table.reporterId),
         foreignKey({
             name: 'item_reports_reporter_id_fkey',
             columns: [table.reporterId],
             foreignColumns: [users.id],
-        })
-            .onDelete('cascade')
-            .onUpdate('cascade'),
-        foreignKey({
-            name: 'item_reports_item_id_fkey',
-            columns: [table.itemId],
-            foreignColumns: [items.id],
         })
             .onDelete('cascade')
             .onUpdate('cascade'),

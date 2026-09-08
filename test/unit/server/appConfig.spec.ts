@@ -4,9 +4,9 @@ import { getMaintenanceFlag } from '../../../server/utils/appConfig'
 
 vi.mock('@@/database/schema', () => ({
     allowedBoothCategories: {},
-    itemCategoryOverrides: {},
+    catalogItems: {},
 }))
-vi.mock('drizzle-orm', () => ({ asc: vi.fn(), sql: vi.fn() }))
+vi.mock('drizzle-orm', () => ({ asc: vi.fn(), eq: vi.fn() }))
 
 describe('Flagship flags', () => {
     afterEach(() => vi.unstubAllGlobals())

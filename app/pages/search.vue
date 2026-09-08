@@ -7,7 +7,7 @@ const toArray = (val: string | string[] | null): string[] => {
 }
 
 const q = useRouteQuery('q', '')
-const itemIds = useRouteQuery<Item['id'][]>('itemId', [], { transform: toArray })
+const itemIds = useRouteQuery<CatalogItemView['id'][]>('itemId', [], { transform: toArray })
 const tags = useRouteQuery<string[]>('tag', [], { transform: toArray })
 
 const searchStatus = ref<'idle' | 'pending' | 'success'>('idle')

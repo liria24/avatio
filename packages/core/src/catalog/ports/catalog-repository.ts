@@ -5,7 +5,7 @@ import type {
     ItemSourceId,
     SourceAvailability,
 } from '../domain/catalog'
-import type { ProviderSnapshot } from './catalog-provider'
+import type { ExternalReference, ProviderSnapshot } from './catalog-provider'
 
 export interface SourceLease {
     sourceId: ItemSourceId
@@ -14,6 +14,7 @@ export interface SourceLease {
 }
 
 export interface CatalogRepository {
+    ensureSource(reference: ExternalReference): Promise<ItemSource>
     findItem(id: CatalogItemId): Promise<CatalogItem | null>
     findSource(id: ItemSourceId): Promise<ItemSource | null>
     findSourceByExternalId(providerKey: string, externalId: string): Promise<ItemSource | null>

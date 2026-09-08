@@ -1,18 +1,5 @@
 import { resolveEffectiveCategory } from '@avatio/core/catalog'
-import { projectCatalogSourceToLegacySetupItem } from '~~/server/migration/catalog/compatibility'
-
-const log = logger('setupProjection')
-
-export type SetupProjectionSource =
-    | { mode: 'v2' }
-    | {
-          mode: 'legacy-fallback'
-          reason:
-              | 'entry-count-mismatch'
-              | 'entry-id-mismatch'
-              | 'missing-catalog-source'
-              | 'shapekey-mismatch'
-      }
+import type { SetupEntryView } from '~~/shared/types/catalog'
 
 export interface SetupQueryViewer {
     userId: string
@@ -23,10 +10,28 @@ export interface SetupQueryResult {
     setup: Setup
     catalogItemIds: string[]
     sourceIds: string[]
-    legacyRevalidationItems: { id: string; platform: Platform; updatedAt: Date }[]
-    v2: boolean
-    projectionSource: SetupProjectionSource
 }
+
+export const projectSetupEntry = (entry: {
+    id: string
+    categoryOverride: ItemCategory | null
+    unsupported: boolean
+    note: string | null
+    item: Parameters<typeof projectCatalogItem>[0]
+    shapekeys: { name: string; value: number }[]
+}): SetupEntryView => ({
+    id: entry.id,
+    catalogItem: projectCatalogItem(entry.item),
+    category: resolveEffectiveCategory({
+        setupOverride: entry.categoryOverride,
+        catalogOverride: entry.item.categoryOverride,
+        primarySourceCategory: entry.item.sources.find((source) => source.primary)?.mappedCategory,
+    }),
+    categoryOverride: entry.categoryOverride,
+    unsupported: entry.unsupported,
+    note: entry.note,
+    shapekeys: entry.shapekeys.map(({ name, value }) => ({ name, value })),
+})
 
 export const querySetupProjection = async (
     db: AppDatabase,
@@ -62,38 +67,6 @@ export const querySetupProjection = async (
                 },
                 with: { badges: { columns: { badge: true, createdAt: true } } },
             },
-            items: {
-                columns: { id: true, category: true, unsupported: true, note: true },
-                with: {
-                    item: {
-                        columns: {
-                            id: true,
-                            updatedAt: true,
-                            platform: true,
-                            category: true,
-                            name: true,
-                            niceName: true,
-                            image: true,
-                            price: true,
-                            likes: true,
-                            nsfw: true,
-                            outdated: true,
-                        },
-                        with: {
-                            shop: {
-                                columns: {
-                                    id: true,
-                                    platform: true,
-                                    name: true,
-                                    image: true,
-                                    verified: true,
-                                },
-                            },
-                        },
-                    },
-                    shapekeys: { columns: { id: true, name: true, value: true } },
-                },
-            },
             entries: {
                 columns: {
                     id: true,
@@ -102,45 +75,21 @@ export const querySetupProjection = async (
                     note: true,
                 },
                 with: {
-                    item: {
-                        columns: {
-                            id: true,
-                            displayNameOverride: true,
-                            categoryOverride: true,
-                        },
-                        with: {
-                            sources: {
-                                columns: {
-                                    id: true,
-                                    providerKey: true,
-                                    externalId: true,
-                                    primary: true,
-                                    availability: true,
-                                    mappedCategory: true,
-                                    displayName: true,
-                                    image: true,
-                                    price: true,
-                                    popularityCount: true,
-                                    nsfw: true,
-                                    metadata: true,
-                                },
-                                with: {
-                                    publisherSource: {
-                                        columns: {
-                                            externalId: true,
-                                            name: true,
-                                            image: true,
-                                            providerVerified: true,
-                                        },
-                                    },
-                                },
-                            },
-                        },
-                    },
+                    item: { with: catalogItemRelations },
                     shapekeys: { columns: { id: true, name: true, value: true } },
                 },
             },
-            images: { columns: { objectKey: true, width: true, height: true } },
+            images: {
+                columns: {
+                    objectKey: true,
+                    width: true,
+                    height: true,
+                    themeColors: true,
+                    contentType: true,
+                    size: true,
+                    etag: true,
+                },
+            },
             tags: { columns: { tag: true } },
             coauthors: {
                 where: {
@@ -165,118 +114,25 @@ export const querySetupProjection = async (
         },
     })
     if (!data) return null
-
-    const canView = viewer
-        ? (!data.hidAt && data.public) || viewer.role === 'admin' || viewer.userId === data.userId
-        : !data.hidAt && data.public
+    const canView =
+        (!data.hidAt && data.public) || viewer?.role === 'admin' || viewer?.userId === data.userId
     if (!canView) return null
-
-    const legacyEntries = new Map(data.items.map((entry) => [entry.id, entry]))
-    const reason =
-        data.entries.length !== data.items.length
-            ? 'entry-count-mismatch'
-            : data.entries.some((entry) => !legacyEntries.has(entry.id))
-              ? 'entry-id-mismatch'
-              : data.entries.some((entry) => !entry.item.sources.some((source) => source.primary))
-                ? 'missing-catalog-source'
-                : data.entries.some((entry) => {
-                        const legacyShapekeys = legacyEntries.get(entry.id)?.shapekeys ?? []
-                        const migrated = new Map(entry.shapekeys.map((key) => [key.id, key]))
-                        return (
-                            legacyShapekeys.length !== entry.shapekeys.length ||
-                            legacyShapekeys.some((key) => {
-                                const match = migrated.get(key.id)
-                                return (
-                                    !match || match.name !== key.name || match.value !== key.value
-                                )
-                            })
-                        )
-                    })
-                  ? 'shapekey-mismatch'
-                  : null
-    const projectionSource: SetupProjectionSource = reason
-        ? { mode: 'legacy-fallback', reason }
-        : { mode: 'v2' }
-    const useV2 = projectionSource.mode === 'v2'
-    if (reason) log.warn({ event: 'catalog.setup.legacy_fallback', setupId: id, reason })
-    const catalogItemIds = useV2 ? [...new Set(data.entries.map((entry) => entry.item.id))] : []
-    const sourceIds = useV2
-        ? [
-              ...new Set(
-                  data.entries.flatMap((entry) => entry.item.sources.map((source) => source.id)),
-              ),
-          ]
-        : []
-    const projectedItems: SetupItem[] = []
-    let failedItemsCount = 0
-
-    if (useV2) {
-        for (const entry of data.entries) {
-            const primarySource = entry.item.sources.find((source) => source.primary)
-            if (!primarySource || primarySource.availability !== 'available') {
-                failedItemsCount++
-                continue
-            }
-
-            const projected = projectCatalogSourceToLegacySetupItem({
-                source: primarySource,
-                displayNameOverride: entry.item.displayNameOverride,
-                category: resolveEffectiveCategory({
-                    setupOverride: entry.categoryOverride,
-                    catalogOverride: entry.item.categoryOverride,
-                    primarySourceCategory: primarySource.mappedCategory,
-                }),
-                unsupported: entry.unsupported,
-                note: entry.note,
-                shapekeys: entry.shapekeys.map(({ name, value }) => ({ name, value })),
-            })
-            if (projected) projectedItems.push(projected)
-            else failedItemsCount++
-        }
-    } else {
-        for (const entry of data.items) {
-            if (entry.item.outdated) {
-                failedItemsCount++
-                continue
-            }
-            projectedItems.push({
-                id: entry.item.id,
-                platform: entry.item.platform,
-                category: entry.category || entry.item.category,
-                name: entry.item.name,
-                niceName: entry.item.niceName,
-                image: entry.item.image,
-                price: entry.item.price,
-                likes: entry.item.likes,
-                nsfw: entry.item.nsfw,
-                outdated: entry.item.outdated,
-                shop: entry.item.shop,
-                unsupported: entry.unsupported,
-                note: entry.note,
-                shapekeys: entry.shapekeys.map(({ name, value }) => ({ name, value })),
-            })
-        }
-    }
-
-    const { items: legacyItems, entries: _entries, ...setup } = data
+    const { userId: _userId, entries, ...setup } = data
+    const projectedEntries = entries.map(projectSetupEntry)
     return {
         setup: {
             ...setup,
             images: await withSetupImageUrls(data.images),
-            items: projectedItems,
+            entries: projectedEntries,
             tags: data.tags.map(({ tag }) => tag),
-            failedItemsCount: failedItemsCount || undefined,
+            failedItemsCount:
+                projectedEntries.filter(
+                    (entry) => entry.catalogItem.primarySource?.availability !== 'available',
+                ).length || undefined,
         },
-        catalogItemIds,
-        sourceIds,
-        legacyRevalidationItems: useV2
-            ? []
-            : legacyItems.map(({ item }) => ({
-                  id: item.id,
-                  platform: item.platform,
-                  updatedAt: item.updatedAt,
-              })),
-        v2: useV2,
-        projectionSource,
+        catalogItemIds: [...new Set(entries.map((entry) => entry.item.id))],
+        sourceIds: [
+            ...new Set(entries.flatMap((entry) => entry.item.sources.map((source) => source.id))),
+        ],
     }
 }

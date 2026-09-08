@@ -6,8 +6,9 @@ import {
 } from '@avatio/core/setups'
 import { z } from 'zod'
 
-// Compatibility HTTP contracts. These are intentionally explicit and must not
-// be generated from Drizzle tables; database evolution must not mutate clients.
+import { setupEntryPublicSchema } from './catalog'
+
+// Explicit HTTP contracts remain independent from database schema types.
 export const userBadgeSchema = z.enum([
     'developer',
     'contributor',
@@ -20,20 +21,8 @@ export const userBadgeSchema = z.enum([
 ])
 export type UserBadge = z.infer<typeof userBadgeSchema>
 
-export const platformSchema = z.enum(['booth', 'github'])
-export type Platform = z.infer<typeof platformSchema>
-
 export { itemCategorySchema }
 export type ItemCategory = z.infer<typeof itemCategorySchema>
-
-export const shopsPublicSchema = z.object({
-    id: z.string(),
-    platform: platformSchema,
-    name: z.string(),
-    image: z.string().nullable(),
-    verified: z.boolean(),
-})
-export type Shop = z.infer<typeof shopsPublicSchema>
 
 export const userBadgesPublicSchema = z.object({
     createdAt: z.date(),
@@ -96,58 +85,23 @@ export const usersPublicSchema = z.object({
 })
 export type User = z.infer<typeof usersPublicSchema>
 
-export const itemsUpdateSchema = z.object({
-    niceName: z.string().nullable().optional(),
-})
-
-export const itemsPublicSchema = z.object({
-    id: z.string(),
-    platform: platformSchema,
-    category: itemCategorySchema,
-    name: z.string(),
-    niceName: z.string().nullable(),
-    image: z.string().nullable(),
-    price: z.string().nullable(),
-    likes: z.number().int().nullable(),
-    nsfw: z.boolean(),
-    outdated: z.boolean(),
-    shop: shopsPublicSchema.nullable().optional(),
-})
-export type Item = z.infer<typeof itemsPublicSchema> & {
-    forks?: number
-    version?: string
-    contributors?: { name: string; contributions: number }[]
-}
-
-export const setupItemShapekeysInsertSchema = z.object({
-    setupItemId: z.string().optional(),
+export const setupEntryShapekeysInsertSchema = z.object({
     name: z.string().min(1).max(64),
     value: z.number(),
 })
-export const setupItemShapekeysPublicSchema = setupItemShapekeysInsertSchema.pick({
+export const setupEntryShapekeysPublicSchema = setupEntryShapekeysInsertSchema.pick({
     name: true,
     value: true,
 })
-export type SetupItemShapekey = z.infer<typeof setupItemShapekeysPublicSchema>
+export type SetupEntryShapekey = z.infer<typeof setupEntryShapekeysPublicSchema>
 
-export const setupItemsInsertSchema = z.object({
-    itemId: z.union([z.string(), z.number()]).transform(String),
+export const setupEntriesInsertSchema = z.object({
+    itemId: z.string().min(1),
     category: itemCategorySchema.nullable().optional(),
     unsupported: z.boolean().default(false),
     note: z.string().max(300, 'ノートは最大 300 文字です。').nullable().optional(),
-    shapekeys: setupItemShapekeysPublicSchema.array().max(64).optional(),
+    shapekeys: setupEntryShapekeysPublicSchema.array().max(64).optional(),
 })
-
-export const setupItemsPublicSchema = itemsPublicSchema.extend({
-    unsupported: z.boolean().optional(),
-    note: z.string().nullable().optional(),
-    shapekeys: setupItemShapekeysPublicSchema.array().optional(),
-})
-export type SetupItem = z.infer<typeof setupItemsPublicSchema> & {
-    forks?: number
-    version?: string
-    contributors?: { name: string; avatar?: string }[]
-}
 
 export const setupTagsInsertSchema = z.object({
     tag: z.string().min(1, 'タグは 1 文字以上必要です。').max(32, 'タグは最大 32 文字です。'),
@@ -207,7 +161,7 @@ export const setupsInsertSchema = z.object({
     name: setupNameSchema,
     description: setupDescriptionSchema.optional(),
     ...setupRelationsSchema,
-    items: setupItemsInsertSchema
+    items: setupEntriesInsertSchema
         .array()
         .min(1, 'アイテムは1個以上必要です。')
         .max(MAX_ITEMS_PER_SETUP, `アイテムは最大 ${MAX_ITEMS_PER_SETUP} 個です。`),
@@ -218,7 +172,7 @@ export const setupsUpdateSchema = z.object({
     name: setupNameSchema.optional(),
     description: setupDescriptionSchema.optional(),
     ...setupRelationsSchema,
-    items: setupItemsInsertSchema
+    items: setupEntriesInsertSchema
         .array()
         .min(1, 'アイテムは1個以上必要です。')
         .max(MAX_ITEMS_PER_SETUP, `アイテムは最大 ${MAX_ITEMS_PER_SETUP} 個です。`),
@@ -234,7 +188,7 @@ export const setupsClientFormSchema = z.object({
         .extend({ user: usersPublicSchema.pick({ username: true, name: true, image: true }) })
         .array()
         .max(8, '共同作者は最大 8 人です。'),
-    entries: setupItemsPublicSchema.array().min(1).max(MAX_ITEMS_PER_SETUP),
+    entries: setupEntryPublicSchema.array().min(1).max(MAX_ITEMS_PER_SETUP),
 })
 
 export const setupsPublicSchema = z.object({
@@ -247,7 +201,7 @@ export const setupsPublicSchema = z.object({
     hidAt: z.date().nullable().optional(),
     hidReason: z.string().nullable().optional(),
     user: usersPublicSchema,
-    items: setupItemsPublicSchema.array(),
+    entries: setupEntryPublicSchema.array(),
     images: setupImagesPublicSchema.array().optional(),
     tags: z.string().array().optional(),
     coauthors: setupCoauthorsPublicSchema.array().optional(),
