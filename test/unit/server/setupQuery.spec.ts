@@ -41,6 +41,8 @@ beforeEach(() => {
             ('private-entry', 'private', 'catalog', 'avatar', NULL, 0), ('hidden-entry', 'hidden', 'catalog', 'avatar', NULL, 0);
         INSERT INTO setup_entry_shapekeys (setup_entry_id, name, value) VALUES ('entry', 'Smile', 0.5);
         INSERT INTO bookmarks (user_id, setup_id) VALUES ('other', 'public'), ('other', 'private'), ('other', 'hidden');
+        INSERT INTO setup_images (setup_id, object_key, width, height, theme_colors)
+        VALUES ('public', 'setups/public/image.png', 1200, 800, '["#123456"]');
     `)
 })
 afterEach(() => {
@@ -121,9 +123,17 @@ describe('provider-neutral Catalog and Setup queries', () => {
             db: AppDatabase
             event: H3Event
             session: { user: { id: string } }
-        }) => Promise<{ data: { id: string }[] }>
+        }) => Promise<{ data: { id: string; images: unknown[] }[] }>
         const result = await route({ db, event: {} as H3Event, session: { user: { id: 'other' } } })
         expect(result.data.map((setup) => setup.id)).toEqual(['public'])
+        expect(result.data[0]?.images).toEqual([
+            {
+                objectKey: 'setups/public/image.png',
+                width: 1200,
+                height: 800,
+                themeColors: ['#123456'],
+            },
+        ])
         vi.stubGlobal('validateQuery', async () => ({
             page: 1,
             limit: 20,

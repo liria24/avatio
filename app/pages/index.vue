@@ -68,6 +68,14 @@ const loading = computed(() =>
         : setupsLatest.status.value === 'pending',
 )
 
+useInfiniteScroll(import.meta.client ? document : undefined, () => setupsLatest.loadMore(), {
+    distance: 600,
+    canLoadMore: () =>
+        (!loggedIn.value || tab.value === 'latest') &&
+        setupsLatest.status.value === 'success' &&
+        !!setupsLatest.pagination.value?.hasNext,
+})
+
 watchDebounced(
     showPrivateDebounced,
     (val) => {
@@ -104,29 +112,20 @@ useSeo({
                     :label="latestChangelog.title"
                     variant="soft"
                     color="neutral"
-                    style="animation-delay: 0.5s"
-                    class="fade-in-blur rounded-full px-4"
+                    class="rounded-full px-4"
                 />
             </template>
 
             <template #title>
-                <span
-                    style="animation-delay: 0.3s"
-                    class="fade-in-blur"
-                    v-html="$t('index.hero.title')"
-                />
+                <span v-html="$t('index.hero.title')" />
             </template>
 
             <template #description>
-                <p
-                    style="animation-delay: 0.5s"
-                    class="fade-in-blur wrap-anywhere break-keep"
-                    v-html="$t('index.hero.description')"
-                />
+                <p class="wrap-anywhere break-keep" v-html="$t('index.hero.description')" />
             </template>
 
             <template #links>
-                <div style="animation-delay: 0.7s" class="fade-in-blur">
+                <div>
                     <UButton
                         :label="$t('login')"
                         color="neutral"
@@ -183,24 +182,12 @@ useSeo({
             <h1 v-else class="text-lg font-medium text-nowrap">{{ $t('index.tabs.latest') }}</h1>
 
             <SetupsList :setups :loading />
+            <UButton
+                v-if="(!loggedIn || tab === 'latest') && setupsLatest.pagination.value?.hasNext"
+                :loading="loading"
+                :label="$t('more')"
+                @click="setupsLatest.loadMore()"
+            />
         </div>
     </div>
 </template>
-
-<style scoped>
-@keyframes fadeInBlur {
-    from {
-        opacity: 0;
-        filter: blur(30px);
-    }
-    to {
-        opacity: 1;
-        filter: blur(0);
-    }
-}
-
-.fade-in-blur {
-    opacity: 0;
-    animation: fadeInBlur 0.7s ease-out forwards;
-}
-</style>
