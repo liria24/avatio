@@ -76,18 +76,6 @@ PRs into `main` require the `lint`, `typecheck`, `test`, and `build` checks from
 - Nitro Storage currently has no mounts. Never restore one for catalog truth, leases, flags, Setup data, or other system-of-record state.
 - AI routes and use cases use semantic capabilities. Concrete per-task model IDs live only in typed stage composition.
 
-## Catalog contract cutover (temporary)
-
-The application now uses only CatalogItem/SetupEntry contracts, source-scoped publisher ownership, and fenced Queue messages. The deployed database temporarily retains the old physical tables and unused columns so the consumer switch can be verified before their removal. Do not add runtime consumers to those retained fields or regenerate/apply the contract migration before the new application has been verified in development and production.
-
-1. The report preparation migrations add and backfill `item_reports.catalog_item_id`. The temporary `catalog_report_transition` trigger preserves reports written by the previous Worker while the new Worker deploys. New code writes only CatalogItem IDs.
-2. Verify public and owner Setup reads, notes, categories, shapekeys, drafts, reports, publisher ownership, source refresh, and a drained retained Queue. Purge the previous public response cache when deploying the changed HTTP contracts.
-3. In a separate contract change, drop the transition trigger, clear the unused nullable report `item_id` values, and convert remaining server draft item references to CatalogItem IDs. Preserve every `setup_draft_images` row across a parent-table rebuild; D1 leaves foreign keys enabled and dropping `setup_drafts` can cascade-delete these references.
-4. Generate the schema contract with `bun run db:generate`. Test populated reports, drafts/images, auth accounts/sessions, Setup entries, categories, and ownerships inside transactions with foreign keys enabled before deployment. Both stage plans must retain the existing D1, R2, KV, Queue, and Flagship resources.
-5. After the contract deployment is verified, delete this entire section. Keep migration SQL history, but do not retain finished rollout implementations or operating history here.
-
-The content D1 remains unbound. The existing Cache KV remains bound only as `CONTENT_CACHE` for authored content. Preserve both physical resources.
-
 ## Environment and secrets
 
 - The canonical path is `.env.<stage>` ciphertext -> dotenvx -> shared validation -> Alchemy -> Worker bindings. Do not maintain parallel secret inventories.
@@ -98,6 +86,7 @@ The content D1 remains unbound. The existing Cache KV remains bound only as `CON
 - Use `bun run config:check:development` or `bun run config:check:production` before plans/deploys. Stage selection is explicit and fails closed.
 - Production and development use the same application-facing secret names. In particular, use `BETTER_AUTH_SECRET`; do not restore `BETTER_AUTH_SECRET_DEVELOPMENT`.
 - Each Worker's Workers Builds settings retain only its stage's dotenv private key and required provider deployment/bootstrap credentials. `scripts/stage.ts` selects exactly one stage file. `NUXT_BETTER_AUTH_SECRET` is derived from canonical `BETTER_AUTH_SECRET`, never managed separately.
+- Alchemy manages Worker runtime variables, secrets, and resource bindings. Do not mirror Git-owned configuration in the dashboard or introduce Alchemy-owned resource IDs as application environment variables.
 - OG image runtime configuration uses Nitro environment expansion to read the canonical `OG_IMAGE_SECRET` binding. Builds must work without that secret and must never inline its value.
 - Clear Better Auth's build-time secret in `nitro:config`, after the module's `modules:done` initialization, so only the runtime Worker binding supplies the key.
 - Do not print decrypted values or expose secrets through public runtime config, app config, client payloads, logs, snapshots, or generated artifacts.
@@ -115,12 +104,6 @@ The content D1 remains unbound. The existing Cache KV remains bound only as `CON
 - For an externally issued secret, obtain the replacement, update only the intended encrypted `.env.<stage>` value through dotenvx, run config check and Alchemy plan, commit ciphertext, obtain deployment authorization, deploy/verify, then revoke the old credential.
 - For Better Auth or another persistent signing key, first establish a multi-key/versioned compatibility plan and preserve sessions where practical. Never replace it with `Alchemy.Random` casually.
 - Rotate dotenv encryption keys only through dotenvx's supported re-encryption workflow. Commit the resulting ciphertext/public-key changes together and keep managed offline backups of both private keys; `.env.keys` is not a backup.
-
-### Dashboard parity and cleanup
-
-Do not remove legacy Worker variables/secrets until the encrypted stage file is complete, config check passes, the Alchemy plan emits secret bindings, development and production-like workerd verification pass, and the production deployment is explicitly authorized and verified.
-
-After cutover, remove manually mirrored runtime values for `BETTER_AUTH_SECRET`, obsolete `BETTER_AUTH_SECRET_DEVELOPMENT`, `BOOTH_PROXY_URL`, `TWITTER_CLIENT_SECRET`, `OG_IMAGE_SECRET`, `LIRIA_DISCORD_ENDPOINT`, and `LIRIA_DISCORD_ACCESS_TOKEN`, plus manual copies of Git-owned site/image URLs and sender address. Alchemy-owned resource IDs (`APP_DB`, R2, Queue, AI, Flagship, Images, Email, and rate limits) must not be reintroduced as application environment variables.
 
 ## Tooling constraints
 
@@ -146,6 +129,7 @@ After cutover, remove manually mirrored runtime values for `BETTER_AUTH_SECRET`,
 - Naming convention: `snakeCase` (Drizzle `snakeCase` helper is used).
 - Migrations use Drizzle v1 nested output under `./drizzle`.
 - Do not edit generated migration SQL by hand; regenerate with `bun run db:generate`.
+- D1 keeps foreign keys enabled in migration transactions. Parent-table rebuilds must preserve retained child rows and be tested with populated data.
 - `bun run dev` runs `alchemy dev --stage development`; Alchemy applies D1 migrations in its local workerd simulator.
 - `bun run db:seed:local -- --yes` copies the remote `avatio-development` D1 into that local simulator; authenticate Wrangler separately with D1 read permission. Its `--source production --allow-production` form requires explicit operator approval and is only for one-off local seeding. It does not deploy infrastructure, create a remote D1, or write to a remote D1. If the development D1 has not been provisioned, obtain authorization for the normal Alchemy development deploy first.
 
@@ -153,7 +137,7 @@ After cutover, remove manually mirrored runtime values for `BETTER_AUTH_SECRET`,
 
 - `@nuxtjs/better-auth` owns Nuxt/Nitro routing, SSR hydration, client session state, and request session memoization.
 - `server/auth.config.ts` is the sole runtime Better Auth configuration; `app/auth.config.ts` configures client plugins. Root `auth.config.ts` exists only for Better Auth CLI schema generation and must not be imported at runtime. Remove it only after the Nuxt module proves equivalent custom D1/Drizzle schema generation directly from `server/auth.config.ts`.
-- Better Auth 1.7.3 uses the relations-v2 Drizzle adapter with `usePlural: true` and `advanced.database.joins: true`. Account identity is `(providerId, providerAccountId)`; the runtime schema does not depend on the former `issuer` column. Generate the auth schema separately, review it against `database/schema.ts`, and generate migrations with Drizzle; never overwrite the full application schema with the auth-only output.
+- Better Auth 1.7.3 uses the relations-v2 Drizzle adapter with `usePlural: true` and `advanced.database.joins: true`. Account identity is `(providerId, providerAccountId)`. Generate the auth schema separately, review it against `database/schema.ts`, and generate migrations with Drizzle; never overwrite the full application schema with the auth-only output.
 - Use `useUserSession()`/module client helpers in the app and `getRequestSession()`/`requireUserSession()` on the server. Do not recreate `useAuth()` or another session state machine.
 - Protected APIs explicitly call `requireUserSession()`; route rules are navigation UX, not the API security boundary. Preserve banned-user policy independently from admin roles.
 - Better Auth tables share `APP_DB`. Do not change auth schema/migrations merely to change Nuxt integration.
