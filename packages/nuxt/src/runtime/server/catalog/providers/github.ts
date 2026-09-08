@@ -54,7 +54,12 @@ export class GithubCatalogProvider implements CatalogProvider {
         if (reference.providerKey !== this.key || !isGithubRepositoryId(reference.externalId))
             return { status: 'transient_error', errorKind: 'provider-reference-mismatch' }
 
-        const repositoryUrl = new URL(`repos/${reference.externalId}`, this.#apiBaseUrl).href
+        const canonical = URL.canParse(reference.canonicalUrl)
+            ? this.matchUrl(new URL(reference.canonicalUrl))
+            : null
+        if (!canonical)
+            return { status: 'transient_error', errorKind: 'provider-reference-mismatch' }
+        const repositoryUrl = new URL(`repos/${canonical.externalId}`, this.#apiBaseUrl).href
         let repositoryResponse: ProviderHttpResponse<GithubRepoResponse>
         try {
             repositoryResponse = await this.options.http.get<GithubRepoResponse>(repositoryUrl)

@@ -174,6 +174,19 @@ describe('GitHub CatalogProvider', () => {
         expect((await empty.fetch(reference)).status).toBe('transient_error')
     })
 
+    it('refreshes a retained alias through the observed canonical repository name', async () => {
+        const requested: string[] = []
+        const provider = new GithubCatalogProvider({
+            http: createHttp(async (url) => {
+                requested.push(url)
+                return response(404, null)
+            }),
+            resolvePublisherSource,
+        })
+        await provider.fetch({ ...reference, canonicalUrl: 'https://github.com/new-owner/renamed' })
+        expect(requested).toEqual(['https://ungh.cc/repos/new-owner/renamed'])
+    })
+
     it('normalizes the primary response without making auxiliary data authoritative', async () => {
         const provider = new GithubCatalogProvider({
             http: createHttp(async (url) => {

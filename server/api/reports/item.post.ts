@@ -26,7 +26,7 @@ export default authedSessionEventHandler(
         await executeD1Batch(db, [
             db.insert(itemReports).values({
                 reporterId: session.user.id,
-                itemId,
+                catalogItemId: itemId,
                 nameError,
                 irrelevant,
                 other,

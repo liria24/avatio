@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const emit = defineEmits<{
-    select: [item: Item]
+    select: [item: CatalogItemView]
 }>()
 
 const props = defineProps<{
@@ -24,11 +24,11 @@ const { data, status } = useFetch('/api/items', {
             id: category,
             label: itemCategory[category].label,
             items: data.data
-                .filter((item: Item) => item.category === category)
-                .map((item: Item) => ({
+                .filter((item) => item.category === category)
+                .map((item) => ({
                     id: item.id,
                     label: item.name,
-                    shop: item.shop?.name,
+                    publisher: item.primarySource?.publisher?.name,
                     image: item.image,
                     slot: 'item' as const,
                 })),
@@ -54,20 +54,7 @@ const groups = computed(() => {
                             id: 'url',
                             label: searchTerm.value,
                             slot: 'url',
-                            onSelect: () => {
-                                const result = extractItemId(searchTerm.value)
-                                if (result) onSelected(result.id, result.platform)
-                                else
-                                    toast.add({
-                                        id: 'invalid-item-url',
-                                        icon: 'mingcute:close-line',
-                                        title: t('commandPalette.itemSearch.invalidUrl'),
-                                        description: t(
-                                            'commandPalette.itemSearch.invalidUrlDescription',
-                                        ),
-                                        color: 'error',
-                                    })
-                            },
+                            onSelect: () => onSelected(searchTerm.value, true),
                         },
                     ],
                 },
@@ -106,13 +93,16 @@ const loadingComputed = computed(
     () => props.loading || loadingRef.value || status.value === 'pending',
 )
 
-const onSelected = async (id: string, platform?: Platform) => {
+const onSelected = async (id: string, resolve = false) => {
     loadingRef.value = true
 
     try {
-        const response = await $fetch<Item>(`/api/items/${id.toString()}`, {
-            query: { platform },
-        })
+        const response = resolve
+            ? await $fetch<CatalogItemView>('/api/items/resolve', {
+                  method: 'POST',
+                  body: { reference: id },
+              })
+            : await $fetch<CatalogItemView>(`/api/items/${encodeURIComponent(id)}`)
         emit('select', response)
         searchTerm.value = ''
     } catch (error) {
@@ -167,7 +157,7 @@ const onSelected = async (id: string, platform?: Platform) => {
                     {{ item.label }}
                 </span>
                 <span class="text-muted line-clamp-1 text-xs leading-none break-all">
-                    {{ item.shop }}
+                    {{ item.publisher }}
                 </span>
             </div>
         </template>

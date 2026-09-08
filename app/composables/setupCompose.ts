@@ -20,7 +20,7 @@ const createSetupCompose = () => {
     const editingSetupId = ref<Setup['id'] | null>(null)
     const imageUploading = ref(false)
     const imageMetadata = ref<Record<string, SetupImageMetadata>>({})
-    const itemEntities = ref<Record<string, Item>>({})
+    const itemEntities = ref<Record<string, CatalogItemView>>({})
     const userEntities = ref<Record<string, ComposeUser>>({})
     const publishIdempotencyKey = ref(crypto.randomUUID())
 
@@ -96,7 +96,10 @@ const createSetupCompose = () => {
             Promise.all(
                 content.items.map(async ({ itemId }) => {
                     try {
-                        return await $fetch<Item>(`/api/items/${itemId}`)
+                        return await $fetch<CatalogItemView>('/api/items/resolve', {
+                            method: 'POST',
+                            body: { reference: itemId },
+                        })
                     } catch (error) {
                         console.error('Failed to hydrate draft item:', itemId, error)
                         return null
@@ -121,7 +124,13 @@ const createSetupCompose = () => {
         userEntities.value = Object.fromEntries(
             users.flatMap((user) => (user ? [[user.id, user]] : [])),
         )
-        await resetFormOnce(content)
+        await resetFormOnce({
+            ...content,
+            items: content.items.map((entry, index) => ({
+                ...entry,
+                itemId: items[index]?.id ?? entry.itemId,
+            })),
+        })
     }
 
     const loadDraft = async (id: string) => {
@@ -167,8 +176,8 @@ const createSetupCompose = () => {
                     username: user.username,
                     note: note ?? '',
                 })) ?? [],
-            items: setup.items.map((item) => ({
-                itemId: item.id,
+            items: setup.entries.map((item) => ({
+                itemId: item.catalogItem.id,
                 category: item.category,
                 note: item.note ?? '',
                 unsupported: item.unsupported ?? false,
@@ -189,7 +198,9 @@ const createSetupCompose = () => {
                 ]),
             ),
         }
-        itemEntities.value = Object.fromEntries(setup.items.map((item) => [item.id, item]))
+        itemEntities.value = Object.fromEntries(
+            setup.entries.map(({ catalogItem }) => [catalogItem.id, catalogItem]),
+        )
         userEntities.value = Object.fromEntries(
             (setup.coauthors ?? []).map(({ user }) => [user.id, user]),
         )

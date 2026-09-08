@@ -72,6 +72,54 @@ describe('D1 migration', () => {
         expect(database.prepare('PRAGMA foreign_key_check').all()).toEqual([])
     })
 
+    it('migrates report IDs and accepts reports from both Workers during the contract transition', () => {
+        database.close()
+        database = new DatabaseSync(':memory:')
+        database.exec('PRAGMA foreign_keys = ON')
+        const prepare = '20260908022206_prepare_catalog_report_contract'
+        const backfill = '20260908022217_backfill_catalog_report_ids'
+        for (const directory of readdirSync('drizzle').sort()) {
+            if (directory >= prepare) break
+            database.exec(readFileSync(join('drizzle', directory, 'migration.sql'), 'utf8'))
+        }
+        database.exec(`
+            INSERT INTO users (id, name, username, display_username, email)
+            VALUES ('reporter', 'Reporter', 'reporter', 'Reporter', 'reporter@example.com');
+            INSERT INTO items (id, platform, name, category) VALUES ('123', 'booth', 'Avatar', 'avatar');
+            INSERT INTO catalog_items (id) VALUES ('catalog');
+            INSERT INTO item_sources (id, item_id, provider_key, external_id, canonical_url, display_name)
+            VALUES ('source', 'catalog', 'booth', '123', 'https://booth.pm/items/123', 'Avatar');
+            INSERT INTO item_reports (id, reporter_id, item_id, comment) VALUES (41, 'reporter', '123', 'Keep report');
+        `)
+        for (const directory of [prepare, backfill]) {
+            database.exec('BEGIN')
+            database.exec(readFileSync(join('drizzle', directory, 'migration.sql'), 'utf8'))
+            database.exec('COMMIT')
+        }
+        expect(
+            database
+                .prepare('SELECT id, item_id, catalog_item_id, comment FROM item_reports')
+                .get(),
+        ).toEqual({
+            id: 41,
+            item_id: '123',
+            catalog_item_id: 'catalog',
+            comment: 'Keep report',
+        })
+        database.exec(`
+            INSERT INTO item_reports (reporter_id, item_id) VALUES ('reporter', '123');
+            INSERT INTO item_reports (reporter_id, catalog_item_id) VALUES ('reporter', 'catalog');
+        `)
+        expect(
+            database.prepare('SELECT catalog_item_id FROM item_reports ORDER BY id').all(),
+        ).toEqual([
+            { catalog_item_id: 'catalog' },
+            { catalog_item_id: 'catalog' },
+            { catalog_item_id: 'catalog' },
+        ])
+        expect(database.prepare('PRAGMA foreign_key_check').all()).toEqual([])
+    })
+
     it('preserves existing drafts and image references through transactional schema and content migrations', () => {
         database.close()
         database = new DatabaseSync(':memory:')

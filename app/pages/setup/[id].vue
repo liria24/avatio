@@ -58,17 +58,19 @@ const toggleBookmark = async () => {
 const itemCategory = useItemCategory()
 
 const categorizedItems = computed(() => {
-    const itemsByCategory = setup.value?.items.reduce(
-        (acc, item) => {
-            const category = item.category || 'other'
-            if (!acc[category]) acc[category] = []
-            acc[category].push(item)
-            return acc
-        },
-        {} as Record<string, SetupItem[]>,
-    )
+    const itemsByCategory = setup.value?.entries
+        .filter((entry) => entry.catalogItem.primarySource?.availability === 'available')
+        .reduce(
+            (acc, item) => {
+                const category = item.category || 'other'
+                if (!acc[category]) acc[category] = []
+                acc[category].push(item)
+                return acc
+            },
+            {} as Record<string, SetupEntryView[]>,
+        )
 
-    const orderedCategories: Record<string, SetupItem[]> = {}
+    const orderedCategories: Record<string, SetupEntryView[]> = {}
 
     if (!itemsByCategory) return
 
@@ -254,7 +256,7 @@ useSeo({
                     <SetupsViewerItem
                         v-for="(item, index) in items"
                         :key="`item-${key}-${index}`"
-                        :item
+                        :entry="item"
                         :show-nsfw="preferences.showNsfw"
                         @report-item="loggedIn ? reportItem.open({ itemId: $event }) : login.open()"
                     />
