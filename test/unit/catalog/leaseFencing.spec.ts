@@ -1,7 +1,9 @@
 import { D1CatalogRepository } from '@avatio/cloudflare'
 import type { ProviderSnapshot } from '@avatio/core/catalog'
+import { drizzle } from 'drizzle-orm/d1'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { relations } from '../../../database/relations'
 import { createTestD1 } from '../../helpers/d1'
 
 describe('Catalog D1 lease fencing', () => {
@@ -32,7 +34,89 @@ describe('Catalog D1 lease fencing', () => {
             INSERT INTO items (id, platform, name, category) VALUES ('123', 'booth', 'Original', 'other');
         `)
     })
-    afterEach(() => database.sqlite.close())
+    afterEach(() => {
+        database.sqlite.close()
+        vi.unstubAllGlobals()
+    })
+
+    it.each(['queue', 'legacy'])(
+        'keeps publisher identity separate when legacy shop IDs collide (%s)',
+        async (path) => {
+            database.sqlite.exec(`
+                INSERT INTO shops (id, platform, name, verified) VALUES ('shared', 'booth', 'BOOTH creator', 1);
+                UPDATE items SET shop_id = 'shared' WHERE id = '123';
+                INSERT INTO publishers (id) VALUES ('github-publisher');
+                INSERT INTO publisher_sources (id, publisher_id, provider_key, external_id, canonical_url, name)
+                VALUES ('github-publisher-source', 'github-publisher', 'github', 'shared', 'https://github.com/shared', 'GitHub creator');
+                INSERT INTO catalog_items (id) VALUES ('github-item');
+                INSERT INTO item_sources (id, item_id, provider_key, external_id, canonical_url, next_check_at, display_name)
+                VALUES ('github-source', 'github-item', 'github', 'shared/repo', 'https://github.com/shared/repo', 0, 'Repository');
+                INSERT INTO items (id, platform, name, category) VALUES ('shared/repo', 'github', 'Repository', 'other');
+            `)
+            if (path === 'queue') {
+                const lease = await repository.claimDueSource(
+                    'github-source',
+                    new Date(0),
+                    new Date(1000),
+                )
+                await repository.completeSourceSync({
+                    sourceId: 'github-source',
+                    leaseToken: lease!.token,
+                    successful: true,
+                    availability: 'available',
+                    snapshot: {
+                        ...snapshot,
+                        reference: {
+                            providerKey: 'github',
+                            externalId: 'shared/repo',
+                            canonicalUrl: 'https://github.com/shared/repo',
+                        },
+                        publisherSourceId: 'github-publisher-source',
+                    },
+                    checkedAt: new Date(1),
+                    nextCheckAt: new Date(3000),
+                })
+            } else {
+                vi.stubGlobal('logger', () => ({ info: vi.fn(), error: vi.fn() }))
+                vi.stubGlobal(
+                    'executeD1Batch',
+                    (db: { batch: (queries: never[]) => unknown }, queries: never[]) =>
+                        db.batch(queries),
+                )
+                const { persistItem } = await import('../../../server/utils/getItem')
+                await persistItem(
+                    drizzle(database.binding, { relations }) as never,
+                    {
+                        valid: true,
+                        item: {
+                            id: 'shared/repo',
+                            platform: 'github',
+                            name: 'Repository',
+                            shopId: 'shared',
+                        },
+                        shop: { id: 'shared', platform: 'github', name: 'GitHub creator' },
+                        cachedItem: { id: 'shared/repo' },
+                        categoryFallback: 'other',
+                        assignAttrParams: { name: 'Repository' },
+                    },
+                    { defer: false, purge: async () => {} },
+                )
+            }
+            expect(
+                database.sqlite
+                    .prepare("SELECT platform, name, verified FROM shops WHERE id = 'shared'")
+                    .get(),
+            ).toMatchObject({ platform: 'booth', name: 'BOOTH creator', verified: 1 })
+            expect(
+                database.sqlite.prepare("SELECT shop_id FROM items WHERE id = 'shared/repo'").get()
+                    ?.shop_id,
+            ).toBeNull()
+            expect((await repository.findSource('github-source'))?.publisherSourceId).toBe(
+                'github-publisher-source',
+            )
+            expect(database.sqlite.prepare('PRAGMA foreign_key_check').all()).toEqual([])
+        },
+    )
 
     it('claims once while valid and reclaims expired leases with a new token', async () => {
         const first = await repository.claimDueSource('source', new Date(0), new Date(1000))

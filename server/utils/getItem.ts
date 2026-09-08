@@ -1,4 +1,4 @@
-import { and, eq, inArray } from 'drizzle-orm'
+import { and, eq, inArray, sql } from 'drizzle-orm'
 import type { BatchItem } from 'drizzle-orm/batch'
 import type { H3Event } from 'h3'
 import { joinURL, withHttps } from 'ufo'
@@ -384,7 +384,15 @@ export const persistItem = async (
 
     const category =
         newOverride?.category ?? categoryOverride ?? oldOverride?.category ?? categoryFallback
-    const fullItem = { ...item, category }
+    const fullItem = {
+        ...item,
+        category,
+        // ponytail: global legacy shop IDs omit colliding links; remove this with the mirror.
+        shopId: sql<string | null>`(${db
+            .select({ id: shops.id })
+            .from(shops)
+            .where(and(eq(shops.id, shop.id), eq(shops.platform, shop.platform)))})`,
+    }
     const manualCategory = newOverride?.category ?? categoryOverride ?? oldOverride?.category
     const catalogWrite = await buildCatalogCompatibilityStatements(db, {
         providerKey: item.platform,
@@ -439,7 +447,14 @@ export const persistItem = async (
             )
 
         queries.push(
-            db.insert(shops).values(shop).onConflictDoUpdate({ target: shops.id, set: shop }),
+            db
+                .insert(shops)
+                .values(shop)
+                .onConflictDoUpdate({
+                    target: shops.id,
+                    set: shop,
+                    setWhere: eq(shops.platform, shop.platform),
+                }),
             db
                 .insert(items)
                 .values(fullItem)
