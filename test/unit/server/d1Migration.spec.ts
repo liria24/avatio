@@ -117,6 +117,17 @@ describe('D1 migration', () => {
             { catalog_item_id: 'catalog' },
             { catalog_item_id: 'catalog' },
         ])
+        database.exec(
+            "INSERT INTO items (id, platform, name, category) VALUES ('unmapped', 'booth', 'Unmapped', 'avatar')",
+        )
+        expect(() =>
+            database.exec(
+                "INSERT INTO item_reports (reporter_id, item_id) VALUES ('reporter', 'unmapped')",
+            ),
+        ).toThrow('Missing CatalogItem for report')
+        expect(database.prepare('SELECT count(*) AS count FROM item_reports').get()).toEqual({
+            count: 3,
+        })
         expect(database.prepare('PRAGMA foreign_key_check').all()).toEqual([])
     })
 

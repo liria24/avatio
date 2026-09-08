@@ -22,6 +22,6 @@ BEGIN
         JOIN item_sources source ON source.provider_key = legacy.platform AND source.external_id = legacy.id
         WHERE legacy.id = NEW.item_id
     ) WHERE id = NEW.id;
-    SELECT CASE WHEN (SELECT catalog_item_id FROM item_reports WHERE id = NEW.id) IS NULL
-        THEN RAISE(ABORT, 'Missing CatalogItem for report') END;
+    SELECT RAISE(ABORT, 'Missing CatalogItem for report')
+    WHERE (SELECT catalog_item_id FROM item_reports WHERE id = NEW.id) IS NULL;
 END;
