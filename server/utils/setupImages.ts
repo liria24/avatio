@@ -10,13 +10,15 @@ interface ResolveSetupImageDataOptions {
 
 export const withSetupImageUrls = async <T extends { objectKey: string }>(
     images: T[],
-): Promise<(T & { url: string })[]> =>
-    await Promise.all(
+): Promise<(T & { url: string })[]> => {
+    const storage = useServerFiles()
+    return await Promise.all(
         images.map(async (image) => ({
             ...image,
             url: await storage.url(image.objectKey),
         })),
     )
+}
 
 export const isUserSetupImageKey = (objectKey: string, userId: string) =>
     objectKey.startsWith(`setup/${userId}/`)

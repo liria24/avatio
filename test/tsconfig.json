@@ -1,0 +1,15 @@
+{
+    "extends": "../.nuxt/tsconfig.server.json",
+    "compilerOptions": {
+        "types": ["vitest/globals"]
+    },
+    "include": [
+        "../.nuxt/types/nitro-nuxt.d.ts",
+        "../.nuxt/types/nitro.d.ts",
+        "../.nuxt/nuxt-files-sdk/storage-registry.d.ts",
+        "./helpers/**/*.ts",
+        "./setup.ts",
+        "./unit/**/*.ts"
+    ],
+    "exclude": ["./nuxt/**/*.ts", "./unit/app/**/*.ts"]
+}

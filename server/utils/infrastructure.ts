@@ -3,8 +3,6 @@ import type { CacheInvalidator, FileStorage } from '@avatio/core'
 import type { CacheContext } from '@cloudflare/workers-types'
 import type { H3Event } from 'h3'
 
-import { getStorage } from './storage'
-
 type CloudflareRequestContext = {
     cloudflare?: {
         context?: {
@@ -16,8 +14,8 @@ type CloudflareRequestContext = {
 export const getFeatureFlags = (event?: H3Event) =>
     new CloudflareFeatureFlags(getRuntimeEnv(event).FLAGS)
 
-export const getFileStorage = (event?: H3Event): FileStorage => {
-    const files = getStorage(event)
+export const getFileStorage = (): FileStorage => {
+    const files = useServerFiles()
     return {
         async importFromUrl({ sourceUrl, destinationKey }) {
             const response = await fetch(sourceUrl)

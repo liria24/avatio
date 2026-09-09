@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
+import type { AppDatabase } from '../../../server/utils/database'
+
 type SetupImagesModule = typeof import('../../../server/utils/setupImages')
 
 vi.mock('@@/database/schema', () => ({
@@ -21,10 +23,8 @@ vi.mock('drizzle-orm', () => ({
     inArray: () => true,
 }))
 
-vi.mock('../../../server/utils/storage', () => ({
-    storage: {
-        url: async (key: string) => `https://files.example.com/${key}`,
-    },
+vi.stubGlobal('useServerFiles', () => ({
+    url: async (key: string) => `https://files.example.com/${key}`,
 }))
 
 const serverError = {
@@ -36,13 +36,14 @@ vi.stubGlobal('serverError', serverError)
 const loadSetupImages = async (): Promise<SetupImagesModule> =>
     await import('../../../server/utils/setupImages')
 
-const createDb = (existingImages: unknown[] = []) => ({
-    select: () => ({
-        from: () => ({
-            where: async () => existingImages,
+const createDb = (existingImages: unknown[] = []): AppDatabase =>
+    ({
+        select: () => ({
+            from: () => ({
+                where: async () => existingImages,
+            }),
         }),
-    }),
-})
+    }) as unknown as AppDatabase
 
 describe('isUserSetupImageKey', () => {
     it('allows setup images below the current user prefix', async () => {
@@ -62,7 +63,7 @@ describe('resolveSetupImageData', () => {
     it('accepts new uploaded setup images owned by the current user', async () => {
         const { resolveSetupImageData } = await loadSetupImages()
 
-        const imageData = await resolveSetupImageData(createDb() as ReturnType<typeof useDB>, {
+        const imageData = await resolveSetupImageData(createDb(), {
             userId: 'user-1',
             images: ['https://files.example.com/setup/user-1/image.jpg'],
             imageMetadata: {
@@ -91,7 +92,7 @@ describe('resolveSetupImageData', () => {
         const { resolveSetupImageData } = await loadSetupImages()
 
         await expect(
-            resolveSetupImageData(createDb() as ReturnType<typeof useDB>, {
+            resolveSetupImageData(createDb(), {
                 userId: 'user-1',
                 images: ['https://files.example.com/setup/user-2/image.jpg'],
                 imageMetadata: {
@@ -118,21 +119,18 @@ describe('resolveSetupImageData', () => {
             etag: 'etag',
         }
 
-        const imageData = await resolveSetupImageData(
-            createDb([existingImage]) as ReturnType<typeof useDB>,
-            {
-                userId: 'user-1',
-                setupId: 'setup-1',
-                images: ['https://files.example.com/legacy/custom-key.jpg'],
-                imageMetadata: {
-                    'https://files.example.com/legacy/custom-key.jpg': {
-                        objectKey: 'legacy/custom-key.jpg',
-                        width: 999,
-                        height: 999,
-                    },
+        const imageData = await resolveSetupImageData(createDb([existingImage]), {
+            userId: 'user-1',
+            setupId: 'setup-1',
+            images: ['https://files.example.com/legacy/custom-key.jpg'],
+            imageMetadata: {
+                'https://files.example.com/legacy/custom-key.jpg': {
+                    objectKey: 'legacy/custom-key.jpg',
+                    width: 999,
+                    height: 999,
                 },
             },
-        )
+        })
 
         expect(imageData).toEqual([existingImage])
     })

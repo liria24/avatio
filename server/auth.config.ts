@@ -116,9 +116,7 @@ export const createAvatioAuthOptions = ({ runtimeConfig }: ServerAuthContext) =>
                                 const imageId = nanoid(JPG_FILENAME_LENGTH)
                                 const { getFileStorage } = await import('./utils/infrastructure')
                                 image = (
-                                    await getFileStorage(
-                                        getCurrentEvent() ?? undefined,
-                                    ).importFromUrl({
+                                    await getFileStorage().importFromUrl({
                                         sourceUrl: image,
                                         destinationKey: `avatar/${imageId}.jpg`,
                                     })

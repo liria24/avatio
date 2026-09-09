@@ -1,3 +1,4 @@
+import { useServerFiles } from 'nuxt-files-sdk/runtime'
 // oxlint-disable typescript/no-explicit-any
 import { $fetch } from 'ofetch'
 
@@ -25,6 +26,7 @@ Object.assign(globalThis, constants, {
     prefixedI18nLocales,
     sanitizeEmailHtml,
     serverError,
+    useServerFiles,
 })
 
 // Polyfill Nuxt/Nitro auto-imported $fetch

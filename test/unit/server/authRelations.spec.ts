@@ -10,7 +10,7 @@ describe('Better Auth relations', () => {
     })
 
     it('falls back to separate session and user queries on RC.4', async () => {
-        const rows = new Map([
+        const rows = new Map<unknown, Record<string, string>[]>([
             [
                 schema.sessions,
                 [
@@ -33,7 +33,7 @@ describe('Better Auth relations', () => {
             ],
         ])
         const select = vi.fn(() => ({
-            from: (table: typeof schema.sessions | typeof schema.users) => ({
+            from: (table: unknown) => ({
                 where: async () => rows.get(table) ?? [],
             }),
         }))
@@ -49,7 +49,7 @@ describe('Better Auth relations', () => {
             join: { user: true },
         })
 
-        expect(session?.user).toMatchObject({ id: 'user-id' })
+        expect(session).toMatchObject({ user: { id: 'user-id' } })
         expect(select).toHaveBeenCalledTimes(2)
     })
 })

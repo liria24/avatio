@@ -1,7 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { createLocalStorage } from '../../../server/storage/local'
-
 interface StorageObject {
     key: string
     lastModified: number
@@ -59,7 +57,7 @@ const arrange = ({
         (name: string) => runtimeGlobal.__env__?.[name] ?? process.env[name],
     )
     vi.stubGlobal('useRuntimeConfig', () => ({ cloudflare: {} }))
-    vi.stubGlobal('storage', storage)
+    vi.stubGlobal('useServerFiles', () => storage)
     vi.stubGlobal('useDB', () => ({
         delete: vi.fn(() => ({
             where: vi.fn().mockResolvedValue(undefined),
@@ -170,9 +168,9 @@ describe('runCleanupJob', () => {
     })
 
     it('keeps referenced local avatars using the active storage URL instead of the R2 origin', async () => {
-        const files = createLocalStorage('.data/uploads')
-        const image = await files.url('avatar/local-used.jpg')
-        storage.url.mockImplementation((key: string) => files.url(key))
+        const localBaseUrl = 'http://localhost:3000/api/_local/files'
+        const image = `${localBaseUrl}/avatar/local-used.jpg`
+        storage.url.mockImplementation(async (key: string) => `${localBaseUrl}/${key}`)
         arrange({
             rows: { users: [{ image }] },
             avatarObjects: [

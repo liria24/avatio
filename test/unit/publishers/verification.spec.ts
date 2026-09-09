@@ -9,6 +9,7 @@ import {
     type PublisherVerificationChallenge,
     type PublisherVerificationProvider,
 } from '@avatio/core/publishers'
+import type { ProviderHttpClient } from '@avatio/nuxt/runtime/server/catalog/providers'
 import { BoothPublisherVerificationProvider } from '@avatio/nuxt/runtime/server/publishers/providers'
 import { describe, expect, it } from 'vitest'
 
@@ -210,7 +211,7 @@ describe('publisher verification', () => {
         const adapter = new BoothPublisherVerificationProvider({
             proxyBaseUrl: 'https://proxy.example/',
             http: {
-                async get() {
+                get: (async () => {
                     return {
                         status: 200,
                         ok: true,
@@ -235,7 +236,7 @@ describe('publisher verification', () => {
                             variations: [],
                         },
                     }
-                },
+                }) as ProviderHttpClient['get'],
             },
         })
         const target = await adapter.resolveTarget(new URL('https://booth.pm/items/123'))

@@ -120,7 +120,7 @@ describe('Catalog D1 lease fencing', () => {
         expect(
             await repository.claimDueSource('source', new Date(0), new Date(1000), true),
         ).not.toBeNull()
-        expect((await repository.findSource('source'))?.nextCheckAt.getTime()).toBe(2000)
+        expect((await repository.findSource('source'))?.nextCheckAt?.getTime()).toBe(2000)
     })
 
     it.each([true, false])(

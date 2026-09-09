@@ -29,6 +29,7 @@ export default promiseEventHandler(async ({ event }) => {
 
     let file
     try {
+        const storage = useServerFiles()
         file = await storage.download(key)
     } catch {
         throw createError({ statusCode: 404, statusMessage: 'Object not found' })

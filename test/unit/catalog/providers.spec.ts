@@ -33,9 +33,9 @@ const boothItem = {
     variations: [{ status: 'free_download' }],
 }
 
-const createHttp = (implementation: ProviderHttpClient['get']): ProviderHttpClient => ({
-    get: implementation,
-})
+const createHttp = (
+    implementation: (url: string) => Promise<ProviderHttpResponse<unknown>>,
+): ProviderHttpClient => ({ get: implementation as ProviderHttpClient['get'] })
 const resolvePublisherSource = async (snapshot: { providerKey: string; externalId: string }) =>
     `${snapshot.providerKey}:${snapshot.externalId}`
 

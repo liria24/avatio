@@ -66,6 +66,7 @@ export default authedSessionEventHandler(
         const { colors } = await extractImageColors(sampleBytes)
 
         const objectKey = `${path}/${session.user.id}/${nanoid(IMAGE_ID_LENGTH)}.${extensionByContentType[contentType as keyof typeof extensionByContentType]}`
+        const storage = useServerFiles()
         let uploaded: { etag?: string; size?: number }
         try {
             uploaded = await storage.upload(objectKey, blob, { contentType })

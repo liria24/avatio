@@ -117,6 +117,7 @@ export default defineNuxtConfig({
         '@nuxt/a11y',
         '@nuxt/test-utils/module',
         '@liria24/og-image/nuxt',
+        'nuxt-files-sdk',
         ...(process.env.VITEST ? [] : ['@vite-pwa/nuxt']),
     ],
 
@@ -171,7 +172,6 @@ export default defineNuxtConfig({
     typescript: {
         typeCheck: 'build',
         tsConfig: {
-            include: ['test/unit/**/*'],
             compilerOptions: {
                 noUncheckedIndexedAccess: true,
             },
