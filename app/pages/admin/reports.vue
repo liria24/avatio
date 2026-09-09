@@ -1,5 +1,4 @@
 <script setup lang="ts">
-const { locale } = useI18n()
 const { resolveReport } = useAdmin()
 const itemCategory = useItemCategory()
 const changeItemNiceName = useChangeItemNiceNameModal()
@@ -47,29 +46,58 @@ const defaultResponse = () => ({
     },
 })
 
-const { data: userData, refresh: refreshUser } = await useFetch('/api/admin/reports/user', {
+const {
+    data: userData,
+    refresh: refreshUser,
+    status: userStatus,
+} = await useFetch('/api/admin/reports/user', {
     dedupe: 'defer',
     query: { status },
     default: defaultResponse,
+    immediate: tab.value === 'user',
+    watch: false,
 })
 
-const { data: setupData, refresh: refreshSetup } = await useFetch('/api/admin/reports/setup', {
+const {
+    data: setupData,
+    refresh: refreshSetup,
+    status: setupStatus,
+} = await useFetch('/api/admin/reports/setup', {
     dedupe: 'defer',
     query: { status },
     default: defaultResponse,
+    immediate: tab.value === 'setup',
+    watch: false,
 })
 
-const { data: itemData, refresh: refreshItem } = await useFetch('/api/admin/reports/item', {
+const {
+    data: itemData,
+    refresh: refreshItem,
+    status: itemStatus,
+} = await useFetch('/api/admin/reports/item', {
     dedupe: 'defer',
     query: { status },
     default: defaultResponse,
+    immediate: tab.value === 'item',
+    watch: false,
 })
 
-const refresh = () => {
-    if (tab.value === 'setup') return refreshSetup()
-    if (tab.value === 'item') return refreshItem()
-    return refreshUser()
+const reportLists = {
+    user: { refresh: refreshUser, status: userStatus },
+    setup: { refresh: refreshSetup, status: setupStatus },
+    item: { refresh: refreshItem, status: itemStatus },
 }
+const activeReports = computed(() => reportLists[tab.value])
+const refresh = () => activeReports.value.refresh()
+
+watch([tab, status], ([, nextStatus], [previousTab, previousStatus]) => {
+    if (
+        nextStatus !== previousStatus ||
+        tab.value !== previousTab ||
+        activeReports.value.status.value === 'idle'
+    )
+        void refresh()
+})
 
 const resolve = async (id: number, isResolved?: boolean) =>
     await resolveReport({
@@ -159,63 +187,13 @@ useSeo({
                 <template v-if="tab === 'user'">
                     <UCard v-for="report in userData.data" :key="report.id">
                         <template #header>
-                            <div class="flex w-full items-center gap-2">
-                                <span
-                                    class="text-muted text-lg leading-none font-light text-nowrap"
-                                >
-                                    #{{ report.id }}
-                                </span>
-                                <UBadge
-                                    :label="report.isResolved ? 'Closed' : 'Open'"
-                                    :icon="
-                                        report.isResolved
-                                            ? 'lucide:circle-slash'
-                                            : 'mingcute:three-quarters-circle-dash-fill'
-                                    "
-                                    :color="report.isResolved ? 'neutral' : 'success'"
-                                    variant="outline"
-                                    class="rounded-full py-1.5 pr-3 pl-2.5"
-                                />
-                                <NuxtTime
-                                    :datetime="report.createdAt"
-                                    relative
-                                    :locale
-                                    class="text-muted text-xs"
-                                />
-
-                                <div class="flex grow items-center justify-end gap-2">
-                                    <UUser
-                                        :avatar="{
-                                            src: report.reporter.image || undefined,
-                                            alt: report.reporter.name,
-                                            icon: 'mingcute:user-3-fill',
-                                        }"
-                                        :name="report.reporter.name"
-                                        size="sm"
-                                        class="mr-2"
-                                    />
-
-                                    <UButton
-                                        v-if="report.isResolved"
-                                        loading-auto
-                                        icon="mingcute:close-line"
-                                        label="Mark as Unresolved"
-                                        color="neutral"
-                                        variant="subtle"
-                                        size="sm"
-                                        @click="resolve(report.id, false)"
-                                    />
-                                    <UButton
-                                        v-else
-                                        loading-auto
-                                        icon="mingcute:check-line"
-                                        label="Mark as Resolved"
-                                        color="neutral"
-                                        size="sm"
-                                        @click="resolve(report.id)"
-                                    />
-                                </div>
-                            </div>
+                            <AdminReportHeader
+                                :id="report.id"
+                                :is-resolved="report.isResolved"
+                                :created-at="report.createdAt"
+                                :reporter="report.reporter"
+                                @resolve="resolve"
+                            />
                         </template>
 
                         <div class="grid w-full grid-cols-1 items-start gap-4 sm:grid-cols-2">
@@ -284,63 +262,13 @@ useSeo({
                 <template v-else-if="tab === 'setup'">
                     <UCard v-for="report in setupData.data" :key="report.id">
                         <template #header>
-                            <div class="flex w-full items-center gap-2">
-                                <span
-                                    class="text-muted text-lg leading-none font-light text-nowrap"
-                                >
-                                    #{{ report.id }}
-                                </span>
-                                <UBadge
-                                    :label="report.isResolved ? 'Closed' : 'Open'"
-                                    :icon="
-                                        report.isResolved
-                                            ? 'lucide:circle-slash'
-                                            : 'mingcute:three-quarters-circle-dash-fill'
-                                    "
-                                    :color="report.isResolved ? 'neutral' : 'success'"
-                                    variant="outline"
-                                    class="rounded-full py-1.5 pr-3 pl-2.5"
-                                />
-                                <NuxtTime
-                                    :datetime="report.createdAt"
-                                    relative
-                                    :locale
-                                    class="text-muted text-xs"
-                                />
-
-                                <div class="flex grow items-center justify-end gap-2">
-                                    <UUser
-                                        :avatar="{
-                                            src: report.reporter.image || undefined,
-                                            alt: report.reporter.name,
-                                            icon: 'mingcute:user-3-fill',
-                                        }"
-                                        :name="report.reporter.name"
-                                        size="sm"
-                                        class="mr-2"
-                                    />
-
-                                    <UButton
-                                        v-if="report.isResolved"
-                                        loading-auto
-                                        icon="mingcute:close-line"
-                                        label="Mark as Unresolved"
-                                        color="neutral"
-                                        variant="subtle"
-                                        size="sm"
-                                        @click="resolve(report.id, false)"
-                                    />
-                                    <UButton
-                                        v-else
-                                        loading-auto
-                                        icon="mingcute:check-line"
-                                        label="Mark as Resolved"
-                                        color="neutral"
-                                        size="sm"
-                                        @click="resolve(report.id)"
-                                    />
-                                </div>
-                            </div>
+                            <AdminReportHeader
+                                :id="report.id"
+                                :is-resolved="report.isResolved"
+                                :created-at="report.createdAt"
+                                :reporter="report.reporter"
+                                @resolve="resolve"
+                            />
                         </template>
 
                         <div class="grid w-full grid-cols-1 items-start gap-4 sm:grid-cols-2">
@@ -411,42 +339,14 @@ useSeo({
                 <template v-else>
                     <UCard v-for="report in itemData.data" :key="report.id">
                         <template #header>
-                            <div class="flex w-full items-center gap-2">
-                                <span
-                                    class="text-muted text-lg leading-none font-light text-nowrap"
-                                >
-                                    #{{ report.id }}
-                                </span>
-                                <UBadge
-                                    :label="report.isResolved ? 'Closed' : 'Open'"
-                                    :icon="
-                                        report.isResolved
-                                            ? 'lucide:circle-slash'
-                                            : 'mingcute:three-quarters-circle-dash-fill'
-                                    "
-                                    :color="report.isResolved ? 'neutral' : 'success'"
-                                    variant="outline"
-                                    class="rounded-full py-1.5 pr-3 pl-2.5"
-                                />
-                                <NuxtTime
-                                    :datetime="report.createdAt"
-                                    relative
-                                    :locale
-                                    class="text-muted text-xs"
-                                />
-
-                                <div class="flex grow items-center justify-end gap-2">
-                                    <UUser
-                                        :avatar="{
-                                            src: report.reporter.image || undefined,
-                                            alt: report.reporter.name,
-                                            icon: 'mingcute:user-3-fill',
-                                        }"
-                                        :name="report.reporter.name"
-                                        size="sm"
-                                        class="mr-2"
-                                    />
-
+                            <AdminReportHeader
+                                :id="report.id"
+                                :is-resolved="report.isResolved"
+                                :created-at="report.createdAt"
+                                :reporter="report.reporter"
+                                @resolve="resolve"
+                            >
+                                <template #default>
                                     <UButton
                                         label="Change Nice Name"
                                         variant="outline"
@@ -459,28 +359,8 @@ useSeo({
                                             })
                                         "
                                     />
-
-                                    <UButton
-                                        v-if="report.isResolved"
-                                        loading-auto
-                                        icon="mingcute:close-line"
-                                        label="Mark as Unresolved"
-                                        color="neutral"
-                                        variant="subtle"
-                                        size="sm"
-                                        @click="resolve(report.id, false)"
-                                    />
-                                    <UButton
-                                        v-else
-                                        loading-auto
-                                        icon="mingcute:check-line"
-                                        label="Mark as Resolved"
-                                        color="neutral"
-                                        size="sm"
-                                        @click="resolve(report.id)"
-                                    />
-                                </div>
-                            </div>
+                                </template>
+                            </AdminReportHeader>
                         </template>
 
                         <div class="grid w-full grid-cols-1 items-start gap-4 sm:grid-cols-2">

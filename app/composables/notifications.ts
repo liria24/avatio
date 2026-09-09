@@ -2,46 +2,33 @@ const _useNotifications = () => {
     const { loggedIn } = useUserSession()
     const localePath = useLocalePath()
 
-    const _asyncData = useFetch('/api/notifications', {
+    const { data, status, refresh } = useFetch('/api/notifications', {
         key: 'notifications',
         dedupe: 'defer',
         immediate: loggedIn.value,
-        transform: (response) => response,
         default: () => ({ data: [], unread: 0 }),
         getCachedData: (key, n, ctx) =>
             ctx.cause !== 'refresh:manual' ? n.payload.data[key] : n.static.data[key],
     })
 
-    const all = computed(() => _asyncData.data.value.data)
-    const read = computed(() => all.value.filter((n) => !!n.readAt))
+    const all = computed(() => data.value.data)
     const unread = computed(() => all.value.filter((n) => !n.readAt))
-    const unreadCount = computed(() => _asyncData.data.value.unread)
+    const unreadCount = computed(() => data.value.unread)
 
-    const markAsRead = async (id: string) => {
+    const setRead = async (id: string, read: boolean) => {
         try {
-            await $fetch('/api/notifications/read', {
+            await $fetch(`/api/notifications/${read ? 'read' : 'unread'}`, {
                 method: 'POST',
                 body: { id },
             })
-            await _asyncData.refresh()
+            await refresh()
         } catch (error) {
-            console.error('Error marking notification as read:', error)
+            console.error(`Error marking notification as ${read ? 'read' : 'unread'}:`, error)
             throw error
         }
     }
-
-    const markAsUnread = async (id: string) => {
-        try {
-            await $fetch('/api/notifications/unread', {
-                method: 'POST',
-                body: { id },
-            })
-            await _asyncData.refresh()
-        } catch (error) {
-            console.error('Error marking notification as unread:', error)
-            throw error
-        }
-    }
+    const markAsRead = (id: string) => setRead(id, true)
+    const markAsUnread = (id: string) => setRead(id, false)
 
     const open = (id: string, actionUrl: string | null) => {
         void markAsRead(id)
@@ -49,12 +36,10 @@ const _useNotifications = () => {
     }
 
     return {
-        // oxlint-disable-next-line typescript/no-misused-spread
-        ..._asyncData,
         all,
-        read,
         unread,
         unreadCount,
+        status,
         markAsRead,
         markAsUnread,
         open,

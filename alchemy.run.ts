@@ -214,15 +214,8 @@ export const Website = Cloudflare.Website.Nuxt(
                 app: {
                     head: {
                         meta: [
-                            { property: 'og:site_name', content: 'Avatio' },
-                            { property: 'og:type', content: 'website' },
-                            { property: 'og:url', content: siteUrl },
                             { property: 'og:title', content: 'Avatio' },
                             { property: 'og:image', content: `${siteUrl}/ogp_2.png` },
-                            {
-                                name: 'description',
-                                content: 'アバター改変レシピの共有プラットフォーム',
-                            },
                             {
                                 property: 'og:description',
                                 content: 'アバター改変レシピの共有プラットフォーム',

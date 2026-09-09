@@ -1,0 +1,28 @@
+{
+    "$schema": "https://unpkg.com/knip@6/schema.json",
+    "ignoreIssues": {
+        "server/utils/createAuditLog.ts": ["exports"],
+        "server/utils/createNotification.ts": ["exports"]
+    },
+    "workspaces": {
+        ".": {
+            "entry": [
+                "alchemy.run.ts",
+                "auth.config.ts",
+                "app/auth.config.ts",
+                "server/auth.config.ts"
+            ],
+            "ignoreDependencies": [
+                "@dotenvx/dotenvx",
+                "@iconify-json/fluent-color",
+                "@iconify-json/lucide",
+                "@iconify-json/mingcute",
+                "@iconify-json/simple-icons",
+                "@iconify-json/svg-spinners",
+                "@iconify-json/twemoji",
+                "@vueuse/router"
+            ],
+            "ignoreUnresolved": ["#nuxt-better-auth"]
+        }
+    }
+}

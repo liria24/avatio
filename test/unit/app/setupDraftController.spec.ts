@@ -62,6 +62,26 @@ describe('setup draft controller owner and recovery boundary', () => {
         await recovery.deleteSetupDraftRecovery(ownerId, initialId)
     })
 
+    it('binds the draft owner when the hydrated session arrives before the first edit', async () => {
+        user.value = null
+        requestFetch.mockResolvedValue({ revision: 1 })
+        const controller = useSetupDraftController(() => {})
+
+        user.value = { id: ownerId }
+        controller.schedule(content('first hydrated edit'), null)
+        await controller.flush()
+
+        expect(requestFetch).toHaveBeenCalledWith(
+            `/api/setup-drafts/${controller.state.id}`,
+            expect.objectContaining({
+                method: 'PUT',
+                body: expect.objectContaining({
+                    content: expect.objectContaining({ name: 'first hydrated edit' }),
+                }),
+            }),
+        )
+    })
+
     it('does not use A recovery when B receives an ownership 404 for A URL', async () => {
         await recovery.saveSetupDraftRecovery(record())
         user.value = { id: 'user-b' }

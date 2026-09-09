@@ -8,6 +8,7 @@
         "../.nuxt/types/nitro.d.ts",
         "../.nuxt/nuxt-files-sdk/storage-registry.d.ts",
         "./helpers/**/*.ts",
+        "./e2e/**/*.ts",
         "./setup.ts",
         "./unit/**/*.ts"
     ],

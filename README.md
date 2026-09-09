@@ -41,11 +41,11 @@ Avatio is a Bun workspace modular monolith. Pure domains live in `@avatio/core`,
 
 ## ローカル開発
 
-Node.js 26とBun 1.4以降を用意し、次の2コマンドを実行します。
+Node.js 26、Bun 1.4.2、Vite+ 0.3.1を用意し、次の2コマンドを実行します。
 
 ```sh
-bun install
-bun dev
+vp install
+vp run dev
 ```
 
 `http://localhost:3000`で通常のNuxt dev serverが起動します。Cloudflare、Alchemy、Wranglerへのログインや`.env.keys`は不要です。初回起動時に既存のDrizzle migrationを適用した`.data/avatio.sqlite`と、再起動後も維持されるローカル認証secretを自動生成します。ログイン画面のローカル専用フォームから、規約とプライバシーポリシーへの同意を伴うemail/passwordアカウントを作成でき、空のDBで最初に作成されたユーザーだけがadminになります。
@@ -54,9 +54,9 @@ bun dev
 
 任意のローカル設定にはNuxt標準の`.env`を使用できます。Bun自身の自動dotenv読込は無効で、暗号化された`.env.development`と`.env.production`はplan/deploy用のNodeスクリプトがdotenvx `--strict`でのみ読み込みます。deployed developmentは引き続きCloudflare上の`development` stageであり、local stageではありません。
 
-既存のremote D1を明示的に取り込む場合だけ、`bun run db:seed:local -- --yes`を使用します。これはremote D1を読み取りますが、remoteへ書き込みません。productionからの取込には`--source production --allow-production`が必要です。
+既存のremote D1を明示的に取り込む場合だけ、`vp run db:seed:local -- --yes`を使用します。これはremote D1を読み取りますが、remoteへ書き込みません。productionからの取込には`--source production --allow-production`が必要です。
 
-Deployed Workers read authored content from GitHub through the existing KV cache and store uploads in R2. Terms and Privacy keep independent versions and append-only acceptance history. PR quality checks run lint, typecheck, tests, and build without production secrets.
+Deployed Workers read authored content from GitHub through the existing KV cache and store uploads in R2. Terms and Privacy keep independent versions and append-only acceptance history. PR quality checks run format, lint, Knip, typecheck, tests, and build without production secrets.
 
 ## 🤝 Contributions
 

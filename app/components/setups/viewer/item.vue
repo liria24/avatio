@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { cn } from 'cn'
 import { withoutProtocol, withoutTrailingSlash } from 'ufo'
 
 interface Props {
@@ -116,12 +117,7 @@ const providerIcon = computed(() => getCatalogProviderData(source.value?.provide
             </NuxtLink>
 
             <div
-                :class="
-                    cn(
-                        'flex flex-wrap items-center gap-y-2',
-                        '[&>*:not(:first-child)]:before:bg-accented [&>*:not(:first-child)]:relative [&>*:not(:first-child)]:before:absolute [&>*:not(:first-child)]:before:top-1/2 [&>*:not(:first-child)]:before:left-0 [&>*:not(:first-child)]:before:h-3 [&>*:not(:first-child)]:before:w-px [&>*:not(:first-child)]:before:-translate-y-1/2 [&>*:not(:first-child)]:before:content-[\'\']',
-                    )
-                "
+                class="[&>*:not(:first-child)]:before:bg-accented flex flex-wrap items-center gap-y-2 [&>*:not(:first-child)]:relative [&>*:not(:first-child)]:before:absolute [&>*:not(:first-child)]:before:top-1/2 [&>*:not(:first-child)]:before:left-0 [&>*:not(:first-child)]:before:h-3 [&>*:not(:first-child)]:before:w-px [&>*:not(:first-child)]:before:-translate-y-1/2 [&>*:not(:first-child)]:before:content-['']"
             >
                 <UTooltip
                     v-if="publisher"
@@ -206,12 +202,7 @@ const providerIcon = computed(() => getCatalogProviderData(source.value?.provide
                     </span>
                 </div>
 
-                <LazyUAvatarGroup
-                    v-if="source?.contributors?.length"
-                    :max="3"
-                    size="2xs"
-                    class="px-2"
-                >
+                <UAvatarGroup v-if="source?.contributors?.length" :max="3" size="2xs" class="px-2">
                     <UTooltip
                         v-for="contributor in source?.contributors"
                         :key="encodeURIComponent(contributor.name)"
@@ -224,7 +215,7 @@ const providerIcon = computed(() => getCatalogProviderData(source.value?.provide
                             icon="mingcute:user-3-fill"
                         />
                     </UTooltip>
-                </LazyUAvatarGroup>
+                </UAvatarGroup>
 
                 <LazyUBadge
                     v-if="item.nsfw"

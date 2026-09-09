@@ -171,17 +171,25 @@ describe('Setup list image loading', () => {
     it('appends each page once and retries a failed page without skipping it', async () => {
         const requests: number[] = []
         const appended: string[][] = []
+        const staleStarted = Promise.withResolvers<void>()
+        const releaseStale = Promise.withResolvers<void>()
         let failNext = false
         registerEndpoint('/api/setups', {
             method: 'GET',
-            handler: (event) => {
-                const page = Number(getQuery(event).page)
+            handler: async (event) => {
+                const { page: pageValue, q: queryValue } = getQuery(event)
+                const page = Number(pageValue)
+                const q = typeof queryValue === 'string' ? queryValue : ''
                 requests.push(page)
                 if (failNext) {
                     throw new Error('Temporary failure')
                 }
+                if (q === 'stale' && page === 2) {
+                    staleStarted.resolve()
+                    await releaseStale.promise
+                }
                 return {
-                    data: [{ id: `page-${page}` }],
+                    data: [{ id: `${q === 'pagination-check' ? '' : `${q}-`}page-${page}` }],
                     pagination: {
                         page,
                         limit: 24,
@@ -193,13 +201,15 @@ describe('Setup list image loading', () => {
                 }
             },
         })
+        const listQuery = ref({ q: 'pagination-check' })
         let list: ReturnType<typeof useSetupsList>
         const wrapper = await mountSuspended(
             defineComponent({
                 setup() {
                     list = useSetupsList('latest', {
-                        query: { q: 'pagination-check' },
+                        query: listQuery,
                         immediate: false,
+                        watch: false,
                         onAppend: (ids) => appended.push(ids),
                     })
                     return () => h('div')
@@ -225,6 +235,17 @@ describe('Setup list image loading', () => {
         expect(requests).toHaveLength(requestCount)
         await list!.refresh()
         expect(appended).toEqual([['page-2'], ['page-3']])
+
+        listQuery.value = { q: 'stale' }
+        await list!.refresh()
+        const stalePage = list!.loadMore()
+        await staleStarted.promise
+        listQuery.value = { q: 'fresh' }
+        await list!.refresh()
+        expect(list!.status.value).toBe('success')
+        releaseStale.resolve()
+        await stalePage
+        expect(list!.setups.value.map((setup) => setup.id)).toEqual(['fresh-page-1'])
         wrapper.unmount()
     })
 })

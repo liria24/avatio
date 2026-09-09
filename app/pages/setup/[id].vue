@@ -34,9 +34,7 @@ if (route.path !== canonicalPath)
         { redirectCode: 308, replace: true },
     )
 
-const { data: setup, status } = loggedIn.value
-    ? await useViewerSetup(id.value)
-    : await useSetup(id.value)
+const { data: setup, status } = loggedIn.value ? await useViewerSetup(id) : await useSetup(id)
 
 if (status.value === 'error' || (status.value === 'success' && !setup.value))
     throw showError({

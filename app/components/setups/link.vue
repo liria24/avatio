@@ -33,13 +33,11 @@ const dominantColor = computed(() => firstImage.value?.themeColors?.[0] || '')
         :to="setup.id ? setupPath(setup.id) : undefined"
         :aria-label="setup.name"
         :data-has-images="hasImages"
+        class="group flex flex-col gap-1.5 overflow-clip rounded-lg p-1.5 shadow-black/10 transition delay-0 duration-100 ease-in-out hover:shadow-xl hover:ring-2 focus:ring-2 focus:outline-none focus-visible:shadow-xl dark:shadow-white/10"
         :class="
-            cn(
-                'group flex flex-col gap-1.5 overflow-clip rounded-lg p-1.5 shadow-black/10 transition delay-0 duration-100 ease-in-out hover:shadow-xl hover:ring-2 focus:ring-2 focus:outline-none focus-visible:shadow-xl dark:shadow-white/10',
-                dominantColor
-                    ? 'link-with-color'
-                    : 'hover:ring-accented hover:bg-elevated focus:ring-accented focus:bg-elevated',
-            )
+            dominantColor
+                ? 'link-with-color'
+                : 'hover:ring-accented hover:bg-elevated focus:ring-accented focus:bg-elevated'
         "
         :style="dominantColor ? { '--dominant-color': dominantColor } : undefined"
     >

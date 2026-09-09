@@ -13,7 +13,9 @@ import {
 } from './shared/utils/i18nRouting'
 
 const baseUrl = process.env.PUBLIC_SITE_URL || 'http://localhost:3000'
-const publicUrl = process.env.PUBLIC_SITE_URL || 'https://avatio.me'
+const publicUrl = ['localhost', '127.0.0.1'].includes(new URL(baseUrl).hostname)
+    ? 'https://avatio.me'
+    : baseUrl
 const r2PublicBaseUrl = process.env.R2_PUBLIC_BASE_URL
 const imageDomain = r2PublicBaseUrl ? new URL(r2PublicBaseUrl).hostname : undefined
 const twitterAuthEnabled = Boolean(
@@ -239,7 +241,7 @@ export default defineNuxtConfig({
     },
 
     site: {
-        url: baseUrl,
+        url: publicUrl,
         name: title,
         description,
         trailingSlash: false,
@@ -247,21 +249,17 @@ export default defineNuxtConfig({
 
     app: {
         head: {
-            htmlAttrs: { lang: 'ja', prefix: 'og: https://ogp.me/ns#' },
+            htmlAttrs: { prefix: 'og: https://ogp.me/ns#' },
             title,
             meta: [
-                { property: 'og:site_name', content: title },
-                { property: 'og:type', content: 'website' },
-                { property: 'og:url', content: baseUrl },
                 { property: 'og:title', content: title },
                 { property: 'og:image', content: `${baseUrl}/ogp_2.png` },
-                { name: 'description', content: description },
                 { property: 'og:description', content: description },
                 { name: 'twitter:site', content: '@liria_24' },
                 { name: 'twitter:card', content: 'summary_large_image' },
             ],
             link: [
-                { rel: 'icon', href: `/favicon.ico`, sizes: '48x48' },
+                { rel: 'icon', href: `/favicon.ico`, sizes: '100x100' },
                 { rel: 'apple-touch-icon', href: `/pwa-192x192.png`, sizes: '192x192' },
             ],
         },
@@ -293,7 +291,7 @@ export default defineNuxtConfig({
     },
 
     i18n: {
-        baseUrl,
+        baseUrl: publicUrl,
         strategy: i18nRoutingStrategy,
         defaultLocale: defaultI18nLocale,
         locales: [

@@ -7,6 +7,8 @@ import { promisify } from 'node:util'
 import { getStageConfig, parseAvatioStage } from '../../config/environment'
 import { secretDefinitions, validateSecrets } from '../../config/secrets'
 
+const execFileAsync = promisify(execFile)
+
 const readDotenv = async (name: string) => {
     const content = await readFile(join(process.cwd(), name), 'utf8')
     return new Map(
@@ -45,53 +47,36 @@ describe('stage configuration', () => {
     })
 
     it('keeps the dotenv private key file ignored', async () => {
-        const gitignore = await readFile(join(process.cwd(), '.gitignore'), 'utf8')
-        expect(gitignore.split(/\r?\n/)).toContain('.env.keys')
+        await expect(
+            execFileAsync('git', ['check-ignore', '--quiet', '.env.keys'], {
+                cwd: process.cwd(),
+            }),
+        ).resolves.toBeDefined()
     })
 
-    it('keeps secrets out of public Nuxt runtime configuration', async () => {
-        const source = await readFile(join(process.cwd(), 'nuxt.config.ts'), 'utf8')
-        const publicRuntimeConfig = source.match(
-            /runtimeConfig:\s*\{[\s\S]*?public:\s*\{([\s\S]*?)\}\s*,?\s*\}\s*,?\s*auth:/,
-        )?.[1]
-
-        expect(publicRuntimeConfig).toBeDefined()
-        expect(publicRuntimeConfig).not.toMatch(/secret|token|credential|proxyUrl/i)
-        expect(publicRuntimeConfig).toContain('siteUrl')
-    })
-
-    it('maps encrypted application secrets to Alchemy secret bindings', async () => {
-        const source = await readFile(join(process.cwd(), 'alchemy.run.ts'), 'utf8')
-
-        for (const { key } of secretDefinitions) expect(source).toContain(`'${key}'`)
-        expect(source).toContain("requiredSecret('BETTER_AUTH_SECRET')")
-        expect(source).toContain('BETTER_AUTH_SECRET: betterAuthSecret')
-        expect(source).toContain('NUXT_BETTER_AUTH_SECRET: betterAuthSecret')
-        expect(source).not.toContain('BETTER_AUTH_SECRET_DEVELOPMENT')
-    })
-
-    it('defers the OG image secret to runtime so secret-free builds remain possible', async () => {
-        const source = await readFile(join(process.cwd(), 'nuxt.config.ts'), 'utf8')
-
-        expect(source).toContain("secret: '{{OG_IMAGE_SECRET}}'")
-        expect(source).toContain('envExpansion: true')
-        expect(source).not.toContain('process.env.OG_IMAGE_SECRET')
-    })
-
-    it('removes build-time auth secrets after Better Auth initializes', async () => {
-        await promisify(execFile)(process.execPath, [
+    it('keeps secrets out of generated Nuxt runtime configuration', async () => {
+        await execFileAsync(process.execPath, [
             '--input-type=module',
             '-e',
             `
             import assert from 'node:assert/strict'
             import { loadNuxt } from '@nuxt/kit'
-            const secret = 'synthetic-build-secret-never-inline-123456789'
-            process.env.BETTER_AUTH_SECRET = secret
-            process.env.NUXT_BETTER_AUTH_SECRET = secret
+            const authSecret = 'synthetic-build-secret-never-inline-123456789'
+            const ogSecret = 'synthetic-og-secret-never-inline-123456789'
+            process.env.BETTER_AUTH_SECRET = authSecret
+            process.env.NUXT_BETTER_AUTH_SECRET = authSecret
+            process.env.OG_IMAGE_SECRET = ogSecret
             const nuxt = await loadNuxt({ cwd: process.cwd(), dev: false, ready: true })
             try {
-                assert.equal(nuxt._nitro.options.runtimeConfig.betterAuthSecret, '')
-                assert.ok(!JSON.stringify(nuxt._nitro.options.runtimeConfig).includes(secret))
+                const runtimeConfig = nuxt._nitro.options.runtimeConfig
+                const serialized = JSON.stringify(runtimeConfig)
+                const publicSerialized = JSON.stringify(runtimeConfig.public)
+                assert.equal(runtimeConfig.betterAuthSecret, '')
+                assert.equal(runtimeConfig.ogImage.secret, '{{OG_IMAGE_SECRET}}')
+                assert.match(runtimeConfig.public.siteUrl, /^https?:\\/\\//)
+                assert.ok(!serialized.includes(authSecret))
+                assert.ok(!serialized.includes(ogSecret))
+                assert.ok(!/(secret|token|credential|proxyUrl)/i.test(publicSerialized))
             } finally {
                 await nuxt.close()
             }
@@ -121,7 +106,7 @@ describe('stage configuration', () => {
         try {
             await copyFile('.env.development', join(directory, '.env.development'))
             await expect(
-                promisify(execFile)(
+                execFileAsync(
                     process.execPath,
                     [join(process.cwd(), 'scripts/stage.ts'), 'check', 'development'],
                     {

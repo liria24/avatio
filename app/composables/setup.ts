@@ -1,148 +1,139 @@
-import type { UseFetchOptions, FetchResult } from 'nuxt/app'
+import type { FetchResult } from 'nuxt/app'
 
-import type { KeysOf } from '#app/composables/asyncData'
+type SetupResponse = FetchResult<'/api/setups/:id', 'get'>
 
-type SetupRes = FetchResult<'/api/setups/:id', 'get'>
+export const useSetup = (id: MaybeRefOrGetter<Setup['id']>) =>
+    useFetch<SetupResponse>(
+        computed(() => `/api/setups/${toValue(id)}` as '/api/setups/:id'),
+        {
+            key: computed(() => `setup-${toValue(id)}`),
+            dedupe: 'defer',
+        },
+    )
 
-export const useSetup = <
-    DataT = SetupRes,
-    PickKeys extends KeysOf<DataT> = KeysOf<DataT>,
-    DefaultT = undefined,
->(
-    id: Setup['id'],
-    options?: UseFetchOptions<SetupRes, DataT, PickKeys, DefaultT, '/api/setups/:id', 'get'>,
-) =>
-    useFetch(`/api/setups/${id}` as '/api/setups/:id', {
-        key: computed(() => `setup-${id}-${JSON.stringify(unref(options?.query))}`),
-        dedupe: 'defer',
-        lazy: false,
-        immediate: true,
-        ...options,
-    })
-
-export const useViewerSetup = (id: Setup['id']) =>
-    useFetch<SetupRes>(`/api/me/setups/${id}`, {
-        key: computed(() => `viewer-setup-${id}`),
-        dedupe: 'defer',
-        lazy: false,
-        immediate: true,
-        headers: useRequestHeaders(['cookie']),
-    })
+export const useViewerSetup = (id: MaybeRefOrGetter<Setup['id']>) =>
+    useFetch<SetupResponse>(
+        computed(() => `/api/me/setups/${toValue(id)}`),
+        {
+            key: computed(() => `viewer-setup-${toValue(id)}`),
+            dedupe: 'defer',
+            headers: useRequestHeaders(['cookie']),
+        },
+    )
 
 export const useSetupsList = (
     type?: 'latest' | 'owned' | 'bookmarked',
     options?: {
-        username?: User['username']
+        username?: MaybeRefOrGetter<User['username'] | undefined>
         query?: MaybeRef<Record<string, unknown>>
         immediate?: boolean
-        watch?: UseFetchOptions<unknown>['watch']
+        watch?: false
         onAppend?: (ids: string[]) => void
     },
 ) => {
-    const page = ref(1)
-    let appendQuery: string | undefined
-    const cacheKey = computed(
-        () =>
-            `setups-state-${type || 'custom'}-${options?.username || ''}-${JSON.stringify(unref(options?.query) || {})}`,
-    )
-    const setups = useState<NonNullable<FetchResult<'/api/setups', 'get'>>['data']>(
-        cacheKey.value,
-        () => [],
-    )
-    const pagination = useState<
-        NonNullable<FetchResult<'/api/setups', 'get'>>['pagination'] | undefined
-    >(`${cacheKey.value}-pagination`, () => undefined)
+    type ListResponse = NonNullable<FetchResult<'/api/setups', 'get'>>
+    type ListItem = ListResponse['data'][number]
 
-    // Build query parameters
-    const queryParams = computed(() => {
-        const base: Record<string, unknown> = {
-            page: page.value,
-            ...(unref(options?.query) || {}),
-        }
-
-        // typeが指定されている場合のみ、デフォルトのlimitを設定
+    const { user } = useUserSession()
+    const baseQuery = computed(() => {
+        const query: Record<string, unknown> = { ...(unref(options?.query) || {}) }
         if (type) {
-            // limitが明示的に指定されていない場合のみデフォルト値を使用
-            if (!base.limit) {
-                base.limit =
+            if (!query.limit) {
+                query.limit =
                     type === 'latest'
                         ? LATEST_SETUPS_LIST_PER_PAGE
                         : type === 'owned'
                           ? USER_SETUPS_LIST_PER_PAGE
                           : BOOKMARKS_LIST_PER_PAGE
             }
-
-            // Add username for owned type
-            if (type === 'owned' && options?.username) base.username = options.username
-
-            // Add bookmarked flag for bookmarked type
-            if (type === 'bookmarked') base.bookmarked = true
+            const username = options?.username ? toValue(options.username) : undefined
+            if (type === 'owned' && username) query.username = username
+            if (type === 'bookmarked') query.bookmarked = true
         }
-
-        return base
+        return query
     })
+    const cacheKey = computed(
+        () =>
+            `setups-${type || 'custom'}-${type === 'latest' || !type ? '' : user.value?.id || 'anonymous'}-${JSON.stringify(baseQuery.value)}`,
+    )
+    const firstPageQuery = computed(() => ({ ...baseQuery.value, page: 1 }))
+    const appended = shallowRef<ListItem[]>([])
+    const appendedPagination = shallowRef<ListResponse['pagination']>()
+    const loadingMore = ref(false)
+    let generation = 0
 
-    // Fetch data - 常に /api/setups を使用
-    const { status, refresh } = useFetch('/api/setups', {
-        key: computed(
-            () => `setups-fetch-${type || 'custom'}-${JSON.stringify(queryParams.value)}`,
-        ),
-        query: queryParams,
-        dedupe: 'defer',
-        lazy: false,
+    const {
+        data: firstPage,
+        status: firstPageStatus,
+        refresh: refreshFirstPage,
+        clear: clearFirstPage,
+    } = useFetch('/api/setups', {
+        key: cacheKey,
+        query: firstPageQuery,
+        dedupe: 'cancel',
         immediate: options?.immediate !== false,
-        ...(options?.watch !== undefined ? { watch: options.watch } : {}),
-        onResponse({ response }) {
-            if (response.ok && response._data?.data) {
-                pagination.value = response._data.pagination
-                if (page.value === 1) setups.value = response._data.data
-                else {
-                    if (appendQuery === JSON.stringify(queryParams.value)) {
-                        const existing = new Set(setups.value.map((setup) => setup.id))
-                        options?.onAppend?.(
-                            response._data.data
-                                .map((setup: { id: string }) => setup.id)
-                                .filter((id: string) => !existing.has(id)),
-                        )
-                    }
-                    setups.value = [...setups.value, ...response._data.data]
-                }
-                appendQuery = undefined
-            }
-        },
+        watch: options?.watch === false ? false : [cacheKey],
     })
+    const setups = computed(() => {
+        const seen = new Set<string>()
+        return [...(firstPage.value?.data ?? []), ...appended.value].filter((setup) => {
+            if (seen.has(setup.id)) return false
+            seen.add(setup.id)
+            return true
+        })
+    })
+    const pagination = computed(() => appendedPagination.value ?? firstPage.value?.pagination)
+    const status = computed(() => (loadingMore.value ? 'pending' : firstPageStatus.value))
 
-    // Initialize: Load initial data
-    const initialize = async () => {
-        appendQuery = undefined
-        page.value = 1
-        await refresh()
+    const resetAppended = () => {
+        generation += 1
+        appended.value = []
+        appendedPagination.value = undefined
+        loadingMore.value = false
     }
 
-    // Load more: Append next page data
+    if (options?.watch !== false) watch(cacheKey, resetAppended, { flush: 'sync' })
+
     const loadMore = async () => {
-        if (status.value !== 'pending' && pagination.value?.hasNext) {
-            page.value = pagination.value.page + 1
-            appendQuery = JSON.stringify(queryParams.value)
-            await refresh()
-            appendQuery = undefined
+        if (loadingMore.value || firstPageStatus.value === 'pending' || !pagination.value?.hasNext)
+            return
+
+        loadingMore.value = true
+        const requestGeneration = generation
+        const query = { ...baseQuery.value, page: pagination.value.page + 1 }
+        try {
+            const response = await $fetch<ListResponse>('/api/setups', { query })
+            if (generation !== requestGeneration) return
+
+            const existing = new Set(setups.value.map((setup) => setup.id))
+            const additions = response.data.filter((setup) => !existing.has(setup.id))
+            appended.value = [...appended.value, ...additions]
+            appendedPagination.value = response.pagination
+            options?.onAppend?.(additions.map((setup) => setup.id))
+        } catch (error) {
+            console.error('Failed to load more setups:', error)
+        } finally {
+            if (generation === requestGeneration) loadingMore.value = false
         }
     }
 
-    // Refresh: Reset to first page
-    const refreshData = async () => {
-        appendQuery = undefined
-        page.value = 1
-        await refresh()
+    const refresh = async () => {
+        resetAppended()
+        await refreshFirstPage()
+    }
+
+    const clear = () => {
+        resetAppended()
+        clearFirstPage()
     }
 
     return {
         setups,
         status,
         pagination,
-        initialize,
         loadMore,
-        refresh: refreshData,
+        refresh,
+        clear,
     }
 }
 

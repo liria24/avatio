@@ -22,10 +22,6 @@ const tab = computed<Tab>({
         return 'latest'
     },
     set(newTab: Tab) {
-        if (newTab === 'latest' && setupsLatest.status.value === 'idle') setupsLatest.refresh()
-        else if (newTab === 'owned' && setupsOwned.status.value === 'idle') setupsOwned.refresh()
-        else if (newTab === 'bookmarked' && setupsBookmarked.status.value === 'idle')
-            setupsBookmarked.refresh()
         _tab.value = newTab !== 'latest' ? newTab : null
     },
 })
@@ -33,7 +29,6 @@ const tab = computed<Tab>({
 const showPrivate = ref(preferences.value.showPrivateSetups)
 const entrance = useSetupEntrance()
 const displayedTab = computed<Tab>(() => (loggedIn.value ? tab.value : 'latest'))
-watch(displayedTab, (value) => entrance.display(value, false, []), { flush: 'sync' })
 const showPrivateDebounced = refDebounced(showPrivate, 300)
 
 watch(
@@ -46,42 +41,36 @@ const setupsLatest = useSetupsList('latest', {
     onAppend: (ids) => entrance.append('latest', ids),
 })
 const setupsOwned = useSetupsList('owned', {
-    username: user.value?.username ?? undefined,
+    username: computed(() => user.value?.username ?? undefined),
     query: computed(() => ({ includePrivate: showPrivateDebounced.value })),
     immediate: loggedIn.value && tab.value === 'owned',
 })
 const setupsBookmarked = useSetupsList('bookmarked', {
     immediate: loggedIn.value && tab.value === 'bookmarked',
 })
-const setups = computed(() =>
-    loggedIn.value
-        ? tab.value === 'owned'
-            ? setupsOwned.setups.value
-            : tab.value === 'bookmarked'
-              ? setupsBookmarked.setups.value
-              : setupsLatest.setups.value
-        : setupsLatest.setups.value,
+const lists = {
+    latest: setupsLatest,
+    owned: setupsOwned,
+    bookmarked: setupsBookmarked,
+}
+const activeList = computed(() => lists[displayedTab.value])
+const setups = computed(() => activeList.value.setups.value)
+const loading = computed(() => activeList.value.status.value === 'pending')
+
+watch(
+    displayedTab,
+    (value) => {
+        entrance.display(value, false, [])
+        if (lists[value].status.value === 'idle') void lists[value].refresh()
+    },
+    { flush: 'sync' },
 )
-const loading = computed(() =>
-    loggedIn.value
-        ? tab.value === 'owned'
-            ? setupsOwned.status.value === 'pending'
-            : tab.value === 'bookmarked'
-              ? setupsBookmarked.status.value === 'pending'
-              : setupsLatest.status.value === 'pending'
-        : setupsLatest.status.value === 'pending',
-)
+
 const cardEntrance = computed(() => {
     // SSR fetches can finish after setup; commit the first display when rendering the result.
-    const list =
-        displayedTab.value === 'owned'
-            ? setupsOwned
-            : displayedTab.value === 'bookmarked'
-              ? setupsBookmarked
-              : setupsLatest
     return entrance.display(
         displayedTab.value,
-        list.status.value === 'success',
+        activeList.value.status.value === 'success',
         setups.value.map((setup) => setup.id),
     )
 })

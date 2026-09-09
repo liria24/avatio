@@ -6,43 +6,44 @@ Compact instruction for OpenCode sessions. If a fact is obvious from filenames, 
 
 ## Package manager & runtime
 
-- **Package manager:** `bun`. `bunfig.toml` uses `linker = "hoisted"` and disables Bun's automatic dotenv loading.
-- **Runtime:** Node 26 runs Nuxt, TypeScript scripts, tests, and the installed Alchemy CLI. Bun installs packages and starts package scripts only. Workers Builds uses `NODE_OPTIONS=--max-old-space-size=4096` to leave memory for the remaining build processes.
-- **Postinstall:** `bun run postinstall` runs `nuxt prepare` only.
-- **Development URL:** `bun run dev` runs the Node.js Nuxt dev server at `http://localhost:3000`; the port is fixed and fails if already in use.
+- **Package manager:** `bun` 1.4.2. `bunfig.toml` uses `linker = "hoisted"` and disables Bun's automatic dotenv loading.
+- **Toolchain:** Vite+ 0.3.1 runs package scripts, lint, format, and tests. Node 26 runs Nuxt, TypeScript scripts, tests, and the installed Alchemy CLI; Bun only installs dependencies. Workers Builds uses `NODE_OPTIONS=--max-old-space-size=4096` to leave memory for the remaining build processes.
+- **Postinstall:** `vp install` uses Bun and runs `nuxt prepare` only.
+- **Development URL:** `vp run dev` runs the Node.js Nuxt dev server at `http://localhost:3000`; the port is fixed and fails if already in use.
 - **Environment split:** local uses SQLite/filesystem/IPX without Alchemy. `development` remains the deployed Cloudflare stage; plans and deployments use the Cloudflare state store.
 
 ## Developer commands
 
 | Task                          | Command                                                                                |
 | ----------------------------- | -------------------------------------------------------------------------------------- |
-| Dev server                    | `bun run dev`                                                                          |
-| Build                         | `bun run build`                                                                        |
-| Typecheck                     | `bun run typecheck`                                                                    |
-| Lint                          | `bun run lint`                                                                         |
-| Fix lint                      | `bun run lint:fix`                                                                     |
-| Format                        | `bun run fmt`                                                                          |
-| Check formatting              | `bun run fmt:check`                                                                    |
-| Run all tests                 | `bun run test`                                                                         |
-| Unit tests only               | `bun run test:unit`                                                                    |
-| Nuxt tests only               | `bun run test:nuxt`                                                                    |
-| Watch tests                   | `bun run test:watch`                                                                   |
-| Generate Drizzle migrations   | `bun run db:generate`                                                                  |
-| Development Alchemy plan      | `bun run plan:development`                                                             |
-| Production Alchemy plan       | `bun run plan:production`                                                              |
-| Development deploy            | `bun run deploy:development`                                                           |
-| Production deploy             | `bun run deploy:production`                                                            |
-| Explicit development adoption | `bun run infra:adopt:development`                                                      |
-| Explicit production adoption  | `bun run infra:adopt:production`                                                       |
-| Seed local SQLite from D1     | `bun run db:seed:local -- --yes`                                                       |
+| Dev server                    | `vp run dev`                                                                           |
+| Build                         | `vp run build`                                                                         |
+| Typecheck                     | `vp run typecheck`                                                                     |
+| Lint                          | `vp run lint`                                                                          |
+| Fix lint                      | `vp run lint:fix`                                                                      |
+| Format                        | `vp run format:fix`                                                                    |
+| Check formatting              | `vp run format`                                                                        |
+| Find unused code              | `vp run lint:unused`                                                                   |
+| Run all tests                 | `vp run test`                                                                          |
+| Unit tests only               | `vp run test:unit`                                                                     |
+| Nuxt tests only               | `vp run test:nuxt`                                                                     |
+| Watch tests                   | `vp run test:watch`                                                                    |
+| Generate Drizzle migrations   | `vp run db:generate`                                                                   |
+| Development Alchemy plan      | `vp run plan:development`                                                              |
+| Production Alchemy plan       | `vp run plan:production`                                                               |
+| Development deploy            | `vp run deploy:development`                                                            |
+| Production deploy             | `vp run deploy:production`                                                             |
+| Explicit development adoption | `vp run infra:adopt:development`                                                       |
+| Explicit production adoption  | `vp run infra:adopt:production`                                                        |
+| Seed local SQLite from D1     | `vp run db:seed:local -- --yes`                                                        |
 | Generate Better Auth schema   | `bunx --bun auth@1.7.3 generate --config auth.config.ts --output .data/auth-schema.ts` |
 
 ## After making changes
 
-Run **`bun run typecheck`** and **`bun run lint`** to verify there are no errors before finishing.
-For deployment-related changes, also run **`bun run build`**. In this repo, the production build is expected to complete successfully even though Nuxt/Rolldown may still print non-fatal warnings during the build; treat the command exit code as the source of truth.
+Run **`vp run typecheck`** and **`vp run lint`** to verify there are no errors before finishing.
+For deployment-related changes, also run **`vp run build`**. In this repo, the production build is expected to complete successfully even though Nuxt/Rolldown may still print non-fatal warnings during the build; treat the command exit code as the source of truth.
 
-PRs into `main` require the `lint`, `typecheck`, `test`, and `build` checks from `.github/workflows/quality.yml`. These checks use no production secrets. Tests use Node 26 for the SQLite-backed D1 regression checks.
+PRs into `main` require the `format`, `lint`, `lint:unused`, `typecheck`, `test`, and `build` checks from `.github/workflows/quality.yml`. These checks use no production secrets. Tests use Node 26 for the SQLite-backed D1 regression checks.
 
 ## Project architecture
 
@@ -84,7 +85,7 @@ PRs into `main` require the `lint`, `typecheck`, `test`, and `build` checks from
 - Non-secret stage configuration is typed in `config/environment.ts`.
 - Canonical secret definitions and validation live in `config/secrets.ts`.
 - `.env.development` and `.env.production` contain committed dotenvx ciphertext. `.env.keys` contains local private keys and must never be committed.
-- Use `bun run config:check:development` or `bun run config:check:production` before plans/deploys. Stage selection is explicit and fails closed.
+- Use `vp run config:check:development` or `vp run config:check:production` before plans/deploys. Stage selection is explicit and fails closed.
 - Production and development use the same application-facing secret names. In particular, use `BETTER_AUTH_SECRET`; do not restore `BETTER_AUTH_SECRET_DEVELOPMENT`.
 - Each Worker's Workers Builds settings retain only its stage's dotenv private key and required provider deployment/bootstrap credentials. `scripts/stage.ts` selects exactly one stage file. `NUXT_BETTER_AUTH_SECRET` is derived from canonical `BETTER_AUTH_SECRET`, never managed separately.
 - Alchemy manages Worker runtime variables, secrets, and resource bindings. Do not mirror Git-owned configuration in the dashboard or introduce Alchemy-owned resource IDs as application environment variables.
@@ -95,7 +96,7 @@ PRs into `main` require the `lint`, `typecheck`, `test`, and `build` checks from
 
 ### Local configuration
 
-1. Run `bun install` and `bun dev`; no Cloudflare credentials or `.env.keys` are required.
+1. Run `vp install` and `vp run dev`; no Cloudflare credentials or `.env.keys` are required.
 2. Optional local overrides use Nuxt's standard `.env` loading. Bun does not automatically load dotenv files.
 3. Local state is gitignored under `.data/`: `avatio.sqlite`, `local-auth-secret`, `uploads/`, and `mail/`.
 4. Do not point normal local startup at deployed development resources. Stage ciphertext is read only by explicit config/plan/deploy/adopt commands.
@@ -108,7 +109,7 @@ PRs into `main` require the `lint`, `typecheck`, `test`, and `build` checks from
 
 ## Tooling constraints
 
-- `oxfmt` handles all formatting automatically; do not manually adjust indentation, quotes, or semicolons.
+- Vite+ handles all formatting automatically; do not manually adjust indentation, quotes, or semicolons.
 - `oxlint` and TypeScript enforce the remaining style rules (`no-explicit-any`, `consistent-type-imports`, `noUncheckedIndexedAccess`, etc.).
 - Vue Options API is disabled (`vite.vue.features.optionsAPI: false`).
 
@@ -129,11 +130,11 @@ PRs into `main` require the `lint`, `typecheck`, `test`, and `build` checks from
 - Migration output: `./drizzle`.
 - Naming convention: `snakeCase` (Drizzle `snakeCase` helper is used).
 - Migrations use Drizzle v1 nested output under `./drizzle`.
-- Do not edit generated migration SQL by hand; regenerate with `bun run db:generate`.
+- Do not edit generated migration SQL by hand; regenerate with `vp run db:generate`.
 - Both drivers keep foreign keys enabled. Parent-table rebuilds must preserve retained child rows and be tested with populated data.
-- `bun run dev` creates `.data/avatio.sqlite` and applies the checked-in migrations with Drizzle's official Node SQLite migrator before serving requests. Build/prerender must not create local state.
+- `vp run dev` creates `.data/avatio.sqlite` and applies the checked-in migrations with Drizzle's official Node SQLite migrator before serving requests. Build/prerender must not create local state.
 - `executeAppBatch` preserves D1 `batch()` semantics and uses a synchronous Node SQLite transaction locally. Never return an async callback from the local transaction.
-- `bun run db:seed:local -- --yes` explicitly copies the remote `avatio-development` D1 into local SQLite; authenticate Wrangler separately with D1 read permission. Its `--source production --allow-production` form requires explicit operator approval and is only for one-off local seeding. It never writes to remote D1.
+- `vp run db:seed:local -- --yes` explicitly copies the remote `avatio-development` D1 into local SQLite; authenticate Wrangler separately with D1 read permission. Its `--source production --allow-production` form requires explicit operator approval and is only for one-off local seeding. It never writes to remote D1.
 
 ## Auth
 
@@ -162,14 +163,14 @@ PRs into `main` require the `lint`, `typecheck`, `test`, and `build` checks from
 - **Cloudflare Flagship** owns true operational flags such as `is-maintenance`; unavailable evaluation fails closed. Catalog admission/category configuration lives in D1. Explicit catalog revalidation uses `POST /api/admin/catalog/revalidate` rather than a global force-update flag.
 - `alchemy.run.ts` is the only infrastructure, D1 migration, and Worker deployment entry point. Do not add a Wrangler config or direct Wrangler deployment script.
 - Content D1 remains unbound. The retained production Cache KV is named `avatio` and bound as `CONTENT_CACHE` for authored content; preserve its identity and existing keys through the prefixed cache driver.
-- Workers Builds uses an empty build command on both Workers. The `avatio` Worker builds only `main` with `bun run deploy:production`; `avatio-development` builds only `development` with `bun run deploy:development`. Non-production branch builds are disabled on both Workers.
+- Workers Builds uses an empty build command on both Workers. The `avatio` Worker builds only `main` with `vp run deploy:production`; `avatio-development` builds only `development` with `vp run deploy:development`. Non-production branch builds are disabled on both Workers.
 - Production deploy/adoption requires a clean `main` checkout. CI additionally checks branch/ref metadata and the actual checked-out commit SHA; detached HEAD is permitted only with matching main CI metadata. Normal deploy never passes `--adopt`. Use the explicit `infra:adopt:*` command only after reviewing the infrastructure plan and obtaining applicable operator authorization.
 - **Workers Cron Triggers**:
   - `/api/admin/job/report` — daily at 22:00
   - `/api/admin/job/cleanup` — manual/admin only
 - **Images:** served through `@nuxt/image`. Allowed external domains are whitelisted in `nuxt.config.ts` (Booth, GitHub, R2 public domain).
-- **Storage:** `nuxt-files-sdk` is configured in `files.config.ts`; runtime code uses `useServerFiles()`. Local `bun run dev` uses its filesystem adapter under gitignored `.data/uploads`, served at `/api/_local/files/*`, including imported OAuth avatars. Local Nuxt Image uses IPX with only localhost HTTP sources; the local route rejects traversal and metadata sidecars. Deployed development/production Workers use the native stage-specific `R2` binding and public domain; R2 HTTP credentials remain unsupported. The local file route returns 404 in deployed builds.
-- **files-sdk build compatibility:** Keep the direct dependencies `@aws-sdk/client-s3`, `@aws-sdk/lib-storage`, `@aws-sdk/s3-presigned-post`, and `@aws-sdk/s3-request-presigner`. Nitro's Cloudflare preset resolves the lazy AWS imports retained by `files-sdk/r2` even though the configured native R2 binding never executes that engine. `bun run build` is the regression check.
+- **Storage:** `nuxt-files-sdk` is configured in `files.config.ts`; runtime code uses `useServerFiles()`. Local `vp run dev` uses its filesystem adapter under gitignored `.data/uploads`, served at `/api/_local/files/*`, including imported OAuth avatars. Local Nuxt Image uses IPX with only localhost HTTP sources; the local route rejects traversal and metadata sidecars. Deployed development/production Workers use the native stage-specific `R2` binding and public domain; R2 HTTP credentials remain unsupported. The local file route returns 404 in deployed builds.
+- **files-sdk build compatibility:** Keep the direct dependencies `@aws-sdk/client-s3`, `@aws-sdk/lib-storage`, `@aws-sdk/s3-presigned-post`, and `@aws-sdk/s3-request-presigner`. Nitro's Cloudflare preset resolves the lazy AWS imports retained by `files-sdk/r2` even though the configured native R2 binding never executes that engine. `vp run build` is the regression check.
 - **PWA:** `@vite-pwa/nuxt` is enabled; `sw.js` and `manifest.webmanifest` are served with `must-revalidate`.
 
 ## i18n

@@ -8,7 +8,7 @@ const reportUser = useReportUserModal()
 
 const username = useRouteParams('username', undefined, { transform: String })
 
-const { data: user, status: userStatus } = await useUser(username.value)
+const { data: user, status: userStatus } = await useUser(username)
 
 if (userStatus.value === 'success' && !user.value)
     showError({
@@ -45,7 +45,7 @@ onBeforeRouteLeave(() => {
 })
 
 const { setups, status } = useSetupsList('owned', {
-    username: user.value?.username,
+    username,
 })
 
 useSeo({

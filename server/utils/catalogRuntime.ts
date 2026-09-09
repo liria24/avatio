@@ -39,12 +39,7 @@ export const getCatalogProviderRegistry = async () => {
                       allowedCategoryKeys: new Set(
                           admittedCategories.map(({ categoryId }) => String(categoryId)),
                       ),
-                      categoryMap: Object.fromEntries(
-                          Object.entries(BOOTH_CATEGORY_MAP).map(([key, category]) => [
-                              key,
-                              category,
-                          ]),
-                      ),
+                      categoryMap: BOOTH_CATEGORY_MAP,
                       http: providerHttpClient,
                       resolvePublisherSource,
                   }),

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const avatioStages = ['development', 'production'] as const
+const avatioStages = ['development', 'production'] as const
 export type AvatioStage = (typeof avatioStages)[number]
 
 const aiTaskConfigSchema = z.object({
@@ -9,7 +9,7 @@ const aiTaskConfigSchema = z.object({
     changelogSlug: z.string().min(1),
 })
 
-export const avatioStageConfigSchema = z.object({
+const avatioStageConfigSchema = z.object({
     production: z.boolean(),
     siteUrl: z.url(),
     imageBaseUrl: z.url(),
@@ -46,7 +46,7 @@ const common = {
     },
 } as const
 
-export const stageConfig = {
+const stageConfig = {
     production: {
         ...common,
         production: true,

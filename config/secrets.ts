@@ -54,14 +54,13 @@ export const secretDefinitions = [
 ] as const
 
 export type AvatioSecretName = (typeof secretDefinitions)[number]['key']
-export type SecretInput = Partial<Record<AvatioSecretName, string | undefined>>
 
 const optionalNonEmpty = z.preprocess(
     (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
     z.string().min(1).optional(),
 )
 
-export const avatioSecretsSchema = z
+const avatioSecretsSchema = z
     .object({
         BETTER_AUTH_SECRET: z.string().min(32, 'must contain at least 32 characters'),
         BOOTH_PROXY_URL: z.url('must be a valid URL'),

@@ -4,9 +4,10 @@ const debounceMs = 2000
 
 export const useSetupDraftController = (onDraftId: (id: string | null) => void) => {
     const { user } = useUserSession()
-    const ownerId = user.value?.id
+    let ownerId = user.value?.id
     const requestFetch = useRequestFetch()
     const requireOwner = () => {
+        ownerId ??= user.value?.id
         if (!ownerId || user.value?.id !== ownerId) throw new Error('Draft owner changed.')
         return ownerId
     }

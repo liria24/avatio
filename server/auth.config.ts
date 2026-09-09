@@ -157,7 +157,9 @@ export const createAvatioAuthOptions = ({ runtimeConfig }: ServerAuthContext) =>
                             useDB(),
                             user.id,
                             'better auth user update',
-                            { includePopularAvatars: true },
+                            {
+                                includePopularAvatars: true,
+                            },
                         )
                     },
                 },

@@ -110,13 +110,7 @@ await initialize({
 <template>
     <UForm :state="values" class="relative size-full pb-5 lg:pl-92" @submit="onSubmit">
         <div
-            :class="
-                cn(
-                    'ring-accented static top-0 bottom-4 left-0 flex flex-col overflow-y-auto rounded-lg',
-                    'scrollbar-thin scrollbar-thumb-(--ui-bg-accented) scrollbar-track-transparent',
-                    'lg:absolute lg:w-88 lg:ring-2',
-                )
-            "
+            class="ring-accented static top-0 bottom-4 left-0 flex scrollbar-thin scrollbar-thumb-(--ui-bg-accented) scrollbar-track-transparent flex-col overflow-y-auto rounded-lg lg:absolute lg:w-88 lg:ring-2"
         >
             <div
                 class="sticky inset-x-0 top-0 z-1 flex flex-col gap-2 p-2 backdrop-blur-lg lg:p-5 lg:pb-2"

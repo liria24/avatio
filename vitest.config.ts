@@ -1,14 +1,13 @@
 import { defineVitestProject } from '@nuxt/test-utils/config'
-import { loadEnv } from 'vite'
+import { loadEnv } from 'vite-plus'
 import { defineConfig } from 'vitest/config'
 
 const env = loadEnv('test', process.cwd(), '')
-Object.assign(process.env, env)
 
 const selectedProjectIndex = process.argv.findIndex((arg) => arg === '--project')
 const selectedProject =
     selectedProjectIndex >= 0 ? process.argv[selectedProjectIndex + 1] : undefined
-const unitOnly = selectedProject === 'unit'
+const needsNuxt = selectedProject !== 'unit' && selectedProject !== 'e2e'
 
 export default defineConfig({
     test: {
@@ -29,9 +28,18 @@ export default defineConfig({
                     env,
                 },
             },
-            ...(unitOnly
-                ? []
-                : [
+            {
+                test: {
+                    name: 'e2e',
+                    sequence: { groupOrder: 1 },
+                    include: ['test/e2e/*.{test,spec}.ts'],
+                    environment: 'node',
+                    globals: true,
+                    env,
+                },
+            },
+            ...(needsNuxt
+                ? [
                       await defineVitestProject({
                           test: {
                               name: 'nuxt',
@@ -41,7 +49,8 @@ export default defineConfig({
                               env,
                           },
                       }),
-                  ]),
+                  ]
+                : []),
         ],
     },
 })
