@@ -44,6 +44,8 @@ export const createAvatioAuthOptions = ({ runtimeConfig }: ServerAuthContext) =>
     )
     const publicConfig = runtimeConfig.public as { siteUrl?: unknown } | undefined
     if (typeof publicConfig?.siteUrl === 'string') configuredOrigins.push(publicConfig.siteUrl)
+    const twitterClientId = getRuntimeEnvString('TWITTER_CLIENT_ID')
+    const twitterClientSecret = getRuntimeEnvString('TWITTER_CLIENT_SECRET')
 
     const options = {
         ...authSchemaOptions,
@@ -69,7 +71,7 @@ export const createAvatioAuthOptions = ({ runtimeConfig }: ServerAuthContext) =>
             expiresIn: 60 * 60 * 24 * 30,
             updateAge: 60 * 60 * 24,
             cookieCache: {
-                enabled: true,
+                enabled: !import.meta.dev,
                 maxAge: SESSION_COOKIE_CACHE_MAX_AGE,
             },
         },
@@ -87,29 +89,37 @@ export const createAvatioAuthOptions = ({ runtimeConfig }: ServerAuthContext) =>
             enabled: import.meta.dev,
         },
 
-        socialProviders: {
-            twitter: {
-                clientId: getRuntimeEnvString('TWITTER_CLIENT_ID') ?? '',
-                clientSecret: getRuntimeEnvString('TWITTER_CLIENT_SECRET') ?? '',
-                mapProfileToUser: async (profile) => ({
-                    username: profile.data.username,
-                    displayUsername: profile.data.username,
-                    email: profile.data.email,
-                    name: profile.data.name,
-                    bio: profile.data.description,
-                    image: profile.data.profile_image_url?.endsWith('_normal.jpg')
-                        ? profile.data.profile_image_url.replace(/_normal\.jpg$/, '_400x400.jpg')
-                        : profile.data.profile_image_url,
-                    emailVerified: true,
-                }),
-            },
-        },
+        socialProviders:
+            twitterClientId && twitterClientSecret
+                ? {
+                      twitter: {
+                          clientId: twitterClientId,
+                          clientSecret: twitterClientSecret,
+                          mapProfileToUser: async (profile) => ({
+                              username: profile.data.username,
+                              displayUsername: profile.data.username,
+                              email: profile.data.email,
+                              name: profile.data.name,
+                              bio: profile.data.description,
+                              image: profile.data.profile_image_url?.endsWith('_normal.jpg')
+                                  ? profile.data.profile_image_url.replace(
+                                        /_normal\.jpg$/,
+                                        '_400x400.jpg',
+                                    )
+                                  : profile.data.profile_image_url,
+                              emailVerified: true,
+                          }),
+                      },
+                  }
+                : {},
 
         databaseHooks: {
             user: {
                 create: {
                     before: async (user) => {
                         let image = user.image
+                        const username =
+                            user.username ?? (import.meta.dev ? `local_${nanoid(12)}` : null)
 
                         if (image)
                             try {
@@ -129,7 +139,8 @@ export const createAvatioAuthOptions = ({ runtimeConfig }: ServerAuthContext) =>
                             data: {
                                 ...user,
                                 image,
-                                lastAgreedToTerms: null,
+                                username,
+                                displayUsername: user.displayUsername ?? username,
                             },
                         }
                     },

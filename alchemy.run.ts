@@ -206,7 +206,7 @@ export const Website = Cloudflare.Website.Nuxt(
                 CLOUDFLARE_ANALYTICS_HOST: siteHost,
             },
             nuxt: {
-                runtimeConfig: { public: { siteUrl } },
+                runtimeConfig: { public: { siteUrl, twitterAuthEnabled: true } },
                 appConfig: { app: { site: siteUrl } },
                 site: { url: siteUrl },
                 i18n: { baseUrl: siteUrl },

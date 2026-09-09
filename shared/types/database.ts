@@ -51,7 +51,7 @@ export const userSettingsUpdateSchema = z.object({
     showNSFW: z.boolean().optional(),
 })
 
-const usernameSchema = z
+export const usernameSchema = z
     .string()
     .min(3, 'ID は 3 文字以上必要です。')
     .max(64, 'ID は最大 64 文字です。')

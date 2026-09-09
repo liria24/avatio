@@ -6,7 +6,7 @@ import type { ZodType } from 'zod'
 import { relations } from '../../../database/relations'
 import { readAppConfig } from '../../../server/utils/appConfig'
 import type { AppDatabase } from '../../../server/utils/database'
-import { executeD1Batch } from '../../../server/utils/executeD1Batch'
+import { executeAppBatch } from '../../../server/utils/executeAppBatch'
 import { createTestD1 } from '../../helpers/d1'
 
 afterEach(() => {
@@ -24,7 +24,7 @@ it('stores manual Catalog overrides atomically and clears only that override lay
         promiseEventHandler: (handler: unknown) => handler,
         requireUserSession: vi.fn(),
         validateBody: async (schema: ZodType) => schema.parse(input),
-        executeD1Batch,
+        executeAppBatch,
         itemCategorySchema,
         createError,
         invalidateCacheResources: vi.fn(),

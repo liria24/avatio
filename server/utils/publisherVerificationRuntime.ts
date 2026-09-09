@@ -1,11 +1,14 @@
-import { D1PublisherRepository } from '@avatio/cloudflare'
+import { SQLitePublisherRepository } from '@avatio/cloudflare'
 import {
     PublisherVerificationError,
     PublisherVerificationProviderRegistry,
 } from '@avatio/core/publishers'
 import { BoothPublisherVerificationProvider } from '@avatio/nuxt/runtime/server/publishers/providers'
 
-export const getPublisherRepository = () => new D1PublisherRepository(getDatabaseBinding())
+export const getPublisherRepository = () => {
+    const db = useDB()
+    return new SQLitePublisherRepository(db, (queries) => executeAppBatch(db, queries))
+}
 
 export const getPublisherVerificationProviderRegistry = () => {
     const proxyBaseUrl = getRuntimeEnvString('BOOTH_PROXY_URL')

@@ -64,7 +64,7 @@ export const acceptLegalDocuments = async (
             message: 'Legal documents changed. Review them again.',
         })
     }
-    await executeD1Batch(
+    await executeAppBatch(
         db,
         records.map((record) =>
             db

@@ -12,7 +12,9 @@ type CloudflareRequestContext = {
 }
 
 export const getFeatureFlags = (event?: H3Event) =>
-    new CloudflareFeatureFlags(getRuntimeEnv(event).FLAGS)
+    import.meta.dev
+        ? { isEnabled: async () => false }
+        : new CloudflareFeatureFlags(getRuntimeEnv(event).FLAGS)
 
 export const getFileStorage = (): FileStorage => {
     const files = useServerFiles()

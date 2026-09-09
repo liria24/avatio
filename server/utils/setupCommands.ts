@@ -106,7 +106,7 @@ export const createSetup = async (
         )
     queries.push(completeIdempotencyRequest(db, idempotency, { id: setupId }))
 
-    await executeD1Batch(db, queries)
+    await executeAppBatch(db, queries)
     await invalidateCacheResources(
         event,
         { collections: [EDGE_CACHE_TAGS.popularAvatars, EDGE_CACHE_TAGS.setups] },
@@ -199,7 +199,7 @@ export const updateSetup = async (
             )
     }
 
-    const [updatedRows] = await executeD1Batch(db, queries)
+    const [updatedRows] = await executeAppBatch(db, queries)
     if (!(updatedRows as { id: string }[] | undefined)?.[0]) throw serverError.notFound()
 
     await invalidateCacheResources(

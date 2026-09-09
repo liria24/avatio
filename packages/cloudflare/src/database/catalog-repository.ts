@@ -8,13 +8,14 @@ import type {
     ProviderSnapshot,
     SourceLease,
 } from '@avatio/core/catalog'
-import type { D1Database } from '@cloudflare/workers-types'
 import { and, eq, isNull, lte, or, sql } from 'drizzle-orm'
-import { drizzle } from 'drizzle-orm/d1'
+import type { BatchItem } from 'drizzle-orm/batch'
+import type { SQLiteAsyncDatabase } from 'drizzle-orm/sqlite-core'
 
 import { catalogItems, itemSources } from '../../../../database/schema'
 
-type Database = ReturnType<typeof drizzle>
+type Database = SQLiteAsyncDatabase<'sync' | 'async', unknown>
+type ExecuteBatch = (queries: BatchItem<'sqlite'>[]) => Promise<unknown[]>
 
 const mapSnapshot = (row: typeof itemSources.$inferSelect): ItemSourceSnapshot => ({
     name: row.displayName,
@@ -52,11 +53,13 @@ const mapSource = (row: typeof itemSources.$inferSelect): ItemSource => ({
     lastErrorAt: row.lastErrorAt,
 })
 
-export class D1CatalogRepository implements CatalogRepository {
+export class SQLiteCatalogRepository implements CatalogRepository {
     readonly #db: Database
+    readonly #executeBatch: ExecuteBatch
 
-    constructor(database: D1Database) {
-        this.#db = drizzle(database)
+    constructor(database: Database, executeBatch: ExecuteBatch) {
+        this.#db = database
+        this.#executeBatch = executeBatch
     }
 
     async findItem(id: string): Promise<CatalogItem | null> {
@@ -173,7 +176,7 @@ export class D1CatalogRepository implements CatalogRepository {
         const itemId = crypto.randomUUID()
         const sourceId = crypto.randomUUID()
         try {
-            await this.#db.batch([
+            await this.#executeBatch([
                 this.#db.insert(catalogItems).values({ id: itemId }),
                 this.#db.insert(itemSources).values({
                     id: sourceId,

@@ -188,10 +188,6 @@
             "otherRequiresComment": "その他を選択した場合は詳細を入力してください"
         }
     },
-    "welcome": {
-        "title": "ようこそ！",
-        "changeUsername": "ユーザーIDを変更"
-    },
     "index": {
         "hero": {
             "title": "お気に入りの<wbr>改変を<wbr>記録して<wbr>共有しよう",
@@ -382,14 +378,30 @@
             "title": "Avatioへようこそ",
             "description": "ログインしてセットアップを投稿しよう",
             "loginWith": "{provider} でログイン",
-            "agreement": "ログインすることで以下に同意したことになります:",
+            "agreement": "ログインまたはアカウント作成により、以下に同意します:",
             "firstTimeNotice": "初めての方は自動的にアカウントが作成されます。",
+            "local": {
+                "name": "表示名",
+                "login": "メールアドレスでログイン",
+                "register": "ローカルアカウントを作成",
+                "switchToLogin": "既存アカウントでログイン",
+                "switchToRegister": "新しいローカルアカウントを作成"
+            },
             "footer": {
                 "terms": "利用規約",
                 "privacy": "プライバシーポリシー"
             }
         },
         "agreeTerms": {
+            "initial": {
+                "title": "利用開始前の確認",
+                "intro": "Avatioをご利用いただくには、規約への同意が必要です。",
+                "description": "以下の利用規約およびプライバシーポリシーのうち、未確認の文書をご確認ください。"
+            },
+            "mixed": {
+                "title": "規約の確認が必要です",
+                "description": "未確認の文書と更新された文書があります。以下の内容をご確認ください。"
+            },
             "title": {
                 "terms": "利用規約が更新されました",
                 "privacy": "プライバシーポリシーが更新されました",

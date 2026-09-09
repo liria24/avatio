@@ -1,11 +1,12 @@
 import {
     CloudflareCacheInvalidator,
     CloudflareCatalogSyncQueue,
-    D1CatalogRepository,
+    SQLiteCatalogRepository,
 } from '@avatio/cloudflare'
 import {
     CatalogProviderRegistry,
     enqueueDueCatalogSources,
+    syncCatalogSource,
     type CatalogSyncQueue,
 } from '@avatio/core/catalog'
 import {
@@ -16,35 +17,56 @@ import type { CacheContext, Queue } from '@cloudflare/workers-types'
 import { inArray } from 'drizzle-orm'
 import { allowedBoothCategories, itemSources } from '~~/database/schema'
 
-export const getCatalogRepository = () => new D1CatalogRepository(getDatabaseBinding())
+export const getCatalogRepository = () => {
+    const db = useDB()
+    return new SQLiteCatalogRepository(db, (queries) => executeAppBatch(db, queries))
+}
 
 export const getCatalogProviderRegistry = async () => {
     const db = useDB()
     const admittedCategories = await db.select().from(allowedBoothCategories)
     const proxyBaseUrl = getRuntimeEnvString('BOOTH_PROXY_URL')
-    if (!proxyBaseUrl) throw new Error('Missing required BOOTH_PROXY_URL runtime secret.')
     const publisherRepository = getPublisherRepository()
     const resolvePublisherSource = async (
         snapshot: Parameters<typeof publisherRepository.upsertSource>[0],
     ) => (await publisherRepository.upsertSource(snapshot)).id
 
     return new CatalogProviderRegistry([
-        new BoothCatalogProvider({
-            proxyBaseUrl,
-            allowedCategoryKeys: new Set(
-                admittedCategories.map(({ categoryId }) => String(categoryId)),
-            ),
-            categoryMap: Object.fromEntries(
-                Object.entries(BOOTH_CATEGORY_MAP).map(([key, category]) => [key, category]),
-            ),
-            http: providerHttpClient,
-            resolvePublisherSource,
-        }),
+        ...(proxyBaseUrl
+            ? [
+                  new BoothCatalogProvider({
+                      proxyBaseUrl,
+                      allowedCategoryKeys: new Set(
+                          admittedCategories.map(({ categoryId }) => String(categoryId)),
+                      ),
+                      categoryMap: Object.fromEntries(
+                          Object.entries(BOOTH_CATEGORY_MAP).map(([key, category]) => [
+                              key,
+                              category,
+                          ]),
+                      ),
+                      http: providerHttpClient,
+                      resolvePublisherSource,
+                  }),
+              ]
+            : []),
         new GithubCatalogProvider({ http: providerHttpClient, resolvePublisherSource }),
     ])
 }
 
 export const getCatalogSyncQueue = (): CatalogSyncQueue | null => {
+    if (import.meta.dev)
+        return {
+            async enqueue(message) {
+                await syncCatalogSource({
+                    sourceId: message.sourceId,
+                    leaseToken: message.leaseToken,
+                    repository: getCatalogRepository(),
+                    providers: await getCatalogProviderRegistry(),
+                    cacheInvalidator: getCatalogCacheInvalidator(),
+                })
+            },
+        }
     const queue = getRuntimeEnv().ITEM_REVALIDATION_QUEUE as Queue | undefined
     return queue ? new CloudflareCatalogSyncQueue(queue) : null
 }

@@ -39,7 +39,7 @@ export interface SendEmailInput {
     attachments?: EmailAttachment[]
 }
 
-const defaultEmailFrom = 'hello@avatio.me'
+const defaultEmailFrom = import.meta.dev ? 'avatio@localhost' : 'hello@avatio.me'
 
 export const getEmailFromAddress = () => {
     const bindingAddress = getRuntimeEnvString('EMAIL_FROM')
@@ -61,8 +61,14 @@ const getEmailBinding = () => {
     return binding
 }
 
-export const sendEmail = async (input: SendEmailInput) =>
-    await getEmailBinding().send({
+export const sendEmail = async (input: SendEmailInput) => {
+    const message = {
         ...input,
         from: input.from ?? getEmailFromAddress(),
-    })
+    }
+    if (import.meta.dev) {
+        const { saveLocalEmail } = await import('./email.local')
+        return saveLocalEmail(message)
+    }
+    return getEmailBinding().send(message)
+}

@@ -6,11 +6,11 @@ Compact instruction for OpenCode sessions. If a fact is obvious from filenames, 
 
 ## Package manager & runtime
 
-- **Package manager:** `bun`. `bunfig.toml` uses `linker = "hoisted"`.
-- **Deployment runtime:** Node 26 runs the installed Alchemy CLI and its Nuxt build child. Workers Builds uses `NODE_OPTIONS=--max-old-space-size=4096` to leave memory for the remaining build processes.
+- **Package manager:** `bun`. `bunfig.toml` uses `linker = "hoisted"` and disables Bun's automatic dotenv loading.
+- **Runtime:** Node 26 runs Nuxt, TypeScript scripts, tests, and the installed Alchemy CLI. Bun installs packages and starts package scripts only. Workers Builds uses `NODE_OPTIONS=--max-old-space-size=4096` to leave memory for the remaining build processes.
 - **Postinstall:** `bun run postinstall` runs `nuxt prepare` only.
-- **Development URL:** `bun run dev` serves the Alchemy local proxy at `http://localhost:3000`; the port is fixed and fails if already in use.
-- **Alchemy state:** Local `dev` uses gitignored `.alchemy/state`; plans and deployments use the Cloudflare state store. Keep them separate so starting the simulator cannot replace deployed development resources.
+- **Development URL:** `bun run dev` runs the Node.js Nuxt dev server at `http://localhost:3000`; the port is fixed and fails if already in use.
+- **Environment split:** local uses SQLite/filesystem/IPX without Alchemy. `development` remains the deployed Cloudflare stage; plans and deployments use the Cloudflare state store.
 
 ## Developer commands
 
@@ -34,7 +34,7 @@ Compact instruction for OpenCode sessions. If a fact is obvious from filenames, 
 | Production deploy             | `bun run deploy:production`                                                            |
 | Explicit development adoption | `bun run infra:adopt:development`                                                      |
 | Explicit production adoption  | `bun run infra:adopt:production`                                                       |
-| Seed local App D1             | `bun run db:seed:local -- --yes`                                                       |
+| Seed local SQLite from D1     | `bun run db:seed:local -- --yes`                                                       |
 | Generate Better Auth schema   | `bunx --bun auth@1.7.3 generate --config auth.config.ts --output .data/auth-schema.ts` |
 
 ## After making changes
@@ -51,12 +51,12 @@ PRs into `main` require the `lint`, `typecheck`, `test`, and `build` checks from
 - **Workspace:** Bun workspaces under `packages/*` with exactly three architectural packages:
   - `@avatio/core` — pure domain, application ports, and explicit contracts. It must not import Nuxt, Nitro, Cloudflare, Drizzle, Better Auth, provider SDKs, or read `process.env`.
   - `@avatio/nuxt` — Nuxt integration, content/routing build hooks, and catalog provider adapters. It may depend on core but never on `@avatio/cloudflare`.
-  - `@avatio/cloudflare` — D1/Drizzle, Queue, cache, Flagship, R2, Workers AI, and binding adapters. It may depend on core.
+  - `@avatio/cloudflare` — SQLite repository, D1 batch, Queue, cache, Flagship, R2, Workers AI, and binding adapters. It may depend on core.
 - The root application is the composition root. Do not add a fourth package without concrete implementation evidence.
 - **Structure:**
   - `app/` — Vue frontend (pages, layouts, composables, components).
   - `server/` — Nitro API routes and server middleware.
-  - `database/schema.ts` — Drizzle ORM schema (SQLite via Cloudflare D1).
+  - `database/schema.ts` — shared Drizzle SQLite schema for local Node SQLite and deployed Cloudflare D1.
   - `shared/` — Utilities shared between client and server.
   - `content/` — canonical Markdown sources, split by `en/` and `ja/`. `@avatio/nuxt` uses `comark-content` with filesystem sources in local dev and commit-pinned GitHub sources in deployed Workers. Nuxt Content is intentionally not active.
 
@@ -70,9 +70,10 @@ PRs into `main` require the `lint`, `typecheck`, `test`, and `build` checks from
 - CatalogItem IDs are Avatio-owned and provider-independent. Provider keys remain strings with `UNIQUE(provider_key, external_id)` source identity.
 - Source availability (`available`/`withdrawn`/`policy_rejected`/`unknown`) and sync state (`fresh`/`stale`/`syncing`/`error`) are independent. Transient provider failures never mean withdrawal.
 - Effective category is resolved only through `SetupEntry override > CatalogItem override > primary source mapping > other`.
-- Catalog refresh is demand-driven. D1 source leases prevent duplicate v2 Queue messages; cold sources are never refreshed by a global schedule.
+- Catalog refresh is demand-driven. SQLite source leases prevent duplicate v2 Queue messages; cold sources are never refreshed by a global schedule.
 - Queue v2 messages contain a source ID and its claimed lease token. Every source sync write and lease release is fenced by that token. Reject messages without a lease token.
-- Public Setup responses are cookie-independent and resource-tagged; viewer/private responses are `no-store`. D1 remains authoritative when caching or invalidation fails.
+- Local development runs the same fenced catalog sync inline and awaits it; it does not reproduce Queue delivery or retry guarantees.
+- Public Setup responses are cookie-independent and resource-tagged; viewer/private responses are `no-store`. The configured SQLite database remains authoritative when caching or invalidation fails.
 - Nitro Storage currently has no mounts. Never restore one for catalog truth, leases, flags, Setup data, or other system-of-record state.
 - AI routes and use cases use semantic capabilities. Concrete per-task model IDs live only in typed stage composition.
 
@@ -88,16 +89,16 @@ PRs into `main` require the `lint`, `typecheck`, `test`, and `build` checks from
 - Each Worker's Workers Builds settings retain only its stage's dotenv private key and required provider deployment/bootstrap credentials. `scripts/stage.ts` selects exactly one stage file. `NUXT_BETTER_AUTH_SECRET` is derived from canonical `BETTER_AUTH_SECRET`, never managed separately.
 - Alchemy manages Worker runtime variables, secrets, and resource bindings. Do not mirror Git-owned configuration in the dashboard or introduce Alchemy-owned resource IDs as application environment variables.
 - OG image runtime configuration uses Nitro environment expansion to read the canonical `OG_IMAGE_SECRET` binding. Builds must work without that secret and must never inline its value.
-- Clear Better Auth's build-time secret in `nitro:config`, after the module's `modules:done` initialization, so only the runtime Worker binding supplies the key.
+- Local development generates and reuses a Better Auth secret under `.data/`. Clear Better Auth's build-time secret for deployed builds in `nitro:config`, after the module's `modules:done` initialization, so only the runtime Worker binding supplies the deployed key.
 - Do not print decrypted values or expose secrets through public runtime config, app config, client payloads, logs, snapshots, or generated artifacts.
 - `process.env` access is limited to build/deploy/config tooling and unavoidable root composition. Domain/application code receives typed configuration or capabilities. `getRuntimeEnv*` remains confined to root composition/infrastructure; do not introduce new `NUXT_*` aliases for canonical values.
 
 ### Local configuration
 
-1. Obtain the managed development dotenv private key.
-2. Store it only in gitignored `.env.keys` using dotenvx's standard key format.
-3. Run `bun run config:check:development`; failures must report names/reasons only.
-4. Run `bun run dev`, which uses the same canonical development names and Alchemy resources as deployment.
+1. Run `bun install` and `bun dev`; no Cloudflare credentials or `.env.keys` are required.
+2. Optional local overrides use Nuxt's standard `.env` loading. Bun does not automatically load dotenv files.
+3. Local state is gitignored under `.data/`: `avatio.sqlite`, `local-auth-secret`, `uploads/`, and `mail/`.
+4. Do not point normal local startup at deployed development resources. Stage ciphertext is read only by explicit config/plan/deploy/adopt commands.
 
 ### Secret rotation
 
@@ -122,16 +123,17 @@ PRs into `main` require the `lint`, `typecheck`, `test`, and `build` checks from
 
 ## Database (Drizzle)
 
-- **Dialect:** SQLite (Cloudflare D1), bound as `APP_DB`.
+- **Dialect:** SQLite. Local uses `node:sqlite` + `drizzle-orm/node-sqlite`; deployed stages use Cloudflare D1 bound as `APP_DB`.
 - Schema file: `database/schema.ts`.
 - Config: `drizzle.config.ts`.
 - Migration output: `./drizzle`.
 - Naming convention: `snakeCase` (Drizzle `snakeCase` helper is used).
 - Migrations use Drizzle v1 nested output under `./drizzle`.
 - Do not edit generated migration SQL by hand; regenerate with `bun run db:generate`.
-- D1 keeps foreign keys enabled in migration transactions. Parent-table rebuilds must preserve retained child rows and be tested with populated data.
-- `bun run dev` runs `alchemy dev --stage development`; Alchemy applies D1 migrations in its local workerd simulator.
-- `bun run db:seed:local -- --yes` copies the remote `avatio-development` D1 into that local simulator; authenticate Wrangler separately with D1 read permission. Its `--source production --allow-production` form requires explicit operator approval and is only for one-off local seeding. It does not deploy infrastructure, create a remote D1, or write to a remote D1. If the development D1 has not been provisioned, obtain authorization for the normal Alchemy development deploy first.
+- Both drivers keep foreign keys enabled. Parent-table rebuilds must preserve retained child rows and be tested with populated data.
+- `bun run dev` creates `.data/avatio.sqlite` and applies the checked-in migrations with Drizzle's official Node SQLite migrator before serving requests. Build/prerender must not create local state.
+- `executeAppBatch` preserves D1 `batch()` semantics and uses a synchronous Node SQLite transaction locally. Never return an async callback from the local transaction.
+- `bun run db:seed:local -- --yes` explicitly copies the remote `avatio-development` D1 into local SQLite; authenticate Wrangler separately with D1 read permission. Its `--source production --allow-production` form requires explicit operator approval and is only for one-off local seeding. It never writes to remote D1.
 
 ## Auth
 
@@ -141,8 +143,10 @@ PRs into `main` require the `lint`, `typecheck`, `test`, and `build` checks from
 - Use `useUserSession()`/module client helpers in the app and `getRequestSession()`/`requireUserSession()` on the server. Do not recreate `useAuth()` or another session state machine.
 - Protected APIs explicitly call `requireUserSession()`; route rules are navigation UX, not the API security boundary. Preserve banned-user policy independently from admin roles.
 - Better Auth tables share `APP_DB`. Do not change auth schema/migrations merely to change Nuxt integration.
+- Local dev enables the Better Auth email/password UI. A local-only SQLite trigger promotes the first successfully inserted user when the user count is zero; deployed D1 never installs it. Hard navigation after signup ensures the session reads the committed role.
 - Deployed client IP resolution trusts only `cf-connecting-ip`, even before bindings are available; forwarded headers are local development compatibility only.
-- Terms and Privacy have independent `version` and `effectiveDate` frontmatter. `updatedAt` is presentation-only. Append-only `legal_acceptances` records are unique per user/document/version and preserve the server-resolved source hash, commit, locale, and acceptance timestamp. Never fabricate records from `lastAgreedToTerms`; it remains a read-only timestamp fallback. New users start with that fallback unset.
+- Terms and Privacy have independent `version` and `effectiveDate` frontmatter. `updatedAt` is presentation-only. Append-only `legal_acceptances` records are unique per user/document/version and preserve the server-resolved source hash, commit, locale, and acceptance timestamp. Never fabricate records from `lastAgreedToTerms`; it remains a read-only timestamp fallback set by the existing account-creation consent flow.
+- `/welcome` does not exist: provider usernames are retained, and local registration collects a username. Users with neither the account-creation fallback nor document history see the agreement modal as an initial review, never as an update.
 
 ## Authored content
 
@@ -164,7 +168,7 @@ PRs into `main` require the `lint`, `typecheck`, `test`, and `build` checks from
   - `/api/admin/job/report` — daily at 22:00
   - `/api/admin/job/cleanup` — manual/admin only
 - **Images:** served through `@nuxt/image`. Allowed external domains are whitelisted in `nuxt.config.ts` (Booth, GitHub, R2 public domain).
-- **Storage:** `nuxt-files-sdk` is configured in `files.config.ts`; runtime code uses `useServerFiles()`. Local `bun run dev` uses its filesystem adapter under gitignored `.data/uploads`, served at `/api/_local/files/*`, including imported OAuth avatars. Local Nuxt Image uses direct URLs. Deployed development/production Workers use the native stage-specific `R2` binding and public domain; R2 HTTP credentials remain unsupported. The local file route returns 404 in deployed builds.
+- **Storage:** `nuxt-files-sdk` is configured in `files.config.ts`; runtime code uses `useServerFiles()`. Local `bun run dev` uses its filesystem adapter under gitignored `.data/uploads`, served at `/api/_local/files/*`, including imported OAuth avatars. Local Nuxt Image uses IPX with only localhost HTTP sources; the local route rejects traversal and metadata sidecars. Deployed development/production Workers use the native stage-specific `R2` binding and public domain; R2 HTTP credentials remain unsupported. The local file route returns 404 in deployed builds.
 - **files-sdk build compatibility:** Keep the direct dependencies `@aws-sdk/client-s3`, `@aws-sdk/lib-storage`, `@aws-sdk/s3-presigned-post`, and `@aws-sdk/s3-request-presigner`. Nitro's Cloudflare preset resolves the lazy AWS imports retained by `files-sdk/r2` even though the configured native R2 binding never executes that engine. `bun run build` is the regression check.
 - **PWA:** `@vite-pwa/nuxt` is enabled; `sw.js` and `manifest.webmanifest` are served with `must-revalidate`.
 
@@ -207,7 +211,7 @@ Admin and cron routes use `promiseEventHandler` plus their explicit module-nativ
 ### Database queries
 
 - Prefer Drizzle ORM query builder (`db.query.*`, `db.select()`, `db.insert()`, etc.) over raw `sql` template literals. Use `sql` only when the query builder cannot express the logic.
-- D1 does not expose Drizzle callback transactions. Build all required statements first and pass them in order to `executeD1Batch(db, queries)` so the batch commits or rolls back atomically.
+- D1 does not expose Drizzle callback transactions. Build all required statements first and pass them in order to `executeAppBatch(db, queries)` so D1 batch or the local synchronous transaction commits or rolls back atomically.
 - Generate parent and child IDs in the application before a batch when later statements need those IDs.
 
 ## Security

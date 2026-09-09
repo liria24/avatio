@@ -1,29 +1,39 @@
-import { execFileSync } from 'node:child_process'
-import { join } from 'node:path'
+import { execFileSync, spawn } from 'node:child_process'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import {
     alchemyCommand,
     stageActions,
     validateDeployment,
     type StageAction,
-} from '../config/deployment'
-import { getStageConfig, parseAvatioStage, type AvatioStage } from '../config/environment'
-import { validateSecrets } from '../config/secrets'
+} from '../config/deployment.ts'
+import { getStageConfig, parseAvatioStage, type AvatioStage } from '../config/environment.ts'
+import { validateSecrets } from '../config/secrets.ts'
 
 const parseAction = (value: string | undefined): StageAction => {
     if (stageActions.includes(value as StageAction)) return value as StageAction
     throw new Error(`Action must be one of: ${stageActions.join(', ')}`)
 }
 
+const scriptPath = fileURLToPath(import.meta.url)
+const dependencyRoot = join(dirname(scriptPath), '..', 'node_modules')
+
 const run = async (command: string[], env = process.env) => {
-    const processHandle = Bun.spawn(command, {
-        cwd: process.cwd(),
-        env,
-        stdin: 'inherit',
-        stdout: 'inherit',
-        stderr: 'inherit',
+    const [executable, ...args] = command
+    if (!executable) throw new Error('Missing executable.')
+    const exitCode = await new Promise<number>((resolve, reject) => {
+        const child = spawn(executable, args, {
+            cwd: process.cwd(),
+            env,
+            stdio: 'inherit',
+        })
+        child.on('error', reject)
+        child.on('exit', (code, signal) => {
+            if (signal) reject(new Error(`${executable} exited via ${signal}.`))
+            else resolve(code ?? 1)
+        })
     })
-    const exitCode = await processHandle.exited
     if (exitCode !== 0) process.exit(exitCode)
 }
 
@@ -52,17 +62,17 @@ const validateBranchPolicy = (action: StageAction, stage: AvatioStage) => {
     })
 }
 
-const action = parseAction(Bun.argv[2])
-const stage = parseAvatioStage(Bun.argv[3] ?? '')
-const loaded = Bun.argv[4] === '--validated-env'
+const action = parseAction(process.argv[2])
+const stage = parseAvatioStage(process.argv[3] ?? '')
+const loaded = process.argv[4] === '--validated-env'
 
 validateBranchPolicy(action, stage)
 
 if (!loaded) {
     const envFile = join(process.cwd(), `.env.${stage}`)
     await run([
-        'bunx',
-        'dotenvx',
+        process.execPath,
+        join(dependencyRoot, '@dotenvx', 'dotenvx', 'src', 'cli', 'dotenvx.js'),
         'run',
         '--quiet',
         '--strict',
@@ -71,7 +81,7 @@ if (!loaded) {
         '--overload',
         '--',
         process.execPath,
-        import.meta.path,
+        scriptPath,
         action,
         stage,
         '--validated-env',
@@ -88,9 +98,6 @@ if (!secrets.success) {
 
 if (action === 'check') {
     console.info(`${stage} configuration is valid.`)
-} else if (action === 'dev') {
-    if (stage !== 'development') throw new Error('The dev command only supports development.')
-    await run(alchemyCommand(action, stage))
 } else {
     await run(alchemyCommand(action, stage))
 }

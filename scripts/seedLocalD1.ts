@@ -1,17 +1,12 @@
-import { Database } from 'bun:sqlite'
-import { mkdtemp, readdir, rename, rm } from 'node:fs/promises'
+import { spawn } from 'node:child_process'
+import { mkdtemp, readFile, rename, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
+import { DatabaseSync } from 'node:sqlite'
 
-import { getStageConfig } from '../config/environment'
+import { getStageConfig } from '../config/environment.ts'
 
-const LOCAL_D1_DIRECTORY = join(
-    process.cwd(),
-    '.alchemy',
-    'local',
-    'd1',
-    'cloudflare-runtime-D1DatabaseObject',
-)
+const LOCAL_DATABASE = join(process.cwd(), '.data', 'avatio.sqlite')
 
 const sourceStages = ['development', 'production'] as const
 type SourceStage = (typeof sourceStages)[number]
@@ -30,7 +25,7 @@ interface TableCount {
 
 const usage = `Usage: bun run db:seed:local -- --yes [--source development|production] [--allow-production]
 
-Copies a remote D1 snapshot into the Alchemy/workerd database used by bun dev.
+Copies a remote D1 snapshot into the local SQLite database used by bun dev.
 
 Default source: development (avatio-development)
 Production source requires both --source production and --allow-production.
@@ -41,9 +36,9 @@ const isSourceStage = (value: string): value is SourceStage =>
     sourceStages.includes(value as SourceStage)
 
 const optionValue = (name: string) => {
-    const index = Bun.argv.indexOf(name)
+    const index = process.argv.indexOf(name)
     if (index === -1) return undefined
-    const value = Bun.argv[index + 1]
+    const value = process.argv[index + 1]
     if (!value || value.startsWith('--')) throw new Error(`${name} requires a value.`)
     return value
 }
@@ -59,48 +54,42 @@ const quoteString = (value: string) => `'${value.replaceAll("'", "''")}'`
 const appTable = (name: string) =>
     !name.startsWith('_') && !name.startsWith('sqlite_') && name !== 'd1_migrations'
 
-const tableNames = (database: Database) =>
+const tableNames = (database: DatabaseSync) =>
     (
         database
-            .query(
+            .prepare(
                 "SELECT name FROM sqlite_schema WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name",
             )
             .all() as TableName[]
     ).map((table) => table.name)
 
-const tableColumns = (database: Database, table: string) =>
-    (database.query(`PRAGMA table_info(${quoteIdentifier(table)})`).all() as TableColumn[]).map(
+const tableColumns = (database: DatabaseSync, table: string) =>
+    (database.prepare(`PRAGMA table_info(${quoteIdentifier(table)})`).all() as TableColumn[]).map(
         (column) => column.name,
     )
 
-const tableCount = (database: Database, table: string) =>
-    (database.query(`SELECT count(*) AS count FROM ${quoteIdentifier(table)}`).get() as TableCount)
-        .count
+const tableCount = (database: DatabaseSync, table: string) =>
+    (
+        database
+            .prepare(`SELECT count(*) AS count FROM ${quoteIdentifier(table)}`)
+            .get() as unknown as TableCount
+    ).count
 
-const findLocalAppDatabase = async () => {
-    const candidates = (await readdir(LOCAL_D1_DIRECTORY, { withFileTypes: true }))
-        .filter((entry) => entry.isFile() && entry.name.endsWith('.sqlite'))
-        .map((entry) => join(LOCAL_D1_DIRECTORY, entry.name))
-
-    for (const candidate of candidates) {
-        const database = new Database(candidate, { readonly: true })
-        try {
-            const tables = new Set(tableNames(database))
-            if (tables.has('users') && tables.has('setups')) return candidate
-        } finally {
-            database.close()
-        }
+const findLocalAppDatabase = () => {
+    const database = new DatabaseSync(LOCAL_DATABASE, { readOnly: true })
+    try {
+        const tables = new Set(tableNames(database))
+        if (tables.has('users') && tables.has('setups')) return LOCAL_DATABASE
+    } finally {
+        database.close()
     }
-
-    throw new Error(
-        'Alchemy local AppDatabase was not found. Run `bun dev` once so it creates the local D1 simulator.',
-    )
+    throw new Error('Local AppDatabase was not found. Run `bun dev` once before seeding.')
 }
 
 const runExport = async (sourceDatabase: string, output: string) => {
-    const processHandle = Bun.spawn(
+    const processHandle = spawn(
+        process.platform === 'win32' ? 'bunx.exe' : 'bunx',
         [
-            'bunx',
             'wrangler',
             'd1',
             'export',
@@ -112,16 +101,17 @@ const runExport = async (sourceDatabase: string, output: string) => {
         ],
         {
             cwd: process.cwd(),
-            stdin: 'inherit',
-            stdout: 'pipe',
-            stderr: 'pipe',
+            stdio: ['inherit', 'pipe', 'pipe'],
         },
     )
-    const [exitCode, stdout, stderr] = await Promise.all([
-        processHandle.exited,
-        new Response(processHandle.stdout).text(),
-        new Response(processHandle.stderr).text(),
-    ])
+    let stdout = ''
+    let stderr = ''
+    processHandle.stdout.setEncoding('utf8').on('data', (chunk) => (stdout += chunk))
+    processHandle.stderr.setEncoding('utf8').on('data', (chunk) => (stderr += chunk))
+    const exitCode = await new Promise<number>((resolve, reject) => {
+        processHandle.on('error', reject)
+        processHandle.on('exit', (code) => resolve(code ?? 1))
+    })
     if (exitCode !== 0) {
         const diagnostic = `${stdout}\n${stderr}`
             .replaceAll(/https?:\/\/\S+/g, '[redacted URL]')
@@ -134,16 +124,16 @@ const runExport = async (sourceDatabase: string, output: string) => {
 }
 
 const createSnapshotDatabase = async (sqlPath: string, snapshotPath: string) => {
-    const snapshot = new Database(snapshotPath)
+    const snapshot = new DatabaseSync(snapshotPath)
     try {
-        snapshot.exec(await Bun.file(sqlPath).text())
+        snapshot.exec(await readFile(sqlPath, 'utf8'))
     } finally {
         snapshot.close()
     }
 }
 
 const createStagedLocalDatabase = (localPath: string, stagedPath: string) => {
-    const local = new Database(localPath, { readonly: true })
+    const local = new DatabaseSync(localPath, { readOnly: true })
     try {
         local.exec(`VACUUM INTO ${quoteString(stagedPath)}`)
     } finally {
@@ -152,11 +142,11 @@ const createStagedLocalDatabase = (localPath: string, stagedPath: string) => {
 }
 
 const seedStagedDatabase = (stagedPath: string, snapshotPath: string) => {
-    const staged = new Database(stagedPath)
+    const staged = new DatabaseSync(stagedPath)
     try {
         staged.exec('PRAGMA journal_mode = DELETE')
         const targetTables = tableNames(staged).filter(appTable)
-        const snapshot = new Database(snapshotPath, { readonly: true })
+        const snapshot = new DatabaseSync(snapshotPath, { readOnly: true })
         let sourceTables: string[]
         let sourceColumns: Map<string, string[]>
         try {
@@ -198,7 +188,7 @@ const seedStagedDatabase = (stagedPath: string, snapshotPath: string) => {
                 )
             }
 
-            const foreignKeyViolations = staged.query('PRAGMA foreign_key_check').all()
+            const foreignKeyViolations = staged.prepare('PRAGMA foreign_key_check').all()
             if (foreignKeyViolations.length)
                 throw new Error(
                     `Foreign key verification failed with ${foreignKeyViolations.length} violation(s).`,
@@ -214,7 +204,7 @@ const seedStagedDatabase = (stagedPath: string, snapshotPath: string) => {
             staged.exec('PRAGMA foreign_keys = ON')
         }
 
-        const verificationSnapshot = new Database(snapshotPath, { readonly: true })
+        const verificationSnapshot = new DatabaseSync(snapshotPath, { readOnly: true })
         try {
             const copied = sourceTables.map((table) => {
                 const sourceCount = tableCount(verificationSnapshot, table)
@@ -235,21 +225,21 @@ const seedStagedDatabase = (stagedPath: string, snapshotPath: string) => {
 }
 
 const main = async () => {
-    if (Bun.argv.includes('--help')) {
+    if (process.argv.includes('--help')) {
         console.info(usage)
         return
     }
-    if (!Bun.argv.includes('--yes'))
+    if (!process.argv.includes('--yes'))
         throw new Error(`Refusing to overwrite the local D1 database without --yes.\n\n${usage}`)
 
     const source = optionValue('--source') ?? 'development'
     if (!isSourceStage(source))
         throw new Error(`--source must be one of: ${sourceStages.join(', ')}.`)
-    if (source === 'production' && !Bun.argv.includes('--allow-production'))
+    if (source === 'production' && !process.argv.includes('--allow-production'))
         throw new Error('Production source requires --allow-production.')
 
     const sourceDatabase = getStageConfig(source).infrastructure.appDatabase
-    const localPath = await findLocalAppDatabase()
+    const localPath = findLocalAppDatabase()
     const tempDirectory = await mkdtemp(join(tmpdir(), 'avatio-d1-seed-'))
     const dumpPath = join(tempDirectory, 'source.sql')
     const snapshotPath = join(tempDirectory, 'source.sqlite')

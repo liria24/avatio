@@ -8,12 +8,30 @@ const { callbackURL } = defineProps<Props>()
 
 const signInEmail = useSignIn('email')
 const signInSocial = useSignIn('social')
+const signUpEmail = useSignUp('email')
 const route = useRoute()
+const register = ref(false)
+const { public: publicConfig } = useRuntimeConfig()
 
 const emailLoginSchema = z.object({
     email: z.email('Invalid email'),
     password: z.string('Password is required').min(8, 'Must be at least 8 characters'),
 })
+
+const emailRegistrationSchema = emailLoginSchema.extend({
+    name: z.string().trim().min(1, 'Name is required'),
+    username: usernameSchema,
+})
+
+const registerWithEmail = async (data: {
+    email: string
+    name: string
+    password: string
+    username: string
+}) => {
+    await signUpEmail.execute(data)
+    if (signUpEmail.status.value === 'success') window.location.assign(callbackURL || route.path)
+}
 </script>
 
 <template>
@@ -25,6 +43,7 @@ const emailLoginSchema = z.object({
         <p class="text-muted text-center text-sm">{{ $t('modal.login.description') }}</p>
 
         <UButton
+            v-if="publicConfig.twitterAuthEnabled"
             loading-auto
             :label="$t('modal.login.loginWith', { provider: 'X (Twitter)' })"
             icon="mingcute:social-x-fill"
@@ -37,7 +56,6 @@ const emailLoginSchema = z.object({
                 signInSocial.execute({
                     provider: 'twitter',
                     callbackURL: callbackURL || route.path,
-                    newUserCallbackURL: $localePath('/welcome'),
                 })
             "
         />
@@ -45,8 +63,26 @@ const emailLoginSchema = z.object({
         <DevOnly>
             <div class="relative">
                 <UAuthForm
-                    :schema="emailLoginSchema"
+                    :schema="register ? emailRegistrationSchema : emailLoginSchema"
                     :fields="[
+                        ...(register
+                            ? [
+                                  {
+                                      name: 'name',
+                                      type: 'text' as const,
+                                      icon: 'mingcute:user-3-fill',
+                                      placeholder: $t('modal.login.local.name'),
+                                      required: true,
+                                  },
+                                  {
+                                      name: 'username',
+                                      type: 'text' as const,
+                                      icon: 'mingcute:at-line',
+                                      placeholder: $t('input.username.placeholder'),
+                                      required: true,
+                                  },
+                              ]
+                            : []),
                         {
                             name: 'email',
                             type: 'email',
@@ -63,18 +99,34 @@ const emailLoginSchema = z.object({
                         },
                     ]"
                     :submit="{
-                        label: 'Login with Email and Password',
+                        label: register
+                            ? $t('modal.login.local.register')
+                            : $t('modal.login.local.login'),
                         color: 'neutral',
                         variant: 'subtle',
                     }"
                     class="ring-muted mb-4 rounded-xl p-4 ring-1"
                     @submit="
-                        signInEmail.execute({
-                            email: $event.data.email,
-                            password: $event.data.password,
-                            callbackURL: callbackURL || route.path,
-                        })
+                        register
+                            ? registerWithEmail($event.data)
+                            : signInEmail.execute({
+                                  email: $event.data.email,
+                                  password: $event.data.password,
+                                  callbackURL: callbackURL || route.path,
+                              })
                     "
+                />
+
+                <UButton
+                    :label="
+                        register
+                            ? $t('modal.login.local.switchToLogin')
+                            : $t('modal.login.local.switchToRegister')
+                    "
+                    variant="link"
+                    color="neutral"
+                    block
+                    @click="register = !register"
                 />
 
                 <UBadge

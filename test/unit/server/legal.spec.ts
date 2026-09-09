@@ -4,7 +4,7 @@ import { createError } from 'h3'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { relations } from '../../../database/relations'
-import { executeD1Batch } from '../../../server/utils/executeD1Batch'
+import { executeAppBatch } from '../../../server/utils/executeAppBatch'
 import {
     acceptLegalDocuments,
     getLegalStatus,
@@ -30,6 +30,10 @@ describe('independent legal acceptance', () => {
         const now = new Date('2026-02-01T00:00:00Z')
         const accepted = current.map(({ document, version }) => ({ document, version }))
         expect(resolveLegalStatus(current, [], null, now).needsAgreement).toBe(true)
+        expect(resolveLegalStatus(current, [], null, now).documents).toMatchObject([
+            { document: 'terms', agreement: 'initial' },
+            { document: 'privacy-policy', agreement: 'initial' },
+        ])
         expect(resolveLegalStatus(current, accepted, null, now).needsAgreement).toBe(false)
         for (const changedDocument of ['terms', 'privacy-policy']) {
             const updated = current.map((document) =>
@@ -67,12 +71,22 @@ describe('independent legal acceptance', () => {
         expect(
             resolveLegalStatus(current, [], new Date('2025-12-31T23:59:59Z'), now).needsAgreement,
         ).toBe(true)
+        expect(
+            resolveLegalStatus(current, [{ document: 'terms', version: '2025-01-01' }], null, now)
+                .documents,
+        ).toMatchObject([
+            { document: 'terms', agreement: 'updated' },
+            { document: 'privacy-policy', agreement: 'initial' },
+        ])
+        expect(
+            resolveLegalStatus(current, [], new Date('2025-12-31T23:59:59Z'), now).documents,
+        ).toMatchObject([{ agreement: 'updated' }, { agreement: 'updated' }])
     })
 
     it('persists server identities once, rejects stale submissions, and never fabricates legacy records', async () => {
         const database = createTestD1()
         const db = drizzle(database.binding, { relations })
-        vi.stubGlobal('executeD1Batch', executeD1Batch)
+        vi.stubGlobal('executeAppBatch', executeAppBatch)
         vi.stubGlobal('createError', createError)
         try {
             database.sqlite.exec(

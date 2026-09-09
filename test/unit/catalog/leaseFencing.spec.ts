@@ -1,12 +1,13 @@
-import { D1CatalogRepository } from '@avatio/cloudflare'
+import { SQLiteCatalogRepository } from '@avatio/cloudflare'
 import type { ProviderSnapshot } from '@avatio/core/catalog'
+import { drizzle } from 'drizzle-orm/d1'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createTestD1 } from '../../helpers/d1'
 
 describe('Catalog D1 lease fencing', () => {
     let database: ReturnType<typeof createTestD1>
-    let repository: D1CatalogRepository
+    let repository: SQLiteCatalogRepository
     const snapshot: ProviderSnapshot = {
         reference: {
             providerKey: 'booth',
@@ -24,7 +25,11 @@ describe('Catalog D1 lease fencing', () => {
     }
     beforeEach(() => {
         database = createTestD1()
-        repository = new D1CatalogRepository(database.binding)
+        const db = drizzle(database.binding)
+        repository = new SQLiteCatalogRepository(db, async (queries) => {
+            const first = queries[0]!
+            return (await db.batch([first, ...queries.slice(1)])) as unknown[]
+        })
         database.sqlite.exec(`
             INSERT INTO catalog_items (id) VALUES ('item');
             INSERT INTO item_sources (id, item_id, provider_key, external_id, canonical_url, next_check_at, display_name)

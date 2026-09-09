@@ -188,10 +188,6 @@
             "otherRequiresComment": "Please enter details when selecting Other"
         }
     },
-    "welcome": {
-        "title": "Welcome!",
-        "changeUsername": "Change User ID"
-    },
     "index": {
         "hero": {
             "title": "Share Your Avatar Setups",
@@ -382,14 +378,30 @@
             "title": "Welcome to Avatio",
             "description": "Log in to post your setup",
             "loginWith": "Login with {provider}",
-            "agreement": "By logging in, you agree to the following:",
+            "agreement": "By logging in or creating an account, you agree to:",
             "firstTimeNotice": "A new account will be automatically created for first-time users.",
+            "local": {
+                "name": "Display name",
+                "login": "Log in with email",
+                "register": "Create local account",
+                "switchToLogin": "Log in to an existing account",
+                "switchToRegister": "Create a new local account"
+            },
             "footer": {
                 "terms": "Terms of Service",
                 "privacy": "Privacy Policy"
             }
         },
         "agreeTerms": {
+            "initial": {
+                "title": "Review before continuing",
+                "intro": "You need to agree to Avatio's policies before continuing.",
+                "description": "Please review any Terms of Service or Privacy Policy documents you have not previously accepted."
+            },
+            "mixed": {
+                "title": "Policy review required",
+                "description": "Some documents are new to you and others have been updated. Please review them below."
+            },
             "title": {
                 "terms": "Terms of Service Updated",
                 "privacy": "Privacy Policy Updated",

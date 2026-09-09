@@ -1,6 +1,6 @@
-import type { AvatioStage } from './environment'
+import type { AvatioStage } from './environment.ts'
 
-export const stageActions = ['check', 'dev', 'plan', 'deploy', 'adopt'] as const
+export const stageActions = ['check', 'plan', 'deploy', 'adopt'] as const
 export type StageAction = (typeof stageActions)[number]
 
 export interface DeploymentState {

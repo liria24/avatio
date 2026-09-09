@@ -94,7 +94,7 @@ describe('workspace architecture boundaries', () => {
         expect(violations).toEqual([])
     })
 
-    it('keeps process.env out of application and domain source', async () => {
+    it('keeps process.env in the narrow runtime composition boundary', async () => {
         const roots = ['app', 'server', 'shared', 'packages/core/src', 'packages/nuxt/src'].map(
             (path) => join(process.cwd(), path),
         )
@@ -103,7 +103,12 @@ describe('workspace architecture boundaries', () => {
         for (const root of roots)
             for (const file of await sourceFiles(root)) {
                 const source = await readFile(file, 'utf8')
-                if (/\bprocess\.env\b/.test(source)) violations.push(relative(process.cwd(), file))
+                const path = relative(process.cwd(), file)
+                if (
+                    /\bprocess\.env\b/.test(source) &&
+                    path !== join('server', 'utils', 'runtimeEnv.ts')
+                )
+                    violations.push(path)
             }
 
         expect(violations).toEqual([])

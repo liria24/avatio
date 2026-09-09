@@ -29,7 +29,7 @@ export default promiseEventHandler(async ({ db, event }) => {
     ])
     if (targets.length !== ids.length)
         throw serverError.badRequest({ responseMessage: 'Unknown CatalogItem ID.' })
-    const queries: Parameters<typeof executeD1Batch>[1] = [
+    const queries: Parameters<typeof executeAppBatch>[1] = [
         db.delete(allowedBoothCategories),
         db
             .update(catalogItems)
@@ -49,7 +49,7 @@ export default promiseEventHandler(async ({ db, event }) => {
                 .set({ categoryOverride: category, categoryOverrideOrigin: 'manual' })
                 .where(eq(catalogItems.id, id)),
         )
-    await executeD1Batch(db, queries)
+    await executeAppBatch(db, queries)
     await invalidateCacheResources(
         event,
         {

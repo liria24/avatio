@@ -23,7 +23,7 @@ export default authedSessionEventHandler(
         })
         if (idempotency.replay) return idempotency.response
 
-        await executeD1Batch(db, [
+        await executeAppBatch(db, [
             db.insert(itemReports).values({
                 reporterId: session.user.id,
                 catalogItemId: itemId,

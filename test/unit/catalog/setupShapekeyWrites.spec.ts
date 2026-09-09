@@ -3,7 +3,7 @@ import type { H3Event } from 'h3'
 import { expect, it, vi } from 'vitest'
 
 import { relations } from '../../../database/relations'
-import { executeD1Batch } from '../../../server/utils/executeD1Batch'
+import { executeAppBatch } from '../../../server/utils/executeAppBatch'
 import { completeIdempotencyRequest } from '../../../server/utils/idempotency'
 import { createSetup, updateSetup } from '../../../server/utils/setupCommands'
 import { createTestD1 } from '../../helpers/d1'
@@ -11,7 +11,7 @@ import { createTestD1 } from '../../helpers/d1'
 it('persists CatalogItem references, notes and shapekeys atomically across create and update', async () => {
     const database = createTestD1()
     const db = drizzle(database.binding, { relations })
-    vi.stubGlobal('executeD1Batch', executeD1Batch)
+    vi.stubGlobal('executeAppBatch', executeAppBatch)
     vi.stubGlobal('completeIdempotencyRequest', completeIdempotencyRequest)
     vi.stubGlobal('resolveSetupImageData', async () => [])
     vi.stubGlobal('invalidateCacheResources', async () => undefined)

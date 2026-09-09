@@ -76,7 +76,7 @@ export default authedSessionEventHandler(
                     }),
                 ),
             ]
-            await executeD1Batch(db, queries)
+            await executeAppBatch(db, queries)
             return { id, revision: 1 }
         }
 
@@ -124,7 +124,7 @@ export default authedSessionEventHandler(
                 ),
             ),
         ]
-        const [updated] = await executeD1Batch(db, queries)
+        const [updated] = await executeAppBatch(db, queries)
         if (!(updated as { id: string }[] | undefined)?.[0]) throw serverError.conflict()
         return { id, revision }
     },

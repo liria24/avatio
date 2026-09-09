@@ -28,17 +28,20 @@ const STORAGE_OPERATION_CONCURRENCY = 8
 
 const BACKUP_PREFIX = 'backup'
 
-const sendMessage = (message: { content?: string; embeds?: object[] }) =>
-    $fetch('/admin/message', {
-        baseURL:
-            getRuntimeEnvString('LIRIA_DISCORD_ENDPOINT')?.replace(/\/+$/, '') ??
-            'https://discord.liria.me',
+const sendMessage = async (message: { content?: string; embeds?: object[] }) => {
+    if (import.meta.dev) return
+    const endpoint = getRuntimeEnvString('LIRIA_DISCORD_ENDPOINT')?.replace(/\/+$/, '')
+    const token = getRuntimeEnvString('LIRIA_DISCORD_ACCESS_TOKEN')
+    if (!endpoint || !token) return
+    await $fetch('/admin/message', {
+        baseURL: endpoint,
         method: 'POST',
         headers: {
-            Authorization: `Bearer ${getRuntimeEnvString('LIRIA_DISCORD_ACCESS_TOKEN')}`,
+            Authorization: `Bearer ${token}`,
         },
         body: message,
     })
+}
 
 const getStorageContext = async () => {
     try {

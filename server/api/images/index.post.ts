@@ -31,38 +31,57 @@ export default authedSessionEventHandler(
             key: `images:${session.user.id}`,
         })
 
-        const images = getRuntimeEnv(event).IMAGES
-        if (!images || typeof images.info !== 'function' || typeof images.input !== 'function')
+        const bytes = await blob.arrayBuffer()
+        const images = import.meta.dev ? undefined : getRuntimeEnv(event).IMAGES
+        if (
+            !import.meta.dev &&
+            (!images || typeof images.info !== 'function' || typeof images.input !== 'function')
+        )
             throw serverError.internalServerError({
                 responseMessage: 'Cloudflare Images binding is not configured.',
             })
-
-        const bytes = await blob.arrayBuffer()
-        let info: { format: string; width: number; height: number; fileSize: number }
+        let info: { contentType: string; width: number | undefined; height: number | undefined }
+        let sampleBytes: ArrayBuffer | Uint8Array
         try {
-            info = await images.info(streamFromBytes(bytes))
+            if (import.meta.dev) {
+                const { processLocalUploadImage } =
+                    await import('~~/server/utils/imageProcessing.local')
+                const processed = await processLocalUploadImage(bytes)
+                info = processed
+                sampleBytes = processed.sample
+            } else {
+                const imageInfo = await images!.info(streamFromBytes(bytes))
+                info = {
+                    contentType: imageInfo.format,
+                    width: imageInfo.width,
+                    height: imageInfo.height,
+                }
+                const sample = await images!
+                    .input(streamFromBytes(bytes))
+                    .transform({ width: 96, height: 96, fit: 'scale-down' })
+                    .output({ format: 'image/png' })
+                sampleBytes = await new Response(sample.image()).arrayBuffer()
+            }
         } catch {
             throw serverError.badRequest({ responseMessage: 'Invalid image data.' })
         }
 
-        const contentType = info.format
+        const contentType = info.contentType
+        const { width, height } = info
         if (!(contentType in extensionByContentType))
             throw serverError.badRequest({ responseMessage: 'Unsupported image type.' })
         if (
-            !Number.isInteger(info.width) ||
-            !Number.isInteger(info.height) ||
-            info.width < 1 ||
-            info.height < 1 ||
-            info.width > 8192 ||
-            info.height > 8192
+            !Number.isInteger(width) ||
+            !Number.isInteger(height) ||
+            width === undefined ||
+            height === undefined ||
+            width < 1 ||
+            height < 1 ||
+            width > 8192 ||
+            height > 8192
         )
             throw serverError.badRequest({ responseMessage: 'Image dimensions are invalid.' })
 
-        const sample = await images
-            .input(streamFromBytes(bytes))
-            .transform({ width: 96, height: 96, fit: 'scale-down' })
-            .output({ format: 'image/png' })
-        const sampleBytes = await new Response(sample.image()).arrayBuffer()
         const { colors } = await extractImageColors(sampleBytes)
 
         const objectKey = `${path}/${session.user.id}/${nanoid(IMAGE_ID_LENGTH)}.${extensionByContentType[contentType as keyof typeof extensionByContentType]}`
@@ -87,8 +106,8 @@ export default authedSessionEventHandler(
         return {
             objectKey,
             url,
-            width: info.width,
-            height: info.height,
+            width,
+            height,
             themeColors: colors,
             contentType,
             size: uploaded.size ?? blob.size,

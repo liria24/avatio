@@ -122,7 +122,7 @@ describe('stage configuration', () => {
             await copyFile('.env.development', join(directory, '.env.development'))
             await expect(
                 promisify(execFile)(
-                    'bun',
+                    process.execPath,
                     [join(process.cwd(), 'scripts/stage.ts'), 'check', 'development'],
                     {
                         cwd: directory,

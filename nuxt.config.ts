@@ -5,6 +5,7 @@ import type { NitroConfig, NitroRouteConfig } from 'nitropack'
 import { defineOrganization } from 'nuxt-schema-org/schema'
 import { withLeadingSlash } from 'ufo'
 
+import { getLocalAuthSecret } from './config/localDevelopment'
 import {
     defaultI18nLocale,
     i18nRoutingStrategy,
@@ -15,9 +16,15 @@ const baseUrl = process.env.PUBLIC_SITE_URL || 'http://localhost:3000'
 const publicUrl = process.env.PUBLIC_SITE_URL || 'https://avatio.me'
 const r2PublicBaseUrl = process.env.R2_PUBLIC_BASE_URL
 const imageDomain = r2PublicBaseUrl ? new URL(r2PublicBaseUrl).hostname : undefined
+const twitterAuthEnabled = Boolean(
+    process.env.TWITTER_CLIENT_ID && process.env.TWITTER_CLIENT_SECRET,
+)
 const title = 'Avatio'
 const description = 'アバター改変レシピの共有プラットフォーム'
 const insightConfigPath = fileURLToPath(new URL('./app/server/insight.config.ts', import.meta.url))
+const betterAuthRuntimePath = fileURLToPath(
+    new URL('./server/shims/better-auth-minimal.ts', import.meta.url),
+)
 
 const normalizeRuntimeConfigForVitest = () => {
     if (!process.env.VITEST) return
@@ -82,14 +89,22 @@ export default defineNuxtConfig({
 
     devtools: { timeline: { enabled: true } },
 
+    devServer: { port: 3000 },
+
     hooks: {
+        listen: (_server, listener) => {
+            if (listener.address.port !== 3000)
+                throw new Error(
+                    'Port 3000 is already in use. Avatio local development requires it.',
+                )
+        },
         'modules:done': normalizeRuntimeConfigForVitest,
         'nitro:config': (config) => {
             // Better Auth populates this during modules:done. Clear it afterwards
             // so the Cloudflare secret binding remains authoritative at runtime.
             const nitroConfig = config as NitroConfig
             nitroConfig.runtimeConfig ??= {}
-            nitroConfig.runtimeConfig.betterAuthSecret = ''
+            nitroConfig.runtimeConfig.betterAuthSecret = import.meta.dev ? getLocalAuthSecret() : ''
         },
         'vite:extendConfig': normalizeRuntimeConfigForVitest,
     },
@@ -144,6 +159,14 @@ export default defineNuxtConfig({
     },
 
     nitro: {
+        rollupConfig: {
+            plugins: [
+                {
+                    name: 'avatio-better-auth-minimal',
+                    resolveId: (id) => (id === 'better-auth' ? betterAuthRuntimePath : null),
+                },
+            ],
+        },
         // Workerd's console.createTask getter throws when Unenv and Hookable probe it at import time.
         alias: {
             'node:console': fileURLToPath(
@@ -190,6 +213,7 @@ export default defineNuxtConfig({
         },
         public: {
             siteUrl: baseUrl,
+            twitterAuthEnabled,
         },
     },
 
@@ -342,7 +366,17 @@ export default defineNuxtConfig({
     },
 
     $development: {
-        image: { provider: 'none' },
+        image: {
+            provider: 'ipx',
+            domains: ['localhost', '127.0.0.1'],
+        },
+        insight: {
+            providers: {
+                cloudflare: {
+                    webAnalytics: false,
+                },
+            },
+        },
     },
 
     image: {
@@ -437,7 +471,7 @@ export default defineNuxtConfig({
 
     sitemap: {
         sitemaps: true,
-        exclude: ['/welcome', '/on-maintenance', '/admin/**'],
+        exclude: ['/on-maintenance', '/admin/**'],
         sources: ['/api/__sitemap__/urls'],
     },
 

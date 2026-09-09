@@ -1,4 +1,4 @@
-import { D1CatalogRepository } from '@avatio/cloudflare'
+import { SQLiteCatalogRepository } from '@avatio/cloudflare'
 import type { ProviderFetchResult } from '@avatio/core/catalog'
 import { drizzle } from 'drizzle-orm/d1'
 import { createError, type H3Event } from 'h3'
@@ -10,14 +10,17 @@ import { createTestD1 } from '../../helpers/d1'
 
 let database: ReturnType<typeof createTestD1>
 let db: ReturnType<typeof drizzle<typeof relations>>
-let repository: D1CatalogRepository
+let repository: SQLiteCatalogRepository
 let background: Promise<unknown>[]
 const fetchSource = vi.fn<() => Promise<ProviderFetchResult>>()
 const rateLimit = vi.fn()
 beforeEach(() => {
     database = createTestD1()
     db = drizzle(database.binding, { relations })
-    repository = new D1CatalogRepository(database.binding)
+    repository = new SQLiteCatalogRepository(db, async (queries) => {
+        const first = queries[0]!
+        return (await db.batch([first, ...queries.slice(1)])) as unknown[]
+    })
     background = []
     rateLimit.mockReset().mockResolvedValue(undefined)
     fetchSource.mockReset().mockResolvedValue({

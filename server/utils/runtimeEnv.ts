@@ -31,4 +31,8 @@ export const getRuntimeEnvString = (name: keyof RuntimeEnv, event?: H3Event) => 
         const value = env[name]
         if (typeof value === 'string' && value) return value
     }
+    if (import.meta.dev) {
+        const value = process.env[name]
+        if (value) return value
+    }
 }

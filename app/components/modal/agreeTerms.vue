@@ -3,11 +3,14 @@ import type { LegalDocument } from '@avatio/core/legal'
 import type { AvatioContentPage } from '@avatio/nuxt/runtime/content'
 
 interface Props {
-    documents: LegalDocument[]
+    documents: { document: LegalDocument; agreement: 'initial' | 'updated' }[]
 }
 const { documents } = defineProps<Props>()
-const needsTerms = computed(() => documents.includes('terms'))
-const needsPrivacyPolicy = computed(() => documents.includes('privacy-policy'))
+const documentIds = computed(() => documents.map(({ document }) => document))
+const needsTerms = computed(() => documentIds.value.includes('terms'))
+const needsPrivacyPolicy = computed(() => documentIds.value.includes('privacy-policy'))
+const hasInitial = computed(() => documents.some(({ agreement }) => agreement === 'initial'))
+const hasUpdated = computed(() => documents.some(({ agreement }) => agreement === 'updated'))
 
 const emit = defineEmits(['close'])
 
@@ -22,10 +25,10 @@ const {
     status,
     refresh,
 } = useAsyncData(
-    () => `legal-review:${locale.value}:${documents.join(',')}`,
+    () => `legal-review:${locale.value}:${documentIds.value.join(',')}`,
     () =>
         Promise.all(
-            documents.map(async (document) => ({
+            documentIds.value.map(async (document) => ({
                 document,
                 page: await requestFetch<AvatioContentPage>(`/api/avatio/content/${document}`, {
                     query: { locale: locale.value },
@@ -35,15 +38,22 @@ const {
 )
 
 const title = computed(() => {
+    if (hasInitial.value && hasUpdated.value) return t('modal.agreeTerms.mixed.title')
+    if (hasInitial.value) return t('modal.agreeTerms.initial.title')
     if (needsTerms.value && needsPrivacyPolicy.value) return t('modal.agreeTerms.title.both')
     if (needsPrivacyPolicy.value) return t('modal.agreeTerms.title.privacy')
     return t('modal.agreeTerms.title.terms')
 })
 const description = computed(() => {
+    if (hasInitial.value && hasUpdated.value) return t('modal.agreeTerms.mixed.description')
+    if (hasInitial.value) return t('modal.agreeTerms.initial.description')
     if (needsTerms.value && needsPrivacyPolicy.value) return t('modal.agreeTerms.description.both')
     if (needsPrivacyPolicy.value) return t('modal.agreeTerms.description.privacy')
     return t('modal.agreeTerms.description.terms')
 })
+const intro = computed(() =>
+    hasInitial.value ? t('modal.agreeTerms.initial.intro') : t('modal.agreeTerms.intro'),
+)
 
 const agreeAndClose = async () => {
     isAgreeing.value = true
@@ -83,7 +93,7 @@ const agreeAndClose = async () => {
     >
         <template #body>
             <p class="text-toned text-sm">
-                {{ $t('modal.agreeTerms.intro') }}
+                {{ intro }}
                 <br />
                 {{ description }}
             </p>

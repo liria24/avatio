@@ -39,7 +39,24 @@ VRSNSユーザー向けのアバターセットアップ共有サービス。<br
 
 Avatio is a Bun workspace modular monolith. Pure domains live in `@avatio/core`, Nuxt integration in `@avatio/nuxt`, and current infrastructure adapters in `@avatio/cloudflare`. Items and publishers use Avatio-owned identities across providers. Setup entries preserve category overrides, notes, and shapekeys; provider availability and refresh errors remain separate. Configuration, secret operations, and deployment guidance are maintained in [AGENTS.md](AGENTS.md).
 
-`bun run dev` serves `http://localhost:3000`, reads authored Markdown from `content/`, and saves uploads to gitignored `.data/uploads`. Its Alchemy state stays in `.alchemy/state`, separate from deployed resources in the Cloudflare state store. Deployed Workers read authored content from GitHub through the existing KV cache and store uploads in R2. Terms and Privacy keep independent versions and append-only acceptance history. PR quality checks run lint, typecheck, tests, and build without production secrets.
+## ローカル開発
+
+Node.js 26とBun 1.4以降を用意し、次の2コマンドを実行します。
+
+```sh
+bun install
+bun dev
+```
+
+`http://localhost:3000`で通常のNuxt dev serverが起動します。Cloudflare、Alchemy、Wranglerへのログインや`.env.keys`は不要です。初回起動時に既存のDrizzle migrationを適用した`.data/avatio.sqlite`と、再起動後も維持されるローカル認証secretを自動生成します。ログイン画面のローカル専用フォームから、規約とプライバシーポリシーへの同意を伴うemail/passwordアカウントを作成でき、空のDBで最初に作成されたユーザーだけがadminになります。
+
+ローカルでは、authored contentは`content/`、uploadは`.data/uploads`、送信メールは`.data/mail`を使用します。画像の表示とupload解析にはIPXを使用し、Catalog Queueは同じ同期処理をinline実行します。CloudflareのD1/R2/Images/Queue/Flagship/Email、外部analytics、Discord通知は使用しません。BOOTH proxy、Twitter OAuth、Workers AIは任意で、未設定でも基本操作とGitHub Catalogを利用できます。ローカルQueueはCloudflare Queueのretry／配信保証を再現しません。
+
+任意のローカル設定にはNuxt標準の`.env`を使用できます。Bun自身の自動dotenv読込は無効で、暗号化された`.env.development`と`.env.production`はplan/deploy用のNodeスクリプトがdotenvx `--strict`でのみ読み込みます。deployed developmentは引き続きCloudflare上の`development` stageであり、local stageではありません。
+
+既存のremote D1を明示的に取り込む場合だけ、`bun run db:seed:local -- --yes`を使用します。これはremote D1を読み取りますが、remoteへ書き込みません。productionからの取込には`--source production --allow-production`が必要です。
+
+Deployed Workers read authored content from GitHub through the existing KV cache and store uploads in R2. Terms and Privacy keep independent versions and append-only acceptance history. PR quality checks run lint, typecheck, tests, and build without production secrets.
 
 ## 🤝 Contributions
 

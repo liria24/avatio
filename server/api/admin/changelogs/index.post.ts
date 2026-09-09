@@ -117,7 +117,7 @@ export default promiseEventHandler(async ({ event, db }) => {
     if (translations.length) queries.push(db.insert(changelogI18ns).values(translations))
     queries.push(completeIdempotencyRequest(db, idempotency, { slug: finalSlug }))
 
-    await executeD1Batch(db, queries)
+    await executeAppBatch(db, queries)
 
     await invalidateCacheResources(
         event,
