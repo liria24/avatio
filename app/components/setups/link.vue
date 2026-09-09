@@ -48,7 +48,7 @@ const dominantColor = computed(() => firstImage.value?.themeColors?.[0] || '')
             class="relative w-full rounded-lg"
             :style="{ backgroundColor: dominantColor || undefined }"
         >
-            <NuxtImg
+            <SetupsImage
                 :src="firstImage!.url"
                 :alt="setup.name"
                 :width="firstImage!.width"
@@ -91,7 +91,7 @@ const dominantColor = computed(() => firstImage.value?.themeColors?.[0] || '')
 
         <div class="flex w-full items-center gap-2">
             <UTooltip v-if="!hasImages" :text="avatarName" :delay-duration="100">
-                <NuxtImg
+                <SetupsImage
                     v-if="avatar"
                     :src="avatar.image || undefined"
                     alt=""

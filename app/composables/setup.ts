@@ -36,9 +36,11 @@ export const useSetupsList = (
         query?: MaybeRef<Record<string, unknown>>
         immediate?: boolean
         watch?: UseFetchOptions<unknown>['watch']
+        onAppend?: (ids: string[]) => void
     },
 ) => {
     const page = ref(1)
+    let appendQuery: string | undefined
     const cacheKey = computed(
         () =>
             `setups-state-${type || 'custom'}-${options?.username || ''}-${JSON.stringify(unref(options?.query) || {})}`,
@@ -91,16 +93,28 @@ export const useSetupsList = (
         immediate: options?.immediate !== false,
         ...(options?.watch !== undefined ? { watch: options.watch } : {}),
         onResponse({ response }) {
-            if (response._data?.data) {
+            if (response.ok && response._data?.data) {
                 pagination.value = response._data.pagination
                 if (page.value === 1) setups.value = response._data.data
-                else setups.value = [...setups.value, ...response._data.data]
+                else {
+                    if (appendQuery === JSON.stringify(queryParams.value)) {
+                        const existing = new Set(setups.value.map((setup) => setup.id))
+                        options?.onAppend?.(
+                            response._data.data
+                                .map((setup: { id: string }) => setup.id)
+                                .filter((id: string) => !existing.has(id)),
+                        )
+                    }
+                    setups.value = [...setups.value, ...response._data.data]
+                }
+                appendQuery = undefined
             }
         },
     })
 
     // Initialize: Load initial data
     const initialize = async () => {
+        appendQuery = undefined
         page.value = 1
         await refresh()
     }
@@ -109,12 +123,15 @@ export const useSetupsList = (
     const loadMore = async () => {
         if (status.value !== 'pending' && pagination.value?.hasNext) {
             page.value = pagination.value.page + 1
+            appendQuery = JSON.stringify(queryParams.value)
             await refresh()
+            appendQuery = undefined
         }
     }
 
     // Refresh: Reset to first page
     const refreshData = async () => {
+        appendQuery = undefined
         page.value = 1
         await refresh()
     }

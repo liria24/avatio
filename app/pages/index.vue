@@ -31,6 +31,9 @@ const tab = computed<Tab>({
 })
 
 const showPrivate = ref(preferences.value.showPrivateSetups)
+const entrance = useSetupEntrance()
+const displayedTab = computed<Tab>(() => (loggedIn.value ? tab.value : 'latest'))
+watch(displayedTab, (value) => entrance.display(value, false, []), { flush: 'sync' })
 const showPrivateDebounced = refDebounced(showPrivate, 300)
 
 watch(
@@ -39,7 +42,8 @@ watch(
 )
 
 const setupsLatest = useSetupsList('latest', {
-    immediate: tab.value === 'latest',
+    immediate: displayedTab.value === 'latest',
+    onAppend: (ids) => entrance.append('latest', ids),
 })
 const setupsOwned = useSetupsList('owned', {
     username: user.value?.username ?? undefined,
@@ -67,6 +71,20 @@ const loading = computed(() =>
               : setupsLatest.status.value === 'pending'
         : setupsLatest.status.value === 'pending',
 )
+const cardEntrance = computed(() => {
+    // SSR fetches can finish after setup; commit the first display when rendering the result.
+    const list =
+        displayedTab.value === 'owned'
+            ? setupsOwned
+            : displayedTab.value === 'bookmarked'
+              ? setupsBookmarked
+              : setupsLatest
+    return entrance.display(
+        displayedTab.value,
+        list.status.value === 'success',
+        setups.value.map((setup) => setup.id),
+    )
+})
 
 useInfiniteScroll(import.meta.client ? document : undefined, () => setupsLatest.loadMore(), {
     distance: 600,
@@ -181,7 +199,7 @@ useSeo({
             </div>
             <h1 v-else class="text-lg font-medium text-nowrap">{{ $t('index.tabs.latest') }}</h1>
 
-            <SetupsList :setups :loading />
+            <SetupsList :key="displayedTab" :setups :loading :entrance="cardEntrance" />
             <UButton
                 v-if="(!loggedIn || tab === 'latest') && setupsLatest.pagination.value?.hasNext"
                 :loading="loading"
