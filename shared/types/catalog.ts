@@ -42,6 +42,7 @@ export type CatalogItemView = z.infer<typeof catalogItemPublicSchema>
 
 export const setupEntryPublicSchema = z.object({
     id: z.string(),
+    position: z.number().int().min(0),
     catalogItem: catalogItemPublicSchema,
     category: itemCategorySchema,
     categoryOverride: itemCategorySchema.nullable(),

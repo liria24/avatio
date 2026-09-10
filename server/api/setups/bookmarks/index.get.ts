@@ -94,7 +94,11 @@ export default authedSessionEventHandler<PaginationResponse<Bookmark[]>>(
                             },
                         },
                         images: {
+                            orderBy: { position: 'asc' },
                             columns: {
+                                id: true,
+                                stableId: true,
+                                position: true,
                                 objectKey: true,
                                 width: true,
                                 height: true,

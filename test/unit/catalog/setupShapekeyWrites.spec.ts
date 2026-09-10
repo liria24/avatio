@@ -32,6 +32,7 @@ it('persists CatalogItem references, notes and shapekeys atomically across creat
         const input = {
             public: true,
             name: 'New',
+            points: [],
             items: [
                 {
                     itemId: 'catalog',
@@ -68,6 +69,25 @@ it('persists CatalogItem references, notes and shapekeys atomically across creat
         expect(database.sqlite.prepare('SELECT item_id FROM setup_entries').all()).toEqual([
             { item_id: 'catalog' },
         ])
+
+        const entry = database.sqlite
+            .prepare('SELECT id FROM setup_entries WHERE setup_id = ?')
+            .get('newsetup') as { id: string }
+        database.sqlite
+            .prepare(
+                'INSERT INTO setup_images (stable_id, setup_id, object_key, width, height) VALUES (?, ?, ?, ?, ?)',
+            )
+            .run('image', 'newsetup', 'setup/user/image.jpg', 640, 480)
+        database.sqlite
+            .prepare(
+                'INSERT INTO setup_image_points (id, setup_id, image_id, setup_entry_id, x, y) VALUES (?, ?, ?, ?, ?, ?)',
+            )
+            .run('point', 'newsetup', 'image', entry.id, 0.5, 0.5)
+        await updateSetup(context, 'newsetup', {
+            images: [],
+            items: [{ id: entry.id, itemId: 'catalog', unsupported: false }],
+        })
+        expect(database.sqlite.prepare('SELECT id FROM setup_image_points').all()).toEqual([])
         expect(database.sqlite.prepare('PRAGMA foreign_key_check').all()).toEqual([])
     } finally {
         vi.unstubAllGlobals()

@@ -242,6 +242,10 @@ export const relations = defineRelations(schema, (r) => ({
             from: r.setups.id,
             to: r.setupImages.setupId,
         }),
+        points: r.many.setupImagePoints({
+            from: r.setups.id,
+            to: r.setupImagePoints.setupId,
+        }),
         coauthors: r.many.setupCoauthors({
             from: r.setups.id,
             to: r.setupCoauthors.setupId,
@@ -270,6 +274,10 @@ export const relations = defineRelations(schema, (r) => ({
             from: r.setupEntries.id,
             to: r.setupEntryShapekeys.setupEntryId,
         }),
+        points: r.many.setupImagePoints({
+            from: r.setupEntries.id,
+            to: r.setupImagePoints.setupEntryId,
+        }),
     },
     setupEntryShapekeys: {
         setupEntry: r.one.setupEntries({
@@ -289,6 +297,18 @@ export const relations = defineRelations(schema, (r) => ({
         setup: r.one.setups({
             from: r.setupImages.setupId,
             to: r.setups.id,
+            optional: false,
+        }),
+    },
+    setupImagePoints: {
+        setup: r.one.setups({
+            from: r.setupImagePoints.setupId,
+            to: r.setups.id,
+            optional: false,
+        }),
+        entry: r.one.setupEntries({
+            from: r.setupImagePoints.setupEntryId,
+            to: r.setupEntries.id,
             optional: false,
         }),
     },

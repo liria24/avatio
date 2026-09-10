@@ -128,6 +128,9 @@ describe('provider-neutral Catalog and Setup queries', () => {
         expect(result.data.map((setup) => setup.id)).toEqual(['public'])
         expect(result.data[0]?.images).toEqual([
             {
+                id: 1,
+                stableId: null,
+                position: 0,
                 objectKey: 'setups/public/image.png',
                 width: 1200,
                 height: 800,

@@ -626,6 +626,7 @@ export const setupEntries = snakeCase.table(
         id: text().primaryKey(),
         itemId: text().notNull(),
         setupId: text().notNull(),
+        position: integer().default(0).notNull(),
         categoryOverride: text({ enum: itemCategory }),
         unsupported: boolean().default(false).notNull(),
         note: text(),
@@ -696,7 +697,9 @@ export const setupImages = snakeCase.table(
     'setup_images',
     {
         id: identity(),
+        stableId: text().unique(),
         setupId: text().notNull(),
+        position: integer().default(0).notNull(),
         objectKey: text().notNull(),
         width: integer().notNull(),
         height: integer().notNull(),
@@ -713,6 +716,37 @@ export const setupImages = snakeCase.table(
             name: 'setup_images_setup_id_fkey',
             columns: [table.setupId],
             foreignColumns: [setups.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+    ],
+)
+
+export const setupImagePoints = snakeCase.table(
+    'setup_image_points',
+    {
+        id: text().primaryKey(),
+        setupId: text().notNull(),
+        imageId: text().notNull(),
+        setupEntryId: text().notNull(),
+        x: real().notNull(),
+        y: real().notNull(),
+    },
+    (table) => [
+        index('setup_image_points_setup_id_idx').on(table.setupId),
+        index('setup_image_points_image_id_idx').on(table.imageId),
+        index('setup_image_points_entry_id_idx').on(table.setupEntryId),
+        foreignKey({
+            name: 'setup_image_points_setup_id_fkey',
+            columns: [table.setupId],
+            foreignColumns: [setups.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+        foreignKey({
+            name: 'setup_image_points_entry_id_fkey',
+            columns: [table.setupEntryId],
+            foreignColumns: [setupEntries.id],
         })
             .onDelete('cascade')
             .onUpdate('cascade'),

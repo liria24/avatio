@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 const query = z.object({
-    q: z.string().optional(),
+    q: z.string().trim().max(100).optional(),
     orderBy: z.enum(['createdAt', 'name']).optional().default('createdAt'),
     sort: z.enum(['asc', 'desc']).optional().default('desc'),
     category: z

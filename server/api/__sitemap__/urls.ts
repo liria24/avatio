@@ -17,7 +17,11 @@ export default defineSitemapEventHandler(async (event) => {
         },
         with: {
             images: {
+                orderBy: { position: 'asc' },
                 columns: {
+                    id: true,
+                    stableId: true,
+                    position: true,
                     objectKey: true,
                 },
             },

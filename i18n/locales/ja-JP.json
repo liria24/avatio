@@ -225,6 +225,11 @@
         "itemSearch": {
             "placeholder": "アイテムを検索 / URLを入力",
             "addFromUrl": "URLから追加",
+            "addUrls": "{count}件のURLを追加",
+            "urlProgress": "URL追加の進捗",
+            "results": "カタログ",
+            "loadMore": "さらに読み込む",
+            "noResults": "一致するアイテムがありません",
             "invalidUrl": "無効なURL",
             "invalidUrlDescription": "正しいアイテムのURLを入力してください。",
             "fetchError": "アイテムの取得に失敗しました",
@@ -265,7 +270,9 @@
                 "unsaved": "未保存の変更",
                 "saving": "保存中...",
                 "saved": "保存しました",
-                "error": "保存に失敗"
+                "error": "保存に失敗",
+                "offline": "オフライン — 再接続後に保存",
+                "conflict": "別の編集と競合しました"
             },
             "draftAlert": {
                 "errorNotSaved": "エラーにより下書きが保存されていません！",
@@ -280,12 +287,32 @@
                 "shapekeyPlaceholder": "シェイプキー名称",
                 "notePlaceholder": "ノートの追加",
                 "empty": "アイテムが登録されていません",
+                "emptyPrompt": "アバター改変に使用したアイテムをリストしましょう",
+                "supportedPlatforms": "対応プラットフォーム: BOOTH, GitHub",
                 "noShapekeys": "シェイプキーがありません"
             },
             "images": {
+                "title": "画像",
                 "add": "画像を追加",
                 "dropAdd": "ドロップして追加",
-                "uploading": "画像をアップロード中..."
+                "uploading": "画像をアップロード中...",
+                "cover": "カバー",
+                "preview": "セットアップ画像",
+                "remove": "画像を削除",
+                "retry": "再試行"
+            },
+            "points": {
+                "title": "アイテムポイント",
+                "description": "画像をクリックし、その位置に配置するアイテムを選択します。",
+                "selectItem": "配置するアイテムを選択",
+                "move": "移動",
+                "remove": "削除",
+                "clickToMove": "移動先を画像上でクリックしてください",
+                "placeItem": "画像に配置"
+            },
+            "mobile": {
+                "details": "投稿情報・画像",
+                "items": "アイテム"
             },
             "tags": {
                 "title": "タグ",
@@ -324,6 +351,9 @@
             "limitedPublicDescription": "URLを知っている人だけ閲覧可能になります"
         },
         "viewer": {
+            "expandPoints": "アイテムポイントを展開",
+            "collapsePoints": "アイテムポイントを閉じる",
+            "showItemPoints": "画像上のこのアイテムを表示",
             "show": "セットアップを表示",
             "hide": "セットアップを非表示",
             "hiddenNotice": "このセットアップは現在非表示です",

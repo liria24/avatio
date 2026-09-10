@@ -369,6 +369,31 @@ describe('D1 migration', () => {
         expect(() => follow.run('user-1', 'user-2')).toThrow(/UNIQUE constraint failed/)
     })
 
+    it('stores stable ordered setup images and image points', () => {
+        database.exec(`
+            INSERT INTO users (id, name, username, display_username, email)
+            VALUES ('point-user', 'Point User', 'point_user', 'Point User', 'point@example.com');
+            INSERT INTO catalog_items (id) VALUES ('point-item');
+            INSERT INTO setups (id, user_id, name) VALUES ('point-setup', 'point-user', 'Points');
+            INSERT INTO setup_entries (id, item_id, setup_id, position)
+            VALUES ('point-entry', 'point-item', 'point-setup', 2);
+            INSERT INTO setup_images (stable_id, setup_id, position, object_key, width, height)
+            VALUES ('stable-image', 'point-setup', 1, 'setup/point.png', 800, 600);
+            INSERT INTO setup_image_points (id, setup_id, image_id, setup_entry_id, x, y)
+            VALUES ('point', 'point-setup', 'stable-image', 'point-entry', 0.25, 0.75);
+        `)
+
+        expect(database.prepare('SELECT * FROM setup_image_points').get()).toMatchObject({
+            id: 'point',
+            image_id: 'stable-image',
+            setup_entry_id: 'point-entry',
+            x: 0.25,
+            y: 0.75,
+        })
+        database.exec("DELETE FROM setup_entries WHERE id = 'point-entry'")
+        expect(database.prepare('SELECT * FROM setup_image_points').all()).toEqual([])
+    })
+
     it('rolls back all business writes when a batch statement fails', () => {
         database.exec(`
             INSERT INTO idempotency_requests
@@ -443,6 +468,7 @@ describe('D1 migration', () => {
             description: '',
             images: [],
             imageMetadata: {},
+            points: [],
             tags: ['avatar'],
             coauthors: [{ userId: 'coauthor', username: 'friend', note: '' }],
             items: [

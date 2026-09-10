@@ -13,15 +13,29 @@ const note = defineModel<string | undefined>('note', {
 
 interface Props {
     item: SetupComposeEntry
+    images?: string[]
 }
 const props = defineProps<Props>()
 
-const emit = defineEmits(['change-category', 'remove-item', 'shapekey-add', 'shapekey-remove'])
+const emit = defineEmits([
+    'change-category',
+    'remove-item',
+    'shapekey-add',
+    'shapekey-remove',
+    'place-item',
+])
 
 const itemCategory = useItemCategory()
+const { t } = useI18n()
 
 const inputShapekeyName = ref('')
 const inputShapekeyValue = ref(0)
+const imagePlacementItems = computed(() =>
+    (props.images ?? []).map((image, index) => ({
+        label: `${t('setup.compose.images.title')} ${index + 1}`,
+        onSelect: () => emit('place-item', image),
+    })),
+)
 </script>
 
 <template>
@@ -233,6 +247,16 @@ const inputShapekeyValue = ref(0)
                 variant="soft"
                 class="w-full"
             />
+
+            <UDropdownMenu v-if="imagePlacementItems.length" :items="imagePlacementItems">
+                <UButton
+                    :label="$t('setup.compose.points.placeItem')"
+                    icon="mingcute:map-pin-fill"
+                    variant="ghost"
+                    size="xs"
+                    class="ml-auto"
+                />
+            </UDropdownMenu>
         </div>
     </div>
 </template>

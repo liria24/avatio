@@ -5,11 +5,13 @@ import { withoutProtocol, withoutTrailingSlash } from 'ufo'
 interface Props {
     entry: SetupEntryView
     showNsfw?: boolean
+    pointCount?: number
 }
-const { entry, showNsfw = false } = defineProps<Props>()
+const { entry, showNsfw = false, pointCount = 0 } = defineProps<Props>()
 
 const emit = defineEmits<{
     'report-item': [itemId: string]
+    'show-points': []
 }>()
 
 const item = computed(() => entry.catalogItem)
@@ -241,6 +243,17 @@ const providerIcon = computed(() => getCatalogProviderData(source.value?.provide
                     {{ entry.note }}
                 </p>
             </div>
+
+            <UTooltip v-if="pointCount" :text="$t('setup.viewer.showItemPoints')">
+                <UButton
+                    icon="mingcute:map-pin-fill"
+                    :label="String(pointCount)"
+                    variant="soft"
+                    size="sm"
+                    class="rounded-lg p-2"
+                    @click="emit('show-points')"
+                />
+            </UTooltip>
 
             <UTooltip
                 v-if="entry.unsupported"

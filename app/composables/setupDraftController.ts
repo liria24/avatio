@@ -1,4 +1,5 @@
 import { setupDraftContentSchema, type SetupDraftContent } from '@avatio/core/setups'
+import { getCurrentScope, onScopeDispose } from 'vue'
 
 const debounceMs = 2000
 
@@ -58,8 +59,9 @@ export const useSetupDraftController = (onDraftId: (id: string | null) => void) 
 
     const flushLatest = () => {
         if (!latest) return
-        writer.queue(latest.content, latest.setupId)
+        const snapshot = latest
         latest = null
+        writer.queue(snapshot.content, snapshot.setupId)
     }
 
     const schedule = (content: SetupDraftContent, setupId: string | null) => {
@@ -105,13 +107,21 @@ export const useSetupDraftController = (onDraftId: (id: string | null) => void) 
         await deleteSetupDraftRecovery(requireOwner(), id).catch(() => null)
     }
 
+    if (getCurrentScope())
+        onScopeDispose(() => {
+            if (debounceTimer) clearTimeout(debounceTimer)
+            debounceTimer = null
+            latest = null
+            writer.cancel()
+        })
+
     const loadRecovery = async (id: string) => {
         const record = await loadSetupDraftRecovery(requireOwner(), id).catch(() => null)
         requireOwner()
         return record
     }
 
-    const load = async (id: string): Promise<SetupDraft> => {
+    const load = async (id: string): Promise<SetupDraft & { recoveredLocally?: true }> => {
         requireOwner()
         let remote: SetupDraft | null = null
         let failure: unknown
@@ -133,6 +143,7 @@ export const useSetupDraftController = (onDraftId: (id: string | null) => void) 
                 content: setupDraftContentSchema.parse(local.content),
                 createdAt: new Date(local.updatedAt),
                 updatedAt: new Date(local.updatedAt),
+                recoveredLocally: true,
             }
         throw failure ?? new Error('Draft not found.')
     }

@@ -56,7 +56,11 @@ export default promiseEventHandler(async ({ db, event }) => {
                 },
             },
             images: {
+                orderBy: { position: 'asc' },
                 columns: {
+                    id: true,
+                    stableId: true,
+                    position: true,
                     objectKey: true,
                 },
             },

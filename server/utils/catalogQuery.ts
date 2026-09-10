@@ -105,10 +105,12 @@ export const queryCatalogItems = async (
         limit: number
         ownerId?: string
         publicAvatars?: boolean
+        suggestedByOwnerId?: string
     },
 ) => {
     const page = input.page ?? 1
     const offset = (page - 1) * input.limit
+    const query = input.q?.trim()
     const category = sql<ItemCategory>`coalesce(${catalogItems.categoryOverride}, ${itemSources.mappedCategory}, 'other')`
     const visibleAvatarEntries = db
         .select({ count: count() })
@@ -126,8 +128,28 @@ export const queryCatalogItems = async (
             ),
         )
     const visibleAvatarCount = sql<number>`(${visibleAvatarEntries})`
-    const ordering =
-        input.orderBy === 'name'
+    const ownerEntries = db
+        .select({ count: count() })
+        .from(setupEntries)
+        .innerJoin(setups, eq(setups.id, setupEntries.setupId))
+        .where(
+            and(
+                eq(setupEntries.itemId, catalogItems.id),
+                input.suggestedByOwnerId ? eq(setups.userId, input.suggestedByOwnerId) : undefined,
+            ),
+        )
+    const ownerEntryCount = sql<number>`(${ownerEntries})`
+    const ordering = query
+        ? sql<number>`case
+              when coalesce(${catalogItems.displayNameOverride}, ${itemSources.displayName}) = ${query} then 0
+              when coalesce(${catalogItems.displayNameOverride}, ${itemSources.displayName}) like ${`${query}%`} then 1
+              when ${publisherSources.name} = ${query} then 2
+              when ${publisherSources.name} like ${`${query}%`} then 3
+              else 4
+          end`
+        : input.suggestedByOwnerId
+          ? ownerEntryCount
+          : input.orderBy === 'name'
             ? sql`coalesce(${catalogItems.displayNameOverride}, ${itemSources.displayName})`
             : input.orderBy === 'popular'
               ? visibleAvatarCount
@@ -147,10 +169,12 @@ export const queryCatalogItems = async (
         .leftJoin(publisherSources, eq(publisherSources.id, itemSources.publisherSourceId))
         .where(
             and(
-                input.q
+                query
                     ? or(
-                          like(itemSources.displayName, '%' + input.q + '%'),
-                          like(catalogItems.displayNameOverride, '%' + input.q + '%'),
+                          like(itemSources.displayName, `%${query}%`),
+                          like(catalogItems.displayNameOverride, `%${query}%`),
+                          like(publisherSources.name, `%${query}%`),
+                          like(itemSources.metadata, `%${query}%`),
                       )
                     : undefined,
                 input.category?.length && !input.ownerId && !input.publicAvatars
@@ -161,9 +185,14 @@ export const queryCatalogItems = async (
                     ? inArray(itemSources.availability, input.availability)
                     : undefined,
                 input.ownerId || input.publicAvatars ? sql`${visibleAvatarCount} > 0` : undefined,
+                input.suggestedByOwnerId ? sql`${ownerEntryCount} > 0` : undefined,
             ),
         )
-        .orderBy(input.sort === 'asc' ? asc(ordering) : desc(ordering), asc(catalogItems.id))
+        .orderBy(
+            query ? asc(ordering) : input.sort === 'asc' ? asc(ordering) : desc(ordering),
+            ...(query ? [desc(itemSources.popularityCount)] : []),
+            asc(catalogItems.id),
+        )
         .limit(input.limit)
         .offset(offset)
     const total = data[0]?.total ?? 0

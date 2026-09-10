@@ -8,6 +8,7 @@ const shapekeySchema = z.object({
 })
 
 export const setupDraftImageMetadataSchema = z.object({
+    id: z.string().min(1).optional(),
     objectKey: z.string().min(1),
     contentType: z.string().optional(),
     size: z.number().int().min(1).optional(),
@@ -23,11 +24,19 @@ export const setupDraftImageMetadataSchema = z.object({
         .optional(),
 })
 
+const setupPointSchema = z.object({
+    id: z.string().min(1),
+    imageId: z.string().min(1),
+    entryId: z.string().min(1),
+    x: z.number().min(0).max(1),
+    y: z.number().min(0).max(1),
+})
+
 export const setupComposeFormSchema = z.object({
     public: z.boolean(),
     name: z.string().max(64),
     description: z.string().max(512),
-    images: z.url().array().max(1),
+    images: z.url().array().max(4),
     tags: z.string().min(1).max(32).array().max(8),
     coauthors: z
         .object({
@@ -39,6 +48,7 @@ export const setupComposeFormSchema = z.object({
         .max(8),
     items: z
         .object({
+            id: z.string().min(1).optional(),
             itemId: z.string().min(1),
             category: itemCategorySchema,
             note: z.string().max(300),
@@ -46,9 +56,11 @@ export const setupComposeFormSchema = z.object({
             shapekeys: shapekeySchema.array().max(64),
         })
         .array(),
+    points: setupPointSchema.array().max(128),
 })
 
 export const setupDraftContentSchema = setupComposeFormSchema.extend({
+    points: setupPointSchema.array().max(128).default([]),
     imageMetadata: z.record(z.string(), setupDraftImageMetadataSchema).optional(),
 })
 
@@ -63,6 +75,7 @@ export const createDefaultSetupComposeForm = (): SetupComposeForm => ({
     tags: [],
     coauthors: [],
     items: [],
+    points: [],
 })
 
 export const isEmptySetupComposeForm = (form: SetupComposeForm) =>
@@ -72,4 +85,5 @@ export const isEmptySetupComposeForm = (form: SetupComposeForm) =>
     !form.images.length &&
     !form.tags.length &&
     !form.coauthors.length &&
-    !form.items.length
+    !form.items.length &&
+    !form.points.length

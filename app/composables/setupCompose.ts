@@ -1,6 +1,7 @@
 import {
     createDefaultSetupComposeForm,
     isEmptySetupComposeForm,
+    setupDraftContentSchema,
     type SetupComposeForm,
     type SetupDraftContent,
 } from '@avatio/core/setups'
@@ -18,10 +19,11 @@ const createSetupCompose = () => {
     const restoring = ref(false)
     const loadFailed = ref(false)
     const editingSetupId = ref<Setup['id'] | null>(null)
-    const imageUploading = ref(false)
     const imageMetadata = ref<Record<string, SetupImageMetadata>>({})
     const itemEntities = ref<Record<string, CatalogItemView>>({})
     const userEntities = ref<Record<string, ComposeUser>>({})
+    const itemSearchTerm = ref('')
+    const itemScrollTop = ref(0)
     const publishIdempotencyKey = ref(crypto.randomUUID())
 
     const updateRouterQuery = (updates: Record<string, string | undefined>) => {
@@ -45,7 +47,7 @@ const createSetupCompose = () => {
         totalItemsCount,
         addItem,
         updateItem,
-        removeItem,
+        removeItem: removeEntry,
         changeItemCategory,
         addShapekey,
         removeShapekey,
@@ -55,12 +57,54 @@ const createSetupCompose = () => {
         setItems,
         itemEntities,
     )
-    const { getSelectedImageMetadata, processImages, removeImage } = useSetupComposeImages(
+    const {
+        getImageId,
+        getSelectedImageMetadata,
+        uploads,
+        imageUploading,
+        processImages,
+        cancelUpload,
+        cancelAllUploads,
+        retryUpload,
+        removeImage: removeSelectedImage,
+        reorderImages,
+    } = useSetupComposeImages(
         computed(() => values.value.images),
         (images) => form.setFieldValue('images', images),
         imageMetadata,
-        imageUploading,
     )
+    const removeItem = (category: ItemCategory, entryId: string) => {
+        removeEntry(category, entryId)
+        form.setFieldValue(
+            'points',
+            values.value.points.filter((point) => point.entryId !== entryId),
+        )
+    }
+    const removeImage = (index: number) => {
+        const url = values.value.images[index]
+        if (url)
+            form.setFieldValue(
+                'points',
+                values.value.points.filter((point) => point.imageId !== getImageId(url)),
+            )
+        removeSelectedImage(index)
+    }
+    const pointEditor = useSetupImagePointsModal()
+    const openImagePoints = (url: string, placingEntryId?: string) => {
+        const imageId = getImageId(url)
+        void pointEditor.open({
+            imageUrl: url,
+            imageId,
+            placingEntryId,
+            entries: entries.value.map(({ id, name, image }) => ({ id, name, image })),
+            points: values.value.points.filter((point) => point.imageId === imageId),
+            onUpdate: (points: SetupPoint[]) =>
+                form.setFieldValue('points', [
+                    ...values.value.points.filter((point) => point.imageId !== imageId),
+                    ...points,
+                ]),
+        })
+    }
     const coauthors = computed<ComposeCoauthor[]>(() =>
         values.value.coauthors.map((coauthor) => ({
             ...coauthor,
@@ -84,9 +128,24 @@ const createSetupCompose = () => {
 
     const resetFormOnce = async (content: SetupDraftContent) => {
         restoring.value = true
-        imageMetadata.value = content.imageMetadata ?? {}
+        imageMetadata.value = Object.fromEntries(
+            content.images.map((url) => [
+                url,
+                {
+                    ...content.imageMetadata?.[url],
+                    id: content.imageMetadata?.[url]?.id ?? crypto.randomUUID(),
+                },
+            ]),
+        ) as Record<string, SetupImageMetadata>
         const { imageMetadata: _, ...formValues } = content
-        form.reset(formValues)
+        form.reset({
+            ...formValues,
+            items: formValues.items.map((entry) => ({
+                ...entry,
+                id: entry.id ?? crypto.randomUUID(),
+            })),
+            points: formValues.points ?? [],
+        })
         await nextTick()
         restoring.value = false
     }
@@ -136,6 +195,7 @@ const createSetupCompose = () => {
     const loadDraft = async (id: string) => {
         restoring.value = true
         loadFailed.value = false
+        cancelAllUploads()
         try {
             await draftController.flush()
             const draftData = await draftController.load(id)
@@ -143,6 +203,14 @@ const createSetupCompose = () => {
             await hydrateDraftReferences(draftData.content)
             editingSetupId.value = draftData.setupId ?? null
             await draftController.switchSession(draftData.id, draftData.revision)
+            if (draftData.recoveredLocally)
+                draftController.schedule(
+                    setupDraftContentSchema.parse({
+                        ...values.value,
+                        imageMetadata: getSelectedImageMetadata(),
+                    }),
+                    editingSetupId.value,
+                )
             updateRouterQuery({
                 draftId: draftData.id,
                 edit: draftData.setupId ?? undefined,
@@ -177,16 +245,19 @@ const createSetupCompose = () => {
                     note: note ?? '',
                 })) ?? [],
             items: setup.entries.map((item) => ({
+                id: item.id,
                 itemId: item.catalogItem.id,
                 category: item.category,
                 note: item.note ?? '',
                 unsupported: item.unsupported ?? false,
                 shapekeys: item.shapekeys ?? [],
             })),
+            points: setup.points ?? [],
             imageMetadata: Object.fromEntries(
                 (setup.images ?? []).map((image) => [
                     image.url,
                     {
+                        id: image.id,
                         objectKey: image.objectKey,
                         contentType: image.contentType ?? undefined,
                         size: image.size ?? undefined,
@@ -239,6 +310,7 @@ const createSetupCompose = () => {
 
     const clearForm = async () => {
         restoring.value = true
+        cancelAllUploads()
         form.reset(createDefaultSetupComposeForm())
         imageMetadata.value = {}
         itemEntities.value = {}
@@ -251,7 +323,7 @@ const createSetupCompose = () => {
     }
 
     const publish = async (): Promise<Setup['id'] | undefined> => {
-        if (publishing.value) return
+        if (publishing.value || imageUploading.value) return
         publishing.value = true
         try {
             await draftController.flush()
@@ -261,17 +333,14 @@ const createSetupCompose = () => {
                 name: values.value.name,
                 description: values.value.description,
                 items: values.value.items,
-                images: values.value.images.length ? values.value.images : undefined,
+                images: values.value.images,
                 imageMetadata: getSelectedImageMetadata(),
-                tags: values.value.tags.length
-                    ? values.value.tags.map((tag) => ({ tag }))
-                    : undefined,
-                coauthors: values.value.coauthors.length
-                    ? values.value.coauthors.map(({ userId, note }) => ({
-                          userId,
-                          note: note || undefined,
-                      }))
-                    : undefined,
+                points: values.value.points,
+                tags: values.value.tags.map((tag) => ({ tag })),
+                coauthors: values.value.coauthors.map(({ userId, note }) => ({
+                    userId,
+                    note: note || undefined,
+                })),
             }
             if (!setupsInsertSchema.safeParse(body).success) throw new Error('Validation failed')
 
@@ -308,8 +377,9 @@ const createSetupCompose = () => {
     }
 
     const addTag = (tag: string) => {
-        if (!tag.trim()) return
-        if (values.value.tags.includes(tag)) {
+        const normalized = tag.trim().slice(0, 32)
+        if (!normalized || values.value.tags.length >= 8) return
+        if (values.value.tags.includes(normalized)) {
             toast.add({
                 id: 'tag-duplicate',
                 icon: 'mingcute:close-line',
@@ -318,7 +388,7 @@ const createSetupCompose = () => {
             })
             return
         }
-        form.setFieldValue('tags', [...values.value.tags, tag])
+        form.setFieldValue('tags', [...values.value.tags, normalized])
     }
     const removeTag = (tag: string) =>
         form.setFieldValue(
@@ -387,8 +457,14 @@ const createSetupCompose = () => {
         setCoauthors,
         updateCoauthorNote,
         imageUploading,
+        uploads,
         processImages,
+        cancelUpload,
+        retryUpload,
         removeImage,
+        reorderImages,
+        getImageId,
+        openImagePoints,
         totalItemsCount,
         addItem,
         updateItem,
@@ -397,6 +473,8 @@ const createSetupCompose = () => {
         addShapekey,
         removeShapekey,
         reorderCategory,
+        itemSearchTerm,
+        itemScrollTop,
         drafts,
         draftsStatus,
         refreshDrafts,

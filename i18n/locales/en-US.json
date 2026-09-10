@@ -225,6 +225,11 @@
         "itemSearch": {
             "placeholder": "Search items / Enter URL",
             "addFromUrl": "Add from URL",
+            "addUrls": "Add {count} URL | Add {count} URLs",
+            "urlProgress": "URL imports",
+            "results": "Catalog",
+            "loadMore": "Load more",
+            "noResults": "No matching items",
             "invalidUrl": "Invalid URL",
             "invalidUrlDescription": "Please enter a valid item URL.",
             "fetchError": "Failed to fetch item",
@@ -265,7 +270,9 @@
                 "unsaved": "Unsaved changes",
                 "saving": "Saving...",
                 "saved": "Saved",
-                "error": "Failed to save"
+                "error": "Failed to save",
+                "offline": "Offline — saves after reconnecting",
+                "conflict": "Conflicts with another edit"
             },
             "draftAlert": {
                 "errorNotSaved": "Draft not saved due to an error!",
@@ -280,12 +287,32 @@
                 "shapekeyPlaceholder": "Shape key name",
                 "notePlaceholder": "Add note",
                 "empty": "No items registered",
+                "emptyPrompt": "List the items used in this setup",
+                "supportedPlatforms": "Supported platforms: BOOTH, GitHub",
                 "noShapekeys": "No shapekeys"
             },
             "images": {
+                "title": "Images",
                 "add": "Add Image",
                 "dropAdd": "Drop to Add",
-                "uploading": "Uploading image..."
+                "uploading": "Uploading image...",
+                "cover": "Cover",
+                "preview": "Setup image",
+                "remove": "Remove image",
+                "retry": "Retry"
+            },
+            "points": {
+                "title": "Item Points",
+                "description": "Click the image, then choose an item to place at that position.",
+                "selectItem": "Choose an item to place",
+                "move": "Move",
+                "remove": "Remove",
+                "clickToMove": "Click the new position on the image",
+                "placeItem": "Place on image"
+            },
+            "mobile": {
+                "details": "Post info & images",
+                "items": "Items"
             },
             "tags": {
                 "title": "Tags",
@@ -324,6 +351,9 @@
             "limitedPublicDescription": "Only people with the URL can view this setup."
         },
         "viewer": {
+            "expandPoints": "Expand item points",
+            "collapsePoints": "Collapse item points",
+            "showItemPoints": "Show this item on the image",
             "show": "Show Setup",
             "hide": "Hide Setup",
             "hiddenNotice": "This setup is currently hidden",

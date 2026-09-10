@@ -16,16 +16,19 @@ export const useSetupComposeEntries = (
     const toast = useToast()
     const { t } = useI18n()
     const entries = computed<SetupComposeEntry[]>(() =>
-        items.value.map((item) => ({
-            ...(entities.value[item.itemId] ?? {
-                id: item.itemId,
-                primarySource: null,
-                name: item.itemId,
-                image: null,
-            }),
-            ...item,
-            id: item.itemId,
-        })),
+        items.value.map((item) => {
+            const id = item.id ?? item.itemId
+            return {
+                ...(entities.value[item.itemId] ?? {
+                    id: item.itemId,
+                    primarySource: null,
+                    name: item.itemId,
+                    image: null,
+                }),
+                ...item,
+                id,
+            }
+        }),
     )
     const totalItemsCount = computed(() => items.value.length)
 
@@ -49,6 +52,7 @@ export const useSetupComposeEntries = (
         setItems([
             ...items.value,
             {
+                id: crypto.randomUUID(),
                 itemId: item.id,
                 category: parsedCategory.success ? parsedCategory.data : 'other',
                 note: '',
@@ -58,16 +62,22 @@ export const useSetupComposeEntries = (
         ])
     }
 
-    const updateItem = (itemId: string, update: Partial<SetupComposeForm['items'][number]>) =>
+    const updateItem = (entryId: string, update: Partial<SetupComposeForm['items'][number]>) =>
         setItems(
-            items.value.map((item) => (item.itemId === itemId ? { ...item, ...update } : item)),
+            items.value.map((item) =>
+                (item.id ?? item.itemId) === entryId ? { ...item, ...update } : item,
+            ),
         )
 
-    const removeItem = (category: ItemCategory, itemId: string) =>
-        setItems(items.value.filter((item) => item.itemId !== itemId || item.category !== category))
+    const removeItem = (category: ItemCategory, entryId: string) =>
+        setItems(
+            items.value.filter(
+                (item) => (item.id ?? item.itemId) !== entryId || item.category !== category,
+            ),
+        )
 
-    const changeItemCategory = (itemId: string, category: ItemCategory) => {
-        if (itemCategorySchema.safeParse(category).success) updateItem(itemId, { category })
+    const changeItemCategory = (entryId: string, category: ItemCategory) => {
+        if (itemCategorySchema.safeParse(category).success) updateItem(entryId, { category })
     }
 
     const addShapekey = (input: {
@@ -77,7 +87,7 @@ export const useSetupComposeEntries = (
         value: number
     }) => {
         const item = items.value.find(
-            ({ itemId, category }) => itemId === input.id && category === input.category,
+            (item) => (item.id ?? item.itemId) === input.id && item.category === input.category,
         )
         if (item)
             updateItem(input.id, {
@@ -87,7 +97,7 @@ export const useSetupComposeEntries = (
 
     const removeShapekey = (input: { category: ItemCategory; id: string; index: number }) => {
         const item = items.value.find(
-            ({ itemId, category }) => itemId === input.id && category === input.category,
+            (item) => (item.id ?? item.itemId) === input.id && item.category === input.category,
         )
         if (item)
             updateItem(input.id, {
@@ -100,8 +110,10 @@ export const useSetupComposeEntries = (
             itemCategorySchema.options.map((key) => [
                 key,
                 key === category
-                    ? reordered.flatMap(({ itemId }) => {
-                          const item = items.value.find((candidate) => candidate.itemId === itemId)
+                    ? reordered.flatMap(({ id }) => {
+                          const item = items.value.find(
+                              (candidate) => (candidate.id ?? candidate.itemId) === id,
+                          )
                           return item ? [item] : []
                       })
                     : items.value.filter((item) => item.category === key),

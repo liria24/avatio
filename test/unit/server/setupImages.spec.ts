@@ -6,6 +6,8 @@ type SetupImagesModule = typeof import('../../../server/utils/setupImages')
 
 vi.mock('@@/database/schema', () => ({
     setupImages: {
+        id: 'id',
+        stableId: 'stableId',
         objectKey: 'objectKey',
         width: 'width',
         height: 'height',
@@ -36,14 +38,16 @@ vi.stubGlobal('serverError', serverError)
 const loadSetupImages = async (): Promise<SetupImagesModule> =>
     await import('../../../server/utils/setupImages')
 
-const createDb = (existingImages: unknown[] = []): AppDatabase =>
-    ({
+const createDb = (...queryResults: unknown[][]): AppDatabase => {
+    let queryIndex = 0
+    return {
         select: () => ({
             from: () => ({
-                where: async () => existingImages,
+                where: async () => queryResults[queryIndex++] ?? [],
             }),
         }),
-    }) as unknown as AppDatabase
+    } as unknown as AppDatabase
+}
 
 describe('isUserSetupImageKey', () => {
     it('allows setup images below the current user prefix', async () => {
@@ -76,7 +80,10 @@ describe('resolveSetupImageData', () => {
         })
 
         expect(imageData).toEqual([
-            {
+            expect.objectContaining({
+                id: undefined,
+                stableId: expect.any(String),
+                position: 0,
                 objectKey: 'setup/user-1/image.jpg',
                 width: 640,
                 height: 480,
@@ -84,7 +91,7 @@ describe('resolveSetupImageData', () => {
                 contentType: null,
                 size: null,
                 etag: null,
-            },
+            }),
         ])
     })
 
@@ -110,6 +117,8 @@ describe('resolveSetupImageData', () => {
         const { resolveSetupImageData } = await loadSetupImages()
 
         const existingImage = {
+            id: 7,
+            stableId: 'stable-image',
             objectKey: 'legacy/custom-key.jpg',
             width: 320,
             height: 240,
@@ -119,19 +128,72 @@ describe('resolveSetupImageData', () => {
             etag: 'etag',
         }
 
-        const imageData = await resolveSetupImageData(createDb([existingImage]), {
-            userId: 'user-1',
-            setupId: 'setup-1',
-            images: ['https://files.example.com/legacy/custom-key.jpg'],
-            imageMetadata: {
-                'https://files.example.com/legacy/custom-key.jpg': {
-                    objectKey: 'legacy/custom-key.jpg',
-                    width: 999,
-                    height: 999,
+        const imageData = await resolveSetupImageData(
+            createDb([existingImage], [{ stableId: 'stable-image', setupId: 'setup-1' }]),
+            {
+                userId: 'user-1',
+                setupId: 'setup-1',
+                images: ['https://files.example.com/legacy/custom-key.jpg'],
+                imageMetadata: {
+                    'https://files.example.com/legacy/custom-key.jpg': {
+                        objectKey: 'legacy/custom-key.jpg',
+                        width: 999,
+                        height: 999,
+                    },
                 },
             },
-        })
+        )
 
-        expect(imageData).toEqual([existingImage])
+        expect(imageData).toEqual([{ ...existingImage, position: 0 }])
+    })
+
+    it('rejects duplicate object keys and stable IDs', async () => {
+        const { resolveSetupImageData } = await loadSetupImages()
+        const metadata = {
+            objectKey: 'setup/user-1/image.jpg',
+            id: 'image-id',
+            width: 640,
+            height: 480,
+        }
+
+        await expect(
+            resolveSetupImageData(createDb(), {
+                userId: 'user-1',
+                images: ['first', 'second'],
+                imageMetadata: { first: metadata, second: metadata },
+            }),
+        ).rejects.toThrow('Bad Request')
+        await expect(
+            resolveSetupImageData(createDb(), {
+                userId: 'user-1',
+                images: ['first', 'second'],
+                imageMetadata: {
+                    first: metadata,
+                    second: { ...metadata, objectKey: 'setup/user-1/second.jpg' },
+                },
+            }),
+        ).rejects.toThrow('Bad Request')
+    })
+
+    it('rejects a stable ID claimed by another setup', async () => {
+        const { resolveSetupImageData } = await loadSetupImages()
+
+        await expect(
+            resolveSetupImageData(
+                createDb([{ stableId: 'claimed-image', setupId: 'another-setup' }]),
+                {
+                    userId: 'user-1',
+                    images: ['image'],
+                    imageMetadata: {
+                        image: {
+                            id: 'claimed-image',
+                            objectKey: 'setup/user-1/image.jpg',
+                            width: 640,
+                            height: 480,
+                        },
+                    },
+                },
+            ),
+        ).rejects.toThrow('Bad Request')
     })
 })

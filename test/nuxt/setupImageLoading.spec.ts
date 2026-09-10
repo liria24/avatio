@@ -133,6 +133,8 @@ describe('Setup list image loading', () => {
             failedItemsCount: undefined,
             images: [
                 {
+                    id: 'image-test',
+                    position: 0,
                     url: '/image-test.png',
                     objectKey: 'image-test.png',
                     width: 1200,

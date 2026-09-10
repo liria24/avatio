@@ -96,6 +96,7 @@ export const setupEntryShapekeysPublicSchema = setupEntryShapekeysInsertSchema.p
 export type SetupEntryShapekey = z.infer<typeof setupEntryShapekeysPublicSchema>
 
 export const setupEntriesInsertSchema = z.object({
+    id: z.string().min(1).optional(),
     itemId: z.string().min(1),
     category: itemCategorySchema.nullable().optional(),
     unsupported: z.boolean().default(false),
@@ -108,6 +109,8 @@ export const setupTagsInsertSchema = z.object({
 })
 
 export const setupImagesPublicSchema = z.object({
+    id: z.string(),
+    position: z.number().int().min(0),
     objectKey: z.string(),
     width: z.number().int(),
     height: z.number().int(),
@@ -119,6 +122,7 @@ export const setupImagesPublicSchema = z.object({
 })
 
 export const setupImageMetadataSchema = z.object({
+    id: z.string().min(1).optional(),
     objectKey: z.string().min(1),
     contentType: z.string().optional(),
     size: z.number().int().min(1).optional(),
@@ -134,6 +138,15 @@ export const setupImageMetadataSchema = z.object({
         .optional(),
 })
 export type SetupImageMetadata = z.infer<typeof setupImageMetadataSchema>
+
+export const setupPointSchema = z.object({
+    id: z.string().min(1),
+    imageId: z.string().min(1),
+    entryId: z.string().min(1),
+    x: z.number().min(0).max(1),
+    y: z.number().min(0).max(1),
+})
+export type SetupPoint = z.infer<typeof setupPointSchema>
 
 export const setupCoauthorsInsertSchema = z.object({
     userId: z.string(),
@@ -151,9 +164,10 @@ const setupNameSchema = z
 const setupDescriptionSchema = z.string().max(512, '説明文は最大 512 文字です。').nullable()
 const setupRelationsSchema = {
     tags: setupTagsInsertSchema.array().max(8, 'タグは最大 8 個です。').optional(),
-    images: z.string().min(1).array().max(1, '画像は最大 1 個です。').optional(),
+    images: z.string().min(1).array().max(4, '画像は最大 4 個です。').optional(),
     imageMetadata: z.record(z.string(), setupImageMetadataSchema).optional(),
     coauthors: setupCoauthorsInsertSchema.array().max(8, '共同作者は最大 8 人です。').optional(),
+    points: setupPointSchema.array().max(128).optional(),
 } as const
 
 export const setupsInsertSchema = z.object({
@@ -161,6 +175,7 @@ export const setupsInsertSchema = z.object({
     name: setupNameSchema,
     description: setupDescriptionSchema.optional(),
     ...setupRelationsSchema,
+    points: setupPointSchema.array().max(128).default([]),
     items: setupEntriesInsertSchema
         .array()
         .min(1, 'アイテムは1個以上必要です。')
@@ -183,12 +198,13 @@ export const setupsClientFormSchema = z.object({
     name: setupNameSchema,
     description: setupDescriptionSchema.optional(),
     tags: z.string().array().max(8, 'タグは最大 8 個です。'),
-    images: z.url().array().max(1, '画像は最大 1 個です。'),
+    images: z.url().array().max(4, '画像は最大 4 個です。'),
     coauthors: setupCoauthorsInsertSchema
         .extend({ user: usersPublicSchema.pick({ username: true, name: true, image: true }) })
         .array()
         .max(8, '共同作者は最大 8 人です。'),
     entries: setupEntryPublicSchema.array().min(1).max(MAX_ITEMS_PER_SETUP),
+    points: setupPointSchema.array().max(128),
 })
 
 export const setupsPublicSchema = z.object({
@@ -205,6 +221,7 @@ export const setupsPublicSchema = z.object({
     images: setupImagesPublicSchema.array().optional(),
     tags: z.string().array().optional(),
     coauthors: setupCoauthorsPublicSchema.array().optional(),
+    points: setupPointSchema.array().optional(),
     failedItemsCount: z.number().min(0).optional(),
 })
 export type Setup = z.infer<typeof setupsPublicSchema>

@@ -96,7 +96,11 @@ export default sessionEventHandler(async ({ event, session, db }) => {
             },
             images: {
                 limit: 1,
+                orderBy: { position: 'asc' },
                 columns: {
+                    id: true,
+                    stableId: true,
+                    position: true,
                     objectKey: true,
                     themeColors: true,
                     width: true,
