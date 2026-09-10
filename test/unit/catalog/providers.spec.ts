@@ -60,14 +60,14 @@ describe('BOOTH CatalogProvider', () => {
         expect(provider.matchUrl(new URL('https://evilbooth.pm/items/12345'))).toBeNull()
     })
 
-    it('normalizes an admitted provider snapshot', async () => {
+    it.each(['12345', 12345])('normalizes an admitted provider snapshot with ID %s', async (id) => {
         const provider = new BoothCatalogProvider({
             proxyBaseUrl: 'https://proxy.example/api',
             allowedCategoryKeys: new Set(['208']),
             categoryMap: { '208': 'avatar' },
             http: createHttp(async (url) => {
                 expect(url).toBe('https://proxy.example/api/12345')
-                return response(200, boothItem)
+                return response(200, { ...boothItem, id })
             }),
             resolvePublisherSource,
         })
@@ -78,6 +78,7 @@ describe('BOOTH CatalogProvider', () => {
         })
         expect(result.status).toBe('available')
         if (result.status !== 'available') return
+        expect(result.snapshot.reference.externalId).toBe('12345')
         expect(result.snapshot.category).toEqual({
             rawKey: '208',
             rawLabel: '3D Characters',
@@ -171,6 +172,19 @@ describe('GitHub CatalogProvider', () => {
         })
         expect((await throwing.fetch(reference)).status).toBe('transient_error')
         expect((await empty.fetch(reference)).status).toBe('transient_error')
+    })
+
+    it('refreshes a retained alias through the observed canonical repository name', async () => {
+        const requested: string[] = []
+        const provider = new GithubCatalogProvider({
+            http: createHttp(async (url) => {
+                requested.push(url)
+                return response(404, null)
+            }),
+            resolvePublisherSource,
+        })
+        await provider.fetch({ ...reference, canonicalUrl: 'https://github.com/new-owner/renamed' })
+        expect(requested).toEqual(['https://ungh.cc/repos/new-owner/renamed'])
     })
 
     it('normalizes the primary response without making auxiliary data authoritative', async () => {

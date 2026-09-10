@@ -62,3 +62,11 @@ export const matchCatalogUrl = (input: string | URL): ExternalReference | null =
 
     return null
 }
+
+/** Accept the same provider references used in the item search field. */
+export const matchCatalogReference = (input: string): ExternalReference | null => {
+    const reference = input.trim()
+    if (/^\d+$/.test(reference)) return matchCatalogUrl(`https://booth.pm/items/${reference}`)
+    if (isGithubRepositoryId(reference)) return matchCatalogUrl(`https://github.com/${reference}`)
+    return matchCatalogUrl(reference)
+}

@@ -94,9 +94,22 @@ export const createAvatioContentService = (options: AvatioContentOptions) => {
                 provenanceSchema.parse(file.meta.provenance).sourceRevision !==
                 provenanceSchema.parse(metadata.meta.provenance).sourceRevision
             ) {
-                file = await content.get(metadata.path, { fresh: true })
-                if (!file) return null
-                await content.update(file.meta.source, file)
+                const key = file.meta.key.slice(file.meta.source.length + 1)
+                if (
+                    provenanceSchema.parse(file.meta.provenance).sourceRevision !==
+                    revisions.get(key)?.sourceRevision
+                ) {
+                    file = await content.get(metadata.path, { fresh: true })
+                    if (!file) return null
+                }
+                if (
+                    provenanceSchema.parse(file.meta.provenance).sourceRevision !==
+                    provenanceSchema.parse(metadata.meta.provenance).sourceRevision
+                ) {
+                    // get() already cached the document; update() would write its KV key twice.
+                    Object.assign(metadata, { data: file.data, meta: file.meta })
+                    await content.cache.set('manifest', content.manifest)
+                }
             }
             const frontmatter = contentFrontmatterSchema.parse(file.data)
             const locale = file.path.split('/')[1] ?? options.fallbackLocale

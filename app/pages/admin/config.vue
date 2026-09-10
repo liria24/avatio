@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 type CategoryOverride = {
     key: number
-    platform: Platform
     itemId: string
     category: ItemCategory
 }
@@ -14,10 +13,6 @@ const categoryOptions = itemCategorySchema.options.map((value) => ({
     label: itemCategory[value].label,
     value,
 }))
-const platformOptions = [
-    { label: 'Booth', value: 'booth' },
-    { label: 'GitHub', value: 'github' },
-] satisfies { label: string; value: Platform }[]
 
 const state = reactive({
     allowedBoothCategoryId: [] as string[],
@@ -34,14 +29,8 @@ const { data, status, refresh } = await useFetch<AppConfig>('/api/admin/config',
 
 const applyConfig = (config: AppConfig) => {
     state.allowedBoothCategoryId = config.allowedBoothCategoryId.map(String)
-    state.categoryOverrides = Object.entries(config.specificItemCategories).flatMap(
-        ([platform, categories]) =>
-            Object.entries(categories).map(([itemId, category]) => ({
-                key: nextOverrideKey++,
-                platform: platform as Platform,
-                itemId,
-                category,
-            })),
+    state.categoryOverrides = Object.entries(config.catalogCategoryOverrides).map(
+        ([itemId, category]) => ({ key: nextOverrideKey++, itemId, category }),
     )
 }
 
@@ -50,7 +39,6 @@ if (data.value) applyConfig(data.value)
 const addCategoryOverride = () => {
     state.categoryOverrides.push({
         key: nextOverrideKey++,
-        platform: 'booth',
         itemId: '',
         category: 'other',
     })
@@ -73,10 +61,7 @@ const createPayload = (): WritableAppConfig | null => {
         return null
     }
 
-    const specificItemCategories: AppConfig['specificItemCategories'] = {
-        booth: {},
-        github: {},
-    }
+    const catalogCategoryOverrides: AppConfig['catalogCategoryOverrides'] = {}
 
     for (const entry of state.categoryOverrides) {
         const itemId = entry.itemId.trim()
@@ -84,17 +69,17 @@ const createPayload = (): WritableAppConfig | null => {
             validationError.value = 'Item IDs in category overrides cannot be empty.'
             return null
         }
-        if (specificItemCategories[entry.platform][itemId]) {
-            validationError.value = `Duplicate category override: ${entry.platform}/${itemId}`
+        if (catalogCategoryOverrides[itemId]) {
+            validationError.value = `Duplicate category override: ${itemId}`
             return null
         }
-        specificItemCategories[entry.platform][itemId] = entry.category
+        catalogCategoryOverrides[itemId] = entry.category
     }
 
     validationError.value = null
     return {
         allowedBoothCategoryId: [...new Set(allowedBoothCategoryId)],
-        specificItemCategories,
+        catalogCategoryOverrides,
     }
 }
 
@@ -219,10 +204,9 @@ useSeo({
                         <div
                             v-for="entry in state.categoryOverrides"
                             :key="entry.key"
-                            class="grid gap-2 sm:grid-cols-[10rem_1fr_12rem_auto]"
+                            class="grid gap-2 sm:grid-cols-[1fr_12rem_auto]"
                         >
-                            <USelect v-model="entry.platform" :items="platformOptions" />
-                            <UInput v-model="entry.itemId" placeholder="Item ID" />
+                            <UInput v-model="entry.itemId" placeholder="CatalogItem ID" />
                             <USelect v-model="entry.category" :items="categoryOptions" />
                             <UButton
                                 icon="mingcute:delete-2-line"

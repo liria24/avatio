@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 const emit = defineEmits<{
-    (e: 'select', id: Item['id']): void
+    (e: 'select', id: CatalogItemView['id']): void
 }>()
 
 const { data: popularAvatars } = await useFetch('/api/items/popular-avatars', {
@@ -31,7 +31,7 @@ const { data: popularAvatars } = await useFetch('/api/items/popular-avatars', {
                     class="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100"
                 >
                     <span class="p-1 text-center text-sm font-semibold text-white">
-                        {{ avatar.niceName || avatarShortName(avatar.name) }}
+                        {{ avatar.displayNameOverride || avatarShortName(avatar.name) }}
                     </span>
                 </div>
 

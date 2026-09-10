@@ -67,23 +67,6 @@ export default promiseEventHandler<PaginationResponse<AuditLog[]>>(async ({ db, 
                             createdAt: true,
                         },
                     },
-                    shops: {
-                        columns: {
-                            id: true,
-                            createdAt: true,
-                        },
-                        with: {
-                            shop: {
-                                columns: {
-                                    id: true,
-                                    platform: true,
-                                    name: true,
-                                    image: true,
-                                    verified: true,
-                                },
-                            },
-                        },
-                    },
                 },
             },
         },

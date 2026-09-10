@@ -1,236 +1,152 @@
+import { drizzle } from 'drizzle-orm/d1'
+import type { H3Event } from 'h3'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const warn = vi.fn()
+import { relations } from '../../../database/relations'
+import {
+    catalogItemRelations,
+    projectCatalogItem,
+    queryCatalogItems,
+} from '../../../server/utils/catalogQuery'
+import type { AppDatabase } from '../../../server/utils/database'
+import { projectSetupEntry, querySetupProjection } from '../../../server/utils/setupQuery'
+import { createTestD1 } from '../../helpers/d1'
 
+let database: ReturnType<typeof createTestD1>
+let db: AppDatabase
 beforeEach(() => {
-    vi.stubGlobal('withSetupImageUrls', async (images: unknown[]) => images)
-    vi.stubGlobal('logger', () => ({ warn }))
-    warn.mockClear()
+    database = createTestD1()
+    db = drizzle(database.binding, { relations })
+    Object.entries({
+        catalogItemRelations,
+        projectCatalogItem,
+        projectSetupEntry,
+        withSetupImageUrls: async (images: unknown[]) => images,
+        sessionEventHandler: (handler: unknown) => handler,
+        authedSessionEventHandler: (handler: unknown) => handler,
+        applyPublicEdgeCache: vi.fn(),
+        EDGE_CACHE_TAGS: { setups: 'setups' },
+    }).forEach(([key, value]) => vi.stubGlobal(key, value))
+    database.sqlite.exec(`
+        INSERT INTO users (id, name, username, display_username, email) VALUES
+            ('owner', 'Owner', 'owner', 'Owner', 'owner@example.com'),
+            ('other', 'Other', 'other', 'Other', 'other@example.com');
+        INSERT INTO catalog_items (id, display_name_override, category_override) VALUES ('catalog', 'Curated', 'hair');
+        INSERT INTO item_sources (id, item_id, provider_key, external_id, canonical_url, display_name, mapped_category, availability, sync_state, "primary")
+        VALUES ('source', 'catalog', 'future-provider', 'external', 'https://example.com/external', 'Provider name', 'clothing', 'available', 'error', 1);
+        INSERT INTO setups (id, user_id, name, public, hid_at) VALUES
+            ('public', 'owner', 'Public', 1, NULL), ('private', 'owner', 'Private', 0, NULL), ('hidden', 'owner', 'Hidden', 1, 1);
+        INSERT INTO setup_entries (id, setup_id, item_id, category_override, note, unsupported) VALUES
+            ('entry', 'public', 'catalog', 'avatar', 'Keep this note', 1),
+            ('private-entry', 'private', 'catalog', 'avatar', NULL, 0), ('hidden-entry', 'hidden', 'catalog', 'avatar', NULL, 0);
+        INSERT INTO setup_entry_shapekeys (setup_entry_id, name, value) VALUES ('entry', 'Smile', 0.5);
+        INSERT INTO bookmarks (user_id, setup_id) VALUES ('other', 'public'), ('other', 'private'), ('other', 'hidden');
+        INSERT INTO setup_images (setup_id, object_key, width, height, theme_colors)
+        VALUES ('public', 'setups/public/image.png', 1200, 800, '["#123456"]');
+    `)
+})
+afterEach(() => {
+    database.sqlite.close()
+    vi.unstubAllGlobals()
 })
 
-afterEach(() => vi.unstubAllGlobals())
-
-const baseSetup = () => ({
-    id: 'AbCd1234',
-    userId: 'owner-1',
-    createdAt: new Date('2026-01-01T00:00:00.000Z'),
-    updatedAt: new Date('2026-01-02T00:00:00.000Z'),
-    public: true,
-    name: 'Setup',
-    description: null,
-    hidAt: null,
-    hidReason: null,
-    user: {
-        id: 'owner-1',
-        username: 'owner',
-        createdAt: new Date('2025-01-01T00:00:00.000Z'),
-        name: 'Owner',
-        image: null,
-        bio: null,
-        links: null,
-        badges: [],
-    },
-    items: [
-        {
-            id: 'entry-1',
-            category: 'accessory' as const,
+describe('provider-neutral Catalog and Setup queries', () => {
+    it('preserves entry fields and category precedence even when a source refresh failed', async () => {
+        const result = await querySetupProjection(db, 'public')
+        expect(result?.setup.entries[0]).toMatchObject({
+            id: 'entry',
+            category: 'avatar',
+            note: 'Keep this note',
             unsupported: true,
-            note: 'Legacy note',
-            item: {
-                id: '12345',
-                updatedAt: new Date('2026-01-02T00:00:00.000Z'),
-                platform: 'booth' as const,
-                category: 'avatar' as const,
-                name: 'Legacy',
-                niceName: null,
-                image: null,
-                price: null,
-                likes: 1,
-                nsfw: false,
-                outdated: false,
-                shop: null,
+            shapekeys: [{ name: 'Smile', value: 0.5 }],
+            catalogItem: {
+                id: 'catalog',
+                name: 'Curated',
+                category: 'hair',
+                primarySource: {
+                    providerKey: 'future-provider',
+                    externalId: 'external',
+                    availability: 'available',
+                    syncState: 'error',
+                },
             },
-            shapekeys: [{ id: 1, name: 'Smile', value: 1 }],
-        },
-    ],
-    entries: [
-        {
-            id: 'entry-1',
-            categoryOverride: 'clothing' as const,
-            unsupported: true,
-            note: 'V2 note',
-            item: {
-                id: 'catalog-item-1',
-                displayNameOverride: 'Curated name',
-                categoryOverride: 'hair' as const,
-                sources: [
-                    {
-                        id: 'source-1',
-                        providerKey: 'booth',
-                        externalId: '12345',
-                        primary: true,
-                        availability: 'available' as const,
-                        mappedCategory: 'avatar' as const,
-                        displayName: 'Provider name',
-                        image: 'https://example.com/item.png',
-                        price: '1000 JPY',
-                        popularityCount: 10,
-                        nsfw: false,
-                        metadata: {},
-                        publisherSource: {
-                            externalId: 'creator',
-                            name: 'Creator',
-                            image: null,
-                            providerVerified: true,
-                        },
-                    },
-                ],
-            },
-            shapekeys: [{ id: 1, name: 'Smile', value: 1 }],
-        },
-    ],
-    images: [],
-    tags: [{ tag: 'VRChat' }],
-    coauthors: [],
-})
-
-const database = (value: ReturnType<typeof baseSetup>) =>
-    ({ query: { setups: { findFirst: vi.fn(async () => value) } } }) as never
-
-describe('Setup v2 compatibility projection', () => {
-    it('uses the three-layer category precedence and stable Catalog resource IDs', async () => {
-        const { querySetupProjection } = await import('../../../server/utils/setupQuery')
-        const result = await querySetupProjection(database(baseSetup()), 'AbCd1234')
-
-        expect(result?.v2).toBe(true)
-        expect(result?.projectionSource).toEqual({ mode: 'v2' })
-        expect(warn).not.toHaveBeenCalled()
-        expect(result?.catalogItemIds).toEqual(['catalog-item-1'])
-        expect(result?.sourceIds).toEqual(['source-1'])
-        expect(result?.setup.items[0]).toMatchObject({
-            id: '12345',
-            category: 'clothing',
-            name: 'Provider name',
-            niceName: 'Curated name',
-            note: 'V2 note',
         })
+        expect(result?.setup).not.toHaveProperty('items')
+        expect(result?.catalogItemIds).toEqual(['catalog'])
+        expect(result?.sourceIds).toEqual(['source'])
+        expect(result?.setup.failedItemsCount).toBeUndefined()
+        database.sqlite.exec(
+            'UPDATE setup_entries SET category_override = NULL; UPDATE catalog_items SET category_override = NULL',
+        )
+        expect((await querySetupProjection(db, 'public'))?.setup.entries[0]?.category).toBe(
+            'clothing',
+        )
     })
-
-    it.each(['withdrawn', 'policy_rejected', 'unknown'] as const)(
-        'hides a %s source without deleting its SetupEntry and reports failure',
-        async (availability) => {
-            const value = baseSetup()
-            value.entries[0]!.item.sources[0]!.availability = availability
-            const { querySetupProjection } = await import('../../../server/utils/setupQuery')
-            const result = await querySetupProjection(database(value), 'AbCd1234')
-
-            expect(result?.setup.items).toEqual([])
-            expect(result?.setup.failedItemsCount).toBe(1)
-            expect(result?.sourceIds).toEqual(['source-1'])
-        },
-    )
-
-    it('falls back to the legacy projection during an incomplete backfill', async () => {
-        const value = baseSetup()
-        value.entries = []
-        const { querySetupProjection } = await import('../../../server/utils/setupQuery')
-        const result = await querySetupProjection(database(value), 'AbCd1234')
-
-        expect(result?.v2).toBe(false)
-        expect(result?.projectionSource).toEqual({
-            mode: 'legacy-fallback',
-            reason: 'entry-count-mismatch',
-        })
-        expect(warn).toHaveBeenCalledWith({
-            event: 'catalog.setup.legacy_fallback',
-            setupId: 'AbCd1234',
-            reason: 'entry-count-mismatch',
-        })
-        expect(result?.setup.items[0]).toMatchObject({ id: '12345', category: 'accessory' })
-        expect(result?.legacyRevalidationItems).toHaveLength(1)
+    it('retains a withdrawn entry and its shapekeys without presenting a refresh error as withdrawal', async () => {
+        database.sqlite.exec("UPDATE item_sources SET availability = 'withdrawn'")
+        const result = await querySetupProjection(db, 'public')
+        expect(result?.setup.entries).toHaveLength(1)
+        expect(result?.setup.entries[0]?.shapekeys).toEqual([{ name: 'Smile', value: 0.5 }])
+        expect(result?.setup.failedItemsCount).toBe(1)
     })
-
-    it.each(['entry-id-mismatch', 'missing-catalog-source'] as const)(
-        'records %s without exposing diagnostics in the Setup DTO',
-        async (reason) => {
-            const value = baseSetup()
-            if (reason === 'entry-id-mismatch') value.entries[0]!.id = 'unmapped'
-            else value.entries[0]!.item.sources = []
-            const { querySetupProjection } = await import('../../../server/utils/setupQuery')
-            const result = await querySetupProjection(database(value), 'AbCd1234')
-            expect(result?.projectionSource).toEqual({ mode: 'legacy-fallback', reason })
-            expect(warn).toHaveBeenCalledWith(expect.objectContaining({ reason }))
-            expect(result?.setup).not.toHaveProperty('projectionSource')
-        },
-    )
-
-    it.each([
-        { reason: 'missing', shapekeys: [] },
-        { reason: 'partial', shapekeys: [{ id: 1, name: 'Smile', value: 1 }] },
-        {
-            reason: 'wrong identity',
-            shapekeys: [
-                { id: 3, name: 'Smile', value: 1 },
-                { id: 2, name: 'Blink', value: 0.5 },
-            ],
-        },
-        {
-            reason: 'wrong name',
-            shapekeys: [
-                { id: 1, name: 'Other', value: 1 },
-                { id: 2, name: 'Blink', value: 0.5 },
-            ],
-        },
-        {
-            reason: 'wrong value',
-            shapekeys: [
-                { id: 1, name: 'Smile', value: 0 },
-                { id: 2, name: 'Blink', value: 0.5 },
-            ],
-        },
-    ])('preserves legacy shapekeys when migration has $reason keys', async ({ shapekeys }) => {
-        const value = baseSetup()
-        value.items[0]!.shapekeys.push({ id: 2, name: 'Blink', value: 0.5 })
-        value.entries[0]!.shapekeys = shapekeys
-        const { querySetupProjection } = await import('../../../server/utils/setupQuery')
-        const result = await querySetupProjection(database(value), value.id, {
-            userId: value.userId,
-        })
-
-        expect(result?.projectionSource).toEqual({
-            mode: 'legacy-fallback',
-            reason: 'shapekey-mismatch',
-        })
-        expect(result?.setup.items[0]?.shapekeys).toEqual([
-            { name: 'Smile', value: 1 },
-            { name: 'Blink', value: 0.5 },
-        ])
-    })
-
-    it('switches to v2 when all shapekeys match regardless of query order without exposing IDs', async () => {
-        const value = baseSetup()
-        value.items[0]!.shapekeys.push({ id: 2, name: 'Blink', value: 0.5 })
-        value.entries[0]!.shapekeys = [...value.items[0]!.shapekeys].reverse()
-        const { querySetupProjection } = await import('../../../server/utils/setupQuery')
-        const result = await querySetupProjection(database(value), value.id)
-
-        expect(result?.projectionSource).toEqual({ mode: 'v2' })
-        expect(result?.setup.items[0]?.shapekeys).toEqual([
-            { name: 'Blink', value: 0.5 },
-            { name: 'Smile', value: 1 },
-        ])
-    })
-
-    it('keeps private/hidden access out of the public projection', async () => {
-        const value = { ...baseSetup(), public: false }
-        const { querySetupProjection } = await import('../../../server/utils/setupQuery')
-
-        expect(await querySetupProjection(database(value), 'AbCd1234')).toBeNull()
+    it.each(['private', 'hidden'])('restricts %s to the owner or an administrator', async (id) => {
+        expect(await querySetupProjection(db, id)).toBeNull()
+        expect(await querySetupProjection(db, id, { userId: 'other' })).toBeNull()
+        expect(await querySetupProjection(db, id, { userId: 'owner' })).not.toBeNull()
         expect(
-            await querySetupProjection(database(value), 'AbCd1234', { userId: 'owner-1' }),
+            await querySetupProjection(db, id, { userId: 'other', role: 'admin' }),
         ).not.toBeNull()
+    })
+    it('queries public avatar usage with effective Setup categories and filters Catalog categories independently', async () => {
         expect(
-            await querySetupProjection(database(value), 'AbCd1234', { userId: 'other' }),
-        ).toBeNull()
+            (await queryCatalogItems(db, { publicAvatars: true, limit: 10 })).data.map(
+                (item) => item.id,
+            ),
+        ).toEqual(['catalog'])
+        expect((await queryCatalogItems(db, { category: ['avatar'], limit: 10 })).data).toEqual([])
+        expect(
+            (await queryCatalogItems(db, { category: ['hair'], q: 'Provider', limit: 10 })).data,
+        ).toHaveLength(1)
+        database.sqlite.exec('UPDATE setups SET public = 0')
+        expect((await queryCatalogItems(db, { publicAvatars: true, limit: 10 })).data).toEqual([])
+        expect((await queryCatalogItems(db, { ownerId: 'owner', limit: 10 })).data).toHaveLength(1)
+    })
+    it('does not expose private or hidden Setups owned by others through bookmarks', async () => {
+        vi.stubGlobal('validateQuery', async () => ({
+            page: 1,
+            limit: 20,
+            sort: 'desc',
+            bookmarked: true,
+        }))
+        const route = (await import('../../../server/api/setups/index.get'))
+            .default as unknown as (input: {
+            db: AppDatabase
+            event: H3Event
+            session: { user: { id: string } }
+        }) => Promise<{ data: { id: string; images: unknown[] }[] }>
+        const result = await route({ db, event: {} as H3Event, session: { user: { id: 'other' } } })
+        expect(result.data.map((setup) => setup.id)).toEqual(['public'])
+        expect(result.data[0]?.images).toEqual([
+            {
+                objectKey: 'setups/public/image.png',
+                width: 1200,
+                height: 800,
+                themeColors: ['#123456'],
+            },
+        ])
+        vi.stubGlobal('validateQuery', async () => ({
+            page: 1,
+            limit: 20,
+            sort: 'desc',
+            orderBy: 'createdAt',
+        }))
+        const bookmarks = (await import('../../../server/api/setups/bookmarks/index.get'))
+            .default as unknown as typeof route
+        const bookmarked = await bookmarks({
+            db,
+            event: {} as H3Event,
+            session: { user: { id: 'other' } },
+        })
+        expect(bookmarked.data).toHaveLength(1)
     })
 })

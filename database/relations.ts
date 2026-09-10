@@ -12,14 +12,6 @@ export const relations = defineRelations(schema, (r) => ({
             from: r.users.id,
             to: r.accounts.userId,
         }),
-        shops: r.many.userShops({
-            from: r.users.id,
-            to: r.userShops.userId,
-        }),
-        shopVerifications: r.many.userShopVerifications({
-            from: r.users.id,
-            to: r.userShopVerifications.userId,
-        }),
         publishers: r.many.userPublishers({
             from: r.users.id,
             to: r.userPublishers.userId,
@@ -138,51 +130,11 @@ export const relations = defineRelations(schema, (r) => ({
             optional: false,
         }),
     },
-    userShops: {
-        user: r.one.users({
-            from: r.userShops.userId,
-            to: r.users.id,
-            optional: false,
-        }),
-        shop: r.one.shops({
-            from: r.userShops.shopId,
-            to: r.shops.id,
-            optional: false,
-        }),
-    },
-    userShopVerifications: {
-        user: r.one.users({
-            from: r.userShopVerifications.userId,
-            to: r.users.id,
-            optional: false,
-        }),
-    },
     userBadges: {
         user: r.one.users({
             from: r.userBadges.userId,
             to: r.users.id,
             optional: false,
-        }),
-    },
-    shops: {
-        items: r.many.items({
-            from: r.shops.id,
-            to: r.items.shopId,
-        }),
-        userShops: r.many.userShops({
-            from: r.shops.id,
-            to: r.userShops.shopId,
-        }),
-    },
-    items: {
-        shop: r.one.shops({
-            from: r.items.shopId,
-            to: r.shops.id,
-            optional: false,
-        }),
-        setupItems: r.many.setupItems({
-            from: r.items.id,
-            to: r.setupItems.itemId,
         }),
     },
     publishers: {
@@ -278,10 +230,6 @@ export const relations = defineRelations(schema, (r) => ({
             to: r.users.id,
             optional: false,
         }),
-        items: r.many.setupItems({
-            from: r.setups.id,
-            to: r.setupItems.setupId,
-        }),
         entries: r.many.setupEntries({
             from: r.setups.id,
             to: r.setupEntries.setupId,
@@ -305,29 +253,6 @@ export const relations = defineRelations(schema, (r) => ({
         reports: r.many.setupReports({
             from: r.setups.id,
             to: r.setupReports.setupId,
-        }),
-    },
-    setupItems: {
-        item: r.one.items({
-            from: r.setupItems.itemId,
-            to: r.items.id,
-            optional: false,
-        }),
-        setup: r.one.setups({
-            from: r.setupItems.setupId,
-            to: r.setups.id,
-            optional: false,
-        }),
-        shapekeys: r.many.setupItemShapekeys({
-            from: r.setupItems.id,
-            to: r.setupItemShapekeys.setupItemId,
-        }),
-    },
-    setupItemShapekeys: {
-        setupItem: r.one.setupItems({
-            from: r.setupItemShapekeys.setupItemId,
-            to: r.setupItems.id,
-            optional: false,
         }),
     },
     setupEntries: {
@@ -427,9 +352,9 @@ export const relations = defineRelations(schema, (r) => ({
             to: r.users.id,
             optional: false,
         }),
-        item: r.one.items({
-            from: r.itemReports.itemId,
-            to: r.items.id,
+        item: r.one.catalogItems({
+            from: r.itemReports.catalogItemId,
+            to: r.catalogItems.id,
             optional: false,
         }),
     },

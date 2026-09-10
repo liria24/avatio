@@ -39,13 +39,16 @@ export default sessionEventHandler(async ({ event, session, db }) => {
         offset,
         where: {
             hidAt: { isNull: true },
-            public: shouldShowPrivate ? undefined : { eq: true },
+            OR:
+                shouldShowPrivate && session
+                    ? [{ public: { eq: true } }, { userId: { eq: session.user.id } }]
+                    : [{ public: { eq: true } }],
             user: {
                 OR: [{ banned: { eq: false } }, { banned: { isNull: true } }],
                 username: username ? { eq: username } : undefined,
             },
             name: q ? { like: `%${q}%` } : undefined,
-            items: {
+            entries: {
                 itemId: itemId ? { in: Array.isArray(itemId) ? itemId : [itemId] } : undefined,
             },
             tags: tag ? { tag: { in: Array.isArray(tag) ? tag : [tag] } } : undefined,
@@ -85,23 +88,10 @@ export default sessionEventHandler(async ({ event, session, db }) => {
                     },
                 },
             },
-            items: {
-                where: {
-                    category: { eq: 'avatar' },
-                },
+            entries: {
                 with: {
-                    item: {
-                        columns: {
-                            id: true,
-                            updatedAt: true,
-                            platform: true,
-                            name: true,
-                            niceName: true,
-                            image: true,
-                            nsfw: true,
-                            outdated: true,
-                        },
-                    },
+                    item: { with: catalogItemRelations },
+                    shapekeys: { columns: { name: true, value: true } },
                 },
             },
             images: {
@@ -109,6 +99,8 @@ export default sessionEventHandler(async ({ event, session, db }) => {
                 columns: {
                     objectKey: true,
                     themeColors: true,
+                    width: true,
+                    height: true,
                 },
             },
             coauthors: {
@@ -137,13 +129,13 @@ export default sessionEventHandler(async ({ event, session, db }) => {
         data.map(async (setup) => ({
             ...setup,
             images: await withSetupImageUrls(setup.images),
-            items: setup.items
-                .filter((item) => !item.item.outdated)
-                .map((item) => ({
-                    ...item.item,
-                    outdated: undefined,
-                })),
-            failedItemsCount: setup.items.filter((item) => item.item.outdated).length || undefined,
+            entries: setup.entries.map(projectSetupEntry),
+            failedItemsCount:
+                setup.entries.filter(
+                    (entry) =>
+                        entry.item.sources.find((source) => source.primary)?.availability !==
+                        'available',
+                ).length || undefined,
             count: undefined,
         })),
     )

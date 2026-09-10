@@ -43,12 +43,13 @@ export const useSetupsList = (
         () =>
             `setups-state-${type || 'custom'}-${options?.username || ''}-${JSON.stringify(unref(options?.query) || {})}`,
     )
-    const setups = useState<
-        Extract<
-            NonNullable<FetchResult<'/api/setups', 'get'>>['data'][number],
-            { items: unknown }
-        >[]
-    >(cacheKey.value, () => [])
+    const setups = useState<NonNullable<FetchResult<'/api/setups', 'get'>>['data']>(
+        cacheKey.value,
+        () => [],
+    )
+    const pagination = useState<
+        NonNullable<FetchResult<'/api/setups', 'get'>>['pagination'] | undefined
+    >(`${cacheKey.value}-pagination`, () => undefined)
 
     // Build query parameters
     const queryParams = computed(() => {
@@ -80,7 +81,7 @@ export const useSetupsList = (
     })
 
     // Fetch data - 常に /api/setups を使用
-    const { data, status, refresh } = useFetch('/api/setups', {
+    const { status, refresh } = useFetch('/api/setups', {
         key: computed(
             () => `setups-fetch-${type || 'custom'}-${JSON.stringify(queryParams.value)}`,
         ),
@@ -91,6 +92,7 @@ export const useSetupsList = (
         ...(options?.watch !== undefined ? { watch: options.watch } : {}),
         onResponse({ response }) {
             if (response._data?.data) {
+                pagination.value = response._data.pagination
                 if (page.value === 1) setups.value = response._data.data
                 else setups.value = [...setups.value, ...response._data.data]
             }
@@ -105,8 +107,8 @@ export const useSetupsList = (
 
     // Load more: Append next page data
     const loadMore = async () => {
-        if (data.value?.pagination.hasNext) {
-            page.value += 1
+        if (status.value !== 'pending' && pagination.value?.hasNext) {
+            page.value = pagination.value.page + 1
             await refresh()
         }
     }
@@ -120,7 +122,7 @@ export const useSetupsList = (
     return {
         setups,
         status,
-        pagination: computed(() => data.value?.pagination),
+        pagination,
         initialize,
         loadMore,
         refresh: refreshData,

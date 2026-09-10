@@ -4,21 +4,13 @@ const NuxtTime = resolveComponent('NuxtTime')
 const { locale } = useI18n()
 
 const rowSelection = ref<Record<string, boolean>>({})
-const filter = ref(['available', 'outdated'])
+const filter = ref(['available', 'withdrawn', 'policy_rejected', 'unknown'])
 const searchQuery = ref('')
 
-const queryParams = computed(() => {
-    const params: Record<string, string> = {}
-
-    const hasAvailable = filter.value.includes('available')
-    const hasOutdated = filter.value.includes('outdated')
-    if (hasAvailable && !hasOutdated) params.outdated = 'false'
-    else if (hasOutdated && !hasAvailable) params.outdated = 'true'
-
-    if (searchQuery.value) params.q = searchQuery.value
-
-    return params
-})
+const queryParams = computed(() => ({
+    q: searchQuery.value || undefined,
+    availability: filter.value.length ? filter.value : undefined,
+}))
 
 const { data, status, refresh } = await useFetch('/api/admin/items', {
     dedupe: 'defer',
@@ -46,7 +38,9 @@ useSeo({
                 :loading="status === 'pending'"
                 :filter-options="[
                     { value: 'available', label: 'Available', icon: 'mingcute:check-line' },
-                    { value: 'outdated', label: 'Outdated', icon: 'mingcute:forbid-circle-fill' },
+                    { value: 'withdrawn', label: 'Withdrawn', icon: 'mingcute:forbid-circle-fill' },
+                    { value: 'policy_rejected', label: 'Policy rejected' },
+                    { value: 'unknown', label: 'Unknown' },
                 ]"
                 :columns="[
                     {
@@ -54,8 +48,8 @@ useSeo({
                         header: 'Item',
                         meta: { class: { td: 'max-w-sm' } },
                     },
-                    { accessorKey: 'niceName', header: 'Nice Name' },
-                    { accessorKey: 'platform', header: 'Platform' },
+                    { accessorKey: 'displayNameOverride', header: 'Display Name' },
+                    { accessorKey: 'primarySource.providerKey', header: 'Provider' },
                     {
                         accessorKey: 'createdAt',
                         header: 'Added',
@@ -80,7 +74,7 @@ useSeo({
                                 locale,
                             }),
                     },
-                    { accessorKey: 'outdated', header: 'Outdated' },
+                    { accessorKey: 'primarySource.availability', header: 'Availability' },
                 ]"
                 class="max-h-[calc(99dvh-var(--ui-header-height))] grow"
             >
@@ -90,8 +84,8 @@ useSeo({
                             :src="row.original.image || undefined"
                             alt=""
                             :icon="
-                                getPlatformData(row.original.platform)?.icon ||
-                                'mingcute:question-line'
+                                getCatalogProviderData(row.original.primarySource?.providerKey)
+                                    ?.icon || 'mingcute:question-line'
                             "
                             size="2xs"
                             :ui="{ image: 'rounded-md' }"

@@ -8,25 +8,19 @@ export default promiseEventHandler<Setup>(async ({ event, db }) => {
     const result = await querySetupProjection(db, id)
     if (!result) throw serverError.notFound()
 
-    if (result.v2) {
-        const queue = getCatalogSyncQueue()
-        if (queue && result.sourceIds.length)
-            runAfterResponse(
-                enqueueDueCatalogSources({
-                    sourceIds: result.sourceIds,
-                    repository: getCatalogRepository(),
-                    queue,
-                }),
-            )
-        applyPublicEdgeCache(event, [
-            getSetupCacheTag(id),
-            ...result.catalogItemIds.map(getCatalogItemCacheTag),
-        ])
-    } else {
-        if (result.legacyRevalidationItems.length)
-            runAfterResponse(enqueueReferencedCatalogSources(result.legacyRevalidationItems))
-        applyPublicEdgeCache(event, [getSetupCacheTag(id)])
-    }
+    const queue = getCatalogSyncQueue()
+    if (queue && result.sourceIds.length)
+        runAfterResponse(
+            enqueueDueCatalogSources({
+                sourceIds: result.sourceIds,
+                repository: getCatalogRepository(),
+                queue,
+            }),
+        )
+    applyPublicEdgeCache(event, [
+        getSetupCacheTag(id),
+        ...result.catalogItemIds.map(getCatalogItemCacheTag),
+    ])
 
     return result.setup
 })

@@ -1,4 +1,4 @@
-import { feedbacks, itemReports, items, setupReports, userReports } from '@@/database/schema'
+import { feedbacks, itemReports, catalogItems, setupReports, userReports } from '@@/database/schema'
 import { count, eq } from 'drizzle-orm'
 
 export default promiseEventHandler(async ({ db, event }) => {
@@ -11,7 +11,7 @@ export default promiseEventHandler(async ({ db, event }) => {
         userReportCountResult,
     ] = await Promise.all([
         db.select({ count: count() }).from(feedbacks).where(eq(feedbacks.isClosed, false)),
-        db.select({ count: count() }).from(items),
+        db.select({ count: count() }).from(catalogItems),
         db.select({ count: count() }).from(itemReports).where(eq(itemReports.isResolved, false)),
         db.select({ count: count() }).from(setupReports).where(eq(setupReports.isResolved, false)),
         db.select({ count: count() }).from(userReports).where(eq(userReports.isResolved, false)),

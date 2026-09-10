@@ -1,4 +1,5 @@
 import type { CacheInvalidator } from '../../ports'
+import type { ProviderSnapshot } from '../ports/catalog-provider'
 import type { CatalogRepository } from '../ports/catalog-repository'
 import type { CatalogProviderRegistry } from './provider-registry'
 
@@ -8,6 +9,7 @@ export interface SyncCatalogSourceInput {
     repository: CatalogRepository
     providers: CatalogProviderRegistry
     cacheInvalidator: CacheInvalidator
+    initialSnapshot?: ProviderSnapshot
     now?: Date
     freshnessMs?: number
     retryMs?: number
@@ -19,6 +21,7 @@ export const syncCatalogSource = async ({
     repository,
     providers,
     cacheInvalidator,
+    initialSnapshot,
     now = new Date(),
     freshnessMs = 24 * 60 * 60 * 1000,
     retryMs = 15 * 60 * 1000,
@@ -27,13 +30,15 @@ export const syncCatalogSource = async ({
     if (!source) return { stale: true as const, cacheInvalidationFailed: false }
 
     const provider = providers.get(source.providerKey)
-    const result = provider
-        ? await provider.fetch({
-              providerKey: source.providerKey,
-              externalId: source.externalId,
-              canonicalUrl: source.canonicalUrl,
-          })
-        : { status: 'transient_error' as const, errorKind: 'provider-not-registered' }
+    const result = initialSnapshot
+        ? { status: 'available' as const, snapshot: initialSnapshot }
+        : provider
+          ? await provider.fetch({
+                providerKey: source.providerKey,
+                externalId: source.externalId,
+                canonicalUrl: source.canonicalUrl,
+            })
+          : { status: 'transient_error' as const, errorKind: 'provider-not-registered' }
 
     const definitive = result.status !== 'transient_error'
     const itemId = await repository.completeSourceSync({
