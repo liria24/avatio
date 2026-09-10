@@ -17,9 +17,9 @@
         "@avatio/core": "workspace:*",
         "@nuxt/kit": "^4.5.2",
         "@nuxt/schema": "^4.5.2",
-        "comark": "0.6.2",
+        "comark": "0.7.0",
         "comark-content": "0.3.0",
-        "zod": "4.5.4"
+        "zod": "4.6.1"
     },
     "peerDependencies": {
         "nuxt": "^4.5.2"
