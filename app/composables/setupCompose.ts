@@ -5,7 +5,6 @@ import {
     type SetupComposeForm,
     type SetupDraftContent,
 } from '@avatio/core/setups'
-import type { InjectionKey } from 'vue'
 
 type ComposeUser = Pick<User, 'id' | 'username' | 'name' | 'image'>
 type ComposeCoauthor = SetupComposeForm['coauthors'][number] & { user: ComposeUser }
@@ -19,7 +18,7 @@ const createSetupCompose = () => {
     const restoring = ref(false)
     const loadFailed = ref(false)
     const editingSetupId = ref<Setup['id'] | null>(null)
-    const imageMetadata = ref<Record<string, SetupImageMetadata>>({})
+    const imageMetadata = shallowRef<Record<string, SetupImageMetadata>>({})
     const itemEntities = ref<Record<string, CatalogItemView>>({})
     const userEntities = ref<Record<string, ComposeUser>>({})
     const itemSearchTerm = ref('')
