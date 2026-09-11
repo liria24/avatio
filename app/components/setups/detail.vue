@@ -215,12 +215,35 @@ useSeo({
 
             <SetupsViewerInfo :setup class="w-full" />
 
-            <p
+            <UTheme
                 v-if="setup.description?.length"
-                class="sentence text-toned text-sm/relaxed whitespace-pre-wrap"
+                :props="{
+                    prose: {
+                        h1: { anchor: false },
+                        h2: { anchor: false },
+                        h3: { anchor: false },
+                        h4: { anchor: false },
+                    },
+                }"
+                :ui="{
+                    prose: {
+                        h1: { base: 'text-3xl mb-4' },
+                        h2: { base: 'text-2xl mt-6 mb-4' },
+                        h3: { base: 'text-xl mt-6' },
+                        p: { base: 'my-3 leading-6' },
+                        a: { base: 'text-secondary' },
+                        ul: { base: 'my-3' },
+                        li: { base: 'my-1 leading-6 [&>p]:my-0' },
+                        hr: { base: 'my-6' },
+                    },
+                }"
             >
-                {{ setup.description }}
-            </p>
+                <Markdown
+                    class="sentence text-toned bg-muted/70 rounded-2xl p-5 *:first:mt-0 *:last:mb-0"
+                >
+                    {{ setup.description }}
+                </Markdown>
+            </UTheme>
         </div>
 
         <div class="flex w-full flex-col gap-7">
