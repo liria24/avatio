@@ -14,7 +14,9 @@ const props = defineProps<{
     onUpdate: (points: SetupPoint[]) => void
 }>()
 
-const points = ref(structuredClone(props.points))
+const copyPoints = (source: readonly SetupPoint[]): SetupPoint[] =>
+    source.map(({ id, imageId, entryId, x, y }) => ({ id, imageId, entryId, x, y }))
+const points = ref<SetupPoint[]>(copyPoints(props.points))
 const pickerOpen = ref(false)
 const movingPointId = ref<string>()
 const pending = ref<{ x: number; y: number; pointId?: string }>()
