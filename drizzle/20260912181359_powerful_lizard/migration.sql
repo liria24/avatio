@@ -1,0 +1,1 @@
+DROP TABLE `allowed_booth_categories`;

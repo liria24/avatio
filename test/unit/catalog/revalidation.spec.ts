@@ -32,6 +32,8 @@ const source = (overrides: Partial<ItemSource> = {}): ItemSource => ({
 })
 
 const repository = (implementations: Partial<CatalogRepository> = {}): CatalogRepository => ({
+    findProviderAdmissionRules: vi.fn(async () => []),
+    observeProviderAdmissionOptions: vi.fn(async () => undefined),
     findItem: vi.fn(async () => null),
     findSource: vi.fn(async () => source()),
     findSourceByExternalId: vi.fn(async () => null),
@@ -127,11 +129,16 @@ describe('demand-driven Catalog source enqueueing', () => {
 })
 
 describe('Catalog synchronization state machine', () => {
-    const run = async (provider: CatalogProvider, initial = source()) => {
+    const run = async (
+        provider: CatalogProvider,
+        initial = source(),
+        implementations: Partial<CatalogRepository> = {},
+    ) => {
         const completeSourceSync = vi.fn(async () => initial.itemId)
         const repo = repository({
             markSyncStarted: vi.fn(async () => initial),
             completeSourceSync,
+            ...implementations,
         })
         const invalidate = vi.fn(async () => undefined)
         const result = await syncCatalogSource({
@@ -142,7 +149,7 @@ describe('Catalog synchronization state machine', () => {
             cacheInvalidator: { invalidate },
             now: new Date('2026-08-24T00:00:00.000Z'),
         })
-        return { result, completeSourceSync, invalidate }
+        return { result, completeSourceSync, invalidate, repo }
     }
 
     it('records transient errors without changing availability or invalidating public data', async () => {
@@ -200,6 +207,64 @@ describe('Catalog synchronization state machine', () => {
         )
         expect(completeSourceSync).toHaveBeenCalledWith(
             expect.objectContaining({ availability: 'available', successful: true }),
+        )
+    })
+
+    it('admits an unknown observed category when an allowed configured tag matches', async () => {
+        const provider: CatalogProvider = {
+            key: 'test',
+            admission: {
+                match: 'any',
+                facets: [
+                    { key: 'category', discovery: 'observed' },
+                    { key: 'tag', discovery: 'configured-only' },
+                ],
+            },
+            matchUrl: () => null,
+            getAdmissionSignals: () => [
+                { facetKey: 'category', valueKey: 'new', label: 'New category' },
+                { facetKey: 'tag', valueKey: 'vrchat', label: 'VRChat' },
+            ],
+            fetch: async (reference) => ({
+                status: 'available',
+                snapshot: {
+                    reference,
+                    name: 'Admitted by tag',
+                    image: null,
+                    price: null,
+                    popularityCount: null,
+                    nsfw: false,
+                    category: null,
+                    metadata: {},
+                    publisherSourceId: null,
+                },
+            }),
+        }
+        const findProviderAdmissionRules = vi.fn(async () => [
+            { facetKey: 'tag', valueKey: 'vrchat', decision: 'allow' as const },
+        ])
+        const observeProviderAdmissionOptions = vi.fn(async () => undefined)
+        const { completeSourceSync } = await run(provider, source(), {
+            findProviderAdmissionRules,
+            observeProviderAdmissionOptions,
+        })
+
+        expect(observeProviderAdmissionOptions).toHaveBeenCalledWith(
+            'test',
+            [{ facetKey: 'category', valueKey: 'new', label: 'New category' }],
+            expect.any(Date),
+        )
+        expect(completeSourceSync).toHaveBeenCalledWith(
+            expect.objectContaining({ availability: 'available', successful: true }),
+        )
+
+        const { completeSourceSync: rejectedSync } = await run(provider)
+        expect(rejectedSync).toHaveBeenCalledWith(
+            expect.objectContaining({
+                availability: 'policy_rejected',
+                snapshot: expect.objectContaining({ name: 'Admitted by tag' }),
+                successful: true,
+            }),
         )
     })
 

@@ -15,7 +15,7 @@ import {
 } from '@avatio/nuxt/runtime/server/catalog/providers'
 import type { CacheContext, Queue } from '@cloudflare/workers-types'
 import { inArray } from 'drizzle-orm'
-import { allowedBoothCategories, itemSources } from '~~/database/schema'
+import { itemSources } from '~~/database/schema'
 
 export const getCatalogRepository = () => {
     const db = useDB()
@@ -23,8 +23,6 @@ export const getCatalogRepository = () => {
 }
 
 export const getCatalogProviderRegistry = async () => {
-    const db = useDB()
-    const admittedCategories = await db.select().from(allowedBoothCategories)
     const proxyBaseUrl = getRuntimeEnvString('BOOTH_PROXY_URL')
     const publisherRepository = getPublisherRepository()
     const resolvePublisherSource = async (
@@ -34,9 +32,6 @@ export const getCatalogProviderRegistry = async () => {
     return new CatalogProviderRegistry([
         new BoothCatalogProvider({
             proxyBaseUrl,
-            allowedCategoryKeys: new Set(
-                admittedCategories.map(({ categoryId }) => String(categoryId)),
-            ),
             categoryMap: BOOTH_CATEGORY_MAP,
             http: providerHttpClient,
             resolvePublisherSource,

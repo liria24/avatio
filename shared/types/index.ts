@@ -14,15 +14,6 @@ export interface PaginationResponse<T> {
     }
 }
 
-export interface WritableAppConfig {
-    allowedBoothCategoryId: number[]
-    catalogCategoryOverrides: Record<string, ItemCategory>
-}
-
-export interface AppConfig extends WritableAppConfig {
-    readonly isMaintenance: boolean
-}
-
 export type DeepNonNullable<T> = T extends null | undefined
     ? never
     : T extends Array<infer U>

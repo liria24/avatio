@@ -3,10 +3,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { getMaintenanceFlag } from '../../../server/utils/appConfig'
 
 vi.mock('@@/database/schema', () => ({
-    allowedBoothCategories: {},
-    catalogItems: {},
+    providerAdmissionOptions: {},
+    providerAdmissionRules: {},
 }))
-vi.mock('drizzle-orm', () => ({ asc: vi.fn(), eq: vi.fn() }))
+vi.mock('drizzle-orm', () => ({ asc: vi.fn() }))
 
 describe('Flagship flags', () => {
     afterEach(() => vi.unstubAllGlobals())

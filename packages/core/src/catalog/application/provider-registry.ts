@@ -25,4 +25,8 @@ export class CatalogProviderRegistry {
     keys(): string[] {
         return [...this.#providers.keys()]
     }
+
+    values(): CatalogProvider[] {
+        return [...this.#providers.values()]
+    }
 }

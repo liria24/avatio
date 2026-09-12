@@ -6,13 +6,20 @@ import type {
     ItemSource,
     ItemSourceSnapshot,
     ProviderSnapshot,
+    ProviderAdmissionRule,
+    ProviderAdmissionSignal,
     SourceLease,
 } from '@avatio/core/catalog'
 import { and, eq, isNull, lte, or, sql } from 'drizzle-orm'
 import type { BatchItem } from 'drizzle-orm/batch'
 import type { SQLiteAsyncDatabase } from 'drizzle-orm/sqlite-core'
 
-import { catalogItems, itemSources } from '../../../../database/schema'
+import {
+    catalogItems,
+    itemSources,
+    providerAdmissionOptions,
+    providerAdmissionRules,
+} from '../../../../database/schema'
 
 type Database = SQLiteAsyncDatabase<'sync' | 'async', unknown>
 type ExecuteBatch = (queries: BatchItem<'sqlite'>[]) => Promise<unknown[]>
@@ -60,6 +67,45 @@ export class SQLiteCatalogRepository implements CatalogRepository {
     constructor(database: Database, executeBatch: ExecuteBatch) {
         this.#db = database
         this.#executeBatch = executeBatch
+    }
+
+    async findProviderAdmissionRules(providerKey: string): Promise<ProviderAdmissionRule[]> {
+        return this.#db
+            .select({
+                facetKey: providerAdmissionRules.facetKey,
+                valueKey: providerAdmissionRules.valueKey,
+                decision: providerAdmissionRules.decision,
+            })
+            .from(providerAdmissionRules)
+            .where(eq(providerAdmissionRules.providerKey, providerKey))
+    }
+
+    async observeProviderAdmissionOptions(
+        providerKey: string,
+        signals: readonly ProviderAdmissionSignal[],
+        observedAt: Date,
+    ): Promise<void> {
+        if (!signals.length) return
+        await this.#db
+            .insert(providerAdmissionOptions)
+            .values(
+                signals.map(({ facetKey, valueKey, label }) => ({
+                    providerKey,
+                    facetKey,
+                    valueKey,
+                    label,
+                    firstSeenAt: observedAt,
+                    lastSeenAt: observedAt,
+                })),
+            )
+            .onConflictDoUpdate({
+                target: [
+                    providerAdmissionOptions.providerKey,
+                    providerAdmissionOptions.facetKey,
+                    providerAdmissionOptions.valueKey,
+                ],
+                set: { label: sql`excluded.label`, lastSeenAt: observedAt },
+            })
     }
 
     async findItem(id: string): Promise<CatalogItem | null> {

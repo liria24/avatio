@@ -3,7 +3,10 @@ const emit = defineEmits<{
     select: [item: CatalogItemView]
 }>()
 
-const props = defineProps<{ loading?: boolean }>()
+const props = withDefaults(
+    defineProps<{ loading?: boolean; allowResolve?: boolean; endpoint?: string }>(),
+    { allowResolve: true, endpoint: '/api/items' },
+)
 const searchTerm = defineModel<string>('searchTerm', { default: '' })
 
 type UrlJob = {
@@ -52,7 +55,7 @@ const fetchResults = async (page = 1) => {
         pagination.value = undefined
     }
     try {
-        const response = await $fetch<PaginationResponse<CatalogItemView[]>>('/api/items', {
+        const response = await $fetch<PaginationResponse<CatalogItemView[]>>(props.endpoint, {
             query: { q: query || undefined, page, limit: 24 },
             signal: request.signal,
         })
@@ -110,6 +113,7 @@ const resolveUrls = (urls: string[]) => {
 }
 
 const onPaste = (event: ClipboardEvent) => {
+    if (!props.allowResolve) return
     const text = event.clipboardData?.getData('text') ?? ''
     const urls = extractUrls(text)
     if (urls.length) resolveUrls(urls)
@@ -118,7 +122,7 @@ const onPaste = (event: ClipboardEvent) => {
 onClickOutside(root, () => (open.value = false))
 
 const rows = computed<SearchRow[]>(() => {
-    const typedUrls = extractUrls(searchTerm.value)
+    const typedUrls = props.allowResolve ? extractUrls(searchTerm.value) : []
     const canResolve = typedUrls.filter(
         (url) => !urlJobs.value.some((candidate) => candidate.url === url),
     )

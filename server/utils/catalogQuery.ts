@@ -8,7 +8,7 @@ import {
     setups,
     users,
 } from '~~/database/schema'
-import type { CatalogItemView } from '~~/shared/types/catalog'
+import type { AdminCatalogItemView, CatalogItemView } from '~~/shared/types/catalog'
 
 export const catalogItemRelations = {
     sources: { with: { publisherSource: true } },
@@ -92,6 +92,23 @@ export const queryCatalogItem = async (db: AppDatabase, id: string) => {
     return item ? projectCatalogItem(item) : null
 }
 
+export const queryAdminCatalogItem = async (
+    db: AppDatabase,
+    id: string,
+): Promise<AdminCatalogItemView | null> => {
+    const item = await db.query.catalogItems.findFirst({
+        where: { id: { eq: id } },
+        with: catalogItemRelations,
+    })
+    return item
+        ? {
+              ...projectCatalogItem(item),
+              manualCategoryOverride:
+                  item.categoryOverrideOrigin === 'manual' ? item.categoryOverride : null,
+          }
+        : null
+}
+
 export const queryCatalogItems = async (
     db: AppDatabase,
     input: {
@@ -106,6 +123,7 @@ export const queryCatalogItems = async (
         ownerId?: string
         publicAvatars?: boolean
         suggestedByOwnerId?: string
+        manualCategoryOverride?: boolean
     },
 ) => {
     const page = input.page ?? 1
@@ -186,6 +204,9 @@ export const queryCatalogItems = async (
                     : undefined,
                 input.ownerId || input.publicAvatars ? sql`${visibleAvatarCount} > 0` : undefined,
                 input.suggestedByOwnerId ? sql`${ownerEntryCount} > 0` : undefined,
+                input.manualCategoryOverride
+                    ? eq(catalogItems.categoryOverrideOrigin, 'manual')
+                    : undefined,
             ),
         )
         .orderBy(

@@ -2,7 +2,10 @@ import type {
     CatalogProvider,
     ExternalReference,
     ItemCategory,
+    ProviderAdmissionDefinition,
+    ProviderAdmissionSignal,
     ProviderFetchResult,
+    ProviderSnapshot,
 } from '@avatio/core/catalog'
 import { matchBoothCatalogUrl } from '@avatio/nuxt/runtime/catalog/references'
 
@@ -32,11 +35,18 @@ export interface BoothResponse {
 
 export interface BoothProviderOptions {
     proxyBaseUrl?: string
-    allowedCategoryKeys: ReadonlySet<string>
     categoryMap: Readonly<Record<string, ItemCategory>>
     http: ProviderHttpClient
     resolvePublisherSource: ResolvePublisherSource
 }
+
+export const BOOTH_ADMISSION_DEFINITION = {
+    match: 'any',
+    facets: [
+        { key: 'category', discovery: 'observed' },
+        { key: 'tag', discovery: 'configured-only' },
+    ],
+} as const satisfies ProviderAdmissionDefinition
 
 export const getBoothItemUrl = (externalId: string, proxyBaseUrl?: string) => {
     const encodedId = encodeURIComponent(externalId)
@@ -46,6 +56,7 @@ export const getBoothItemUrl = (externalId: string, proxyBaseUrl?: string) => {
 
 export class BoothCatalogProvider implements CatalogProvider {
     readonly key = 'booth'
+    readonly admission = BOOTH_ADMISSION_DEFINITION
 
     constructor(private readonly options: BoothProviderOptions) {}
 
@@ -79,9 +90,6 @@ export class BoothCatalogProvider implements CatalogProvider {
             return { status: 'transient_error', errorKind: 'provider-invalid-success-response' }
 
         const rawCategoryKey = String(item.category.id)
-        if (!this.options.allowedCategoryKeys.has(rawCategoryKey))
-            return { status: 'policy_rejected', errorKind: 'provider-category-not-admitted' }
-
         const publisherSourceId = await this.options.resolvePublisherSource({
             providerKey: this.key,
             externalId: item.shop.subdomain,
@@ -116,5 +124,32 @@ export class BoothCatalogProvider implements CatalogProvider {
                 publisherSourceId,
             },
         }
+    }
+
+    getAdmissionSignals(snapshot: ProviderSnapshot): ProviderAdmissionSignal[] {
+        const category = snapshot.category
+        const tags = Array.isArray(snapshot.metadata.tags) ? snapshot.metadata.tags : []
+        return [
+            ...(category
+                ? [
+                      {
+                          facetKey: 'category',
+                          valueKey: category.rawKey,
+                          label: category.rawLabel ?? category.rawKey,
+                      },
+                  ]
+                : []),
+            ...tags.flatMap((tag) => {
+                if (!tag || typeof tag !== 'object' || !('name' in tag)) return []
+                const signal = this.normalizeAdmissionValue('tag', String(tag.name))
+                return signal ? [signal] : []
+            }),
+        ]
+    }
+
+    normalizeAdmissionValue(facetKey: string, value: string): ProviderAdmissionSignal | null {
+        const label = value.trim().normalize('NFKC')
+        if (facetKey !== 'tag' || !label) return null
+        return { facetKey, valueKey: label.toLocaleLowerCase('en-US'), label }
     }
 }

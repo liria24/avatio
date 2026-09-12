@@ -5,7 +5,12 @@ import type {
     ItemSourceId,
     SourceAvailability,
 } from '../domain/catalog'
-import type { ExternalReference, ProviderSnapshot } from './catalog-provider'
+import type {
+    ExternalReference,
+    ProviderAdmissionRule,
+    ProviderAdmissionSignal,
+    ProviderSnapshot,
+} from './catalog-provider'
 
 export interface SourceLease {
     sourceId: ItemSourceId
@@ -14,6 +19,12 @@ export interface SourceLease {
 }
 
 export interface CatalogRepository {
+    findProviderAdmissionRules(providerKey: string): Promise<ProviderAdmissionRule[]>
+    observeProviderAdmissionOptions(
+        providerKey: string,
+        signals: readonly ProviderAdmissionSignal[],
+        observedAt: Date,
+    ): Promise<void>
     ensureSource(reference: ExternalReference): Promise<ItemSource>
     findItem(id: CatalogItemId): Promise<CatalogItem | null>
     findSource(id: ItemSourceId): Promise<ItemSource | null>

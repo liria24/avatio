@@ -1,3 +1,5 @@
+import type { AppConfig, WritableAppConfig } from '@avatio/core/contracts'
+
 export const useAdmin = () => {
     const { t } = useI18n()
     const toast = useToast()

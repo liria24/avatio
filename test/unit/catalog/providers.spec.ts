@@ -47,7 +47,6 @@ describe('BOOTH CatalogProvider', () => {
     ])('matches and canonicalizes %s', (value) => {
         const provider = new BoothCatalogProvider({
             proxyBaseUrl: 'https://proxy.example/',
-            allowedCategoryKeys: new Set(['208']),
             categoryMap: { '208': 'avatar' },
             http: createHttp(async () => response(200, boothItem)),
             resolvePublisherSource,
@@ -63,7 +62,6 @@ describe('BOOTH CatalogProvider', () => {
     it.each(['12345', 12345])('normalizes an admitted provider snapshot with ID %s', async (id) => {
         const provider = new BoothCatalogProvider({
             proxyBaseUrl: 'https://proxy.example/api',
-            allowedCategoryKeys: new Set(['208']),
             categoryMap: { '208': 'avatar' },
             http: createHttp(async (url) => {
                 expect(url).toBe('https://proxy.example/api/12345')
@@ -90,7 +88,6 @@ describe('BOOTH CatalogProvider', () => {
 
     it('reads BOOTH directly when no proxy is configured', async () => {
         const provider = new BoothCatalogProvider({
-            allowedCategoryKeys: new Set(['208']),
             categoryMap: { '208': 'avatar' },
             http: createHttp(async (url) => {
                 expect(url).toBe('https://booth.pm/ja/items/12345.json')
@@ -114,7 +111,6 @@ describe('BOOTH CatalogProvider', () => {
     ] as const)('maps HTTP %i to %s', async (status, expected) => {
         const provider = new BoothCatalogProvider({
             proxyBaseUrl: 'https://proxy.example/',
-            allowedCategoryKeys: new Set(['208']),
             categoryMap: { '208': 'avatar' },
             http: createHttp(async () => response(status, null)),
             resolvePublisherSource,
@@ -127,10 +123,9 @@ describe('BOOTH CatalogProvider', () => {
         expect(result.status).toBe(expected)
     })
 
-    it('keeps policy rejection separate from withdrawal', async () => {
+    it('extracts normalized admission signals without rejecting inside fetch', async () => {
         const provider = new BoothCatalogProvider({
             proxyBaseUrl: 'https://proxy.example/',
-            allowedCategoryKeys: new Set(),
             categoryMap: {},
             http: createHttp(async () => response(200, boothItem)),
             resolvePublisherSource,
@@ -140,7 +135,12 @@ describe('BOOTH CatalogProvider', () => {
             externalId: '12345',
             canonicalUrl: 'https://booth.pm/items/12345',
         })
-        expect(result.status).toBe('policy_rejected')
+        expect(result.status).toBe('available')
+        if (result.status !== 'available') return
+        expect(provider.getAdmissionSignals(result.snapshot)).toEqual([
+            { facetKey: 'category', valueKey: '208', label: '3D Characters' },
+            { facetKey: 'tag', valueKey: 'vrchat', label: 'VRChat' },
+        ])
     })
 })
 

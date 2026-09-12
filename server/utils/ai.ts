@@ -1,7 +1,7 @@
 import { createWorkersAiCapabilities, type AiTaskModels } from '@avatio/cloudflare'
+import { itemCategories } from '@avatio/core/catalog'
 import type { H3Event } from '@nuxt/nitro-server/h3'
 import { z } from 'zod'
-import { itemCategory } from '~~/database/schema'
 
 const modelBindings = {
     catalogEnrichment: 'AI_MODEL_CATALOG_ENRICHMENT',
@@ -36,7 +36,7 @@ export const useAiCapabilities = (event: H3Event) => {
             changelogTranslation: requireModel('changelogTranslation', event),
             changelogSlug: requireModel('changelogSlug', event),
         },
-        itemCategories: itemCategory,
+        itemCategories,
     })
 }
 
