@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { en, ja } from '@nuxt/ui/locale'
+import { useForm } from '@tanstack/vue-form'
 
 definePageMeta({
     auth: 'user',
@@ -13,28 +14,20 @@ const { data: userSettings } = await useUserSettings()
 const { update: updateUserSettings } = useUserSettingsUpdate()
 
 const updating = ref(false)
-const username = ref(user.value!.username || '')
-const name = ref(user.value!.name || '')
-const bio = ref(user.value!.bio || '')
-const links = ref([...(user.value!.links || [])])
+const usernameAvailable = ref(false)
 const newLink = ref('')
 const editingLink = ref('')
 
-const processImage = async (file: File) => {
-    if (!username.value) return
-
-    updating.value = true
-
-    try {
-        const image = await uploadImage(file, 'avatar')
-
-        await updateUser({ image: image.url })
-    } catch (error) {
-        console.error('Failed to upload image:', error)
-    } finally {
-        updating.value = false
-    }
-}
+const getProfileValues = () => ({
+    username: user.value!.username || '',
+    name: user.value!.name || '',
+    bio: user.value!.bio || '',
+    links: [...(user.value!.links || [])],
+})
+const profileFormSchema = usersUpdateSchema.pick({ username: true, name: true }).required().extend({
+    bio: usersUpdateSchema.shape.bio.unwrap().unwrap(),
+    links: usersUpdateSchema.shape.links.unwrap().unwrap(),
+})
 
 const saveProfile = async (data: Parameters<typeof updateUser>[0]) => {
     try {
@@ -46,6 +39,7 @@ const saveProfile = async (data: Parameters<typeof updateUser>[0]) => {
             color: 'success',
         })
         await fetchSession({ force: true })
+        return true
     } catch (error) {
         console.error('Failed to save profile:', error)
         toast.add({
@@ -55,6 +49,46 @@ const saveProfile = async (data: Parameters<typeof updateUser>[0]) => {
             description: t('settings.general.toast.saveFailedDescription'),
             color: 'error',
         })
+        return false
+    }
+}
+
+const profileForm = useForm({
+    defaultValues: getProfileValues(),
+    validators: [{ triggers: ['change'], run: profileFormSchema }],
+    onSubmit: async ({ value, formApi }) => {
+        const normalized = {
+            username: value.username.trim(),
+            name: value.name.trim(),
+            bio: value.bio.trim(),
+            links: value.links,
+        }
+        const current = user.value
+        const changes = {
+            ...(normalized.username !== current?.username ? { username: normalized.username } : {}),
+            ...(normalized.name !== current?.name ? { name: normalized.name } : {}),
+            ...(normalized.bio !== (current?.bio || '') ? { bio: normalized.bio } : {}),
+            ...(JSON.stringify(normalized.links) !== JSON.stringify(current?.links || [])
+                ? { links: normalized.links }
+                : {}),
+        }
+        if (!Object.keys(changes).length || (await saveProfile(changes))) formApi.reset(normalized)
+    },
+})
+
+const processImage = async (file: File) => {
+    if (!profileForm.state.values.username) return
+
+    updating.value = true
+
+    try {
+        const image = await uploadImage(file, 'avatar')
+
+        await updateUser({ image: image.url })
+    } catch (error) {
+        console.error('Failed to upload image:', error)
+    } finally {
+        updating.value = false
     }
 }
 
@@ -75,7 +109,11 @@ const validateLink = (value: string, currentIndex = -1) => {
         return
     }
 
-    if (links.value.some((link, index) => link === trimmedLink && index !== currentIndex)) {
+    if (
+        profileForm.state.values.links.some(
+            (link, index) => link === trimmedLink && index !== currentIndex,
+        )
+    ) {
         toast.add({
             id: 'link-duplicate',
             icon: 'mingcute:warning-line',
@@ -93,22 +131,24 @@ const addLink = () => {
     const link = validateLink(newLink.value)
     if (!link) return false
 
-    links.value.push(link)
+    profileForm.pushFieldValue('links', link)
     newLink.value = ''
     return true
 }
 
 const editLink = (index: number, close: () => void) => {
-    if (index < 0 || index >= links.value.length) return
+    if (index < 0 || index >= profileForm.state.values.links.length) return
     const link = validateLink(editingLink.value, index)
     if (!link) return
-    links.value.splice(index, 1, link)
+    profileForm.setFieldValue('links', (links) =>
+        links.map((current, candidate) => (candidate === index ? link : current)),
+    )
     close()
 }
 
 const removeLink = (index: number) => {
-    if (index < 0 || index >= links.value.length) return
-    links.value.splice(index, 1)
+    if (index < 0 || index >= profileForm.state.values.links.length) return
+    profileForm.removeFieldValue('links', index)
 }
 
 const { open, reset, onChange } = useFileDialog({
@@ -194,181 +234,203 @@ useSeo({
                     </UFieldGroup>
                 </div>
 
-                <div class="flex w-full flex-col gap-4">
-                    <InputUsername
-                        v-model="username"
-                        :placeholder="$t('settings.general.profile.name')"
-                    >
-                        <template #trailing="{ available }">
-                            <UButton
-                                v-if="username !== user?.username"
-                                :label="$t('save')"
-                                color="neutral"
-                                :disabled="!available || !username.trim()"
-                                loading-auto
-                                @click="saveProfile({ username })"
-                            />
-                        </template>
-                    </InputUsername>
-
-                    <UFormField
-                        name="name"
-                        :label="$t('settings.general.profile.name')"
-                        :ui="{ container: 'flex items-center gap-1' }"
-                        class="w-full"
-                    >
-                        <UInput
-                            v-model="name"
+                <form
+                    class="flex w-full flex-col gap-4"
+                    @submit.prevent="profileForm.handleSubmit()"
+                >
+                    <profileForm.Field v-slot="{ field }" name="username">
+                        <InputUsername
+                            v-model:available="usernameAvailable"
+                            :model-value="field.value"
+                            :error="field.meta.isTouched ? getFormError(field.errors) : undefined"
                             :placeholder="$t('settings.general.profile.name')"
-                            size="lg"
-                            variant="subtle"
-                            class="w-full"
+                            @update:model-value="field.handleChange"
                         />
-                        <UButton
-                            v-if="name.trim() !== user?.name"
-                            :label="$t('save')"
-                            size="lg"
-                            color="neutral"
-                            loading-auto
-                            @click="saveProfile({ name: name.trim() })"
-                        />
-                    </UFormField>
+                    </profileForm.Field>
 
-                    <UFormField
-                        name="bio"
-                        :label="$t('settings.general.profile.bio')"
-                        :ui="{ container: 'flex flex-col gap-1' }"
-                        class="w-full"
-                    >
-                        <UTextarea
-                            v-model="bio"
-                            :placeholder="$t('settings.general.profile.bio')"
-                            autoresize
-                            variant="soft"
+                    <profileForm.Field v-slot="{ field }" name="name">
+                        <UFormField
+                            name="name"
+                            :label="$t('settings.general.profile.name')"
+                            :error="field.meta.isTouched ? getFormError(field.errors) : undefined"
                             class="w-full"
-                        />
-                        <UButton
-                            v-if="bio.trim() !== (user?.bio || '')"
-                            :label="$t('save')"
-                            color="neutral"
-                            loading-auto
-                            class="ml-auto"
-                            @click="saveProfile({ bio: bio.trim() })"
-                        />
-                    </UFormField>
+                        >
+                            <UInput
+                                :model-value="field.value"
+                                :placeholder="$t('settings.general.profile.name')"
+                                size="lg"
+                                variant="subtle"
+                                class="w-full"
+                                @blur="field.handleBlur"
+                                @update:model-value="field.handleChange"
+                            />
+                        </UFormField>
+                    </profileForm.Field>
 
-                    <UFormField
-                        name="links"
-                        :label="$t('settings.general.profile.links')"
-                        class="w-full"
-                    >
-                        <SortableList v-model="links" handle=".link-drag" class="flex flex-col">
-                            <div
-                                v-for="(statelink, index) in links"
-                                :key="statelink"
-                                class="hover:bg-elevated flex items-center gap-2 rounded-md p-2 transition-colors"
+                    <profileForm.Field v-slot="{ field }" name="bio">
+                        <UFormField
+                            name="bio"
+                            :label="$t('settings.general.profile.bio')"
+                            :error="field.meta.isTouched ? getFormError(field.errors) : undefined"
+                            class="w-full"
+                        >
+                            <UTextarea
+                                :model-value="field.value"
+                                :placeholder="$t('settings.general.profile.bio')"
+                                autoresize
+                                variant="soft"
+                                class="w-full"
+                                @blur="field.handleBlur"
+                                @update:model-value="field.handleChange"
+                            />
+                        </UFormField>
+                    </profileForm.Field>
+
+                    <profileForm.ArrayField v-slot="{ field }" name="links">
+                        <UFormField
+                            name="links"
+                            :label="$t('settings.general.profile.links')"
+                            :error="field.meta.isTouched ? getFormError(field.errors) : undefined"
+                            class="w-full"
+                        >
+                            <SortableList
+                                :model-value="field.value"
+                                handle=".link-drag"
+                                class="flex flex-col"
+                                @update:model-value="field.handleChange"
                             >
-                                <Icon
-                                    name="mingcute:dots-fill"
-                                    size="18"
-                                    class="link-drag text-muted shrink-0 cursor-move"
-                                />
-
-                                <UTooltip :text="statelink" :delay-duration="50">
+                                <div
+                                    v-for="(statelink, index) in field.value"
+                                    :key="statelink"
+                                    class="hover:bg-elevated flex items-center gap-2 rounded-md p-2 transition-colors"
+                                >
                                     <Icon
-                                        :name="useLinkAttributes(statelink).icon"
+                                        name="mingcute:dots-fill"
                                         size="18"
-                                        class="text-toned shrink-0"
+                                        class="link-drag text-muted shrink-0 cursor-move"
                                     />
-                                </UTooltip>
 
-                                <p class="line-clamp-1 text-sm leading-none break-all">
-                                    {{ statelink }}
-                                </p>
+                                    <UTooltip :text="statelink" :delay-duration="50">
+                                        <Icon
+                                            :name="useLinkAttributes(statelink).icon"
+                                            size="18"
+                                            class="text-toned shrink-0"
+                                        />
+                                    </UTooltip>
 
-                                <UPopover :content="{ side: 'bottom' }">
+                                    <p class="line-clamp-1 text-sm leading-none break-all">
+                                        {{ statelink }}
+                                    </p>
+
+                                    <UPopover :content="{ side: 'bottom' }">
+                                        <UButton
+                                            type="button"
+                                            :aria-label="$t('settings.general.profile.editLink')"
+                                            icon="mingcute:edit-2-fill"
+                                            variant="ghost"
+                                            size="sm"
+                                            class="ml-auto"
+                                            @click="editingLink = statelink"
+                                        />
+
+                                        <template #content="{ close }">
+                                            <div class="flex max-w-96 items-center gap-2 p-2">
+                                                <UInput
+                                                    v-model="editingLink"
+                                                    :placeholder="
+                                                        $t('settings.general.profile.editLink')
+                                                    "
+                                                    class="w-full"
+                                                    @keyup.enter.prevent="editLink(index, close)"
+                                                />
+                                                <UButton
+                                                    type="button"
+                                                    :label="$t('save')"
+                                                    variant="soft"
+                                                    color="neutral"
+                                                    :disabled="!editingLink.trim()"
+                                                    @click="editLink(index, close)"
+                                                />
+                                            </div>
+                                        </template>
+                                    </UPopover>
                                     <UButton
-                                        :aria-label="$t('settings.general.profile.editLink')"
-                                        icon="mingcute:edit-2-fill"
+                                        type="button"
+                                        :aria-label="$t('settings.general.profile.removeLink')"
+                                        icon="mingcute:close-line"
                                         variant="ghost"
                                         size="sm"
-                                        class="ml-auto"
-                                        @click="editingLink = statelink"
+                                        @click="removeLink(index)"
+                                    />
+                                </div>
+                            </SortableList>
+
+                            <div class="flex items-center gap-1">
+                                <UPopover
+                                    :content="{
+                                        side: 'bottom',
+                                    }"
+                                >
+                                    <UButton
+                                        v-if="field.value.length < 8"
+                                        type="button"
+                                        icon="mingcute:add-line"
+                                        :label="$t('settings.general.profile.addLink')"
+                                        variant="ghost"
+                                        block
+                                        class="p-2"
                                     />
 
-                                    <template #content="{ close }">
+                                    <template #content>
                                         <div class="flex max-w-96 items-center gap-2 p-2">
                                             <UInput
-                                                v-model="editingLink"
+                                                v-model="newLink"
                                                 :placeholder="
-                                                    $t('settings.general.profile.editLink')
+                                                    $t('settings.general.profile.addLink')
                                                 "
                                                 class="w-full"
-                                                @keyup.enter="editLink(index, close)"
+                                                @keyup.enter.prevent="addLink()"
                                             />
                                             <UButton
-                                                :label="$t('save')"
+                                                type="button"
+                                                :label="$t('add')"
                                                 variant="soft"
                                                 color="neutral"
-                                                :disabled="!editingLink.trim()"
-                                                @click="editLink(index, close)"
+                                                :disabled="!newLink.trim()"
+                                                @click="addLink()"
                                             />
                                         </div>
                                     </template>
                                 </UPopover>
-                                <UButton
-                                    :aria-label="$t('settings.general.profile.removeLink')"
-                                    icon="mingcute:close-line"
-                                    variant="ghost"
-                                    size="sm"
-                                    @click="removeLink(index)"
-                                />
                             </div>
-                        </SortableList>
+                        </UFormField>
+                    </profileForm.ArrayField>
 
-                        <div class="flex items-center gap-1">
-                            <UPopover
-                                :content="{
-                                    side: 'bottom',
-                                }"
-                            >
-                                <UButton
-                                    v-if="links.length < 8"
-                                    icon="mingcute:add-line"
-                                    :label="$t('settings.general.profile.addLink')"
-                                    variant="ghost"
-                                    block
-                                    class="p-2"
-                                />
-
-                                <template #content>
-                                    <div class="flex max-w-96 items-center gap-2 p-2">
-                                        <UInput
-                                            v-model="newLink"
-                                            :placeholder="$t('settings.general.profile.addLink')"
-                                            class="w-full"
-                                            @keyup.enter="addLink()"
-                                        />
-                                        <UButton
-                                            :label="$t('add')"
-                                            variant="soft"
-                                            color="neutral"
-                                            :disabled="!newLink.trim()"
-                                            @click="addLink()"
-                                        />
-                                    </div>
-                                </template>
-                            </UPopover>
-                            <UButton
-                                v-if="JSON.stringify(links) !== JSON.stringify(user?.links || [])"
-                                :label="$t('save')"
-                                color="neutral"
-                                loading-auto
-                                @click="saveProfile({ links })"
-                            />
-                        </div>
-                    </UFormField>
-                </div>
+                    <profileForm.Subscribe
+                        v-slot="formState"
+                        :selector="
+                            (state) => ({
+                                canSubmit: state.canSubmit,
+                                isDefaultValue: state.isDefaultValue,
+                                isSubmitting: state.isSubmitting,
+                                username: state.values.username,
+                            })
+                        "
+                    >
+                        <UButton
+                            type="submit"
+                            :label="$t('save')"
+                            color="neutral"
+                            :disabled="
+                                formState.isDefaultValue ||
+                                !formState.canSubmit ||
+                                (formState.username !== user?.username && !usernameAvailable)
+                            "
+                            :loading="formState.isSubmitting"
+                            class="ml-auto"
+                        />
+                    </profileForm.Subscribe>
+                </form>
             </div>
         </section>
 
