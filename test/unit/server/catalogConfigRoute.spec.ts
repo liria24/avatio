@@ -1,6 +1,6 @@
 import { itemCategorySchema } from '@avatio/core/catalog'
+import { createError, type H3Event } from '@nuxt/nitro-server/h3'
 import { drizzle } from 'drizzle-orm/d1'
-import { createError, type H3Event } from 'h3'
 import type { ZodType } from 'zod'
 
 import { relations } from '../../../database/relations'

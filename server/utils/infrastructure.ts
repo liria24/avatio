@@ -1,7 +1,7 @@
 import { CloudflareCacheInvalidator, CloudflareFeatureFlags } from '@avatio/cloudflare'
 import type { CacheInvalidator, FileStorage } from '@avatio/core'
 import type { CacheContext } from '@cloudflare/workers-types'
-import type { H3Event } from 'h3'
+import type { H3Event } from '@nuxt/nitro-server/h3'
 
 type CloudflareRequestContext = {
     cloudflare?: {

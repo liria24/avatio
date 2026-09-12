@@ -1,4 +1,3 @@
-import { destr } from 'destr'
 import type { z } from 'zod'
 
 const throwIfFailed = <T>(
@@ -26,11 +25,7 @@ export const validateBody = async <T extends z.ZodTypeAny>(
 export const validateFormData = async <T extends z.ZodTypeAny>(s: T): Promise<z.infer<T>> =>
     throwIfFailed(
         'validateFormData',
-        s.safeParse(
-            Object.fromEntries(
-                [...(await readFormData(useEvent())).entries()].map(([k, v]) => [k, destr(v)]),
-            ),
-        ),
+        s.safeParse(Object.fromEntries((await readFormData(useEvent())).entries())),
     )
 
 export const validateParams = async <T extends z.ZodTypeAny>(s: T): Promise<z.infer<T>> =>

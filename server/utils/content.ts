@@ -1,6 +1,6 @@
 import { createGithubContentSource } from '@avatio/nuxt/runtime/server/content/github'
 import { createAvatioContentService } from '@avatio/nuxt/runtime/server/content/service'
-import type { H3Event } from 'h3'
+import type { H3Event } from '@nuxt/nitro-server/h3'
 import kvDriver from 'unstorage/drivers/cloudflare-kv-binding'
 import { getStageConfig } from '~~/config/environment'
 
@@ -31,7 +31,7 @@ export const getContentService = async (event: H3Event) => {
                 base: `authored-content:v1:${config.repo}:${config.branch}`,
             }),
             ttl: 300_000,
-            strategy: 'none',
+            swr: false,
         },
         logger: log,
     })

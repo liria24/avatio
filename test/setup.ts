@@ -1,6 +1,5 @@
 import { useServerFiles } from 'nuxt-files-sdk/runtime'
 // oxlint-disable typescript/no-explicit-any
-import { $fetch } from 'ofetch'
 
 import { serverError } from '../server/utils/error'
 import {
@@ -28,9 +27,6 @@ Object.assign(globalThis, constants, {
     serverError,
     useServerFiles,
 })
-
-// Polyfill Nuxt/Nitro auto-imported $fetch
-;(globalThis as any).$fetch = $fetch
 
 // Polyfill Nitro defineCachedFunction — bypasses caching in tests
 ;(globalThis as any).defineCachedFunction = <T extends (...args: any[]) => Promise<any>>(

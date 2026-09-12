@@ -1,7 +1,7 @@
 import { syncCatalogSource, type ProviderSnapshot } from '@avatio/core/catalog'
 import { matchCatalogReference } from '@avatio/nuxt/runtime/catalog/references'
+import type { H3Event } from '@nuxt/nitro-server/h3'
 import { and, eq, isNull } from 'drizzle-orm'
-import type { H3Event } from 'h3'
 import { catalogItems } from '~~/database/schema'
 
 const log = logger('resolveCatalogReference')

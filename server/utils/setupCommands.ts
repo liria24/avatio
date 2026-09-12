@@ -1,6 +1,6 @@
+import type { H3Event } from '@nuxt/nitro-server/h3'
 import { and, eq, inArray, notInArray } from 'drizzle-orm'
 import type { BatchItem } from 'drizzle-orm/batch'
-import type { H3Event } from 'h3'
 import { nanoid } from 'nanoid'
 import type { z } from 'zod'
 import {

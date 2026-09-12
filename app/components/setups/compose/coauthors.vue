@@ -1,6 +1,4 @@
 <script lang="ts" setup>
-import { VueDraggable } from 'vue-draggable-plus'
-
 const { coauthors, addCoauthor, removeCoauthor, setCoauthors, updateCoauthorNote } =
     useSetupCompose()
 </script>
@@ -8,12 +6,9 @@ const { coauthors, addCoauthor, removeCoauthor, setCoauthors, updateCoauthorNote
 <template>
     <UFormField name="coauthors" :label="$t('setup.compose.coauthors.title')">
         <div class="flex flex-col gap-2">
-            <VueDraggable
+            <SortableList
                 :model-value="coauthors"
-                :animation="150"
                 handle=".draggable"
-                drag-class="opacity-100"
-                ghost-class="opacity-0"
                 class="flex h-full w-full flex-col gap-2 empty:hidden"
                 @update:model-value="setCoauthors"
             >
@@ -58,7 +53,7 @@ const { coauthors, addCoauthor, removeCoauthor, setCoauthors, updateCoauthorNote
                         />
                     </div>
                 </div>
-            </VueDraggable>
+            </SortableList>
 
             <UPopover :content="{ side: 'right', align: 'start' }">
                 <UButton

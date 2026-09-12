@@ -1,5 +1,3 @@
-import { defu } from 'defu'
-
 export default authedSessionEventHandler(async ({ session, db }) => {
     const data = await db.query.userSettings.findFirst({
         where: {
@@ -13,11 +11,9 @@ export default authedSessionEventHandler(async ({ session, db }) => {
         },
     })
 
-    const result = defu(data, {
-        updatedAt: null,
-        showPrivateSetups: true,
-        showNSFW: false,
-    })
-
-    return result
+    return {
+        updatedAt: data?.updatedAt ?? null,
+        showPrivateSetups: data?.showPrivateSetups ?? true,
+        showNSFW: data?.showNSFW ?? false,
+    }
 })

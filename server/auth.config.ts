@@ -1,10 +1,9 @@
 import type { CacheInvalidationInput } from '@avatio/core'
 import { drizzleAdapter } from '@better-auth/drizzle-adapter/relations-v2'
+import type { H3Event } from '@nuxt/nitro-server/h3'
 import { defineServerAuth, type ServerAuthContext } from '@nuxtjs/better-auth/config'
 import type { BetterAuthOptions } from 'better-auth'
-import type { H3Event } from 'h3'
 import { nanoid } from 'nanoid'
-import { useEvent } from 'nitropack/runtime'
 
 import { SESSION_COOKIE_CACHE_MAX_AGE } from '../shared/utils/constants'
 import { logger } from '../shared/utils/logger'

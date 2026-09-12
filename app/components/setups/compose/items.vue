@@ -1,6 +1,4 @@
 <script lang="ts" setup>
-import { VueDraggable } from 'vue-draggable-plus'
-
 import type { SetupComposeEntry } from '~/composables/setupComposeEntries'
 
 const itemCategory = useItemCategory()
@@ -127,12 +125,9 @@ onBeforeUnmount(() => {
                         </h2>
                     </div>
 
-                    <VueDraggable
+                    <SortableList
                         :model-value="getItemsByCategory(category)"
-                        :animation="150"
                         handle=".draggable"
-                        drag-class="opacity-100"
-                        ghost-class="opacity-0"
                         class="flex h-full w-full flex-col gap-2"
                         @update:model-value="setItemsByCategory(category, $event)"
                     >
@@ -152,7 +147,7 @@ onBeforeUnmount(() => {
                             @update:unsupported="updateItem(item.id, { unsupported: $event })"
                             @update:note="updateItem(item.id, { note: $event || '' })"
                         />
-                    </VueDraggable>
+                    </SortableList>
                 </template>
             </div>
         </div>

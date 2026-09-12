@@ -1,4 +1,4 @@
-import type { H3Event } from 'h3'
+import type { H3Event } from '@nuxt/nitro-server/h3'
 
 interface SessionEventHandlerOptions {
     rejectBannedUser?: boolean

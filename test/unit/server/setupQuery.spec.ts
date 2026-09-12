@@ -1,5 +1,5 @@
+import type { H3Event } from '@nuxt/nitro-server/h3'
 import { drizzle } from 'drizzle-orm/d1'
-import type { H3Event } from 'h3'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { relations } from '../../../database/relations'
@@ -124,7 +124,11 @@ describe('provider-neutral Catalog and Setup queries', () => {
             event: H3Event
             session: { user: { id: string } }
         }) => Promise<{ data: { id: string; images: unknown[] }[] }>
-        const result = await route({ db, event: {} as H3Event, session: { user: { id: 'other' } } })
+        const result = await route({
+            db,
+            event: {} as H3Event,
+            session: { user: { id: 'other' } },
+        })
         expect(result.data.map((setup) => setup.id)).toEqual(['public'])
         expect(result.data[0]?.images).toEqual([
             {

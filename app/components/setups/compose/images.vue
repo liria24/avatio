@@ -1,6 +1,5 @@
 <script lang="ts" setup>
 import { cn } from 'cn'
-import { VueDraggable } from 'vue-draggable-plus'
 
 const {
     values,
@@ -41,10 +40,9 @@ onChange((files) => {
 <template>
     <UFormField :label="$t('setup.compose.images.title')" :help="`${imageCount} / 4`">
         <div ref="dropZoneRef" class="flex flex-wrap items-start gap-3">
-            <VueDraggable
+            <SortableList
                 v-if="values.images.length"
                 :model-value="values.images"
-                :animation="150"
                 handle=".image-drag"
                 class="contents"
                 @update:model-value="reorderImages"
@@ -109,7 +107,7 @@ onChange((files) => {
                         @click="openImagePoints(image)"
                     />
                 </div>
-            </VueDraggable>
+            </SortableList>
 
             <div v-for="upload in uploads" :key="upload.id" class="group flex flex-col gap-1">
                 <div

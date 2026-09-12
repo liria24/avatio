@@ -1,5 +1,5 @@
 import { createWorkersAiCapabilities, type AiTaskModels } from '@avatio/cloudflare'
-import type { H3Event } from 'h3'
+import type { H3Event } from '@nuxt/nitro-server/h3'
 import { z } from 'zod'
 import { itemCategory } from '~~/database/schema'
 

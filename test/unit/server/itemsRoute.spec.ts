@@ -1,7 +1,7 @@
 import { SQLiteCatalogRepository } from '@avatio/cloudflare'
 import type { ProviderFetchResult } from '@avatio/core/catalog'
+import { createError, type H3Event } from '@nuxt/nitro-server/h3'
 import { drizzle } from 'drizzle-orm/d1'
-import { createError, type H3Event } from 'h3'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
 import { relations } from '../../../database/relations'

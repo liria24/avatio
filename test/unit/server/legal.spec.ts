@@ -1,6 +1,6 @@
 import { resolveLegalStatus, type LegalDocumentMetadata } from '@avatio/core/legal'
+import { createError } from '@nuxt/nitro-server/h3'
 import { drizzle } from 'drizzle-orm/d1'
-import { createError } from 'h3'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { relations } from '../../../database/relations'

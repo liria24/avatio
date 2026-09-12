@@ -1,5 +1,5 @@
+import type { H3Event } from '@nuxt/nitro-server/h3'
 import { asc, eq } from 'drizzle-orm'
-import type { H3Event } from 'h3'
 import { allowedBoothCategories, catalogItems } from '~~/database/schema'
 
 export const getMaintenanceFlag = (event?: H3Event) =>

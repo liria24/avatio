@@ -1,5 +1,4 @@
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
-import { getQuery } from 'h3'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import SetupImage from '~/components/setups/image.vue'
@@ -179,9 +178,9 @@ describe('Setup list image loading', () => {
         registerEndpoint('/api/setups', {
             method: 'GET',
             handler: async (event) => {
-                const { page: pageValue, q: queryValue } = getQuery(event)
-                const page = Number(pageValue)
-                const q = typeof queryValue === 'string' ? queryValue : ''
+                const url = new URL(event.node.req.url ?? '/', 'http://localhost')
+                const page = Number(url.searchParams.get('page'))
+                const q = url.searchParams.get('q') ?? ''
                 requests.push(page)
                 if (failNext) {
                     throw new Error('Temporary failure')

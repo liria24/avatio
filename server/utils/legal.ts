@@ -4,8 +4,8 @@ import {
     type LegalDocumentMetadata,
     type legalAcceptanceInputSchema,
 } from '@avatio/core/legal'
+import type { H3Event } from '@nuxt/nitro-server/h3'
 import { eq } from 'drizzle-orm'
-import type { H3Event } from 'h3'
 import type { z } from 'zod'
 import { legalAcceptances, users } from '~~/database/schema'
 

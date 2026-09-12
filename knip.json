@@ -10,7 +10,9 @@
                 "alchemy.run.ts",
                 "auth.config.ts",
                 "app/auth.config.ts",
-                "server/auth.config.ts"
+                "server/auth.config.ts",
+                "oxfmt.config.ts",
+                "taze.config.ts"
             ],
             "ignoreDependencies": [
                 "@dotenvx/dotenvx",
@@ -20,6 +22,7 @@
                 "@iconify-json/simple-icons",
                 "@iconify-json/svg-spinners",
                 "@iconify-json/twemoji",
+                "@nuxt/nitro-server",
                 "@vueuse/router"
             ],
             "ignoreUnresolved": ["#nuxt-better-auth"]

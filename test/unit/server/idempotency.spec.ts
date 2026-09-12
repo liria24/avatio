@@ -1,4 +1,4 @@
-import { createError } from 'h3'
+import { createError } from '@nuxt/nitro-server/h3'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 interface StoredRequest {
@@ -79,7 +79,19 @@ const makeDb = () => {
 }
 
 describe('idempotency request claims', () => {
-    beforeEach(() => vi.stubGlobal('createError', createError))
+    beforeEach(() => {
+        vi.stubGlobal('createError', createError)
+        vi.stubGlobal(
+            'getHeader',
+            (event: ReturnType<typeof makeEvent>['event']) =>
+                event.node.req.headers['idempotency-key'],
+        )
+        vi.stubGlobal(
+            'setResponseHeader',
+            (event: ReturnType<typeof makeEvent>['event'], name: string, value: string | number) =>
+                event.node.res.setHeader(name, value),
+        )
+    })
 
     it('requires a UUID Idempotency-Key', async () => {
         const { event } = makeEvent()

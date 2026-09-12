@@ -99,7 +99,7 @@ describe('comark authored content', () => {
         const binding = {
             get: vi.fn(async (key: string) => values.get(key) ?? null),
             put: vi.fn(async (key: string, value: string) => {
-                if (writes.has(key)) throw new Error('KV key written twice in one request')
+                if (writes.has(key)) throw new Error(`KV key written twice in one request: ${key}`)
                 writes.add(key)
                 values.set(key, value)
             }),
@@ -120,7 +120,7 @@ describe('comark authored content', () => {
                 }),
                 locales: ['ja', 'en'],
                 fallbackLocale: 'ja',
-                cache: { driver: kvDriver({ binding }), ttl: 300_000, strategy: 'none' },
+                cache: { driver: kvDriver({ binding }), ttl: 300_000, swr: false },
             })
         const service = create()
         const metadata = await service.getLegalDocuments('en')

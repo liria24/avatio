@@ -1,5 +1,5 @@
+import type { H3Event } from '@nuxt/nitro-server/h3'
 import { drizzle } from 'drizzle-orm/d1'
-import type { H3Event } from 'h3'
 import { expect, it, vi } from 'vitest'
 
 import { relations } from '../../../database/relations'

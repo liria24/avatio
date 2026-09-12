@@ -117,9 +117,7 @@ PRs into `main` require the `format`, `lint`, `lint:unused`, `typecheck`, `test`
 
 - **Runner:** Vitest, configured in `vitest.config.ts`.
 - Unit tests live in `test/unit/*.{test,spec}.ts`.
-- `test/setup.ts` polyfills:
-  - `globalThis.$fetch` (from `ofetch`)
-  - `globalThis.defineCachedFunction` (bypasses caching in tests)
+- `test/setup.ts` polyfills Nitro's `globalThis.defineCachedFunction` by bypassing caching.
 - Test env is loaded from `.env` via `loadEnv('test', ...)`.
 
 ## Database (Drizzle)
