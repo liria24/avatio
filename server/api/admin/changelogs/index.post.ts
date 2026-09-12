@@ -37,15 +37,19 @@ export default promiseEventHandler(async ({ event, db }) => {
     })
 
     if (!slug) {
-        const { changelogSlugGenerator } = useAiCapabilities(event)
-        generatedSlug = await changelogSlugGenerator.generate({
-            title,
-            reservedSlugs: exists.map((entry) => entry.slug),
-        })
-        if (exists.some((entry) => entry.slug === generatedSlug))
-            throw serverError.internalServerError({
-                responseMessage: 'AI generated a duplicate changelog slug. Provide one manually.',
+        if (import.meta.dev) generatedSlug = idempotency.id
+        else {
+            const { changelogSlugGenerator } = useAiCapabilities(event)
+            generatedSlug = await changelogSlugGenerator.generate({
+                title,
+                reservedSlugs: exists.map((entry) => entry.slug),
             })
+            if (exists.some((entry) => entry.slug === generatedSlug))
+                throw serverError.internalServerError({
+                    responseMessage:
+                        'AI generated a duplicate changelog slug. Provide one manually.',
+                })
+        }
     }
 
     const finalSlug = slug || generatedSlug
@@ -53,7 +57,7 @@ export default promiseEventHandler(async ({ event, db }) => {
     const translations: (typeof changelogI18ns.$inferInsert)[] = []
 
     // Handle i18n translations
-    if (!i18n || i18n.length === 0) {
+    if ((!i18n || i18n.length === 0) && !import.meta.dev) {
         // AI generate translations for both en and ja
         const locales: Array<'en'> = ['en']
 
@@ -83,7 +87,7 @@ export default promiseEventHandler(async ({ event, db }) => {
                 })
             }
         }
-    } else {
+    } else if (i18n?.length) {
         // Use provided i18n translations
         translations.push(
             ...i18n.map((translation) => ({

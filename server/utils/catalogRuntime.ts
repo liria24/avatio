@@ -32,19 +32,15 @@ export const getCatalogProviderRegistry = async () => {
     ) => (await publisherRepository.upsertSource(snapshot)).id
 
     return new CatalogProviderRegistry([
-        ...(proxyBaseUrl
-            ? [
-                  new BoothCatalogProvider({
-                      proxyBaseUrl,
-                      allowedCategoryKeys: new Set(
-                          admittedCategories.map(({ categoryId }) => String(categoryId)),
-                      ),
-                      categoryMap: BOOTH_CATEGORY_MAP,
-                      http: providerHttpClient,
-                      resolvePublisherSource,
-                  }),
-              ]
-            : []),
+        new BoothCatalogProvider({
+            proxyBaseUrl,
+            allowedCategoryKeys: new Set(
+                admittedCategories.map(({ categoryId }) => String(categoryId)),
+            ),
+            categoryMap: BOOTH_CATEGORY_MAP,
+            http: providerHttpClient,
+            resolvePublisherSource,
+        }),
         new GithubCatalogProvider({ http: providerHttpClient, resolvePublisherSource }),
     ])
 }

@@ -38,7 +38,7 @@ onChange((files) => {
 </script>
 
 <template>
-    <UFormField :label="$t('setup.compose.images.title')" :help="`${imageCount} / 4`">
+    <UFormField :label="$t('setup.compose.images.title')" :hint="`${imageCount} / 4`">
         <div ref="dropZoneRef" class="flex flex-wrap items-start gap-3">
             <SortableList
                 v-if="values.images.length"
@@ -82,9 +82,8 @@ onChange((files) => {
                         <UButton
                             :aria-label="$t('setup.compose.images.remove')"
                             icon="mingcute:close-line"
-                            variant="ghost"
+                            color="neutral"
                             size="xs"
-                            :ui="{ leadingIcon: 'text-highlighted' }"
                             class="absolute top-1.5 right-1.5 rounded-full opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
                             @click.stop="removeImage(index)"
                         />

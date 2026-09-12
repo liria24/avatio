@@ -28,21 +28,24 @@ describe('stage configuration', () => {
         expect(getStageConfig('development').production).toBe(false)
     })
 
-    it('uses the same canonical encrypted secret names in both stages', async () => {
+    it('uses only declared encrypted secret names and includes every required secret', async () => {
         const production = await readDotenv('.env.production')
         const development = await readDotenv('.env.development')
-        const expected = secretDefinitions.map(({ key }) => key).sort()
+        const declared = new Set(secretDefinitions.map(({ key }) => key))
+        const required = secretDefinitions.filter((secret) => secret.required).map(({ key }) => key)
         const applicationKeys = (environment: Map<string, string>) =>
             [...environment.keys()].filter((key) => !key.startsWith('DOTENV_PUBLIC_KEY')).sort()
 
-        expect(applicationKeys(production)).toEqual(expected)
-        expect(applicationKeys(development)).toEqual(expected)
         expect(production.has('DOTENV_PUBLIC_KEY_PRODUCTION')).toBe(true)
         expect(development.has('DOTENV_PUBLIC_KEY_DEVELOPMENT')).toBe(true)
 
-        for (const key of expected) {
-            expect(production.get(key)).toMatch(/^encrypted:/)
-            expect(development.get(key)).toMatch(/^encrypted:/)
+        for (const environment of [production, development]) {
+            const keys = applicationKeys(environment)
+            expect(
+                keys.every((key) => declared.has(key as (typeof secretDefinitions)[number]['key'])),
+            ).toBe(true)
+            for (const key of required) expect(environment.get(key)).toMatch(/^encrypted:/)
+            for (const key of keys) expect(environment.get(key)).toMatch(/^encrypted:/)
         }
     })
 
@@ -99,6 +102,16 @@ describe('stage configuration', () => {
         expect(output).toContain('BETTER_AUTH_SECRET')
         expect(output).toContain('BOOTH_PROXY_URL')
         expect(output).not.toContain(sensitiveValue)
+    })
+
+    it('allows BOOTH access without a configured proxy', () => {
+        expect(
+            validateSecrets({
+                BETTER_AUTH_SECRET: 'x'.repeat(32),
+                TWITTER_CLIENT_SECRET: 'twitter-secret',
+                OG_IMAGE_SECRET: 'x'.repeat(16),
+            }).success,
+        ).toBe(true)
     })
 
     it('stops stage commands when the dotenv private key cannot decrypt the stage file', async () => {

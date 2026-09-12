@@ -1,6 +1,6 @@
 <script setup lang="ts">
-const { user, loggedIn, signOut, fetchSession } = useUserSession()
-const { data: sessions, load: loadSessions, setActive } = useDeviceSessions()
+const { user, loggedIn, signOut } = useUserSession()
+const { data: sessions, load: loadSessions, switchAccount, switching } = useDeviceSessions()
 const toast = useToast()
 const colorMode = useColorMode()
 const login = useLoginModal()
@@ -9,12 +9,10 @@ const { t, locales, setLocale } = useI18n()
 const open = ref(false)
 
 watch(open, async (value) => {
-    if (value && loggedIn.value && sessions.value === undefined) await loadSessions()
+    if (value && loggedIn.value) await loadSessions()
 })
 
-const switchAccount = async (sessionToken: string) => {
-    await setActive(sessionToken)
-    await fetchSession({ force: true })
+const onSwitchAccount = async (session: DeviceSession) => {
     toast.add({
         id: 'switching-account',
         icon: 'svg-spinners:ring-resize',
@@ -22,7 +20,17 @@ const switchAccount = async (sessionToken: string) => {
         description: t('loading'),
         progress: false,
     })
-    reloadNuxtApp()
+    try {
+        await switchAccount(session)
+    } catch {
+        console.error('Failed to switch account.')
+        toast.add({
+            id: 'switching-account',
+            icon: 'mingcute:close-line',
+            title: t('header.menu.switchAccountFailed'),
+            color: 'error',
+        })
+    }
 }
 
 const revoke = () => signOut({ onSuccess: () => reloadNuxtApp() })
@@ -102,12 +110,13 @@ const revoke = () => signOut({ onSuccess: () => reloadNuxtApp() })
                     children: [
                         ...(sessions?.map((s) => ({
                             label: s.user.name,
+                            disabled: switching || s.user.id === user?.id,
                             avatar: {
                                 src: s.user.image || undefined,
                                 alt: s.user.name,
                                 icon: 'mingcute:user-3-fill',
                             },
-                            onSelect: () => switchAccount(s.session.token),
+                            onSelect: () => onSwitchAccount(s),
                         })) || []),
                         {
                             label: t('header.menu.newAccount'),
@@ -126,6 +135,7 @@ const revoke = () => signOut({ onSuccess: () => reloadNuxtApp() })
     >
         <button
             type="button"
+            :disabled="switching"
             :aria-label="$t('header.userMenu')"
             class="ring-accented size-8 cursor-pointer rounded-full ring-0 transition-all select-none hover:ring-4"
         >

@@ -31,11 +31,17 @@ export interface BoothResponse {
 }
 
 export interface BoothProviderOptions {
-    proxyBaseUrl: string
+    proxyBaseUrl?: string
     allowedCategoryKeys: ReadonlySet<string>
     categoryMap: Readonly<Record<string, ItemCategory>>
     http: ProviderHttpClient
     resolvePublisherSource: ResolvePublisherSource
+}
+
+export const getBoothItemUrl = (externalId: string, proxyBaseUrl?: string) => {
+    const encodedId = encodeURIComponent(externalId)
+    if (!proxyBaseUrl) return `https://booth.pm/ja/items/${encodedId}.json`
+    return new URL(encodedId, proxyBaseUrl.endsWith('/') ? proxyBaseUrl : `${proxyBaseUrl}/`).href
 }
 
 export class BoothCatalogProvider implements CatalogProvider {
@@ -53,11 +59,8 @@ export class BoothCatalogProvider implements CatalogProvider {
 
         let response
         try {
-            const proxyBaseUrl = this.options.proxyBaseUrl.endsWith('/')
-                ? this.options.proxyBaseUrl
-                : `${this.options.proxyBaseUrl}/`
             response = await this.options.http.get<BoothResponse>(
-                new URL(encodeURIComponent(reference.externalId), proxyBaseUrl).href,
+                getBoothItemUrl(reference.externalId, this.options.proxyBaseUrl),
             )
         } catch {
             return { status: 'transient_error', errorKind: 'provider-network-error' }

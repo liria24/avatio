@@ -54,6 +54,7 @@
             "settings": "Settings",
             "feedback": "Feedback",
             "switchAccount": "Switch Account",
+            "switchAccountFailed": "Failed to switch accounts",
             "newAccount": "New Account",
             "logout": "Logout"
         }
@@ -72,6 +73,7 @@
                 "bio": "Bio",
                 "links": "Links",
                 "addLink": "Add Link",
+                "editLink": "Edit Link",
                 "removeLink": "Remove Link",
                 "avatarAlt": "Your avatar image"
             },
@@ -347,6 +349,7 @@
             "coauthorDuplicate": "Cannot add duplicate co-authors",
             "itemAlreadyAdded": "Item already added",
             "draftRestored": "Found and restored draft in progress",
+            "switchAccountFailed": "Failed to switch the posting account",
             "limitedPublic": "Limited Access",
             "limitedPublicDescription": "Only people with the URL can view this setup."
         },

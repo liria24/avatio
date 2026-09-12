@@ -14,7 +14,11 @@ const createSetupCompose = () => {
     const router = useRouter()
     const toast = useToast()
     const { t } = useI18n()
+    const { user } = useUserSession()
+    const { switchAccount: switchDeviceAccount } = useDeviceSessions()
+    const requestFetch = useRequestFetch()
     const publishing = ref(false)
+    const switchingAccount = ref(false)
     const restoring = ref(false)
     const loadFailed = ref(false)
     const editingSetupId = ref<Setup['id'] | null>(null)
@@ -32,7 +36,7 @@ const createSetupCompose = () => {
         updateRouterQuery({ draftId: id ?? undefined }),
     )
     const { form, values } = useSetupComposeForm((next) => {
-        if (restoring.value || publishing.value) return
+        if (restoring.value || publishing.value || switchingAccount.value) return
         loadFailed.value = false
         draftController.schedule(
             { ...next, imageMetadata: getSelectedImageMetadata() },
@@ -154,7 +158,7 @@ const createSetupCompose = () => {
             Promise.all(
                 content.items.map(async ({ itemId }) => {
                     try {
-                        return await $fetch<CatalogItemView>('/api/items/resolve', {
+                        return await requestFetch<CatalogItemView>('/api/items/resolve', {
                             method: 'POST',
                             body: { reference: itemId },
                         })
@@ -167,7 +171,7 @@ const createSetupCompose = () => {
             Promise.all(
                 content.coauthors.map(async ({ userId, username }) => {
                     try {
-                        return await $fetch<ComposeUser>(`/api/users/${username}`)
+                        return await requestFetch<ComposeUser>(`/api/users/${username}`)
                     } catch (error) {
                         console.error('Failed to hydrate draft coauthor:', userId, error)
                         return null
@@ -229,7 +233,7 @@ const createSetupCompose = () => {
     }
 
     const loadSetup = async (setupId: Setup['id']) => {
-        const setup = await $fetch<Setup>(`/api/me/setups/${setupId}`)
+        const setup = await requestFetch<Setup>(`/api/me/setups/${setupId}`)
         draftController.requireOwner()
         const content: SetupDraftContent = {
             public: setup.public,
@@ -283,7 +287,7 @@ const createSetupCompose = () => {
         if (!args.edit) return
 
         try {
-            const drafts = await $fetch<SetupDraftSummary[]>('/api/setup-drafts', {
+            const drafts = await requestFetch<SetupDraftSummary[]>('/api/setup-drafts', {
                 query: { setupId: args.edit },
             })
             if (drafts[0]) {
@@ -343,7 +347,7 @@ const createSetupCompose = () => {
             }
             if (!setupsInsertSchema.safeParse(body).success) throw new Error('Validation failed')
 
-            const response = await $fetch<Setup>(
+            const response = await requestFetch<Setup>(
                 editingSetupId.value ? `/api/setups/${editingSetupId.value}` : '/api/setups',
                 {
                     method: editingSetupId.value ? 'PUT' : 'POST',
@@ -367,6 +371,54 @@ const createSetupCompose = () => {
             })
         } finally {
             publishing.value = false
+        }
+    }
+
+    const switchPostingAccount = async (target: DeviceSession) => {
+        if (
+            switchingAccount.value ||
+            publishing.value ||
+            imageUploading.value ||
+            editingSetupId.value ||
+            target.user.id === user.value?.id
+        )
+            return
+
+        switchingAccount.value = true
+        try {
+            if (!changed.value) {
+                await switchDeviceAccount(target)
+                return
+            }
+
+            draftController.schedule(
+                setupDraftContentSchema.parse({
+                    ...values.value,
+                    imageMetadata: getSelectedImageMetadata(),
+                }),
+                null,
+            )
+            await draftController.flush()
+            if (!['saved', 'restored'].includes(draftController.state.status))
+                throw new Error('Draft must be saved before switching accounts.')
+
+            await requestFetch(`/api/setup-drafts/${draftController.state.id}/transfer`, {
+                method: 'POST',
+                body: {
+                    targetSessionToken: target.session.token,
+                    expectedRevision: draftController.state.revision,
+                },
+            })
+            await draftController.deleteRecovery(draftController.state.id).catch(() => null)
+            reloadNuxtApp({ force: true })
+        } catch {
+            switchingAccount.value = false
+            console.error('Failed to switch setup posting account.')
+            toast.add({
+                icon: 'mingcute:close-line',
+                title: t('setup.compose.switchAccountFailed'),
+                color: 'error',
+            })
         }
     }
 
@@ -429,7 +481,7 @@ const createSetupCompose = () => {
     } = useFetch<SetupDraftSummary[]>('/api/setup-drafts', { default: () => [], dedupe: 'defer' })
     const deleteDrafts = async (ids: string[]) => {
         for (const id of ids) {
-            await $fetch(`/api/setup-drafts/${id}`, { method: 'DELETE' })
+            await requestFetch(`/api/setup-drafts/${id}`, { method: 'DELETE' })
             await draftController.deleteRecovery(id).catch(() => null)
         }
         if (ids.includes(draftController.state.id)) await reset()
@@ -447,6 +499,8 @@ const createSetupCompose = () => {
         changed,
         editingSetupId,
         publishing,
+        switchingAccount: readonly(switchingAccount),
+        switchPostingAccount,
         draft,
         loadDraft,
         addTag,

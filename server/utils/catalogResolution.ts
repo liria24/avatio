@@ -86,6 +86,7 @@ export const resolveCatalogReference = async (
     if (result.result.status !== 'available')
         throw serverError.notFound({ responseMessage: 'The provider source is unavailable.' })
     const snapshot = result.result.snapshot
+    if (import.meta.dev) return queryCatalogItem(db, source.itemId)
     runAfterResponse(
         (async () => {
             try {

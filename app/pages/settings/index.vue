@@ -18,6 +18,7 @@ const name = ref(user.value!.name || '')
 const bio = ref(user.value!.bio || '')
 const links = ref([...(user.value!.links || [])])
 const newLink = ref('')
+const editingLink = ref('')
 
 const processImage = async (file: File) => {
     if (!username.value) return
@@ -57,9 +58,9 @@ const saveProfile = async (data: Parameters<typeof updateUser>[0]) => {
     }
 }
 
-const addLink = () => {
-    const trimmedLink = newLink.value.trim()
-    if (!trimmedLink) return false
+const validateLink = (value: string, currentIndex = -1) => {
+    const trimmedLink = value.trim()
+    if (!trimmedLink) return
 
     try {
         new URL(trimmedLink)
@@ -71,10 +72,10 @@ const addLink = () => {
             description: t('settings.general.toast.invalidLinkDescription'),
             color: 'error',
         })
-        return false
+        return
     }
 
-    if (links.value.includes(trimmedLink)) {
+    if (links.value.some((link, index) => link === trimmedLink && index !== currentIndex)) {
         toast.add({
             id: 'link-duplicate',
             icon: 'mingcute:warning-line',
@@ -82,12 +83,27 @@ const addLink = () => {
             description: t('settings.general.toast.linkExistsDescription'),
             color: 'warning',
         })
-        return false
+        return
     }
 
-    links.value.push(trimmedLink)
+    return trimmedLink
+}
+
+const addLink = () => {
+    const link = validateLink(newLink.value)
+    if (!link) return false
+
+    links.value.push(link)
     newLink.value = ''
     return true
+}
+
+const editLink = (index: number, close: () => void) => {
+    if (index < 0 || index >= links.value.length) return
+    const link = validateLink(editingLink.value, index)
+    if (!link) return
+    links.value.splice(index, 1, link)
+    close()
 }
 
 const removeLink = (index: number) => {
@@ -246,23 +262,16 @@ useSeo({
                         :label="$t('settings.general.profile.links')"
                         class="w-full"
                     >
-                        <ReorderGroup
-                            v-model:values="links"
-                            as="div"
-                            axis="y"
-                            class="flex flex-col"
-                        >
-                            <ReorderItem
+                        <SortableList v-model="links" handle=".link-drag" class="flex flex-col">
+                            <div
                                 v-for="(statelink, index) in links"
                                 :key="statelink"
-                                :value="statelink"
-                                as="div"
-                                class="hover:bg-elevated flex cursor-move items-center gap-2 rounded-md p-2 transition-colors"
+                                class="hover:bg-elevated flex items-center gap-2 rounded-md p-2 transition-colors"
                             >
                                 <Icon
                                     name="mingcute:dots-fill"
                                     size="18"
-                                    class="text-muted shrink-0"
+                                    class="link-drag text-muted shrink-0 cursor-move"
                                 />
 
                                 <UTooltip :text="statelink" :delay-duration="50">
@@ -277,6 +286,36 @@ useSeo({
                                     {{ statelink }}
                                 </p>
 
+                                <UPopover :content="{ side: 'bottom' }">
+                                    <UButton
+                                        :aria-label="$t('settings.general.profile.editLink')"
+                                        icon="mingcute:edit-2-fill"
+                                        variant="ghost"
+                                        size="sm"
+                                        class="ml-auto"
+                                        @click="editingLink = statelink"
+                                    />
+
+                                    <template #content="{ close }">
+                                        <div class="flex max-w-96 items-center gap-2 p-2">
+                                            <UInput
+                                                v-model="editingLink"
+                                                :placeholder="
+                                                    $t('settings.general.profile.editLink')
+                                                "
+                                                class="w-full"
+                                                @keyup.enter="editLink(index, close)"
+                                            />
+                                            <UButton
+                                                :label="$t('save')"
+                                                variant="soft"
+                                                color="neutral"
+                                                :disabled="!editingLink.trim()"
+                                                @click="editLink(index, close)"
+                                            />
+                                        </div>
+                                    </template>
+                                </UPopover>
                                 <UButton
                                     :aria-label="$t('settings.general.profile.removeLink')"
                                     icon="mingcute:close-line"
@@ -284,8 +323,8 @@ useSeo({
                                     size="sm"
                                     @click="removeLink(index)"
                                 />
-                            </ReorderItem>
-                        </ReorderGroup>
+                            </div>
+                        </SortableList>
 
                         <div class="flex items-center gap-1">
                             <UPopover

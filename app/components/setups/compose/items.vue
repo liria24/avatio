@@ -139,6 +139,7 @@ onBeforeUnmount(() => {
                             :note="item.note"
                             :item="item"
                             :images="values.images"
+                            class="m-0.5"
                             @change-category="changeItemCategory(item.id, $event)"
                             @remove-item="removeItem(item.category, item.id)"
                             @place-item="openImagePoints($event, item.id)"

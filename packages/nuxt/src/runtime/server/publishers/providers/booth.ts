@@ -4,11 +4,11 @@ import type {
 } from '@avatio/core/publishers'
 import { matchBoothCatalogUrl } from '@avatio/nuxt/runtime/catalog/references'
 
-import type { BoothResponse } from '../../catalog/providers/booth'
+import { getBoothItemUrl, type BoothResponse } from '../../catalog/providers/booth'
 import type { ProviderHttpClient } from '../../catalog/providers/http'
 
 export interface BoothVerificationProviderOptions {
-    proxyBaseUrl: string
+    proxyBaseUrl?: string
     http: ProviderHttpClient
 }
 
@@ -21,11 +21,8 @@ export class BoothPublisherVerificationProvider implements PublisherVerification
         const reference = matchBoothCatalogUrl(url)
         if (!reference) return null
 
-        const proxyBaseUrl = this.options.proxyBaseUrl.endsWith('/')
-            ? this.options.proxyBaseUrl
-            : `${this.options.proxyBaseUrl}/`
         const response = await this.options.http.get<BoothResponse>(
-            new URL(encodeURIComponent(reference.externalId), proxyBaseUrl).href,
+            getBoothItemUrl(reference.externalId, this.options.proxyBaseUrl),
         )
         if (!response.ok || !response.data) throw new Error(`BOOTH returned ${response.status}.`)
 

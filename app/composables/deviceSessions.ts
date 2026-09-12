@@ -23,6 +23,8 @@ const normalizeDeviceSessions = (sessions: DeviceSession[]) =>
 
 export const useDeviceSessions = () => {
     const client = useAuthClient()
+    const { user } = useUserSession()
+    const switching = useState('auth:device-session-switching', () => false)
     const asyncData = useAsyncData<DeviceSession[]>(
         'auth:device-sessions',
         async () => normalizeDeviceSessions(await $fetch('/api/users/me/sessions')),
@@ -46,8 +48,20 @@ export const useDeviceSessions = () => {
             if (asyncData.status.value === 'idle') await asyncData.execute()
             else await asyncData.refresh()
         },
-        setActive: async (sessionToken: string) => {
-            await requireClient().multiSession.setActive({ sessionToken })
+        switching: readonly(switching),
+        switchAccount: async (target: DeviceSession) => {
+            if (switching.value || target.user.id === user.value?.id) return
+            switching.value = true
+            try {
+                const result = await requireClient().multiSession.setActive({
+                    sessionToken: target.session.token,
+                })
+                if (result.error) throw new Error(result.error.message)
+                reloadNuxtApp({ force: true })
+            } catch (error) {
+                switching.value = false
+                throw error
+            }
         },
         revokeOtherSessions: async () => {
             await requireClient().revokeOtherSessions()

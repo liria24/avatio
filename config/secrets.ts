@@ -8,8 +8,8 @@ export const secretDefinitions = [
     },
     {
         key: 'BOOTH_PROXY_URL',
-        required: true,
-        purpose: 'Authenticated BOOTH provider proxy',
+        required: false,
+        purpose: 'Optional BOOTH provider proxy',
     },
     {
         key: 'TWITTER_CLIENT_SECRET',
@@ -63,7 +63,7 @@ const optionalNonEmpty = z.preprocess(
 const avatioSecretsSchema = z
     .object({
         BETTER_AUTH_SECRET: z.string().min(32, 'must contain at least 32 characters'),
-        BOOTH_PROXY_URL: z.url('must be a valid URL'),
+        BOOTH_PROXY_URL: optionalNonEmpty.pipe(z.url('must be a valid URL').optional()),
         TWITTER_CLIENT_SECRET: z.string().min(1, 'must not be empty'),
         OG_IMAGE_SECRET: z.string().min(16, 'must contain at least 16 characters'),
         LIRIA_DISCORD_ENDPOINT: optionalNonEmpty.pipe(z.url('must be a valid URL').optional()),

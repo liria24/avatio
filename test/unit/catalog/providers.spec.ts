@@ -88,6 +88,24 @@ describe('BOOTH CatalogProvider', () => {
         expect(result.snapshot.publisherSourceId).toBe('booth:creator')
     })
 
+    it('reads BOOTH directly when no proxy is configured', async () => {
+        const provider = new BoothCatalogProvider({
+            allowedCategoryKeys: new Set(['208']),
+            categoryMap: { '208': 'avatar' },
+            http: createHttp(async (url) => {
+                expect(url).toBe('https://booth.pm/ja/items/12345.json')
+                return response(200, boothItem)
+            }),
+            resolvePublisherSource,
+        })
+        const result = await provider.fetch({
+            providerKey: 'booth',
+            externalId: '12345',
+            canonicalUrl: 'https://booth.pm/items/12345',
+        })
+        expect(result.status).toBe('available')
+    })
+
     it.each([
         [404, 'withdrawn'],
         [410, 'withdrawn'],

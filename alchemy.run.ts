@@ -121,7 +121,7 @@ const rateLimit = (name: string, namespaceId: number, limit: number) =>
 
 const makeWebsiteEnv = (config: AvatioStageConfig) => {
     const betterAuthSecret = requiredSecret('BETTER_AUTH_SECRET')
-    const boothProxyUrl = requiredSecret('BOOTH_PROXY_URL')
+    const boothProxyUrl = optionalSecret('BOOTH_PROXY_URL')
     const rateLimits = config.infrastructure.rateLimitNamespaces
 
     return {

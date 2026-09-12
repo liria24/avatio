@@ -4,23 +4,21 @@ definePageMeta({ auth: 'user', layout: 'compose' })
 const route = useRoute()
 const overlay = useOverlay()
 const { t } = useI18n()
-const compose = useSetupCompose()
 const {
-    form,
     values,
     publish,
     reset,
     changed,
     editingSetupId,
     publishing,
+    switchingAccount,
     imageUploading,
     draft,
     loadDraft,
     initialize,
-} = compose
+} = useSetupCompose()
 
 const publishedSetupId = ref<Setup['id'] | null>(null)
-const modalNewSetupConfirm = ref(false)
 const mobilePanel = ref<'details' | 'items'>('details')
 const desktop = useMediaQuery('(min-width: 1024px)', { ssrWidth: 1024 })
 const publishCompleteModal = usePublishSetupCompleteModal()
@@ -79,141 +77,121 @@ await initialize({ draftId: queryValue(route.query.draftId), edit: queryValue(ro
 </script>
 
 <template>
-    <UForm :state="values" class="flex size-full min-h-0 flex-col gap-6 px-1" @submit="onSubmit">
-        <div class="flex items-center gap-3">
-            <h1 class="mr-auto text-2xl font-bold">
+    <UForm
+        :state="values"
+        :inert="switchingAccount"
+        :aria-busy="switchingAccount"
+        class="flex min-h-dvh flex-col items-center gap-5 p-6"
+        @submit="onSubmit"
+    >
+        <header class="flex w-full items-center gap-4">
+            <NuxtLinkLocale to="/">
+                <AppLogo class="-mt-1.5 w-20 sm:w-24" aria-label="Avatio" />
+            </NuxtLinkLocale>
+
+            <h1 class="text-2xl font-bold">
                 {{ editingSetupId ? $t('setup.compose.editTitle') : $t('setup.compose.title') }}
             </h1>
 
-            <SetupsComposeDraftsModal
-                :referenced-draft-id="draft.status === 'new' ? undefined : draft.id"
-                @load="loadDraft($event)"
-            >
-                <UButton
-                    :label="$t('setup.compose.draftButton')"
-                    icon="mingcute:circle-dash-fill"
-                    variant="subtle"
-                    size="sm"
-                    class="rounded-full"
-                />
-            </SetupsComposeDraftsModal>
-
-            <UBadge
-                v-if="statusBadge"
-                :icon="statusBadge[0]"
-                :label="statusBadge[1]"
-                :color="statusBadge[2]"
-                variant="soft"
-                class="rounded-full px-3"
-                data-testid="draft-status"
-            />
-
-            <UModal
-                v-model:open="modalNewSetupConfirm"
-                :title="$t('setup.compose.newSetupModal.title')"
-            >
-                <UButton
-                    v-if="changed"
-                    :disabled="
-                        draft.status === 'unsaved' || draft.status === 'saving' || publishing
-                    "
-                    :aria-label="$t('setup.compose.newSetup')"
-                    icon="mingcute:add-line"
-                    variant="soft"
-                    color="neutral"
-                    :ui="{ leadingIcon: 'size-4' }"
-                    class="rounded-full"
-                />
-                <template #body>
-                    <UAlert
-                        :title="$t('setup.compose.newSetupConfirm')"
-                        :description="
-                            draft.status === 'error'
-                                ? $t('setup.compose.draftAlert.errorNotSaved')
-                                : $t('setup.compose.draftAlert.currentlySaved')
-                        "
-                        :color="draft.status === 'error' ? 'error' : 'neutral'"
-                        variant="outline"
-                    />
-                </template>
-                <template #footer>
+            <div class="ml-auto flex items-center gap-3">
+                <SetupsComposeDraftsModal
+                    :referenced-draft-id="draft.status === 'new' ? undefined : draft.id"
+                    @load="loadDraft($event)"
+                >
                     <UButton
-                        :label="$t('setup.compose.newSetupCreate')"
-                        variant="soft"
-                        class="ml-auto"
-                        @click="resetForm().then(() => (modalNewSetupConfirm = false))"
+                        :label="$t('setup.compose.draftButton')"
+                        icon="mingcute:circle-dash-fill"
+                        variant="subtle"
+                        size="sm"
+                        :disabled="switchingAccount"
+                        class="rounded-full"
                     />
-                </template>
-            </UModal>
+                </SetupsComposeDraftsModal>
 
-            <UButton
-                type="submit"
-                :label="
-                    editingSetupId
-                        ? $t('setup.compose.updateButton')
-                        : $t('setup.compose.publishButton')
-                "
-                icon="mingcute:upload-fill"
-                color="neutral"
-                :loading="publishing"
-                :disabled="imageUploading"
-                :ui="{ leadingIcon: 'size-5' }"
-                class="rounded-full px-12 py-2.5"
-            />
-        </div>
-
-        <USplitter
-            v-if="desktop"
-            id="splitter-items"
-            :items="[
-                {
-                    slot: 'sidebar',
-                    minSize: 30,
-                    defaultSize: 40,
-                    class: 'ring ring-inset ring-muted/50 bg-elevated/30 rounded-xl flex flex-col gap-8 overflow-y-auto p-4 sm:p-6',
-                },
-                {
-                    slot: 'main',
-                    minSize: 30,
-                    defaultSize: 60,
-                    class: 'ring ring-inset ring-muted/50 bg-elevated/30 rounded-xl flex flex-col gap-4 overflow-hidden p-4 sm:p-6',
-                },
-            ]"
-            class="min-h-0 grow"
-        >
-            <template #sidebar><SetupsComposeDetails /></template>
-            <template #main><SetupsComposeItems /></template>
-        </USplitter>
-
-        <div v-else class="flex min-h-0 grow flex-col gap-4">
-            <div class="grid grid-cols-2 gap-2">
-                <UButton
-                    :label="$t('setup.compose.mobile.details')"
-                    icon="mingcute:edit-3-fill"
-                    :variant="mobilePanel === 'details' ? 'solid' : 'soft'"
-                    block
-                    @click="mobilePanel = 'details'"
+                <UBadge
+                    v-if="statusBadge"
+                    :icon="statusBadge[0]"
+                    :label="statusBadge[1]"
+                    :color="statusBadge[2]"
+                    variant="soft"
+                    class="rounded-full px-3"
+                    data-testid="draft-status"
                 />
+
                 <UButton
-                    :label="$t('setup.compose.mobile.items')"
-                    icon="mingcute:package-2-fill"
-                    :variant="mobilePanel === 'items' ? 'solid' : 'soft'"
-                    block
-                    @click="mobilePanel = 'items'"
+                    type="submit"
+                    :label="
+                        editingSetupId
+                            ? $t('setup.compose.updateButton')
+                            : $t('setup.compose.publishButton')
+                    "
+                    icon="mingcute:upload-fill"
+                    color="neutral"
+                    :loading="publishing || switchingAccount"
+                    :disabled="imageUploading || switchingAccount"
+                    :ui="{ leadingIcon: 'size-5' }"
+                    class="rounded-full px-12 py-2.5"
                 />
             </div>
-            <section
-                v-show="mobilePanel === 'details'"
-                class="flex grow flex-col gap-8 rounded-xl p-1"
+        </header>
+        <main class="flex min-h-0 w-full grow flex-col gap-6 px-1">
+            <USplitter
+                v-if="desktop"
+                id="splitter-items"
+                :items="[
+                    {
+                        slot: 'left',
+                        minSize: 30,
+                        defaultSize: 40,
+                        class: 'ring ring-inset ring-muted/50 bg-elevated/30 rounded-xl flex flex-col gap-8 overflow-y-auto p-4 sm:p-6',
+                    },
+                    {
+                        slot: 'right',
+                        minSize: 30,
+                        defaultSize: 60,
+                        class: 'ring ring-inset ring-muted/50 bg-elevated/30 rounded-xl flex flex-col gap-4 overflow-hidden p-4 sm:p-6',
+                    },
+                ]"
+                class="min-h-0 grow"
             >
-                <SetupsComposeDetails />
-            </section>
-            <section
-                v-show="mobilePanel === 'items'"
-                class="flex min-h-[60vh] grow flex-col gap-4 rounded-xl p-1"
-            >
-                <SetupsComposeItems />
-            </section>
-        </div>
+                <template #left>
+                    <SetupsComposeDetails />
+                </template>
+                <template #right>
+                    <SetupsComposeItems />
+                </template>
+            </USplitter>
+
+            <div v-else class="flex min-h-0 grow flex-col gap-4">
+                <div class="grid grid-cols-2 gap-2">
+                    <UButton
+                        :label="$t('setup.compose.mobile.details')"
+                        icon="mingcute:edit-3-fill"
+                        :variant="mobilePanel === 'details' ? 'solid' : 'soft'"
+                        block
+                        @click="mobilePanel = 'details'"
+                    />
+                    <UButton
+                        :label="$t('setup.compose.mobile.items')"
+                        icon="mingcute:package-2-fill"
+                        :variant="mobilePanel === 'items' ? 'solid' : 'soft'"
+                        block
+                        @click="mobilePanel = 'items'"
+                    />
+                </div>
+                <section
+                    v-show="mobilePanel === 'details'"
+                    class="flex grow flex-col gap-8 rounded-xl p-1"
+                >
+                    <SetupsComposeDetails />
+                </section>
+                <section
+                    v-show="mobilePanel === 'items'"
+                    class="flex min-h-[60vh] grow flex-col gap-4 rounded-xl p-1"
+                >
+                    <SetupsComposeItems />
+                </section>
+            </div>
+        </main>
     </UForm>
 </template>

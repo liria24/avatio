@@ -209,9 +209,9 @@ describe('publisher verification', () => {
 
     it('checks BOOTH descriptions without applying catalog admission', async () => {
         const adapter = new BoothPublisherVerificationProvider({
-            proxyBaseUrl: 'https://proxy.example/',
             http: {
-                get: (async () => {
+                get: (async (url: string) => {
+                    expect(url).toBe('https://booth.pm/ja/items/123.json')
                     return {
                         status: 200,
                         ok: true,

@@ -54,6 +54,7 @@
             "settings": "設定",
             "feedback": "フィードバック",
             "switchAccount": "アカウント切替",
+            "switchAccountFailed": "アカウントを切り替えられませんでした",
             "newAccount": "新しいアカウント",
             "logout": "ログアウト"
         }
@@ -72,6 +73,7 @@
                 "bio": "bio",
                 "links": "リンク",
                 "addLink": "リンクを追加",
+                "editLink": "リンクを編集",
                 "removeLink": "リンクを削除",
                 "avatarAlt": "あなたのアバター画像"
             },
@@ -347,6 +349,7 @@
             "coauthorDuplicate": "共同作者を重複して追加することはできません",
             "itemAlreadyAdded": "アイテムはすでに追加されています",
             "draftRestored": "編集途中の下書きが見つかったため復元されました",
+            "switchAccountFailed": "投稿アカウントを切り替えられませんでした",
             "limitedPublic": "限定公開",
             "limitedPublicDescription": "URLを知っている人だけ閲覧可能になります"
         },

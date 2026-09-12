@@ -35,7 +35,7 @@ describe('Setup compose autosave UI', () => {
                     SetupsComposeCoauthors: true,
                     SetupsComposeItems: true,
                     USplitter: {
-                        template: '<div><slot name="sidebar" /><slot name="main" /></div>',
+                        template: '<div><slot name="left" /><slot name="right" /></div>',
                     },
                 },
             },
