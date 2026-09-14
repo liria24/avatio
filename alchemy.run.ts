@@ -210,7 +210,6 @@ export const Website = Cloudflare.Website.Nuxt(
                 appConfig: { app: { site: siteUrl } },
                 site: { url: siteUrl },
                 i18n: { baseUrl: siteUrl },
-                socialShare: { baseUrl: siteUrl },
                 app: {
                     head: {
                         meta: [

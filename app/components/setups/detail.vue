@@ -104,21 +104,10 @@ const categorizedItems = computed(() => {
     return orderedCategories
 })
 
-const shareButtons = computed(() =>
-    [
-        { network: 'x', icon: 'mingcute:social-x-fill', label: 'X' },
-        { network: 'bluesky', icon: 'mingcute:bluesky-social-fill', label: 'Bluesky' },
-        { network: 'line', icon: 'mingcute:line-app-fill', label: 'Line' },
-    ].map(({ network, icon, label }) => ({
-        shareUrl: useSocialShare({
-            network,
-            title: setup.value?.name,
-            image: setup.value?.images?.[0]?.url || undefined,
-        }).value?.shareUrl,
-        icon,
-        label,
-    })),
-)
+const shareLinks = useShareLinks({
+    title: () => setup.value?.name,
+    utm: false,
+})
 
 onBeforeRouteLeave(() => {
     overlay.closeAll()
@@ -314,12 +303,11 @@ useSeo({
                     "
                 />
                 <UButton
-                    v-for="share in shareButtons"
-                    :to="share.shareUrl"
+                    :to="shareLinks.twitter"
                     target="_blank"
                     external
-                    :aria-label="share.label"
-                    :icon="share.icon"
+                    aria-label="X"
+                    icon="mingcute:social-x-fill"
                     variant="ghost"
                 />
                 <UButton

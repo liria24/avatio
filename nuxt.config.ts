@@ -130,7 +130,6 @@ export default defineNuxtConfig({
         '@nuxtjs/i18n',
         '@vueuse/nuxt',
         'motion-v/nuxt',
-        '@stefanobartoletti/nuxt-social-share',
         '@nuxt/a11y',
         '@nuxt/test-utils/module',
         '@liria24/og-image/nuxt',
@@ -461,10 +460,6 @@ export default defineNuxtConfig({
     robots: {
         blockNonSeoBots: true,
         blockAiBots: true,
-    },
-
-    socialShare: {
-        baseUrl,
     },
 
     sitemap: {
