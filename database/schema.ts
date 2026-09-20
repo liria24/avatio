@@ -1,4 +1,6 @@
 import {
+    catalogClassificationChoices,
+    catalogClassificationStatuses,
     categoryOverrideOrigins,
     itemCategories,
     providerAdmissionDecisions,
@@ -614,6 +616,50 @@ export const itemSources = snakeCase.table(
             foreignColumns: [publisherSources.id],
         })
             .onDelete('set null')
+            .onUpdate('cascade'),
+    ],
+)
+
+/** Latest Jev classification for a catalog item and source snapshot. */
+export const catalogItemClassifications = snakeCase.table(
+    'catalog_item_classifications',
+    {
+        itemId: text().primaryKey(),
+        sourceId: text().notNull(),
+        sourceUpdatedAt: timestamp().notNull(),
+        inputHash: text().notNull(),
+        classifierVersion: text().notNull(),
+        requestedModel: text().notNull(),
+        responseModel: text(),
+        status: text({ enum: catalogClassificationStatuses }).default('processing').notNull(),
+        category: text({ enum: catalogClassificationChoices }),
+        confidence: real(),
+        probabilities: text({ mode: 'json' }).$type<Record<string, number>>(),
+        errorKind: text(),
+        retryAt: timestamp(),
+        leaseToken: text(),
+        leaseUntil: timestamp(),
+        createdAt: timestamp().default(now).notNull(),
+        updatedAt: timestamp()
+            .default(now)
+            .$onUpdate(() => new Date())
+            .notNull(),
+    },
+    (table) => [
+        index('catalog_item_classifications_source_id_idx').on(table.sourceId),
+        foreignKey({
+            name: 'catalog_item_classifications_item_id_fkey',
+            columns: [table.itemId],
+            foreignColumns: [catalogItems.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+        foreignKey({
+            name: 'catalog_item_classifications_source_id_fkey',
+            columns: [table.sourceId],
+            foreignColumns: [itemSources.id],
+        })
+            .onDelete('cascade')
             .onUpdate('cascade'),
     ],
 )

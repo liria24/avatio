@@ -12,7 +12,7 @@ const searchTerm = defineModel<string>('searchTerm', { default: '' })
 type UrlJob = {
     id: string
     url: string
-    status: 'resolving' | 'failed' | 'added'
+    status: 'queued' | 'resolving' | 'failed' | 'added'
 }
 
 type SearchRow =
@@ -33,6 +33,8 @@ const root = ref<HTMLElement>()
 const open = ref(false)
 let generation = 0
 let request: AbortController | undefined
+let activeUrlJobs = 0
+const MAX_CONCURRENT_URL_JOBS = 4
 
 const extractUrls = (text: string) =>
     [...new Set(text.match(/https?:\/\/[^\s<>"']+/giu) ?? [])].filter((value) => {
@@ -101,15 +103,34 @@ const resolveJob = async (job: UrlJob) => {
     }
 }
 
+const runUrlQueue = () => {
+    while (activeUrlJobs < MAX_CONCURRENT_URL_JOBS) {
+        const job = urlJobs.value.find(({ status }) => status === 'queued')
+        if (!job) return
+        activeUrlJobs += 1
+        job.status = 'resolving'
+        void resolveJob(job).finally(() => {
+            activeUrlJobs -= 1
+            runUrlQueue()
+        })
+    }
+}
+
+const retryJob = (job: UrlJob) => {
+    if (job.status !== 'failed') return
+    job.status = 'queued'
+    runUrlQueue()
+}
+
 const resolveUrls = (urls: string[]) => {
     open.value = true
     const known = new Set(urlJobs.value.map(({ url }) => url))
     const jobs = urls
         .filter((url) => !known.has(url))
         .slice(0, 32)
-        .map((url): UrlJob => ({ id: crypto.randomUUID(), url, status: 'resolving' }))
+        .map((url): UrlJob => ({ id: crypto.randomUUID(), url, status: 'queued' }))
     urlJobs.value.push(...jobs)
-    for (const job of jobs) void resolveJob(job)
+    runUrlQueue()
 }
 
 const onPaste = (event: ClipboardEvent) => {
@@ -220,9 +241,11 @@ const selectItem = (item: CatalogItemView) => {
                             :name="
                                 row.job.status === 'resolving'
                                     ? 'svg-spinners:ring-resize'
-                                    : row.job.status === 'added'
-                                      ? 'mingcute:check-fill'
-                                      : 'mingcute:warning-fill'
+                                    : row.job.status === 'queued'
+                                      ? 'mingcute:time-fill'
+                                      : row.job.status === 'added'
+                                        ? 'mingcute:check-fill'
+                                        : 'mingcute:warning-fill'
                             "
                             size="18"
                             :class="row.job.status === 'failed' ? 'text-error' : 'text-muted'"
@@ -233,7 +256,7 @@ const selectItem = (item: CatalogItemView) => {
                             :label="$t('retry')"
                             variant="ghost"
                             size="xs"
-                            @click="resolveJob(row.job)"
+                            @click="retryJob(row.job)"
                         />
                     </div>
 

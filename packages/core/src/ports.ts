@@ -1,4 +1,4 @@
-import type { CatalogItemId, ItemSourceId } from './catalog'
+import type { CatalogClassificationChoice, CatalogItemId } from './catalog'
 import type { SetupId } from './setups'
 
 export interface CacheInvalidationInput {
@@ -26,26 +26,39 @@ export interface FileStorage {
     delete(key: string): Promise<void>
 }
 
-export interface CatalogEnrichmentInput {
-    sourceId: ItemSourceId
+export interface CatalogDisplayNameInput {
+    name: string
+    description?: string
+    readme?: string
+    examples?: Array<{
+        name: string
+        displayName: string | null
+    }>
+}
+
+export interface CatalogDisplayNameGenerator {
+    generate(input: CatalogDisplayNameInput): Promise<string | null>
+}
+
+export interface CatalogClassificationInput {
     name: string
     description?: string
     readme?: string
     originalCategory?: string
-    examples?: Array<{
-        name: string
-        displayName: string | null
-        category: string
-    }>
 }
 
-export interface CatalogEnrichmentResult {
-    displayName: string | null
-    category: string | null
+export interface CatalogClassificationResult {
+    category: CatalogClassificationChoice
+    confidence: number
+    probabilities: Record<string, number>
+    model: string
 }
 
-export interface CatalogItemEnricher {
-    enrich(input: CatalogEnrichmentInput): Promise<CatalogEnrichmentResult>
+export interface CatalogItemClassifier {
+    classify(
+        input: CatalogClassificationInput,
+        options?: { signal?: AbortSignal },
+    ): Promise<CatalogClassificationResult>
 }
 
 export interface ChangelogTranslationInput {

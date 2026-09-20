@@ -5,6 +5,7 @@ export type AvatioStage = (typeof avatioStages)[number]
 
 const aiTaskConfigSchema = z.object({
     catalogEnrichment: z.string().min(1),
+    catalogClassification: z.string().min(1),
     changelogTranslation: z.string().min(1),
     changelogSlug: z.string().min(1),
 })
@@ -30,7 +31,12 @@ const avatioStageConfigSchema = z.object({
         bucket: z.string().min(1),
         queue: z.string().min(1),
         flags: z.string().min(1),
-        rateLimitNamespaces: z.tuple([z.number().int(), z.number().int(), z.number().int()]),
+        rateLimitNamespaces: z.tuple([
+            z.number().int(),
+            z.number().int(),
+            z.number().int(),
+            z.number().int(),
+        ]),
     }),
 })
 
@@ -41,6 +47,7 @@ const common = {
     twitterClientId: 'QUFuRTNOVjk3MXdxQjU1cnhGdks6MTpjaQ',
     aiModels: {
         catalogEnrichment: 'openai/gpt-5.6-luna',
+        catalogClassification: 'typesafe/jev',
         changelogTranslation: 'openai/gpt-5.6-luna',
         changelogSlug: 'openai/gpt-5.6-luna',
     },
@@ -62,7 +69,7 @@ const stageConfig = {
             bucket: 'avatio',
             queue: 'item-revalidation',
             flags: 'avatio-production',
-            rateLimitNamespaces: [2101, 2102, 2103],
+            rateLimitNamespaces: [2101, 2102, 2103, 2104],
         },
     },
     development: {
@@ -80,7 +87,7 @@ const stageConfig = {
             bucket: 'avatio-development',
             queue: 'item-revalidation-development',
             flags: 'avatio-development',
-            rateLimitNamespaces: [2201, 2202, 2203],
+            rateLimitNamespaces: [2201, 2202, 2203, 2204],
         },
     },
 } satisfies Record<AvatioStage, AvatioStageConfig>

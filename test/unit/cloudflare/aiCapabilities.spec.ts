@@ -4,6 +4,7 @@ describe('semantic AI task configuration', () => {
     it('selects models independently for each task', () => {
         const models: AiTaskModels = {
             catalogEnrichment: 'provider/catalog-v1',
+            catalogClassification: 'provider/classification-v1',
             changelogTranslation: 'provider/translation-v1',
             changelogSlug: 'provider/slug-v1',
         }
@@ -12,6 +13,9 @@ describe('semantic AI task configuration', () => {
         expect(getAiTaskModel(changed, 'changelogTranslation')).toBe('provider/translation-v2')
         expect(getAiTaskModel(changed, 'catalogEnrichment')).toBe(
             getAiTaskModel(models, 'catalogEnrichment'),
+        )
+        expect(getAiTaskModel(changed, 'catalogClassification')).toBe(
+            getAiTaskModel(models, 'catalogClassification'),
         )
         expect(getAiTaskModel(changed, 'changelogSlug')).toBe(
             getAiTaskModel(models, 'changelogSlug'),

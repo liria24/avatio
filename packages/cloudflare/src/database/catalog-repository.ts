@@ -1,4 +1,7 @@
 import type {
+    CatalogClassification,
+    CatalogClassificationChoice,
+    CatalogClassificationLease,
     CatalogItem,
     CatalogItemId,
     ExternalReference,
@@ -10,11 +13,12 @@ import type {
     ProviderAdmissionSignal,
     SourceLease,
 } from '@avatio/core/catalog'
-import { and, eq, isNull, lte, or, sql } from 'drizzle-orm'
+import { and, eq, exists, isNull, lte, or, sql } from 'drizzle-orm'
 import type { BatchItem } from 'drizzle-orm/batch'
 import type { SQLiteAsyncDatabase } from 'drizzle-orm/sqlite-core'
 
 import {
+    catalogItemClassifications,
     catalogItems,
     itemSources,
     providerAdmissionOptions,
@@ -58,6 +62,14 @@ const mapSource = (row: typeof itemSources.$inferSelect): ItemSource => ({
     syncLeaseToken: row.syncLeaseToken,
     lastErrorKind: row.lastErrorKind,
     lastErrorAt: row.lastErrorAt,
+    updatedAt: row.updatedAt,
+})
+
+const mapClassification = (
+    row: typeof catalogItemClassifications.$inferSelect,
+): CatalogClassification => ({
+    ...row,
+    probabilities: row.probabilities ?? null,
 })
 
 export class SQLiteCatalogRepository implements CatalogRepository {
@@ -156,6 +168,200 @@ export class SQLiteCatalogRepository implements CatalogRepository {
             )
             .limit(1)
         return source ? mapSource(source) : null
+    }
+
+    async findClassification(itemId: string): Promise<CatalogClassification | null> {
+        const [classification] = await this.#db
+            .select()
+            .from(catalogItemClassifications)
+            .where(eq(catalogItemClassifications.itemId, itemId))
+            .limit(1)
+        return classification ? mapClassification(classification) : null
+    }
+
+    async claimClassification(input: {
+        itemId: string
+        sourceId: string
+        sourceUpdatedAt: Date
+        inputHash: string
+        classifierVersion: string
+        requestedModel: string
+        now: Date
+        leaseUntil: Date
+    }): Promise<CatalogClassificationLease | null> {
+        const token = crypto.randomUUID()
+        const [claimed] = await this.#db
+            .insert(catalogItemClassifications)
+            .values({
+                itemId: input.itemId,
+                sourceId: input.sourceId,
+                sourceUpdatedAt: input.sourceUpdatedAt,
+                inputHash: input.inputHash,
+                classifierVersion: input.classifierVersion,
+                requestedModel: input.requestedModel,
+                status: 'processing',
+                leaseToken: token,
+                leaseUntil: input.leaseUntil,
+            })
+            .onConflictDoUpdate({
+                target: catalogItemClassifications.itemId,
+                set: {
+                    sourceId: input.sourceId,
+                    sourceUpdatedAt: input.sourceUpdatedAt,
+                    inputHash: input.inputHash,
+                    classifierVersion: input.classifierVersion,
+                    requestedModel: input.requestedModel,
+                    responseModel: null,
+                    status: 'processing',
+                    category: null,
+                    confidence: null,
+                    probabilities: null,
+                    errorKind: null,
+                    retryAt: null,
+                    leaseToken: token,
+                    leaseUntil: input.leaseUntil,
+                },
+                setWhere: sql`
+                    ${catalogItemClassifications.sourceId} <> excluded.source_id
+                    OR ${catalogItemClassifications.sourceUpdatedAt} <> excluded.source_updated_at
+                    OR ${catalogItemClassifications.inputHash} <> excluded.input_hash
+                    OR ${catalogItemClassifications.classifierVersion} <> excluded.classifier_version
+                    OR ${catalogItemClassifications.requestedModel} <> excluded.requested_model
+                    OR (
+                        ${catalogItemClassifications.status} = 'processing'
+                        AND (
+                            ${catalogItemClassifications.leaseUntil} IS NULL
+                            OR ${catalogItemClassifications.leaseUntil} <= ${input.now.getTime()}
+                        )
+                    )
+                    OR (
+                        ${catalogItemClassifications.status} = 'error'
+                        AND (
+                            ${catalogItemClassifications.retryAt} IS NULL
+                            OR ${catalogItemClassifications.retryAt} <= ${input.now.getTime()}
+                        )
+                    )
+                `,
+            })
+            .returning({ itemId: catalogItemClassifications.itemId })
+        return claimed
+            ? {
+                  itemId: input.itemId,
+                  sourceId: input.sourceId,
+                  sourceUpdatedAt: input.sourceUpdatedAt,
+                  inputHash: input.inputHash,
+                  classifierVersion: input.classifierVersion,
+                  requestedModel: input.requestedModel,
+                  token,
+                  expiresAt: input.leaseUntil,
+              }
+            : null
+    }
+
+    async completeClassification(input: {
+        lease: CatalogClassificationLease
+        responseModel: string
+        category: CatalogClassificationChoice
+        confidence: number
+        probabilities: Record<string, number>
+        accepted: boolean
+        completedAt: Date
+    }): Promise<void> {
+        const queries: BatchItem<'sqlite'>[] = []
+        const category = input.category === 'unknown' ? null : input.category
+        const accepted = input.accepted && category !== null
+        if (input.accepted && category) {
+            queries.push(
+                this.#db
+                    .update(catalogItems)
+                    .set({ categoryOverride: category, categoryOverrideOrigin: 'ai' })
+                    .where(
+                        and(
+                            eq(catalogItems.id, input.lease.itemId),
+                            or(
+                                isNull(catalogItems.categoryOverrideOrigin),
+                                eq(catalogItems.categoryOverrideOrigin, 'ai'),
+                            ),
+                            exists(
+                                this.#db
+                                    .select({ id: itemSources.id })
+                                    .from(itemSources)
+                                    .where(
+                                        and(
+                                            eq(itemSources.id, input.lease.sourceId),
+                                            eq(itemSources.itemId, input.lease.itemId),
+                                            eq(itemSources.updatedAt, input.lease.sourceUpdatedAt),
+                                        ),
+                                    ),
+                            ),
+                            exists(
+                                this.#db
+                                    .select({ itemId: catalogItemClassifications.itemId })
+                                    .from(catalogItemClassifications)
+                                    .where(
+                                        and(
+                                            eq(
+                                                catalogItemClassifications.itemId,
+                                                input.lease.itemId,
+                                            ),
+                                            eq(
+                                                catalogItemClassifications.leaseToken,
+                                                input.lease.token,
+                                            ),
+                                        ),
+                                    ),
+                            ),
+                        ),
+                    ),
+            )
+        }
+        queries.push(
+            this.#db
+                .update(catalogItemClassifications)
+                .set({
+                    responseModel: input.responseModel,
+                    status: accepted ? 'resolved' : 'uncertain',
+                    category: input.category,
+                    confidence: input.confidence,
+                    probabilities: input.probabilities,
+                    errorKind: null,
+                    retryAt: null,
+                    leaseToken: null,
+                    leaseUntil: null,
+                    updatedAt: input.completedAt,
+                })
+                .where(
+                    and(
+                        eq(catalogItemClassifications.itemId, input.lease.itemId),
+                        eq(catalogItemClassifications.leaseToken, input.lease.token),
+                    ),
+                ),
+        )
+        await this.#executeBatch(queries)
+    }
+
+    async failClassification(input: {
+        lease: CatalogClassificationLease
+        errorKind: string
+        retryAt: Date
+        failedAt: Date
+    }): Promise<void> {
+        await this.#db
+            .update(catalogItemClassifications)
+            .set({
+                status: 'error',
+                errorKind: input.errorKind,
+                retryAt: input.retryAt,
+                leaseToken: null,
+                leaseUntil: null,
+                updatedAt: input.failedAt,
+            })
+            .where(
+                and(
+                    eq(catalogItemClassifications.itemId, input.lease.itemId),
+                    eq(catalogItemClassifications.leaseToken, input.lease.token),
+                ),
+            )
     }
 
     async scheduleSourceCheck(id: string, now: Date): Promise<boolean> {

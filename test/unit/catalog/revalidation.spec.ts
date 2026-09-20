@@ -28,6 +28,7 @@ const source = (overrides: Partial<ItemSource> = {}): ItemSource => ({
     syncLeaseToken: null,
     lastErrorKind: null,
     lastErrorAt: null,
+    updatedAt: new Date(0),
     ...overrides,
 })
 
@@ -37,6 +38,10 @@ const repository = (implementations: Partial<CatalogRepository> = {}): CatalogRe
     findItem: vi.fn(async () => null),
     findSource: vi.fn(async () => source()),
     findSourceByExternalId: vi.fn(async () => null),
+    findClassification: vi.fn(async () => null),
+    claimClassification: vi.fn(async () => null),
+    completeClassification: vi.fn(async () => undefined),
+    failClassification: vi.fn(async () => undefined),
     ensureSource: vi.fn(async () => source()),
     scheduleSourceCheck: vi.fn(async () => true),
     claimDueSource: vi.fn(async () => null),

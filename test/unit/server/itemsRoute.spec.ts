@@ -14,6 +14,7 @@ let repository: SQLiteCatalogRepository
 let background: Promise<unknown>[]
 const fetchSource = vi.fn<() => Promise<ProviderFetchResult>>()
 const rateLimit = vi.fn()
+const classifySource = vi.fn()
 beforeEach(() => {
     database = createTestD1()
     db = drizzle(database.binding, { relations })
@@ -23,6 +24,7 @@ beforeEach(() => {
     })
     background = []
     rateLimit.mockReset().mockResolvedValue(undefined)
+    classifySource.mockReset().mockResolvedValue(undefined)
     fetchSource.mockReset().mockResolvedValue({
         status: 'available',
         snapshot: {
@@ -51,7 +53,8 @@ beforeEach(() => {
         enforceRateLimit: rateLimit,
         runAfterResponse: (promise: Promise<unknown>) => background.push(promise),
         enqueueReferencedCatalogSources: async () => undefined,
-        generateCatalogAttributes: async () => ({ displayName: 'Short name', category: 'avatar' }),
+        classifyCatalogSource: classifySource,
+        generateCatalogDisplayName: async () => 'Short name',
         invalidateCacheResources: vi.fn(),
         EDGE_CACHE_TAGS: { items: 'items' },
     }).forEach(([key, value]) => vi.stubGlobal(key, value))
@@ -78,7 +81,9 @@ it('resolves a provider reference once and returns the same Avatio ID for later 
     expect((await resolve(item!.id))?.id).toBe(item!.id)
     expect((await resolve())?.id).toBe(item!.id)
     expect(fetchSource).toHaveBeenCalledTimes(1)
-    expect(rateLimit).toHaveBeenCalledTimes(1)
+    expect(rateLimit).toHaveBeenCalledTimes(2)
+    expect(rateLimit).toHaveBeenCalledWith({ binding: 'RATE_LIMIT_ITEM_RESOLUTION', key: 'user' })
+    expect(classifySource).toHaveBeenCalledTimes(2)
     expect((await repository.findSource(item!.primarySource!.id))?.syncLeaseToken).toBeNull()
 })
 it('rejects unsupported references and enforces the limit before creating Catalog data', async () => {

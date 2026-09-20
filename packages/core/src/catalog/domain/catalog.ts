@@ -1,8 +1,16 @@
 import type { PublisherSourceId } from '../../publishers/domain/publisher'
-import type { CategoryOverrideOrigin, ItemCategory } from './category'
+import type { CatalogClassificationChoice, CategoryOverrideOrigin, ItemCategory } from './category'
 
 export type CatalogItemId = string
 export type ItemSourceId = string
+
+export const catalogClassificationStatuses = [
+    'processing',
+    'resolved',
+    'uncertain',
+    'error',
+] as const
+export type CatalogClassificationStatus = (typeof catalogClassificationStatuses)[number]
 
 export const sourceAvailabilities = [
     'available',
@@ -59,4 +67,36 @@ export interface ItemSource {
     syncLeaseToken: string | null
     lastErrorKind: string | null
     lastErrorAt: Date | null
+    updatedAt: Date
+}
+
+export interface CatalogClassification {
+    itemId: CatalogItemId
+    sourceId: ItemSourceId
+    sourceUpdatedAt: Date
+    inputHash: string
+    classifierVersion: string
+    requestedModel: string
+    responseModel: string | null
+    status: CatalogClassificationStatus
+    category: CatalogClassificationChoice | null
+    confidence: number | null
+    probabilities: Record<string, number> | null
+    errorKind: string | null
+    retryAt: Date | null
+    leaseToken: string | null
+    leaseUntil: Date | null
+    createdAt: Date
+    updatedAt: Date
+}
+
+export interface CatalogClassificationLease {
+    itemId: CatalogItemId
+    sourceId: ItemSourceId
+    sourceUpdatedAt: Date
+    inputHash: string
+    classifierVersion: string
+    requestedModel: string
+    token: string
+    expiresAt: Date
 }

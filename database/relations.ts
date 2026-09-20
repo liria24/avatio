@@ -211,6 +211,11 @@ export const relations = defineRelations(schema, (r) => ({
             from: r.catalogItems.id,
             to: r.setupEntries.itemId,
         }),
+        classification: r.one.catalogItemClassifications({
+            from: r.catalogItems.id,
+            to: r.catalogItemClassifications.itemId,
+            optional: true,
+        }),
     },
     itemSources: {
         item: r.one.catalogItems({
@@ -222,6 +227,22 @@ export const relations = defineRelations(schema, (r) => ({
             from: r.itemSources.publisherSourceId,
             to: r.publisherSources.id,
             optional: true,
+        }),
+        classifications: r.many.catalogItemClassifications({
+            from: r.itemSources.id,
+            to: r.catalogItemClassifications.sourceId,
+        }),
+    },
+    catalogItemClassifications: {
+        item: r.one.catalogItems({
+            from: r.catalogItemClassifications.itemId,
+            to: r.catalogItems.id,
+            optional: false,
+        }),
+        source: r.one.itemSources({
+            from: r.catalogItemClassifications.sourceId,
+            to: r.itemSources.id,
+            optional: false,
         }),
     },
     setups: {

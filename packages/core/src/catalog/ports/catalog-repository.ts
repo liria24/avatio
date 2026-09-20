@@ -1,10 +1,13 @@
 import type {
+    CatalogClassification,
+    CatalogClassificationLease,
     CatalogItem,
     CatalogItemId,
     ItemSource,
     ItemSourceId,
     SourceAvailability,
 } from '../domain/catalog'
+import type { CatalogClassificationChoice } from '../domain/category'
 import type {
     ExternalReference,
     ProviderAdmissionRule,
@@ -29,6 +32,32 @@ export interface CatalogRepository {
     findItem(id: CatalogItemId): Promise<CatalogItem | null>
     findSource(id: ItemSourceId): Promise<ItemSource | null>
     findSourceByExternalId(providerKey: string, externalId: string): Promise<ItemSource | null>
+    findClassification(itemId: CatalogItemId): Promise<CatalogClassification | null>
+    claimClassification(input: {
+        itemId: CatalogItemId
+        sourceId: ItemSourceId
+        sourceUpdatedAt: Date
+        inputHash: string
+        classifierVersion: string
+        requestedModel: string
+        now: Date
+        leaseUntil: Date
+    }): Promise<CatalogClassificationLease | null>
+    completeClassification(input: {
+        lease: CatalogClassificationLease
+        responseModel: string
+        category: CatalogClassificationChoice
+        confidence: number
+        probabilities: Record<string, number>
+        accepted: boolean
+        completedAt: Date
+    }): Promise<void>
+    failClassification(input: {
+        lease: CatalogClassificationLease
+        errorKind: string
+        retryAt: Date
+        failedAt: Date
+    }): Promise<void>
     scheduleSourceCheck(id: ItemSourceId, now: Date): Promise<boolean>
     claimDueSource(
         id: ItemSourceId,
