@@ -74,9 +74,15 @@ useSeo({
                                     : 'mingcute:eye-close-line',
                                 onSelect: async () => {
                                     if (row.original.hidAt)
-                                        setupUnhide.open({ setupId: row.original.id })
-                                    else setupHide.open({ setupId: row.original.id })
-                                    refresh()
+                                        setupUnhide.open({
+                                            setupId: row.original.id,
+                                            onSuccess: refresh,
+                                        })
+                                    else
+                                        setupHide.open({
+                                            setupId: row.original.id,
+                                            onSuccess: refresh,
+                                        })
                                 },
                             },
                         ],

@@ -37,6 +37,7 @@ export default promiseEventHandler(async ({ db, event }) => {
                     username: true,
                     name: true,
                     image: true,
+                    banned: true,
                 },
             },
             reporter: {

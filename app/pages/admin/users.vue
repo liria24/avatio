@@ -96,8 +96,10 @@ useSeo({
                                     else
                                         banUser.open({
                                             userId: row.original.id,
+                                            username: row.original.username,
                                             name: row.original.name,
                                             image: row.original.image,
+                                            onSuccess: refresh,
                                         })
                                 },
                             },

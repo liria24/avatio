@@ -662,7 +662,50 @@
             "cleanup": "Cleanup"
         },
         "reports": {
+            "title": "Reports",
+            "tabs": {
+                "user": "Users",
+                "setup": "Setups",
+                "item": "Items"
+            },
+            "status": {
+                "label": "Status",
+                "all": "All",
+                "open": "Open",
+                "closed": "Closed"
+            },
+            "sort": {
+                "label": "Sort",
+                "newest": "Newest first",
+                "oldest": "Oldest first"
+            },
+            "actions": {
+                "label": "Actions",
+                "refresh": "Refresh",
+                "retry": "Retry",
+                "resolve": "Mark as resolved",
+                "reopen": "Mark as unresolved",
+                "viewUser": "View user",
+                "banUser": "Ban user",
+                "unbanUser": "Unban user",
+                "viewSetup": "View setup",
+                "hideSetup": "Hide setup",
+                "unhideSetup": "Unhide setup",
+                "viewSource": "View source",
+                "changeItemName": "Change item name"
+            },
+            "loading": "Loading reports",
+            "empty": {
+                "title": "No matching reports",
+                "description": "Try another report type or status."
+            },
+            "error": {
+                "title": "Could not load reports",
+                "description": "Please wait a moment and try again."
+            },
+            "pagination": "{start}–{end} of {total}",
             "user": {
+                "banned": "Banned",
                 "reasons": {
                     "spam": "Spam",
                     "malicious": "Malicious User",
@@ -672,6 +715,7 @@
                 }
             },
             "setup": {
+                "hidden": "Hidden",
                 "reasons": {
                     "spam": "Spam, Personal Info, Inappropriate Content",
                     "hate": "Discrimination, Violence, Defamation",

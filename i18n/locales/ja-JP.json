@@ -662,7 +662,50 @@
             "cleanup": "クリーンアップ"
         },
         "reports": {
+            "title": "報告",
+            "tabs": {
+                "user": "ユーザー",
+                "setup": "セットアップ",
+                "item": "アイテム"
+            },
+            "status": {
+                "label": "状態",
+                "all": "すべて",
+                "open": "未解決",
+                "closed": "解決済み"
+            },
+            "sort": {
+                "label": "並び順",
+                "newest": "新しい順",
+                "oldest": "古い順"
+            },
+            "actions": {
+                "label": "操作",
+                "refresh": "更新",
+                "retry": "再試行",
+                "resolve": "解決済みにする",
+                "reopen": "未解決に戻す",
+                "viewUser": "ユーザーを表示",
+                "banUser": "ユーザーをBAN",
+                "unbanUser": "BANを解除",
+                "viewSetup": "セットアップを表示",
+                "hideSetup": "セットアップを非表示",
+                "unhideSetup": "セットアップを再表示",
+                "viewSource": "配布元を表示",
+                "changeItemName": "アイテム名称を変更"
+            },
+            "loading": "報告を読み込んでいます",
+            "empty": {
+                "title": "該当する報告はありません",
+                "description": "種別または状態を変更して確認してください。"
+            },
+            "error": {
+                "title": "報告を取得できませんでした",
+                "description": "時間をおいて再試行してください。"
+            },
+            "pagination": "{start}～{end} / {total} 件",
             "user": {
+                "banned": "BAN済み",
                 "reasons": {
                     "spam": "スパム",
                     "malicious": "悪意のあるユーザー",
@@ -672,6 +715,7 @@
                 }
             },
             "setup": {
+                "hidden": "非表示",
                 "reasons": {
                     "spam": "スパム、個人情報、不適切な内容",
                     "hate": "差別、暴力、誹謗中傷",
