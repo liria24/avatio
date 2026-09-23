@@ -36,4 +36,4 @@ jobs:
       - run: vp run ${{ matrix.check }}
         env:
           NITRO_PRESET: ${{ matrix.check == 'build' && 'cloudflare_module' || '' }}
-          NODE_OPTIONS: --max-old-space-size=4096
+          NODE_OPTIONS: --max-old-space-size=6144

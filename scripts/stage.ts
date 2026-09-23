@@ -99,5 +99,8 @@ if (!secrets.success) {
 if (action === 'check') {
     console.info(`${stage} configuration is valid.`)
 } else {
-    await run(alchemyCommand(action, stage))
+    await run(alchemyCommand(action, stage), {
+        ...process.env,
+        NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ''} --max-old-space-size=6144`.trim(),
+    })
 }

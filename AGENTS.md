@@ -7,7 +7,7 @@ Compact instruction for OpenCode sessions. If a fact is obvious from filenames, 
 ## Package manager & runtime
 
 - **Package manager:** `bun` 1.4.2. `bunfig.toml` uses `linker = "hoisted"` and disables Bun's automatic dotenv loading.
-- **Toolchain:** Vite+ 0.3.1 runs package scripts, lint, format, and tests. Node 26 runs Nuxt, TypeScript scripts, tests, and the installed Alchemy CLI; Bun only installs dependencies. Workers Builds uses `NODE_OPTIONS=--max-old-space-size=4096` to leave memory for the remaining build processes.
+- **Toolchain:** Vite+ 0.3.1 runs package scripts, lint, format, and tests. Node 26 runs Nuxt, TypeScript scripts, tests, and the installed Alchemy CLI; Bun only installs dependencies. Production builds use a 6 GB Node heap (`--max-old-space-size=6144`) in local commands, CI, and Workers Builds stage deployments.
 - **Postinstall:** `vp install` uses Bun and runs `nuxt prepare` only.
 - **Development URL:** `vp run dev` runs the Node.js Nuxt dev server at `http://localhost:3000`; the port is fixed and fails if already in use.
 - **Environment split:** local uses SQLite/filesystem/IPX without Alchemy. `development` remains the deployed Cloudflare stage; plans and deployments use the Cloudflare state store.
