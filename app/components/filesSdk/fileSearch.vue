@@ -17,6 +17,7 @@ const caseInsensitive = ref(true)
 const results = ref<StoredFile[]>([])
 const pending = ref(false)
 const errorMessage = ref<string>()
+let activeRequest: AbortController | undefined
 
 const matchItems = [
     { label: 'Substring', value: 'substring' },
@@ -32,15 +33,20 @@ const formatSize = (size: number) =>
     }).format(size)
 
 const search = async () => {
+    activeRequest?.abort()
     const pattern = query.value.trim()
     if (!pattern) {
         results.value = []
         errorMessage.value = undefined
+        pending.value = false
         return
     }
 
+    const request = new AbortController()
+    activeRequest = request
     pending.value = true
     errorMessage.value = undefined
+    results.value = []
 
     try {
         const nextResults: StoredFile[] = []
@@ -49,21 +55,29 @@ const search = async () => {
             caseInsensitive: caseInsensitive.value,
             maxResults: 50,
             limit: 100,
+            signal: request.signal,
         }))
             nextResults.push(file)
-        results.value = nextResults
+        if (!request.signal.aborted) results.value = nextResults
     } catch (error) {
-        errorMessage.value = error instanceof Error ? error.message : 'Failed to search files.'
+        if (!request.signal.aborted)
+            errorMessage.value = error instanceof Error ? error.message : 'Failed to search files.'
     } finally {
-        pending.value = false
+        if (!request.signal.aborted) pending.value = false
     }
 }
 
 const debouncedSearch = useDebounceFn(search, 300)
 
 watch([query, match, caseInsensitive], () => {
+    activeRequest?.abort()
+    results.value = []
+    errorMessage.value = undefined
+    pending.value = false
     void debouncedSearch()
 })
+
+onBeforeUnmount(() => activeRequest?.abort())
 </script>
 
 <template>
@@ -89,6 +103,7 @@ watch([query, match, caseInsensitive], () => {
             <UCheckbox v-model="caseInsensitive" label="Ignore case" size="sm" />
             <UButton
                 icon="mingcute:search-line"
+                aria-label="Search files"
                 variant="soft"
                 color="neutral"
                 size="sm"
@@ -121,5 +136,8 @@ watch([query, match, caseInsensitive], () => {
                 <span class="text-muted font-mono">{{ formatSize(file.size) }}</span>
             </button>
         </div>
+        <p v-else-if="!pending && query.trim() && !errorMessage" class="text-muted text-sm">
+            No matching files.
+        </p>
     </UPageCard>
 </template>

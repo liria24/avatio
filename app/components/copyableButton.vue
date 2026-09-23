@@ -43,8 +43,10 @@ const resolvedAttrs = computed((): ButtonProps => {
         icon: iconName,
         ui: {
             ...existingUi,
-            leadingIcon: [
-                existingUi.leadingIcon,
+            leadingIcon: (defaults: string) => [
+                typeof existingUi.leadingIcon === 'function'
+                    ? existingUi.leadingIcon(defaults)
+                    : [defaults, existingUi.leadingIcon],
                 !iconVisible && 'opacity-0',
                 'transition-opacity',
             ],

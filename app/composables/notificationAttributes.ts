@@ -1,7 +1,6 @@
-import type { NotificationPayload } from '~~/database/schema'
-
 export const useNotificationAttributes = (type: NotificationType, payload: NotificationPayload) => {
     const { t, locale } = useI18n()
+    const setupPath = useSetupPath()
 
     type Labels = Record<
         NotificationType,
@@ -45,13 +44,13 @@ export const useNotificationAttributes = (type: NotificationType, payload: Notif
 
     const href: Hrefs = {
         setup_coauthor_added: {
-            href: `/setup/${payload.setup?.id}`,
+            href: payload.setup?.id ? setupPath(payload.setup.id) : '',
         },
         user_followed: {
             href: `/@${payload.user?.username}`,
         },
         setup_created: {
-            href: `/setup/${payload.setup?.id}`,
+            href: payload.setup?.id ? setupPath(payload.setup.id) : '',
         },
     }
 

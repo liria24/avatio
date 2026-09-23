@@ -1,4 +1,4 @@
-import { createParse } from 'comark'
+import { createMarkdownParser } from 'comark'
 import breaks from 'comark/plugins/breaks'
 import { sql } from 'drizzle-orm'
 import { z } from 'zod'
@@ -15,12 +15,12 @@ const query = z.object({
         .max(API_LIMIT_MAX)
         .optional()
         .default(CHANGELOGS_API_DEFAULT_LIMIT),
-    lang: z.enum(locales.enumValues).optional().default('ja'),
+    lang: z.enum(locales).optional().default('ja'),
 })
 
-const parse = createParse({ plugins: [breaks()] })
+const parse = createMarkdownParser({ plugins: [breaks()] })
 
-export default promiseEventHandler(async ({ db }) => {
+export default promiseEventHandler(async ({ event, db }) => {
     const { q, sort, userId, page, limit, lang } = await validateQuery(query)
 
     const offset = (page - 1) * limit
@@ -35,7 +35,7 @@ export default promiseEventHandler(async ({ db }) => {
             createdAt: sort,
         },
         where: {
-            title: q ? { ilike: `%${q}%` } : undefined,
+            title: q ? { like: `%${q}%` } : undefined,
             authors: userId ? { userId: { eq: userId || undefined } } : undefined,
         },
         columns: {
@@ -77,7 +77,7 @@ export default promiseEventHandler(async ({ db }) => {
         },
     })
 
-    return {
+    const result = {
         data: await Promise.all(
             data.map(async (changelog) => {
                 const i18nData = changelog.i18n.find((i18n) => i18n.locale === lang)
@@ -104,4 +104,7 @@ export default promiseEventHandler(async ({ db }) => {
             hasPrev: offset > 0,
         },
     }
+
+    applyPublicEdgeCache(event, [EDGE_CACHE_TAGS.changelogs])
+    return result
 })

@@ -1,14 +1,24 @@
 <script lang="ts" setup>
 interface Props {
     setup: ReturnType<typeof useSetupsList>['setups']['value'][number]
+    index: number
 }
-const { setup } = defineProps<Props>()
+const { setup, index } = defineProps<Props>()
 
 const { locale, t } = useI18n()
+const setupPath = useSetupPath()
 
+const avatar = computed(
+    () =>
+        setup.entries.find(
+            (entry) =>
+                entry.category === 'avatar' &&
+                entry.catalogItem.primarySource?.availability === 'available',
+        )?.catalogItem,
+)
 const avatarName = computed(() =>
-    setup.items.length && setup.items[0]
-        ? setup.items[0].niceName || avatarShortName(setup.items[0].name)
+    avatar.value
+        ? avatar.value.displayNameOverride || avatarShortName(avatar.value.name)
         : t('unknownAvatar'),
 )
 
@@ -20,32 +30,34 @@ const dominantColor = computed(() => firstImage.value?.themeColors?.[0] || '')
 <template>
     <NuxtLink
         tabindex="0"
-        :to="setup.id ? $localePath(`/setup/${setup.id}`) : undefined"
+        :to="setup.id ? setupPath(setup.id) : undefined"
         :aria-label="setup.name"
         :data-has-images="hasImages"
+        class="group flex flex-col gap-1.5 overflow-clip rounded-lg p-1.5 shadow-black/10 transition delay-0 duration-100 ease-in-out hover:shadow-xl hover:ring-2 focus:ring-2 focus:outline-none focus-visible:shadow-xl dark:shadow-white/10"
         :class="
-            cn(
-                'group flex flex-col gap-1.5 overflow-clip rounded-lg p-1.5 shadow-black/10 transition delay-0 duration-100 ease-in-out hover:shadow-xl hover:ring-2 focus:ring-2 focus:outline-none focus-visible:shadow-xl dark:shadow-white/10',
-                dominantColor
-                    ? 'link-with-color'
-                    : 'hover:ring-accented hover:bg-elevated focus:ring-accented focus:bg-elevated',
-            )
+            dominantColor
+                ? 'link-with-color'
+                : 'hover:ring-accented hover:bg-elevated focus:ring-accented focus:bg-elevated'
         "
         :style="dominantColor ? { '--dominant-color': dominantColor } : undefined"
     >
-        <div v-if="hasImages" class="relative w-full">
-            <NuxtImg
+        <div
+            v-if="hasImages"
+            class="relative w-full rounded-lg"
+            :style="{ backgroundColor: dominantColor || undefined }"
+        >
+            <SetupsImage
                 :src="firstImage!.url"
                 :alt="setup.name"
-                width="640"
-                sizes="sm:100vw md:50vw lg:33vw"
+                :width="firstImage!.width"
+                :height="firstImage!.height"
+                sizes="50vw md:33vw"
+                :loading="index < 2 ? 'eager' : 'lazy'"
+                :fetchpriority="index === 0 ? 'high' : undefined"
                 format="avif"
                 quality="80"
                 fit="cover"
-                placeholder
-                placeholder-class="is-loading opacity-60"
-                preload
-                class="size-full max-h-64 rounded-lg object-cover transition-all ease-in-out [clip-path:inset(0_round_var(--radius-lg))] sm:max-h-105 [&.is-loading]:blur-xl"
+                class="block h-auto max-h-64 w-full rounded-lg object-cover [clip-path:inset(0_round_var(--radius-lg))] sm:max-h-105"
             />
             <div
                 :class="[
@@ -77,17 +89,15 @@ const dominantColor = computed(() => firstImage.value?.themeColors?.[0] || '')
 
         <div class="flex w-full items-center gap-2">
             <UTooltip v-if="!hasImages" :text="avatarName" :delay-duration="100">
-                <NuxtImg
-                    v-if="setup.items[0]"
-                    :src="setup.items[0].image || undefined"
+                <SetupsImage
+                    v-if="avatar"
+                    :src="avatar.image || undefined"
                     alt=""
                     :width="88"
                     :height="88"
                     format="avif"
-                    :placeholder="[50, 50, 50, 10]"
-                    preload
-                    placeholder-class="is-loading opacity-60"
-                    class="aspect-square size-14 shrink-0 rounded-lg object-cover transition-all ease-in-out [clip-path:inset(0_round_var(--radius-lg))] md:size-20 [&.is-loading]:blur-xl"
+                    loading="lazy"
+                    class="aspect-square size-14 shrink-0 rounded-lg object-cover [clip-path:inset(0_round_var(--radius-lg))] md:size-20"
                 />
                 <div
                     v-else

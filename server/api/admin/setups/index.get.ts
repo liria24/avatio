@@ -11,7 +11,8 @@ const query = z.object({
     banned: z.stringbool().optional(),
 })
 
-export default adminSessionEventHandler(async ({ db }) => {
+export default promiseEventHandler(async ({ db, event }) => {
+    await requireUserSession(event, { user: { role: 'admin' } })
     const {
         q,
         orderBy,
@@ -30,7 +31,7 @@ export default adminSessionEventHandler(async ({ db }) => {
                 // OR: [{ banned: { eq: false } }, { banned: { isNull: true } }],
                 username: username ? { eq: username } : undefined,
             },
-            name: q ? { ilike: `%${q}%` } : undefined,
+            name: q ? { like: `%${q}%` } : undefined,
             public: isPrivate !== undefined ? { eq: !isPrivate } : undefined,
             hidAt: hidden ? { isNotNull: true } : hidden === false ? { isNull: true } : undefined,
             banned: banned ? { eq: true } : banned === false ? { eq: false } : undefined,
@@ -55,7 +56,11 @@ export default adminSessionEventHandler(async ({ db }) => {
                 },
             },
             images: {
+                orderBy: { position: 'asc' },
                 columns: {
+                    id: true,
+                    stableId: true,
+                    position: true,
                     objectKey: true,
                 },
             },

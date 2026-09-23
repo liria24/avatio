@@ -9,28 +9,12 @@ const { callbackURL } = defineProps<Props>()
 const route = useRoute()
 const localePath = useLocalePath()
 
-const isInternalUpdate = ref(false)
-
 // ブラウザの戻るボタンでモーダルを閉じる
 const handlePopState = () => {
-    if (route.path === localePath('/login')) {
-        isInternalUpdate.value = true
-        open.value = false
-        nextTick(() => {
-            isInternalUpdate.value = false
-        })
-    }
+    if (route.path === localePath('/login')) open.value = false
 }
 
-onMounted(() => {
-    // ブラウザの戻るボタンのイベントリスナーを追加
-    window.addEventListener('popstate', handlePopState)
-})
-
-onBeforeUnmount(() => {
-    // イベントリスナーを削除
-    if (import.meta.client) window.removeEventListener('popstate', handlePopState)
-})
+useEventListener('popstate', handlePopState)
 </script>
 
 <template>

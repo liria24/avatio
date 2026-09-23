@@ -9,6 +9,10 @@ const params = z.object({
 export default authedSessionEventHandler(
     async ({ session, db }) => {
         const { id } = await validateParams(params)
+        await enforceRateLimit({
+            binding: 'RATE_LIMIT_USER_ACTION',
+            key: `relations:${session.user.id}`,
+        })
 
         await db
             .delete(bookmarks)

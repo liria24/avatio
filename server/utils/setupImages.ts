@@ -1,9 +1,5 @@
-import { setupImages } from '@@/database/schema'
-import type { SetupImageMetadata } from '@@/shared/types/database'
 import { and, eq, inArray } from 'drizzle-orm'
-import { withHttps } from 'ufo'
-
-import { getStorage } from './storage'
+import { setupImages } from '~~/database/schema'
 
 interface ResolveSetupImageDataOptions {
     userId: string
@@ -12,15 +8,28 @@ interface ResolveSetupImageDataOptions {
     imageMetadata?: Record<string, SetupImageMetadata>
 }
 
-export const withSetupImageUrls = async <T extends { objectKey: string }>(
+export const withSetupImageUrls = async <
+    T extends {
+        id?: string | number
+        stableId?: string | null
+        position?: number
+        objectKey: string
+    },
+>(
     images: T[],
-): Promise<(T & { url: string })[]> =>
-    await Promise.all(
-        images.map(async (image) => ({
-            ...image,
-            url: withHttps(await getStorage().url(image.objectKey)),
-        })),
+) => {
+    const storage = useServerFiles()
+    return await Promise.all(
+        [...images]
+            .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+            .map(async ({ id, stableId, position = 0, ...image }) => ({
+                ...image,
+                id: stableId ?? String(id ?? image.objectKey),
+                position,
+                url: await storage.url(image.objectKey),
+            })),
     )
+}
 
 export const isUserSetupImageKey = (objectKey: string, userId: string) =>
     objectKey.startsWith(`setup/${userId}/`)
@@ -34,11 +43,15 @@ export const resolveSetupImageData = async (
     const objectKeys = images
         .map((url) => imageMetadata?.[url]?.objectKey ?? (url.includes('://') ? null : url))
         .filter((objectKey): objectKey is string => Boolean(objectKey))
+    if (new Set(objectKeys).size !== objectKeys.length)
+        throw serverError.badRequest({ responseMessage: 'Duplicate setup image.' })
 
     const existingImages =
         setupId && objectKeys.length
             ? await db
                   .select({
+                      id: setupImages.id,
+                      stableId: setupImages.stableId,
                       objectKey: setupImages.objectKey,
                       width: setupImages.width,
                       height: setupImages.height,
@@ -57,12 +70,17 @@ export const resolveSetupImageData = async (
             : []
     const existingByObjectKey = new Map(existingImages.map((image) => [image.objectKey, image]))
 
-    return images.map((url) => {
+    const resolvedImages = images.map((url, position) => {
         const metadata = imageMetadata?.[url]
         const objectKey = metadata?.objectKey ?? (url.includes('://') ? null : url)
 
         const existing = objectKey ? existingByObjectKey.get(objectKey) : undefined
-        if (existing) return existing
+        if (existing)
+            return {
+                ...existing,
+                stableId: existing.stableId ?? metadata?.id ?? String(existing.id),
+                position,
+            }
 
         if (metadata) {
             if (!isUserSetupImageKey(metadata.objectKey, userId))
@@ -71,6 +89,9 @@ export const resolveSetupImageData = async (
                 })
 
             return {
+                id: undefined,
+                stableId: metadata.id ?? crypto.randomUUID(),
+                position,
                 objectKey: metadata.objectKey,
                 width: metadata.width,
                 height: metadata.height,
@@ -85,4 +106,18 @@ export const resolveSetupImageData = async (
             responseMessage: 'Image metadata is required for uploaded setup images.',
         })
     })
+
+    const stableIds = resolvedImages.map(({ stableId }) => stableId)
+    if (new Set(stableIds).size !== stableIds.length)
+        throw serverError.badRequest({ responseMessage: 'Duplicate setup image ID.' })
+    const claimedImages = await db
+        .select({ stableId: setupImages.stableId, setupId: setupImages.setupId })
+        .from(setupImages)
+        .where(inArray(setupImages.stableId, stableIds))
+    if (claimedImages.some(({ setupId: claimedSetupId }) => claimedSetupId !== setupId))
+        throw serverError.badRequest({
+            responseMessage: 'Setup image ID belongs to another setup.',
+        })
+
+    return resolvedImages
 }

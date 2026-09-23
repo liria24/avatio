@@ -28,7 +28,11 @@
         "fallbackDescription": "日本語にフォールバックされています。",
         "updatedAt": "最終更新日: {date}",
         "effectiveDate": "効力発生日: {date}",
-        "changeLog": "変更履歴"
+        "changeLog": "変更履歴",
+        "version": "バージョン: {version}",
+        "sourceRevision": "この版のソースを表示",
+        "retry": "再試行",
+        "loadError": "規約を読み込めませんでした。再度お試しください。"
     },
     "itemCategory": {
         "avatar": "ベースアバター",
@@ -50,6 +54,7 @@
             "settings": "設定",
             "feedback": "フィードバック",
             "switchAccount": "アカウント切替",
+            "switchAccountFailed": "アカウントを切り替えられませんでした",
             "newAccount": "新しいアカウント",
             "logout": "ログアウト"
         }
@@ -68,6 +73,7 @@
                 "bio": "bio",
                 "links": "リンク",
                 "addLink": "リンクを追加",
+                "editLink": "リンクを編集",
                 "removeLink": "リンクを削除",
                 "avatarAlt": "あなたのアバター画像"
             },
@@ -94,24 +100,23 @@
                 "linkExistsDescription": "同じリンクは追加できません。"
             }
         },
-        "shop": {
-            "title": "ショップ認証",
-            "step1": "1. 認証するショップで販売しているアイテムを1つ選定し、URLを入力してください",
-            "step2": "2. 選定したアイテムの説明文に以下のコードを追記してください",
-            "stepDescription": "認証に使用できるアイテムは、Avatioに登録できるアイテムのみです。非公開アイテムや、非対応プラットフォームのアイテムは使用できません。また、現在GitHubはショップ認証に対応していません。",
-            "generatingCode": "コードを生成中...",
-            "verify": "ショップを認証",
-            "newShop": "新しくショップを認証",
-            "unverify": "ショップの認証を解除",
-            "unverifyConfirm": "本当にショップの認証を解除しますか？",
-            "deleteCodeNote": "認証が完了した後、追記したコードは削除してください",
-            "notVerifiable": "このURLは認証可能なアイテムではありません",
-            "noVerifiedShops": "認証済みのショップはありません",
+        "publisher": {
+            "title": "パブリッシャー認証",
+            "step1": "1. パブリッシャーソースを証明するアイテムURLを入力してください",
+            "step2": "2. プロバイダーの案内に従って以下のコードを追加してください",
+            "createChallenge": "認証チャレンジを作成",
+            "instruction": "BOOTHではこのコードをアイテムの説明文に追加して保存した後、認証してください。",
+            "verify": "パブリッシャーを認証",
+            "newPublisher": "新しいパブリッシャーを認証",
+            "unverify": "認証を解除",
+            "unverifyConfirm": "このパブリッシャーソースの所有者認証を解除しますか？",
+            "none": "認証済みのパブリッシャーソースはありません",
             "toast": {
-                "verified": "ショップを認証しました",
-                "verifyFailed": "ショップの認証に失敗しました",
-                "unverified": "ショップの認証を解除しました",
-                "unverifyFailed": "ショップの認証解除に失敗しました"
+                "challengeFailed": "認証チャレンジの作成に失敗しました",
+                "verified": "パブリッシャーを認証しました",
+                "verifyFailed": "パブリッシャーの認証に失敗しました",
+                "unverified": "パブリッシャー認証を解除しました",
+                "unverifyFailed": "パブリッシャー認証の解除に失敗しました"
             }
         },
         "account": {
@@ -171,8 +176,6 @@
             "feedbackSubmittedDescription": "ご協力ありがとうございます。",
             "feedbackSubmitFailed": "フィードバックの送信に失敗しました",
             "toggleFailed": "切替えに失敗しました",
-            "forceUpdateItemToggled": "アイテム情報の強制更新を切り替えました",
-            "forceUpdateItemToggleFailed": "切換えに失敗しました",
             "configSaved": "設定を保存しました",
             "configSaveFailed": "設定の保存に失敗しました",
             "itemNiceNameChanged": "アイテムの名称を変更しました",
@@ -186,10 +189,6 @@
             "selectReason": "報告の理由を選択してください",
             "otherRequiresComment": "その他を選択した場合は詳細を入力してください"
         }
-    },
-    "welcome": {
-        "title": "ようこそ！",
-        "changeUsername": "ユーザーIDを変更"
     },
     "index": {
         "hero": {
@@ -228,6 +227,11 @@
         "itemSearch": {
             "placeholder": "アイテムを検索 / URLを入力",
             "addFromUrl": "URLから追加",
+            "addUrls": "{count}件のURLを追加",
+            "urlProgress": "URL追加の進捗",
+            "results": "カタログ",
+            "loadMore": "さらに読み込む",
+            "noResults": "一致するアイテムがありません",
             "invalidUrl": "無効なURL",
             "invalidUrlDescription": "正しいアイテムのURLを入力してください。",
             "fetchError": "アイテムの取得に失敗しました",
@@ -268,7 +272,9 @@
                 "unsaved": "未保存の変更",
                 "saving": "保存中...",
                 "saved": "保存しました",
-                "error": "保存に失敗"
+                "error": "保存に失敗",
+                "offline": "オフライン — 再接続後に保存",
+                "conflict": "別の編集と競合しました"
             },
             "draftAlert": {
                 "errorNotSaved": "エラーにより下書きが保存されていません！",
@@ -283,12 +289,32 @@
                 "shapekeyPlaceholder": "シェイプキー名称",
                 "notePlaceholder": "ノートの追加",
                 "empty": "アイテムが登録されていません",
+                "emptyPrompt": "アバター改変に使用したアイテムをリストしましょう",
+                "supportedPlatforms": "対応プラットフォーム: BOOTH, GitHub",
                 "noShapekeys": "シェイプキーがありません"
             },
             "images": {
+                "title": "画像",
                 "add": "画像を追加",
                 "dropAdd": "ドロップして追加",
-                "uploading": "画像をアップロード中..."
+                "uploading": "画像をアップロード中...",
+                "cover": "カバー",
+                "preview": "セットアップ画像",
+                "remove": "画像を削除",
+                "retry": "再試行"
+            },
+            "points": {
+                "title": "アイテムポイント",
+                "description": "画像をクリックし、その位置に配置するアイテムを選択します。",
+                "selectItem": "配置するアイテムを選択",
+                "move": "移動",
+                "remove": "削除",
+                "clickToMove": "移動先を画像上でクリックしてください",
+                "placeItem": "画像に配置"
+            },
+            "mobile": {
+                "details": "投稿情報・画像",
+                "items": "アイテム"
             },
             "tags": {
                 "title": "タグ",
@@ -323,10 +349,14 @@
             "coauthorDuplicate": "共同作者を重複して追加することはできません",
             "itemAlreadyAdded": "アイテムはすでに追加されています",
             "draftRestored": "編集途中の下書きが見つかったため復元されました",
+            "switchAccountFailed": "投稿アカウントを切り替えられませんでした",
             "limitedPublic": "限定公開",
             "limitedPublicDescription": "URLを知っている人だけ閲覧可能になります"
         },
         "viewer": {
+            "expandPoints": "アイテムポイントを展開",
+            "collapsePoints": "アイテムポイントを閉じる",
+            "showItemPoints": "画像上のこのアイテムを表示",
             "show": "セットアップを表示",
             "hide": "セットアップを非表示",
             "hiddenNotice": "このセットアップは現在非表示です",
@@ -381,14 +411,30 @@
             "title": "Avatioへようこそ",
             "description": "ログインしてセットアップを投稿しよう",
             "loginWith": "{provider} でログイン",
-            "agreement": "ログインすることで以下に同意したことになります:",
+            "agreement": "ログインまたはアカウント作成により、以下に同意します:",
             "firstTimeNotice": "初めての方は自動的にアカウントが作成されます。",
+            "local": {
+                "name": "表示名",
+                "login": "メールアドレスでログイン",
+                "register": "ローカルアカウントを作成",
+                "switchToLogin": "既存アカウントでログイン",
+                "switchToRegister": "新しいローカルアカウントを作成"
+            },
             "footer": {
                 "terms": "利用規約",
                 "privacy": "プライバシーポリシー"
             }
         },
         "agreeTerms": {
+            "initial": {
+                "title": "利用開始前の確認",
+                "intro": "Avatioをご利用いただくには、規約への同意が必要です。",
+                "description": "以下の利用規約およびプライバシーポリシーのうち、未確認の文書をご確認ください。"
+            },
+            "mixed": {
+                "title": "規約の確認が必要です",
+                "description": "未確認の文書と更新された文書があります。以下の内容をご確認ください。"
+            },
             "title": {
                 "terms": "利用規約が更新されました",
                 "privacy": "プライバシーポリシーが更新されました",
@@ -551,7 +597,7 @@
         "objectToBanSubject": "ユーザーBANへの異議申し立て",
         "editProfile": "プロフィールを編集",
         "reportUser": "ユーザーを報告",
-        "shops": "ショップ",
+        "publishers": "パブリッシャー",
         "setups": "セットアップ"
     },
     "badges": {
@@ -559,7 +605,7 @@
         "contributor": "コントリビューター",
         "translator": "翻訳者",
         "alphaTester": "アルファテスター",
-        "shopOwner": "ショップオーナー",
+        "publisherOwner": "パブリッシャーオーナー",
         "patrol": "パトロール",
         "ideaMan": "アイデアマン"
     },
@@ -658,8 +704,7 @@
             },
             "flags": {
                 "title": "Flags",
-                "maintenanceMode": "メンテナンスモード",
-                "forceUpdateItem": "アイテム情報の強制更新"
+                "maintenanceMode": "メンテナンスモード"
             },
             "hideSetup": {
                 "title": "セットアップを非表示",

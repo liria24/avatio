@@ -1,5 +1,6 @@
 <script setup lang="ts">
-const { auth, session, sessions, getSessions, revoke } = useAuth()
+const { user, loggedIn, signOut } = useUserSession()
+const { data: sessions, load: loadSessions, switchAccount, switching } = useDeviceSessions()
 const toast = useToast()
 const colorMode = useColorMode()
 const login = useLoginModal()
@@ -8,11 +9,10 @@ const { t, locales, setLocale } = useI18n()
 const open = ref(false)
 
 watch(open, async (value) => {
-    if (value && session.value && sessions.value === undefined) await getSessions()
+    if (value && loggedIn.value) await loadSessions()
 })
 
-const switchAccount = async (sessionToken: string) => {
-    await auth.multiSession.setActive({ sessionToken })
+const onSwitchAccount = async (session: DeviceSession) => {
     toast.add({
         id: 'switching-account',
         icon: 'svg-spinners:ring-resize',
@@ -20,8 +20,20 @@ const switchAccount = async (sessionToken: string) => {
         description: t('loading'),
         progress: false,
     })
-    reloadNuxtApp()
+    try {
+        await switchAccount(session)
+    } catch {
+        console.error('Failed to switch account.')
+        toast.add({
+            id: 'switching-account',
+            icon: 'mingcute:close-line',
+            title: t('header.menu.switchAccountFailed'),
+            color: 'error',
+        })
+    }
 }
+
+const revoke = () => signOut({ onSuccess: () => reloadNuxtApp() })
 </script>
 
 <template>
@@ -30,7 +42,7 @@ const switchAccount = async (sessionToken: string) => {
         :items="[
             [
                 {
-                    to: $localePath(`/@${session?.user.username}`),
+                    to: $localePath(`/@${user?.username}`),
                     slot: 'user',
                 },
             ],
@@ -98,12 +110,13 @@ const switchAccount = async (sessionToken: string) => {
                     children: [
                         ...(sessions?.map((s) => ({
                             label: s.user.name,
+                            disabled: switching || s.user.id === user?.id,
                             avatar: {
                                 src: s.user.image || undefined,
                                 alt: s.user.name,
                                 icon: 'mingcute:user-3-fill',
                             },
-                            onSelect: () => switchAccount(s.session.token),
+                            onSelect: () => onSwitchAccount(s),
                         })) || []),
                         {
                             label: t('header.menu.newAccount'),
@@ -122,23 +135,24 @@ const switchAccount = async (sessionToken: string) => {
     >
         <button
             type="button"
+            :disabled="switching"
             :aria-label="$t('header.userMenu')"
             class="ring-accented size-8 cursor-pointer rounded-full ring-0 transition-all select-none hover:ring-4"
         >
             <UAvatar
-                :src="session?.user.image || undefined"
-                :alt="session?.user.name"
+                :src="user?.image || undefined"
+                :alt="user?.name"
                 icon="mingcute:user-3-fill"
             />
         </button>
 
         <template #user>
             <UUser
-                :name="session?.user.name"
-                :description="`@${session?.user.username}`"
+                :name="user?.name"
+                :description="`@${user?.username}`"
                 :avatar="{
-                    src: session?.user.image || undefined,
-                    alt: session?.user.name,
+                    src: user?.image || undefined,
+                    alt: user?.name,
                     icon: 'mingcute:user-3-fill',
                 }"
                 :ui="{ description: 'font-mono max-w-32 break-all line-clamp-1' }"

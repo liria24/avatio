@@ -1,5 +1,5 @@
 import { setups } from '@@/database/schema'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { z } from 'zod'
 
 const params = z.object({
@@ -7,7 +7,7 @@ const params = z.object({
 })
 
 export default authedSessionEventHandler(
-    async ({ session, db }) => {
+    async ({ event, session, db }) => {
         const { id } = await validateParams(params)
 
         const data = await db.query.setups.findFirst({
@@ -15,11 +15,23 @@ export default authedSessionEventHandler(
             columns: { userId: true, name: true },
         })
 
-        if (!data || data.userId !== session.user.id) throw serverError.forbidden()
+        if (!data) throw serverError.notFound()
+        if (data.userId !== session.user.id) throw serverError.forbidden()
 
-        await db.delete(setups).where(eq(setups.id, id))
+        const [deleted] = await db
+            .delete(setups)
+            .where(and(eq(setups.id, id), eq(setups.userId, session.user.id)))
+            .returning({ id: setups.id })
+        if (!deleted) throw serverError.notFound()
 
-        await purgeSetupCache(id)
+        await invalidateCacheResources(
+            event,
+            {
+                setups: [id],
+                collections: [EDGE_CACHE_TAGS.popularAvatars, EDGE_CACHE_TAGS.setups],
+            },
+            'setup delete',
+        )
 
         await createAuditLog(db, {
             userId: session.user.id,

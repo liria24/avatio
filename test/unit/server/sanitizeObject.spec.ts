@@ -44,4 +44,32 @@ describe('sanitizeObject — non-string input', () => {
     ])('%s', (_label, input, expected) => {
         expect(sanitizeObject(input)).toEqual(expected)
     })
+
+    it('drops prototype-pollution keys at every depth', () => {
+        const input = JSON.parse(`{
+            "__proto__": { "polluted": true },
+            "constructor": { "polluted": true },
+            "prototype": { "polluted": true },
+            "safe": "<p>ok</p>",
+            "nested": {
+                "__proto__": { "polluted": true },
+                "constructor": { "polluted": true },
+                "prototype": { "polluted": true },
+                "safe": "<script>xss</script>text"
+            },
+            "array": [{
+                "__proto__": { "polluted": true },
+                "constructor": { "polluted": true },
+                "prototype": { "polluted": true },
+                "safe": "value"
+            }]
+        }`)
+
+        expect(sanitizeObject(input)).toEqual({
+            safe: '<p>ok</p>',
+            nested: { safe: 'text' },
+            array: [{ safe: 'value' }],
+        })
+        expect(({} as { polluted?: boolean }).polluted).toBeUndefined()
+    })
 })

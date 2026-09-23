@@ -1,5 +1,3 @@
-import { prefixedI18nLocales } from '../../shared/utils/i18nRouting'
-
 const maintenancePagePath = '/on-maintenance'
 const localizedMaintenancePagePaths = new Set(
     prefixedI18nLocales.map((locale) => `/${locale}${maintenancePagePath}`),

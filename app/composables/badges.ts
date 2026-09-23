@@ -27,7 +27,12 @@ export const useBadges = () => {
         shop_owner: {
             icon: 'fluent-color:building-store-24',
             iconScale: 1,
-            label: t('badges.shopOwner'),
+            label: t('badges.publisherOwner'),
+        },
+        publisher_owner: {
+            icon: 'fluent-color:building-store-24',
+            iconScale: 1,
+            label: t('badges.publisherOwner'),
         },
         patrol: {
             icon: 'fluent-color:shield-24',

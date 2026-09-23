@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { EditorContentType, EditorProps } from '@nuxt/ui'
-import { defu } from 'defu'
 
 const editorRef = useTemplateRef('editorRef')
 
@@ -31,13 +30,12 @@ const {
         :editable
         :autofocus
         :spellcheck="false"
-        :ui="
-            defu(ui, {
-                root: 'flex grow flex-col gap-2',
-                content: 'flex grow',
-                base: 'px-2 sm:px-2 *:my-2.5 [&_p]:leading-6',
-            })
-        "
+        :ui="{
+            ...ui,
+            root: ui?.root ?? 'flex grow flex-col gap-2',
+            content: ui?.content ?? 'flex grow',
+            base: ui?.base ?? 'px-2 sm:px-2 *:my-2.5 [&_p]:leading-6',
+        }"
     >
         <slot name="top" :editor />
 

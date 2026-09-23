@@ -1,6 +1,6 @@
 import type { SitemapUrlInput } from '#sitemap/types'
 
-export default defineSitemapEventHandler(async () => {
+export default defineSitemapEventHandler(async (event) => {
     const db = useDB()
 
     const setups = await db.query.setups.findMany({
@@ -17,7 +17,11 @@ export default defineSitemapEventHandler(async () => {
         },
         with: {
             images: {
+                orderBy: { position: 'asc' },
                 columns: {
+                    id: true,
+                    stableId: true,
+                    position: true,
                     objectKey: true,
                 },
             },
@@ -36,28 +40,25 @@ export default defineSitemapEventHandler(async () => {
         },
     })
 
+    applyPublicEdgeCache(event, [EDGE_CACHE_TAGS.setups, EDGE_CACHE_TAGS.users])
     return [
         ...(await Promise.all(
-            setups.map(
-                async (setup): Promise<SitemapUrlInput> => ({
-                    loc: `/setup/${setup.id}`,
-                    lastmod: setup.updatedAt,
-                    images: setup.images?.length
-                        ? (await withSetupImageUrls(setup.images)).map((image) => ({
-                              loc: image.url,
-                          }))
-                        : undefined,
-                    _i18nTransform: true,
-                }),
-            ),
-        )),
-        ...users.map(
-            (user): SitemapUrlInput => ({
-                loc: `/@${user.username}`,
-                lastmod: user.updatedAt,
-                images: user.image ? [{ loc: user.image }] : undefined,
+            setups.map(async (setup): Promise<SitemapUrlInput> => ({
+                loc: getSetupPath(setup.id),
+                lastmod: setup.updatedAt,
+                images: setup.images?.length
+                    ? (await withSetupImageUrls(setup.images)).map((image) => ({
+                          loc: image.url,
+                      }))
+                    : undefined,
                 _i18nTransform: true,
-            }),
-        ),
+            })),
+        )),
+        ...users.map((user): SitemapUrlInput => ({
+            loc: `/@${user.username}`,
+            lastmod: user.updatedAt,
+            images: user.image ? [{ loc: user.image }] : undefined,
+            _i18nTransform: true,
+        })),
     ]
 })

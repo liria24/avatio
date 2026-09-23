@@ -1,11 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { sendMessage } = vi.hoisted(() => ({
-    sendMessage: vi.fn(),
-}))
-
-vi.mock('@avatio/bot-notifier', () => ({ sendMessage }))
-
 interface StorageObject {
     key: string
     lastModified: number
@@ -22,6 +16,7 @@ type RuntimeGlobal = typeof globalThis & {
 }
 
 const publicBaseUrl = 'https://cdn.example.com'
+const discordEndpoint = 'https://discord.example.com'
 const oldDate = Date.parse('2026-06-05T00:00:00.000Z')
 const recentDate = Date.parse('2026-06-07T10:00:00.000Z')
 const runtimeGlobal = globalThis as RuntimeGlobal
@@ -36,7 +31,10 @@ const storage = {
     copy: vi.fn(),
     delete: vi.fn(),
     listAll: vi.fn(),
+    url: vi.fn(),
 }
+
+const discordFetch = vi.fn()
 
 const makeAsyncIterable = (items: StorageObject[]) =>
     (async function* () {
@@ -53,9 +51,17 @@ const arrange = ({
     avatarObjects?: StorageObject[]
 }) => {
     vi.stubGlobal('logger', () => log)
+    vi.stubGlobal('$fetch', discordFetch)
+    vi.stubGlobal(
+        'getRuntimeEnvString',
+        (name: string) => runtimeGlobal.__env__?.[name] ?? process.env[name],
+    )
     vi.stubGlobal('useRuntimeConfig', () => ({ cloudflare: {} }))
-    vi.stubGlobal('storage', storage)
+    vi.stubGlobal('useServerFiles', () => storage)
     vi.stubGlobal('useDB', () => ({
+        delete: vi.fn(() => ({
+            where: vi.fn().mockResolvedValue(undefined),
+        })),
         query: {
             setupImages: {
                 findMany: vi.fn().mockResolvedValue(rows.setupImages ?? []),
@@ -86,10 +92,20 @@ describe('runCleanupJob', () => {
         vi.useFakeTimers()
         vi.setSystemTime(new Date('2026-06-07T12:00:00.000Z'))
         process.env.R2_PUBLIC_BASE_URL = publicBaseUrl
-        sendMessage.mockReset()
+        process.env.STAGE = 'development'
+        process.env.LIRIA_DISCORD_ENDPOINT = `${discordEndpoint}/`
+        process.env.LIRIA_DISCORD_ACCESS_TOKEN = 'test-token'
+        discordFetch.mockReset()
+        discordFetch.mockResolvedValue(undefined)
         storage.copy.mockReset()
         storage.delete.mockReset()
         storage.listAll.mockReset()
+        storage.url.mockReset()
+        storage.url.mockImplementation(async (key: string) => {
+            const base = runtimeGlobal.__env__?.R2_PUBLIC_BASE_URL ?? process.env.R2_PUBLIC_BASE_URL
+            if (!base) throw new Error('Storage URL is unavailable')
+            return `${base.replace(/\/+$/, '')}/${key}`
+        })
         log.error.mockReset()
         log.info.mockReset()
         log.warn.mockReset()
@@ -100,6 +116,9 @@ describe('runCleanupJob', () => {
         vi.resetModules()
         vi.unstubAllGlobals()
         delete process.env.R2_PUBLIC_BASE_URL
+        delete process.env.STAGE
+        delete process.env.LIRIA_DISCORD_ENDPOINT
+        delete process.env.LIRIA_DISCORD_ACCESS_TOKEN
         delete runtimeGlobal.__env__
     })
 
@@ -131,7 +150,7 @@ describe('runCleanupJob', () => {
         })
         expect(storage.copy).not.toHaveBeenCalled()
         expect(storage.delete).not.toHaveBeenCalled()
-        expect(sendMessage).not.toHaveBeenCalled()
+        expect(discordFetch).not.toHaveBeenCalled()
     })
 
     it('treats old storage objects as cleanup candidates when DB rows are empty', async () => {
@@ -146,6 +165,28 @@ describe('runCleanupJob', () => {
             candidates: ['setup/orphan.jpg', 'avatar/orphan.jpg'],
             totalWouldProcess: 2,
         })
+    })
+
+    it('keeps referenced local avatars using the active storage URL instead of the R2 origin', async () => {
+        const localBaseUrl = 'http://localhost:3000/api/_local/files'
+        const image = `${localBaseUrl}/avatar/local-used.jpg`
+        storage.url.mockImplementation(async (key: string) => `${localBaseUrl}/${key}`)
+        arrange({
+            rows: { users: [{ image }] },
+            avatarObjects: [
+                { key: 'avatar/local-used.jpg', lastModified: oldDate },
+                { key: 'avatar/local-orphan.jpg', lastModified: oldDate },
+            ],
+        })
+
+        const result = await runCleanupJob(true)
+
+        expect(result.data).toMatchObject({
+            candidates: ['avatar/local-orphan.jpg'],
+            totalWouldProcess: 1,
+        })
+        expect(storage.copy).not.toHaveBeenCalled()
+        expect(storage.delete).not.toHaveBeenCalled()
     })
 
     it('ignores external profile URLs when deriving used R2 keys', async () => {
@@ -182,7 +223,7 @@ describe('runCleanupJob', () => {
         })
     })
 
-    it('skips cleanup when R2 public base URL is unavailable', async () => {
+    it('skips cleanup when the active storage URL is unavailable', async () => {
         delete process.env.R2_PUBLIC_BASE_URL
         arrange({
             rows: {
@@ -196,7 +237,7 @@ describe('runCleanupJob', () => {
         expect(result).toMatchObject({
             success: false,
             dryRun: true,
-            message: 'R2_PUBLIC_BASE_URL is not configured. Cleanup skipped.',
+            message: 'Storage public base URL is unavailable. Cleanup skipped.',
             data: {
                 candidates: [],
                 wouldDelete: [],
@@ -233,6 +274,16 @@ describe('runCleanupJob', () => {
         expect(result.data.backupFailures).toEqual([
             { key: 'setup/backup-failed.jpg', error: 'copy failed' },
         ])
+        expect(discordFetch).toHaveBeenCalledWith('/admin/message', {
+            baseURL: discordEndpoint,
+            method: 'POST',
+            headers: { Authorization: 'Bearer test-token' },
+            body: expect.objectContaining({
+                embeds: expect.arrayContaining([
+                    expect.objectContaining({ title: 'Avatio Data Cleanup [development]' }),
+                ]),
+            }),
+        })
     })
 
     it('reports delete partial failures', async () => {

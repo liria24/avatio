@@ -40,9 +40,11 @@ export default authedSessionEventHandler<PaginationResponse<Bookmark[]>>(
                 },
                 setup: {
                     hidAt: { isNull: true },
+                    OR: [{ public: { eq: true } }, { userId: { eq: session.user.id } }],
+                    user: { OR: [{ banned: { eq: false } }, { banned: { isNull: true } }] },
                     id: setupId ? { in: Array.isArray(setupId) ? setupId : [setupId] } : undefined,
                     userId: userId ? { eq: userId } : undefined,
-                    name: q ? { ilike: `%${q}%` } : undefined,
+                    name: q ? { like: `%${q}%` } : undefined,
                     tags: tag ? { tag: { in: Array.isArray(tag) ? tag : [tag] } } : undefined,
                 },
             },
@@ -85,30 +87,18 @@ export default authedSessionEventHandler<PaginationResponse<Bookmark[]>>(
                                 },
                             },
                         },
-                        items: {
-                            where: {
-                                category: { eq: 'avatar' },
-                            },
+                        entries: {
                             with: {
-                                item: {
-                                    columns: {
-                                        id: true,
-                                        updatedAt: true,
-                                        platform: true,
-                                        category: true,
-                                        name: true,
-                                        niceName: true,
-                                        image: true,
-                                        price: true,
-                                        likes: true,
-                                        nsfw: true,
-                                        outdated: true,
-                                    },
-                                },
+                                item: { with: catalogItemRelations },
+                                shapekeys: { columns: { name: true, value: true } },
                             },
                         },
                         images: {
+                            orderBy: { position: 'asc' },
                             columns: {
+                                id: true,
+                                stableId: true,
+                                position: true,
                                 objectKey: true,
                                 width: true,
                                 height: true,
@@ -162,7 +152,7 @@ export default authedSessionEventHandler<PaginationResponse<Bookmark[]>>(
                 setup: {
                     ...bookmark.setup,
                     images: await withSetupImageUrls(bookmark.setup.images),
-                    items: bookmark.setup.items.map((item) => item.item),
+                    entries: bookmark.setup.entries.map(projectSetupEntry),
                     tags: bookmark.setup.tags.map((tag) => tag.tag),
                 },
             })),

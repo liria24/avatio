@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { session } = useAuth()
+const { user, loggedIn, preferences } = useViewerContext()
 const login = useLoginModal()
 const { t, locale } = useI18n()
 const { update } = useUserSettingsUpdate()
@@ -8,7 +8,7 @@ const { data: latestChangelog } = useFetch('/api/changelogs/latest', {
     key: computed(() => `latest-changelog-${locale.value}`),
     query: { lang: locale.value },
     dedupe: 'defer',
-    immediate: !session.value,
+    immediate: !loggedIn.value,
 })
 
 type Tab = 'latest' | 'owned' | 'bookmarked'
@@ -22,51 +22,71 @@ const tab = computed<Tab>({
         return 'latest'
     },
     set(newTab: Tab) {
-        if (newTab === 'latest' && setupsLatest.status.value === 'idle') setupsLatest.refresh()
-        else if (newTab === 'owned' && setupsOwned.status.value === 'idle') setupsOwned.refresh()
-        else if (newTab === 'bookmarked' && setupsBookmarked.status.value === 'idle')
-            setupsBookmarked.refresh()
         _tab.value = newTab !== 'latest' ? newTab : null
     },
 })
 
-const showPrivate = ref(session.value?.user.settings?.showPrivateSetups ?? true)
+const showPrivate = ref(preferences.value.showPrivateSetups)
+const entrance = useSetupEntrance()
+const displayedTab = computed<Tab>(() => (loggedIn.value ? tab.value : 'latest'))
 const showPrivateDebounced = refDebounced(showPrivate, 300)
 
+watch(
+    () => preferences.value.showPrivateSetups,
+    (value) => (showPrivate.value = value),
+)
+
 const setupsLatest = useSetupsList('latest', {
-    immediate: tab.value === 'latest',
+    immediate: displayedTab.value === 'latest',
+    onAppend: (ids) => entrance.append('latest', ids),
 })
 const setupsOwned = useSetupsList('owned', {
-    username: session.value?.user.username ?? undefined,
+    username: computed(() => user.value?.username ?? undefined),
     query: computed(() => ({ includePrivate: showPrivateDebounced.value })),
-    immediate: !!session.value && tab.value === 'owned',
+    immediate: loggedIn.value && tab.value === 'owned',
 })
 const setupsBookmarked = useSetupsList('bookmarked', {
-    immediate: !!session.value && tab.value === 'bookmarked',
+    immediate: loggedIn.value && tab.value === 'bookmarked',
 })
-const setups = computed(() =>
-    session.value
-        ? tab.value === 'owned'
-            ? setupsOwned.setups.value
-            : tab.value === 'bookmarked'
-              ? setupsBookmarked.setups.value
-              : setupsLatest.setups.value
-        : setupsLatest.setups.value,
+const lists = {
+    latest: setupsLatest,
+    owned: setupsOwned,
+    bookmarked: setupsBookmarked,
+}
+const activeList = computed(() => lists[displayedTab.value])
+const setups = computed(() => activeList.value.setups.value)
+const loading = computed(() => activeList.value.status.value === 'pending')
+
+watch(
+    displayedTab,
+    (value) => {
+        entrance.display(value, false, [])
+        if (lists[value].status.value === 'idle') void lists[value].refresh()
+    },
+    { flush: 'sync' },
 )
-const loading = computed(() =>
-    session.value
-        ? tab.value === 'owned'
-            ? setupsOwned.status.value === 'pending'
-            : tab.value === 'bookmarked'
-              ? setupsBookmarked.status.value === 'pending'
-              : setupsLatest.status.value === 'pending'
-        : setupsLatest.status.value === 'pending',
-)
+
+const cardEntrance = computed(() => {
+    // SSR fetches can finish after setup; commit the first display when rendering the result.
+    return entrance.display(
+        displayedTab.value,
+        activeList.value.status.value === 'success',
+        setups.value.map((setup) => setup.id),
+    )
+})
+
+useInfiniteScroll(import.meta.client ? document : undefined, () => setupsLatest.loadMore(), {
+    distance: 600,
+    canLoadMore: () =>
+        (!loggedIn.value || tab.value === 'latest') &&
+        setupsLatest.status.value === 'success' &&
+        !!setupsLatest.pagination.value?.hasNext,
+})
 
 watchDebounced(
     showPrivateDebounced,
     (val) => {
-        update({ showPrivateSetups: val })
+        if (val !== preferences.value.showPrivateSetups) update({ showPrivateSetups: val })
     },
     { debounce: 500 },
 )
@@ -86,7 +106,7 @@ useSeo({
 <template>
     <div class="flex w-full flex-col gap-6">
         <UPageHero
-            v-if="!session"
+            v-if="!loggedIn"
             :ui="{
                 container: 'py-12 sm:py-18 lg:py-26',
                 title: 'sm:text-6xl wrap-anywhere break-keep',
@@ -99,29 +119,20 @@ useSeo({
                     :label="latestChangelog.title"
                     variant="soft"
                     color="neutral"
-                    style="animation-delay: 0.5s"
-                    class="fade-in-blur rounded-full px-4"
+                    class="rounded-full px-4"
                 />
             </template>
 
             <template #title>
-                <span
-                    style="animation-delay: 0.3s"
-                    class="fade-in-blur"
-                    v-html="$t('index.hero.title')"
-                />
+                <span v-html="$t('index.hero.title')" />
             </template>
 
             <template #description>
-                <p
-                    style="animation-delay: 0.5s"
-                    class="fade-in-blur wrap-anywhere break-keep"
-                    v-html="$t('index.hero.description')"
-                />
+                <p class="wrap-anywhere break-keep" v-html="$t('index.hero.description')" />
             </template>
 
             <template #links>
-                <div style="animation-delay: 0.7s" class="fade-in-blur">
+                <div>
                     <UButton
                         :label="$t('login')"
                         color="neutral"
@@ -134,7 +145,7 @@ useSeo({
         </UPageHero>
 
         <div class="flex w-full flex-col items-start gap-5">
-            <div v-if="session" class="flex w-full items-center gap-1">
+            <div v-if="loggedIn" class="flex w-full items-center gap-1">
                 <UButton
                     :label="$t('index.tabs.latest')"
                     :active="tab === 'latest'"
@@ -177,25 +188,13 @@ useSeo({
             </div>
             <h1 v-else class="text-lg font-medium text-nowrap">{{ $t('index.tabs.latest') }}</h1>
 
-            <SetupsList :setups :loading />
+            <SetupsList :key="displayedTab" :setups :loading :entrance="cardEntrance" />
+            <UButton
+                v-if="(!loggedIn || tab === 'latest') && setupsLatest.pagination.value?.hasNext"
+                :loading="loading"
+                :label="$t('more')"
+                @click="setupsLatest.loadMore()"
+            />
         </div>
     </div>
 </template>
-
-<style scoped>
-@keyframes fadeInBlur {
-    from {
-        opacity: 0;
-        filter: blur(30px);
-    }
-    to {
-        opacity: 1;
-        filter: blur(0);
-    }
-}
-
-.fade-in-blur {
-    opacity: 0;
-    animation: fadeInBlur 0.7s ease-out forwards;
-}
-</style>

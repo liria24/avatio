@@ -2,11 +2,7 @@
 const { t } = useI18n()
 
 definePageMeta({
-    middleware: defineNuxtRouteMiddleware(async () => {
-        const localePath = useLocalePath()
-        const { session } = useAuth()
-        if (session.value) return navigateTo(localePath('/'))
-    }),
+    auth: 'guest',
 })
 useSeo({
     title: t('login'),

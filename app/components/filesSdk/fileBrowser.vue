@@ -17,6 +17,7 @@ const prefixes = ref<string[]>([])
 const cursor = ref<string>()
 const pending = ref(false)
 const errorMessage = ref<string>()
+let activeRequest: AbortController | undefined
 
 const parentPrefix = computed(() => {
     if (!prefix.value) return undefined
@@ -45,8 +46,17 @@ const getFolderName = (folderPrefix: string) =>
     folderPrefix.slice(0, -1).split('/').at(-1) || folderPrefix
 
 const load = async (nextCursor?: string) => {
+    if (nextCursor && pending.value) return
+    activeRequest?.abort()
+    const request = new AbortController()
+    activeRequest = request
     pending.value = true
     errorMessage.value = undefined
+    if (!nextCursor) {
+        items.value = []
+        prefixes.value = []
+        cursor.value = undefined
+    }
 
     try {
         const result = await props.files.list({
@@ -54,20 +64,23 @@ const load = async (nextCursor?: string) => {
             cursor: nextCursor,
             delimiter: '/',
             limit: 100,
+            signal: request.signal,
         })
+        if (request.signal.aborted) return
 
         if (nextCursor) {
             items.value = [...items.value, ...result.items]
-            prefixes.value = [...prefixes.value, ...(result.prefixes ?? [])]
+            prefixes.value = [...new Set([...prefixes.value, ...(result.prefixes ?? [])])]
         } else {
             items.value = result.items
             prefixes.value = result.prefixes ?? []
         }
         cursor.value = result.cursor
     } catch (error) {
-        errorMessage.value = error instanceof Error ? error.message : 'Failed to load files.'
+        if (!request.signal.aborted)
+            errorMessage.value = error instanceof Error ? error.message : 'Failed to load files.'
     } finally {
-        pending.value = false
+        if (!request.signal.aborted) pending.value = false
     }
 }
 
@@ -76,15 +89,10 @@ const openPrefix = async (nextPrefix: string) => {
     await load()
 }
 
-const refresh = async () => await load()
+const refresh = () => load()
 
-watch(
-    () => props.files,
-    () => {
-        void load()
-    },
-    { immediate: true },
-)
+onMounted(() => void load())
+onBeforeUnmount(() => activeRequest?.abort())
 </script>
 
 <template>
@@ -101,6 +109,7 @@ watch(
             <div class="flex items-center gap-2 p-3">
                 <UButton
                     icon="mingcute:arrow-up-line"
+                    aria-label="Parent folder"
                     variant="ghost"
                     color="neutral"
                     size="sm"
@@ -122,6 +131,7 @@ watch(
                 />
                 <UButton
                     icon="mingcute:refresh-2-line"
+                    aria-label="Refresh files"
                     variant="ghost"
                     color="neutral"
                     size="sm"
@@ -174,7 +184,9 @@ watch(
                     >
                         <Icon name="mingcute:file-fill" class="text-muted size-5 shrink-0" />
                         <div class="min-w-0 flex-1">
-                            <p class="text-highlighted truncate font-medium">{{ file.name }}</p>
+                            <p class="text-highlighted truncate font-medium">
+                                {{ file.key.split('/').at(-1) }}
+                            </p>
                             <p class="text-muted truncate font-mono text-[11px]">{{ file.key }}</p>
                         </div>
                         <span class="text-muted font-mono text-xs">{{

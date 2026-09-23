@@ -12,6 +12,7 @@ export const useFeedback = () => {
     const state = useState<Schema>('feedbackState', () => ({
         comment: '',
     }))
+    let idempotencyKey = crypto.randomUUID()
 
     const submit = async () => {
         try {
@@ -19,6 +20,7 @@ export const useFeedback = () => {
 
             await $fetch('/api/feedbacks', {
                 method: 'POST',
+                headers: { 'Idempotency-Key': idempotencyKey },
                 body: {
                     comment: state.value.comment,
                     contextPath: route.fullPath,
@@ -32,6 +34,7 @@ export const useFeedback = () => {
             })
 
             state.value.comment = ''
+            idempotencyKey = crypto.randomUUID()
         } catch (error) {
             console.error('Error submitting feedback:', error)
             toast.add({

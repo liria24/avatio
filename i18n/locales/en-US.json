@@ -28,7 +28,11 @@
         "fallbackDescription": "Showing Japanese version as fallback.",
         "updatedAt": "Last updated: {date}",
         "effectiveDate": "Effective date: {date}",
-        "changeLog": "Changelog"
+        "changeLog": "Changelog",
+        "version": "Version: {version}",
+        "sourceRevision": "View source revision",
+        "retry": "Try again",
+        "loadError": "Could not load the legal documents. Please try again."
     },
     "itemCategory": {
         "avatar": "Base Avatar",
@@ -50,6 +54,7 @@
             "settings": "Settings",
             "feedback": "Feedback",
             "switchAccount": "Switch Account",
+            "switchAccountFailed": "Failed to switch accounts",
             "newAccount": "New Account",
             "logout": "Logout"
         }
@@ -68,6 +73,7 @@
                 "bio": "Bio",
                 "links": "Links",
                 "addLink": "Add Link",
+                "editLink": "Edit Link",
                 "removeLink": "Remove Link",
                 "avatarAlt": "Your avatar image"
             },
@@ -94,24 +100,23 @@
                 "linkExistsDescription": "Cannot add the same link."
             }
         },
-        "shop": {
-            "title": "Shop Verification",
-            "step1": "1. Select one item from your shop and enter its URL",
-            "step2": "2. Add the following code to the item description",
-            "stepDescription": "Only items that can be registered in Avatio are eligible for verification. Private items and items from unsupported platforms cannot be used. GitHub shops are currently not supported.",
-            "generatingCode": "Generating code...",
-            "verify": "Verify Shop",
-            "newShop": "Verify New Shop",
-            "unverify": "Unverify Shop",
-            "unverifyConfirm": "Are you sure you want to unverify this shop?",
-            "deleteCodeNote": "Please delete the code from the item description after verification is complete",
-            "notVerifiable": "This URL is not a verifiable item",
-            "noVerifiedShops": "No verified shops",
+        "publisher": {
+            "title": "Publisher Verification",
+            "step1": "1. Enter an item URL that proves the publisher source",
+            "step2": "2. Add this code using the provider instruction",
+            "createChallenge": "Create verification challenge",
+            "instruction": "For BOOTH, add this code to the item description, save it, then verify.",
+            "verify": "Verify Publisher",
+            "newPublisher": "Verify New Publisher",
+            "unverify": "Remove Verification",
+            "unverifyConfirm": "Remove ownership verification for this publisher source?",
+            "none": "No verified publisher sources",
             "toast": {
-                "verified": "Shop verified",
-                "verifyFailed": "Failed to verify shop",
-                "unverified": "Shop unverified",
-                "unverifyFailed": "Failed to unverify shop"
+                "challengeFailed": "Failed to create verification challenge",
+                "verified": "Publisher verified",
+                "verifyFailed": "Failed to verify publisher",
+                "unverified": "Publisher verification removed",
+                "unverifyFailed": "Failed to remove publisher verification"
             }
         },
         "account": {
@@ -171,8 +176,6 @@
             "feedbackSubmittedDescription": "Thank you for your cooperation.",
             "feedbackSubmitFailed": "Failed to submit feedback",
             "toggleFailed": "Failed to toggle",
-            "forceUpdateItemToggled": "Force update item toggled",
-            "forceUpdateItemToggleFailed": "Failed to toggle",
             "configSaved": "Config saved",
             "configSaveFailed": "Failed to save config",
             "itemNiceNameChanged": "Item name changed",
@@ -186,10 +189,6 @@
             "selectReason": "Please select a reason for the report",
             "otherRequiresComment": "Please enter details when selecting Other"
         }
-    },
-    "welcome": {
-        "title": "Welcome!",
-        "changeUsername": "Change User ID"
     },
     "index": {
         "hero": {
@@ -228,6 +227,11 @@
         "itemSearch": {
             "placeholder": "Search items / Enter URL",
             "addFromUrl": "Add from URL",
+            "addUrls": "Add {count} URL | Add {count} URLs",
+            "urlProgress": "URL imports",
+            "results": "Catalog",
+            "loadMore": "Load more",
+            "noResults": "No matching items",
             "invalidUrl": "Invalid URL",
             "invalidUrlDescription": "Please enter a valid item URL.",
             "fetchError": "Failed to fetch item",
@@ -268,7 +272,9 @@
                 "unsaved": "Unsaved changes",
                 "saving": "Saving...",
                 "saved": "Saved",
-                "error": "Failed to save"
+                "error": "Failed to save",
+                "offline": "Offline — saves after reconnecting",
+                "conflict": "Conflicts with another edit"
             },
             "draftAlert": {
                 "errorNotSaved": "Draft not saved due to an error!",
@@ -283,12 +289,32 @@
                 "shapekeyPlaceholder": "Shape key name",
                 "notePlaceholder": "Add note",
                 "empty": "No items registered",
+                "emptyPrompt": "List the items used in this setup",
+                "supportedPlatforms": "Supported platforms: BOOTH, GitHub",
                 "noShapekeys": "No shapekeys"
             },
             "images": {
+                "title": "Images",
                 "add": "Add Image",
                 "dropAdd": "Drop to Add",
-                "uploading": "Uploading image..."
+                "uploading": "Uploading image...",
+                "cover": "Cover",
+                "preview": "Setup image",
+                "remove": "Remove image",
+                "retry": "Retry"
+            },
+            "points": {
+                "title": "Item Points",
+                "description": "Click the image, then choose an item to place at that position.",
+                "selectItem": "Choose an item to place",
+                "move": "Move",
+                "remove": "Remove",
+                "clickToMove": "Click the new position on the image",
+                "placeItem": "Place on image"
+            },
+            "mobile": {
+                "details": "Post info & images",
+                "items": "Items"
             },
             "tags": {
                 "title": "Tags",
@@ -323,10 +349,14 @@
             "coauthorDuplicate": "Cannot add duplicate co-authors",
             "itemAlreadyAdded": "Item already added",
             "draftRestored": "Found and restored draft in progress",
+            "switchAccountFailed": "Failed to switch the posting account",
             "limitedPublic": "Limited Access",
             "limitedPublicDescription": "Only people with the URL can view this setup."
         },
         "viewer": {
+            "expandPoints": "Expand item points",
+            "collapsePoints": "Collapse item points",
+            "showItemPoints": "Show this item on the image",
             "show": "Show Setup",
             "hide": "Hide Setup",
             "hiddenNotice": "This setup is currently hidden",
@@ -381,14 +411,30 @@
             "title": "Welcome to Avatio",
             "description": "Log in to post your setup",
             "loginWith": "Login with {provider}",
-            "agreement": "By logging in, you agree to the following:",
+            "agreement": "By logging in or creating an account, you agree to:",
             "firstTimeNotice": "A new account will be automatically created for first-time users.",
+            "local": {
+                "name": "Display name",
+                "login": "Log in with email",
+                "register": "Create local account",
+                "switchToLogin": "Log in to an existing account",
+                "switchToRegister": "Create a new local account"
+            },
             "footer": {
                 "terms": "Terms of Service",
                 "privacy": "Privacy Policy"
             }
         },
         "agreeTerms": {
+            "initial": {
+                "title": "Review before continuing",
+                "intro": "You need to agree to Avatio's policies before continuing.",
+                "description": "Please review any Terms of Service or Privacy Policy documents you have not previously accepted."
+            },
+            "mixed": {
+                "title": "Policy review required",
+                "description": "Some documents are new to you and others have been updated. Please review them below."
+            },
             "title": {
                 "terms": "Terms of Service Updated",
                 "privacy": "Privacy Policy Updated",
@@ -551,7 +597,7 @@
         "objectToBanSubject": "Appeal user ban",
         "editProfile": "Edit Profile",
         "reportUser": "Report User",
-        "shops": "Shops",
+        "publishers": "Publishers",
         "setups": "Setups"
     },
     "badges": {
@@ -559,7 +605,7 @@
         "contributor": "Contributor",
         "translator": "Translator",
         "alphaTester": "Alpha Tester",
-        "shopOwner": "Shop Owner",
+        "publisherOwner": "Publisher Owner",
         "patrol": "Patrol",
         "ideaMan": "Idea Man"
     },
@@ -658,8 +704,7 @@
             },
             "flags": {
                 "title": "Flags",
-                "maintenanceMode": "Maintenance Mode",
-                "forceUpdateItem": "Force Update Item Info"
+                "maintenanceMode": "Maintenance Mode"
             },
             "hideSetup": {
                 "title": "Hide Setup",

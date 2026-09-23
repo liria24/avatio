@@ -1,20 +1,10 @@
 import { z } from 'zod'
 
-const params = z.object({
-    id: z.string(),
-})
-
-const query = z.object({
-    platform: platformSchema.optional(),
-})
-
-const log = logger('/api/items/[id]:GET')
-
-export default promiseEventHandler<Item>(async ({ event, db }) => {
-    const { id } = await validateParams(params)
-    const { platform } = await validateQuery(query)
-
-    log.info(`Processing item: ${id}, Platform: ${platform || 'auto-detect'}`)
-
-    return await getItem(event, db, id, platform)
+export default promiseEventHandler(async ({ event, db }) => {
+    const { id } = await validateParams(z.object({ id: z.string().min(1) }))
+    const item = await queryCatalogItem(db, id)
+    if (!item) throw serverError.notFound()
+    runAfterResponse(enqueueReferencedCatalogSources([item.id]))
+    applyPublicEdgeCache(event, [getCatalogItemCacheTag(item.id)])
+    return item
 })

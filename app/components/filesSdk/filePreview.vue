@@ -8,16 +8,21 @@ const props = defineProps<{
 }>()
 
 const objectUrl = ref<string>()
-const publicUrl = ref<string>()
 const textPreview = ref<string>()
 const pending = ref(false)
 const errorMessage = ref<string>()
+let activeRequest: AbortController | undefined
 
-const isImage = computed(() => props.file?.type.startsWith('image/'))
+const isImage = computed(() => /^(image\/(jpeg|png|webp|gif|avif))$/.test(props.file?.type ?? ''))
 const isText = computed(() => {
     const type = props.file?.type ?? ''
     return type.startsWith('text/') || type.includes('json') || type.includes('xml')
 })
+const downloadUrl = computed(() =>
+    props.file
+        ? `/api/admin/files?op=download&key=${encodeURIComponent(props.file.key)}`
+        : undefined,
+)
 
 const fileDate = computed(() =>
     props.file?.lastModified ? new Date(props.file.lastModified).toLocaleString('en') : 'Unknown',
@@ -38,38 +43,55 @@ const clearObjectUrl = () => {
 }
 
 const loadPreview = async () => {
+    activeRequest?.abort()
     clearObjectUrl()
-    publicUrl.value = undefined
     textPreview.value = undefined
     errorMessage.value = undefined
+    pending.value = false
 
     if (!props.file) return
+    if (
+        !(isImage.value && props.file.size <= 5 * 1024 * 1024) &&
+        !(isText.value && props.file.size <= 128 * 1024)
+    )
+        return
 
+    const request = new AbortController()
+    activeRequest = request
     pending.value = true
     try {
-        publicUrl.value = await props.files.url(props.file.key)
-
-        if (isImage.value) objectUrl.value = publicUrl.value
-        else if (isText.value && props.file.size <= 128 * 1024) {
-            const downloaded = await props.files.download(props.file.key, { as: 'blob' })
-            textPreview.value = await downloaded.text()
+        const downloaded = await props.files.download(props.file.key, {
+            as: 'blob',
+            signal: request.signal,
+        })
+        if (request.signal.aborted) return
+        if (isImage.value) {
+            const blob = await downloaded.blob()
+            if (!request.signal.aborted) objectUrl.value = URL.createObjectURL(blob)
+        } else {
+            const text = await downloaded.text()
+            if (!request.signal.aborted) textPreview.value = text
         }
     } catch (error) {
-        errorMessage.value = error instanceof Error ? error.message : 'Failed to preview file.'
+        if (!request.signal.aborted)
+            errorMessage.value = error instanceof Error ? error.message : 'Failed to preview file.'
     } finally {
-        pending.value = false
+        if (!request.signal.aborted) pending.value = false
     }
 }
 
 watch(
-    () => props.file?.key,
+    () => props.file,
     () => {
         void loadPreview()
     },
     { immediate: true },
 )
 
-onBeforeUnmount(clearObjectUrl)
+onBeforeUnmount(() => {
+    activeRequest?.abort()
+    clearObjectUrl()
+})
 </script>
 
 <template>
@@ -88,7 +110,9 @@ onBeforeUnmount(clearObjectUrl)
             <div class="flex items-start gap-3">
                 <Icon name="mingcute:file-fill" class="text-muted mt-1 size-5 shrink-0" />
                 <div class="min-w-0 flex-1">
-                    <h2 class="text-highlighted truncate font-medium">{{ file.name }}</h2>
+                    <h2 class="text-highlighted truncate font-medium">
+                        {{ file.key.split('/').at(-1) }}
+                    </h2>
                     <p class="text-muted font-mono text-xs break-all">{{ file.key }}</p>
                 </div>
             </div>
@@ -111,10 +135,9 @@ onBeforeUnmount(clearObjectUrl)
                     class="max-h-96 max-w-full object-contain"
                 />
                 <pre
-                    v-else-if="textPreview"
+                    v-else-if="textPreview !== undefined"
                     class="size-full max-h-96 overflow-auto p-3 text-xs whitespace-pre-wrap"
-                    >{{ textPreview }}</pre
-                >
+                    >{{ textPreview }}</pre>
                 <div v-else class="text-muted flex flex-col items-center gap-2 text-sm">
                     <Icon
                         :name="
@@ -143,20 +166,8 @@ onBeforeUnmount(clearObjectUrl)
 
             <div class="mt-auto flex gap-2">
                 <UButton
-                    v-if="publicUrl"
-                    :to="publicUrl"
-                    target="_blank"
-                    external
-                    icon="mingcute:external-link-line"
-                    label="Open"
-                    variant="soft"
-                    color="neutral"
-                    size="sm"
-                />
-                <UButton
-                    v-if="publicUrl"
-                    :to="publicUrl"
-                    download
+                    :to="downloadUrl"
+                    :download="file.key.split('/').at(-1)"
                     external
                     icon="mingcute:download-line"
                     label="Download"

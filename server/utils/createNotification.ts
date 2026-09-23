@@ -1,9 +1,7 @@
-import { destr } from 'destr'
 import type { z } from 'zod'
-import type { NotificationPayload } from '~~/database/schema'
 import { notifications } from '~~/database/schema'
 
-type Body = Omit<z.infer<typeof notificationsInsertSchema>, 'payload'> & {
+type Body = Omit<z.input<typeof notificationsInsertSchema>, 'payload'> & {
     payload: NotificationPayload
 }
 
@@ -11,17 +9,18 @@ export default async (db: ReturnType<typeof useDB>, body: Body): Promise<{ id: s
     const log = logger('createNotification')
 
     try {
-        const { userId, type, payload, actionUrl, banner } = body
-
+        const { userId, type, payload, actionUrl, banner, dedupeKey } = body
         const [result] = await db
             .insert(notifications)
             .values({
                 userId,
                 type,
-                payload: destr(payload),
+                payload,
                 actionUrl,
                 banner,
+                dedupeKey,
             })
+            .onConflictDoNothing()
             .returning({ id: notifications.id })
 
         return result || null

@@ -9,29 +9,11 @@ const query = z.object({
         .default(OWNED_AVATARS_API_DEFAULT_LIMIT),
 })
 
-export default authedSessionEventHandler<Item[]>(async ({ event, session, db }) => {
+export default authedSessionEventHandler<CatalogItemView[]>(async ({ event, session, db }) => {
     const { limit } = await validateQuery(query)
 
-    const data = await db.query.items.findMany({
-        where: {
-            outdated: { eq: false },
-            category: { eq: 'avatar' },
-            setupItems: {
-                setup: {
-                    userId: { eq: session.user.id },
-                },
-            },
-        },
-        orderBy: {
-            createdAt: 'desc',
-        },
-        limit,
-    })
-
-    if (data.length)
-        runAfterResponse(
-            Promise.all(data.map((item) => enqueueItemRevalidation(event, item, 'owned-avatars'))),
-        )
-
-    return data
+    const result = await queryCatalogItems(db, { limit, ownerId: session.user.id })
+    applyNoStoreCache(event)
+    runAfterResponse(enqueueReferencedCatalogSources(result.data.map((item) => item.id)))
+    return result.data.filter((item) => item.primarySource?.availability === 'available')
 })

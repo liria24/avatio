@@ -29,8 +29,8 @@ const openSidebar = ref(true)
                             icon: 'mingcute:settings-1-fill',
                         },
                         {
-                            to: $localePath('/settings/shops'),
-                            label: $t('settings.shop.title'),
+                            to: $localePath('/settings/publishers'),
+                            label: $t('settings.publisher.title'),
                             icon: 'mingcute:shop-fill',
                         },
                         {

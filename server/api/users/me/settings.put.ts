@@ -19,8 +19,6 @@ export default authedSessionEventHandler(
                 set: body,
             })
 
-        await purgeUserSettingsSessionCache(session.user.id)
-
         return { success: true }
     },
     { rejectBannedUser: true },

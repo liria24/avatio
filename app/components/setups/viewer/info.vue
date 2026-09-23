@@ -5,15 +5,15 @@ interface Props {
 }
 const { setup, sidebar } = defineProps<Props>()
 
-const { session } = useAuth()
+const { user } = useUserSession()
 const setupDelete = useSetupDeleteModal()
 
 const { locale } = useI18n()
 </script>
 
 <template>
-    <div :class="cn('grid gap-5', !sidebar && 'lg:hidden')">
-        <div v-if="session?.user.username === setup.user.username" class="grid grid-cols-2 gap-1">
+    <div class="grid gap-5" :class="{ 'lg:hidden': !sidebar }">
+        <div v-if="user?.username === setup.user.username" class="grid grid-cols-2 gap-1">
             <UButton
                 :to="`/setup/compose?edit=${setup.id}`"
                 :label="$t('edit')"

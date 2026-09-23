@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-const { session } = await useAuth()
+const { loggedIn } = useUserSession()
 </script>
 
 <template>
@@ -7,7 +7,7 @@ const { session } = await useAuth()
         <header class="flex w-full items-center justify-between gap-6">
             <HeaderLeft />
 
-            <HeaderThemeButton v-if="!session" />
+            <HeaderThemeButton v-if="!loggedIn" />
         </header>
 
         <main class="grid w-full grow">

@@ -13,7 +13,8 @@ const replySubject = (subject: string | null) => {
     return value.toLowerCase().startsWith('re:') ? value : `Re: ${value}`
 }
 
-export default adminSessionEventHandler(async ({ db }) => {
+export default promiseEventHandler(async ({ db, event }) => {
+    await requireUserSession(event, { user: { role: 'admin' } })
     const { id } = await validateParams(params)
     const { text } = await validateBody(body)
 

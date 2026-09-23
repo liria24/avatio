@@ -16,7 +16,8 @@ const body = z
         message: 'At least one field must be provided',
     })
 
-export default adminSessionEventHandler(async ({ db }) => {
+export default promiseEventHandler(async ({ db, event }) => {
+    await requireUserSession(event, { user: { role: 'admin' } })
     const { id } = await validateParams(params)
     const { isRead, isArchived } = await validateBody(body)
 

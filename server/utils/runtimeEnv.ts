@@ -1,21 +1,17 @@
-import type { H3Event } from 'h3'
+import type { H3Event } from '@nuxt/nitro-server/h3'
 
-export type RuntimeEnv = Partial<Record<string, unknown>>
+import type { WebsiteEnv } from '../../alchemy.run'
 
-declare const useEvent: (() => H3Event) | undefined
+/** Runtime bindings injected by the Alchemy Website resource. */
+type RuntimeEnv = Partial<WebsiteEnv>
 
-type RuntimeGlobal = typeof globalThis & {
-    __env__?: RuntimeEnv
-}
+const getGlobalRuntimeEnv = (): RuntimeEnv | undefined =>
+    (globalThis as typeof globalThis & { __env__?: RuntimeEnv }).__env__
 
-const getGlobalRuntimeEnv = () => (globalThis as RuntimeGlobal).__env__
-
-const getCloudflareRuntimeEnv = (event?: H3Event) =>
-    event?.context.cloudflare?.env as RuntimeEnv | undefined
+const getCloudflareRuntimeEnv = (event?: H3Event) => event?.context?.cloudflare?.env
 
 const getCurrentEventRuntimeEnv = () => {
     try {
-        if (typeof useEvent !== 'function') return undefined
         return getCloudflareRuntimeEnv(useEvent())
     } catch {
         // not inside a request context
@@ -23,29 +19,20 @@ const getCurrentEventRuntimeEnv = () => {
 }
 
 const getRuntimeEnvSources = (event?: H3Event): RuntimeEnv[] =>
-    [
-        getGlobalRuntimeEnv(),
-        getCloudflareRuntimeEnv(event),
-        getCurrentEventRuntimeEnv(),
-        process.env,
-    ].filter((env): env is RuntimeEnv => Boolean(env))
+    [getGlobalRuntimeEnv(), getCloudflareRuntimeEnv(event), getCurrentEventRuntimeEnv()].filter(
+        (env): env is RuntimeEnv => Boolean(env),
+    )
 
 export const getRuntimeEnv = (event?: H3Event): RuntimeEnv =>
-    getGlobalRuntimeEnv() ??
-    getCloudflareRuntimeEnv(event) ??
-    getCurrentEventRuntimeEnv() ??
-    process.env
+    Object.assign({}, ...getRuntimeEnvSources(event))
 
-export const getRuntimeEnvValue = (name: string, event?: H3Event) => {
-    for (const env of getRuntimeEnvSources(event)) {
-        const value = env[name]
-        if (value !== undefined && value !== null) return value
-    }
-}
-
-export const getRuntimeEnvString = (name: string, event?: H3Event) => {
+export const getRuntimeEnvString = (name: keyof RuntimeEnv, event?: H3Event) => {
     for (const env of getRuntimeEnvSources(event)) {
         const value = env[name]
         if (typeof value === 'string' && value) return value
+    }
+    if (import.meta.dev) {
+        const value = process.env[name]
+        if (value) return value
     }
 }

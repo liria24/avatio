@@ -3,7 +3,7 @@ title: プライバシーポリシー
 description: Avatioのプライバシーポリシー
 updatedAt: '2026-05-27'
 effectiveDate: '2026-06-01'
-commitLogPath: 'content/ja/privacy-policy.md'
+version: '2026-06-01'
 ---
 
 Liria（以下、当サークル」といいます。）は、本ウェブサイト上で提供するサービス（以下、「本サービス」といいます。）における、ユーザーの個人情報の取扱いについて、以下のとおりプライバシーポリシー（以下、「本ポリシー」といいます。）を定めます。

@@ -1,14 +1,14 @@
 <script lang="ts" setup>
 interface Props {
-    itemId: Item['id']
+    itemId: CatalogItemView['id']
 }
 const { itemId } = defineProps<Props>()
 
 const emit = defineEmits<{
-    (e: 'remove', itemId: Item['id']): void
+    (e: 'remove', itemId: CatalogItemView['id']): void
 }>()
 
-const { data: item } = useFetch<Item>(`/api/items/${itemId}`, {
+const { data: item } = useFetch<CatalogItemView>(`/api/items/${itemId}`, {
     immediate: true,
     dedupe: 'defer',
 })

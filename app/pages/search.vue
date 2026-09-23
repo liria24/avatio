@@ -7,7 +7,7 @@ const toArray = (val: string | string[] | null): string[] => {
 }
 
 const q = useRouteQuery('q', '')
-const itemIds = useRouteQuery<Item['id'][]>('itemId', [], { transform: toArray })
+const itemIds = useRouteQuery<CatalogItemView['id'][]>('itemId', [], { transform: toArray })
 const tags = useRouteQuery<string[]>('tag', [], { transform: toArray })
 
 const searchStatus = ref<'idle' | 'pending' | 'success'>('idle')
@@ -25,7 +25,7 @@ const query = computed(() => ({
     limit: SETUP_SEARCH_PER_PAGE,
 }))
 
-const { setups, status, pagination, loadMore, refresh } = useSetupsList(undefined, {
+const { setups, status, pagination, loadMore, refresh, clear } = useSetupsList(undefined, {
     query,
     immediate: false,
     watch: false,
@@ -34,7 +34,7 @@ const { setups, status, pagination, loadMore, refresh } = useSetupsList(undefine
 const search = async () => {
     if (!q.value.length && !itemIds.value.length && !tags.value.length) {
         searchStatus.value = 'idle'
-        setups.value = []
+        clear()
         return
     }
 

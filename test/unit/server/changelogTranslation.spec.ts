@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { parseChangelogTranslation } from '../../../server/utils/changelogTranslation'
+import { parseChangelogTranslation } from '../../../server/utils/ai'
 import sanitizeObject from '../../../server/utils/sanitizeObject'
 
 beforeEach(() => {

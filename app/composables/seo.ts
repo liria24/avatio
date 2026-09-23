@@ -46,7 +46,6 @@ export const useSeo = ({
     const route = useRoute()
     const { localeProperties } = useI18n()
     const routeBaseName = useRouteBaseName()
-    const baseRouteName = computed(() => routeBaseName(route))
 
     useSeoMeta({
         title: title,
@@ -62,7 +61,7 @@ export const useSeo = ({
         meta: [
             {
                 property: 'og:type',
-                content: type || (baseRouteName.value === 'index' ? 'website' : 'article'),
+                content: type || (routeBaseName(route) === 'index' ? 'website' : 'article'),
             },
         ],
         link: [{ rel: 'icon', href: '/favicon.ico' }],
@@ -132,5 +131,7 @@ export const useSeo = ({
             }),
         )
 
-    if (schemaOrg) useSchemaOrg(schemaOrgItems)
+    if (schemaOrg) {
+        useSchemaOrg(schemaOrgItems)
+    }
 }

@@ -1,4 +1,5 @@
-import { sendMessage } from '@avatio/bot-notifier'
+import { lt } from 'drizzle-orm'
+import { idempotencyRequests } from '~~/database/schema'
 
 const reportLog = logger('/api/admin/job/report')
 const cleanupLog = logger('/api/admin/job/cleanup')
@@ -26,26 +27,32 @@ const IMAGE_DELETION_THRESHOLD = 24 * 60 * 60 * 1000
 const STORAGE_OPERATION_CONCURRENCY = 8
 
 const BACKUP_PREFIX = 'backup'
-const BACKUP_RULE_ID = 'avatio-backup-cleanup'
-const BACKUP_RETENTION_SECONDS = 3 * 24 * 60 * 60 // 3 days
 
-interface LifecycleRule {
-    id: string
-    conditions: { prefix: string }
-    enabled: boolean
-    deleteObjectsTransition?: {
-        condition: { maxAge: number; type: 'Age' }
+const sendMessage = async (message: { content?: string; embeds?: object[] }) => {
+    if (import.meta.dev) return
+    const endpoint = getRuntimeEnvString('LIRIA_DISCORD_ENDPOINT')?.replace(/\/+$/, '')
+    const token = getRuntimeEnvString('LIRIA_DISCORD_ACCESS_TOKEN')
+    if (!endpoint || !token) return
+    await $fetch('/admin/message', {
+        baseURL: endpoint,
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+        body: message,
+    })
+}
+
+const getStorageContext = async () => {
+    try {
+        const storage = useServerFiles()
+        return { storage, publicBaseUrl: new URL('.', await storage.url('cleanup')).href }
+    } catch {
+        return null
     }
 }
 
-const getR2PublicBaseUrl = () => getRuntimeEnvString('R2_PUBLIC_BASE_URL')?.replace(/\/+$/, '')
-
-const extractStorageKeyFromUrl = (
-    url: string,
-    publicBaseUrl = getR2PublicBaseUrl(),
-): string | null => {
-    if (!publicBaseUrl) return null
-
+const extractStorageKeyFromUrl = (url: string, publicBaseUrl: string): string | null => {
     try {
         const parsedUrl = new URL(url)
         const parsedBaseUrl = new URL(publicBaseUrl)
@@ -89,10 +96,11 @@ const imageUrlsToStorageKeys = (urls: string[], publicBaseUrl: string) =>
     )
 
 const getStorageObjects = async (prefix: string): Promise<ImageInfo[]> => {
+    const storage = useServerFiles()
     const items: ImageInfo[] = []
 
     try {
-        for await (const obj of getStorage().listAll({ prefix: `${prefix}/` }))
+        for await (const obj of storage.listAll({ prefix: `${prefix}/` }))
             items.push({
                 key: obj.key,
                 lastModified: new Date(obj.lastModified ?? Date.now()),
@@ -111,6 +119,7 @@ const getCleanupCandidates = (
 ) => storageImages.filter((image) => !usedKeys.has(image.key) && image.lastModified < thresholdDate)
 
 const copyWithConcurrency = async (images: ImageInfo[], backupDate: string) => {
+    const storage = useServerFiles()
     const backedUp: string[] = []
     const backupFailed: FailedImageOperation[] = []
     let index = 0
@@ -124,10 +133,7 @@ const copyWithConcurrency = async (images: ImageInfo[], backupDate: string) => {
                 if (!image) return
 
                 try {
-                    await getStorage().copy(
-                        image.key,
-                        `${BACKUP_PREFIX}/${backupDate}/${image.key}`,
-                    )
+                    await storage.copy(image.key, `${BACKUP_PREFIX}/${backupDate}/${image.key}`)
                     backedUp.push(image.key)
                 } catch (error) {
                     cleanupLog.warn('Failed to backup image before deletion:', image.key, error)
@@ -143,59 +149,9 @@ const copyWithConcurrency = async (images: ImageInfo[], backupDate: string) => {
     return { backedUp, backupFailed }
 }
 
-const ensureBackupLifecycleRule = async () => {
-    const config = useRuntimeConfig()
-    const accountId = config.cloudflare?.accountId
-    const apiToken = config.cloudflare?.apiToken
-    const bucket = process.env.R2_BUCKET ?? 'avatio'
-
-    if (!accountId || !apiToken) {
-        cleanupLog.warn('Cloudflare credentials not configured; skipping lifecycle rule setup')
-        return
-    }
-
-    const baseUrl = `https://api.cloudflare.com/client/v4/accounts/${accountId}/r2/buckets/${bucket}/lifecycle`
-    const headers = {
-        Authorization: `Bearer ${apiToken}`,
-        'Content-Type': 'application/json',
-    }
-
-    let existingRules: LifecycleRule[] = []
-    try {
-        const res = await $fetch<{ result: { rules?: LifecycleRule[] }; success: boolean }>(
-            baseUrl,
-            { headers },
-        )
-        if (res.success) existingRules = res.result.rules ?? []
-    } catch (error) {
-        cleanupLog.warn('Failed to fetch existing lifecycle rules:', error)
-    }
-
-    const backupRule: LifecycleRule = {
-        id: BACKUP_RULE_ID,
-        conditions: { prefix: `${BACKUP_PREFIX}/` },
-        enabled: true,
-        deleteObjectsTransition: {
-            condition: { maxAge: BACKUP_RETENTION_SECONDS, type: 'Age' },
-        },
-    }
-
-    const mergedRules = [...existingRules.filter((r) => r.id !== BACKUP_RULE_ID), backupRule]
-
-    try {
-        await $fetch(baseUrl, {
-            method: 'PUT',
-            headers,
-            body: { rules: mergedRules },
-        })
-        cleanupLog.info('Backup lifecycle rule ensured on R2 bucket')
-    } catch (error) {
-        cleanupLog.warn('Failed to set lifecycle rules:', error)
-    }
-}
-
 export const runReportJob = async () => {
     const db = useDB()
+    const stage = getRuntimeEnvString('STAGE') ?? 'development'
 
     const now = new Date()
     const yesterday = new Date()
@@ -319,7 +275,7 @@ export const runReportJob = async () => {
 
     if (contents.length > 0) {
         const embed = {
-            title: 'Avatio Report',
+            title: `Avatio Report [${stage}]`,
             color: 0xeeeeee,
             timestamp: now.toISOString(),
             fields: contents.map((content) => ({
@@ -357,11 +313,16 @@ export const runReportJob = async () => {
 }
 
 export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) => {
+    const stage = getRuntimeEnvString('STAGE') ?? 'development'
     const thresholdDate = new Date(Date.now() - IMAGE_DELETION_THRESHOLD)
-    const publicBaseUrl = getR2PublicBaseUrl()
+    const storageContext = await getStorageContext()
+    const db = useDB()
 
-    if (!publicBaseUrl) {
-        const message = 'R2_PUBLIC_BASE_URL is not configured. Cleanup skipped.'
+    if (!dryRun)
+        await db.delete(idempotencyRequests).where(lt(idempotencyRequests.expiresAt, new Date()))
+
+    if (!storageContext) {
+        const message = 'Storage public base URL is unavailable. Cleanup skipped.'
         cleanupLog.error(message)
         return dryRun
             ? {
@@ -391,7 +352,7 @@ export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) 
               }
     }
 
-    const db = useDB()
+    const { storage, publicBaseUrl } = storageContext
 
     const [usedImageUrls, [allSetupImages, allUserImages]] = await Promise.all([
         getUsedImageUrls(db),
@@ -427,8 +388,6 @@ export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) 
         }
     }
 
-    await ensureBackupLifecycleRule()
-
     const { backedUp, backupFailed: backupFailures } = await copyWithConcurrency(allImages, today)
     const backedUpSet = new Set(backedUp)
     const imagesToDelete = allImages.filter((image) => backedUpSet.has(image.key))
@@ -439,19 +398,21 @@ export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) 
 
     const deleteResults =
         imagesToDelete.length > 0
-            ? await getStorage().delete(
+            ? await storage.delete(
                   imagesToDelete.map((image) => image.key),
                   { concurrency: STORAGE_OPERATION_CONCURRENCY },
               )
             : { deleted: [], errors: undefined }
     const successful = deleteResults.deleted
-    const failed = (deleteResults.errors ?? []).map(({ key, error }) => {
-        cleanupLog.error('Failed to delete image:', key, error)
-        return {
-            key,
-            error: error.message || 'Unknown error',
-        }
-    })
+    const failed: { key: string; error: string }[] = (deleteResults.errors ?? []).map(
+        ({ key, error }: { key: string; error: Error }) => {
+            cleanupLog.error('Failed to delete image:', key, error)
+            return {
+                key,
+                error: error.message || 'Unknown error',
+            }
+        },
+    )
 
     const message = 'Cleanup completed.'
 
@@ -460,7 +421,7 @@ export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) 
             await sendMessage({
                 embeds: [
                     {
-                        title: 'Avatio Data Cleanup',
+                        title: `Avatio Data Cleanup [${stage}]`,
                         description: message,
                         color: 0xeeeeee,
                         timestamp: new Date().toISOString(),

@@ -1,16 +1,13 @@
-import type { H3Event } from 'h3'
+import type { H3Event } from '@nuxt/nitro-server/h3'
 
 interface SessionEventHandlerOptions {
     rejectBannedUser?: boolean
 }
 
-const rejectBannedUser = (session: Session | null) => {
-    if (session?.user?.banned) throw serverError.forbidden()
-}
+type Session = NonNullable<Awaited<ReturnType<typeof getRequestSession>>>
 
-const hasBetterAuthSessionCookie = (headers: Headers) => {
-    const cookie = headers.get('cookie')
-    return Boolean(cookie?.includes('better-auth'))
+export const assertSessionNotBanned = (session: Session | null) => {
+    if (session?.user?.banned) throw serverError.forbidden()
 }
 
 export const promiseEventHandler = <T = unknown>(
@@ -18,7 +15,18 @@ export const promiseEventHandler = <T = unknown>(
 ) => {
     return eventHandler(async (event) => {
         const db = useDB()
-        return handler({ event, db })
+        try {
+            return await handler({ event, db })
+        } catch (error) {
+            if (isDatabaseUniqueConflict(error))
+                throw createError({
+                    statusCode: 409,
+                    statusMessage: 'Conflict',
+                    message: 'The requested database state conflicts with an existing resource.',
+                    cause: error,
+                })
+            throw error
+        }
     })
 }
 
@@ -35,11 +43,9 @@ export const sessionEventHandler = <T = unknown>(
     options?: SessionEventHandlerOptions,
 ) =>
     promiseEventHandler(async ({ event, db }) => {
-        const session = hasBetterAuthSessionCookie(event.headers)
-            ? await auth.api.getSession({ headers: event.headers })
-            : null
+        const session = await getRequestSession(event)
 
-        if (options?.rejectBannedUser) rejectBannedUser(session)
+        if (options?.rejectBannedUser) assertSessionNotBanned(session)
 
         return await handler({ event, session, db })
     })
@@ -56,26 +62,9 @@ export const authedSessionEventHandler = <T = unknown>(
     }) => Promise<T> | T,
     options?: SessionEventHandlerOptions,
 ) =>
-    sessionEventHandler(async ({ event, session, db }) => {
-        if (!session) throw serverError.unauthorized()
+    promiseEventHandler(async ({ event, db }) => {
+        const session = await requireUserSession(event)
+        if (options?.rejectBannedUser) assertSessionNotBanned(session)
 
         return await handler({ event, session, db })
-    }, options)
-
-export const adminSessionEventHandler = <T = unknown>(
-    handler: ({
-        event,
-        session,
-        db,
-    }: {
-        event: H3Event
-        session: NonNullable<Session>
-        db: ReturnType<typeof useDB>
-    }) => Promise<T> | T,
-    options?: SessionEventHandlerOptions,
-) =>
-    sessionEventHandler(async ({ event, session, db }) => {
-        assertAdminSession(session)
-
-        return await handler({ event, session, db })
-    }, options)
+    })

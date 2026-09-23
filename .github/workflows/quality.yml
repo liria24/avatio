@@ -1,0 +1,39 @@
+name: quality
+
+on:
+  pull_request:
+    branches: [main, development]
+  push:
+    branches: [main, development]
+  merge_group:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: ${{ matrix.check }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [format, lint, 'lint:unused', typecheck, test, build]
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: voidzero-dev/setup-vp@9fd26ff49f9b5e6276c2b493da4454ad4527f7f4 # v1.20.0
+        with:
+          node-version-file: .node-version
+          version-file: package.json
+          cache: true
+          run-install: false
+      - run: vp install --frozen-lockfile
+      - run: vp run ${{ matrix.check }}
+        env:
+          NITRO_PRESET: ${{ matrix.check == 'build' && 'cloudflare_module' || '' }}
+          NODE_OPTIONS: --max-old-space-size=4096

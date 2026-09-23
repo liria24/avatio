@@ -17,7 +17,8 @@ const query = z.object({
         .default(ADMIN_AUDIT_LOG_API_DEFAULT_LIMIT),
 })
 
-export default adminSessionEventHandler<PaginationResponse<AuditLog[]>>(async ({ db }) => {
+export default promiseEventHandler<PaginationResponse<AuditLog[]>>(async ({ db, event }) => {
+    await requireUserSession(event, { user: { role: 'admin' } })
     const { q, sort, userId, action, targetType, targetId, page, limit } =
         await validateQuery(query)
 
@@ -33,7 +34,7 @@ export default adminSessionEventHandler<PaginationResponse<AuditLog[]>>(async ({
             createdAt: sort,
         },
         where: {
-            details: q ? { ilike: `%${q}%` } : undefined,
+            details: q ? { like: `%${q}%` } : undefined,
             userId: userId ? { eq: userId } : undefined,
             action: action ? { eq: action } : undefined,
             targetType: targetType ? { eq: targetType } : undefined,
@@ -64,23 +65,6 @@ export default adminSessionEventHandler<PaginationResponse<AuditLog[]>>(async ({
                         columns: {
                             badge: true,
                             createdAt: true,
-                        },
-                    },
-                    shops: {
-                        columns: {
-                            id: true,
-                            createdAt: true,
-                        },
-                        with: {
-                            shop: {
-                                columns: {
-                                    id: true,
-                                    platform: true,
-                                    name: true,
-                                    image: true,
-                                    verified: true,
-                                },
-                            },
                         },
                     },
                 },

@@ -13,6 +13,7 @@ const available = defineModel<boolean>('available', {
 interface Props {
     label?: string
     placeholder?: string
+    error?: FormFieldProps['error']
     variant?: InputProps['variant']
     color?: InputProps['color']
     size?: InputProps['size']
@@ -21,9 +22,10 @@ interface Props {
         field?: FormFieldProps['ui']
     }
 }
-const { label, placeholder, variant, color, size, ui } = defineProps<Props>()
+const { label, placeholder, error, variant, color, size, ui } = defineProps<Props>()
 
-const { session, auth } = useAuth()
+const { user } = useUserSession()
+const auth = useAuthClient()
 const { t } = useI18n()
 
 const checkState = ref<'idle' | 'checking' | 'available' | 'unavailable' | 'error'>('idle')
@@ -43,7 +45,7 @@ const stateMessages = computed(() => ({
 }))
 
 const checkNewIdAvailability = useDebounceFn(async (username: string) => {
-    if (!username?.length || username === session.value!.user.username) {
+    if (!username?.length || username === user.value?.username) {
         checkState.value = 'idle'
         available.value = false
         return
@@ -53,6 +55,7 @@ const checkNewIdAvailability = useDebounceFn(async (username: string) => {
     available.value = false
 
     try {
+        if (!auth) throw new Error('Auth client is unavailable.')
         const result = await auth.isUsernameAvailable({ username })
         checkState.value = result.data?.available ? 'available' : 'unavailable'
         available.value = result.data?.available ?? false
@@ -73,7 +76,7 @@ watch(input, (id) => {
 </script>
 
 <template>
-    <UFormField :label="label || $t('input.username.label')" :ui="ui?.field">
+    <UFormField :label="label || $t('input.username.label')" :error :ui="ui?.field">
         <div class="flex w-full items-center gap-1">
             <slot name="leading" :available />
 

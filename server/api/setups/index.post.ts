@@ -1,92 +1,38 @@
-import {
-    setupCoauthors,
-    setupImages,
-    setupItems,
-    setupItemShapekeys,
-    setups,
-    setupTags,
-} from '@@/database/schema'
-
-const body = setupsInsertSchema
+const bodySchema = setupsInsertSchema
 
 export default authedSessionEventHandler(
-    async ({ session, db }) => {
-        const {
-            public: isPublic,
-            name,
-            description,
-            items,
-            images,
-            imageMetadata,
-            tags,
-            coauthors,
-        } = await validateBody(body, { sanitize: true })
-
-        const imageData = await resolveSetupImageData(db, {
-            userId: session.user.id,
-            images,
-            imageMetadata,
+    async ({ event, session, db }) => {
+        const input = await validateBody(bodySchema, { sanitize: true })
+        await enforceRateLimit({
+            binding: 'RATE_LIMIT_USER_ACTION',
+            key: `setups:${session.user.id}`,
         })
 
-        const setupId = await db.transaction(async (tx) => {
-            const [setup] = await tx
-                .insert(setups)
-                .values({
-                    userId: session.user.id,
-                    public: isPublic,
-                    name,
-                    description,
-                })
-                .returning({
-                    id: setups.id,
-                })
-
-            const setupId = setup?.id
-            if (!setupId) throw new Error('Failed to create setup')
-
-            const insertedItems = await tx
-                .insert(setupItems)
-                .values(
-                    items.map((item) => ({
-                        setupId,
-                        itemId: item.itemId,
-                        category: item.category,
-                        note: item.note,
-                        unsupported: item.category === 'avatar' ? false : item.unsupported,
-                    })),
-                )
-                .returning({ id: setupItems.id })
-
-            const shapekeys = items.flatMap((item, i) =>
-                (item.shapekeys || []).map((s) => ({
-                    setupItemId: insertedItems[i]!.id,
-                    ...s,
-                })),
-            )
-
-            await Promise.all([
-                shapekeys.length
-                    ? tx.insert(setupItemShapekeys).values(shapekeys)
-                    : Promise.resolve(),
-                imageData.length
-                    ? tx.insert(setupImages).values(imageData.map((img) => ({ ...img, setupId })))
-                    : Promise.resolve(),
-                tags?.length
-                    ? tx.insert(setupTags).values(tags.map((t) => ({ setupId, tag: t.tag })))
-                    : Promise.resolve(),
-                coauthors?.length
-                    ? tx.insert(setupCoauthors).values(coauthors.map((c) => ({ setupId, ...c })))
-                    : Promise.resolve(),
-            ])
-
-            return setupId
+        const generatedSetupId = await generateNewSetupId(db)
+        const idempotency = await claimIdempotencyRequest({
+            event,
+            db,
+            scope: `user:${session.user.id}`,
+            route: '/api/setups',
+            body: input,
+            resourceId: generatedSetupId,
         })
+        if (idempotency.replay) {
+            if (!idempotency.resourceId) throw serverError.internalServerError()
+            const projection = await querySetupProjection(db, idempotency.resourceId, {
+                userId: session.user.id,
+                role: session.user.role,
+            })
+            if (!projection) throw serverError.internalServerError()
+            return projection.setup
+        }
 
-        const data = await useEvent().$fetch(`/api/setups/${setupId}`)
-
-        return data
+        return createSetup(
+            { event, db, user: { id: session.user.id, role: session.user.role } },
+            input,
+            idempotency.resourceId ?? generatedSetupId,
+            idempotency,
+        )
     },
-    {
-        rejectBannedUser: true,
-    },
+    { rejectBannedUser: true },
 )

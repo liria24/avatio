@@ -3,15 +3,15 @@ const open = defineModel<boolean>('open', {
     default: false,
 })
 const items = defineModel<string[]>('items', {
-    default: [],
+    default: () => [],
 })
 const tags = defineModel<string[]>('tags', {
-    default: [],
+    default: () => [],
 })
 
 const popoverItemSearch = ref(false)
 
-const onSelectItemSearch = async (item: Partial<Item> & Pick<Item, 'id'>) => {
+const onSelectItemSearch = async (item: Partial<CatalogItemView> & Pick<CatalogItemView, 'id'>) => {
     if (!items.value.includes(item.id)) items.value.push(item.id)
 
     popoverItemSearch.value = false

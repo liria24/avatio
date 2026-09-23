@@ -1,3 +1,5 @@
+import type { AppConfig, WritableAppConfig } from '@avatio/core/contracts'
+
 export const useAdmin = () => {
     const { t } = useI18n()
     const toast = useToast()
@@ -6,6 +8,7 @@ export const useAdmin = () => {
         url: (params: T) => string
         method: 'POST' | 'PUT' | 'PATCH' | 'DELETE'
         body?: (params: T) => Record<string, unknown>
+        headers?: (params: T) => Record<string, string>
         successTitle?: string | ((params: T) => string)
         errorTitle: string
         errorLog: string
@@ -18,6 +21,7 @@ export const useAdmin = () => {
             await $fetch(config.url(params as T), {
                 method: config.method,
                 body: config.body?.(params as T),
+                headers: config.headers?.(params as T),
                 onResponse({ response }) {
                     if (!response.ok) return
                     if (config.successTitle) {
@@ -113,25 +117,25 @@ export const useAdmin = () => {
         errorLog: 'Error unhiding setup:',
     })
 
-    const saveAppFlags = async (flags: AppFlags): Promise<AppFlags | null> => {
+    const saveAppConfig = async (config: WritableAppConfig): Promise<AppConfig | null> => {
         try {
-            const response = await $fetch<AppFlags>('/api/admin/flags', {
+            const response = await $fetch<AppConfig>('/api/admin/config', {
                 method: 'PUT',
-                body: flags,
+                body: config,
             })
             toast.add({ title: t('toast.admin.configSaved'), color: 'success' })
             return response
         } catch (error) {
-            console.error('Error saving app flags:', error)
+            console.error('Error saving app config:', error)
             toast.add({ title: t('toast.admin.configSaveFailed'), color: 'error' })
             return null
         }
     }
 
-    const changeItemNiceName = defineAction<{ itemId: string; niceName: string }>({
+    const changeItemNiceName = defineAction<{ itemId: string; displayNameOverride: string }>({
         url: ({ itemId }) => `/api/admin/items/${itemId}`,
         method: 'PUT',
-        body: ({ niceName }) => ({ niceName }),
+        body: ({ displayNameOverride }) => ({ displayNameOverride }),
         successTitle: t('toast.admin.itemNiceNameChanged'),
         errorTitle: t('toast.admin.itemNiceNameChangeFailed'),
         errorLog: 'Error changing item nice name:',
@@ -150,10 +154,15 @@ export const useAdmin = () => {
         errorLog: 'Error banning user:',
     })
 
-    const createChangelog = defineAction<{ title: string; markdown: string }>({
+    const createChangelog = defineAction<{
+        title: string
+        markdown: string
+        idempotencyKey: string
+    }>({
         url: () => '/api/admin/changelogs',
         method: 'POST',
         body: ({ title, markdown }) => ({ title, markdown }),
+        headers: ({ idempotencyKey }) => ({ 'Idempotency-Key': idempotencyKey }),
         successTitle: t('toast.admin.changelogCreated'),
         errorTitle: t('toast.admin.changelogCreateFailed'),
         errorLog: 'Error creating changelog:',
@@ -170,7 +179,7 @@ export const useAdmin = () => {
         openFeedback,
         hideSetup,
         unhideSetup,
-        saveAppFlags,
+        saveAppConfig,
         changeItemNiceName,
         banUserWithReason,
         createChangelog,

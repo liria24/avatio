@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm'
 
-export default adminSessionEventHandler(async ({ db }) => {
+export default promiseEventHandler(async ({ db, event }) => {
+    await requireUserSession(event, { user: { role: 'admin' } })
     const { sort, reporterId, page, limit, status } = await validateQuery(adminReportQuerySchema)
 
     const offset = (page - 1) * limit

@@ -45,6 +45,15 @@ export const serverError = {
             message: options?.responseMessage,
         })
     },
+    /** 409 */
+    conflict(options?: ServerErrorOptions): never {
+        if (options?.log) logger(options.log.tag ?? 'server:error').error(options.log.message)
+        throw createError({
+            status: StatusCodes.CONFLICT,
+            statusText: getReasonPhrase(StatusCodes.CONFLICT),
+            message: options?.responseMessage,
+        })
+    },
     /** 429 */
     tooManyRequests(options?: ServerErrorOptions): never {
         if (options?.log) logger(options.log.tag ?? 'server:error').error(options.log.message)
@@ -63,4 +72,20 @@ export const serverError = {
             message: options?.responseMessage,
         })
     },
+}
+
+export const isDatabaseUniqueConflict = (error: unknown) => {
+    let current: unknown = error
+    for (let depth = 0; depth < 4 && current; depth += 1) {
+        const message =
+            current instanceof Error ? current.message : typeof current === 'string' ? current : ''
+        if (
+            message.includes('UNIQUE constraint failed') ||
+            message.includes('SQLITE_CONSTRAINT_UNIQUE') ||
+            message.includes('duplicate key value violates unique constraint')
+        )
+            return true
+        current = current instanceof Error ? current.cause : undefined
+    }
+    return false
 }

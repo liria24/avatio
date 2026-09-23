@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm'
 
-export default adminSessionEventHandler(async ({ db }) => {
+export default promiseEventHandler(async ({ db, event }) => {
+    await requireUserSession(event, { user: { role: 'admin' } })
     const { sort, reporterId, page, limit, status } = await validateQuery(adminReportQuerySchema)
 
     const offset = (page - 1) * limit
@@ -28,30 +29,7 @@ export default adminSessionEventHandler(async ({ db }) => {
             isResolved: true,
         },
         with: {
-            item: {
-                columns: {
-                    id: true,
-                    platform: true,
-                    category: true,
-                    name: true,
-                    niceName: true,
-                    image: true,
-                    price: true,
-                    likes: true,
-                    nsfw: true,
-                },
-                with: {
-                    shop: {
-                        columns: {
-                            id: true,
-                            platform: true,
-                            name: true,
-                            image: true,
-                            verified: true,
-                        },
-                    },
-                },
-            },
+            item: { with: catalogItemRelations },
             reporter: {
                 columns: {
                     id: true,
@@ -64,7 +42,7 @@ export default adminSessionEventHandler(async ({ db }) => {
     })
 
     return {
-        data,
+        data: data.map((row) => ({ ...row, item: projectCatalogItem(row.item) })),
         pagination: createPagination(data[0]?.count || 0, page, limit, offset),
     }
 })

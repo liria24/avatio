@@ -14,7 +14,7 @@ const input = ref(props.current)
 const changeItemNiceName = async () => {
     await changeItemNiceNameAction({
         itemId: props.itemId,
-        niceName: input.value,
+        displayNameOverride: input.value,
         onSuccess: () => {
             emit('close')
             input.value = ''

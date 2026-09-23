@@ -1,25 +1,41 @@
 <script lang="ts" setup>
+import type { SetupComposeEntry } from '~/composables/setupComposeEntries'
+
 const unsupported = defineModel<boolean>('unsupported', {
     default: false,
 })
-const shapekeys = defineModel<SetupItemShapekey[]>('shapekeys', {
-    default: [],
+const shapekeys = defineModel<SetupEntryShapekey[]>('shapekeys', {
+    default: () => [],
 })
 const note = defineModel<string | undefined>('note', {
     default: '',
 })
 
 interface Props {
-    item: SetupItem
+    item: SetupComposeEntry
+    images?: string[]
 }
 const props = defineProps<Props>()
 
-const emit = defineEmits(['change-category', 'remove-item', 'shapekey-add', 'shapekey-remove'])
+const emit = defineEmits([
+    'change-category',
+    'remove-item',
+    'shapekey-add',
+    'shapekey-remove',
+    'place-item',
+])
 
 const itemCategory = useItemCategory()
+const { t } = useI18n()
 
 const inputShapekeyName = ref('')
 const inputShapekeyValue = ref(0)
+const imagePlacementItems = computed(() =>
+    (props.images ?? []).map((image, index) => ({
+        label: `${t('setup.compose.images.title')} ${index + 1}`,
+        onSelect: () => emit('place-item', image),
+    })),
+)
 </script>
 
 <template>
@@ -33,8 +49,8 @@ const inputShapekeyValue = ref(0)
         <div class="flex grow flex-col gap-2">
             <div class="flex items-start gap-1">
                 <NuxtLink
-                    v-if="props.item.image"
-                    :to="resolveItemUrl(props.item.id, props.item.platform)"
+                    v-if="props.item.image && props.item.primarySource"
+                    :to="props.item.primarySource?.canonicalUrl"
                     target="_blank"
                     external
                     class="shrink-0"
@@ -61,7 +77,7 @@ const inputShapekeyValue = ref(0)
                 <div class="flex grow flex-col gap-2 self-center pl-2">
                     <div class="flex items-center gap-2">
                         <UTooltip
-                            v-if="props.item.platform === 'booth'"
+                            v-if="props.item.primarySource?.providerKey === 'booth'"
                             text="BOOTH"
                             :delay-duration="50"
                         >
@@ -69,7 +85,7 @@ const inputShapekeyValue = ref(0)
                         </UTooltip>
 
                         <UTooltip
-                            v-else-if="props.item.platform === 'github'"
+                            v-else-if="props.item.primarySource?.providerKey === 'github'"
                             text="GitHub"
                             :delay-duration="50"
                         >
@@ -81,13 +97,20 @@ const inputShapekeyValue = ref(0)
                         </UTooltip>
 
                         <NuxtLink
-                            :to="resolveItemUrl(props.item.id, props.item.platform)"
+                            v-if="props.item.primarySource"
+                            :to="props.item.primarySource?.canonicalUrl"
                             target="_blank"
                             external
                             class="text-toned line-clamp-2 py-1 font-mono text-sm tracking-wider"
                         >
                             {{ props.item.name }}
                         </NuxtLink>
+                        <span
+                            v-else
+                            class="text-muted line-clamp-2 py-1 font-mono text-sm tracking-wider"
+                        >
+                            {{ props.item.name }}
+                        </span>
                     </div>
                     <div class="flex items-center gap-2">
                         <UPopover
@@ -224,6 +247,16 @@ const inputShapekeyValue = ref(0)
                 variant="soft"
                 class="w-full"
             />
+
+            <UDropdownMenu v-if="imagePlacementItems.length" :items="imagePlacementItems">
+                <UButton
+                    :label="$t('setup.compose.points.placeItem')"
+                    icon="mingcute:map-pin-fill"
+                    variant="ghost"
+                    size="xs"
+                    class="ml-auto"
+                />
+            </UDropdownMenu>
         </div>
     </div>
 </template>

@@ -1,5 +1,5 @@
 import { notifications } from '@@/database/schema'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { z } from 'zod'
 
 const body = z.object({
@@ -23,12 +23,14 @@ export default authedSessionEventHandler(
 
         if (data.userId !== session.user.id) throw serverError.forbidden()
 
-        await db
+        const [updated] = await db
             .update(notifications)
             .set({
                 readAt: new Date(),
             })
-            .where(eq(notifications.id, id))
+            .where(and(eq(notifications.id, id), eq(notifications.userId, session.user.id)))
+            .returning({ id: notifications.id })
+        if (!updated) throw serverError.notFound()
     },
     { rejectBannedUser: true },
 )

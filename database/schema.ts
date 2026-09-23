@@ -1,48 +1,113 @@
 import {
-    bigint,
-    boolean,
+    categoryOverrideOrigins,
+    itemCategories,
+    providerAdmissionDecisions,
+    sourceAvailabilities,
+    syncStates,
+} from '@avatio/core/catalog'
+import { sql } from 'drizzle-orm'
+import {
     foreignKey,
     index,
     integer,
-    jsonb,
-    pgEnum,
+    primaryKey,
     real,
-    text,
-    timestamp,
-    uniqueIndex,
-    uuid,
     snakeCase,
-} from 'drizzle-orm/pg-core'
+    text,
+    uniqueIndex,
+} from 'drizzle-orm/sqlite-core'
 import { nanoid } from 'nanoid'
 
-export const locales = pgEnum('locales', ['en', 'ja'])
-
-export const userBadge = pgEnum('user_badge', [
+const now = sql`(unixepoch() * 1000)`
+const timestamp = () => integer({ mode: 'timestamp_ms' })
+const boolean = () => integer({ mode: 'boolean' })
+const identity = () => integer().primaryKey({ autoIncrement: true })
+const uuid = () => text().$defaultFn(() => crypto.randomUUID())
+export const locales = ['en', 'ja'] as const
+export const userBadge = [
     'developer',
     'contributor',
     'translator',
     'alpha_tester',
     'shop_owner',
+    'publisher_owner',
     'patrol',
     'idea_man',
-])
+] as const
+export const notificationType = [
+    'system_announcement',
+    'user_badge_granted',
+    'setup_coauthor_added',
+    'user_role_changed',
+    'user_banned',
+    'user_unbanned',
+    'user_followed',
+    'setup_created',
+] as const
+export const auditActionType = [
+    'user_ban',
+    'user_unban',
+    'user_delete',
+    'user_role_change',
+    'user_shop_verify',
+    'user_shop_unverify',
+    'user_badge_grant',
+    'user_badge_revoke',
+    'setup_hide',
+    'setup_unhide',
+    'setup_delete',
+    'report_resolve',
+    'feedback_close',
+    'cleanup',
+    'image_upload_url_create',
+    'image_upload_complete',
+    'image_move',
+    'image_delete',
+    'image_cleanup',
+] as const
+export const auditTargetType = [
+    'user',
+    'setup',
+    'report',
+    'feedback',
+    'badge',
+    'system',
+    'image',
+] as const
+export const idempotencyStatus = ['pending', 'completed'] as const
 
-export const platform = pgEnum('platform', ['booth', 'github'])
+export const idempotencyRequests = snakeCase.table(
+    'idempotency_requests',
+    {
+        id: uuid().primaryKey(),
+        createdAt: timestamp().default(now).notNull(),
+        updatedAt: timestamp()
+            .default(now)
+            .$onUpdate(() => new Date())
+            .notNull(),
+        scope: text().notNull(),
+        route: text().notNull(),
+        key: text().notNull(),
+        requestHash: text().notNull(),
+        status: text({ enum: idempotencyStatus }).default('pending').notNull(),
+        resourceId: text(),
+        response: text({ mode: 'json' }).$type<unknown>(),
+        statusCode: integer(),
+        leaseExpiresAt: timestamp().notNull(),
+        expiresAt: timestamp().notNull(),
+    },
+    (table) => [
+        uniqueIndex('idempotency_requests_scope_route_key_uidx').on(
+            table.scope,
+            table.route,
+            table.key,
+        ),
+        index('idempotency_requests_expires_at_idx').on(table.expiresAt),
+        index('idempotency_requests_status_lease_idx').on(table.status, table.leaseExpiresAt),
+    ],
+)
 
-export const itemCategory = pgEnum('item_category', [
-    'avatar',
-    'clothing',
-    'accessory',
-    'hair',
-    'shader',
-    'texture',
-    'tool',
-    'other',
-])
-
-export const userSchema = snakeCase.schema('user')
-
-export const users = userSchema.table(
+export const users = snakeCase.table(
     'users',
     {
         id: text().primaryKey(),
@@ -52,28 +117,52 @@ export const users = userSchema.table(
         email: text().notNull().unique(),
         emailVerified: boolean().default(false).notNull(),
         image: text(),
-        createdAt: timestamp().defaultNow().notNull(),
-        updatedAt: timestamp().defaultNow().notNull(),
+        createdAt: timestamp().default(now).notNull(),
+        updatedAt: timestamp().default(now).notNull(),
         role: text(),
         banned: boolean(),
         banReason: text(),
         banExpires: timestamp(),
         bio: text(),
-        links: text().array(),
-        lastAgreedToTerms: timestamp().defaultNow(),
+        links: text({ mode: 'json' }).$type<string[]>(),
+        lastAgreedToTerms: timestamp().default(now),
     },
     (table) => [index('user_email_index').on(table.email)],
 )
 
-export const sessions = userSchema.table(
+export const legalAcceptances = snakeCase.table(
+    'legal_acceptances',
+    {
+        id: uuid().primaryKey(),
+        userId: text()
+            .notNull()
+            .references(() => users.id, { onDelete: 'cascade' }),
+        document: text({ enum: ['terms', 'privacy-policy'] }).notNull(),
+        version: text().notNull(),
+        sourceRevision: text().notNull(),
+        sourceCommit: text(),
+        sourceLocale: text().notNull(),
+        acceptedAt: timestamp().notNull(),
+    },
+    (table) => [
+        uniqueIndex('legal_acceptances_user_document_version_uidx').on(
+            table.userId,
+            table.document,
+            table.version,
+        ),
+    ],
+)
+
+export const sessions = snakeCase.table(
     'sessions',
     {
         id: text().primaryKey(),
         expiresAt: timestamp().notNull(),
         token: text().notNull().unique(),
-        createdAt: timestamp().defaultNow().notNull(),
+        createdAt: timestamp().default(now).notNull(),
         updatedAt: timestamp()
-            .$onUpdate(() => /* @__PURE__ */ new Date())
+            .default(now)
+            .$onUpdate(() => new Date())
             .notNull(),
         ipAddress: text(),
         userAgent: text(),
@@ -90,18 +179,15 @@ export const sessions = userSchema.table(
     ],
 )
 
-export const accounts = userSchema.table(
+export const accounts = snakeCase.table(
     'accounts',
     {
         id: text().primaryKey(),
-        accountId: text().notNull(),
+        providerAccountId: text().notNull(),
         providerId: text().notNull(),
         userId: text()
             .notNull()
-            .references(() => users.id, {
-                onUpdate: 'cascade',
-                onDelete: 'cascade',
-            }),
+            .references(() => users.id, { onUpdate: 'cascade', onDelete: 'cascade' }),
         accessToken: text(),
         refreshToken: text(),
         idToken: text(),
@@ -112,83 +198,49 @@ export const accounts = userSchema.table(
         createdAt: timestamp().notNull(),
         updatedAt: timestamp().notNull(),
     },
-    (table) => [index('account_user_id_index').on(table.userId)],
+    (table) => [
+        index('account_user_id_index').on(table.userId),
+        uniqueIndex('accounts_providerId_providerAccountId_uidx').on(
+            table.providerId,
+            table.providerAccountId,
+        ),
+    ],
 )
 
-export const verifications = userSchema.table(
+export const verifications = snakeCase.table(
     'verifications',
     {
         id: text().primaryKey(),
         identifier: text().notNull(),
         value: text().notNull(),
         expiresAt: timestamp().notNull(),
-        createdAt: timestamp().defaultNow().notNull(),
+        createdAt: timestamp().default(now).notNull(),
         updatedAt: timestamp()
-            .defaultNow()
-            .$onUpdate(() => /* @__PURE__ */ new Date())
+            .default(now)
+            .$onUpdate(() => new Date())
             .notNull(),
     },
     (table) => [index('verification_identifier_idx').on(table.identifier)],
 )
 
-export const userShops = userSchema.table(
-    'user_shops',
-    {
-        id: integer().primaryKey().generatedAlwaysAsIdentity(),
-        createdAt: timestamp().defaultNow().notNull(),
-        userId: text().notNull(),
-        shopId: text().notNull(),
-    },
-    (table) => [
-        index('user_shops_user_id_index').on(table.userId),
-        index('user_shops_shop_id_index').on(table.shopId),
-        foreignKey({
-            name: 'user_shops_user_id_fkey',
-            columns: [table.userId],
-            foreignColumns: [users.id],
-        })
-            .onDelete('cascade')
-            .onUpdate('cascade'),
-        foreignKey({
-            name: 'user_shops_shop_id_fkey',
-            columns: [table.shopId],
-            foreignColumns: [shops.id],
-        })
-            .onDelete('cascade')
-            .onUpdate('cascade'),
-    ],
-)
+export const rateLimits = snakeCase.table('rate_limits', {
+    id: text().primaryKey(),
+    key: text().notNull().unique(),
+    count: integer().notNull(),
+    lastRequest: integer().notNull(),
+})
 
-export const userShopVerifications = userSchema.table(
-    'user_shop_verifications',
-    {
-        id: uuid().primaryKey().defaultRandom(),
-        code: text().notNull(),
-        createdAt: timestamp().defaultNow().notNull(),
-        userId: text().notNull(),
-    },
-    (table) => [
-        index('user_shop_verifications_user_id_index').on(table.userId),
-        foreignKey({
-            name: 'user_shop_verifications_user_id_fkey',
-            columns: [table.userId],
-            foreignColumns: [users.id],
-        })
-            .onDelete('cascade')
-            .onUpdate('cascade'),
-    ],
-)
-
-export const userBadges = userSchema.table(
+export const userBadges = snakeCase.table(
     'user_badges',
     {
-        id: integer().primaryKey().generatedAlwaysAsIdentity(),
-        createdAt: timestamp().defaultNow().notNull(),
+        id: identity(),
+        createdAt: timestamp().default(now).notNull(),
         userId: text().notNull(),
-        badge: userBadge().notNull(),
+        badge: text({ enum: userBadge }).notNull(),
     },
     (table) => [
         index('user_badges_user_id_index').on(table.userId),
+        uniqueIndex('user_badges_user_badge_uidx').on(table.userId, table.badge),
         foreignKey({
             name: 'user_badges_user_id_fkey',
             columns: [table.userId],
@@ -199,14 +251,14 @@ export const userBadges = userSchema.table(
     ],
 )
 
-export const userSettings = userSchema.table(
+export const userSettings = snakeCase.table(
     'user_settings',
     {
-        id: uuid().primaryKey().defaultRandom(),
-        createdAt: timestamp().defaultNow().notNull(),
+        id: uuid().primaryKey(),
+        createdAt: timestamp().default(now).notNull(),
         updatedAt: timestamp()
-            .defaultNow()
-            .$onUpdate(() => /* @__PURE__ */ new Date())
+            .default(now)
+            .$onUpdate(() => new Date())
             .notNull(),
         userId: text().notNull().unique(),
         showPrivateSetups: boolean().default(true).notNull(),
@@ -228,14 +280,17 @@ export const changelogs = snakeCase.table(
     'changelogs',
     {
         slug: text().primaryKey(),
-        createdAt: timestamp().defaultNow().notNull(),
+        createdAt: timestamp().default(now).notNull(),
         updatedAt: timestamp()
-            .defaultNow()
-            .$onUpdate(() => /* @__PURE__ */ new Date())
+            .default(now)
+            .$onUpdate(() => new Date())
             .notNull(),
         title: text().notNull(),
         markdown: text().notNull(),
         html: text(),
+        idempotencyRequestId: text()
+            .unique()
+            .references(() => idempotencyRequests.id, { onDelete: 'set null' }),
     },
     (table) => [index('changelogs_slug_index').on(table.slug)],
 )
@@ -243,9 +298,9 @@ export const changelogs = snakeCase.table(
 export const changelogI18ns = snakeCase.table(
     'changelog_i18ns',
     {
-        id: uuid().primaryKey().defaultRandom(),
+        id: uuid().primaryKey(),
         changelogSlug: text().notNull(),
-        locale: locales().notNull(),
+        locale: text({ enum: locales }).notNull(),
         title: text().notNull(),
         markdown: text().notNull(),
         html: text(),
@@ -254,6 +309,7 @@ export const changelogI18ns = snakeCase.table(
     (table) => [
         index('changelog_i18ns_changelog_slug_index').on(table.changelogSlug),
         index('changelog_i18ns_locale_index').on(table.locale),
+        uniqueIndex('changelog_i18ns_slug_locale_uidx').on(table.changelogSlug, table.locale),
         foreignKey({
             name: 'changelog_i18ns_changelog_slug_fkey',
             columns: [table.changelogSlug],
@@ -267,13 +323,14 @@ export const changelogI18ns = snakeCase.table(
 export const changelogAuthors = snakeCase.table(
     'changelog_authors',
     {
-        id: integer().primaryKey().generatedAlwaysAsIdentity(),
+        id: identity(),
         changelogSlug: text().notNull(),
         userId: text().notNull(),
     },
     (table) => [
         index('changelog_authors_changelog_slug_index').on(table.changelogSlug),
         index('changelog_authors_user_id_index').on(table.userId),
+        uniqueIndex('changelog_authors_slug_user_uidx').on(table.changelogSlug, table.userId),
         foreignKey({
             name: 'changelog_authors_changelog_slug_fkey',
             columns: [table.changelogSlug],
@@ -291,52 +348,272 @@ export const changelogAuthors = snakeCase.table(
     ],
 )
 
-export const shops = snakeCase.table(
-    'shops',
+/** Provider-owned values surfaced for generic admission management. */
+export const providerAdmissionOptions = snakeCase.table(
+    'provider_admission_options',
     {
-        id: text().primaryKey(),
-        createdAt: timestamp().defaultNow().notNull(),
-        updatedAt: timestamp()
-            .defaultNow()
-            .$onUpdate(() => /* @__PURE__ */ new Date())
-            .notNull(),
-        platform: platform().notNull(),
-        name: text().notNull(),
-        image: text(),
-        verified: boolean().default(false).notNull(),
-    },
-    (table) => [index('shops_id_index').on(table.id), index('shops_name_index').on(table.name)],
-)
-
-export const items = snakeCase.table(
-    'items',
-    {
-        id: text().primaryKey(),
-        createdAt: timestamp().defaultNow().notNull(),
-        updatedAt: timestamp()
-            .defaultNow()
-            .$onUpdate(() => /* @__PURE__ */ new Date())
-            .notNull(),
-        platform: platform().notNull(),
-        outdated: boolean().default(false).notNull(),
-        shopId: text(),
-        name: text().notNull(),
-        niceName: text(),
-        category: itemCategory().notNull(),
-        image: text(),
-        price: text(),
-        likes: integer(),
-        nsfw: boolean().default(false).notNull(),
+        providerKey: text().notNull(),
+        facetKey: text().notNull(),
+        valueKey: text().notNull(),
+        label: text().notNull(),
+        firstSeenAt: timestamp().default(now).notNull(),
+        lastSeenAt: timestamp().default(now).notNull(),
     },
     (table) => [
-        index('items_id_index').on(table.id),
-        index('items_name_index').on(table.name),
+        primaryKey({ columns: [table.providerKey, table.facetKey, table.valueKey] }),
+        index('provider_admission_options_provider_facet_idx').on(
+            table.providerKey,
+            table.facetKey,
+        ),
+    ],
+)
+
+/** Provider-neutral admission decisions. Missing rules are denied. */
+export const providerAdmissionRules = snakeCase.table(
+    'provider_admission_rules',
+    {
+        providerKey: text().notNull(),
+        facetKey: text().notNull(),
+        valueKey: text().notNull(),
+        decision: text({ enum: providerAdmissionDecisions }).notNull(),
+    },
+    (table) => [
+        primaryKey({ columns: [table.providerKey, table.facetKey, table.valueKey] }),
         foreignKey({
-            name: 'items_shop_id_fkey',
-            columns: [table.shopId],
-            foreignColumns: [shops.id],
+            name: 'provider_admission_rules_option_fkey',
+            columns: [table.providerKey, table.facetKey, table.valueKey],
+            foreignColumns: [
+                providerAdmissionOptions.providerKey,
+                providerAdmissionOptions.facetKey,
+                providerAdmissionOptions.valueKey,
+            ],
         })
             .onDelete('cascade')
+            .onUpdate('cascade'),
+    ],
+)
+
+/** Avatio-owned publisher identity, independent from a provider account. */
+export const publishers = snakeCase.table(
+    'publishers',
+    {
+        id: uuid().primaryKey(),
+        createdAt: timestamp().default(now).notNull(),
+        updatedAt: timestamp()
+            .default(now)
+            .$onUpdate(() => new Date())
+            .notNull(),
+        displayNameOverride: text(),
+        imageOverride: text(),
+    },
+    (table) => [index('publishers_display_name_override_idx').on(table.displayNameOverride)],
+)
+
+/** Provider-specific publisher identity and snapshot. Provider keys intentionally have no enum. */
+export const publisherSources = snakeCase.table(
+    'publisher_sources',
+    {
+        id: uuid().primaryKey(),
+        createdAt: timestamp().default(now).notNull(),
+        updatedAt: timestamp()
+            .default(now)
+            .$onUpdate(() => new Date())
+            .notNull(),
+        publisherId: text().notNull(),
+        providerKey: text().notNull(),
+        externalId: text().notNull(),
+        canonicalUrl: text().notNull(),
+        name: text().notNull(),
+        image: text(),
+        providerVerified: boolean().default(false).notNull(),
+        metadata: text({ mode: 'json' }).$type<Record<string, unknown>>(),
+    },
+    (table) => [
+        index('publisher_sources_publisher_id_idx').on(table.publisherId),
+        uniqueIndex('publisher_sources_provider_external_uidx').on(
+            table.providerKey,
+            table.externalId,
+        ),
+        foreignKey({
+            name: 'publisher_sources_publisher_id_fkey',
+            columns: [table.publisherId],
+            foreignColumns: [publishers.id],
+        })
+            .onDelete('restrict')
+            .onUpdate('cascade'),
+    ],
+)
+
+/** Verified Avatio ownership of a Publisher. */
+export const userPublishers = snakeCase.table(
+    'user_publishers',
+    {
+        id: uuid().primaryKey(),
+        createdAt: timestamp().default(now).notNull(),
+        userId: text().notNull(),
+        publisherId: text().notNull(),
+    },
+    (table) => [
+        index('user_publishers_user_id_idx').on(table.userId),
+        index('user_publishers_publisher_id_idx').on(table.publisherId),
+        uniqueIndex('user_publishers_user_publisher_uidx').on(table.userId, table.publisherId),
+        foreignKey({
+            name: 'user_publishers_user_id_fkey',
+            columns: [table.userId],
+            foreignColumns: [users.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+        foreignKey({
+            name: 'user_publishers_publisher_id_fkey',
+            columns: [table.publisherId],
+            foreignColumns: [publishers.id],
+        })
+            .onDelete('restrict')
+            .onUpdate('cascade'),
+    ],
+)
+
+/** Authorization truth for ownership of one provider-specific PublisherSource. */
+export const publisherSourceOwnerships = snakeCase.table(
+    'publisher_source_ownerships',
+    {
+        id: uuid().primaryKey(),
+        userId: text().notNull(),
+        publisherSourceId: text().notNull(),
+        method: text().notNull(),
+        verifiedAt: timestamp().notNull(),
+    },
+    (table) => [
+        index('publisher_source_ownerships_user_id_idx').on(table.userId),
+        index('publisher_source_ownerships_source_id_idx').on(table.publisherSourceId),
+        uniqueIndex('publisher_source_ownerships_user_source_uidx').on(
+            table.userId,
+            table.publisherSourceId,
+        ),
+        foreignKey({
+            name: 'publisher_source_ownerships_user_id_fkey',
+            columns: [table.userId],
+            foreignColumns: [users.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+        foreignKey({
+            name: 'publisher_source_ownerships_source_id_fkey',
+            columns: [table.publisherSourceId],
+            foreignColumns: [publisherSources.id],
+        })
+            .onDelete('restrict')
+            .onUpdate('cascade'),
+    ],
+)
+
+/** Pending ownership challenge; kept separate from identity and provider state. */
+export const publisherVerificationChallenges = snakeCase.table(
+    'publisher_source_verification_challenges',
+    {
+        id: uuid().primaryKey(),
+        code: text().notNull(),
+        createdAt: timestamp().default(now).notNull(),
+        userId: text().notNull(),
+        publisherSourceId: text().notNull(),
+        method: text().notNull(),
+        expiresAt: timestamp().notNull(),
+    },
+    (table) => [
+        index('publisher_verification_challenges_user_id_idx').on(table.userId),
+        index('publisher_verification_challenges_source_id_idx').on(table.publisherSourceId),
+        index('publisher_verification_challenges_expires_at_idx').on(table.expiresAt),
+        foreignKey({
+            name: 'publisher_verification_challenges_user_id_fkey',
+            columns: [table.userId],
+            foreignColumns: [users.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+        foreignKey({
+            name: 'publisher_verification_challenges_source_id_fkey',
+            columns: [table.publisherSourceId],
+            foreignColumns: [publisherSources.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+    ],
+)
+
+/** Stable Avatio catalog identity, independent from every provider external ID. */
+export const catalogItems = snakeCase.table(
+    'catalog_items',
+    {
+        id: uuid().primaryKey(),
+        createdAt: timestamp().default(now).notNull(),
+        updatedAt: timestamp()
+            .default(now)
+            .$onUpdate(() => new Date())
+            .notNull(),
+        displayNameOverride: text(),
+        categoryOverride: text({ enum: itemCategories }),
+        categoryOverrideOrigin: text({ enum: categoryOverrideOrigins }),
+    },
+    (table) => [index('catalog_items_display_name_override_idx').on(table.displayNameOverride)],
+)
+
+/** Provider source, provider snapshot, availability, and synchronization state. */
+export const itemSources = snakeCase.table(
+    'item_sources',
+    {
+        id: uuid().primaryKey(),
+        createdAt: timestamp().default(now).notNull(),
+        updatedAt: timestamp()
+            .default(now)
+            .$onUpdate(() => new Date())
+            .notNull(),
+        itemId: text().notNull(),
+        publisherSourceId: text(),
+        providerKey: text().notNull(),
+        externalId: text().notNull(),
+        canonicalUrl: text().notNull(),
+        primary: boolean().default(false).notNull(),
+        availability: text({ enum: sourceAvailabilities }).default('unknown').notNull(),
+        syncState: text({ enum: syncStates }).default('stale').notNull(),
+        providerCategoryKey: text(),
+        providerCategoryLabel: text(),
+        mappedCategory: text({ enum: itemCategories }),
+        displayName: text().notNull(),
+        image: text(),
+        price: text(),
+        popularityCount: integer(),
+        nsfw: boolean().default(false).notNull(),
+        metadata: text({ mode: 'json' }).$type<Record<string, unknown>>(),
+        lastCheckedAt: timestamp(),
+        lastSuccessfulSyncAt: timestamp(),
+        nextCheckAt: timestamp(),
+        syncLeaseUntil: timestamp(),
+        syncLeaseToken: text(),
+        lastErrorKind: text(),
+        lastErrorAt: timestamp(),
+    },
+    (table) => [
+        index('item_sources_item_id_idx').on(table.itemId),
+        index('item_sources_publisher_source_id_idx').on(table.publisherSourceId),
+        index('item_sources_due_lease_idx').on(table.nextCheckAt, table.syncLeaseUntil),
+        uniqueIndex('item_sources_provider_external_uidx').on(table.providerKey, table.externalId),
+        uniqueIndex('item_sources_primary_item_uidx')
+            .on(table.itemId)
+            .where(sql`${table.primary} = 1`),
+        foreignKey({
+            name: 'item_sources_item_id_fkey',
+            columns: [table.itemId],
+            foreignColumns: [catalogItems.id],
+        })
+            .onDelete('restrict')
+            .onUpdate('cascade'),
+        foreignKey({
+            name: 'item_sources_publisher_source_id_fkey',
+            columns: [table.publisherSourceId],
+            foreignColumns: [publisherSources.id],
+        })
+            .onDelete('set null')
             .onUpdate('cascade'),
     ],
 )
@@ -346,11 +623,11 @@ export const setups = snakeCase.table(
     {
         id: text()
             .primaryKey()
-            .$default(() => nanoid(8)),
-        createdAt: timestamp().defaultNow().notNull(),
+            .$defaultFn(() => nanoid(8)),
+        createdAt: timestamp().default(now).notNull(),
         updatedAt: timestamp()
-            .defaultNow()
-            .$onUpdate(() => /* @__PURE__ */ new Date())
+            .default(now)
+            .$onUpdate(() => new Date())
             .notNull(),
         userId: text().notNull(),
         public: boolean().default(true).notNull(),
@@ -358,6 +635,9 @@ export const setups = snakeCase.table(
         description: text(),
         hidAt: timestamp(),
         hidReason: text(),
+        idempotencyRequestId: text()
+            .unique()
+            .references(() => idempotencyRequests.id, { onDelete: 'set null' }),
     },
     (table) => [
         index('setups_id_index').on(table.id),
@@ -373,28 +653,30 @@ export const setups = snakeCase.table(
     ],
 )
 
-export const setupItems = snakeCase.table(
-    'setup_items',
+/** V2 Setup relation. Source withdrawal never deletes this relation. */
+export const setupEntries = snakeCase.table(
+    'setup_entries',
     {
-        id: integer().primaryKey().generatedAlwaysAsIdentity(),
+        id: text().primaryKey(),
         itemId: text().notNull(),
         setupId: text().notNull(),
-        category: itemCategory(),
+        position: integer().default(0).notNull(),
+        categoryOverride: text({ enum: itemCategories }),
         unsupported: boolean().default(false).notNull(),
         note: text(),
     },
     (table) => [
-        index('setup_items_id_index').on(table.id),
-        index('setup_items_setup_id_index').on(table.setupId),
+        index('setup_entries_setup_id_idx').on(table.setupId),
+        index('setup_entries_item_id_idx').on(table.itemId),
         foreignKey({
-            name: 'setup_items_item_id_fkey',
+            name: 'setup_entries_item_id_fkey',
             columns: [table.itemId],
-            foreignColumns: [items.id],
+            foreignColumns: [catalogItems.id],
         })
-            .onDelete('cascade')
+            .onDelete('restrict')
             .onUpdate('cascade'),
         foreignKey({
-            name: 'setup_items_setup_id_fkey',
+            name: 'setup_entries_setup_id_fkey',
             columns: [table.setupId],
             foreignColumns: [setups.id],
         })
@@ -403,21 +685,20 @@ export const setupItems = snakeCase.table(
     ],
 )
 
-export const setupItemShapekeys = snakeCase.table(
-    'setup_item_shapekeys',
+export const setupEntryShapekeys = snakeCase.table(
+    'setup_entry_shapekeys',
     {
-        id: integer().primaryKey().generatedAlwaysAsIdentity(),
-        setupItemId: integer().notNull(),
+        id: identity(),
+        setupEntryId: text().notNull(),
         name: text().notNull(),
         value: real().notNull(),
     },
     (table) => [
-        index('setup_item_shapekeys_id_index').on(table.id),
-        index('setup_item_shapekeys_setup_item_id_index').on(table.setupItemId),
+        index('setup_entry_shapekeys_entry_id_idx').on(table.setupEntryId),
         foreignKey({
-            name: 'setup_item_shapekeys_setup_item_id_fkey',
-            columns: [table.setupItemId],
-            foreignColumns: [setupItems.id],
+            name: 'setup_entry_shapekeys_entry_id_fkey',
+            columns: [table.setupEntryId],
+            foreignColumns: [setupEntries.id],
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
@@ -427,7 +708,7 @@ export const setupItemShapekeys = snakeCase.table(
 export const setupTags = snakeCase.table(
     'setup_tags',
     {
-        id: integer().primaryKey().generatedAlwaysAsIdentity(),
+        id: identity(),
         setupId: text().notNull(),
         tag: text().notNull(),
     },
@@ -435,6 +716,7 @@ export const setupTags = snakeCase.table(
         index('setup_tags_id_index').on(table.id),
         index('setup_tags_setup_id_index').on(table.setupId),
         index('setup_tags_tag_index').on(table.tag),
+        uniqueIndex('setup_tags_setup_tag_uidx').on(table.setupId, table.tag),
         foreignKey({
             name: 'setup_tags_setup_id_fkey',
             columns: [table.setupId],
@@ -448,16 +730,18 @@ export const setupTags = snakeCase.table(
 export const setupImages = snakeCase.table(
     'setup_images',
     {
-        id: integer().primaryKey().generatedAlwaysAsIdentity(),
+        id: identity(),
+        stableId: text().unique(),
         setupId: text().notNull(),
+        position: integer().default(0).notNull(),
         objectKey: text().notNull(),
         width: integer().notNull(),
         height: integer().notNull(),
-        themeColors: text().array(),
+        themeColors: text({ mode: 'json' }).$type<string[]>(),
         contentType: text(),
         size: integer(),
         etag: text(),
-        createdAt: timestamp().defaultNow().notNull(),
+        createdAt: timestamp().default(now).notNull(),
     },
     (table) => [
         index('setup_images_id_index').on(table.id),
@@ -472,10 +756,41 @@ export const setupImages = snakeCase.table(
     ],
 )
 
+export const setupImagePoints = snakeCase.table(
+    'setup_image_points',
+    {
+        id: text().primaryKey(),
+        setupId: text().notNull(),
+        imageId: text().notNull(),
+        setupEntryId: text().notNull(),
+        x: real().notNull(),
+        y: real().notNull(),
+    },
+    (table) => [
+        index('setup_image_points_setup_id_idx').on(table.setupId),
+        index('setup_image_points_image_id_idx').on(table.imageId),
+        index('setup_image_points_entry_id_idx').on(table.setupEntryId),
+        foreignKey({
+            name: 'setup_image_points_setup_id_fkey',
+            columns: [table.setupId],
+            foreignColumns: [setups.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+        foreignKey({
+            name: 'setup_image_points_entry_id_fkey',
+            columns: [table.setupEntryId],
+            foreignColumns: [setupEntries.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+    ],
+)
+
 export const setupCoauthors = snakeCase.table(
     'setup_coauthors',
     {
-        id: integer().primaryKey().generatedAlwaysAsIdentity(),
+        id: identity(),
         setupId: text().notNull(),
         userId: text().notNull(),
         note: text(),
@@ -484,6 +799,7 @@ export const setupCoauthors = snakeCase.table(
         index('setup_coauthors_id_index').on(table.id),
         index('setup_coauthors_setup_id_index').on(table.setupId),
         index('setup_coauthors_user_id_index').on(table.userId),
+        uniqueIndex('setup_coauthors_setup_user_uidx').on(table.setupId, table.userId),
         foreignKey({
             name: 'setup_coauthors_setup_id_fkey',
             columns: [table.setupId],
@@ -501,11 +817,11 @@ export const setupCoauthors = snakeCase.table(
     ],
 )
 
-export const followUsers = userSchema.table(
+export const followUsers = snakeCase.table(
     'follow_users',
     {
-        id: integer().primaryKey().generatedAlwaysAsIdentity(),
-        createdAt: timestamp().defaultNow().notNull(),
+        id: identity(),
+        createdAt: timestamp().default(now).notNull(),
         userId: text().notNull(),
         targetUserId: text().notNull(),
     },
@@ -513,6 +829,7 @@ export const followUsers = userSchema.table(
         index('follow_users_id_index').on(table.id),
         index('follow_users_user_id_index').on(table.userId),
         index('follow_users_target_user_id_index').on(table.targetUserId),
+        uniqueIndex('follow_users_user_target_uidx').on(table.userId, table.targetUserId),
         foreignKey({
             name: 'follow_users_user_id_fkey',
             columns: [table.userId],
@@ -530,18 +847,19 @@ export const followUsers = userSchema.table(
     ],
 )
 
-export const setupDrafts = userSchema.table(
+export const setupDrafts = snakeCase.table(
     'setup_drafts',
     {
-        id: uuid().primaryKey().defaultRandom(),
-        createdAt: timestamp().defaultNow().notNull(),
+        id: uuid().primaryKey(),
+        createdAt: timestamp().default(now).notNull(),
         updatedAt: timestamp()
-            .defaultNow()
-            .$onUpdate(() => /* @__PURE__ */ new Date())
+            .default(now)
+            .$onUpdate(() => new Date())
             .notNull(),
         userId: text().notNull(),
         setupId: text(),
-        content: jsonb().notNull(),
+        revision: integer().default(1).notNull(),
+        content: text({ mode: 'json' }).notNull(),
     },
     (table) => [
         index('setup_drafts_id_index').on(table.id),
@@ -564,17 +882,18 @@ export const setupDrafts = userSchema.table(
     ],
 )
 
-export const setupDraftImages = userSchema.table(
+export const setupDraftImages = snakeCase.table(
     'setup_draft_images',
     {
-        id: uuid().primaryKey().defaultRandom(),
-        setupDraftId: uuid().notNull(),
+        id: uuid().primaryKey(),
+        setupDraftId: text().notNull(),
         objectKey: text().notNull(),
     },
     (table) => [
         index('setup_draft_images_id_index').on(table.id),
         index('setup_draft_images_setup_draft_id_index').on(table.setupDraftId),
         index('setup_draft_images_object_key_index').on(table.objectKey),
+        uniqueIndex('setup_draft_images_draft_object_uidx').on(table.setupDraftId, table.objectKey),
         foreignKey({
             name: 'setup_draft_images_setup_draft_id_fkey',
             columns: [table.setupDraftId],
@@ -585,11 +904,11 @@ export const setupDraftImages = userSchema.table(
     ],
 )
 
-export const bookmarks = userSchema.table(
+export const bookmarks = snakeCase.table(
     'bookmarks',
     {
-        id: integer().primaryKey().generatedAlwaysAsIdentity(),
-        createdAt: timestamp().defaultNow().notNull(),
+        id: identity(),
+        createdAt: timestamp().default(now).notNull(),
         userId: text().notNull(),
         setupId: text().notNull(),
     },
@@ -597,6 +916,7 @@ export const bookmarks = userSchema.table(
         index('bookmarks_id_index').on(table.id),
         index('bookmarks_user_id_index').on(table.userId),
         index('bookmarks_setup_id_index').on(table.setupId),
+        uniqueIndex('bookmarks_user_setup_uidx').on(table.userId, table.setupId),
         foreignKey({
             name: 'bookmarks_user_id_fkey',
             columns: [table.userId],
@@ -614,52 +934,33 @@ export const bookmarks = userSchema.table(
     ],
 )
 
-export const notificationType = pgEnum('notification_type', [
-    'system_announcement',
-    'user_badge_granted',
-    'setup_coauthor_added',
-    'user_role_changed',
-    'user_banned',
-    'user_unbanned',
-    'user_followed',
-    'setup_created',
-])
-
 export interface NotificationPayload {
-    user?: {
-        username: string | null | undefined
-        name: string
-    }
-    setup?: {
-        id: number
-        name: string
-    }
+    user?: { username: string | null | undefined; name: string }
+    setup?: { id: string; name: string }
     banExpiresIn?: number
     content?: string
     customTranslations?: {
-        [locale: string]: {
-            title: string
-            message?: string
-            actionLabel?: string
-        }
+        [locale: string]: { title: string; message?: string; actionLabel?: string }
     }
 }
 
-export const notifications = userSchema.table(
+export const notifications = snakeCase.table(
     'notifications',
     {
-        id: uuid().primaryKey().defaultRandom(),
-        createdAt: timestamp().defaultNow().notNull(),
+        id: uuid().primaryKey(),
+        createdAt: timestamp().default(now).notNull(),
         userId: text().notNull(),
-        type: notificationType().notNull(),
+        type: text({ enum: notificationType }).notNull(),
         readAt: timestamp(),
-        payload: jsonb().$type<NotificationPayload>().notNull(),
+        payload: text({ mode: 'json' }).$type<NotificationPayload>().notNull(),
         actionUrl: text(),
         banner: boolean().default(false).notNull(),
+        dedupeKey: text(),
     },
     (table) => [
         index('notifications_user_id_index').on(table.userId),
         index('notifications_type_index').on(table.type),
+        uniqueIndex('notifications_user_dedupe_uidx').on(table.userId, table.dedupeKey),
         foreignKey({
             name: 'notifications_user_id_fkey',
             columns: [table.userId],
@@ -670,17 +971,18 @@ export const notifications = userSchema.table(
     ],
 )
 
-export const feedbackSchema = snakeCase.schema('feedback')
-
-export const feedbacks = feedbackSchema.table(
+export const feedbacks = snakeCase.table(
     'feedbacks',
     {
-        id: integer().primaryKey().generatedAlwaysAsIdentity(),
-        createdAt: timestamp().defaultNow().notNull(),
+        id: identity(),
+        createdAt: timestamp().default(now).notNull(),
         fingerprint: text().notNull(),
         comment: text().notNull(),
         contextPath: text(),
         isClosed: boolean().default(false).notNull(),
+        idempotencyRequestId: text()
+            .unique()
+            .references(() => idempotencyRequests.id, { onDelete: 'set null' }),
     },
     (table) => [
         index('feedbacks_id_index').on(table.id),
@@ -688,22 +990,27 @@ export const feedbacks = feedbackSchema.table(
     ],
 )
 
-export const itemReports = feedbackSchema.table(
+export const itemReports = snakeCase.table(
     'item_reports',
     {
-        id: integer().primaryKey().generatedAlwaysAsIdentity(),
-        createdAt: timestamp().defaultNow().notNull(),
+        id: identity(),
+        createdAt: timestamp().default(now).notNull(),
         reporterId: text().notNull(),
-        itemId: text().notNull(),
+        catalogItemId: text()
+            .notNull()
+            .references(() => catalogItems.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
         nameError: boolean().default(false).notNull(),
         irrelevant: boolean().default(false).notNull(),
         other: boolean().default(false).notNull(),
         comment: text(),
         isResolved: boolean().default(false).notNull(),
+        idempotencyRequestId: text()
+            .unique()
+            .references(() => idempotencyRequests.id, { onDelete: 'set null' }),
     },
     (table) => [
         index('item_reports_id_index').on(table.id),
-        index('item_reports_item_id_index').on(table.itemId),
+        index('item_reports_catalog_item_id_index').on(table.catalogItemId),
         index('item_reports_reporter_id_index').on(table.reporterId),
         foreignKey({
             name: 'item_reports_reporter_id_fkey',
@@ -712,21 +1019,14 @@ export const itemReports = feedbackSchema.table(
         })
             .onDelete('cascade')
             .onUpdate('cascade'),
-        foreignKey({
-            name: 'item_reports_item_id_fkey',
-            columns: [table.itemId],
-            foreignColumns: [items.id],
-        })
-            .onDelete('cascade')
-            .onUpdate('cascade'),
     ],
 )
 
-export const setupReports = feedbackSchema.table(
+export const setupReports = snakeCase.table(
     'setup_reports',
     {
-        id: integer().primaryKey().generatedAlwaysAsIdentity(),
-        createdAt: timestamp().defaultNow().notNull(),
+        id: identity(),
+        createdAt: timestamp().default(now).notNull(),
         reporterId: text().notNull(),
         setupId: text().notNull(),
         spam: boolean().default(false).notNull(),
@@ -736,6 +1036,9 @@ export const setupReports = feedbackSchema.table(
         other: boolean().default(false).notNull(),
         comment: text(),
         isResolved: boolean().default(false).notNull(),
+        idempotencyRequestId: text()
+            .unique()
+            .references(() => idempotencyRequests.id, { onDelete: 'set null' }),
     },
     (table) => [
         index('setup_reports_id_index').on(table.id),
@@ -758,11 +1061,11 @@ export const setupReports = feedbackSchema.table(
     ],
 )
 
-export const userReports = feedbackSchema.table(
+export const userReports = snakeCase.table(
     'user_reports',
     {
-        id: integer().primaryKey().generatedAlwaysAsIdentity(),
-        createdAt: timestamp().defaultNow().notNull(),
+        id: identity(),
+        createdAt: timestamp().default(now).notNull(),
         reporterId: text().notNull(),
         reporteeId: text().notNull(),
         spam: boolean().default(false).notNull(),
@@ -772,6 +1075,9 @@ export const userReports = feedbackSchema.table(
         other: boolean().default(false).notNull(),
         comment: text(),
         isResolved: boolean().default(false).notNull(),
+        idempotencyRequestId: text()
+            .unique()
+            .references(() => idempotencyRequests.id, { onDelete: 'set null' }),
     },
     (table) => [
         index('user_reports_id_index').on(table.id),
@@ -794,8 +1100,6 @@ export const userReports = feedbackSchema.table(
     ],
 )
 
-export const adminSchema = snakeCase.schema('admin')
-
 export interface EmailAttachmentMetadata {
     filename: string | null
     size: number | null
@@ -804,46 +1108,14 @@ export interface EmailAttachmentMetadata {
     contentId?: string
 }
 
-export const auditActionType = pgEnum('audit_action_type', [
-    'user_ban',
-    'user_unban',
-    'user_delete',
-    'user_role_change',
-    'user_shop_verify',
-    'user_shop_unverify',
-    'user_badge_grant',
-    'user_badge_revoke',
-    'setup_hide',
-    'setup_unhide',
-    'setup_delete',
-    'report_resolve',
-    'feedback_close',
-    'cleanup',
-    'image_upload_url_create',
-    'image_upload_complete',
-    'image_move',
-    'image_delete',
-    'image_cleanup',
-])
-
-export const auditTargetType = pgEnum('audit_target_type', [
-    'user',
-    'setup',
-    'report',
-    'feedback',
-    'badge',
-    'system',
-    'image',
-])
-
-export const auditLogs = adminSchema.table(
+export const auditLogs = snakeCase.table(
     'audit_logs',
     {
-        id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
-        createdAt: timestamp().defaultNow().notNull(),
+        id: identity(),
+        createdAt: timestamp().default(now).notNull(),
         userId: text(),
-        action: auditActionType().notNull(),
-        targetType: auditTargetType().notNull(),
+        action: text({ enum: auditActionType }).notNull(),
+        targetType: text({ enum: auditTargetType }).notNull(),
         targetId: text(),
         details: text(),
     },
@@ -863,10 +1135,10 @@ export const auditLogs = adminSchema.table(
     ],
 )
 
-export const emails = adminSchema.table(
+export const emails = snakeCase.table(
     'emails',
     {
-        id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+        id: identity(),
         messageId: text().notNull(),
         subject: text(),
         fromAddress: text().notNull(),
@@ -875,14 +1147,18 @@ export const emails = adminSchema.table(
         snippet: text(),
         textBody: text(),
         htmlBody: text(),
-        attachments: jsonb().$type<EmailAttachmentMetadata[]>().default([]).notNull(),
+        attachments: text({ mode: 'json' })
+            .$type<EmailAttachmentMetadata[]>()
+            .default(sql`'[]'`)
+            .notNull(),
         rawSize: integer(),
         isRead: boolean().default(false).notNull(),
         isArchived: boolean().default(false).notNull(),
         receivedAt: timestamp().notNull(),
-        createdAt: timestamp().defaultNow().notNull(),
+        createdAt: timestamp().default(now).notNull(),
         updatedAt: timestamp()
-            .$onUpdate(() => /* @__PURE__ */ new Date())
+            .default(now)
+            .$onUpdate(() => new Date())
             .notNull(),
     },
     (table) => [

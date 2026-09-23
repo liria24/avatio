@@ -5,14 +5,17 @@ const state = reactive({
     title: '',
     markdown: '',
 })
+const idempotencyKey = ref(crypto.randomUUID())
 
 const onSubmit = async () => {
-    await createChangelog(state)
+    await createChangelog({ ...state, idempotencyKey: idempotencyKey.value })
+    idempotencyKey.value = crypto.randomUUID()
 }
 
 const resetForm = () => {
     state.title = ''
     state.markdown = ''
+    idempotencyKey.value = crypto.randomUUID()
 }
 
 useSeo({

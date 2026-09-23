@@ -13,7 +13,8 @@ const querySchema = z.object({
     banned: z.stringbool().optional(),
 })
 
-export default adminSessionEventHandler(async ({ db }) => {
+export default promiseEventHandler(async ({ db, event }) => {
+    await requireUserSession(event, { user: { role: 'admin' } })
     const {
         limit,
         offset,
@@ -43,11 +44,11 @@ export default adminSessionEventHandler(async ({ db }) => {
         where: {
             name:
                 searchValue && (!searchField || searchField === 'name')
-                    ? { ilike: searchPattern! }
+                    ? { like: searchPattern! }
                     : undefined,
-            email: searchValue && searchField === 'email' ? { ilike: searchPattern! } : undefined,
+            email: searchValue && searchField === 'email' ? { like: searchPattern! } : undefined,
             username:
-                searchValue && searchField === 'username' ? { ilike: searchPattern! } : undefined,
+                searchValue && searchField === 'username' ? { like: searchPattern! } : undefined,
             role:
                 role === 'user'
                     ? { OR: [{ isNull: true }, { eq: 'user' }] }
@@ -67,7 +68,7 @@ export default adminSessionEventHandler(async ({ db }) => {
                     createdAt: true,
                 },
             },
-            shops: {
+            publisherSourceOwnerships: {
                 extras: {
                     count: sql<number>`CAST(COUNT(*) OVER() AS INTEGER)`,
                 },

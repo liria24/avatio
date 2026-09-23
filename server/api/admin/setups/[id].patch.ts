@@ -10,7 +10,8 @@ const body = z.object({
     hideReason: z.string().optional(),
 })
 
-export default adminSessionEventHandler(async ({ db }) => {
+export default promiseEventHandler(async ({ event, db }) => {
+    await requireUserSession(event, { user: { role: 'admin' } })
     const { id } = await validateParams(params)
     const { hide, hideReason } = await validateBody(body)
 
@@ -23,7 +24,14 @@ export default adminSessionEventHandler(async ({ db }) => {
             })
             .where(eq(setups.id, id))
 
-    await purgeSetupCache(id)
+    await invalidateCacheResources(
+        event,
+        {
+            setups: [id],
+            collections: [EDGE_CACHE_TAGS.popularAvatars, EDGE_CACHE_TAGS.setups],
+        },
+        'admin setup visibility update',
+    )
 
     return null
 })
