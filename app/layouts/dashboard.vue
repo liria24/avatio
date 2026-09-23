@@ -107,6 +107,11 @@ const dev = import.meta.dev
                                 icon: 'mingcute:mail-fill',
                                 to: '/admin/emails',
                             },
+                            {
+                                label: 'Storage',
+                                icon: 'mingcute:folder-fill',
+                                to: '/admin/storage',
+                            },
                         ]"
                         orientation="vertical"
                         tooltip

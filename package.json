@@ -12,7 +12,7 @@
     ],
     "type": "module",
     "scripts": {
-        "build": "nuxt build",
+        "build": "node --max-old-space-size=6144 node_modules/nuxt/bin/nuxt.mjs build",
         "dev": "nuxt dev",
         "generate": "nuxt generate",
         "preview": "nuxt preview",
@@ -111,7 +111,7 @@
         "@vue/test-utils": "^2.5.0",
         "alchemy": "2.0.0-beta.76",
         "drizzle-kit": "1.0.0-rc.4",
-        "effect": "4.0.0-rc.115",
+        "effect": "4.0.0-rc.112",
         "fake-indexeddb": "^6.2.5",
         "files-sdk": "2.4.1",
         "happy-dom": "^20.14.5",
@@ -138,8 +138,8 @@
     },
     "packageManager": "bun@1.4.2",
     "catalog": {
-        "vite": "npm:@voidzero-dev/vite-plus-core@0.3.2",
+        "vite": "npm:@voidzero-dev/vite-plus-core@0.3.1",
         "vitest": "4.1.11",
-        "vite-plus": "0.3.2"
+        "vite-plus": "0.3.1"
     }
 }

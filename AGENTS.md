@@ -7,7 +7,7 @@ Compact instruction for OpenCode sessions. If a fact is obvious from filenames, 
 ## Package manager & runtime
 
 - **Package manager:** `bun` 1.4.2. `bunfig.toml` uses `linker = "hoisted"` and disables Bun's automatic dotenv loading.
-- **Toolchain:** Vite+ 0.3.1 runs package scripts, lint, format, and tests. Node 26 runs Nuxt, TypeScript scripts, tests, and the installed Alchemy CLI; Bun only installs dependencies. Workers Builds uses `NODE_OPTIONS=--max-old-space-size=4096` to leave memory for the remaining build processes.
+- **Toolchain:** Vite+ 0.3.1 runs package scripts, lint, format, and tests. Node 26 runs Nuxt, TypeScript scripts, tests, and the installed Alchemy CLI; Bun only installs dependencies. Production builds use a 6 GB Node heap (`--max-old-space-size=6144`) in local commands, CI, and Workers Builds stage deployments.
 - **Postinstall:** `vp install` uses Bun and runs `nuxt prepare` only.
 - **Development URL:** `vp run dev` runs the Node.js Nuxt dev server at `http://localhost:3000`; the port is fixed and fails if already in use.
 - **Environment split:** local uses SQLite/filesystem/IPX without Alchemy. `development` remains the deployed Cloudflare stage; plans and deployments use the Cloudflare state store.
@@ -167,7 +167,7 @@ PRs into `main` require the `format`, `lint`, `lint:unused`, `typecheck`, `test`
   - `/api/admin/job/report` — daily at 22:00
   - `/api/admin/job/cleanup` — manual/admin only
 - **Images:** served through `@nuxt/image`. Allowed external domains are whitelisted in `nuxt.config.ts` (Booth, GitHub, R2 public domain).
-- **Storage:** `nuxt-files-sdk` is configured in `files.config.ts`; runtime code uses `useServerFiles()`. Local `vp run dev` uses its filesystem adapter under gitignored `.data/uploads`, served at `/api/_local/files/*`, including imported OAuth avatars. Local Nuxt Image uses IPX with only localhost HTTP sources; the local route rejects traversal and metadata sidecars. Deployed development/production Workers use the native stage-specific `R2` binding and public domain; R2 HTTP credentials remain unsupported. The local file route returns 404 in deployed builds.
+- **Storage:** `nuxt-files-sdk` is configured in `files.config.ts`; runtime code uses `useServerFiles()`. Local `vp run dev` uses its filesystem adapter under gitignored `.data/uploads`, served at `/api/_local/files/*`, including imported OAuth avatars. Local Nuxt Image uses IPX with only localhost HTTP sources; the local route rejects traversal and metadata sidecars. Deployed development/production Workers use the native stage-specific `R2` binding and public domain; R2 HTTP credentials remain unsupported. The local file route returns 404 in deployed builds. `/admin/storage` uses the read-only, admin-authenticated `/api/admin/files` gateway for listing, search, previews, and downloads; image uploads remain on `/api/images`.
 - **files-sdk build compatibility:** Keep the direct dependencies `@aws-sdk/client-s3`, `@aws-sdk/lib-storage`, `@aws-sdk/s3-presigned-post`, and `@aws-sdk/s3-request-presigner`. Nitro's Cloudflare preset resolves the lazy AWS imports retained by `files-sdk/r2` even though the configured native R2 binding never executes that engine. `vp run build` is the regression check.
 - **PWA:** `@vite-pwa/nuxt` is enabled; `sw.js` and `manifest.webmanifest` are served with `must-revalidate`.
 

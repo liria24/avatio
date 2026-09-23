@@ -404,13 +404,15 @@ export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) 
               )
             : { deleted: [], errors: undefined }
     const successful = deleteResults.deleted
-    const failed = (deleteResults.errors ?? []).map(({ key, error }) => {
-        cleanupLog.error('Failed to delete image:', key, error)
-        return {
-            key,
-            error: error.message || 'Unknown error',
-        }
-    })
+    const failed: { key: string; error: string }[] = (deleteResults.errors ?? []).map(
+        ({ key, error }: { key: string; error: Error }) => {
+            cleanupLog.error('Failed to delete image:', key, error)
+            return {
+                key,
+                error: error.message || 'Unknown error',
+            }
+        },
+    )
 
     const message = 'Cleanup completed.'
 

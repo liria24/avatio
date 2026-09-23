@@ -1,4 +1,5 @@
 import type { R2Bucket } from '@cloudflare/workers-types'
+import { defineFilesConfig } from 'nuxt-files-sdk/config'
 
 import { getRuntimeEnv, getRuntimeEnvString } from './server/utils/runtimeEnv'
 
