@@ -224,13 +224,6 @@ export const queryCatalogItems = async (
                 sources: [{ ...row.source, publisherSource: row.publisher }],
             }),
         ),
-        pagination: {
-            page,
-            limit: input.limit,
-            total,
-            totalPages: Math.ceil(total / input.limit),
-            hasNext: offset + input.limit < total,
-            hasPrev: offset > 0,
-        },
+        pagination: createPagination(total, page, input.limit, offset),
     }
 }

@@ -54,8 +54,8 @@ describe('OpenAI provider request transport', () => {
             >[0]['binding'],
             models: {
                 catalogEnrichment: 'openai/gpt-5.6-luna',
-                changelogTranslation: 'openai/gpt-5.6-luna',
-                changelogSlug: 'openai/gpt-5.6-luna',
+                changelogTranslation: 'openai/gpt-5.6-translation',
+                changelogSlug: 'openai/gpt-5.6-slug',
             },
         })
         expect(await capabilities.catalogDisplayNameGenerator.generate({ name: 'Avatar' })).toBe(
@@ -72,8 +72,12 @@ describe('OpenAI provider request transport', () => {
         expect(await capabilities.changelogSlugGenerator.generate({ title: 'Release' })).toBe(
             'new-release',
         )
-        for (const [model, input, options] of run.mock.calls) {
-            expect(model).toBe('openai/gpt-5.6-luna')
+        expect(run.mock.calls.map(([model]) => model)).toEqual([
+            'openai/gpt-5.6-luna',
+            'openai/gpt-5.6-translation',
+            'openai/gpt-5.6-slug',
+        ])
+        for (const [, input, options] of run.mock.calls) {
             expect(input.input).toEqual(expect.any(Array))
             expect(input).not.toHaveProperty('messages')
             expect(options.returnRawResponse).toBe(true)

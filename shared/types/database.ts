@@ -2,6 +2,9 @@ import { itemCategorySchema } from '@avatio/core/catalog'
 import {
     setupComposeFormSchema,
     setupDraftContentSchema,
+    setupDraftImageMetadataSchema,
+    setupEntryShapekeysSchema,
+    setupPointSchema,
     type SetupDraftContent,
 } from '@avatio/core/setups'
 import { z } from 'zod'
@@ -85,14 +88,8 @@ export const usersPublicSchema = z.object({
 })
 export type User = z.infer<typeof usersPublicSchema>
 
-export const setupEntryShapekeysInsertSchema = z.object({
-    name: z.string().min(1).max(64),
-    value: z.number(),
-})
-export const setupEntryShapekeysPublicSchema = setupEntryShapekeysInsertSchema.pick({
-    name: true,
-    value: true,
-})
+export const setupEntryShapekeysInsertSchema = setupEntryShapekeysSchema
+export const setupEntryShapekeysPublicSchema = setupEntryShapekeysSchema
 export type SetupEntryShapekey = z.infer<typeof setupEntryShapekeysPublicSchema>
 
 export const setupEntriesInsertSchema = z.object({
@@ -121,31 +118,9 @@ export const setupImagesPublicSchema = z.object({
     url: z.string().min(1),
 })
 
-export const setupImageMetadataSchema = z.object({
-    id: z.string().min(1).optional(),
-    objectKey: z.string().min(1),
-    contentType: z.string().optional(),
-    size: z.number().int().min(1).optional(),
-    etag: z.string().nullable().optional(),
-    width: z.number().int().min(1).max(8192),
-    height: z.number().int().min(1).max(8192),
-    themeColors: z
-        .string()
-        .regex(/^#[\da-f]{6}$/i)
-        .array()
-        .max(8)
-        .nullable()
-        .optional(),
-})
+export const setupImageMetadataSchema = setupDraftImageMetadataSchema
 export type SetupImageMetadata = z.infer<typeof setupImageMetadataSchema>
 
-export const setupPointSchema = z.object({
-    id: z.string().min(1),
-    imageId: z.string().min(1),
-    entryId: z.string().min(1),
-    x: z.number().min(0).max(1),
-    y: z.number().min(0).max(1),
-})
 export type SetupPoint = z.infer<typeof setupPointSchema>
 
 export const setupCoauthorsInsertSchema = z.object({
@@ -193,20 +168,6 @@ export const setupsUpdateSchema = z.object({
         .max(MAX_ITEMS_PER_SETUP, `アイテムは最大 ${MAX_ITEMS_PER_SETUP} 個です。`),
 })
 
-export const setupsClientFormSchema = z.object({
-    public: z.boolean(),
-    name: setupNameSchema,
-    description: setupDescriptionSchema.optional(),
-    tags: z.string().array().max(8, 'タグは最大 8 個です。'),
-    images: z.url().array().max(4, '画像は最大 4 個です。'),
-    coauthors: setupCoauthorsInsertSchema
-        .extend({ user: usersPublicSchema.pick({ username: true, name: true, image: true }) })
-        .array()
-        .max(8, '共同作者は最大 8 人です。'),
-    entries: setupEntryPublicSchema.array().min(1).max(MAX_ITEMS_PER_SETUP),
-    points: setupPointSchema.array().max(128),
-})
-
 export const setupsPublicSchema = z.object({
     id: z.string(),
     createdAt: z.date(),
@@ -226,7 +187,7 @@ export const setupsPublicSchema = z.object({
 })
 export type Setup = z.infer<typeof setupsPublicSchema>
 
-export { setupComposeFormSchema, setupDraftContentSchema }
+export { setupComposeFormSchema, setupDraftContentSchema, setupPointSchema }
 
 export const setupDraftsUpdateSchema = z.object({
     expectedRevision: z.number().int().min(0),
@@ -247,12 +208,6 @@ export const setupDraftSummarySchema = setupDraftsPublicSchema
 export type { SetupDraftContent }
 export type SetupDraft = z.infer<typeof setupDraftsPublicSchema>
 export type SetupDraftSummary = z.infer<typeof setupDraftSummarySchema>
-
-export const bookmarksPublicSchema = z.object({
-    createdAt: z.date(),
-    setup: setupsPublicSchema,
-})
-export type Bookmark = z.infer<typeof bookmarksPublicSchema>
 
 export const feedbacksInsertSchema = z.object({
     comment: z

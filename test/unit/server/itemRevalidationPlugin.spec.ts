@@ -35,7 +35,7 @@ describe('item revalidation queue plugin', () => {
         const markSyncStarted = vi.fn(async () => null)
         vi.stubGlobal('getCatalogRepository', () => ({ markSyncStarted }))
         vi.stubGlobal('getCatalogProviderRegistry', async () => ({}))
-        vi.stubGlobal('getCatalogCacheInvalidator', () => ({}))
+        vi.stubGlobal('createCacheInvalidator', () => ({}))
         const { default: plugin } = await import('../../../server/plugins/itemRevalidationQueue')
         let handler!: QueueHandler
         plugin({

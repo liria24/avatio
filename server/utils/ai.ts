@@ -5,7 +5,6 @@ import {
 } from '@avatio/cloudflare'
 import { itemCategories } from '@avatio/core/catalog'
 import type { H3Event } from '@nuxt/nitro-server/h3'
-import { z } from 'zod'
 
 const modelBindings = {
     catalogEnrichment: 'AI_MODEL_CATALOG_ENRICHMENT',
@@ -52,16 +51,6 @@ export const getCatalogItemClassifier = (event: H3Event) => {
         classifier: createCatalogItemClassifier({ binding, model, itemCategories }),
         model,
     }
-}
-
-export const changelogTranslationSchema = z.object({
-    title: z.string().min(1),
-    markdown: z.string().min(1),
-})
-
-export const parseChangelogTranslation = (value: string) => {
-    const parsed = JSON.parse(value.trim()) as unknown
-    return changelogTranslationSchema.parse(sanitizeObject(parsed))
 }
 
 export interface GenerateCatalogDisplayNameParams {

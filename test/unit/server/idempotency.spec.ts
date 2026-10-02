@@ -1,21 +1,20 @@
 import { createError } from '@nuxt/nitro-server/h3'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { drizzle } from 'drizzle-orm/d1'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-interface StoredRequest {
-    id: string
-    scope: string
-    route: string
-    key: string
-    requestHash: string
-    status: 'pending' | 'completed'
-    resourceId: string | null
-    response: unknown
-    statusCode: number | null
-    leaseExpiresAt: Date
-    expiresAt: Date
-    createdAt: Date
-    updatedAt: Date
-}
+import { relations } from '../../../database/relations'
+import { completeIdempotencyRequest } from '../../../server/utils/idempotency'
+import { createTestD1 } from '../../helpers/d1'
+let database: ReturnType<typeof createTestD1>
+let db: ReturnType<typeof drizzle<typeof relations>>
+beforeEach(() => {
+    database = createTestD1()
+    db = drizzle(database.binding, { relations })
+})
+afterEach(() => {
+    database.sqlite.close()
+    vi.unstubAllGlobals()
+})
 
 const key = '4ecb4ccc-216c-4a66-b538-0a83f55fb9cc'
 
@@ -30,52 +29,6 @@ const makeEvent = (idempotencyKey?: string) => {
         },
         setHeader,
     }
-}
-
-const makeDb = () => {
-    const state: { value?: StoredRequest } = {}
-    const findFirst = vi.fn(async () => state.value)
-    const db = {
-        query: { idempotencyRequests: { findFirst } },
-        insert: vi.fn(() => ({
-            values: (
-                values: Omit<
-                    StoredRequest,
-                    'createdAt' | 'updatedAt' | 'status' | 'response' | 'statusCode'
-                >,
-            ) => ({
-                onConflictDoNothing: () => ({
-                    returning: async () => {
-                        await Promise.resolve()
-                        if (state.value) return []
-                        const now = new Date()
-                        state.value = {
-                            ...values,
-                            resourceId: values.resourceId ?? null,
-                            status: 'pending',
-                            response: null,
-                            statusCode: null,
-                            createdAt: now,
-                            updatedAt: now,
-                        }
-                        return [{ id: values.id }]
-                    },
-                }),
-            }),
-        })),
-        update: vi.fn(() => ({
-            set: (values: Partial<StoredRequest>) => ({
-                where: () => ({
-                    returning: async () => {
-                        if (!state.value) return []
-                        Object.assign(state.value, values)
-                        return [{ id: state.value.id }]
-                    },
-                }),
-            }),
-        })),
-    }
-    return { db, state }
 }
 
 describe('idempotency request claims', () => {
@@ -93,15 +46,43 @@ describe('idempotency request claims', () => {
         )
     })
 
+    it('separates scopes and routes and reclaims only an expired pending request', async () => {
+        const { claimIdempotencyRequest } = await import('../../../server/utils/idempotency')
+        const options = {
+            db,
+            event: makeEvent(key).event as never,
+            scope: 'user:1',
+            route: '/api/feedbacks',
+            body: {},
+        }
+        const first = await claimIdempotencyRequest(options)
+        const otherUser = await claimIdempotencyRequest({ ...options, scope: 'user:2' })
+        const otherRoute = await claimIdempotencyRequest({ ...options, route: '/api/reports/user' })
+        expect(new Set([first.id, otherUser.id, otherRoute.id]).size).toBe(3)
+        database.sqlite
+            .prepare('UPDATE idempotency_requests SET lease_expires_at = 0 WHERE id = ?')
+            .run(first.id)
+        expect(await claimIdempotencyRequest(options)).toMatchObject({
+            id: first.id,
+            replay: false,
+        })
+        await expect(claimIdempotencyRequest(options)).rejects.toMatchObject({ statusCode: 409 })
+        await expect(
+            claimIdempotencyRequest({ ...options, scope: 'user:2' }),
+        ).rejects.toMatchObject({ statusCode: 409 })
+        expect(
+            database.sqlite.prepare('SELECT COUNT(*) AS count FROM idempotency_requests').get(),
+        ).toEqual({ count: 3 })
+    })
+
     it('requires a UUID Idempotency-Key', async () => {
         const { event } = makeEvent()
-        const { db } = makeDb()
         const { claimIdempotencyRequest } = await import('../../../server/utils/idempotency')
 
         await expect(
             claimIdempotencyRequest({
                 event: event as never,
-                db: db as never,
+                db,
                 scope: 'user:1',
                 route: '/api/feedbacks',
                 body: {},
@@ -112,10 +93,9 @@ describe('idempotency request claims', () => {
     it('allows only one parallel claim and returns Retry-After to the other', async () => {
         const firstEvent = makeEvent(key)
         const secondEvent = makeEvent(key)
-        const { db } = makeDb()
         const { claimIdempotencyRequest } = await import('../../../server/utils/idempotency')
         const options = {
-            db: db as never,
+            db,
             scope: 'user:1',
             route: '/api/feedbacks',
             body: { comment: 'same' },
@@ -136,25 +116,20 @@ describe('idempotency request claims', () => {
 
     it('replays completed responses for the same canonical body and rejects a changed body', async () => {
         const { event } = makeEvent(key)
-        const { db, state } = makeDb()
         const { claimIdempotencyRequest } = await import('../../../server/utils/idempotency')
         const first = await claimIdempotencyRequest({
             event: event as never,
-            db: db as never,
+            db,
             scope: 'user:1',
             route: '/api/reports/user',
             body: { first: 1, second: 2 },
         })
-        Object.assign(state.value!, {
-            status: 'completed',
-            response: { id: 42 },
-            statusCode: 200,
-            resourceId: '42',
-        })
+        first.resourceId = '42'
+        await completeIdempotencyRequest(db, first, { id: 42 })
 
         const replay = await claimIdempotencyRequest({
             event: event as never,
-            db: db as never,
+            db,
             scope: 'user:1',
             route: '/api/reports/user',
             body: { second: 2, first: 1 },
@@ -169,7 +144,7 @@ describe('idempotency request claims', () => {
         await expect(
             claimIdempotencyRequest({
                 event: event as never,
-                db: db as never,
+                db,
                 scope: 'user:1',
                 route: '/api/reports/user',
                 body: { first: 99, second: 2 },

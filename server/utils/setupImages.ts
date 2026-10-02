@@ -11,7 +11,7 @@ interface ResolveSetupImageDataOptions {
 export const withSetupImageUrls = async <
     T extends {
         id?: string | number
-        stableId?: string | null
+        stableId: string
         position?: number
         objectKey: string
     },
@@ -22,9 +22,9 @@ export const withSetupImageUrls = async <
     return await Promise.all(
         [...images]
             .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
-            .map(async ({ id, stableId, position = 0, ...image }) => ({
+            .map(async ({ id: _id, stableId, position = 0, ...image }) => ({
                 ...image,
-                id: stableId ?? String(id ?? image.objectKey),
+                id: stableId,
                 position,
                 url: await storage.url(image.objectKey),
             })),
@@ -78,7 +78,6 @@ export const resolveSetupImageData = async (
         if (existing)
             return {
                 ...existing,
-                stableId: existing.stableId ?? metadata?.id ?? String(existing.id),
                 position,
             }
 

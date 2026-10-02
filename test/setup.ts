@@ -1,5 +1,4 @@
 import { useServerFiles } from 'nuxt-files-sdk/runtime'
-// oxlint-disable typescript/no-explicit-any
 
 import { serverError } from '../server/utils/error'
 import {
@@ -7,6 +6,7 @@ import {
     getCacheInvalidator,
     getFeatureFlags,
 } from '../server/utils/infrastructure'
+import { createPagination } from '../server/utils/pagination'
 import { getRuntimeEnv, getRuntimeEnvString } from '../server/utils/runtimeEnv'
 import { sanitizeEmailHtml } from '../server/utils/sanitizeEmailHtml'
 import { authAdditionalFields } from '../shared/utils/authAdditionalFields'
@@ -17,6 +17,7 @@ import { prefixedI18nLocales } from '../shared/utils/i18nRouting'
 Object.assign(globalThis, constants, {
     authAdditionalFields,
     createCacheInvalidator,
+    createPagination,
     getCacheInvalidator,
     getFeatureFlags,
     getRuntimeEnv,
@@ -27,9 +28,3 @@ Object.assign(globalThis, constants, {
     serverError,
     useServerFiles,
 })
-
-// Polyfill Nitro defineCachedFunction — bypasses caching in tests
-;(globalThis as any).defineCachedFunction = <T extends (...args: any[]) => Promise<any>>(
-    fn: T,
-    _opts?: any,
-): T => fn

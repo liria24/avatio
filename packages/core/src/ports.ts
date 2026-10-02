@@ -13,7 +13,7 @@ export interface CacheInvalidator {
 }
 
 export interface FeatureFlags {
-    isEnabled(flag: 'maintenance' | 'catalogV2Reads' | 'catalogV2Writes'): Promise<boolean>
+    isEnabled(flag: 'maintenance'): Promise<boolean>
 }
 
 export interface StoredFile {
@@ -23,7 +23,6 @@ export interface StoredFile {
 
 export interface FileStorage {
     importFromUrl(input: { sourceUrl: string; destinationKey: string }): Promise<StoredFile>
-    delete(key: string): Promise<void>
 }
 
 export interface CatalogDisplayNameInput {

@@ -52,6 +52,10 @@ vp run dev
 
 ローカルでは、authored contentは`content/`、uploadは`.data/uploads`、送信メールは`.data/mail`を使用します。画像の表示とupload解析にはIPXを使用し、Catalog Queueは同じ同期処理をinline実行します。CloudflareのD1/R2/Images/Queue/Flagship/Email、外部analytics、Discord通知は使用しません。BOOTH proxy、Twitter OAuth、Workers AIは任意で、未設定でも基本操作とGitHub Catalogを利用できます。ローカルQueueはCloudflare Queueのretry／配信保証を再現しません。
 
+Setup画像の`stableId`は必須・一意です。追加migrationは既存IDを維持し、未設定の画像だけ数値主キーの文字列で補完します。衝突時はIDを振り直さず失敗するため、デプロイ前に対象DBのバックアップでmigrationを検証してください。
+
+ブックマーク一覧APIは`GET /api/setups?bookmarked=true`を使用します。旧`GET /api/setups/bookmarks`一覧は廃止し、個別ブックマークの取得・追加・削除は維持しています。
+
 任意のローカル設定にはNuxt標準の`.env`を使用できます。Bun自身の自動dotenv読込は無効で、暗号化された`.env.development`と`.env.production`はplan/deploy用のNodeスクリプトがdotenvx `--strict`でのみ読み込みます。deployed developmentは引き続きCloudflare上の`development` stageであり、local stageではありません。
 
 既存のremote D1を明示的に取り込む場合だけ、`vp run db:seed:local -- --yes`を使用します。これはremote D1を読み取りますが、remoteへ書き込みません。productionからの取込には`--source production --allow-production`が必要です。

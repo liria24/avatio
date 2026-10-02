@@ -61,6 +61,25 @@ const userReport = {
     },
 }
 
+const setupReport = {
+    ...userReport,
+    setup: { id: 'setup-id', name: 'Reported setup', hidAt: null, images: [] },
+}
+const itemReport = {
+    ...userReport,
+    nameError: true,
+    irrelevant: false,
+    item: {
+        id: 'item-id',
+        name: 'Reported item',
+        displayNameOverride: null,
+        primarySource: null,
+        image: null,
+        category: 'other',
+    },
+}
+const reports = { user: userReport, setup: setupReport, item: itemReport }
+
 const registerReportsEndpoint = (type: 'user' | 'setup' | 'item') =>
     registerEndpoint(`/api/admin/reports/${type}`, {
         method: 'GET',
@@ -71,7 +90,7 @@ const registerReportsEndpoint = (type: 'user' | 'setup' | 'item') =>
 
             const page = Number(url.searchParams.get('page') ?? 1)
             return {
-                data: responseMode === 'data' && type === 'user' ? [userReport] : [],
+                data: responseMode === 'data' ? [reports[type]] : [],
                 pagination: pagination(page, responseMode === 'data' ? 45 : 0),
             }
         },
@@ -87,6 +106,24 @@ describe('Admin reports UI', () => {
         responseMode = 'data'
         requests.length = 0
         vi.clearAllMocks()
+    })
+
+    it.each([
+        ['user', 'Reported user', 'spam', 'malicious'],
+        ['setup', 'Reported setup', 'spam', 'extreme'],
+        ['item', 'Reported item', 'wrongName', 'unrelated'],
+    ])('renders %s reasons and its action menu', async (tab, name, reason, absentReason) => {
+        const wrapper = await mountSuspended(AdminReportsPage, { route: `/?tab=${tab}` })
+        try {
+            expect(wrapper.text()).toContain(name)
+            expect(wrapper.text()).toContain(`admin.reports.${tab}.reasons.${reason}`)
+            expect(wrapper.text()).not.toContain(`admin.reports.${tab}.reasons.${absentReason}`)
+            expect(wrapper.find('button[aria-label="admin.reports.actions.label"]').exists()).toBe(
+                true,
+            )
+        } finally {
+            wrapper.unmount()
+        }
     })
 
     it('syncs filters and pagination through the route and only loads the active report type', async () => {

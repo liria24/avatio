@@ -27,9 +27,6 @@ export const getFileStorage = (): FileStorage => {
             })
             return { key: destinationKey, url: await files.url(destinationKey) }
         },
-        async delete(key) {
-            await files.delete(key)
-        },
     }
 }
 

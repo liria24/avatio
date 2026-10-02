@@ -139,15 +139,13 @@ describe('edge cache policy', () => {
 
 describe('edge cache purge', () => {
     it('purges the deduplicated tag set through the Cloudflare cache context', async () => {
-        const { invalidateCacheResourcesWithContext } =
-            await import('../../../server/utils/edgeCache')
+        const { createCacheInvalidator } = await import('../../../server/utils/infrastructure')
         const purge = vi.fn().mockResolvedValue({ success: true, errors: [] })
 
-        await invalidateCacheResourcesWithContext(
-            { purge },
-            { collections: ['setups', 'setups'], setups: ['abc'] },
-            'test',
-        )
+        await createCacheInvalidator({ purge }).invalidate({
+            collections: ['setups', 'setups'],
+            setups: ['abc'],
+        })
 
         expect(purge).toHaveBeenCalledWith({ tags: ['setup:abc', 'setups'] })
     })

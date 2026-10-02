@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import type { DropdownMenuItem } from '@nuxt/ui'
 interface Props {
+    actions: DropdownMenuItem[][]
     id: number
     isResolved: boolean
     createdAt: string | Date
@@ -46,7 +48,15 @@ const { locale } = useI18n()
                 />
             </ULink>
 
-            <slot />
+            <UDropdownMenu :items="actions">
+                <UButton
+                    :aria-label="$t('admin.reports.actions.label')"
+                    icon="mingcute:more-2-line"
+                    color="neutral"
+                    variant="outline"
+                    size="sm"
+                />
+            </UDropdownMenu>
 
             <UButton
                 loading-auto

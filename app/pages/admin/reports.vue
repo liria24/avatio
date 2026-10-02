@@ -1,6 +1,28 @@
 <script setup lang="ts">
 import type { DropdownMenuItem, TabsItem } from '@nuxt/ui'
 
+const reasonLabels = {
+    user: {
+        spam: 'admin.reports.user.reasons.spam',
+        hate: 'admin.reports.user.reasons.malicious',
+        infringe: 'admin.reports.user.reasons.infringement',
+        badImage: 'admin.reports.user.reasons.inappropriate',
+        other: 'admin.reports.user.reasons.other',
+    },
+    setup: {
+        spam: 'admin.reports.setup.reasons.spam',
+        hate: 'admin.reports.setup.reasons.hate',
+        infringe: 'admin.reports.setup.reasons.infringement',
+        badImage: 'admin.reports.setup.reasons.extreme',
+        other: 'admin.reports.setup.reasons.other',
+    },
+    item: {
+        nameError: 'admin.reports.item.reasons.wrongName',
+        irrelevant: 'admin.reports.item.reasons.unrelated',
+        other: 'admin.reports.item.reasons.other',
+    },
+} as const
+
 const REPORTS_PER_PAGE = 20
 
 type Tab = 'user' | 'setup' | 'item'
@@ -384,18 +406,9 @@ useSeo({
                                     :is-resolved="report.isResolved"
                                     :created-at="report.createdAt"
                                     :reporter="report.reporter"
+                                    :actions="userReportActions(report)"
                                     @resolve="resolve"
-                                >
-                                    <UDropdownMenu :items="userReportActions(report)">
-                                        <UButton
-                                            :aria-label="$t('admin.reports.actions.label')"
-                                            icon="mingcute:more-2-line"
-                                            color="neutral"
-                                            variant="outline"
-                                            size="sm"
-                                        />
-                                    </UDropdownMenu>
-                                </AdminReportHeader>
+                                />
                             </template>
 
                             <div class="grid w-full grid-cols-1 items-start gap-4 sm:grid-cols-2">
@@ -426,36 +439,17 @@ useSeo({
 
                                 <div class="flex w-full flex-col gap-2">
                                     <div class="flex flex-wrap items-center gap-1">
-                                        <UBadge
-                                            v-if="report.spam"
-                                            :label="$t('admin.reports.user.reasons.spam')"
-                                            variant="outline"
-                                            class="rounded-full px-2"
-                                        />
-                                        <UBadge
-                                            v-if="report.hate"
-                                            :label="$t('admin.reports.user.reasons.malicious')"
-                                            variant="outline"
-                                            class="rounded-full px-2"
-                                        />
-                                        <UBadge
-                                            v-if="report.infringe"
-                                            :label="$t('admin.reports.user.reasons.infringement')"
-                                            variant="outline"
-                                            class="rounded-full px-2"
-                                        />
-                                        <UBadge
-                                            v-if="report.badImage"
-                                            :label="$t('admin.reports.user.reasons.inappropriate')"
-                                            variant="outline"
-                                            class="rounded-full px-2"
-                                        />
-                                        <UBadge
-                                            v-if="report.other"
-                                            :label="$t('admin.reports.user.reasons.other')"
-                                            variant="outline"
-                                            class="rounded-full px-2"
-                                        />
+                                        <template
+                                            v-for="(label, reason) in reasonLabels.user"
+                                            :key="reason"
+                                        >
+                                            <UBadge
+                                                v-if="report[reason]"
+                                                :label="$t(label)"
+                                                variant="outline"
+                                                class="rounded-full px-2"
+                                            />
+                                        </template>
                                     </div>
 
                                     <p
@@ -477,18 +471,9 @@ useSeo({
                                     :is-resolved="report.isResolved"
                                     :created-at="report.createdAt"
                                     :reporter="report.reporter"
+                                    :actions="setupReportActions(report)"
                                     @resolve="resolve"
-                                >
-                                    <UDropdownMenu :items="setupReportActions(report)">
-                                        <UButton
-                                            :aria-label="$t('admin.reports.actions.label')"
-                                            icon="mingcute:more-2-line"
-                                            color="neutral"
-                                            variant="outline"
-                                            size="sm"
-                                        />
-                                    </UDropdownMenu>
-                                </AdminReportHeader>
+                                />
                             </template>
 
                             <div class="grid w-full grid-cols-1 items-start gap-4 sm:grid-cols-2">
@@ -521,36 +506,17 @@ useSeo({
 
                                 <div class="flex w-full flex-col gap-2">
                                     <div class="flex flex-wrap items-center gap-1">
-                                        <UBadge
-                                            v-if="report.spam"
-                                            :label="$t('admin.reports.setup.reasons.spam')"
-                                            variant="outline"
-                                            class="rounded-full px-2"
-                                        />
-                                        <UBadge
-                                            v-if="report.hate"
-                                            :label="$t('admin.reports.setup.reasons.hate')"
-                                            variant="outline"
-                                            class="rounded-full px-2"
-                                        />
-                                        <UBadge
-                                            v-if="report.infringe"
-                                            :label="$t('admin.reports.setup.reasons.infringement')"
-                                            variant="outline"
-                                            class="rounded-full px-2"
-                                        />
-                                        <UBadge
-                                            v-if="report.badImage"
-                                            :label="$t('admin.reports.setup.reasons.extreme')"
-                                            variant="outline"
-                                            class="rounded-full px-2"
-                                        />
-                                        <UBadge
-                                            v-if="report.other"
-                                            :label="$t('admin.reports.setup.reasons.other')"
-                                            variant="outline"
-                                            class="rounded-full px-2"
-                                        />
+                                        <template
+                                            v-for="(label, reason) in reasonLabels.setup"
+                                            :key="reason"
+                                        >
+                                            <UBadge
+                                                v-if="report[reason]"
+                                                :label="$t(label)"
+                                                variant="outline"
+                                                class="rounded-full px-2"
+                                            />
+                                        </template>
                                     </div>
 
                                     <p
@@ -572,18 +538,9 @@ useSeo({
                                     :is-resolved="report.isResolved"
                                     :created-at="report.createdAt"
                                     :reporter="report.reporter"
+                                    :actions="itemReportActions(report)"
                                     @resolve="resolve"
-                                >
-                                    <UDropdownMenu :items="itemReportActions(report)">
-                                        <UButton
-                                            :aria-label="$t('admin.reports.actions.label')"
-                                            icon="mingcute:more-2-line"
-                                            color="neutral"
-                                            variant="outline"
-                                            size="sm"
-                                        />
-                                    </UDropdownMenu>
-                                </AdminReportHeader>
+                                />
                             </template>
 
                             <div class="grid w-full grid-cols-1 items-start gap-4 sm:grid-cols-2">
@@ -640,24 +597,17 @@ useSeo({
 
                                 <div class="flex w-full flex-col gap-2">
                                     <div class="flex flex-wrap items-center gap-1">
-                                        <UBadge
-                                            v-if="report.nameError"
-                                            :label="$t('admin.reports.item.reasons.wrongName')"
-                                            variant="outline"
-                                            class="rounded-full px-2"
-                                        />
-                                        <UBadge
-                                            v-if="report.irrelevant"
-                                            :label="$t('admin.reports.item.reasons.unrelated')"
-                                            variant="outline"
-                                            class="rounded-full px-2"
-                                        />
-                                        <UBadge
-                                            v-if="report.other"
-                                            :label="$t('admin.reports.item.reasons.other')"
-                                            variant="outline"
-                                            class="rounded-full px-2"
-                                        />
+                                        <template
+                                            v-for="(label, reason) in reasonLabels.item"
+                                            :key="reason"
+                                        >
+                                            <UBadge
+                                                v-if="report[reason]"
+                                                :label="$t(label)"
+                                                variant="outline"
+                                                class="rounded-full px-2"
+                                            />
+                                        </template>
                                     </div>
 
                                     <p

@@ -58,34 +58,28 @@ export default promiseEventHandler(async ({ event, db }) => {
 
     // Handle i18n translations
     if ((!i18n || i18n.length === 0) && !import.meta.dev) {
-        // AI generate translations for both en and ja
-        const locales: Array<'en'> = ['en']
-
-        for (const locale of locales) {
-            const targetLanguage = 'English'
-
-            try {
-                const { changelogTranslator } = useAiCapabilities(event)
-                const translated = await changelogTranslator.translate({
+        try {
+            const { changelogTranslator } = useAiCapabilities(event)
+            const translated = sanitizeObject(
+                await changelogTranslator.translate({
                     title,
                     content: markdown,
                     sourceLocale: 'Japanese',
-                    targetLocale: targetLanguage,
-                })
-
-                translations.push({
-                    changelogSlug: finalSlug,
-                    locale,
-                    title: translated.title,
-                    markdown: translated.content,
-                    aiGenerated: true,
-                })
-            } catch (error) {
-                log.error(`Failed to parse translation for locale ${locale}:`, error)
-                throw serverError.internalServerError({
-                    responseMessage: 'Failed to generate changelog translations.',
-                })
-            }
+                    targetLocale: 'English',
+                }),
+            )
+            translations.push({
+                changelogSlug: finalSlug,
+                locale: 'en',
+                title: translated.title,
+                markdown: translated.content,
+                aiGenerated: true,
+            })
+        } catch (error) {
+            log.error('Failed to generate English translation:', error)
+            throw serverError.internalServerError({
+                responseMessage: 'Failed to generate changelog translations.',
+            })
         }
     } else if (i18n?.length) {
         // Use provided i18n translations

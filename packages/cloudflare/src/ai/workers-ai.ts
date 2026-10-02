@@ -58,11 +58,6 @@ const categoryCriteria: Record<ItemCategory | 'unknown', string> = {
     unknown: 'The supplied information is insufficient to classify reliably',
 }
 
-export const getAiTaskModel = <Task extends AiTaskKey>(
-    models: Pick<AiTaskModels, Task>,
-    task: Task,
-) => models[task]
-
 export const createWorkersAiCapabilities = (
     options: WorkersAiCapabilitiesOptions,
 ): WorkersAiCapabilities => {
@@ -84,7 +79,7 @@ export const createWorkersAiCapabilities = (
                           .join('\n')}`
                     : ''
                 const { output } = await generateText({
-                    model: workersAi(getAiTaskModel(options.models, 'catalogEnrichment')),
+                    model: workersAi(options.models.catalogEnrichment),
                     system: catalogSystemPrompt,
                     prompt: `${JSON.stringify({
                         name: input.name,
@@ -100,7 +95,7 @@ export const createWorkersAiCapabilities = (
         changelogTranslator: {
             async translate(input) {
                 const { output } = await generateText({
-                    model: workersAi(getAiTaskModel(options.models, 'changelogTranslation')),
+                    model: workersAi(options.models.changelogTranslation),
                     system: 'You are a professional translator. Preserve Markdown formatting.',
                     prompt: `Translate this changelog from ${input.sourceLocale} to ${input.targetLocale}.\n\nTitle: ${input.title}\n\nContent:\n${input.content}`,
                     output: Output.object({ schema: translationResultSchema }),
@@ -114,7 +109,7 @@ export const createWorkersAiCapabilities = (
                     ? ` The result must differ from: ${input.reservedSlugs.join(', ')}.`
                     : ''
                 const { text } = await generateText({
-                    model: workersAi(getAiTaskModel(options.models, 'changelogSlug')),
+                    model: workersAi(options.models.changelogSlug),
                     system: 'Return only a short lowercase URL slug containing ASCII letters, digits, and hyphens.',
                     prompt: `Create a slug for this changelog title: ${input.title}.${reserved}`,
                 })

@@ -1,4 +1,4 @@
-import type { H3Event } from '@nuxt/nitro-server/h3'
+import { createError, type H3Event } from '@nuxt/nitro-server/h3'
 import { drizzle } from 'drizzle-orm/d1'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -18,6 +18,7 @@ beforeEach(() => {
     database = createTestD1()
     db = drizzle(database.binding, { relations })
     Object.entries({
+        createError,
         catalogItemRelations,
         projectCatalogItem,
         projectSetupEntry,
@@ -41,8 +42,8 @@ beforeEach(() => {
             ('private-entry', 'private', 'catalog', 'avatar', NULL, 0), ('hidden-entry', 'hidden', 'catalog', 'avatar', NULL, 0);
         INSERT INTO setup_entry_shapekeys (setup_entry_id, name, value) VALUES ('entry', 'Smile', 0.5);
         INSERT INTO bookmarks (user_id, setup_id) VALUES ('other', 'public'), ('other', 'private'), ('other', 'hidden');
-        INSERT INTO setup_images (setup_id, object_key, width, height, theme_colors)
-        VALUES ('public', 'setups/public/image.png', 1200, 800, '["#123456"]');
+        INSERT INTO setup_images (stable_id, setup_id, object_key, width, height, theme_colors)
+        VALUES ('image-1', 'public', 'setups/public/image.png', 1200, 800, '["#123456"]');
     `)
 })
 afterEach(() => {
@@ -122,18 +123,21 @@ describe('provider-neutral Catalog and Setup queries', () => {
             .default as unknown as (input: {
             db: AppDatabase
             event: H3Event
-            session: { user: { id: string } }
+            session: { user: { id: string } } | null
         }) => Promise<{ data: { id: string; images: unknown[] }[] }>
         const result = await route({
             db,
             event: {} as H3Event,
             session: { user: { id: 'other' } },
         })
+        await expect(route({ db, event: {} as H3Event, session: null })).rejects.toMatchObject({
+            statusCode: 401,
+        })
         expect(result.data.map((setup) => setup.id)).toEqual(['public'])
         expect(result.data[0]?.images).toEqual([
             {
                 id: 1,
-                stableId: null,
+                stableId: 'image-1',
                 position: 0,
                 objectKey: 'setups/public/image.png',
                 width: 1200,
@@ -141,19 +145,10 @@ describe('provider-neutral Catalog and Setup queries', () => {
                 themeColors: ['#123456'],
             },
         ])
-        vi.stubGlobal('validateQuery', async () => ({
-            page: 1,
-            limit: 20,
-            sort: 'desc',
-            orderBy: 'createdAt',
-        }))
-        const bookmarks = (await import('../../../server/api/setups/bookmarks/index.get'))
-            .default as unknown as typeof route
-        const bookmarked = await bookmarks({
-            db,
-            event: {} as H3Event,
-            session: { user: { id: 'other' } },
-        })
-        expect(bookmarked.data).toHaveLength(1)
+        database.sqlite.exec(
+            "INSERT INTO bookmarks (user_id, setup_id) VALUES ('owner', 'private'), ('owner', 'hidden')",
+        )
+        const own = await route({ db, event: {} as H3Event, session: { user: { id: 'owner' } } })
+        expect(own.data.map((setup) => setup.id)).toEqual(['private'])
     })
 })

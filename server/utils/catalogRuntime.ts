@@ -1,8 +1,4 @@
-import {
-    CloudflareCacheInvalidator,
-    CloudflareCatalogSyncQueue,
-    SQLiteCatalogRepository,
-} from '@avatio/cloudflare'
+import { CloudflareCatalogSyncQueue, SQLiteCatalogRepository } from '@avatio/cloudflare'
 import {
     CatalogProviderRegistry,
     enqueueDueCatalogSources,
@@ -13,7 +9,7 @@ import {
     BoothCatalogProvider,
     GithubCatalogProvider,
 } from '@avatio/nuxt/runtime/server/catalog/providers'
-import type { CacheContext, Queue } from '@cloudflare/workers-types'
+import type { Queue } from '@cloudflare/workers-types'
 import { inArray } from 'drizzle-orm'
 import { itemSources } from '~~/database/schema'
 
@@ -49,16 +45,13 @@ export const getCatalogSyncQueue = (): CatalogSyncQueue | null => {
                     leaseToken: message.leaseToken,
                     repository: getCatalogRepository(),
                     providers: await getCatalogProviderRegistry(),
-                    cacheInvalidator: getCatalogCacheInvalidator(),
+                    cacheInvalidator: createCacheInvalidator(),
                 })
             },
         }
     const queue = getRuntimeEnv().ITEM_REVALIDATION_QUEUE as Queue | undefined
     return queue ? new CloudflareCatalogSyncQueue(queue) : null
 }
-
-export const getCatalogCacheInvalidator = (cache?: CacheContext) =>
-    new CloudflareCacheInvalidator(cache)
 
 export const enqueueReferencedCatalogSources = async (catalogItemIds: readonly string[]) => {
     const queue = getCatalogSyncQueue()

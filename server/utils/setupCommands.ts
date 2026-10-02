@@ -193,7 +193,6 @@ export const updateSetup = async (
         input.points !== undefined && imageData === undefined
             ? await db
                   .select({
-                      id: setupImages.id,
                       stableId: setupImages.stableId,
                   })
                   .from(setupImages)
@@ -201,7 +200,7 @@ export const updateSetup = async (
             : []
     const imageIds = new Set([
         ...(imageData ?? []).map(({ stableId }) => stableId),
-        ...existingPointImages.map(({ id: imageId, stableId }) => stableId ?? String(imageId)),
+        ...existingPointImages.map(({ stableId }) => stableId),
     ])
     const points = input.points
         ? preparePoints(id, input.points, new Set(entryIds), imageIds)

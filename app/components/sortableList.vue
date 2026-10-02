@@ -3,18 +3,11 @@ import { animations, tearDown } from '@formkit/drag-and-drop'
 import { dragAndDrop } from '@formkit/drag-and-drop/vue'
 
 const props = defineProps<{
-    modelValue: T[]
     handle: string
 }>()
-const emit = defineEmits<{
-    'update:modelValue': [value: T[]]
-}>()
+const values = defineModel<T[]>({ required: true })
 
 const parent = useTemplateRef<HTMLElement>('parent')
-const values = computed({
-    get: () => props.modelValue,
-    set: (value) => emit('update:modelValue', value),
-})
 
 dragAndDrop({
     parent,

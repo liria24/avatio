@@ -41,7 +41,7 @@ describe('UserBadges', () => {
             props: { badges: [{ badge: 'contributor' as const }] },
             global: { stubs },
         })
-        // developer badge should not be present
+        expect(wrapper.html()).toContain('fluent-color:animal-paw-print-24')
         expect(wrapper.html()).not.toContain('fluent-color:code-block-24')
     })
 })

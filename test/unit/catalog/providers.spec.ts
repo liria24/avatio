@@ -236,7 +236,7 @@ describe('GitHub CatalogProvider', () => {
 })
 
 describe('CatalogProviderRegistry', () => {
-    it('adds a provider without any Setup-domain change', () => {
+    it('looks up registered providers and rejects duplicate keys', () => {
         const futureProvider: CatalogProvider = {
             key: 'future',
             matchUrl: (url) =>
@@ -250,9 +250,11 @@ describe('CatalogProviderRegistry', () => {
             fetch: async () => ({ status: 'transient_error', errorKind: 'not-implemented' }),
         }
         const registry = new CatalogProviderRegistry([futureProvider])
-        expect(registry.keys()).toEqual(['future'])
-        expect(registry.matchUrl(new URL('https://catalog.example/item-1'))?.externalId).toBe(
-            'item-1',
+        expect(registry.get('future')).toBe(futureProvider)
+        expect(registry.get('missing')).toBeNull()
+        expect(registry.values()).toEqual([futureProvider])
+        expect(() => new CatalogProviderRegistry([futureProvider, futureProvider])).toThrow(
+            'unique',
         )
     })
 })

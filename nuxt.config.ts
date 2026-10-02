@@ -160,6 +160,7 @@ export default defineNuxtConfig({
     },
 
     nitro: {
+        sourceMap: false,
         rollupConfig: {
             plugins: [
                 {

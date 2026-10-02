@@ -95,14 +95,7 @@ export default promiseEventHandler(async ({ event, db }) => {
                 }
             }),
         ),
-        pagination: {
-            page,
-            limit,
-            total: data[0]?.count || 0,
-            totalPages: Math.ceil((data[0]?.count || 0) / limit),
-            hasNext: offset + limit < (data[0]?.count || 0),
-            hasPrev: offset > 0,
-        },
+        pagination: createPagination(data[0]?.count || 0, page, limit, offset),
     }
 
     applyPublicEdgeCache(event, [EDGE_CACHE_TAGS.changelogs])

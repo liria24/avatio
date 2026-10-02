@@ -13,9 +13,7 @@ describe('Cloudflare infrastructure adapters', () => {
         const flags = new CloudflareFeatureFlags({ getBooleanValue })
 
         await expect(flags.isEnabled('maintenance')).resolves.toBe(true)
-        await expect(flags.isEnabled('catalogV2Reads')).resolves.toBe(false)
         expect(getBooleanValue).toHaveBeenNthCalledWith(1, 'is-maintenance', false)
-        expect(getBooleanValue).toHaveBeenNthCalledWith(2, 'catalog-v2-reads', false)
 
         const unavailable = new CloudflareFeatureFlags({
             getBooleanValue: vi.fn(async () => {
@@ -27,9 +25,8 @@ describe('Cloudflare infrastructure adapters', () => {
 
     it('imports external files into R2 and exposes the configured public URL', async () => {
         const put = vi.fn(async () => null)
-        const remove = vi.fn(async () => undefined)
         vi.stubGlobal('__env__', {
-            R2: { put, delete: remove },
+            R2: { put },
             R2_PUBLIC_BASE_URL: 'https://images.example.com/',
         })
         vi.stubGlobal(
@@ -60,8 +57,5 @@ describe('Cloudflare infrastructure adapters', () => {
                 httpMetadata: expect.objectContaining({ contentType: 'image/jpeg' }),
             }),
         )
-
-        await storage.delete('avatar/user image.jpg')
-        expect(remove).toHaveBeenCalledWith('avatar/user image.jpg')
     })
 })

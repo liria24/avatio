@@ -777,7 +777,7 @@ export const setupImages = snakeCase.table(
     'setup_images',
     {
         id: identity(),
-        stableId: text().unique(),
+        stableId: text().notNull().unique(),
         setupId: text().notNull(),
         position: integer().default(0).notNull(),
         objectKey: text().notNull(),

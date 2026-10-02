@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 import { itemCategorySchema } from '../../catalog/domain/category'
 
-const shapekeySchema = z.object({
+export const setupEntryShapekeysSchema = z.object({
     name: z.string().min(1).max(64),
     value: z.number(),
 })
@@ -24,7 +24,7 @@ export const setupDraftImageMetadataSchema = z.object({
         .optional(),
 })
 
-const setupPointSchema = z.object({
+export const setupPointSchema = z.object({
     id: z.string().min(1),
     imageId: z.string().min(1),
     entryId: z.string().min(1),
@@ -53,7 +53,7 @@ export const setupComposeFormSchema = z.object({
             category: itemCategorySchema,
             note: z.string().max(300),
             unsupported: z.boolean(),
-            shapekeys: shapekeySchema.array().max(64),
+            shapekeys: setupEntryShapekeysSchema.array().max(64),
         })
         .array(),
     points: setupPointSchema.array().max(128),

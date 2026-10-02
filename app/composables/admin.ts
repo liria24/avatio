@@ -58,15 +58,6 @@ export const useAdmin = () => {
         refreshSummary: true,
     })
 
-    const banUser = defineAction<{ userId: string }>({
-        url: ({ userId }) => `/api/admin/user/${userId}`,
-        method: 'PATCH',
-        body: () => ({ ban: true }),
-        successTitle: t('toast.admin.userBanned'),
-        errorTitle: t('toast.admin.userBanFailed'),
-        errorLog: 'Error banning user:',
-    })
-
     const unbanUser = defineAction<{ userId: string }>({
         url: ({ userId }) => `/api/admin/user/${userId}`,
         method: 'PATCH',
@@ -173,7 +164,6 @@ export const useAdmin = () => {
 
     return {
         resolveReport,
-        banUser,
         unbanUser,
         closeFeedback,
         openFeedback,

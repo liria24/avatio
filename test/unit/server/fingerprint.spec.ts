@@ -48,6 +48,7 @@ describe('getFingerprint', () => {
     it('falls back to "unknown" when user-agent header is absent', async () => {
         mockGetHeaders.mockReturnValue({})
         const fp = await getFingerprint()
-        expect(fp).toMatch(/^[0-9a-f]{40}$/)
+        mockGetHeaders.mockReturnValue({ 'user-agent': 'unknown' })
+        expect(fp).toBe(await getFingerprint())
     })
 })

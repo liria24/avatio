@@ -1,71 +1,34 @@
+import { SQLitePublisherRepository } from '@avatio/cloudflare'
 import {
     createPublisherVerificationChallenge,
     PublisherVerificationError,
     PublisherVerificationProviderRegistry,
     verifyPublisherVerificationChallenge,
-    type PublisherRepository,
-    type PublisherSource,
-    type PublisherSourceOwnership,
-    type PublisherVerificationChallenge,
     type PublisherVerificationProvider,
 } from '@avatio/core/publishers'
 import type { ProviderHttpClient } from '@avatio/nuxt/runtime/server/catalog/providers'
 import { BoothPublisherVerificationProvider } from '@avatio/nuxt/runtime/server/publishers/providers'
-import { describe, expect, it } from 'vitest'
+import { drizzle } from 'drizzle-orm/d1'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-const createMemoryRepository = () => {
-    const sources = new Map<string, PublisherSource>()
-    const challenges = new Map<string, PublisherVerificationChallenge>()
-    const ownerships = new Map<string, PublisherSourceOwnership>()
-    const repository = {
-        async upsertSource(snapshot) {
-            const key = `${snapshot.providerKey}\0${snapshot.externalId}`
-            const source =
-                sources.get(key) ??
-                ({
-                    id: `source:${key}`,
-                    publisherId: `publisher:${key}`,
-                    ...snapshot,
-                } satisfies PublisherSource)
-            sources.set(key, source)
-            return source
-        },
-        async createChallenge(challenge) {
-            challenges.set(challenge.id, challenge)
-        },
-        async findChallenge(id) {
-            const challenge = challenges.get(id)
-            if (!challenge) return null
-            const source = [...sources.values()].find(
-                ({ id: sourceId }) => sourceId === challenge.publisherSourceId,
+import { relations } from '../../../database/relations'
+import { executeAppBatch } from '../../../server/utils/executeAppBatch'
+import { createTestD1 } from '../../helpers/d1'
+
+let database: ReturnType<typeof createTestD1>
+let repository: SQLitePublisherRepository
+beforeEach(() => {
+    database = createTestD1()
+    const db = drizzle(database.binding, { relations })
+    repository = new SQLitePublisherRepository(db, (queries) => executeAppBatch(db, queries))
+    for (const id of ['user', 'owner', 'other'])
+        database.sqlite
+            .prepare(
+                'INSERT INTO users (id, name, username, display_username, email) VALUES (?, ?, ?, ?, ?)',
             )
-            return source ? { challenge, source } : null
-        },
-        async deleteChallenge(id, userId) {
-            if (challenges.get(id)?.userId === userId) challenges.delete(id)
-        },
-        async consumeChallengeAndCreateOwnership(challenge, verifiedAt) {
-            if (!challenges.delete(challenge.id)) return null
-            const ownership = {
-                id: `ownership:${challenge.id}`,
-                userId: challenge.userId,
-                publisherSourceId: challenge.publisherSourceId,
-                method: challenge.method,
-                verifiedAt,
-            }
-            ownerships.set(ownership.id, ownership)
-            return ownership
-        },
-        async listOwnerships() {
-            return []
-        },
-        async deleteOwnership(id, userId) {
-            if (ownerships.get(id)?.userId !== userId) return false
-            return ownerships.delete(id)
-        },
-    } satisfies PublisherRepository
-    return { repository, challenges, ownerships }
-}
+            .run(id, id, id, id, id + '@example.com')
+})
+afterEach(() => database.sqlite.close())
 
 const provider = (key: string): PublisherVerificationProvider => ({
     key,
@@ -93,7 +56,6 @@ const provider = (key: string): PublisherVerificationProvider => ({
 
 describe('publisher verification', () => {
     it('isolates challenges and ownership by provider and source', async () => {
-        const { repository } = createMemoryRepository()
         const providers = new PublisherVerificationProviderRegistry([
             provider('first'),
             provider('second'),
@@ -128,7 +90,7 @@ describe('publisher verification', () => {
             providers,
             now,
         })
-        expect(ownership.publisherSourceId).toBe('source:first\0same-id')
+        expect(ownership.publisherSourceId).toBe(challenge.source.id)
         await expect(
             verifyPublisherVerificationChallenge({
                 id: challenge.id,
@@ -142,7 +104,6 @@ describe('publisher verification', () => {
     })
 
     it('expires and isolates challenges by user', async () => {
-        const { repository } = createMemoryRepository()
         const providers = new PublisherVerificationProviderRegistry([provider('first')])
         const challenge = await createPublisherVerificationChallenge({
             userId: 'owner',
@@ -177,7 +138,6 @@ describe('publisher verification', () => {
     })
 
     it('removes one source ownership without affecting another source', async () => {
-        const { repository, ownerships } = createMemoryRepository()
         const providers = new PublisherVerificationProviderRegistry([
             provider('first'),
             provider('second'),
@@ -202,9 +162,32 @@ describe('publisher verification', () => {
             )
         }
 
+        const badges = () =>
+            database.sqlite
+                .prepare('SELECT badge FROM user_badges WHERE user_id = ? ORDER BY badge')
+                .all('owner')
+                .map((row) => row.badge)
+        database.sqlite.exec(
+            "INSERT INTO user_badges (user_id, badge) VALUES ('owner', 'shop_owner'), ('owner', 'contributor'), ('other', 'publisher_owner')",
+        )
+        database.sqlite
+            .prepare(
+                "INSERT INTO publisher_source_ownerships (id, user_id, publisher_source_id, method, verified_at) VALUES ('other-ownership', 'other', ?, 'description', 1)",
+            )
+            .run(owned[0]!.publisherSourceId)
+        expect(await repository.deleteOwnership(owned[0]!.id, 'other')).toBe(false)
+        expect(await repository.listOwnerships('owner')).toHaveLength(2)
         expect(await repository.deleteOwnership(owned[0]!.id, 'owner')).toBe(true)
-        expect(ownerships.has(owned[0]!.id)).toBe(false)
-        expect(ownerships.has(owned[1]!.id)).toBe(true)
+        expect((await repository.listOwnerships('owner')).map((row) => row.id)).toEqual([
+            owned[1]!.id,
+        ])
+        expect(badges()).toEqual(['contributor', 'publisher_owner', 'shop_owner'])
+        expect(await repository.deleteOwnership(owned[1]!.id, 'owner')).toBe(true)
+        expect(await repository.listOwnerships('owner')).toEqual([])
+        expect(badges()).toEqual(['contributor'])
+        expect(
+            database.sqlite.prepare('SELECT badge FROM user_badges WHERE user_id = ?').all('other'),
+        ).toEqual([{ badge: 'publisher_owner' }])
     })
 
     it('checks BOOTH descriptions without applying catalog admission', async () => {
