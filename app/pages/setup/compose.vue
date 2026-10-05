@@ -120,6 +120,7 @@ await initialize({ draftId: queryValue(route.query.draftId), edit: queryValue(ro
                     <UButton
                         :label="$t('setup.compose.draftButton')"
                         icon="mingcute:circle-dash-fill"
+                        color="neutral"
                         variant="subtle"
                         size="sm"
                         :disabled="switchingAccount"
@@ -133,6 +134,7 @@ await initialize({ draftId: queryValue(route.query.draftId), edit: queryValue(ro
                     :label="statusBadge[1]"
                     :color="statusBadge[2]"
                     variant="soft"
+                    :ui="{ label: 'text-toned' }"
                     class="rounded-full px-3"
                     data-testid="draft-status"
                 />

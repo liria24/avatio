@@ -137,6 +137,7 @@ const focusAdded = (event: Event) => {
                         coauthors.length ? undefined : $t('setup.compose.coauthors.placeholder')
                     "
                     variant="soft"
+                    color="neutral"
                     block
                 />
 
