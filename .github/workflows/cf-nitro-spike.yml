@@ -32,6 +32,27 @@ jobs:
           cache: true
           run-install: false
       - run: vp install --frozen-lockfile
+      - name: Select matching synthetic build and binding context
+        env:
+          SPIKE_MODE: ${{ matrix.mode }}
+        run: |
+          node --input-type=module <<'JS'
+          import { appendFileSync } from 'node:fs'
+          import { createCloudflareResourceFixture } from './test/helpers/cloudflareResources.ts'
+          const mode = process.env.SPIKE_MODE
+          const preview = mode !== 'production'
+          const inventory = createCloudflareResourceFixture()
+          const target = preview ? inventory.previews[mode] : inventory.production
+          const values = {
+            STAGE: preview ? 'development' : 'production',
+            PREVIEW_NAME: preview ? mode : '',
+            PUBLIC_SITE_URL: target.siteUrl,
+            R2_PUBLIC_BASE_URL: target.imageBaseUrl,
+            OG_IMAGE_ENDPOINT: target.ogImageEndpoint,
+          }
+          appendFileSync(process.env.GITHUB_ENV,
+            Object.entries(values).map(([name, value]) => `${name}=${value}\n`).join(''))
+          JS
       - name: Build actual Nuxt/Nitro application
         run: vp run build
         env:
