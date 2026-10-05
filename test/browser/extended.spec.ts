@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { readFile, writeFile } from 'node:fs/promises'
+import { readFile, rename, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 import AxeBuilder from '@axe-core/playwright'
@@ -23,10 +23,16 @@ test('pointer sorting persists after the item list is unmounted and mounted agai
     const rows = page.locator('[data-entry-id]')
     await rows.nth(1).locator('.draggable').dragTo(rows.nth(0).locator('.draggable'))
     await expect(rows.first()).toContainText(second.name)
+    await expect(page.getByTestId('draft-status')).toHaveText(
+        labels.setup.compose.draftStatus.saved,
+    )
     const draftUrl = page.url()
     const draftId = new URL(draftUrl).searchParams.get('draftId')!
+    expect(draftId).toBeTruthy()
     const persistedItems = async () => {
-        const draft = await (await page.request.get(`/api/setup-drafts/${draftId}`)).json()
+        const response = await page.request.get(`/api/setup-drafts/${draftId}`)
+        expect(response.status()).toBe(200)
+        const draft = await response.json()
         return draft.content.items.map((item: { itemId: string }) => item.itemId)
     }
     await expect.poll(persistedItems).toEqual([second.id, first.id])
@@ -35,6 +41,9 @@ test('pointer sorting persists after the item list is unmounted and mounted agai
     await expect(rows.first()).toContainText(second.name)
     await rows.nth(1).locator('.draggable').dragTo(rows.nth(0).locator('.draggable'))
     await expect(rows.first()).toContainText(first.name)
+    await expect(page.getByTestId('draft-status')).toHaveText(
+        labels.setup.compose.draftStatus.saved,
+    )
     await expect.poll(persistedItems).toEqual([first.id, second.id])
 })
 
@@ -106,7 +115,6 @@ test('two browser tabs surface stale saves without overwriting the committed dra
         await second.goto(page.url())
         const secondInput = second.getByRole('textbox', {
             name: labels.setup.compose.nameLabel,
-            exact: true,
         })
         await expect(secondInput).toHaveValue('Original two-tab draft')
         await input.fill('Committed in first tab')
@@ -152,7 +160,7 @@ test('real signed device sessions transfer a saved draft and image to the select
         await chooser
     ).setFiles({ name: 'transfer.png', mimeType: 'image/png', buffer: fixturePng() })
     await expect(
-        page.getByRole('img', { name: labels.setup.compose.images.preview, exact: true }),
+        page.getByRole('img', { name: `${labels.setup.compose.images.preview} 1`, exact: true }),
     ).toBeVisible()
     await expect(page.getByTestId('draft-status')).toHaveText(
         labels.setup.compose.draftStatus.saved,
@@ -279,7 +287,10 @@ test('legal review refreshes after a stale version and a temporary source failur
             )
             await page.reload()
             await expect(dialog).toContainText('2021-01-01')
-            await writeFile(privacy, '---\nversion: invalid\n---\nUnavailable')
+            // A missing source makes acceptance unavailable and the document endpoint return 404.
+            // Removing it avoids racing a request against an in-place, partially written file.
+            const unavailablePath = join(runtime.root, `privacy-unavailable-${randomUUID()}.md`)
+            await rename(privacy, unavailablePath)
             const unavailable = page.waitForResponse(
                 (response) =>
                     response.url().includes('/api/avatio/legal/accept') &&
@@ -288,7 +299,7 @@ test('legal review refreshes after a stale version and a temporary source failur
             const unavailablePage = page.waitForResponse(
                 (response) =>
                     response.url().includes('/api/avatio/content/privacy-policy') &&
-                    response.status() === 503,
+                    response.status() === 404,
             )
             await dialog
                 .getByRole('button', { name: labels.modal.agreeTerms.agree, exact: true })
@@ -296,10 +307,7 @@ test('legal review refreshes after a stale version and a temporary source failur
             await unavailable
             await unavailablePage
             await expect(dialog.getByRole('button', { name: labels.content.retry })).toBeVisible()
-            await writeFile(
-                privacy,
-                privacyOriginal.replace(/^version:.*$/m, "version: '2021-01-01'"),
-            )
+            await rename(unavailablePath, privacy)
             await dialog.getByRole('button', { name: labels.content.retry }).click()
             await dialog
                 .getByRole('button', { name: labels.modal.agreeTerms.agree, exact: true })
@@ -398,6 +406,9 @@ test('compose and dialog accessibility are checked in a real browser', async ({
 }) => {
     await authenticate(context, account)
     await goto('/en/setup/compose', { waitUntil: 'hydration' })
+    const consent = page.getByRole('button', { name: labels.cookie.accept, exact: true })
+    await consent.click()
+    await expect(consent).toBeHidden()
     await addCatalogItem(page, runtime, `Accessible item ${randomUUID()}`)
     const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
     expect(results.violations).toEqual([])

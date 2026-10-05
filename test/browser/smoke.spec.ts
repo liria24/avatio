@@ -63,6 +63,10 @@ test('compose saves, publishes once and edits the same Setup', async ({
     const response = await createdResponse
     expect(response.status()).toBe(200)
     const setup = (await response.json()) as { id: string }
+    await page
+        .getByRole('dialog')
+        .getByRole('link', { name: labels.modal.publishComplete.viewSetup, exact: true })
+        .click()
     await expect(page).toHaveURL(new RegExp(`/en/${setup.id}$`))
     await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible()
     await goto(`/en/setup/compose?edit=${setup.id}`, { waitUntil: 'hydration' })
@@ -76,6 +80,11 @@ test('compose saves, publishes once and edits the same Setup', async ({
     )
     await page.getByRole('button', { name: labels.setup.compose.updateButton, exact: true }).click()
     expect((await editedResponse).status()).toBe(200)
+    await page
+        .getByRole('dialog')
+        .getByRole('link', { name: labels.modal.publishComplete.viewSetup, exact: true })
+        .click()
+    await expect(page.getByRole('heading', { name: `${title} edited`, exact: true })).toBeVisible()
     const persisted = await (await page.request.get(`/api/me/setups/${setup.id}`)).json()
     expect(persisted).toMatchObject({
         id: setup.id,
@@ -183,12 +192,16 @@ test('image upload renders, publishes and opens a keyboard-accessible gallery', 
         await chooser
     ).setFiles({ name: 'fixture.png', mimeType: 'image/png', buffer: fixturePng() })
     await expect(
-        page.getByRole('img', { name: labels.setup.compose.images.preview, exact: true }),
+        page.getByRole('img', { name: `${labels.setup.compose.images.preview} 1`, exact: true }),
     ).toBeVisible()
     await openItems(page)
     await addCatalogItem(page, runtime, `Image item ${randomUUID()}`)
     await page
         .getByRole('button', { name: labels.setup.compose.publishButton, exact: true })
+        .click()
+    await page
+        .getByRole('dialog')
+        .getByRole('link', { name: labels.modal.publishComplete.viewSetup, exact: true })
         .click()
     await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible()
     const trigger = page.getByRole('button', {
