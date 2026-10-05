@@ -16,6 +16,10 @@ const {
     draft,
     loadDraft,
     initialize,
+    pointEditor,
+    closeImagePoints,
+    updateImagePoints,
+    entries,
 } = useSetupCompose()
 
 const publishedSetupId = ref<Setup['id'] | null>(null)
@@ -96,6 +100,33 @@ await initialize({ draftId: queryValue(route.query.draftId), edit: queryValue(ro
 </script>
 
 <template>
+    <ModalSetupImagePoints
+        v-if="pointEditor"
+        :key="pointEditor.id"
+        :open="true"
+        :image-id="pointEditor.id"
+        :image-url="pointEditor.url"
+        :width="pointEditor.width"
+        :height="pointEditor.height"
+        :placing-entry-id="pointEditor.placingEntryId"
+        :entries="entries"
+        :points="values.points.filter((point) => point.imageId === pointEditor?.id)"
+        :total-points="values.points.length"
+        @update:open="closeImagePoints"
+        @update:points="updateImagePoints(pointEditor.id, $event)"
+    >
+        <template #save-status>
+            <UBadge
+                v-if="statusBadge"
+                :icon="statusBadge[0]"
+                :label="statusBadge[1]"
+                :color="statusBadge[2]"
+                variant="soft"
+                :ui="{ label: 'text-toned' }"
+                data-testid="point-draft-status"
+            />
+        </template>
+    </ModalSetupImagePoints>
     <UForm
         :state="values"
         :inert="switchingAccount"

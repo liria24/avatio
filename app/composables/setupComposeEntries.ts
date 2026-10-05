@@ -35,7 +35,7 @@ export const useSetupComposeEntries = (
     const addItem = (item: CatalogItemView) => {
         if (!item?.id || !item?.category) {
             console.error('Invalid item data:', item)
-            return
+            return false
         }
         if (items.value.some(({ itemId }) => itemId === item.id)) {
             toast.add({
@@ -44,7 +44,16 @@ export const useSetupComposeEntries = (
                 title: t('setup.compose.itemAlreadyAdded'),
                 color: 'warning',
             })
-            return
+            return false
+        }
+
+        if (items.value.length >= MAX_ITEMS_PER_SETUP) {
+            toast.add({
+                id: 'item-limit',
+                title: t('commandPalette.itemSearch.itemLimit'),
+                color: 'warning',
+            })
+            return false
         }
 
         const parsedCategory = itemCategorySchema.safeParse(item.category)
@@ -60,6 +69,7 @@ export const useSetupComposeEntries = (
                 shapekeys: [],
             },
         ])
+        return true
     }
 
     const updateItem = (entryId: string, update: Partial<SetupComposeForm['items'][number]>) =>

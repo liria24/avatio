@@ -14,7 +14,6 @@ import {
     LazyModalAdminEmailReply,
     LazyImageViewer,
     LazyModalAgreeTerms,
-    LazyModalSetupImagePoints,
 } from '#components'
 
 const opts = { destroyOnClose: false } as const
@@ -39,4 +38,3 @@ export const useChangeItemNiceNameModal = defineOverlay(LazyModalAdminChangeItem
 export const useEmailDetailSlideover = defineOverlay(LazyModalAdminEmailDetail)
 export const useEmailReplyModal = defineOverlay(LazyModalAdminEmailReply)
 export const useImageViewerModal = defineOverlay(LazyImageViewer)
-export const useSetupImagePointsModal = defineOverlay(LazyModalSetupImagePoints)

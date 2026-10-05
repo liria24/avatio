@@ -6,8 +6,306 @@ import AxeBuilder from '@axe-core/playwright'
 import { eq } from 'drizzle-orm'
 
 import { setupReports, users } from '../../database/schema'
-import { fixturePng, seedSetup } from '../helpers/seeds'
-import { addCatalogItem, authenticate, expect, labels, test } from './fixtures'
+import { fixturePng, seedCatalogItem, seedSetup } from '../helpers/seeds'
+import {
+    addCatalogItem,
+    authenticate,
+    expect,
+    labels,
+    openDetails,
+    openItems,
+    test,
+} from './fixtures'
+
+test.describe('point editor', () => {
+    test.use({ hasTouch: true })
+    test('point editing commits completed operations, cancels moves, and restores saved points at mobile width', async ({
+        page,
+        goto,
+        context,
+        account,
+        runtime,
+    }, testInfo) => {
+        test.setTimeout(120_000)
+        page.setDefaultTimeout(10_000)
+        page.setDefaultNavigationTimeout(60_000)
+        await authenticate(context, account)
+        await goto('/en/setup/compose', { waitUntil: 'hydration' })
+        await page.getByRole('button', { name: labels.cookie.accept, exact: true }).click()
+        const first = await addCatalogItem(page, runtime, `Point first ${randomUUID()}`)
+        const second = await addCatalogItem(page, runtime, `Point second ${randomUUID()}`)
+        const chooser = page.waitForEvent('filechooser')
+        await page
+            .getByRole('button', { name: labels.setup.compose.images.add, exact: true })
+            .click()
+        await (
+            await chooser
+        ).setFiles([
+            { name: 'portrait.png', mimeType: 'image/png', buffer: fixturePng(640, 960) },
+            { name: 'landscape.png', mimeType: 'image/png', buffer: fixturePng(960, 640) },
+        ])
+        const triggers = page.getByRole('button', {
+            name: labels.setup.compose.points.title,
+            exact: true,
+        })
+        await expect(triggers).toHaveCount(4)
+        await triggers.nth(0).click()
+        const dialog = page.getByRole('dialog', { name: labels.setup.compose.points.title })
+        const image = dialog.getByRole('img', {
+            name: labels.setup.compose.images.preview,
+            exact: true,
+        })
+        const markers = dialog.locator('[data-point-id]')
+        const pick = async (name: string) => {
+            await page.getByRole('option').filter({ hasText: name }).click()
+        }
+        const add = async (x: number, y: number, name: string) => {
+            const bounds = (await image.boundingBox())!
+            await image.click({ position: { x: bounds.width * x, y: bounds.height * y } })
+            await pick(name)
+        }
+        await expect(
+            dialog.getByRole('button', { name: labels.setup.compose.points.add, exact: true }),
+        ).toBeEnabled()
+        await add(0.3, 0.3, first.name)
+        await add(0.7, 0.6, first.name)
+        await expect(markers).toHaveCount(2)
+        const marker = markers.first()
+        const original = await marker.getAttribute('style')
+        const drag = async () => {
+            const bounds = (await marker.boundingBox())!
+            await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2)
+            await page.mouse.down()
+            await page.mouse.move(
+                bounds.x + bounds.width / 2 + 35,
+                bounds.y + bounds.height / 2 + 20,
+                {
+                    steps: 5,
+                },
+            )
+        }
+        await drag()
+        await page.mouse.up()
+        await expect(marker).not.toHaveAttribute('style', original!)
+        const moved = await marker.getAttribute('style')
+        await dialog
+            .getByRole('button', { name: labels.setup.compose.points.undo, exact: true })
+            .click()
+        await expect(marker).toHaveAttribute('style', original!)
+        await dialog
+            .getByRole('button', { name: labels.setup.compose.points.redo, exact: true })
+            .click()
+        await expect(marker).toHaveAttribute('style', moved!)
+        await drag()
+        await marker.dispatchEvent('pointercancel', {
+            pointerId: 1,
+            pointerType: 'mouse',
+            bubbles: true,
+        })
+        await page.mouse.up()
+        await expect(marker).toHaveAttribute('style', moved!)
+        await marker.focus()
+        await page.keyboard.down('ArrowRight')
+        await page.keyboard.press('Escape')
+        await page.keyboard.up('ArrowRight')
+        await expect(marker).toHaveAttribute('style', moved!)
+        await marker.press('Shift+ArrowDown')
+        await expect(marker).not.toHaveAttribute('style', moved!)
+        await dialog
+            .getByRole('button', { name: labels.setup.compose.points.undo, exact: true })
+            .click()
+        await expect(marker).toHaveAttribute('style', moved!)
+        await marker.click()
+        await page
+            .getByRole('button', { name: labels.setup.compose.points.changeItem, exact: true })
+            .click()
+        await pick(second.name)
+        await expect(marker).toHaveAttribute('aria-label', second.name)
+        await marker.click()
+        await page
+            .getByRole('button', { name: labels.setup.compose.points.move, exact: true })
+            .click()
+        const bounds = (await image.boundingBox())!
+        await image.click({ position: { x: bounds.width * 0.1, y: bounds.height * 0.8 } })
+        expect(await marker.evaluate((element) => parseFloat(element.style.left))).toBeCloseTo(
+            10,
+            0,
+        )
+        expect(await marker.evaluate((element) => parseFloat(element.style.top))).toBeCloseTo(80, 0)
+        const destination = await marker.getAttribute('style')
+        await marker.click()
+        await image.click({ position: { x: bounds.width * 0.5, y: bounds.height * 0.2 } })
+        await expect(page.getByRole('option')).toHaveCount(0)
+        await expect(markers).toHaveCount(2)
+        await marker.click()
+        await page
+            .getByRole('button', { name: labels.setup.compose.points.remove, exact: true })
+            .click()
+        await expect(markers).toHaveCount(1)
+        await dialog
+            .getByRole('button', { name: labels.setup.compose.points.undo, exact: true })
+            .click()
+        await expect(markers).toHaveCount(2)
+        await page.screenshot({ path: testInfo.outputPath('points-desktop.png') })
+        await dialog
+            .getByRole('button', { name: labels.setup.compose.points.done, exact: true })
+            .click()
+        await expect(dialog).toBeHidden()
+        await triggers.nth(2).click()
+        await add(0.5, 0.5, second.name)
+        await expect(markers).toHaveCount(1)
+        await dialog
+            .getByRole('button', { name: labels.setup.compose.points.done, exact: true })
+            .click()
+        await expect(page.getByTestId('draft-status')).toHaveText(
+            labels.setup.compose.draftStatus.saved,
+        )
+        const draftUrl = page.url()
+        const draftId = new URL(draftUrl).searchParams.get('draftId')!
+        const saved = await (await page.request.get(`/api/setup-drafts/${draftId}`)).json()
+        expect(saved.content.points).toHaveLength(3)
+        expect(
+            new Set(saved.content.points.map((point: { imageId: string }) => point.imageId)).size,
+        ).toBe(2)
+        await page.setViewportSize({ width: 390, height: 844 })
+        await goto(draftUrl, { waitUntil: 'hydration' })
+        await openDetails(page)
+        await triggers.nth(0).click()
+        await expect(markers).toHaveCount(2)
+        await expect(markers.first()).toHaveAttribute('style', destination!)
+        await expect(
+            dialog.getByRole('button', { name: labels.setup.compose.points.undo, exact: true }),
+        ).toBeDisabled()
+        await markers.first().tap()
+        await expect(
+            page.getByRole('button', { name: labels.setup.compose.points.changeItem, exact: true }),
+        ).toBeVisible()
+        const popover = page.getByRole('dialog', {
+            name: labels.setup.compose.points.selectItem,
+            exact: true,
+        })
+        await expect
+            .poll(async () => {
+                const bounds = await popover.boundingBox()
+                return bounds && bounds.x >= 15 && bounds.x + bounds.width <= 375
+            })
+            .toBe(true)
+        await expect(popover).toHaveCSS('opacity', '1')
+        await page.screenshot({ path: testInfo.outputPath('points-mobile.png') })
+        const accessibility = await new AxeBuilder({ page })
+            .include('[role="dialog"]')
+            .withTags(['wcag2a', 'wcag2aa'])
+            .analyze()
+        expect(accessibility.violations).toEqual([])
+        await page.keyboard.press('Escape')
+        await page.setViewportSize({ width: 844, height: 390 })
+        await expect.poll(async () => (await image.boundingBox())?.height ?? 0).toBeGreaterThan(0)
+        await expect(
+            dialog.getByRole('button', { name: labels.setup.compose.points.add, exact: true }),
+        ).toBeEnabled()
+    })
+})
+
+test('catalog input handles IME and Enter, retains focus after the first item, and survives a viewport remount', async ({
+    page,
+    goto,
+    context,
+    account,
+    runtime,
+}) => {
+    await authenticate(context, account)
+    await goto('/en/setup/compose', { waitUntil: 'hydration' })
+    const first = await addCatalogItem(page, runtime, `Search first ${randomUUID()}`)
+    const search = page.getByRole('combobox', {
+        name: labels.commandPalette.itemSearch.placeholder,
+    })
+    await expect(search).toBeFocused()
+    await expect(search).toHaveValue('')
+    const second = await seedCatalogItem(runtime, `Keyboard second ${randomUUID()}`)
+    await search.dispatchEvent('compositionstart')
+    await search.fill(second.name)
+    await search.press('Enter')
+    await expect(page.locator('[data-entry-id]')).toHaveCount(1)
+    await search.dispatchEvent('compositionend')
+    await expect(page.getByRole('option', { name: second.name, exact: true })).toBeVisible()
+    await search.press('ArrowDown')
+    await search.press('Enter')
+    await expect(page.locator('[data-entry-id]')).toHaveCount(2)
+    await expect(search).toHaveValue('')
+    await search.fill(first.name)
+    await expect(page.getByRole('option').filter({ hasText: first.name })).toHaveAttribute(
+        'data-disabled',
+        '',
+    )
+    await page.setViewportSize({ width: 390, height: 844 })
+    await expect(
+        page.getByRole('tab', { name: labels.setup.compose.mobile.items, exact: true }),
+    ).toBeVisible()
+    await openItems(page)
+    await expect(search).toHaveValue(first.name)
+    await search.fill('')
+    await search.press('Escape')
+    await expect(page.getByRole('option')).toHaveCount(0)
+})
+
+test('catalog URL imports require an explicit action and retain partial failures across viewport changes', async ({
+    page,
+    goto,
+    context,
+    account,
+    runtime,
+}) => {
+    await authenticate(context, account)
+    await goto('/en/setup/compose', { waitUntil: 'hydration' })
+    const item = await seedCatalogItem(runtime, `URL item ${randomUUID()}`)
+    const data = await (await page.request.get(`/api/items/${item.id}`)).json()
+    const requests: string[] = []
+    const finish = Promise.withResolvers<void>()
+    await context.route('**/api/items/resolve', async (route) => {
+        const { reference } = route.request().postDataJSON() as { reference: string }
+        requests.push(reference)
+        await finish.promise
+        await route.fulfill({
+            status: reference.endsWith('/failed') ? 503 : 200,
+            contentType: 'application/json',
+            body: JSON.stringify(reference.endsWith('/failed') ? { statusCode: 503 } : data),
+        })
+    })
+    const search = page.getByRole('combobox', {
+        name: labels.commandPalette.itemSearch.placeholder,
+    })
+    await search.fill(
+        'https://example.test/first https://example.test/duplicate https://example.test/failed',
+    )
+    await expect(page.getByRole('option', { name: 'Add 3 URLs', exact: true })).toBeVisible()
+    expect(requests).toEqual([])
+    await search.press('ArrowDown')
+    await search.press('Enter')
+    await expect.poll(() => requests.length).toBe(3)
+    await page.setViewportSize({ width: 390, height: 844 })
+    await expect(
+        page.getByRole('tab', { name: labels.setup.compose.mobile.items, exact: true }),
+    ).toBeVisible()
+    await openItems(page)
+    finish.resolve()
+    await expect(page.locator('[data-entry-id]')).toHaveCount(1)
+    await expect(
+        page.getByText(labels.commandPalette.itemSearch.resolveFailed, { exact: true }),
+    ).toBeVisible()
+    await expect(
+        page.getByText(labels.commandPalette.itemSearch.duplicate, { exact: true }),
+    ).toBeVisible()
+    await expect(search).toHaveValue('')
+    await context.unroute('**/api/items/resolve')
+    await context.route('**/api/items/resolve', (route) =>
+        route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(data) }),
+    )
+    await page.getByRole('button', { name: labels.content.retry, exact: true }).click()
+    await expect(
+        page.getByText(labels.commandPalette.itemSearch.resolveFailed, { exact: true }),
+    ).toHaveCount(0)
+    await expect(page.locator('[data-entry-id]')).toHaveCount(1)
+})
 
 test('pointer sorting persists after the item list is unmounted and mounted again', async ({
     page,
@@ -48,6 +346,34 @@ test('pointer sorting persists after the item list is unmounted and mounted agai
         labels.setup.compose.draftStatus.saved,
     )
     await expect.poll(persistedItems).toEqual([first.id, second.id])
+})
+
+test('shared catalog search preserves admin selection focus and search-filter IDs', async ({
+    page,
+    goto,
+    context,
+    runtime,
+}) => {
+    await authenticate(context, runtime.admin)
+    const item = await seedCatalogItem(runtime, `Shared search ${randomUUID()}`)
+    await goto('/en/admin/config', { waitUntil: 'hydration' })
+    const search = page.getByRole('combobox', {
+        name: labels.commandPalette.itemSearch.placeholder,
+    })
+    await search.fill('https://example.test/none')
+    await expect(page.getByRole('option', { name: 'Add 1 URL', exact: true })).toHaveCount(0)
+    await search.fill(item.name)
+    await page.getByRole('option', { name: item.name, exact: true }).click()
+    const row = page.locator(`[data-override-id="${item.id}"]`)
+    await expect(row).toBeVisible()
+    await expect(row.getByRole('combobox')).toBeFocused()
+    await goto('/en/search', { waitUntil: 'hydration' })
+    await page.getByRole('button', { name: labels.search.options.title, exact: true }).click()
+    await page.getByRole('button', { name: labels.search.options.addItem, exact: true }).click()
+    await search.fill(item.name)
+    await page.getByRole('option', { name: item.name, exact: true }).click()
+    await expect.poll(() => new URL(page.url()).searchParams.get('itemId')).toBe(item.id)
+    await expect(search).toBeHidden()
 })
 
 test('IndexedDB recovery survives failed draft saves and stays isolated by owner', async ({

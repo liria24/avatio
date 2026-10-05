@@ -118,7 +118,7 @@ describe('setup compose account switching', () => {
                 removeImage: noOp,
                 reorderImages: noOp,
             }),
-            useSetupImagePointsModal: () => ({ open: noOp }),
+            useCatalogItemSearch: () => ({ reset: noOp }),
             useFetch: () => ({ data: ref([]), status: ref('success'), refresh: noOp }),
             reloadNuxtApp: reload,
             $fetch: regularFetch,

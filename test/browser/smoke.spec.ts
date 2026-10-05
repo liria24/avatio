@@ -168,7 +168,9 @@ test('keyboard item reordering and removal preserve focus and mobile tab search'
             exact: true,
         }),
     ).toBeFocused()
-    const search = page.getByRole('textbox', { name: labels.commandPalette.itemSearch.placeholder })
+    const search = page.getByRole('combobox', {
+        name: labels.commandPalette.itemSearch.placeholder,
+    })
     await search.fill('retained search')
     await openDetails(page)
     await openItems(page)

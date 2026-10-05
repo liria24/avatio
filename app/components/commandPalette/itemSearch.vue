@@ -1,196 +1,112 @@
 <script setup lang="ts">
-const emit = defineEmits<{
-    select: [item: CatalogItemView]
-}>()
+import type { CatalogItemSearchSession } from '~/composables/catalogItemSearch'
 
+const emit = defineEmits<{ select: [item: CatalogItemView] }>()
 const props = withDefaults(
-    defineProps<{ loading?: boolean; allowResolve?: boolean; endpoint?: string }>(),
+    defineProps<{
+        loading?: boolean
+        allowResolve?: boolean
+        endpoint?: string
+        session?: CatalogItemSearchSession
+    }>(),
     { allowResolve: true, endpoint: '/api/items' },
 )
 const searchTerm = defineModel<string>('searchTerm', { default: '' })
-
-type UrlJob = {
-    id: string
-    url: string
-    status: 'queued' | 'resolving' | 'failed' | 'added'
-}
-
-type SearchRow =
-    | { id: string; type: 'resolve'; urls: string[] }
-    | { id: string; type: 'url'; job: UrlJob }
-    | { id: string; type: 'item'; item: CatalogItemView }
-    | { id: string; type: 'error'; page: number }
-    | { id: string; type: 'empty' }
-
-const results = ref<CatalogItemView[]>([])
-const pagination = ref<PaginationResponse<CatalogItemView[]>['pagination']>()
-const urlJobs = ref<UrlJob[]>([])
-const searchPending = ref(false)
-const failedPage = ref<number>()
-const composing = ref(false)
-const scrollArea = ref<{ $el?: HTMLElement }>()
-const root = ref<HTMLElement>()
-const open = ref(false)
-let generation = 0
-let request: AbortController | undefined
-let activeUrlJobs = 0
-const MAX_CONCURRENT_URL_JOBS = 4
-
-const extractUrls = (text: string) =>
-    [...new Set(text.match(/https?:\/\/[^\s<>"']+/giu) ?? [])].filter((value) => {
-        try {
-            return Boolean(new URL(value))
-        } catch {
-            return false
-        }
+const session =
+    props.session ??
+    useCatalogItemSearch((item) => emit('select', item), {
+        searchTerm,
+        endpoint: () => props.endpoint,
     })
-
-const fetchResults = async (page = 1) => {
-    if (searchPending.value) return
-    const current = generation
-    const query = searchTerm.value.trim().slice(0, 100)
-    request = new AbortController()
-    searchPending.value = true
-    failedPage.value = undefined
-    if (page === 1) {
-        results.value = []
-        pagination.value = undefined
-    }
-    try {
-        const response = await $fetch<PaginationResponse<CatalogItemView[]>>(props.endpoint, {
-            query: { q: query || undefined, page, limit: 24 },
-            signal: request.signal,
-        })
-        if (current !== generation) return
-        results.value = page === 1 ? response.data : [...results.value, ...response.data]
-        pagination.value = response.pagination
-    } catch (error) {
-        if (current === generation && (error as { name?: string }).name !== 'AbortError') {
-            failedPage.value = page
-            console.error('Failed to search items:', error)
-        }
-    } finally {
-        if (current === generation) {
-            searchPending.value = false
-            await nextTick()
-            void loadIfNearEnd()
-        }
-    }
-}
-
-const search = useDebounceFn(() => fetchResults(), 300, { maxWait: 600 })
-const queueSearch = () => {
-    generation += 1
-    request?.abort()
-    searchPending.value = false
-    if (!composing.value) void search()
-}
-watch(searchTerm, queueSearch, { immediate: true })
-onBeforeUnmount(() => request?.abort())
-
-const resolveJob = async (job: UrlJob) => {
-    job.status = 'resolving'
-    try {
-        const item = await $fetch<CatalogItemView>('/api/items/resolve', {
-            method: 'POST',
-            body: { reference: job.url },
-        })
-        emit('select', item)
-        job.status = 'added'
-    } catch (error) {
-        job.status = 'failed'
-        console.error('Failed to resolve item URL:', error)
-    }
-}
-
-const runUrlQueue = () => {
-    while (activeUrlJobs < MAX_CONCURRENT_URL_JOBS) {
-        const job = urlJobs.value.find(({ status }) => status === 'queued')
-        if (!job) return
-        activeUrlJobs += 1
-        job.status = 'resolving'
-        void resolveJob(job).finally(() => {
-            activeUrlJobs -= 1
-            runUrlQueue()
-        })
-    }
-}
-
-const retryJob = (job: UrlJob) => {
-    if (job.status !== 'failed') return
-    job.status = 'queued'
-    runUrlQueue()
-}
-
-const resolveUrls = (urls: string[]) => {
-    open.value = true
-    const known = new Set(urlJobs.value.map(({ url }) => url))
-    const jobs = urls
-        .filter((url) => !known.has(url))
-        .slice(0, 32)
-        .map((url): UrlJob => ({ id: crypto.randomUUID(), url, status: 'queued' }))
-    urlJobs.value.push(...jobs)
-    runUrlQueue()
-}
-
-const onPaste = (event: ClipboardEvent) => {
-    if (!props.allowResolve) return
-    const text = event.clipboardData?.getData('text') ?? ''
-    const urls = extractUrls(text)
-    if (urls.length) resolveUrls(urls)
-}
-
-onClickOutside(root, () => (open.value = false))
-
-const rows = computed<SearchRow[]>(() => {
-    const typedUrls = props.allowResolve ? extractUrls(searchTerm.value) : []
-    const canResolve = typedUrls.filter(
-        (url) => !urlJobs.value.some((candidate) => candidate.url === url),
-    )
-    return [
-        ...(canResolve.length
-            ? [{ id: 'resolve-urls', type: 'resolve' as const, urls: canResolve }]
-            : []),
-        ...urlJobs.value.map((job) => ({ id: job.id, type: 'url' as const, job })),
-        ...results.value.map((item) => ({ id: item.id, type: 'item' as const, item })),
-        ...(failedPage.value
-            ? [{ id: 'search-error', type: 'error' as const, page: failedPage.value }]
-            : []),
-        ...(!searchPending.value && !failedPage.value && !results.value.length
-            ? [{ id: 'empty', type: 'empty' as const }]
-            : []),
-    ]
-})
-
-async function loadIfNearEnd() {
-    const element = scrollArea.value?.$el
-    if (
-        !element ||
-        searchPending.value ||
-        failedPage.value ||
-        !pagination.value?.hasNext ||
-        element.scrollTop + element.clientHeight < element.scrollHeight - 120
-    )
-        return
-    await fetchResults(pagination.value.page + 1)
-}
-
-const onCompositionEnd = () => {
-    composing.value = false
-    queueSearch()
-}
-
-const selectItem = (item: CatalogItemView) => {
-    emit('select', item)
-    searchTerm.value = ''
+const { results, pending, failedPage, composing, jobs, urls, tooManyUrls, selectedIds, atLimit } =
+    session
+const inputTerm = session.searchTerm
+const open = ref(false)
+const menu = ref<{ inputRef?: HTMLInputElement; viewportRef?: HTMLElement }>()
+const { t } = useI18n()
+const focusInput = () => nextTick(() => menu.value?.inputRef?.focus())
+const finishSelection = () => {
     open.value = false
+    if (props.session) void focusInput()
+}
+const selectItem = (item: CatalogItemView) => {
+    if (composing.value || session.selectItem(item) !== 'added') return
+    inputTerm.value = ''
+    finishSelection()
+}
+const rows = computed(() => [
+    ...(props.allowResolve && urls.value.some((url) => !jobs.value.some((job) => job.url === url))
+        ? [
+              {
+                  id: 'resolve-urls',
+                  label: t('commandPalette.itemSearch.addUrls', { count: urls.value.length }),
+                  icon: 'mingcute:link-fill',
+                  disabled: atLimit.value,
+                  item: undefined,
+                  onSelect: (event: Event) => {
+                      event.preventDefault()
+                      if (!composing.value) {
+                          session.resolveUrls()
+                          finishSelection()
+                      }
+                  },
+              },
+          ]
+        : []),
+    ...results.value.map((item) => ({
+        id: item.id,
+        label: item.name,
+        description: item.primarySource?.publisher?.name,
+        disabled: selectedIds.value.includes(item.id) || atLimit.value,
+        item,
+        onSelect: (event: Event) => {
+            event.preventDefault()
+            selectItem(item)
+        },
+    })),
+])
+watch(open, (value) => {
+    if (value) session.activate()
+})
+useInfiniteScroll(
+    computed(() => menu.value?.viewportRef),
+    () => session.fetchResults((session.pagination.value?.page ?? 0) + 1),
+    {
+        distance: 120,
+        canLoadMore: () =>
+            open.value &&
+            !pending.value &&
+            !failedPage.value &&
+            !!session.pagination.value?.hasNext,
+    },
+)
+const onKeydown = (event: KeyboardEvent) => {
+    if (event.key !== 'Enter') return
+    // Reka handles the selected option before this bubbles; keep Enter out of the parent form.
+    event.preventDefault()
+    if (event.isComposing || composing.value) event.stopPropagation()
+}
+const onComposition = (value: boolean) => {
+    composing.value = value
+    session.queueSearch()
 }
 </script>
 
 <template>
-    <div ref="root" class="relative min-w-72 md:min-w-96">
-        <UInput
-            v-model="searchTerm"
+    <div class="flex min-w-0 flex-col gap-2" @keydown="onKeydown">
+        <UInputMenu
+            ref="menu"
+            v-model="inputTerm"
+            v-model:open="open"
+            mode="autocomplete"
+            :items="rows"
+            value-key="id"
+            ignore-filter
+            :reset-search-term-on-blur="false"
+            :reset-search-term-on-select="false"
+            open-on-click
+            :virtualize="{ estimateSize: 56, overscan: 8 }"
+            :loading="props.loading || pending"
             icon="mingcute:package-2-fill"
             :placeholder="$t('commandPalette.itemSearch.placeholder')"
             :aria-label="$t('commandPalette.itemSearch.placeholder')"
@@ -198,114 +114,94 @@ const selectItem = (item: CatalogItemView) => {
             size="lg"
             autocomplete="off"
             class="w-full"
-            @focus="open = true"
-            @compositionstart="composing = true"
-            @compositionend="onCompositionEnd"
-            @paste="onPaste"
-            @keydown.escape="open = false"
+            :ui="{
+                content: 'max-w-[calc(100vw-2rem)]',
+                viewport: 'max-h-72',
+                item: 'min-h-14',
+                itemLabel: 'text-toned',
+                itemDescription: 'text-toned',
+                empty: 'text-toned',
+            }"
+            @compositionstart="onComposition(true)"
+            @compositionend="onComposition(false)"
         >
-            <template v-if="props.loading || searchPending" #trailing>
-                <Icon name="svg-spinners:ring-resize" size="16" class="text-muted" />
+            <template #item-leading="{ item: row }">
+                <UAvatar
+                    v-if="row.item"
+                    :src="row.item.image || undefined"
+                    :alt="row.item.name"
+                    icon="mingcute:package-2-fill"
+                    size="lg"
+                    class="rounded-md"
+                />
+                <Icon v-else name="mingcute:link-fill" size="20" />
             </template>
-        </UInput>
-
+            <template #item-trailing="{ item: row }">
+                <span v-if="selectedIds.includes(row.id)" class="text-toned text-xs">
+                    {{ $t('commandPalette.itemSearch.alreadyAdded') }}
+                </span>
+            </template>
+            <template #empty>
+                <span role="option" aria-disabled="true">
+                    {{
+                        pending
+                            ? $t('commandPalette.itemSearch.searching')
+                            : failedPage
+                              ? $t('commandPalette.itemSearch.searchFailed')
+                              : $t('commandPalette.itemSearch.noResults')
+                    }}
+                </span>
+            </template>
+            <template v-if="failedPage" #content-bottom>
+                <UButton
+                    :label="$t('content.retry')"
+                    icon="mingcute:refresh-2-fill"
+                    variant="soft"
+                    color="error"
+                    block
+                    class="m-2 w-[calc(100%-1rem)]"
+                    @click="session.fetchResults(failedPage)"
+                />
+            </template>
+        </UInputMenu>
+        <UAlert
+            v-if="atLimit || tooManyUrls"
+            color="warning"
+            variant="soft"
+            :title="$t('commandPalette.itemSearch.' + (atLimit ? 'itemLimit' : 'urlLimit'))"
+        />
         <div
-            v-if="open"
-            class="bg-default ring-muted absolute inset-x-0 top-[calc(100%+0.375rem)] z-20 overflow-hidden rounded-lg shadow-xl ring-1"
+            v-if="jobs.length"
+            class="flex max-h-40 flex-col gap-1 overflow-y-auto"
+            aria-live="polite"
         >
-            <UScrollArea
-                ref="scrollArea"
-                :items="rows"
-                :virtualize="{ estimateSize: 56, overscan: 8, skipMeasurement: true }"
-                shadow
-                class="h-72"
-                :ui="{ item: 'px-2 py-1' }"
-                @scroll="loadIfNearEnd"
-            >
-                <template #default="{ item: row }">
-                    <UButton
-                        v-if="row.type === 'resolve'"
-                        :label="$t('commandPalette.itemSearch.addUrls', { count: row.urls.length })"
-                        icon="mingcute:link-fill"
-                        variant="soft"
-                        block
-                        class="h-12 justify-start"
-                        @click="resolveUrls(row.urls)"
-                    />
-
-                    <div
-                        v-else-if="row.type === 'url'"
-                        class="ring-muted flex h-12 min-w-0 items-center gap-2 rounded-lg px-3 ring-1"
-                    >
-                        <Icon
-                            :name="
-                                row.job.status === 'resolving'
-                                    ? 'svg-spinners:ring-resize'
-                                    : row.job.status === 'queued'
-                                      ? 'mingcute:time-fill'
-                                      : row.job.status === 'added'
-                                        ? 'mingcute:check-fill'
-                                        : 'mingcute:warning-fill'
-                            "
-                            size="18"
-                            :class="row.job.status === 'failed' ? 'text-error' : 'text-muted'"
-                        />
-                        <span class="grow truncate text-xs">{{ row.job.url }}</span>
-                        <UButton
-                            v-if="row.job.status === 'failed'"
-                            :label="$t('retry')"
-                            variant="ghost"
-                            size="xs"
-                            @click="retryJob(row.job)"
-                        />
-                    </div>
-
-                    <button
-                        v-else-if="row.type === 'item'"
-                        type="button"
-                        class="hover:bg-elevated flex h-12 w-full items-center gap-3 rounded-lg px-2 text-left transition-colors"
-                        @click="selectItem(row.item)"
-                    >
-                        <NuxtImg
-                            v-if="row.item.image"
-                            :src="row.item.image"
-                            :alt="row.item.name"
-                            width="40"
-                            height="40"
-                            class="size-10 shrink-0 rounded-md object-cover"
-                        />
-                        <span
-                            v-else
-                            class="bg-muted grid size-10 shrink-0 place-items-center rounded-md"
-                        >
-                            <Icon name="mingcute:package-2-fill" size="18" class="text-muted" />
-                        </span>
-                        <span class="min-w-0 grow">
-                            <span class="text-toned block truncate text-sm">{{
-                                row.item.name
-                            }}</span>
-                            <span class="text-muted block truncate text-xs">
-                                {{ row.item.primarySource?.publisher?.name }}
-                            </span>
-                        </span>
-                    </button>
-
-                    <UButton
-                        v-else-if="row.type === 'error'"
-                        :label="$t('retry')"
-                        icon="mingcute:refresh-2-fill"
-                        color="error"
-                        variant="soft"
-                        block
-                        class="h-12"
-                        @click="fetchResults(row.page)"
-                    />
-
-                    <p v-else class="text-muted grid h-12 place-items-center text-sm">
-                        {{ $t('commandPalette.itemSearch.noResults') }}
-                    </p>
-                </template>
-            </UScrollArea>
+            <div v-for="job in jobs" :key="job.id" class="flex min-w-0 items-center gap-2 text-xs">
+                <Icon
+                    :name="
+                        job.status === 'resolving'
+                            ? 'svg-spinners:ring-resize'
+                            : job.status === 'queued'
+                              ? 'mingcute:time-fill'
+                              : job.status === 'failed'
+                                ? 'mingcute:warning-fill'
+                                : 'mingcute:check-fill'
+                    "
+                    size="16"
+                    class="shrink-0"
+                />
+                <span class="text-toned min-w-0 grow truncate" :title="job.url">{{ job.url }}</span>
+                <span class="text-toned shrink-0">{{
+                    $t('commandPalette.itemSearch.' + (job.error ?? job.status))
+                }}</span>
+                <UButton
+                    v-if="job.status === 'failed'"
+                    :label="$t('content.retry')"
+                    variant="ghost"
+                    size="xs"
+                    :disabled="atLimit"
+                    @click="session.retryJob(job.id)"
+                />
+            </div>
         </div>
     </div>
 </template>
