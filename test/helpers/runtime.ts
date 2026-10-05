@@ -124,7 +124,7 @@ export default defineNuxtConfig({
         optimizeDeps: {
             ...application.vite?.optimizeDeps,
             // Scan lazy routes and overlays before browser actions can discover new dependencies.
-            entries: ['**/*.{vue,ts}'],
+            entries: ['**/*.vue', 'composables/**/*.ts'],
         },
     },
 })
@@ -239,14 +239,26 @@ export default defineNuxtConfig({
             auth,
             clean,
             origin: fixtureOrigin,
-            dependencyDiagnostics: () =>
-                log
+            dependencyDiagnostics: () => {
+                let dependencyBlock = false
+                return log
                     .join('')
                     .split('\n')
-                    .filter((line) =>
-                        /optim|dependenc|reload|Vite (client|server) built/i.test(line),
-                    )
-                    .join('\n'),
+                    .filter((line) => {
+                        if (/\[(?:info|warn|error|success)\]/.test(line)) dependencyBlock = false
+                        if (
+                            /Failed to run dependency scan|(?:discovered new|New) dependencies/i.test(
+                                line,
+                            )
+                        )
+                            dependencyBlock = true
+                        return (
+                            dependencyBlock ||
+                            /optim|dependenc|reload|Vite (client|server) built/i.test(line)
+                        )
+                    })
+                    .join('\n')
+            },
         }
     } catch (error) {
         await clean()
