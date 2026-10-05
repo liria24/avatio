@@ -1,6 +1,6 @@
 import { createDefaultSetupComposeForm, isEmptySetupComposeForm } from '@avatio/core/setups'
 import { describe, expect, it, vi } from 'vitest'
-import { effectScope, nextTick } from 'vue'
+import { effectScope, nextTick, reactive } from 'vue'
 
 import { useSetupComposeForm } from '../../../app/composables/setupComposeForm'
 
@@ -24,5 +24,29 @@ describe('setup compose form autosave subscription', () => {
         )
         expect(onChange.mock.lastCall?.[0]).not.toBe(compose.values.value)
         scope.stop()
+    })
+
+    it('keeps autosaved nested item values independent from reactive UI entries', async () => {
+        const onChange = vi.fn()
+        const scope = effectScope()
+        const compose = scope.run(() => useSetupComposeForm(onChange))!
+        const item = reactive({
+            id: 'entry',
+            itemId: 'catalog-item',
+            category: 'other' as const,
+            note: '',
+            unsupported: false,
+            shapekeys: [{ name: 'Smile', value: 0.5 }],
+        })
+        try {
+            compose.form.setFieldValue('items', [item])
+            await nextTick()
+            expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ items: [item] }))
+            const saved = onChange.mock.lastCall?.[0]
+            item.shapekeys[0]!.value = 0.8
+            expect(saved.items[0].shapekeys[0].value).toBe(0.5)
+        } finally {
+            scope.stop()
+        }
     })
 })
