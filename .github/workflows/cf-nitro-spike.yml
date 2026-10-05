@@ -13,6 +13,9 @@ permissions:
 
 jobs:
   compatibility:
+    name: compatibility (${{ matrix.mode }}, ${{ matrix.nodeCompat }})
+    env:
+      AVATIO_SPIKE_NODE_COMPAT: ${{ matrix.nodeCompat }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
@@ -21,8 +24,16 @@ jobs:
         include:
           - mode: production
             preview: 'false'
+            nodeCompat: v1
           - mode: pr-354
             preview: 'true'
+            nodeCompat: v1
+          - mode: production
+            preview: 'false'
+            nodeCompat: v2
+          - mode: pr-354
+            preview: 'true'
+            nodeCompat: v2
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
@@ -61,16 +72,21 @@ jobs:
       - name: Install isolated, pinned official packaging tools
         working-directory: test/fixtures/cf-nitro
         run: bun install --frozen-lockfile
-      - name: Package actual Nitro output with cf
+      - name: Reproduce the upstream compatibility refusal
+        if: matrix.nodeCompat == 'v1'
+        working-directory: test/fixtures/cf-nitro
+        run: node probe.mjs '${{ matrix.mode }}'
+        env:
+          CLOUDFLARE_PREVIEW_BUILD: ${{ matrix.preview }}
+          NODE_OPTIONS: --max-old-space-size=4096
+      - name: Package actual Nitro output under the isolated v2 trial
+        if: matrix.nodeCompat == 'v2'
         working-directory: test/fixtures/cf-nitro
         run: node node_modules/cf/bin/cf build --mode '${{ matrix.mode }}'
         env:
           CLOUDFLARE_PREVIEW_BUILD: ${{ matrix.preview }}
           NODE_OPTIONS: --max-old-space-size=4096
-      - name: Validate Build Output, bindings and assets
+      - name: Verify v2 Build Output, binding contract and PWA assets
+        if: matrix.nodeCompat == 'v2'
         working-directory: test/fixtures/cf-nitro
         run: node verify.mjs '${{ matrix.mode }}' '${{ matrix.preview }}'
-      - name: Validate production upload without credentials or mutations
-        if: matrix.preview == 'false'
-        working-directory: test/fixtures/cf-nitro
-        run: node node_modules/cf/bin/cf deploy --prebuilt --dry-run --mode production

@@ -7,7 +7,7 @@
     "workspaces": {
         "test/fixtures/cf-nitro": {
             "vite": false,
-            "entry": ["cloudflare.config.ts", "vite.config.ts", "verify.mjs"]
+            "entry": ["cloudflare.config.ts", "vite.config.ts", "probe.mjs", "verify.mjs"]
         },
         ".": {
             "entry": [

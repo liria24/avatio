@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readFile, access } from 'node:fs/promises'
+import { appendFile, readFile, access } from 'node:fs/promises'
 import { join } from 'node:path'
 
 import { readBuildOutput } from '@cloudflare/build-output-utils'
@@ -11,6 +11,10 @@ assert.equal(output.rootConfig.buildContext.isPreview, preview === 'true')
 assert.equal(Object.keys(output.workers).length, 1)
 const worker = output.workers.default
 assert.equal(worker.config.name, 'avatio')
+assert.ok(worker.config.compatibilityFlags.includes('nodejs_compat'))
+assert.ok(!worker.config.compatibilityFlags.includes('no_nodejs_compat_v2'))
+assert.ok(worker.config.compatibilityFlags.includes('no_handle_cross_request_promise_resolution'))
+assert.equal(worker.config.compatibilityDate, '2026-05-26')
 for (const binding of [
     'APP_DB',
     'CONTENT_CACHE',
@@ -36,8 +40,7 @@ assert.ok(worker.bundleDir)
 assert.ok(worker.assetsDir)
 await access(join(worker.assetsDir, 'sw.js'))
 await access(join(worker.assetsDir, 'manifest.webmanifest'))
-const headers = await readFile(join(worker.assetsDir, '_headers'), 'utf8')
-assert.match(headers, /must-revalidate/)
+assert.match(await readFile(join(worker.assetsDir, '_headers'), 'utf8'), /must-revalidate/)
 if (preview === 'true') {
     assert.equal(worker.config.env.ITEM_REVALIDATION_QUEUE, undefined)
     assert.equal(worker.config.triggers?.length ?? 0, 0)
@@ -46,4 +49,17 @@ if (preview === 'true') {
     assert.ok(worker.config.env.ITEM_REVALIDATION_QUEUE)
     assert.equal(worker.config.triggers.length, 2)
 }
-console.log(JSON.stringify({ mode, preview, worker: worker.config.name, assetsVerified: true }))
+console.log(
+    JSON.stringify({
+        mode,
+        preview,
+        nodeCompat: 'v2',
+        buildOutputVerified: true,
+        deploymentVerified: false,
+    }),
+)
+if (process.env.GITHUB_STEP_SUMMARY)
+    await appendFile(
+        process.env.GITHUB_STEP_SUMMARY,
+        `v2 packaging and static Build Output verified for ${mode}. Runtime behavior, secret scoping, populated migrations, Preview lifecycle and deployments remain unverified.\n`,
+    )
