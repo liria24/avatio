@@ -17,7 +17,8 @@ export const useSetupComposeForm = (onChange: (values: SetupComposeForm) => void
     watch(
         () => JSON.stringify(values.value),
         (next) => onChange(JSON.parse(next) as SetupComposeForm),
-        { flush: 'post' },
+        // Async page setup can defer post watchers past the restoration guard.
+        { flush: 'sync' },
     )
 
     return { form, values }

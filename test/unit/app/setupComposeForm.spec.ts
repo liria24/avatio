@@ -73,4 +73,58 @@ describe('setup compose form autosave subscription', () => {
             scope.stop()
         }
     })
+
+    it('observes the restoration guard before asynchronous page setup returns', async () => {
+        const schedule = vi.fn()
+        let restoring = false
+        const scope = effectScope()
+        const compose = scope.run(() =>
+            useSetupComposeForm((values) => {
+                if (!restoring) schedule(values)
+            }),
+        )!
+        try {
+            restoring = true
+            compose.form.reset({ ...createDefaultSetupComposeForm(), name: 'Restored draft' })
+            restoring = false
+            await nextTick()
+            expect(schedule).not.toHaveBeenCalled()
+
+            compose.form.setFieldValue('name', 'Edited draft')
+            await nextTick()
+            expect(schedule).toHaveBeenCalledOnce()
+            expect(schedule).toHaveBeenCalledWith(expect.objectContaining({ name: 'Edited draft' }))
+        } finally {
+            scope.stop()
+        }
+    })
+
+    it('continues saving input changes without reentering for identical values', async () => {
+        const snapshots: { name: string; description: string }[] = []
+        const scope = effectScope()
+        let compose: ReturnType<typeof useSetupComposeForm>
+        compose = scope.run(() =>
+            useSetupComposeForm((values) => {
+                snapshots.push(values)
+                // Updating form state from a subscriber must not start another save of the same data.
+                compose.form.setFieldValue('name', values.name)
+            }),
+        )!
+        try {
+            compose.form.setFieldValue('name', 'First input')
+            compose.form.setFieldValue('description', 'Description input')
+            compose.form.setFieldValue('name', 'Second input')
+            await nextTick()
+            expect(snapshots).toHaveLength(3)
+            expect(snapshots).toMatchObject([
+                { name: 'First input', description: '' },
+                { name: 'First input', description: 'Description input' },
+                { name: 'Second input', description: 'Description input' },
+            ])
+            await nextTick()
+            expect(snapshots).toHaveLength(3)
+        } finally {
+            scope.stop()
+        }
+    })
 })
