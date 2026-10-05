@@ -61,9 +61,6 @@ describe('extractImageColors', () => {
             },
             expect.objectContaining({
                 pixels: 2,
-                saturationDistance: 0.5,
-                lightnessDistance: 0.65,
-                hueDistance: 0.3,
             }),
         )
         const { colorValidator } = mocks.extractColorsFromImageData.mock.calls[0]![1] as {

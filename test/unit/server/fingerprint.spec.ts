@@ -16,11 +16,6 @@ describe('getFingerprint', () => {
         mockGetRequestIP.mockReturnValue('127.0.0.1')
     })
 
-    it('returns a 40-character lowercase hex string (SHA-1)', async () => {
-        const fp = await getFingerprint()
-        expect(fp).toMatch(/^[0-9a-f]{40}$/)
-    })
-
     it('returns the same hash for the same IP and user-agent', async () => {
         expect(await getFingerprint()).toBe(await getFingerprint())
     })

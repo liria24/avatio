@@ -24,8 +24,14 @@ Compact instruction for OpenCode sessions. If a fact is obvious from filenames, 
 | Format                        | `vp run format:fix`                                                              |
 | Check formatting              | `vp run format`                                                                  |
 | Find unused code              | `vp run lint:unused`                                                             |
-| Run all tests                 | `vp run test`                                                                    |
+| Fast local tests              | `vp run test`                                                                    |
 | Unit tests only               | `vp run test:unit`                                                               |
+| Full Vitest suite (CI)        | `vp run test:ci`                                                                 |
+| Integration tests (CI)        | `vp run test:integration`                                                        |
+| HTTP contracts (CI)           | `vp run test:http`                                                               |
+| Miniflare bindings (CI)       | `vp run test:bindings`                                                           |
+| Browser smoke (CI)            | `vp run test:browser:smoke`                                                      |
+| Extended browsers (CI)        | `vp run test:browser:extended`                                                   |
 | Nuxt tests only               | `vp run test:nuxt`                                                               |
 | Watch tests                   | `vp run test:watch`                                                              |
 | Generate Drizzle migrations   | `vp run db:generate`                                                             |
@@ -117,7 +123,12 @@ PRs into `main` require the `format`, `lint`, `lint:unused`, `typecheck`, `test`
 ## Testing
 
 - **Runner:** Vitest, configured in `vitest.config.ts`.
-- Unit tests live in `test/unit/*.{test,spec}.ts`.
+- Local `test`, `test:unit`, and `test:watch` select only `test/unit/`; they do not initialize Nuxt or execute SQLite integration, HTTP, browser, Miniflare, or build checks.
+- CI runs every Vitest project (`unit`, `integration`, `nuxt`, `http`, `cloudflare`) plus Chromium smoke on every PR and merge group. Extended Chromium, Firefox, WebKit, and mobile checks run on main/development pushes, daily, and manual runs. The required `test` check aggregates applicable suites and fails on failed, cancelled, or unexpectedly skipped jobs. All six existing required check names remain.
+- Heavy tests live under `test/integration/`, `test/nuxt/`, `test/http/`, `test/cloudflare/`, and `test/browser/`. Historical migrations and idempotency regression coverage remain in CI; add migration cases when schema/migrations change, rather than duplicating request-replay suites in Miniflare.
+- HTTP/browser fixtures copy application sources into a fresh temporary root, exclude real local state and environment files, create a private SQLite/files/mail/auth-secret directory, and reject an occupied port 3000. Better Auth `testUtils` is confined to test-only auth instances; actual HTTP login and device switching use the application's auth server. No test auth bypass route or production plugin is added.
+- Fixture child processes and browser contexts deny external network requests. CI traces/screenshots contain synthetic fixture users only and are retained for three days after failure. Fixture databases, files, signing secrets, cookies, and normal browser profiles are never cached or uploaded.
+- Browser retries do not permit flaky success: `failOnFlakyTests` is enabled in CI. Smoke/full runtime budgets are measured from CI results, not inferred from local unit timing.
 - `test/setup.ts` supplies shared server auto-imports; database regression tests use a migrated in-memory SQLite D1 adapter.
 - Test env is loaded from `.env` via `loadEnv('test', ...)`.
 

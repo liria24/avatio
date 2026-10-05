@@ -1,9 +1,16 @@
+import { createDefaultSetupComposeForm, isEmptySetupComposeForm } from '@avatio/core/setups'
 import { describe, expect, it, vi } from 'vitest'
 import { effectScope, nextTick } from 'vue'
 
 import { useSetupComposeForm } from '../../../app/composables/setupComposeForm'
 
 describe('setup compose form autosave subscription', () => {
+    it('recognizes the reset form as empty', () => {
+        expect(isEmptySetupComposeForm(createDefaultSetupComposeForm())).toBe(true)
+        expect(isEmptySetupComposeForm({ ...createDefaultSetupComposeForm(), name: 'draft' })).toBe(
+            false,
+        )
+    })
     it('snapshots a real TanStack Form field change without cloning Vue proxies', async () => {
         const onChange = vi.fn()
         const scope = effectScope()

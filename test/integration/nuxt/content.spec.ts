@@ -29,30 +29,39 @@ afterEach(() => {
 
 describe('comark authored content', () => {
     it('uses filesystem content, shared TOC, and intentional Japanese fallback', async () => {
-        const service = createLocalContentService(
-            join(process.cwd(), 'content'),
-            ['ja', 'en'],
-            'ja',
-        )
-        const page = await service.getPage('terms', 'en')
-        expect(page).toMatchObject({
-            locale: 'ja',
-            requestedLocale: 'en',
-            isFallback: true,
-            source: {
-                path: 'content/ja/terms.md',
-                sourceRevision: expect.stringMatching(/^sha256:[a-f0-9]{64}$/),
-            },
-        })
-        expect((await service.getPage('faq', 'en'))?.isFallback).toBe(false)
-        expect(
-            (await service.getPage('faq', 'ja'))?.toc.some((link) => link.text === 'Avatioとは'),
-        ).toBe(true)
-        expect(await service.getPage('missing', 'en')).toBeNull()
-        const metadata = await service.getLegalDocuments('en')
-        expect(metadata).toHaveLength(2)
-        expect(metadata[0]).not.toHaveProperty('document.nodes')
-        expect(JSON.stringify(metadata)).not.toContain('frontmatter')
+        const directory = await mkdtemp(join(tmpdir(), 'avatio-content-fallback-'))
+        try {
+            await mkdir(join(directory, 'ja'))
+            await mkdir(join(directory, 'en'))
+            await writeFile(join(directory, 'ja', 'terms.md'), markdown())
+            await writeFile(join(directory, 'ja', 'privacy-policy.md'), markdown())
+            await writeFile(join(directory, 'ja', 'faq.md'), markdown('## Avatioとは'))
+            await writeFile(join(directory, 'en', 'faq.md'), markdown('## About Avatio'))
+            const service = createLocalContentService(directory, ['ja', 'en'], 'ja')
+            const page = await service.getPage('terms', 'en')
+            expect(page).toMatchObject({
+                locale: 'ja',
+                requestedLocale: 'en',
+                isFallback: true,
+                source: {
+                    path: 'content/ja/terms.md',
+                    sourceRevision: expect.stringMatching(/^sha256:[a-f0-9]{64}$/),
+                },
+            })
+            expect((await service.getPage('faq', 'en'))?.isFallback).toBe(false)
+            expect(
+                (await service.getPage('faq', 'ja'))?.toc.some(
+                    (link) => link.text === 'Avatioとは',
+                ),
+            ).toBe(true)
+            expect(await service.getPage('missing', 'en')).toBeNull()
+            const metadata = await service.getLegalDocuments('en')
+            expect(metadata).toHaveLength(2)
+            expect(metadata[0]).not.toHaveProperty('document.nodes')
+            expect(JSON.stringify(metadata)).not.toContain('frontmatter')
+        } finally {
+            await rm(directory, { recursive: true, force: true })
+        }
     })
 
     it('reads local edits on the next request without generated templates', async () => {

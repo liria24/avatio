@@ -49,6 +49,12 @@ Setup画像の`stableId`は必須・一意です。追加migrationは既存IDを
 
 ブックマーク一覧APIは`GET /api/setups?bookmarked=true`を使用します。旧`GET /api/setups/bookmarks`一覧は廃止し、個別ブックマークの取得・追加・削除は維持しています。
 
+## Testing
+
+`vp run test` and `vp run test:watch` run the fast local unit project. SQLite integration, Nuxt DOM, real HTTP contracts, Miniflare bindings, browser smoke, and the Cloudflare build run in CI. `vp run test:ci` selects the full Vitest suite; browser commands are separate.
+
+Every PR runs all existing regression coverage and Chromium smoke. Development/main pushes, daily runs, and manual runs also exercise extended Chromium, Firefox, WebKit, and mobile flows. The required `test` check succeeds only when all suites required for that event succeed. Browser tests use isolated temporary data and synthetic accounts, block external traffic, and preserve failure traces briefly. See [AGENTS.md](./AGENTS.md#testing) for commands and fixture boundaries.
+
 ## 🤝 Contributions
 
 Avatioはオープンソースプロジェクトです。

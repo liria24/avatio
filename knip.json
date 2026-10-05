@@ -14,7 +14,8 @@
                 "app/auth.config.ts",
                 "server/auth.config.ts",
                 "oxfmt.config.ts",
-                "taze.config.ts"
+                "taze.config.ts",
+                "test/helpers/runtimeNetwork.mjs"
             ],
             "ignoreDependencies": [
                 "@dotenvx/dotenvx",

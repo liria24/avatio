@@ -1,3 +1,4 @@
+import { toCloudflareCacheTags } from '@avatio/cloudflare'
 import { matchSetupPath } from '@avatio/core/setups'
 import { derivePageRoutePolicy } from '@avatio/nuxt/build/routes'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -170,5 +171,18 @@ describe('edge cache purge', () => {
         )
 
         await vi.waitFor(() => expect(purge).toHaveBeenCalledTimes(2))
+    })
+})
+
+describe('Cloudflare resource tag mapping', () => {
+    it('maps semantic IDs without a reverse Setup lookup', () => {
+        expect(
+            toCloudflareCacheTags({
+                items: ['item-1'],
+                setups: ['setup-1'],
+                users: ['user-1'],
+                collections: ['catalog'],
+            }),
+        ).toEqual(['item:item-1', 'setup:setup-1', 'user:user-1', 'catalog'])
     })
 })

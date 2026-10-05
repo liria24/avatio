@@ -1,0 +1,12 @@
+{
+    "extends": "../../.nuxt/tsconfig.server.json",
+    "compilerOptions": { "types": ["node"] },
+    "include": [
+        "../../.nuxt/types/nitro-nuxt.d.ts",
+        "../../.nuxt/types/nitro.d.ts",
+        "../../.nuxt/nuxt-files-sdk/storage-registry.d.ts",
+        "./**/*.ts",
+        "../helpers/**/*.ts",
+        "../../playwright.config.ts"
+    ]
+}

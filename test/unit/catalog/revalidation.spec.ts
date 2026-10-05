@@ -1,4 +1,3 @@
-import { toCloudflareCacheTags } from '@avatio/cloudflare'
 import {
     CatalogProviderRegistry,
     enqueueDueCatalogSources,
@@ -311,18 +310,5 @@ describe('Catalog synchronization state machine', () => {
         expect(markSyncStarted).toHaveBeenCalledWith('source-1', 'old', expect.any(Date))
         expect(completeSourceSync).not.toHaveBeenCalled()
         expect(invalidate).not.toHaveBeenCalled()
-    })
-})
-
-describe('Cloudflare resource tag mapping', () => {
-    it('maps semantic IDs without a reverse Setup lookup', () => {
-        expect(
-            toCloudflareCacheTags({
-                items: ['item-1'],
-                setups: ['setup-1'],
-                users: ['user-1'],
-                collections: ['catalog'],
-            }),
-        ).toEqual(['item:item-1', 'setup:setup-1', 'user:user-1', 'catalog'])
     })
 })

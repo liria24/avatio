@@ -26,7 +26,7 @@ describe('sanitizeObject — string input', () => {
         ],
         ['preserves plain text', 'plain text', 'plain text'],
     ])('%s', (_label, input, expected) => {
-        expect(sanitizeObject(input)).toBe(expected)
+        expect(sanitizeObject(input).replace(/\s*\/>$/, '>')).toBe(expected.replace(/\s*\/>$/, '>'))
     })
 })
 

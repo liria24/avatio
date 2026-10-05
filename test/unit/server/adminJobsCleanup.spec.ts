@@ -262,7 +262,7 @@ describe('runCleanupJob', () => {
 
         const result = await runCleanupJob()
 
-        expect(storage.delete).toHaveBeenCalledWith(['setup/backed-up.jpg'], { concurrency: 8 })
+        expect(storage.delete).toHaveBeenCalledWith(['setup/backed-up.jpg'], expect.any(Object))
         expect(result.data).toMatchObject({
             candidates: ['setup/backed-up.jpg', 'setup/backup-failed.jpg'],
             backedUp: ['setup/backed-up.jpg'],

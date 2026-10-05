@@ -1,10 +1,19 @@
 import { CloudflareFeatureFlags } from '@avatio/cloudflare'
 
+import { getMaintenanceFlag } from '../../../server/utils/appConfig'
 import { getFileStorage } from '../../../server/utils/infrastructure'
 
 afterEach(() => vi.unstubAllGlobals())
 
 describe('Cloudflare infrastructure adapters', () => {
+    it('keeps root composition fail-closed when Flagship is absent or unavailable', async () => {
+        vi.stubGlobal('__env__', {})
+        await expect(getMaintenanceFlag()).resolves.toBe(false)
+        vi.stubGlobal('__env__', {
+            FLAGS: { getBooleanValue: vi.fn().mockRejectedValue(new Error('unavailable')) },
+        })
+        await expect(getMaintenanceFlag()).resolves.toBe(false)
+    })
     it('maps semantic flags and fails closed', async () => {
         const getBooleanValue = vi.fn(async (key: string) => key === 'is-maintenance')
         const flags = new CloudflareFeatureFlags({ getBooleanValue })
