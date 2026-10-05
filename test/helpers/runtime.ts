@@ -119,6 +119,14 @@ export default defineNuxtConfig({
     devtools: { enabled: false },
     fonts: { providers: { google: false, bunny: false, fontshare: false, fontsource: false, adobe: false } },
     pwa: { ...application.pwa, disable: true },
+    vite: {
+        ...application.vite,
+        optimizeDeps: {
+            ...application.vite?.optimizeDeps,
+            // Scan lazy routes and overlays before browser actions can discover new dependencies.
+            entries: ['./app/**/*.{vue,ts}'],
+        },
+    },
 })
 `,
         )

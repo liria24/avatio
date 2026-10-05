@@ -36,8 +36,11 @@ test('pointer sorting persists after the item list is unmounted and mounted agai
         return draft.content.items.map((item: { itemId: string }) => item.itemId)
     }
     await expect.poll(persistedItems).toEqual([second.id, first.id])
-    await goto('/en/faq', { waitUntil: 'hydration' })
-    await goto(draftUrl, { waitUntil: 'hydration' })
+    await page.locator('header a[href="/en"]').click()
+    await expect(page).toHaveURL(`${runtime.origin}/en`)
+    await expect(rows).toHaveCount(0)
+    await page.goBack()
+    await expect(page).toHaveURL(draftUrl)
     await expect(rows.first()).toContainText(second.name)
     await rows.nth(1).locator('.draggable').dragTo(rows.nth(0).locator('.draggable'))
     await expect(rows.first()).toContainText(first.name)
@@ -113,6 +116,7 @@ test('two browser tabs surface stale saves without overwriting the committed dra
     const second = await context.newPage()
     try {
         await second.goto(page.url())
+        await second.waitForFunction('window.useNuxtApp?.().isHydrating === false')
         const secondInput = second.getByRole('textbox', {
             name: labels.setup.compose.nameLabel,
         })
@@ -409,6 +413,8 @@ test('compose and dialog accessibility are checked in a real browser', async ({
     const consent = page.getByRole('button', { name: labels.cookie.accept, exact: true })
     await consent.click()
     await expect(consent).toBeHidden()
+    const empty = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
+    expect(empty.violations).toEqual([])
     await addCatalogItem(page, runtime, `Accessible item ${randomUUID()}`)
     const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
     expect(results.violations).toEqual([])

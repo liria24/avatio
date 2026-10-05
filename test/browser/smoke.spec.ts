@@ -196,9 +196,12 @@ test('image upload renders, publishes and opens a keyboard-accessible gallery', 
     ).toBeVisible()
     await openItems(page)
     await addCatalogItem(page, runtime, `Image item ${randomUUID()}`)
-    await page
-        .getByRole('button', { name: labels.setup.compose.publishButton, exact: true })
-        .click()
+    const publish = page.getByRole('button', {
+        name: labels.setup.compose.publishButton,
+        exact: true,
+    })
+    await expect(publish).toBeInViewport({ ratio: 1 })
+    await publish.click()
     await page
         .getByRole('dialog')
         .getByRole('link', { name: labels.modal.publishComplete.viewSetup, exact: true })
@@ -210,7 +213,9 @@ test('image upload renders, publishes and opens a keyboard-accessible gallery', 
     })
     await trigger.focus()
     await page.keyboard.press('Enter')
-    await expect(page.getByRole('dialog', { name: labels.imageViewer.title })).toBeVisible()
+    await expect(
+        page.getByRole('dialog', { name: `${title}${labels.setup.viewer.imageAlt}`, exact: true }),
+    ).toBeVisible()
     await page.keyboard.press('Escape')
     await expect(trigger).toBeFocused()
 })
