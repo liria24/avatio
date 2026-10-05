@@ -13,7 +13,7 @@ import {
     prefixedI18nLocales,
 } from './shared/utils/i18nRouting'
 
-const buildEnvironment = getBuildEnvironment(process.env, import.meta.dev)
+const buildEnvironment = getBuildEnvironment(process.env, process.env.NODE_ENV === 'development')
 const {
     siteUrl: baseUrl,
     publicUrl,
@@ -107,7 +107,9 @@ export default defineNuxtConfig({
             // so the Cloudflare secret binding remains authoritative at runtime.
             const nitroConfig = config as NitroConfig
             nitroConfig.runtimeConfig ??= {}
-            nitroConfig.runtimeConfig.betterAuthSecret = import.meta.dev ? getLocalAuthSecret() : ''
+            nitroConfig.runtimeConfig.betterAuthSecret = useNuxt().options.dev
+                ? getLocalAuthSecret()
+                : ''
         },
         'vite:extendConfig': normalizeRuntimeConfigForVitest,
     },
@@ -369,6 +371,11 @@ export default defineNuxtConfig({
     },
 
     $development: {
+        runtimeConfig: {
+            public: {
+                emailPasswordAuthEnabled: true,
+            },
+        },
         image: {
             provider: 'ipx',
             domains: ['localhost', '127.0.0.1'],
