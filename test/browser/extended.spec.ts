@@ -9,6 +9,35 @@ import { setupReports, users } from '../../database/schema'
 import { fixturePng, seedSetup } from '../helpers/seeds'
 import { addCatalogItem, authenticate, expect, labels, test } from './fixtures'
 
+test('pointer sorting persists after the item list is unmounted and mounted again', async ({
+    page,
+    goto,
+    context,
+    account,
+    runtime,
+}) => {
+    await authenticate(context, account)
+    await goto('/en/setup/compose', { waitUntil: 'hydration' })
+    const first = await addCatalogItem(page, runtime, `Drag first ${randomUUID()}`)
+    const second = await addCatalogItem(page, runtime, `Drag second ${randomUUID()}`)
+    const rows = page.locator('[data-entry-id]')
+    await rows.nth(1).locator('.draggable').dragTo(rows.nth(0).locator('.draggable'))
+    await expect(rows.first()).toContainText(second.name)
+    const draftUrl = page.url()
+    const draftId = new URL(draftUrl).searchParams.get('draftId')!
+    const persistedItems = async () => {
+        const draft = await (await page.request.get(`/api/setup-drafts/${draftId}`)).json()
+        return draft.content.items.map((item: { itemId: string }) => item.itemId)
+    }
+    await expect.poll(persistedItems).toEqual([second.id, first.id])
+    await goto('/en/faq', { waitUntil: 'hydration' })
+    await goto(draftUrl, { waitUntil: 'hydration' })
+    await expect(rows.first()).toContainText(second.name)
+    await rows.nth(1).locator('.draggable').dragTo(rows.nth(0).locator('.draggable'))
+    await expect(rows.first()).toContainText(first.name)
+    await expect.poll(persistedItems).toEqual([first.id, second.id])
+})
+
 test('IndexedDB recovery survives failed draft saves and stays isolated by owner', async ({
     page,
     goto,

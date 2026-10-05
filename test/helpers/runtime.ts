@@ -185,7 +185,7 @@ export default defineNuxtConfig({
             overrides: { role?: string; banned?: boolean; initialLegal?: boolean } = {},
         ) => {
             const suffix = randomUUID().replaceAll('-', '')
-            const username = `test_${suffix}`
+            const username = `test_${suffix.slice(0, 20)}`
             const user = await helpers.saveUser(
                 helpers.createUser({
                     id: suffix,

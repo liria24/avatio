@@ -1,7 +1,7 @@
 import { test as nuxtTest, expect } from '@nuxt/test-utils/playwright'
 import type { BrowserContext, Page } from '@playwright/test'
 
-import labels from '../../i18n/locales/en-US.json'
+import labels from '../../i18n/locales/en-US.json' with { type: 'json' }
 import { startTestRuntime, type FixtureUser, type TestRuntime } from '../helpers/runtime'
 import { seedCatalogItem } from '../helpers/seeds'
 
