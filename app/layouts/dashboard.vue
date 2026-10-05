@@ -26,7 +26,7 @@ const dev = import.meta.dev
                 <template #header="{ collapsed }">
                     <div :data-collapsed="collapsed" class="flex w-full items-center gap-2 pl-2">
                         <UButton
-                            :to="$localePath('/admin')"
+                            :to="$localePath({ path: '/admin' })"
                             icon="avatio:avatio"
                             variant="link"
                             color="neutral"
@@ -146,7 +146,7 @@ const dev = import.meta.dev
 
                     <div class="mt-auto flex items-center px-1">
                         <UButton
-                            :to="$localePath('/')"
+                            :to="$localePath({ path: '/' })"
                             aria-label="Back to Site"
                             icon="mingcute:arrow-left-line"
                             variant="ghost"

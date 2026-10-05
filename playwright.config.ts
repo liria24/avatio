@@ -20,7 +20,7 @@ export default defineConfig({
     projects: [
         {
             name: 'chromium-smoke',
-            testMatch: 'smoke.spec.ts',
+            testMatch: ['smoke.spec.ts', 'nuxt46.spec.ts'],
             use: { ...devices['Desktop Chrome'] },
         },
         {
@@ -30,19 +30,19 @@ export default defineConfig({
         },
         {
             name: 'firefox',
-            testMatch: 'smoke.spec.ts',
+            testMatch: ['smoke.spec.ts', 'nuxt46.spec.ts'],
             grep: /login|content|private/,
             use: { ...devices['Desktop Firefox'] },
         },
         {
             name: 'webkit',
-            testMatch: 'smoke.spec.ts',
+            testMatch: ['smoke.spec.ts', 'nuxt46.spec.ts'],
             grep: /login|content|private/,
             use: { ...devices['Desktop Safari'] },
         },
         {
             name: 'mobile',
-            testMatch: 'smoke.spec.ts',
+            testMatch: ['smoke.spec.ts', 'nuxt46.spec.ts'],
             grep: /login|content|private|keyboard/,
             use: { ...devices['Pixel 7'], reducedMotion: 'reduce' },
         },

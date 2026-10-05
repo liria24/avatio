@@ -75,7 +75,7 @@ const to = computed(() => href || notification.actionUrl)
 
             <UButton
                 v-if="to && labels.actionLabel"
-                :to="$localePath(to)"
+                :to="$localePath({ path: to })"
                 :label="labels.actionLabel"
                 icon="mingcute:arrow-right-line"
                 variant="outline"

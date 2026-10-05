@@ -135,7 +135,7 @@ await initialize({ draftId: queryValue(route.query.draftId), edit: queryValue(ro
         @submit="onSubmit"
     >
         <header class="flex w-full flex-wrap items-center gap-4">
-            <NuxtLinkLocale to="/">
+            <NuxtLinkLocale :to="{ path: '/' }">
                 <AppLogo class="-mt-1.5 w-20 sm:w-24" aria-label="Avatio" />
             </NuxtLinkLocale>
 

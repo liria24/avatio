@@ -39,7 +39,7 @@ VRSNSユーザー向けのアバターセットアップ共有サービス。<br
 
 ## Cloudflare Preview の準備状況（#354）
 
-現在の実行環境は Nuxt 4.5.2、デプロイは引き続き Alchemy です。公開ビルド設定とサーバーの binding 型を Alchemy から分離し、`cf@1.0.0-beta.11` 用の `cloudflare.config.ts`、PR のメール・パスワード認証、lease で保護された inline Catalog 同期を用意しています。`vp run test:cloudflare` は、秘密情報や Cloudflare への書き込みなしで設定・対象判定・認証を検証します。同じテストは通常の quality workflow の全テスト検査にも含まれます。
+現在の実行環境は Nuxt 4.6.0、デプロイは引き続き Alchemy です。公開ビルド設定とサーバーの binding 型を Alchemy から分離し、`cf@1.0.0-beta.11` 用の `cloudflare.config.ts`、PR のメール・パスワード認証、lease で保護された inline Catalog 同期を用意しています。`vp run test:cloudflare` は、秘密情報や Cloudflare への書き込みなしで設定・対象判定・認証を検証します。同じテストは通常の quality workflow の全テスト検査にも含まれます。
 
 将来の `cf` 設定は Worker 名を `avatio` に固定し、`production`、永続 Preview の `development`、PR Preview の `pr-<番号>` を区別します。`AVATIO_CF_RESOURCES_FILE` には確認済みの実資源 ID を含む JSON を明示し、PR ごとに D1・KV・R2 を分離します。資源の自動作成やテスト用 ID へのフォールバックはありません。入力項目とビルド環境は [AGENTS.md](./AGENTS.md#native-cloudflare-preview-preparation-354) を参照してください。
 

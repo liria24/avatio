@@ -53,7 +53,7 @@ PRs into `main` require the `format`, `lint`, `lint:unused`, `typecheck`, `test`
 
 ## Project architecture
 
-- **Framework:** Nuxt 4 (`compatibilityVersion: 5`).
+- **Framework:** Nuxt 4.6.0 (`compatibilityVersion: 5`), using Nitro. The Nuxt CLI v4 is supplied transitively.
 - **Deployment target:** Cloudflare Workers, built and deployed by `Cloudflare.Website.Nuxt` in `alchemy.run.ts`.
 - **Workspace:** Bun workspaces under `packages/*` with exactly three architectural packages:
   - `@avatio/core` — pure domain, application ports, and explicit contracts. It must not import Nuxt, Nitro, Cloudflare, Drizzle, Better Auth, provider SDKs, or read `process.env`.
@@ -188,7 +188,7 @@ PRs into `main` require the `format`, `lint`, `lint:unused`, `typecheck`, `test`
 
 ## Native Cloudflare Preview preparation (#354)
 
-- The active deployment remains Alchemy on Nuxt 4.5.2. `cloudflare.config.ts` is a prepared configuration contract, not an enabled deployment path. `cf` is pinned to `1.0.0-beta.11` and runs on Node (`node node_modules/cf/bin/cf`), never Bun. Do not add a direct deploy command until the activation gates below are verified.
+- The active deployment remains Alchemy on Nuxt 4.6.0. `cloudflare.config.ts` is a prepared configuration contract, not an enabled deployment path. `cf` is pinned to `1.0.0-beta.11` and runs on Node (`node node_modules/cf/bin/cf`), never Bun. Do not add a direct deploy command until the activation gates below are verified.
 - `config/build.ts` owns public Nuxt build settings. Explicit deployed builds use `STAGE=production|development`; local `vp run dev` remains independent of those stages. `server/types/cloudflare.ts` owns application-facing binding types and must not import Alchemy.
 - The prepared Worker name is always `avatio`. Mode `production` requires `isPreview=false`, `STAGE=production`, and no `PREVIEW_NAME`. Modes `development` and `pr-<positive-number>` require native Preview mode, `STAGE=development`, and an identical `PREVIEW_NAME`. They also require explicit HTTPS origins for `PUBLIC_SITE_URL`, `R2_PUBLIC_BASE_URL`, and `OG_IMAGE_ENDPOINT` at build time. The root config rejects mismatches between these URLs and binding inputs.
 - `AVATIO_CF_RESOURCES_FILE` must point to an operator-reviewed JSON inventory (for example, gitignored `.cloudflare/resources.json`). Its top level contains `accountId`, `production`, `development`, and `previews` keyed by `pr-<number>`. Every target contains `database: { id, name }`, `cache: { id, name }`, `bucket`, `flagshipId`, four `rateLimitNamespaces`, `siteUrl`, `imageBaseUrl`, `ogImageEndpoint`, and `emailFrom`. Non-production targets require `emailDestinations`; production requires `analyticsSiteTag`. `optionalSecrets` selects optional names from the existing `config/secrets.ts` definitions, never values. See the validated schema in `config/cloudflare.ts`; fixtures under `test/` are synthetic and must never become deployment inputs.
@@ -224,10 +224,16 @@ PRs into `main` require the `format`, `lint`, `lint:unused`, `typecheck`, `test`
 - `server/utils` is Avatio's formal Nuxt/Nitro server runtime integration and continues to use framework auto-imports.
 - Organize runtime utilities by one coherent responsibility per file; one exported function per file is not required. Never introduce catch-all names such as `misc.ts`, `helpers.ts`, or `common.ts`.
 - Migration-only, rollout compatibility, and backfill implementations must not live in `server/utils`.
+- Portable public HTTP handlers use `requestEventHandler` and explicit imports from `nuxt/server`. Their `RequestEvent` exposes `req: Request`, `url: URL`, and `res.headers: Headers`. Never mix H3 auto-imports into them. Pass that event explicitly to `validateRequestQuery`/`validateRequestParams`; shared Zod failure handling preserves the existing validation contract.
+- Better Auth session/admin handlers, Nitro plugins/tasks, sitemap integration, and Cloudflare composition retain explicit H3/Nitro boundaries. Keep domain/application behavior independent of either event type. The new Nuxt cookie-session helpers and `appSecret` do not replace Better Auth or its signing key.
 
 ### API handlers
 
-Wrap every API handler with the appropriate factory from `server/utils/eventHandler.ts`:
+Wrap every API handler with the appropriate factory:
+
+- `requestEventHandler` from `server/utils/requestEventHandler.ts` — portable public HTTP handlers; no auth required
+
+Factories from `server/utils/eventHandler.ts` retain the Better Auth/H3 boundary:
 
 - `promiseEventHandler` — no auth required
 - `sessionEventHandler` — session available but optional (null-safe)

@@ -32,7 +32,7 @@ const _useNotifications = () => {
 
     const open = (id: string, actionUrl: string | null) => {
         void markAsRead(id)
-        if (actionUrl) void navigateTo(localePath(actionUrl))
+        if (actionUrl) void navigateTo(localePath({ path: actionUrl }))
     }
 
     return {

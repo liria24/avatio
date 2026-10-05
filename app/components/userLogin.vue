@@ -141,10 +141,14 @@ const registerWithEmail = async (data: {
         <p class="text-muted text-right text-xs">
             {{ $t('modal.login.agreement') }}
             <br class="sm:hidden" />
-            <ULink :to="$localePath('/terms')" target="_blank" class="ml-2 font-bold">
+            <ULink :to="$localePath({ path: '/terms' })" target="_blank" class="ml-2 font-bold">
                 {{ $t('modal.login.footer.terms') }}
             </ULink>
-            <ULink :to="$localePath('/privacy-policy')" target="_blank" class="ml-2 font-bold">
+            <ULink
+                :to="$localePath({ path: '/privacy-policy' })"
+                target="_blank"
+                class="ml-2 font-bold"
+            >
                 {{ $t('modal.login.footer.privacy') }}
             </ULink>
         </p>

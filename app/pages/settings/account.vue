@@ -29,7 +29,7 @@ const providers: Record<string, { name: string; icon: string }> = {
 const deleteUser = async () => {
     try {
         if (!auth) throw new Error('Auth client is unavailable.')
-        await auth.deleteUser({ callbackURL: localePath('/') })
+        await auth.deleteUser({ callbackURL: localePath({ path: '/' }) })
 
         toast.add({
             icon: 'mingcute:check-line',
@@ -37,7 +37,7 @@ const deleteUser = async () => {
             description: t('settings.account.toast.deleteDescription'),
             color: 'success',
         })
-        navigateTo(localePath('/'), { external: true })
+        navigateTo(localePath({ path: '/' }), { external: true })
     } catch (error) {
         console.error('Error deleting user:', error)
         toast.add({

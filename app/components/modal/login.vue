@@ -11,7 +11,7 @@ const localePath = useLocalePath()
 
 // ブラウザの戻るボタンでモーダルを閉じる
 const handlePopState = () => {
-    if (route.path === localePath('/login')) open.value = false
+    if (route.path === localePath({ path: '/login' })) open.value = false
 }
 
 useEventListener('popstate', handlePopState)

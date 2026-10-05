@@ -42,7 +42,7 @@ const revoke = () => signOut({ onSuccess: () => reloadNuxtApp() })
         :items="[
             [
                 {
-                    to: $localePath(`/@${user?.username}`),
+                    to: $localePath({ path: `/@${user?.username}` }),
                     slot: 'user',
                 },
             ],
@@ -50,12 +50,12 @@ const revoke = () => signOut({ onSuccess: () => reloadNuxtApp() })
                 {
                     label: t('header.menu.bookmarks'),
                     icon: 'mingcute:bookmark-fill',
-                    to: $localePath('/bookmarks'),
+                    to: $localePath({ path: '/bookmarks' }),
                 },
                 {
                     label: t('header.menu.settings'),
                     icon: 'mingcute:settings-1-fill',
-                    to: $localePath('/settings'),
+                    to: $localePath({ path: '/settings' }),
                 },
             ],
             [
