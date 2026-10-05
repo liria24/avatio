@@ -90,3 +90,7 @@ jobs:
         if: matrix.nodeCompat == 'v2'
         working-directory: test/fixtures/cf-nitro
         run: node verify.mjs '${{ matrix.mode }}' '${{ matrix.preview }}'
+      - name: Execute the v2 application in isolated workerd
+        if: matrix.nodeCompat == 'v2'
+        working-directory: test/fixtures/cf-nitro
+        run: node runtime.mjs '${{ matrix.mode }}'

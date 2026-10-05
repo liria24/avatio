@@ -27,10 +27,12 @@ test.describe('point editor', () => {
         runtime,
     }, testInfo) => {
         test.setTimeout(120_000)
-        page.setDefaultTimeout(10_000)
         page.setDefaultNavigationTimeout(60_000)
         await authenticate(context, account)
+        // Cold Nuxt dev hydration compiles the client graph; retain Playwright's
+        // normal readiness window before enforcing the shorter interaction waits.
         await goto('/en/setup/compose', { waitUntil: 'hydration' })
+        page.setDefaultTimeout(10_000)
         await page.getByRole('button', { name: labels.cookie.accept, exact: true }).click()
         const first = await addCatalogItem(page, runtime, `Point first ${randomUUID()}`)
         const second = await addCatalogItem(page, runtime, `Point second ${randomUUID()}`)
