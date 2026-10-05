@@ -1,15 +1,12 @@
-import en from '../../i18n/locales/en-US.json'
-import ja from '../../i18n/locales/ja-JP.json'
+import en from '../../i18n/locales/en-US.json' with { type: 'json' }
+import ja from '../../i18n/locales/ja-JP.json' with { type: 'json' }
 import { expect, test } from './fixtures'
 
 for (const [locale, messages] of [
     ['ja', ja],
     ['en', en],
 ] as const)
-    test(`content: Vapor owner warning renders and dismisses in ${locale}`, async ({
-        page,
-        goto,
-    }) => {
+    test(`content: owner warning renders and dismisses in ${locale}`, async ({ page, goto }) => {
         const path = locale === 'ja' ? '/faq' : '/en/faq'
         const hydrationErrors: string[] = []
         page.on('console', (message) => {

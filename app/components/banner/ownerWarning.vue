@@ -1,4 +1,4 @@
-<script lang="ts" setup vapor>
+<script lang="ts" setup>
 const { app } = useAppConfig()
 const { t } = useI18n()
 const emit = defineEmits<{ close: [] }>()

@@ -90,7 +90,8 @@ export default defineNuxtConfig({
 
     future: { compatibilityVersion: 5 },
 
-    vue: { vapor: true },
+    // The ownerWarning Vapor trial crashes in @comark/vue's VDOM-only slot transform.
+    vue: { vapor: false },
 
     devtools: { timeline: { enabled: true } },
 
