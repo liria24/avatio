@@ -26,7 +26,10 @@ test('login survives reload and logout revokes the browser session', async ({
             async () => (await (await page.request.get('/api/auth/get-session')).json())?.user?.id,
         )
         .toBe(account.id)
+    await expect(page).toHaveURL(`${new URL(page.url()).origin}/en`)
+    await expect(page.getByRole('button', { name: labels.header.userMenu })).toBeVisible()
     await page.reload()
+    await page.waitForFunction('window.useNuxtApp?.().isHydrating === false')
     await page.getByRole('button', { name: labels.header.userMenu }).click()
     await page.getByRole('menuitem', { name: labels.header.menu.logout, exact: true }).click()
     await expect
@@ -44,9 +47,7 @@ test('compose saves, publishes once and edits the same Setup', async ({
     await authenticate(context, account)
     await goto('/en/setup/compose', { waitUntil: 'hydration' })
     const title = `Publish ${randomUUID()}`
-    await page
-        .getByRole('textbox', { name: labels.setup.compose.nameLabel, exact: true })
-        .fill(title)
+    await page.getByRole('textbox', { name: labels.setup.compose.nameLabel }).fill(title)
     await openItems(page)
     const item = await addCatalogItem(page, runtime, `Catalog ${randomUUID()}`)
     await expect(page.getByTestId('draft-status')).toHaveText(
@@ -66,7 +67,7 @@ test('compose saves, publishes once and edits the same Setup', async ({
     await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible()
     await goto(`/en/setup/compose?edit=${setup.id}`, { waitUntil: 'hydration' })
     await page
-        .getByRole('textbox', { name: labels.setup.compose.nameLabel, exact: true })
+        .getByRole('textbox', { name: labels.setup.compose.nameLabel })
         .fill(`${title} edited`)
     const editedResponse = page.waitForResponse(
         (response) =>
@@ -175,9 +176,7 @@ test('image upload renders, publishes and opens a keyboard-accessible gallery', 
     await authenticate(context, account)
     await goto('/en/setup/compose', { waitUntil: 'hydration' })
     const title = `Image ${randomUUID()}`
-    await page
-        .getByRole('textbox', { name: labels.setup.compose.nameLabel, exact: true })
-        .fill(title)
+    await page.getByRole('textbox', { name: labels.setup.compose.nameLabel }).fill(title)
     const chooser = page.waitForEvent('filechooser')
     await page.getByRole('button', { name: labels.setup.compose.images.add, exact: true }).click()
     await (

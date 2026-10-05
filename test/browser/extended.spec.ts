@@ -57,7 +57,7 @@ test('IndexedDB recovery survives failed draft saves and stays isolated by owner
     )
     await goto('/en/setup/compose', { waitUntil: 'hydration' })
     const title = `Recovered ${randomUUID()}`
-    const input = page.getByRole('textbox', { name: labels.setup.compose.nameLabel, exact: true })
+    const input = page.getByRole('textbox', { name: labels.setup.compose.nameLabel })
     await input.fill(title)
     await expect(page.getByTestId('draft-status')).toHaveText(
         labels.setup.compose.draftStatus.error,
@@ -95,7 +95,7 @@ test('two browser tabs surface stale saves without overwriting the committed dra
 }) => {
     await authenticate(context, account)
     await goto('/en/setup/compose', { waitUntil: 'hydration' })
-    const input = page.getByRole('textbox', { name: labels.setup.compose.nameLabel, exact: true })
+    const input = page.getByRole('textbox', { name: labels.setup.compose.nameLabel })
     await input.fill('Original two-tab draft')
     await expect(page.getByTestId('draft-status')).toHaveText(
         labels.setup.compose.draftStatus.saved,
@@ -144,7 +144,7 @@ test('real signed device sessions transfer a saved draft and image to the select
     }
     await goto('/en/setup/compose', { waitUntil: 'hydration' })
     await page
-        .getByRole('textbox', { name: labels.setup.compose.nameLabel, exact: true })
+        .getByRole('textbox', { name: labels.setup.compose.nameLabel })
         .fill('Transferred image draft')
     const chooser = page.waitForEvent('filechooser')
     await page.getByRole('button', { name: labels.setup.compose.images.add, exact: true }).click()
@@ -169,9 +169,9 @@ test('real signed device sessions transfer a saved draft and image to the select
             async () => (await (await page.request.get('/api/auth/get-session')).json())?.user?.id,
         )
         .toBe(target.id)
-    await expect(
-        page.getByRole('textbox', { name: labels.setup.compose.nameLabel, exact: true }),
-    ).toHaveValue('Transferred image draft')
+    await expect(page.getByRole('textbox', { name: labels.setup.compose.nameLabel })).toHaveValue(
+        'Transferred image draft',
+    )
     const transferred = (await (await page.request.get(`/api/setup-drafts/${id}`)).json()) as {
         revision: number
         content: { images: string[]; imageMetadata: Record<string, { objectKey: string }> }
@@ -195,9 +195,9 @@ test('real signed device sessions transfer a saved draft and image to the select
         target.id,
     )
     await page.reload()
-    await expect(
-        page.getByRole('textbox', { name: labels.setup.compose.nameLabel, exact: true }),
-    ).toHaveValue('Transferred image draft')
+    await expect(page.getByRole('textbox', { name: labels.setup.compose.nameLabel })).toHaveValue(
+        'Transferred image draft',
+    )
 })
 
 test('failed account transfers retain the source owner and browser session', async ({
@@ -210,7 +210,7 @@ test('failed account transfers retain the source owner and browser session', asy
     await authenticate(context, account)
     await goto('/en/setup/compose', { waitUntil: 'hydration' })
     await page
-        .getByRole('textbox', { name: labels.setup.compose.nameLabel, exact: true })
+        .getByRole('textbox', { name: labels.setup.compose.nameLabel })
         .fill('Retained source draft')
     await expect(page.getByTestId('draft-status')).toHaveText(
         labels.setup.compose.draftStatus.saved,
@@ -231,9 +231,9 @@ test('failed account transfers retain the source owner and browser session', asy
         account.id,
     )
     await page.reload()
-    await expect(
-        page.getByRole('textbox', { name: labels.setup.compose.nameLabel, exact: true }),
-    ).toHaveValue('Retained source draft')
+    await expect(page.getByRole('textbox', { name: labels.setup.compose.nameLabel })).toHaveValue(
+        'Retained source draft',
+    )
 })
 
 test('legal review refreshes after a stale version and a temporary source failure', async ({
@@ -285,10 +285,16 @@ test('legal review refreshes after a stale version and a temporary source failur
                     response.url().includes('/api/avatio/legal/accept') &&
                     response.status() === 503,
             )
+            const unavailablePage = page.waitForResponse(
+                (response) =>
+                    response.url().includes('/api/avatio/content/privacy-policy') &&
+                    response.status() === 503,
+            )
             await dialog
                 .getByRole('button', { name: labels.modal.agreeTerms.agree, exact: true })
                 .click()
             await unavailable
+            await unavailablePage
             await expect(dialog.getByRole('button', { name: labels.content.retry })).toBeVisible()
             await writeFile(
                 privacy,
@@ -367,7 +373,8 @@ test('admin hiding and resolving reports stay independent, with ban and session 
                 data: { ban: true, banReason: 'Synthetic ban' },
             })
         ).status(),
-    ).toBe(200)
+    ).toBe(204)
+    expect((await runtime.db.query.users.findFirst({ where: { id: owner.id } }))?.banned).toBe(true)
     const ownerRequest = await runtime.createUser()
     expect(
         (
@@ -375,7 +382,7 @@ test('admin hiding and resolving reports stay independent, with ban and session 
                 data: { revokeUserSessions: true },
             })
         ).status(),
-    ).toBe(200)
+    ).toBe(204)
     const revoked = await context.request.get(`${runtime.origin}/api/setup-drafts`, {
         headers: Object.fromEntries(ownerRequest.headers),
     })
