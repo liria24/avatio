@@ -14,9 +14,11 @@ export const useSetupComposeForm = (onChange: (values: SetupComposeForm) => void
     })
     const values = useSelector(form.atom, (state) => state.values)
     // Form values contain only JSON data, but nested entries can still be Vue proxies.
-    watch(values, (next) => onChange(JSON.parse(JSON.stringify(next)) as SetupComposeForm), {
-        flush: 'post',
-    })
+    watch(
+        () => JSON.stringify(values.value),
+        (next) => onChange(JSON.parse(next) as SetupComposeForm),
+        { flush: 'post' },
+    )
 
     return { form, values }
 }

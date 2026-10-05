@@ -49,4 +49,28 @@ describe('setup compose form autosave subscription', () => {
             scope.stop()
         }
     })
+
+    it('does not schedule another save when restoring identical draft values', async () => {
+        const onChange = vi.fn()
+        const scope = effectScope()
+        const compose = scope.run(() => useSetupComposeForm(onChange))!
+        const restored = { ...createDefaultSetupComposeForm(), name: 'Restored draft' }
+        try {
+            compose.form.reset(restored)
+            await nextTick()
+            expect(onChange).toHaveBeenCalledOnce()
+            onChange.mockClear()
+
+            compose.form.reset({ ...createDefaultSetupComposeForm(), name: 'Restored draft' })
+            await nextTick()
+            expect(onChange).not.toHaveBeenCalled()
+
+            compose.form.setFieldValue('name', 'Edited draft')
+            await nextTick()
+            expect(onChange).toHaveBeenCalledOnce()
+            expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ name: 'Edited draft' }))
+        } finally {
+            scope.stop()
+        }
+    })
 })
