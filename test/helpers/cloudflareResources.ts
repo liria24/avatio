@@ -1,5 +1,5 @@
 import type { CloudflareResourceInventory } from '../../config/cloudflare'
-import { getStageConfig } from '../../config/environment'
+import { getStageConfig } from '../../config/environment.ts'
 
 /** Synthetic IDs only: never import this fixture into deployment tooling. */
 export const createCloudflareResourceFixture = (): CloudflareResourceInventory => {
