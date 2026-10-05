@@ -33,6 +33,20 @@ export const test = nuxtTest.extend<{ account: FixtureUser }, { runtime: TestRun
         await use(await runtime.createUser())
     },
     context: async ({ context }, use) => {
+        context.on('page', (page) => {
+            page.on('websocket', (socket) => {
+                socket.on('framereceived', ({ payload }) => {
+                    if (typeof payload !== 'string') return
+                    try {
+                        const message = JSON.parse(payload) as { type?: string; path?: string }
+                        if (message.type === 'full-reload')
+                            console.info('Fixture received Vite full reload:', message.path ?? '*')
+                    } catch {
+                        /* Non-JSON WebSocket messages are unrelated to Vite. */
+                    }
+                })
+            })
+        })
         await context.route('**/*', async (route) => {
             const url = new URL(route.request().url())
             if (['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)) await route.continue()
@@ -40,6 +54,13 @@ export const test = nuxtTest.extend<{ account: FixtureUser }, { runtime: TestRun
         })
         await use(context)
     },
+})
+
+test.afterEach(async ({ runtime }, info) => {
+    if (info.status === info.expectedStatus) return
+    const diagnostics = runtime.dependencyDiagnostics()
+    if (diagnostics)
+        await info.attach('vite-dependency-log', { body: diagnostics, contentType: 'text/plain' })
 })
 
 export const addCatalogItem = async (page: Page, runtime: TestRuntime, name: string) => {

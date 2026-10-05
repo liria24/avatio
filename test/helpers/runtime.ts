@@ -230,7 +230,24 @@ export default defineNuxtConfig({
         const admin = await createUser({ role: 'admin' })
         if ((await db.query.users.findFirst({ where: { id: admin.id } }))?.role !== 'admin')
             throw new Error('Fixture admin was not created')
-        return { root, db, sqlite, admin, createUser, auth, clean, origin: fixtureOrigin }
+        return {
+            root,
+            db,
+            sqlite,
+            admin,
+            createUser,
+            auth,
+            clean,
+            origin: fixtureOrigin,
+            dependencyDiagnostics: () =>
+                log
+                    .join('')
+                    .split('\n')
+                    .filter((line) =>
+                        /optim|dependenc|reload|Vite (client|server) built/i.test(line),
+                    )
+                    .join('\n'),
+        }
     } catch (error) {
         await clean()
         throw error
