@@ -7,6 +7,7 @@ import { readBuildOutput } from '@cloudflare/build-output-utils'
 import { drizzle } from 'drizzle-orm/d1'
 import { migrate } from 'drizzle-orm/d1/migrator'
 import { Miniflare } from 'miniflare'
+import { PNG } from 'pngjs'
 
 // Real bundled application, local bindings, disposable secrets. Never contact Cloudflare.
 const mode = process.argv[2]
@@ -112,8 +113,39 @@ try {
         )
         for (const [index, response] of sessions.entries()) {
             assert.equal(response.status, 200)
+            assert.ok(response.headers.get('cache-control')?.includes('no-store'))
             assert.equal((await response.json()).user.email, `${suffixes[index]}@example.test`)
         }
+        const forgedCookie = cookies[0].replace('session_token=', 'session_token=x')
+        assert.equal(
+            await (
+                await request('/api/auth/get-session', {
+                    headers: { cookie: forgedCookie },
+                })
+            ).json(),
+            null,
+        )
+        const png = new PNG({ width: 32, height: 32 })
+        for (let i = 0; i < png.data.length; i += 4) {
+            png.data[i] = 80
+            png.data[i + 1] = 120
+            png.data[i + 2] = 200
+            png.data[i + 3] = 255
+        }
+        const form = new FormData()
+        form.set('blob', new Blob([PNG.sync.write(png)], { type: 'image/png' }), 'fixture.png')
+        form.set('path', 'setup')
+        const upload = await request('/api/images', {
+            method: 'POST',
+            headers: { cookie: cookies[0], origin },
+            body: form,
+        })
+        assert.equal(upload.status, 200)
+        const image = await upload.json()
+        assert.equal(image.width, 32)
+        assert.equal(image.height, 32)
+        assert.ok(image.url.startsWith(env.R2_PUBLIC_BASE_URL.value + '/'))
+        assert.ok(await bucket.get(image.objectKey))
         assert.equal(
             (await database.prepare('SELECT COUNT(*) AS count FROM users').first()).count,
             2,
@@ -125,7 +157,9 @@ try {
         assert.equal(logout.status, 200)
         assert.equal(
             await (
-                await request('/api/auth/get-session', { headers: { cookie: cookies[0] } })
+                await request('/api/auth/get-session?disableCookieCache=true', {
+                    headers: { cookie: cookies[0] },
+                })
             ).json(),
             null,
         )

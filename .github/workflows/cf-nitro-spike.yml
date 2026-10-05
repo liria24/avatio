@@ -11,6 +11,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: cf-nitro-spike-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   compatibility:
     name: compatibility (${{ matrix.mode }}, ${{ matrix.nodeCompat }})
