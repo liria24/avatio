@@ -16,7 +16,7 @@ const loadSection = async <T>(name: string, configured: boolean, load: () => Pro
 }
 
 export default promiseEventHandler(async ({ event }) => {
-    await requireUserSession(event, { user: { role: 'admin' } })
+    await requireAdminSession(event)
     applyNoStoreCache(event)
 
     const { days } = await validateQuery(querySchema)

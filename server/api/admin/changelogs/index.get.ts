@@ -11,7 +11,7 @@ const query = z.object({
 })
 
 export default promiseEventHandler(async ({ db, event }) => {
-    await requireUserSession(event, { user: { role: 'admin' } })
+    await requireAdminSession(event)
     const { q, sort, userId, limit, lang, content } = await validateQuery(query)
 
     const data = await db.query.changelogs.findMany({

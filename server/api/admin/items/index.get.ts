@@ -23,7 +23,7 @@ const query = z.object({
 })
 
 export default promiseEventHandler(async ({ db, event }) => {
-    await requireUserSession(event, { user: { role: 'admin' } })
+    await requireAdminSession(event)
     const { q, orderBy, sort, page, limit, manualCategoryOverride, providerKey, availability } =
         await validateQuery(query)
 

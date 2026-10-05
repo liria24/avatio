@@ -3,7 +3,7 @@ import { writableAppConfigSchema } from '@avatio/core/contracts'
 import { and, eq, or, sql } from 'drizzle-orm'
 
 export default promiseEventHandler(async ({ db, event }) => {
-    await requireUserSession(event, { user: { role: 'admin' } })
+    await requireAdminSession(event)
     const config = await validateBody(writableAppConfigSchema, { sanitize: true })
     const [registry, existingOptions] = await Promise.all([
         getCatalogProviderRegistry(),

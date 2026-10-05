@@ -17,7 +17,7 @@ const body = createInsertSchema(changelogI18ns)
     })
 
 export default promiseEventHandler(async ({ event, db }) => {
-    const session = await requireUserSession(event, { user: { role: 'admin' } })
+    const session = await requireAdminSession(event)
     const { slug, title, markdown, authors, i18n } = await validateBody(body, { sanitize: true })
     const idempotency = await claimIdempotencyRequest({
         event,

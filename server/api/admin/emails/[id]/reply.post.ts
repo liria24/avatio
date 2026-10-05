@@ -14,7 +14,7 @@ const replySubject = (subject: string | null) => {
 }
 
 export default promiseEventHandler(async ({ db, event }) => {
-    await requireUserSession(event, { user: { role: 'admin' } })
+    await requireAdminSession(event)
     const { id } = await validateParams(params)
     const { text } = await validateBody(body)
 

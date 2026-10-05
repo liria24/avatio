@@ -18,7 +18,7 @@ const query = z.object({
 })
 
 export default promiseEventHandler<PaginationResponse<AuditLog[]>>(async ({ db, event }) => {
-    await requireUserSession(event, { user: { role: 'admin' } })
+    await requireAdminSession(event)
     const { q, sort, userId, action, targetType, targetId, page, limit } =
         await validateQuery(query)
 

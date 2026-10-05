@@ -3,7 +3,7 @@ import { and, eq } from 'drizzle-orm'
 import { z } from 'zod'
 
 export default promiseEventHandler(async ({ event, db }) => {
-    await requireUserSession(event, { user: { role: 'admin' } })
+    await requireAdminSession(event)
     const { id } = await validateParams(z.object({ id: z.string().min(1) }))
     const { categoryOverride } = await validateBody(
         z.object({ categoryOverride: itemCategorySchema.nullable() }),

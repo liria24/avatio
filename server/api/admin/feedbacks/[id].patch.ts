@@ -16,7 +16,7 @@ const body = z
     })
 
 export default promiseEventHandler<Feedback>(async ({ db, event }) => {
-    await requireUserSession(event, { user: { role: 'admin' } })
+    await requireAdminSession(event)
     const { id } = await validateParams(params)
     const { isClosed } = await validateBody(body)
 

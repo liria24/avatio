@@ -9,8 +9,11 @@ import { startTestRuntime, type FixtureUser, type TestRuntime } from '../helpers
 import { draftContent, fixturePng, seedCatalogItem, seedSetup } from '../helpers/seeds'
 
 let runtime: TestRuntime
+let bannedAdmin: FixtureUser
 beforeAll(async () => {
     runtime = await startTestRuntime()
+    bannedAdmin = await runtime.createUser({ role: 'admin' })
+    await runtime.db.update(users).set({ banned: true }).where(eq(users.id, bannedAdmin.id))
 })
 afterAll(async () => {
     await runtime?.clean()
@@ -37,6 +40,13 @@ describe('real HTTP authorization and ownership', () => {
     it.each(endpoints)('$method $path rejects anonymous requests', async ({ path, method }) => {
         expect((await request(path, undefined, { method })).status).toBe(401)
     })
+
+    it.each(endpoints)(
+        '$method $path rejects a banned admin with a retained session',
+        async ({ path, method }) => {
+            expect((await request(path, bannedAdmin, { method })).status).toBe(403)
+        },
+    )
 
     it('distinguishes ordinary users, admins and banned admins', async () => {
         const user = await runtime.createUser()
@@ -124,7 +134,11 @@ describe('real HTTP authorization and ownership', () => {
         const save = (user: FixtureUser, expectedRevision: number, name: string) =>
             request(`/api/setup-drafts/${id}`, user, {
                 method: 'PUT',
-                body: JSON.stringify({ expectedRevision, content: draftContent(name) }),
+                body: JSON.stringify({
+                    expectedRevision,
+                    setupId: null,
+                    content: draftContent(name),
+                }),
             })
         expect((await save(owner, 0, 'Original')).status).toBe(200)
         expect((await request(`/api/setup-drafts/${id}`, other)).status).toBe(404)
@@ -175,7 +189,7 @@ describe('real HTTP authorization and ownership', () => {
         expect(
             (await request('/api/images', owner, { method: 'POST', body: invalid })).status,
         ).toBe(400)
-        expect((await request('/api/_local/files/..%2f..%2fpackage.json')).status).toBe(404)
+        expect((await request('/api/_local/files/..%2f..%2fpackage.json')).status).toBe(400)
     })
 
     it('preserves stable image IDs and points when images are reordered or removed', async () => {
@@ -209,6 +223,7 @@ describe('real HTTP authorization and ownership', () => {
         const items = [{ id: entryId, itemId: item.id }]
         const response = await request('/api/setups', owner, {
             method: 'POST',
+            headers: { 'Idempotency-Key': randomUUID() },
             body: JSON.stringify({
                 name: 'Stable image contract',
                 items,
