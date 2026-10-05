@@ -13,7 +13,7 @@ export default defineConfig({
     failOnFlakyTests: Boolean(process.env.CI),
     reporter: [['list'], ['html', { outputFolder: '.cache/playwright-report', open: 'never' }]],
     use: {
-        trace: 'on-first-retry',
+        trace: 'retain-on-failure',
         screenshot: 'only-on-failure',
         serviceWorkers: 'block',
     },

@@ -124,7 +124,7 @@ export default defineNuxtConfig({
         optimizeDeps: {
             ...application.vite?.optimizeDeps,
             // Scan lazy routes and overlays before browser actions can discover new dependencies.
-            entries: ['./app/**/*.{vue,ts}'],
+            entries: ['**/*.{vue,ts}'],
         },
     },
 })
