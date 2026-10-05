@@ -18,12 +18,45 @@ const {
     openImagePoints,
 } = useSetupCompose()
 const list = ref<HTMLElement>()
+const root = useTemplateRef<HTMLElement>('root')
+const announcement = ref('')
+const { t } = useI18n()
 const itemCategories = itemCategorySchema.options
 
 const getItemsByCategory = (category: ItemCategory) =>
     entries.value.filter((entry) => entry.category === category)
 const setItemsByCategory = (category: ItemCategory, next: SetupComposeEntry[]) =>
     reorderCategory(category, next)
+
+const moveItem = (item: SetupComposeEntry, direction: -1 | 1) => {
+    const next = getItemsByCategory(item.category)
+    const from = next.findIndex(({ id }) => id === item.id)
+    const to = from + direction
+    if (from < 0 || to < 0 || to >= next.length) return
+    next.splice(from, 1)
+    next.splice(to, 0, item)
+    reorderCategory(item.category, next)
+    announcement.value = t('reorder.position', {
+        name: item.name,
+        position: to + 1,
+        count: next.length,
+    })
+}
+
+const removeEntry = async (item: SetupComposeEntry) => {
+    const index = itemCategories.flatMap(getItemsByCategory).findIndex(({ id }) => id === item.id)
+    removeItem(item.category, item.id)
+    await nextTick()
+    const ordered = itemCategories.flatMap(getItemsByCategory)
+    const next = ordered[Math.min(index, ordered.length - 1)]
+    const control = next
+        ? root.value?.querySelector<HTMLElement>(
+              `[data-entry-id="${CSS.escape(next.id)}"] [data-remove]`,
+          )
+        : root.value?.querySelector<HTMLInputElement>('input')
+    control?.focus()
+    announcement.value = t('dynamicFields.removed', { name: item.name })
+}
 
 const { data: suggestedItems } = await useFetch('/api/items/suggested', {
     query: { limit: 8 },
@@ -42,7 +75,10 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <div class="contents">
+    <div ref="root" class="contents">
+        <p role="status" aria-live="polite" aria-atomic="true" class="sr-only">
+            {{ announcement }}
+        </p>
         <div v-if="!totalItemsCount" class="m-auto flex flex-col items-center gap-6 text-center">
             <p class="text-xl">
                 {{ $t('setup.compose.items.emptyPrompt') }}
@@ -132,8 +168,10 @@ onBeforeUnmount(() => {
                         @update:model-value="setItemsByCategory(category, $event)"
                     >
                         <SetupsComposeItem
-                            v-for="item in getItemsByCategory(category)"
+                            v-for="(item, index) in getItemsByCategory(category)"
                             :key="item.id"
+                            :index="index"
+                            :count="getItemsByCategory(category).length"
                             :unsupported="item.unsupported"
                             :shapekeys="item.shapekeys"
                             :note="item.note"
@@ -141,7 +179,8 @@ onBeforeUnmount(() => {
                             :images="values.images"
                             class="m-0.5"
                             @change-category="changeItemCategory(item.id, $event)"
-                            @remove-item="removeItem(item.category, item.id)"
+                            @remove-item="removeEntry(item)"
+                            @move="moveItem(item, $event)"
                             @place-item="openImagePoints($event, item.id)"
                             @shapekey-add="addShapekey($event)"
                             @shapekey-remove="removeShapekey($event)"

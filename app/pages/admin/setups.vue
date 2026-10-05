@@ -140,16 +140,30 @@ useSeo({
 
                 <template #images-cell="{ row }">
                     <div class="flex items-center gap-1">
-                        <NuxtImg
+                        <button
                             v-for="(image, index) in row.original.images"
-                            :key="index"
-                            :src="image.url"
-                            alt=""
-                            width="32"
-                            height="32"
-                            class="aspect-square size-8 cursor-pointer rounded-md object-cover"
-                            @click="modalImageViewer.open({ src: image.url })"
-                        />
+                            :key="image.id"
+                            type="button"
+                            :aria-label="
+                                $t('imageViewer.open', {
+                                    name: row.original.name,
+                                    index: index + 1,
+                                })
+                            "
+                            aria-haspopup="dialog"
+                            class="shrink-0 rounded-md focus-visible:outline-2 focus-visible:outline-offset-2"
+                            @click="
+                                modalImageViewer.open({ src: image.url, alt: row.original.name })
+                            "
+                        >
+                            <NuxtImg
+                                :src="image.url"
+                                alt=""
+                                width="32"
+                                height="32"
+                                class="aspect-square size-8 cursor-pointer rounded-md object-cover"
+                            />
+                        </button>
                     </div>
                 </template>
 

@@ -17,6 +17,28 @@
     "report": "Report",
     "unknownAvatar": "Unknown Base Avatar",
     "jsWarning": "This website uses JavaScript. It may not display correctly if JavaScript is disabled.",
+    "imageViewer": {
+        "title": "Image viewer",
+        "open": "View {name}, image {index}"
+    },
+    "reorder": {
+        "label": "Reorder {name}",
+        "up": "Move up",
+        "down": "Move down",
+        "position": "{name} moved to position {position} of {count}."
+    },
+    "dynamicFields": {
+        "remove": "Remove {name}",
+        "removed": "Removed {name}.",
+        "added": "Added {name}.",
+        "noteFor": "Note for {name}",
+        "shapekeysFor": "Shapekeys for {name}",
+        "shapekeyName": "Shapekey name",
+        "shapekeyValue": "Shapekey value",
+        "addShapekey": "Add shapekey",
+        "shapekeyInvalid": "Enter a name of 1–64 characters and a numeric value.",
+        "shapekeyLimit": "You can add up to 64 shapekeys."
+    },
     "shareButton": {
         "copyLink": "Copy Link",
         "copied": "Copied",

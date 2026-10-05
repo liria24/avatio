@@ -331,10 +331,15 @@ useSeo({
                         :model-value="tab"
                         :items="tabItems"
                         :content="false"
+                        activation-mode="manual"
                         color="neutral"
                         size="sm"
                         @update:model-value="setTab"
-                    />
+                    >
+                        <template #default="{ item }">
+                            <span :id="`report-tab-${item.value}`">{{ item.label }}</span>
+                        </template>
+                    </UTabs>
                 </template>
 
                 <template #right>
@@ -355,7 +360,13 @@ useSeo({
         </template>
 
         <template #body>
-            <div class="flex min-h-0 grow flex-col gap-4 p-3 sm:p-5">
+            <div
+                role="tabpanel"
+                :aria-labelledby="`report-tab-${tab}`"
+                :aria-busy="isPending"
+                tabindex="0"
+                class="flex min-h-0 grow flex-col gap-4 p-3 focus-visible:outline-2 focus-visible:outline-offset-[-2px] sm:p-5"
+            >
                 <UProgress v-if="isPending && hasReports" size="xs" animation="carousel" />
 
                 <UAlert

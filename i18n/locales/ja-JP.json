@@ -17,6 +17,28 @@
     "report": "報告",
     "unknownAvatar": "不明なベースアバター",
     "jsWarning": "このWebサイトはJavaScriptを使用しています。JavaScriptが無効の場合、正しく表示されません。",
+    "imageViewer": {
+        "title": "画像ビューアー",
+        "open": "{name}の画像{index}を拡大"
+    },
+    "reorder": {
+        "label": "{name}を並べ替え",
+        "up": "上に移動",
+        "down": "下に移動",
+        "position": "{name}を{count}件中{position}番目に移動しました。"
+    },
+    "dynamicFields": {
+        "remove": "{name}を削除",
+        "removed": "{name}を削除しました。",
+        "added": "{name}を追加しました。",
+        "noteFor": "{name}のメモ",
+        "shapekeysFor": "{name}のシェイプキー",
+        "shapekeyName": "シェイプキー名",
+        "shapekeyValue": "シェイプキーの値",
+        "addShapekey": "シェイプキーを追加",
+        "shapekeyInvalid": "1〜64文字の名前と数値を入力してください。",
+        "shapekeyLimit": "シェイプキーは64件まで追加できます。"
+    },
     "shareButton": {
         "copyLink": "リンクをコピー",
         "copied": "コピーしました",

@@ -25,6 +25,15 @@ const tab = computed<Tab>({
         _tab.value = newTab !== 'latest' ? newTab : null
     },
 })
+const tabItems = computed(() => [
+    { label: t('index.tabs.latest'), value: 'latest' },
+    { label: t('index.tabs.me'), value: 'owned' },
+    { label: t('index.tabs.bookmarks'), value: 'bookmarked' },
+])
+const setTab = (value: string | number) => {
+    if (value === 'latest' || value === 'owned' || value === 'bookmarked') tab.value = value
+}
+const [DefineSetupList, ReuseSetupList] = createReusableTemplate()
 
 const showPrivate = ref(preferences.value.showPrivateSetups)
 const entrance = useSetupEntrance()
@@ -144,50 +153,7 @@ useSeo({
             </template>
         </UPageHero>
 
-        <div class="flex w-full flex-col items-start gap-5">
-            <div v-if="loggedIn" class="flex w-full items-center gap-1">
-                <UButton
-                    :label="$t('index.tabs.latest')"
-                    :active="tab === 'latest'"
-                    variant="ghost"
-                    active-variant="solid"
-                    color="neutral"
-                    class="px-4 py-2"
-                    @click="tab = 'latest'"
-                />
-                <UButton
-                    :label="$t('index.tabs.me')"
-                    :active="tab === 'owned'"
-                    variant="ghost"
-                    active-variant="solid"
-                    color="neutral"
-                    class="px-4 py-2"
-                    @click="tab = 'owned'"
-                />
-                <UButton
-                    :label="$t('index.tabs.bookmarks')"
-                    :active="tab === 'bookmarked'"
-                    variant="ghost"
-                    active-variant="solid"
-                    color="neutral"
-                    class="px-4 py-2"
-                    @click="tab = 'bookmarked'"
-                />
-
-                <USwitch
-                    v-if="tab === 'owned'"
-                    v-model="showPrivate"
-                    :aria-label="$t('index.showPrivate')"
-                    size="sm"
-                    class="ml-auto"
-                >
-                    <template #label>
-                        <Icon name="mingcute:lock-fill" size="16" />
-                    </template>
-                </USwitch>
-            </div>
-            <h1 v-else class="text-lg font-medium text-nowrap">{{ $t('index.tabs.latest') }}</h1>
-
+        <DefineSetupList>
             <SetupsList :key="displayedTab" :setups :loading :entrance="cardEntrance" />
             <UButton
                 v-if="(!loggedIn || tab === 'latest') && setupsLatest.pagination.value?.hasNext"
@@ -195,6 +161,43 @@ useSeo({
                 :label="$t('more')"
                 @click="setupsLatest.loadMore()"
             />
+        </DefineSetupList>
+        <div class="relative flex w-full flex-col items-start gap-5">
+            <template v-if="loggedIn">
+                <h1 class="sr-only">{{ $t('index.seo.title') }}</h1>
+                <UTabs
+                    :model-value="tab"
+                    :items="tabItems"
+                    activation-mode="manual"
+                    color="neutral"
+                    :ui="{
+                        root: 'w-full items-stretch gap-5',
+                        list: 'gap-1 bg-transparent p-0',
+                        indicator: 'hidden',
+                        trigger:
+                            'grow-0 px-4 py-2 data-[state=active]:bg-inverted data-[state=inactive]:text-default hover:data-[state=inactive]:bg-elevated',
+                        content: 'flex flex-col items-start gap-5 data-[state=inactive]:hidden',
+                    }"
+                    @update:model-value="setTab"
+                >
+                    <template #content><ReuseSetupList /></template>
+                </UTabs>
+                <USwitch
+                    v-if="tab === 'owned'"
+                    v-model="showPrivate"
+                    :aria-label="$t('index.showPrivate')"
+                    size="sm"
+                    class="absolute top-2 right-0"
+                >
+                    <template #label>
+                        <Icon name="mingcute:lock-fill" size="16" />
+                    </template>
+                </USwitch>
+            </template>
+            <template v-else>
+                <h1 class="text-lg font-medium text-nowrap">{{ $t('index.tabs.latest') }}</h1>
+                <ReuseSetupList />
+            </template>
         </div>
     </div>
 </template>

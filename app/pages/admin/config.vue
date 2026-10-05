@@ -75,11 +75,26 @@ const overrideForm = useForm({
     onSubmit: () => undefined,
 })
 const savingOverrides = reactive(new Set<string>())
+const overrideErrors = reactive(new Map<string, string>())
+const overrideList = useTemplateRef<HTMLElement>('overrideList')
+const overrideSearch = useTemplateRef<HTMLElement>('overrideSearch')
+const overrideAnnouncement = ref('')
+const overrideId = useId()
+const focusOverride = async (id?: string) => {
+    await nextTick()
+    const control = id
+        ? overrideList.value?.querySelector<HTMLElement>(
+              `[data-override-id="${CSS.escape(id)}"] [role="combobox"]`,
+          )
+        : overrideSearch.value?.querySelector<HTMLInputElement>('input')
+    control?.focus()
+}
 
 const reset = async () => {
     await Promise.all([refresh(), refreshOverrides()])
     admissionForm.reset({ providers: cloneAdmissions(data.value?.providerAdmissions ?? []) })
     overrideForm.reset({ entries: toEditableOverrides(overrideResponse.value?.data ?? []) })
+    overrideErrors.clear()
 }
 
 const updateAdmissions = (update: (providers: ProviderAdmissionConfig[]) => void) => {
@@ -126,6 +141,8 @@ const addOverride = (item: CatalogItemView) => {
         manualCategoryOverride: null,
         pendingCategory: item.category,
     })
+    void focusOverride(item.id)
+    overrideAnnouncement.value = `Added ${item.name}.`
 }
 
 const setOverrideCategory = (index: number, pendingCategory: ItemCategory) => {
@@ -140,6 +157,7 @@ const saveOverride = async (index: number) => {
     const entry = overrideForm.state.values.entries[index]
     if (!entry) return
     savingOverrides.add(entry.id)
+    overrideErrors.delete(entry.id)
     try {
         const item = await $fetch<AdminCatalogItemView>(`/api/admin/items/${entry.id}`, {
             method: 'PATCH',
@@ -158,9 +176,11 @@ const saveOverride = async (index: number) => {
         toast.add({ title: 'Category override saved', color: 'success' })
     } catch (error) {
         console.error('Error saving category override:', error)
+        overrideErrors.set(entry.id, 'Category override save failed. Please try again.')
         toast.add({ title: 'Category override save failed', color: 'error' })
     } finally {
         savingOverrides.delete(entry.id)
+        if (overrideErrors.has(entry.id)) void focusOverride(entry.id)
     }
 }
 
@@ -168,6 +188,7 @@ const removeOverride = async (index: number) => {
     const entry = overrideForm.state.values.entries[index]
     if (!entry) return
     savingOverrides.add(entry.id)
+    overrideErrors.delete(entry.id)
     try {
         await $fetch(`/api/admin/items/${entry.id}`, {
             method: 'PATCH',
@@ -176,12 +197,17 @@ const removeOverride = async (index: number) => {
         overrideForm.setFieldValue('entries', (entries) =>
             entries.filter(({ id }) => id !== entry.id),
         )
+        const entries = overrideForm.state.values.entries
+        void focusOverride(entries[Math.min(index, entries.length - 1)]?.id)
+        overrideAnnouncement.value = `Removed ${entry.name}.`
         toast.add({ title: 'Category override removed', color: 'success' })
     } catch (error) {
         console.error('Error removing category override:', error)
+        overrideErrors.set(entry.id, 'Category override removal failed. Please try again.')
         toast.add({ title: 'Category override removal failed', color: 'error' })
     } finally {
         savingOverrides.delete(entry.id)
+        if (overrideErrors.has(entry.id)) void focusOverride(entry.id)
     }
 }
 
@@ -263,14 +289,14 @@ useSeo({ title: 'Admin - Config' })
                             variant="subtle"
                         >
                             <div class="flex flex-col gap-5">
-                                <section
+                                <fieldset
                                     v-for="(facet, facetIndex) in provider.facets"
                                     :key="facet.key"
-                                    class="space-y-2"
+                                    class="min-w-0 space-y-2"
                                 >
-                                    <h3 class="text-sm font-medium capitalize">
+                                    <legend class="text-sm font-medium capitalize">
                                         {{ facetLabel(facet.key) }}
-                                    </h3>
+                                    </legend>
 
                                     <UInputTags
                                         v-if="facet.discovery === 'configured-only'"
@@ -282,6 +308,7 @@ useSeo({ title: 'Admin - Config' })
                                         add-on-blur
                                         add-on-paste
                                         :placeholder="`Add ${facetLabel(facet.key)}`"
+                                        :aria-label="`${getCatalogProviderData(provider.providerKey).label} ${facetLabel(facet.key)}`"
                                         class="w-full"
                                         @update:model-value="
                                             setConfiguredValues(providerIndex, facetIndex, $event)
@@ -295,6 +322,8 @@ useSeo({ title: 'Admin - Config' })
                                         <div
                                             v-for="(option, optionIndex) in facet.options"
                                             :key="option.valueKey"
+                                            role="group"
+                                            :aria-label="option.label"
                                             class="flex items-center gap-3 p-3"
                                         >
                                             <Icon
@@ -309,6 +338,7 @@ useSeo({ title: 'Admin - Config' })
                                             <UButton
                                                 type="button"
                                                 label="Allow"
+                                                :aria-pressed="option.decision === 'allow'"
                                                 size="xs"
                                                 color="success"
                                                 :variant="
@@ -326,6 +356,7 @@ useSeo({ title: 'Admin - Config' })
                                             <UButton
                                                 type="button"
                                                 label="Reject"
+                                                :aria-pressed="option.decision === 'deny'"
                                                 size="xs"
                                                 color="error"
                                                 :variant="
@@ -342,7 +373,7 @@ useSeo({ title: 'Admin - Config' })
                                             />
                                         </div>
                                     </div>
-                                </section>
+                                </fieldset>
                             </div>
                         </UPageCard>
                     </admissionForm.ArrayField>
@@ -353,19 +384,26 @@ useSeo({ title: 'Admin - Config' })
                     description="Search the existing Catalog, then save or remove each override independently."
                     variant="subtle"
                 >
-                    <div class="flex flex-col gap-3">
-                        <CommandPaletteItemSearch
-                            endpoint="/api/admin/items"
-                            :allow-resolve="false"
-                            @select="addOverride"
-                        />
+                    <div ref="overrideList" class="flex flex-col gap-3">
+                        <p role="status" aria-live="polite" aria-atomic="true" class="sr-only">
+                            {{ overrideAnnouncement }}
+                        </p>
+                        <div ref="overrideSearch">
+                            <CommandPaletteItemSearch
+                                endpoint="/api/admin/items"
+                                :allow-resolve="false"
+                                @select="addOverride"
+                            />
+                        </div>
 
                         <overrideForm.ArrayField v-slot="{ field }" name="entries">
-                            <div
+                            <fieldset
                                 v-for="(entry, index) in field.value"
                                 :key="entry.id"
-                                class="border-default grid items-center gap-3 rounded-lg border p-3 lg:grid-cols-[minmax(16rem,1fr)_10rem_10rem_auto]"
+                                :data-override-id="entry.id"
+                                class="border-default grid min-w-0 items-center gap-3 rounded-lg border p-3 lg:grid-cols-[minmax(16rem,1fr)_10rem_10rem_auto]"
                             >
+                                <legend class="sr-only">{{ entry.name }}</legend>
                                 <div class="flex min-w-0 items-center gap-3">
                                     <UAvatar
                                         :src="entry.image || undefined"
@@ -399,6 +437,13 @@ useSeo({ title: 'Admin - Config' })
                                     <p class="text-sm">{{ itemCategory[entry.category].label }}</p>
                                 </div>
                                 <USelect
+                                    :aria-label="`Category for ${entry.name}`"
+                                    :aria-invalid="overrideErrors.has(entry.id)"
+                                    :aria-describedby="
+                                        overrideErrors.has(entry.id)
+                                            ? `${overrideId}-${entry.id}`
+                                            : undefined
+                                    "
                                     :model-value="entry.pendingCategory"
                                     :items="categoryOptions"
                                     @update:model-value="setOverrideCategory(index, $event)"
@@ -407,7 +452,7 @@ useSeo({ title: 'Admin - Config' })
                                     <UButton
                                         type="button"
                                         icon="mingcute:save-2-line"
-                                        aria-label="Save category override"
+                                        :aria-label="`Save category override for ${entry.name}`"
                                         color="neutral"
                                         :loading="savingOverrides.has(entry.id)"
                                         @click="saveOverride(index)"
@@ -415,14 +460,22 @@ useSeo({ title: 'Admin - Config' })
                                     <UButton
                                         type="button"
                                         icon="mingcute:delete-2-line"
-                                        aria-label="Remove category override"
+                                        :aria-label="`Remove category override for ${entry.name}`"
                                         color="error"
                                         variant="soft"
                                         :loading="savingOverrides.has(entry.id)"
                                         @click="removeOverride(index)"
                                     />
                                 </div>
-                            </div>
+                                <p
+                                    v-if="overrideErrors.has(entry.id)"
+                                    :id="`${overrideId}-${entry.id}`"
+                                    role="alert"
+                                    class="text-error text-sm lg:col-span-4"
+                                >
+                                    {{ overrideErrors.get(entry.id) }}
+                                </p>
+                            </fieldset>
                         </overrideForm.ArrayField>
                     </div>
                 </UPageCard>

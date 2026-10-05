@@ -108,6 +108,28 @@ describe('Admin reports UI', () => {
         vi.clearAllMocks()
     })
 
+    it('does not fetch a report tab on focus; activation updates the URL and named panel', async () => {
+        const wrapper = await mountSuspended(AdminReportsPage, {
+            route: '/',
+            attachTo: document.body,
+        })
+        await vi.waitFor(() => expect(requests).toHaveLength(1))
+        const tabs = wrapper.findAll('[role="tab"]')
+        await tabs[1]!.trigger('focus')
+        await nextTick()
+        expect(requests).toHaveLength(1)
+        expect(tabs[0]!.attributes('aria-selected')).toBe('true')
+        await tabs[1]!.trigger('keydown', { key: 'Enter' })
+        await vi.waitFor(() => expect(requests.at(-1)?.type).toBe('setup'))
+        await vi.waitFor(() => expect(useRouter().currentRoute.value.query.tab).toBe('setup'))
+        expect(wrapper.get('[role="tabpanel"]').attributes('aria-labelledby')).toBe(
+            'report-tab-setup',
+        )
+        await navigateTo('/?tab=item')
+        await vi.waitFor(() => expect(tabs[2]!.attributes('aria-selected')).toBe('true'))
+        wrapper.unmount()
+    })
+
     it.each([
         ['user', 'Reported user', 'spam', 'malicious'],
         ['setup', 'Reported setup', 'spam', 'extreme'],

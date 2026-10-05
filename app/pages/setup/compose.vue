@@ -20,6 +20,25 @@ const {
 
 const publishedSetupId = ref<Setup['id'] | null>(null)
 const mobilePanel = ref<'details' | 'items'>('details')
+const mobileTabs = computed(() => [
+    {
+        label: t('setup.compose.mobile.details'),
+        value: 'details',
+        icon: 'mingcute:edit-3-fill',
+        slot: 'details' as const,
+        ui: { content: 'flex flex-col gap-8' },
+    },
+    {
+        label: t('setup.compose.mobile.items'),
+        value: 'items',
+        icon: 'mingcute:package-2-fill',
+        slot: 'items' as const,
+        ui: { content: 'flex min-h-[60vh] flex-col gap-4' },
+    },
+])
+const setMobilePanel = (value: string | number) => {
+    if (value === 'details' || value === 'items') mobilePanel.value = value
+}
 const desktop = useMediaQuery('(min-width: 1024px)', { ssrWidth: 1024 })
 const publishCompleteModal = usePublishSetupCompleteModal()
 
@@ -162,36 +181,29 @@ await initialize({ draftId: queryValue(route.query.draftId), edit: queryValue(ro
                 </template>
             </USplitter>
 
-            <div v-else class="flex min-h-0 grow flex-col gap-4">
-                <div class="grid grid-cols-2 gap-2">
-                    <UButton
-                        :label="$t('setup.compose.mobile.details')"
-                        icon="mingcute:edit-3-fill"
-                        :variant="mobilePanel === 'details' ? 'solid' : 'soft'"
-                        block
-                        @click="mobilePanel = 'details'"
-                    />
-                    <UButton
-                        :label="$t('setup.compose.mobile.items')"
-                        icon="mingcute:package-2-fill"
-                        :variant="mobilePanel === 'items' ? 'solid' : 'soft'"
-                        block
-                        @click="mobilePanel = 'items'"
-                    />
-                </div>
-                <section
-                    v-show="mobilePanel === 'details'"
-                    class="flex grow flex-col gap-8 rounded-xl p-1"
-                >
+            <UTabs
+                v-else
+                :model-value="mobilePanel"
+                :items="mobileTabs"
+                :unmount-on-hide="false"
+                activation-mode="manual"
+                :ui="{
+                    root: 'min-h-0 grow items-stretch gap-4',
+                    list: 'grid grid-cols-2 gap-2 bg-transparent p-0',
+                    indicator: 'hidden',
+                    trigger:
+                        'data-[state=active]:bg-primary data-[state=inactive]:bg-primary/10 data-[state=inactive]:text-primary hover:data-[state=inactive]:bg-primary/15',
+                    content: 'grow rounded-xl p-1 data-[state=inactive]:hidden',
+                }"
+                @update:model-value="setMobilePanel"
+            >
+                <template #details>
                     <SetupsComposeDetails />
-                </section>
-                <section
-                    v-show="mobilePanel === 'items'"
-                    class="flex min-h-[60vh] grow flex-col gap-4 rounded-xl p-1"
-                >
+                </template>
+                <template #items>
                     <SetupsComposeItems />
-                </section>
-            </div>
+                </template>
+            </UTabs>
         </main>
     </UForm>
 </template>

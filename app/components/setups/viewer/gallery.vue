@@ -62,22 +62,34 @@ defineExpose({ showEntry })
         >
             <template #default="{ item: image, index }">
                 <div class="relative mx-auto w-fit max-w-full">
-                    <NuxtImg
-                        :src="image.url"
-                        :width="
-                            image.height > 720
-                                ? Math.round((image.width * 720) / image.height)
-                                : image.width
+                    <button
+                        type="button"
+                        :aria-label="$t('imageViewer.open', { name, index: index + 1 })"
+                        aria-haspopup="dialog"
+                        class="block max-w-full cursor-zoom-in rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4"
+                        @click="
+                            imageViewer.open({
+                                src: image.url,
+                                alt: `${name}${$t('setup.viewer.imageAlt')}`,
+                            })
                         "
-                        :height="Math.min(image.height, 720)"
-                        format="avif"
-                        :preload="index === 0"
-                        :loading="index === 0 ? 'eager' : 'lazy'"
-                        :fetchpriority="index === 0 ? 'high' : 'low'"
-                        :alt="`${name}${$t('setup.viewer.imageAlt')}`"
-                        class="max-h-180 max-w-full cursor-zoom-in rounded-lg object-contain"
-                        @click="imageViewer.open({ src: image.url, alt: name })"
-                    />
+                    >
+                        <NuxtImg
+                            :src="image.url"
+                            :width="
+                                image.height > 720
+                                    ? Math.round((image.width * 720) / image.height)
+                                    : image.width
+                            "
+                            :height="Math.min(image.height, 720)"
+                            format="avif"
+                            :preload="index === 0"
+                            :loading="index === 0 ? 'eager' : 'lazy'"
+                            :fetchpriority="index === 0 ? 'high' : 'low'"
+                            :alt="`${name}${$t('setup.viewer.imageAlt')}`"
+                            class="max-h-180 max-w-full cursor-zoom-in rounded-lg object-contain"
+                        />
+                    </button>
 
                     <svg
                         v-if="expanded"
