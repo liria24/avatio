@@ -71,7 +71,7 @@ jobs:
       - name: Build actual Nuxt/Nitro application
         run: |
           if [ "$AVATIO_SPIKE_NODE_COMPAT" = v2 ]; then
-            vp run build -- --extends ./test/fixtures/cf-nitro/nuxt
+            vp run build --extends ./test/fixtures/cf-nitro/nuxt
           else
             vp run build
           fi
