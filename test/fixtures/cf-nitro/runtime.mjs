@@ -135,10 +135,16 @@ try {
         const form = new FormData()
         form.set('blob', new Blob([PNG.sync.write(png)], { type: 'image/png' }), 'fixture.png')
         form.set('path', 'setup')
+        // Miniflare uses its own Fetch classes; serialize Node's multipart body explicitly.
+        const multipart = new Response(form)
         const upload = await request('/api/images', {
             method: 'POST',
-            headers: { cookie: cookies[0], origin },
-            body: form,
+            headers: {
+                cookie: cookies[0],
+                origin,
+                'content-type': multipart.headers.get('content-type'),
+            },
+            body: await multipart.arrayBuffer(),
         })
         assert.equal(upload.status, 200)
         const image = await upload.json()
