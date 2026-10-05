@@ -32,9 +32,15 @@ const {
                 document,
                 page: await requestFetch<AvatioContentPage>(`/api/avatio/content/${document}`, {
                     query: { locale: locale.value },
+                    cache: 'no-store',
                 }),
             })),
         ),
+    {
+        // A rejected acceptance must refetch even while the app is still hydrating.
+        getCachedData: (key, nuxtApp, { cause }) =>
+            cause === 'initial' && nuxtApp.isHydrating ? nuxtApp.payload.data[key] : undefined,
+    },
 )
 
 const title = computed(() => {
