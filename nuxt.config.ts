@@ -146,6 +146,17 @@ export default defineNuxtConfig({
         vue: { features: { optionsAPI: false } },
         optimizeDeps: {
             include: [
+                // Lazy routes and overlays must not trigger a dependency reload during editing.
+                '@unhead/schema-org/vue',
+                'better-auth/client/plugins',
+                'zod',
+                '@yeger/vue-masonry-wall',
+                '@comark/vue',
+                '@formkit/drag-and-drop',
+                '@formkit/drag-and-drop/vue',
+                '@tanstack/vue-form',
+                'cn',
+                'canvas-confetti',
                 '@nuxt/ui > prosemirror-state',
                 '@nuxt/ui > prosemirror-transform',
                 '@nuxt/ui > prosemirror-model',

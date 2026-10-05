@@ -119,6 +119,7 @@ PRs into `main` require the `format`, `lint`, `lint:unused`, `typecheck`, `test`
 - Vite+ handles all formatting automatically; do not manually adjust indentation, quotes, or semicolons.
 - `oxlint` and TypeScript enforce the remaining style rules (`no-explicit-any`, `consistent-type-imports`, `noUncheckedIndexedAccess`, etc.).
 - Vue Options API is disabled (`vite.vue.features.optionsAPI: false`).
+- Keep the explicit lazy client dependencies in `vite.optimizeDeps.include`; cold compose, overlay, and navigation flows must not lose state to development dependency reloads. Recheck these flows when upgrading the bundler or client SDKs.
 
 ## Testing
 
