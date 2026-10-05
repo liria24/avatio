@@ -93,7 +93,9 @@ try {
             }),
         })
     if (output.rootConfig.buildContext.isPreview) {
-        const suffixes = [randomUUID().replaceAll('-', ''), randomUUID().replaceAll('-', '')]
+        const suffixes = Array.from({ length: 2 }, () =>
+            randomUUID().replaceAll('-', '').slice(0, 20),
+        )
         const registrations = await Promise.all(suffixes.map(signup))
         const cookies = []
         for (const response of registrations) {
