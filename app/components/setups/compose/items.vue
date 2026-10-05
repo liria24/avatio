@@ -86,11 +86,12 @@ onBeforeUnmount(() => {
 
             <UFormField
                 :help="$t('setup.compose.items.supportedPlatforms')"
-                :ui="{ help: 'px-1 text-xs text-dimmed' }"
+                :ui="{ help: 'px-1 text-xs text-toned' }"
+                class="w-full max-w-sm"
             >
                 <CommandPaletteItemSearch
                     v-model:search-term="itemSearchTerm"
-                    class="min-w-sm"
+                    class="w-full min-w-0 sm:min-w-sm"
                     @select="addItem"
                 />
             </UFormField>
@@ -104,6 +105,7 @@ onBeforeUnmount(() => {
                 >
                     <button
                         type="button"
+                        :aria-label="item.name"
                         class="group relative cursor-pointer overflow-clip rounded-lg object-cover"
                         @click="addItem(item)"
                     >
