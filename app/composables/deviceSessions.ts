@@ -27,7 +27,8 @@ export const useDeviceSessions = () => {
     const switching = useState('auth:device-session-switching', () => false)
     const asyncData = useAsyncData<DeviceSession[]>(
         'auth:device-sessions',
-        async () => normalizeDeviceSessions(await $fetch('/api/users/me/sessions')),
+        async () =>
+            normalizeDeviceSessions(await $fetch<DeviceSession[]>('/api/users/me/sessions')),
         { immediate: false },
     )
 

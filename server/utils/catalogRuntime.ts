@@ -13,6 +13,8 @@ import type { Queue } from '@cloudflare/workers-types'
 import { inArray } from 'drizzle-orm'
 import { itemSources } from '~~/database/schema'
 
+import { getPreviewKind } from '../../config/preview'
+
 export const getCatalogRepository = () => {
     const db = useDB()
     return new SQLiteCatalogRepository(db, (queries) => executeAppBatch(db, queries))
@@ -37,7 +39,10 @@ export const getCatalogProviderRegistry = async () => {
 }
 
 export const getCatalogSyncQueue = (): CatalogSyncQueue | null => {
-    if (import.meta.dev)
+    if (
+        import.meta.dev ||
+        getPreviewKind(getRuntimeEnvString('STAGE'), getRuntimeEnvString('PREVIEW_NAME'))
+    )
         return {
             async enqueue(message) {
                 await syncCatalogSource({

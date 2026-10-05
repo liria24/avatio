@@ -57,11 +57,18 @@ describe('stage configuration', () => {
         ).resolves.toBeDefined()
     })
 
-    it('keeps secrets out of generated Nuxt runtime configuration', async () => {
-        await execFileAsync(process.execPath, [
-            '--input-type=module',
-            '-e',
-            `
+    it.each([
+        ['production', ''],
+        ['development', ''],
+        ['development', 'development'],
+        ['development', 'pr-354'],
+    ])(
+        'keeps secrets out of Nuxt configuration for %s / %s',
+        async (stage, preview) => {
+            await execFileAsync(process.execPath, [
+                '--input-type=module',
+                '-e',
+                `
             import assert from 'node:assert/strict'
             import { loadNuxt } from '@nuxt/kit'
             const authSecret = 'synthetic-build-secret-never-inline-123456789'
@@ -69,6 +76,15 @@ describe('stage configuration', () => {
             process.env.BETTER_AUTH_SECRET = authSecret
             process.env.NUXT_BETTER_AUTH_SECRET = authSecret
             process.env.OG_IMAGE_SECRET = ogSecret
+            process.env.STAGE = ${JSON.stringify(stage)}
+            process.env.PREVIEW_NAME = ${JSON.stringify(preview)}
+            process.env.PUBLIC_SITE_URL = 'https://preview.example.test'
+            process.env.R2_PUBLIC_BASE_URL = 'https://preview-images.example.test'
+            process.env.OG_IMAGE_ENDPOINT = 'https://preview-og.example.test'
+            const preview = Boolean(process.env.PREVIEW_NAME)
+            const pr = process.env.PREVIEW_NAME.startsWith('pr-')
+            const siteUrl = preview ? process.env.PUBLIC_SITE_URL
+                : process.env.STAGE === 'production' ? 'https://avatio.me' : 'https://dev.avatio.me'
             const nuxt = await loadNuxt({ cwd: process.cwd(), dev: false, ready: true })
             try {
                 const runtimeConfig = nuxt._nitro.options.runtimeConfig
@@ -76,7 +92,18 @@ describe('stage configuration', () => {
                 const publicSerialized = JSON.stringify(runtimeConfig.public)
                 assert.equal(runtimeConfig.betterAuthSecret, '')
                 assert.equal(runtimeConfig.ogImage.secret, '{{OG_IMAGE_SECRET}}')
-                assert.match(runtimeConfig.public.siteUrl, /^https?:\\/\\//)
+                assert.equal(runtimeConfig.public.siteUrl, siteUrl)
+                assert.equal(nuxt.options.appConfig.app.site, siteUrl)
+                assert.equal(nuxt.options.i18n.baseUrl, siteUrl)
+                assert.equal(runtimeConfig.public.emailPasswordAuthEnabled, pr)
+                assert.equal(runtimeConfig.public.twitterAuthEnabled, !pr)
+                assert.equal(nuxt.options.image.provider, pr ? 'none' : 'cloudflare')
+                if (preview) {
+                    assert.equal(runtimeConfig.ogImage.endpoint, process.env.OG_IMAGE_ENDPOINT)
+                    assert.deepEqual(nuxt._nitro.options.scheduledTasks, {})
+                    assert.equal(runtimeConfig.cloudflare.apiToken, '')
+                    assert.equal(runtimeConfig.cloudflare.siteTag, '')
+                }
                 assert.ok(!serialized.includes(authSecret))
                 assert.ok(!serialized.includes(ogSecret))
                 assert.ok(!/(secret|token|credential|proxyUrl)/i.test(publicSerialized))
@@ -84,8 +111,10 @@ describe('stage configuration', () => {
                 await nuxt.close()
             }
         `,
-        ])
-    }, 30_000)
+            ])
+        },
+        30_000,
+    )
 
     it('reports names and reasons without exposing supplied values', () => {
         const sensitiveValue = 'never-print-this-secret-value'

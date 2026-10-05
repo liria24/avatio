@@ -5,6 +5,7 @@ import type { NitroConfig, NitroRouteConfig } from 'nitropack'
 import { defineOrganization } from 'nuxt-schema-org/schema'
 import { withLeadingSlash } from 'ufo'
 
+import { getBuildEnvironment } from './config/build'
 import { getLocalAuthSecret } from './config/localDevelopment'
 import {
     defaultI18nLocale,
@@ -12,15 +13,15 @@ import {
     prefixedI18nLocales,
 } from './shared/utils/i18nRouting'
 
-const baseUrl = process.env.PUBLIC_SITE_URL || 'http://localhost:3000'
-const publicUrl = ['localhost', '127.0.0.1'].includes(new URL(baseUrl).hostname)
-    ? 'https://avatio.me'
-    : baseUrl
-const r2PublicBaseUrl = process.env.R2_PUBLIC_BASE_URL
+const buildEnvironment = getBuildEnvironment(process.env, import.meta.dev)
+const {
+    siteUrl: baseUrl,
+    publicUrl,
+    twitterAuthEnabled,
+    emailPasswordAuthEnabled,
+} = buildEnvironment
+const r2PublicBaseUrl = buildEnvironment.imageBaseUrl
 const imageDomain = r2PublicBaseUrl ? new URL(r2PublicBaseUrl).hostname : undefined
-const twitterAuthEnabled = Boolean(
-    process.env.TWITTER_CLIENT_ID && process.env.TWITTER_CLIENT_SECRET,
-)
 const title = 'Avatio'
 const description = 'アバター改変レシピの共有プラットフォーム'
 const insightConfigPath = fileURLToPath(new URL('./app/server/insight.config.ts', import.meta.url))
@@ -216,12 +217,16 @@ export default defineNuxtConfig({
         public: {
             siteUrl: baseUrl,
             twitterAuthEnabled,
+            emailPasswordAuthEnabled,
         },
     },
+
+    appConfig: { app: { site: baseUrl } },
 
     insight: {
         providers: {
             cloudflare: {
+                // Keep query types available; runtime queries require separate analytics bindings.
                 webAnalytics: true,
             },
         },
@@ -378,7 +383,7 @@ export default defineNuxtConfig({
     },
 
     image: {
-        provider: 'cloudflare',
+        provider: buildEnvironment.previewKind === 'pr' ? 'none' : 'cloudflare',
         cloudflare: { baseURL: publicUrl },
         screens: {
             mdIcon: 48,
@@ -403,6 +408,7 @@ export default defineNuxtConfig({
 
     ogImage: {
         preset: 'avatio',
+        ...(buildEnvironment.previewKind ? { endpoint: buildEnvironment.ogImageEndpoint } : {}),
         // Nitro resolves the canonical Worker binding at runtime, keeping it out of builds.
         secret: '{{OG_IMAGE_SECRET}}',
         routes: {
@@ -502,9 +508,11 @@ export default defineNuxtConfig({
 
     $production: {
         nitro: {
-            scheduledTasks: {
-                '0 22 * * *': ['job:report'],
-            },
+            scheduledTasks: buildEnvironment.previewKind
+                ? {}
+                : {
+                      '0 22 * * *': ['job:report'],
+                  },
         },
     },
 })

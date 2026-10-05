@@ -1,3 +1,4 @@
+import type { ReadableStream as CloudflareReadableStream } from '@cloudflare/workers-types'
 import { nanoid } from 'nanoid'
 import { z } from 'zod'
 
@@ -21,7 +22,8 @@ const extensionByContentType = {
 } as const
 
 const streamFromBytes = (bytes: ArrayBuffer) =>
-    new Blob([new Uint8Array(bytes)]).stream() as ReadableStream<Uint8Array>
+    // Workers binding types declare Web Streams separately from the Node/DOM types.
+    new Blob([new Uint8Array(bytes)]).stream() as unknown as CloudflareReadableStream<Uint8Array>
 
 export default authedSessionEventHandler(
     async ({ event, session, db }) => {
@@ -53,14 +55,14 @@ export default authedSessionEventHandler(
                 const imageInfo = await images!.info(streamFromBytes(bytes))
                 info = {
                     contentType: imageInfo.format,
-                    width: imageInfo.width,
-                    height: imageInfo.height,
+                    width: 'width' in imageInfo ? imageInfo.width : undefined,
+                    height: 'height' in imageInfo ? imageInfo.height : undefined,
                 }
                 const sample = await images!
                     .input(streamFromBytes(bytes))
                     .transform({ width: 96, height: 96, fit: 'scale-down' })
                     .output({ format: 'image/png' })
-                sampleBytes = await new Response(sample.image()).arrayBuffer()
+                sampleBytes = await sample.response().arrayBuffer()
             }
         } catch {
             throw serverError.badRequest({ responseMessage: 'Invalid image data.' })

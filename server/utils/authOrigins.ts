@@ -49,13 +49,15 @@ export const isAvatioWorkerOrigin = (origin: string) => {
 export const resolveAuthTrustedOrigins = (input: {
     configuredOrigins: readonly string[]
     request?: Request
+    configuredOnly?: boolean
 }) => {
     const origins = new Set(input.configuredOrigins.flatMap((origin) => parseOrigin(origin) ?? []))
     const requestOrigin = input.request ? parseOrigin(input.request.url) : null
 
     // Preview URLs have an unpredictable version/branch prefix. Trust only the exact
     // origin serving this request, and only when its worker label belongs to Avatio.
-    if (requestOrigin && isAvatioWorkerOrigin(requestOrigin)) origins.add(requestOrigin)
+    if (!input.configuredOnly && requestOrigin && isAvatioWorkerOrigin(requestOrigin))
+        origins.add(requestOrigin)
 
     return [...origins]
 }

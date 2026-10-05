@@ -1,8 +1,5 @@
 import { CloudflareFeatureFlags } from '@avatio/cloudflare'
-import { r2 } from 'files-sdk/r2'
-import { configureFiles } from 'nuxt-files-sdk/runtime'
 
-import filesConfig from '../../../files.config'
 import { getFileStorage } from '../../../server/utils/infrastructure'
 
 afterEach(() => vi.unstubAllGlobals())
@@ -24,11 +21,11 @@ describe('Cloudflare infrastructure adapters', () => {
     })
 
     it('imports external files into R2 and exposes the configured public URL', async () => {
-        const put = vi.fn(async () => null)
-        vi.stubGlobal('__env__', {
-            R2: { put },
-            R2_PUBLIC_BASE_URL: 'https://images.example.com/',
-        })
+        const upload = vi.fn(async () => undefined)
+        vi.stubGlobal('useServerFiles', () => ({
+            upload,
+            url: async (key: string) => `https://images.example.com/${encodeURI(key)}`,
+        }))
         vi.stubGlobal(
             'fetch',
             vi.fn(
@@ -38,7 +35,6 @@ describe('Cloudflare infrastructure adapters', () => {
                     }),
             ),
         )
-        configureFiles(filesConfig, { factories: { r2 } })
         const storage = getFileStorage()
 
         await expect(
@@ -50,12 +46,10 @@ describe('Cloudflare infrastructure adapters', () => {
             key: 'avatar/user image.jpg',
             url: 'https://images.example.com/avatar/user%20image.jpg',
         })
-        expect(put).toHaveBeenCalledWith(
+        expect(upload).toHaveBeenCalledWith(
             'avatar/user image.jpg',
             expect.anything(),
-            expect.objectContaining({
-                httpMetadata: expect.objectContaining({ contentType: 'image/jpeg' }),
-            }),
+            expect.objectContaining({ contentType: 'image/jpeg' }),
         )
     })
 })

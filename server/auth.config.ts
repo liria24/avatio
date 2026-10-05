@@ -5,6 +5,7 @@ import { defineServerAuth, type ServerAuthContext } from '@nuxtjs/better-auth/co
 import type { BetterAuthOptions } from 'better-auth'
 import { nanoid } from 'nanoid'
 
+import { getPreviewKind } from '../config/preview'
 import { SESSION_COOKIE_CACHE_MAX_AGE } from '../shared/utils/constants'
 import { logger } from '../shared/utils/logger'
 import { parseConfiguredAuthOrigins, resolveAuthTrustedOrigins } from './utils/authOrigins'
@@ -38,13 +39,20 @@ const getCurrentEvent = () => {
 }
 
 export const createAvatioAuthOptions = ({ runtimeConfig }: ServerAuthContext) => {
+    const previewKind = getPreviewKind(
+        getRuntimeEnvString('STAGE'),
+        getRuntimeEnvString('PREVIEW_NAME'),
+    )
     const configuredOrigins = parseConfiguredAuthOrigins(
         getRuntimeEnvString('AUTH_TRUSTED_ORIGINS'),
     )
     const publicConfig = runtimeConfig.public as { siteUrl?: unknown } | undefined
-    if (typeof publicConfig?.siteUrl === 'string') configuredOrigins.push(publicConfig.siteUrl)
-    const twitterClientId = getRuntimeEnvString('TWITTER_CLIENT_ID')
-    const twitterClientSecret = getRuntimeEnvString('TWITTER_CLIENT_SECRET')
+    if (!previewKind && typeof publicConfig?.siteUrl === 'string')
+        configuredOrigins.push(publicConfig.siteUrl)
+    const twitterClientId =
+        previewKind === 'pr' ? undefined : getRuntimeEnvString('TWITTER_CLIENT_ID')
+    const twitterClientSecret =
+        previewKind === 'pr' ? undefined : getRuntimeEnvString('TWITTER_CLIENT_SECRET')
 
     const options = {
         ...authSchemaOptions,
@@ -57,7 +65,11 @@ export const createAvatioAuthOptions = ({ runtimeConfig }: ServerAuthContext) =>
         }),
 
         trustedOrigins: (request?: Request) =>
-            resolveAuthTrustedOrigins({ configuredOrigins, request }),
+            resolveAuthTrustedOrigins({
+                configuredOrigins,
+                request,
+                configuredOnly: Boolean(previewKind),
+            }),
 
         user: {
             ...authSchemaOptions.user,
@@ -85,7 +97,7 @@ export const createAvatioAuthOptions = ({ runtimeConfig }: ServerAuthContext) =>
         },
 
         emailAndPassword: {
-            enabled: import.meta.dev,
+            enabled: import.meta.dev || previewKind === 'pr',
         },
 
         socialProviders:

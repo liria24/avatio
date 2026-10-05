@@ -6,37 +6,37 @@ Compact instruction for OpenCode sessions. If a fact is obvious from filenames, 
 
 ## Package manager & runtime
 
-- **Package manager:** `bun` 1.4.2. `bunfig.toml` uses `linker = "hoisted"` and disables Bun's automatic dotenv loading.
-- **Toolchain:** Vite+ 0.3.1 runs package scripts, lint, format, and tests. Node 26 runs Nuxt, TypeScript scripts, tests, and the installed Alchemy CLI; Bun only installs dependencies. Workers Builds uses `NODE_OPTIONS=--max-old-space-size=4096` to leave memory for the remaining build processes.
+- **Package manager:** `bun`. `bunfig.toml` uses `linker = "hoisted"` and disables Bun's automatic dotenv loading.
+- **Toolchain:** Vite+ runs package scripts, lint, format, and tests. Node 26 runs Nuxt, TypeScript scripts, tests, and the installed Alchemy CLI; Bun only installs dependencies. Workers Builds uses `NODE_OPTIONS=--max-old-space-size=4096` to leave memory for the remaining build processes.
 - **Postinstall:** `vp install` uses Bun and runs `nuxt prepare` only.
 - **Development URL:** `vp run dev` runs the Node.js Nuxt dev server at `http://localhost:3000`; the port is fixed and fails if already in use.
 - **Environment split:** local uses SQLite/filesystem/IPX without Alchemy. `development` remains the deployed Cloudflare stage; plans and deployments use the Cloudflare state store.
 
 ## Developer commands
 
-| Task                          | Command                                                                                |
-| ----------------------------- | -------------------------------------------------------------------------------------- |
-| Dev server                    | `vp run dev`                                                                           |
-| Build                         | `vp run build`                                                                         |
-| Typecheck                     | `vp run typecheck`                                                                     |
-| Lint                          | `vp run lint`                                                                          |
-| Fix lint                      | `vp run lint:fix`                                                                      |
-| Format                        | `vp run format:fix`                                                                    |
-| Check formatting              | `vp run format`                                                                        |
-| Find unused code              | `vp run lint:unused`                                                                   |
-| Run all tests                 | `vp run test`                                                                          |
-| Unit tests only               | `vp run test:unit`                                                                     |
-| Nuxt tests only               | `vp run test:nuxt`                                                                     |
-| Watch tests                   | `vp run test:watch`                                                                    |
-| Generate Drizzle migrations   | `vp run db:generate`                                                                   |
-| Development Alchemy plan      | `vp run plan:development`                                                              |
-| Production Alchemy plan       | `vp run plan:production`                                                               |
-| Development deploy            | `vp run deploy:development`                                                            |
-| Production deploy             | `vp run deploy:production`                                                             |
-| Explicit development adoption | `vp run infra:adopt:development`                                                       |
-| Explicit production adoption  | `vp run infra:adopt:production`                                                        |
-| Seed local SQLite from D1     | `vp run db:seed:local -- --yes`                                                        |
-| Generate Better Auth schema   | `bunx --bun auth@1.7.3 generate --config auth.config.ts --output .data/auth-schema.ts` |
+| Task                          | Command                                                                          |
+| ----------------------------- | -------------------------------------------------------------------------------- |
+| Dev server                    | `vp run dev`                                                                     |
+| Build                         | `vp run build`                                                                   |
+| Typecheck                     | `vp run typecheck`                                                               |
+| Lint                          | `vp run lint`                                                                    |
+| Fix lint                      | `vp run lint:fix`                                                                |
+| Format                        | `vp run format:fix`                                                              |
+| Check formatting              | `vp run format`                                                                  |
+| Find unused code              | `vp run lint:unused`                                                             |
+| Run all tests                 | `vp run test`                                                                    |
+| Unit tests only               | `vp run test:unit`                                                               |
+| Nuxt tests only               | `vp run test:nuxt`                                                               |
+| Watch tests                   | `vp run test:watch`                                                              |
+| Generate Drizzle migrations   | `vp run db:generate`                                                             |
+| Development Alchemy plan      | `vp run plan:development`                                                        |
+| Production Alchemy plan       | `vp run plan:production`                                                         |
+| Development deploy            | `vp run deploy:development`                                                      |
+| Production deploy             | `vp run deploy:production`                                                       |
+| Explicit development adoption | `vp run infra:adopt:development`                                                 |
+| Explicit production adoption  | `vp run infra:adopt:production`                                                  |
+| Seed local SQLite from D1     | `vp run db:seed:local -- --yes`                                                  |
+| Generate Better Auth schema   | `bunx --bun auth generate --config auth.config.ts --output .data/auth-schema.ts` |
 
 ## After making changes
 
@@ -141,7 +141,7 @@ PRs into `main` require the `format`, `lint`, `lint:unused`, `typecheck`, `test`
 
 - `@nuxtjs/better-auth` owns Nuxt/Nitro routing, SSR hydration, client session state, and request session memoization.
 - `server/auth.config.ts` is the sole runtime Better Auth configuration; `app/auth.config.ts` configures client plugins. Root `auth.config.ts` exists only for Better Auth CLI schema generation and must not be imported at runtime. Remove it only after the Nuxt module proves equivalent custom D1/Drizzle schema generation directly from `server/auth.config.ts`.
-- Better Auth 1.7.3 uses the relations-v2 Drizzle adapter with `usePlural: true` and `advanced.database.joins: true`. Account identity is `(providerId, providerAccountId)`. Generate the auth schema separately, review it against `database/schema.ts`, and generate migrations with Drizzle; never overwrite the full application schema with the auth-only output.
+- Better Auth uses the relations-v2 Drizzle adapter with `usePlural: true` and `advanced.database.joins: true`. Account identity is `(providerId, providerAccountId)`. Generate the auth schema separately, review it against `database/schema.ts`, and generate migrations with Drizzle; never overwrite the full application schema with the auth-only output.
 - Use `useUserSession()`/module client helpers in the app and `getRequestSession()`/`requireUserSession()` on the server. Do not recreate `useAuth()` or another session state machine.
 - Protected APIs explicitly call `requireUserSession()`; route rules are navigation UX, not the API security boundary. Preserve banned-user policy independently from admin roles.
 - Better Auth tables share `APP_DB`. Do not change auth schema/migrations merely to change Nuxt integration.
@@ -170,10 +170,21 @@ PRs into `main` require the `format`, `lint`, `lint:unused`, `typecheck`, `test`
   - `/api/admin/job/report` — daily at 22:00
   - `/api/admin/job/cleanup` — manual/admin only
 - **Images:** served through `@nuxt/image`. Allowed external domains are whitelisted in `nuxt.config.ts` (Booth, GitHub, R2 public domain).
-- Nitro source maps are disabled so the Cloudflare build stays within the 4 GB heap limit.
-- **Storage:** `nuxt-files-sdk` is configured in `files.config.ts`; runtime code uses `useServerFiles()`. Local `vp run dev` uses its filesystem adapter under gitignored `.data/uploads`, served at `/api/_local/files/*`, including imported OAuth avatars. Local Nuxt Image uses IPX with only localhost HTTP sources; the local route rejects traversal and metadata sidecars. Deployed development/production Workers use the native stage-specific `R2` binding and public domain; R2 HTTP credentials remain unsupported. The local file route returns 404 in deployed builds.
-- **files-sdk build compatibility:** Keep the direct dependencies `@aws-sdk/client-s3`, `@aws-sdk/lib-storage`, `@aws-sdk/s3-presigned-post`, and `@aws-sdk/s3-request-presigner`. Nitro's Cloudflare preset resolves the lazy AWS imports retained by `files-sdk/r2` even though the configured native R2 binding never executes that engine. `vp run build` is the regression check.
+- **Storage:** `nuxt-files-sdk` is configured in `files.config.ts`; runtime code uses `useServerFiles()`. Its `$development.storage` selects the filesystem adapter under gitignored `.data/uploads`, served at `/api/_local/files/*`, including imported OAuth avatars. Local Nuxt Image uses IPX with only localhost HTTP sources; the local route rejects traversal and metadata sidecars. Deployed development/production Workers use the native stage-specific `R2` binding and public domain; R2 HTTP credentials remain unsupported. The local file route returns 404 in deployed builds.
+- **files-sdk build compatibility:** The native R2 binding does not use `@aws-sdk/*`; `nuxt-files-sdk` generates shims for optional AWS imports during the Cloudflare build. Nitro source maps are disabled because their generation exceeded the 4 GB heap limit. Check the Cloudflare preset after SDK updates.
 - **PWA:** `@vite-pwa/nuxt` is enabled; `sw.js` and `manifest.webmanifest` are served with `must-revalidate`.
+
+## Native Cloudflare Preview preparation (#354)
+
+- The active deployment remains Alchemy on Nuxt 4.5.2. `cloudflare.config.ts` is a prepared configuration contract, not an enabled deployment path. `cf` is pinned to `1.0.0-beta.11` and runs on Node (`node node_modules/cf/bin/cf`), never Bun. Do not add a direct deploy command until the activation gates below are verified.
+- `config/build.ts` owns public Nuxt build settings. Explicit deployed builds use `STAGE=production|development`; local `vp run dev` remains independent of those stages. `server/types/cloudflare.ts` owns application-facing binding types and must not import Alchemy.
+- The prepared Worker name is always `avatio`. Mode `production` requires `isPreview=false`, `STAGE=production`, and no `PREVIEW_NAME`. Modes `development` and `pr-<positive-number>` require native Preview mode, `STAGE=development`, and an identical `PREVIEW_NAME`. They also require explicit HTTPS origins for `PUBLIC_SITE_URL`, `R2_PUBLIC_BASE_URL`, and `OG_IMAGE_ENDPOINT` at build time. The root config rejects mismatches between these URLs and binding inputs.
+- `AVATIO_CF_RESOURCES_FILE` must point to an operator-reviewed JSON inventory (for example, gitignored `.cloudflare/resources.json`). Its top level contains `accountId`, `production`, `development`, and `previews` keyed by `pr-<number>`. Every target contains `database: { id, name }`, `cache: { id, name }`, `bucket`, `flagshipId`, four `rateLimitNamespaces`, `siteUrl`, `imageBaseUrl`, `ogImageEndpoint`, and `emailFrom`. Non-production targets require `emailDestinations`; production requires `analyticsSiteTag`. `optionalSecrets` selects optional names from the existing `config/secrets.ts` definitions, never values. See the validated schema in `config/cloudflare.ts`; fixtures under `test/` are synthetic and must never become deployment inputs.
+- Existing production/development resource names, development image URL, and rate-limit namespaces remain tied to `config/environment.ts`. PR D1/KV/R2 resources must be named `avatio-pr-<number>`; database IDs, KV IDs, buckets, public URLs, and all rate-limit namespaces must be distinct across targets. Reusing the same reviewed PR inventory produces the same bindings. This configuration neither provisions nor destroys resources, and does not transfer Alchemy resource ownership.
+- Native Previews omit Queue producers, consumers, and Cron; Catalog uses the existing awaited inline sync with fenced lease tokens. PR email/password auth requires the server-side Preview binding and uses the existing form; a public UI flag cannot enable auth. The first-user admin trigger remains local-only. Preview trusted origins contain only the explicit Preview URL. PR images use their dedicated R2 public URL directly.
+- Preview email senders, allowed recipients, Flagship, and OG endpoints must be non-production. Workers AI and Images bindings are available for application checks. Analytics credentials and notification integrations are disabled; the only currently permitted optional Preview secret is `BOOTH_PROXY_URL`. A future notification integration must first establish a verified non-production destination. Signing secrets are declared without values; any future publisher must derive `NUXT_BETTER_AUTH_SECRET` from canonical `BETTER_AUTH_SECRET`, not introduce another managed secret.
+- `vp run test:cloudflare` validates synthetic configuration, event selection, PR auth, and inline sync without credentials, write permissions, or Cloudflare API mutations. The same tests run in the quality workflow's full `test` check. Same-repository PR close selects cleanup and reopen selects the same PR target; forks are excluded. These are tested decisions only, not active lifecycle operations. Existing quality/release jobs and required checks remain authoritative.
+- Activation gates: validate actual Nuxt/Nitro Build Output and Avatio tasks/plugins/cache (the proposed Nuxt 4.6 Vite server alone is insufficient); inspect Preview secret scoping and close/reopen resource handling; supply reviewed real IDs; prove migration-history compatibility against a populated D1 backup. Alchemy's `__alchemy_migrations` ledger and `cf`'s `d1_migrations` ledger must not be assumed interchangeable. Do not stop Workers Builds, remove Alchemy or `avatio-development`, or alter local SQLite/seed as part of this preparation.
 
 ## i18n
 

@@ -60,7 +60,7 @@ const registerWithEmail = async (data: {
             "
         />
 
-        <DevOnly>
+        <template v-if="publicConfig.emailPasswordAuthEnabled">
             <div class="relative">
                 <UAuthForm
                     :schema="register ? emailRegistrationSchema : emailLoginSchema"
@@ -130,13 +130,13 @@ const registerWithEmail = async (data: {
                 />
 
                 <UBadge
-                    label="// Dev Only"
+                    label="// Test accounts"
                     variant="subtle"
                     color="neutral"
                     class="absolute -top-4 left-4"
                 />
             </div>
-        </DevOnly>
+        </template>
 
         <p class="text-muted text-right text-xs">
             {{ $t('modal.login.agreement') }}

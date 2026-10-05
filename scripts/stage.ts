@@ -99,5 +99,5 @@ if (!secrets.success) {
 if (action === 'check') {
     console.info(`${stage} configuration is valid.`)
 } else {
-    await run(alchemyCommand(action, stage))
+    await run(alchemyCommand(action, stage), { ...process.env, STAGE: stage, PREVIEW_NAME: '' })
 }

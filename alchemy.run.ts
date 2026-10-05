@@ -5,13 +5,14 @@ import * as Config from 'effect/Config'
 import * as Effect from 'effect/Effect'
 import * as Layer from 'effect/Layer'
 import * as Option from 'effect/Option'
+import * as Redacted from 'effect/Redacted'
 
 import { getStageConfig, type AvatioStageConfig } from './config/environment.ts'
 import type { AvatioSecretName } from './config/secrets'
 
-const requiredSecret = (name: AvatioSecretName) => Config.redacted(name)
+const requiredSecret = (name: AvatioSecretName) => Config.Redacted(name)
 const optionalSecret = (name: AvatioSecretName) =>
-    Config.redacted(name).pipe(Config.withDefault(''))
+    Config.Redacted(name).pipe(Config.withDefault(Redacted.make('')))
 
 const retainProduction = Alchemy.RemovalPolicy.retain(
     Effect.map(Stage, (stage) => stage === 'production'),
@@ -168,10 +169,7 @@ export const Website = Cloudflare.Website.Nuxt(
     'Website',
     Effect.gen(function* () {
         const config = getStageConfig(yield* Stage)
-        const context = yield* Effect.serviceOption(Alchemy.AlchemyContext)
-        const siteUrl = config.siteUrl
         const siteHost = new URL(config.siteUrl).hostname
-        const imageHost = new URL(config.imageBaseUrl).hostname
         const webAnalytics = config.production
             ? yield* Cloudflare.Rum.Site('WebAnalytics', {
                   zoneTag: 'dae79da2dd3dda74ec53220f91811a1d',
@@ -207,42 +205,9 @@ export const Website = Cloudflare.Website.Nuxt(
                 CLOUDFLARE_ANALYTICS_SITE_TAG: webAnalytics?.siteTag ?? '',
                 CLOUDFLARE_ANALYTICS_HOST: siteHost,
             },
-            nuxt: {
-                runtimeConfig: { public: { siteUrl, twitterAuthEnabled: true } },
-                appConfig: { app: { site: siteUrl } },
-                site: { url: siteUrl },
-                i18n: { baseUrl: siteUrl },
-                app: {
-                    head: {
-                        meta: [
-                            { property: 'og:title', content: 'Avatio' },
-                            { property: 'og:image', content: `${siteUrl}/ogp_2.png` },
-                            {
-                                property: 'og:description',
-                                content: 'アバター改変レシピの共有プラットフォーム',
-                            },
-                            { name: 'twitter:site', content: '@liria_24' },
-                            { name: 'twitter:card', content: 'summary_large_image' },
-                        ],
-                    },
-                },
-                image: {
-                    cloudflare: { baseURL: siteUrl },
-                    domains: [
-                        imageHost,
-                        'booth.pximg.net',
-                        's2.booth.pm',
-                        'github.com',
-                        'avatars.githubusercontent.com',
-                    ],
-                    provider: Option.getOrNull(context)?.dev ? 'none' : 'cloudflare',
-                },
-            },
         }
     }),
 )
-
-export type WebsiteEnv = Cloudflare.InferEnv<typeof Website>
 
 export default Alchemy.Stack(
     'Avatio',

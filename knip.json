@@ -8,7 +8,9 @@
         ".": {
             "entry": [
                 "alchemy.run.ts",
+                "cloudflare.config.ts",
                 "auth.config.ts",
+                "files.config.ts",
                 "app/auth.config.ts",
                 "server/auth.config.ts",
                 "oxfmt.config.ts",
