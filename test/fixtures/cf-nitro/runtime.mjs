@@ -82,7 +82,7 @@ try {
     assert.equal(await (await bucket.get('isolated-probe')).text(), 'synthetic content')
     await bucket.delete('isolated-probe')
     assert.equal(await bucket.get('isolated-probe'), null)
-    const signup = (suffix) =>
+    const signup = (suffix, password = `Synthetic-${randomUUID()}`) =>
         request('/api/auth/sign-up/email', {
             method: 'POST',
             headers: { 'content-type': 'application/json', origin },
@@ -90,14 +90,17 @@ try {
                 name: `Fixture ${suffix}`,
                 username: `fixture_${suffix}`,
                 email: `${suffix}@example.test`,
-                password: `Synthetic-${randomUUID()}`,
+                password,
             }),
         })
     if (output.rootConfig.buildContext.isPreview) {
         const suffixes = Array.from({ length: 2 }, () =>
             randomUUID().replaceAll('-', '').slice(0, 20),
         )
-        const registrations = await Promise.all(suffixes.map(signup))
+        const passwords = suffixes.map(() => `Synthetic-${randomUUID()}`)
+        const registrations = await Promise.all(
+            suffixes.map((suffix, index) => signup(suffix, passwords[index])),
+        )
         const cookies = []
         for (const response of registrations) {
             assert.equal(response.status, 200, `Signup status ${response.status}`)
@@ -158,7 +161,8 @@ try {
         )
         const logout = await request('/api/auth/sign-out', {
             method: 'POST',
-            headers: { cookie: cookies[0], origin },
+            headers: { cookie: cookies[0], origin, 'content-type': 'application/json' },
+            body: '{}',
         })
         assert.equal(logout.status, 200)
         assert.equal(
@@ -177,6 +181,22 @@ try {
             ).user.email,
             `${suffixes[1]}@example.test`,
         )
+        const logins = await Promise.all(
+            suffixes.map((suffix, index) =>
+                request('/api/auth/sign-in/email', {
+                    method: 'POST',
+                    headers: { origin, 'content-type': 'application/json' },
+                    body: JSON.stringify({
+                        email: `${suffix}@example.test`,
+                        password: passwords[index],
+                    }),
+                }),
+            ),
+        )
+        for (const [index, response] of logins.entries()) {
+            assert.equal(response.status, 200)
+            assert.equal((await response.json()).user.email, `${suffixes[index]}@example.test`)
+        }
     } else {
         assert.equal((await signup('disabled')).status, 400)
     }

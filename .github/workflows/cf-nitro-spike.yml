@@ -99,6 +99,10 @@ jobs:
         if: matrix.nodeCompat == 'v2'
         working-directory: test/fixtures/cf-nitro
         run: node verify.mjs '${{ matrix.mode }}' '${{ matrix.preview }}'
+      - name: Validate production-shaped prebuilt deployment without credentials
+        if: matrix.nodeCompat == 'v2' && matrix.mode == 'production'
+        working-directory: test/fixtures/cf-nitro
+        run: node node_modules/cf/bin/cf deploy --prebuilt --dry-run --mode production
       - name: Execute the v2 application in isolated workerd
         if: matrix.nodeCompat == 'v2'
         working-directory: test/fixtures/cf-nitro
