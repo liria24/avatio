@@ -9,6 +9,7 @@ on:
       - 'nuxt.config.ts'
       - 'config/cloudflare.ts'
       - 'config/build.ts'
+      - 'scripts/cloudflareMigrationHistory.ts'
       - 'package.json'
       - 'bun.lock'
   workflow_dispatch:
@@ -107,3 +108,6 @@ jobs:
         if: matrix.nodeCompat == 'v2'
         working-directory: test/fixtures/cf-nitro
         run: node runtime.mjs '${{ matrix.mode }}'
+      - name: Verify pinned cf local migrations with synthetic populated data
+        if: matrix.nodeCompat == 'v2' && matrix.mode == 'production'
+        run: node test/fixtures/cf-nitro/migrations.mjs

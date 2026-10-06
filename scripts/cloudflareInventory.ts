@@ -1,4 +1,6 @@
 // An opt-in inventory of existing resources. This script has no mutation or secret-value API.
+import { mkdirSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 type Metadata = Record<string, unknown>
 
 const record = (value: unknown): Metadata =>
@@ -389,13 +391,46 @@ export const collectCloudflareInventory = async (
     }
 }
 
+export const summarizeCloudflareInventory = (
+    report: Awaited<ReturnType<typeof collectCloudflareInventory>>,
+) => ({
+    readOnly: report.readOnly,
+    inventoryComplete: report.inventoryComplete,
+    migrationHistoryVerified: report.migrationHistoryVerified,
+    deploymentVerified: report.deploymentVerified,
+    totalReads: report.results.length,
+    successfulReads: report.results.filter(({ available }) => available).length,
+    unavailable: report.results
+        .filter(({ available }) => !available)
+        .map(({ label, status }) => ({
+            capability:
+                label === 'Avatio Web Analytics settings'
+                    ? 'web-analytics'
+                    : label.endsWith('Flagship identity')
+                      ? 'flagship'
+                      : 'resource-metadata',
+            status,
+        })),
+})
+
 if (import.meta.main) {
     try {
         const report = await collectCloudflareInventory(
             process.env.CLOUDFLARE_ACCOUNT_ID ?? '',
             process.env.CLOUDFLARE_API_TOKEN ?? '',
         )
-        console.log(JSON.stringify(report, null, 2))
+        // Details remain in a private gitignored file. Never upload it as a public CI artifact.
+        const directory = join(process.cwd(), '.cloudflare', 'verification')
+        mkdirSync(directory, { recursive: true, mode: 0o700 })
+        writeFileSync(
+            join(directory, `inventory-${Date.now()}.json`),
+            JSON.stringify(report, null, 2),
+            {
+                flag: 'wx',
+                mode: 0o600,
+            },
+        )
+        console.log(JSON.stringify(summarizeCloudflareInventory(report), null, 2))
         if (report.results.some(({ available }) => !available)) process.exitCode = 1
     } catch {
         console.error(

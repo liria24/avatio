@@ -2,9 +2,25 @@ import {
     collectCloudflareInventory,
     projectPreviewBaseMetadata,
     projectWorkerMetadata,
+    summarizeCloudflareInventory,
 } from '../../scripts/cloudflareInventory'
 
 describe('read-only Cloudflare inventory', () => {
+    it('publishes only counts and capability failures, without any obtained metadata or names', async () => {
+        const fetcher = vi.fn<typeof fetch>().mockImplementation(async () =>
+            Response.json({
+                success: true,
+                result: { bindings: [{ name: 'PRIVATE_RUNTIME_NAME', type: 'secret_text' }] },
+            }),
+        )
+        const report = await collectCloudflareInventory('a'.repeat(32), 'private-token', fetcher)
+        const summary = summarizeCloudflareInventory(report)
+        expect(summary.successfulReads).toBe(19)
+        expect(summary.unavailable).toEqual([])
+        expect(JSON.stringify(summary)).not.toMatch(
+            /PRIVATE_RUNTIME_NAME|bindings|private-token|avatio/,
+        )
+    })
     it('projects identities and binding names without variable or secret values', () => {
         const result = projectWorkerMetadata({
             compatibility_date: '2026-05-26',
