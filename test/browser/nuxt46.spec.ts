@@ -24,6 +24,10 @@ for (const [locale, messages] of [
         expect(decodeURIComponent((await warning.getAttribute('href'))!)).toContain(
             `subject=${messages.banner.ownerWarningSubject}`,
         )
+        // The cookie toast overlaps the footer while its entrance animation settles.
+        const consent = page.getByRole('button', { name: messages.cookie.accept, exact: true })
+        await consent.click()
+        await expect(consent).toBeHidden()
         await warning
             .locator('..')
             .getByRole('button', { name: messages.close, exact: true })
