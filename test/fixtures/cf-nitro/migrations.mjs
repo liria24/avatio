@@ -58,7 +58,6 @@ const migrate = (id, directory = 'drizzle') =>
         directory,
         '--pattern',
         `${directory.replaceAll('\\', '/')}/*/migration.sql`,
-        '--yes',
     ])
 
 try {
