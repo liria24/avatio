@@ -52,10 +52,15 @@ const cf = async (args) => {
     return JSON.parse(result.stdout)
 }
 const query = async (id, sql) => {
-    const result = await cf(['d1', 'query', id, '--sql', sql])
+    const response = await cf(['d1', 'raw', id, '--sql', sql])
+    const result = Array.isArray(response) ? response : response.result
     assert.ok(Array.isArray(result), 'Expected the pinned cf D1 query result array')
-    assert.equal(result[0]?.success, true)
-    return result[0].results
+    assert.ok(result.length > 0 && result.every((entry) => entry.success === true))
+    const { columns, rows } = result[0].results
+    assert.ok(Array.isArray(columns) && Array.isArray(rows))
+    return rows.map((row) =>
+        Object.fromEntries(columns.map((column, index) => [column, row[index]])),
+    )
 }
 const migrate = (id, directory = join(projectRoot, 'drizzle')) =>
     cf([
@@ -165,6 +170,10 @@ try {
         'synthetic-session',
     )
     assert.equal((await query(populatedId, 'SELECT stable_id FROM setup_images'))[0].stable_id, '7')
+    assert.deepEqual(await query(populatedId, 'SELECT id FROM setup_entries'), [
+        { id: 'fixture-entry' },
+    ])
+    assert.equal((await query(populatedId, 'PRAGMA foreign_keys'))[0].foreign_keys, 1)
     assert.deepEqual(await query(populatedId, 'PRAGMA foreign_key_check'), [])
     console.log(
         JSON.stringify({
