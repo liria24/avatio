@@ -147,6 +147,8 @@ export default defineNuxtConfig({
     vite: {
         vue: { features: { optionsAPI: false } },
         optimizeDeps: {
+            // Nuxt module entries contain virtual imports that Vite's standalone scanner cannot resolve.
+            noDiscovery: true,
             include: [
                 // Lazy routes and overlays must not trigger a dependency reload during editing.
                 '@unhead/schema-org/vue',

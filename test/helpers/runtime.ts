@@ -174,6 +174,13 @@ export default defineNuxtConfig({
         }
         if (!ready)
             throw new Error(`Isolated Nuxt did not become ready:\n${log.join('').slice(-12_000)}`)
+        // Nitro can report ready even after Vite's initial dependency scan has failed.
+        if (
+            /vite:dep-scan:resolve|Failed to scan for dependencies|Missing "#components" specifier/.test(
+                log.join(''),
+            )
+        )
+            throw new Error(`Nuxt dependency discovery failed:\n${log.join('').slice(-12_000)}`)
         sqlite = new DatabaseSync(join(root, '.data/avatio.sqlite'))
         sqlite.exec('PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000')
         const db = drizzle({ client: sqlite, relations })
