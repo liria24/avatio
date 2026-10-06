@@ -114,6 +114,8 @@ describe('trusted PR cleanup and reopen guards', () => {
             mode: 'pr-354',
             accountId: inventory.accountId,
             workerName: 'avatio',
+            retainedDatabase: null,
+            retainedBucket: null,
             resources: inspection.resources,
         })
     })
@@ -251,5 +253,49 @@ describe('read-only HTTP verification against a specific Preview deployment', ()
         await expect(verifyCloudflarePreviewHttp(result, expected, fetcher)).rejects.toThrow(
             'HTTP 302',
         )
+    })
+})
+
+describe('shared Preview storage cleanup', () => {
+    it('requires the shared database to survive cleanup and rejects missing or replaced data', () => {
+        const shared = createCloudflareResourceFixture()
+        Object.assign(shared.previews!['pr-354']!, structuredClone(shared.sharedPreviewStorage))
+        const before = {
+            ...inspection,
+            resources: {
+                ...inspection.resources,
+                database: shared.sharedPreviewStorage.database,
+                bucket: { name: shared.sharedPreviewStorage.bucket },
+            },
+        }
+        const plan = createCloudflarePreviewCleanupPlan({
+            ...cleanup,
+            inventory: shared,
+            inspection: before,
+        })
+        expect(plan.retainedDatabase).toEqual(shared.sharedPreviewStorage.database)
+        expect(plan.retainedBucket).toEqual({ name: shared.sharedPreviewStorage.bucket })
+        const after = {
+            ...absent,
+            resources: {
+                ...absent.resources,
+                database: shared.sharedPreviewStorage.database,
+                bucket: { name: shared.sharedPreviewStorage.bucket },
+            },
+        }
+        expect(verifyCloudflarePreviewCleanup(plan, pr, after).absenceVerified).toBe(true)
+        expect(() =>
+            verifyCloudflarePreviewCleanup(plan, pr, {
+                ...after,
+                resources: { ...after.resources, bucket: null },
+            }),
+        ).toThrow(/incomplete/)
+        expect(() => verifyCloudflarePreviewCleanup(plan, pr, absent)).toThrow(/incomplete/)
+        expect(() =>
+            verifyCloudflarePreviewCleanup(plan, pr, {
+                ...after,
+                resources: { ...after.resources, database: inventory.production.database },
+            }),
+        ).toThrow(/incomplete/)
     })
 })

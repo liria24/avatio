@@ -111,6 +111,12 @@ export const createCloudflarePreviewCleanupPlan = (input: {
         throw new Error('Cleanup requires successful reads of all resources in the exact account.')
     const { preview, database, cache, bucket } = inspection.resources
     if (
+        target.database.id.toLowerCase() ===
+            input.inventory.sharedPreviewStorage.database.id.toLowerCase() &&
+        (!database || !bucket)
+    )
+        throw new Error('Shared Preview D1 and R2 must exist before cleanup can proceed.')
+    if (
         (preview && (!identifier.safeParse(preview.id).success || preview.name !== mode)) ||
         (database &&
             (database.id !== target.database.id || database.name !== target.database.name)) ||
@@ -122,6 +128,15 @@ export const createCloudflarePreviewCleanupPlan = (input: {
         mode,
         accountId: input.inventory.accountId,
         workerName: 'avatio' as const,
+        retainedDatabase:
+            target.database.id.toLowerCase() ===
+            input.inventory.sharedPreviewStorage.database.id.toLowerCase()
+                ? target.database
+                : null,
+        retainedBucket:
+            target.bucket === input.inventory.sharedPreviewStorage.bucket
+                ? { name: target.bucket }
+                : null,
         // Absent resources make retries idempotent, but unavailable reads are never absence.
         resources: { preview, database, cache, bucket },
     }
@@ -140,7 +155,15 @@ export const verifyCloudflarePreviewCleanup = (
         !inspection.complete ||
         inspection.accountId !== plan.accountId ||
         inspection.workerName !== plan.workerName ||
-        Object.values(inspection.resources).some((resource) => resource !== null)
+        inspection.resources.preview !== null ||
+        inspection.resources.cache !== null ||
+        (plan.retainedBucket
+            ? inspection.resources.bucket?.name !== plan.retainedBucket.name
+            : inspection.resources.bucket !== null) ||
+        (plan.retainedDatabase
+            ? inspection.resources.database?.id !== plan.retainedDatabase.id ||
+              inspection.resources.database?.name !== plan.retainedDatabase.name
+            : inspection.resources.database !== null)
     )
         throw new Error('Cleanup is incomplete or PR identity/state changed; stop and inspect.')
     return { mode: plan.mode, absenceVerified: true as const }

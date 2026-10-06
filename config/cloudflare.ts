@@ -15,8 +15,9 @@ const origin = z.string().refine((value) => {
     }
 }, 'Expected an HTTPS origin')
 const namespace = z.number().int().positive().max(4_294_967_295)
+const databaseSchema = z.strictObject({ id: z.uuid().toLowerCase(), name: z.string().min(1) })
 const resourceSchema = z.strictObject({
-    database: z.strictObject({ id: z.uuid().toLowerCase(), name: z.string().min(1) }),
+    database: databaseSchema,
     cache: z.strictObject({ id, name: z.string().min(1) }),
     bucket: z.string().min(1),
     flagshipId: z.string().min(1),
@@ -35,6 +36,11 @@ const inventorySchema = z.strictObject({
     accountId: id,
     production: resourceSchema,
     development: resourceSchema,
+    sharedPreviewStorage: z.strictObject({
+        database: databaseSchema,
+        bucket: z.string().min(1),
+        imageBaseUrl: origin,
+    }),
     previews: z.record(z.string().regex(/^pr-[1-9]\d*$/), resourceSchema).default({}),
 })
 
@@ -74,25 +80,65 @@ export const createCloudflareConfig = (context: ConfigContext, input: unknown) =
             )
     }
     const allResources = [...permanent, ...Object.entries(inventory.previews)]
+    const sharedStorage = inventory.sharedPreviewStorage
+    const sharedDatabase = sharedStorage.database
+    if (
+        sharedDatabase.id === inventory.production.database.id ||
+        sharedDatabase.name === inventory.production.database.name ||
+        sharedStorage.bucket === inventory.production.bucket ||
+        sharedStorage.imageBaseUrl === inventory.production.imageBaseUrl ||
+        (sharedDatabase.id === inventory.development.database.id &&
+            sharedDatabase.name !== inventory.development.database.name)
+    )
+        throw new Error('Shared Preview storage must be reviewed non-production D1 and R2.')
+    for (const [, resources] of allResources) {
+        const sharedDatabaseBinding = resources.database.id === sharedDatabase.id
+        const sharedBucketBinding = resources.bucket === sharedStorage.bucket
+        const sharedImageOrigin = resources.imageBaseUrl === sharedStorage.imageBaseUrl
+        if (
+            sharedDatabaseBinding !== sharedBucketBinding ||
+            sharedDatabaseBinding !== sharedImageOrigin
+        )
+            throw new Error('Preview D1 and R2 must be shared or isolated as a pair.')
+    }
     for (const [name, resources] of Object.entries(inventory.previews)) {
         const expectedName = `avatio-${name}`
         if (
-            [resources.database.name, resources.cache.name, resources.bucket].some(
-                (value) => value !== expectedName,
-            )
+            resources.cache.name !== expectedName ||
+            (resources.database.id !== sharedDatabase.id && resources.bucket !== expectedName)
         )
             throw new Error(`${name} requires dedicated resources named ${expectedName}.`)
+        if (
+            resources.database.id === sharedDatabase.id
+                ? resources.database.name !== sharedDatabase.name
+                : resources.database.name !== expectedName
+        )
+            throw new Error(
+                `${name} requires the shared Preview D1 or a dedicated ${expectedName} D1.`,
+            )
     }
-    for (const select of [
-        (value: z.output<typeof resourceSchema>) => value.database.id,
-        (value: z.output<typeof resourceSchema>) => value.cache.id,
-        (value: z.output<typeof resourceSchema>) => value.bucket,
-        (value: z.output<typeof resourceSchema>) => value.siteUrl,
-        (value: z.output<typeof resourceSchema>) => value.imageBaseUrl,
-    ]) {
-        const values = allResources.map(([, value]) => select(value))
+    const isolatedDatabaseIds = allResources
+        .filter(
+            ([name, resources]) =>
+                name === 'production' || resources.database.id !== sharedDatabase.id,
+        )
+        .map(([, resources]) => resources.database.id)
+    if (new Set(isolatedDatabaseIds).size !== isolatedDatabaseIds.length)
+        throw new Error('Only the reviewed shared Preview D1 may be shared across targets.')
+    for (const [select, sharedValue] of [
+        [(value: z.output<typeof resourceSchema>) => value.cache.id, undefined],
+        [(value: z.output<typeof resourceSchema>) => value.bucket, sharedStorage.bucket],
+        [(value: z.output<typeof resourceSchema>) => value.siteUrl, undefined],
+        [
+            (value: z.output<typeof resourceSchema>) => value.imageBaseUrl,
+            sharedStorage.imageBaseUrl,
+        ],
+    ] as const) {
+        const values = allResources
+            .map(([, value]) => select(value))
+            .filter((value) => value !== sharedValue)
         if (new Set(values).size !== values.length)
-            throw new Error('Production, development, and PR resources must be isolated.')
+            throw new Error('Production, development, and isolated PR resources must be distinct.')
     }
     const namespaces = allResources.flatMap(([, value]) => value.rateLimitNamespaces)
     if (new Set(namespaces).size !== namespaces.length)

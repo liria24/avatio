@@ -221,6 +221,7 @@ describe('native Cloudflare REST boundary', () => {
         await expect(
             createCloudflareNativeApi(inventory.accountId, 'synthetic-token', fetcher).bootstrapPr(
                 'pr-354',
+                inventory.sharedPreviewStorage,
             ),
         ).rejects.toThrow()
         expect(fetcher).toHaveBeenCalledTimes(1)
@@ -264,5 +265,47 @@ describe('specific deployed Preview binding verification', () => {
                 { mode: 'pr-354', deploymentId: 'v354' },
             ),
         ).toThrow(/version identity/)
+    })
+})
+
+describe('shared storage deletion guard', () => {
+    it.each(['database', 'bucket'] as const)(
+        'refuses shared %s deletion before making any API call',
+        async (kind) => {
+            const shared = createCloudflareResourceFixture()
+            Object.assign(shared.previews!['pr-354']!, structuredClone(shared.sharedPreviewStorage))
+            const fetcher = vi.fn<typeof fetch>()
+            const api = createCloudflareNativeApi(shared.accountId, 'synthetic-token', fetcher)
+            await expect(api.deletePrResource('pr-354', kind, shared)).rejects.toThrow(
+                /never be deleted/,
+            )
+            expect(fetcher).not.toHaveBeenCalled()
+        },
+    )
+})
+
+describe('shared Preview storage bootstrap', () => {
+    it('reuses existing shared D1 and R2 without allocating either', async () => {
+        const name = 'avatio-pr-354'
+        const database = inventory.sharedPreviewStorage.database
+        const fetcher = vi.fn<typeof fetch>(async (url, init) => {
+            expect(init?.method).toBe('GET')
+            const path = new URL(address(url)).pathname
+            if (path.endsWith(`/d1/database/${database.id}`))
+                return response({ uuid: database.id, name: database.name })
+            if (path.endsWith('/storage/kv/namespaces'))
+                return response([{ id: '3'.repeat(32), title: name }])
+            if (path.endsWith(`/r2/buckets/${inventory.sharedPreviewStorage.bucket}`))
+                return response({ name: inventory.sharedPreviewStorage.bucket })
+            throw new Error('Unexpected bootstrap request')
+        })
+        const result = await createCloudflareNativeApi(
+            inventory.accountId,
+            'synthetic-token',
+            fetcher,
+        ).bootstrapPr('pr-354', inventory.sharedPreviewStorage)
+        expect(result.database).toEqual(database)
+        expect(result.bucket).toBe(inventory.sharedPreviewStorage.bucket)
+        expect(fetcher).toHaveBeenCalledTimes(3)
     })
 })

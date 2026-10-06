@@ -274,7 +274,10 @@ if (import.meta.main) {
                         )
                 } else if (action === 'bootstrap' && selected.action === 'bootstrap') {
                     createCloudflareConfig({ mode: 'production', isPreview: false }, inventory)
-                    const resources = await api.bootstrapPr(selected.mode)
+                    const resources = await api.bootstrapPr(
+                        selected.mode,
+                        inventory.sharedPreviewStorage,
+                    )
                     // Operator retrieves identities privately from Cloudflare, reviews non-production
                     // domains/CORS/integrations and supplies the complete inventory before publishing.
                     await mkdir(resolve('.cloudflare'), { recursive: true })
@@ -347,6 +350,20 @@ if (import.meta.main) {
                             },
                         },
                     })
+                    if (
+                        plan.resources.ownership === 'shared-preview' &&
+                        git(
+                            'diff',
+                            '--name-only',
+                            selected.trustedSha,
+                            selected.sourceSha,
+                            '--',
+                            'drizzle',
+                        )
+                    )
+                        throw new Error(
+                            'PR migration changes require an isolated D1; shared Preview D1 follows the trusted base schema.',
+                        )
                     const secrets = prepareCloudflareRuntimeSecrets(plan, inventory, process.env)
                     if (!plan.isPreview) {
                         const directory = await mkdtemp(join(tmpdir(), 'avatio-runtime-'))

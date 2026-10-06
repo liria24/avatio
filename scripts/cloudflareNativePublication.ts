@@ -158,6 +158,13 @@ export const publishCloudflareNative = async (
         beforeNames.some((name, index) => name !== plan.migrationNames[index])
     )
         throw new Error('Remote ledger is not a committed migration prefix.')
+    if (
+        plan.resources.ownership === 'shared-preview' &&
+        beforeNames.length !== plan.migrationNames.length
+    )
+        throw new Error(
+            'PRs must not migrate shared Preview D1. Apply reviewed base migrations first or use an isolated D1.',
+        )
     let previousDeploymentId: string | undefined
     if (plan.isPreview) {
         const existing = inspected.resources.preview
@@ -274,6 +281,8 @@ export const cleanupCloudflareNativePr = async (input: {
     await checkClosed()
     if (plan.resources.preview) await input.api.deletePreview(input.mode, plan.resources.preview.id)
     for (const kind of ['database', 'cache', 'bucket'] as const) {
+        if (kind === 'database' && plan.retainedDatabase) continue
+        if (kind === 'bucket' && plan.retainedBucket) continue
         await checkClosed()
         await input.api.deletePrResource(input.mode, kind, input.inventory)
     }

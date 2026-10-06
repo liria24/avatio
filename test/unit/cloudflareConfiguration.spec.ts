@@ -116,6 +116,36 @@ describe('prepared cf configuration', () => {
         expect(() => createCloudflareConfig(context, createCloudflareResourceFixture())).toThrow()
     })
 
+    it('allows reviewed shared Preview D1 across PRs while retaining isolated overrides', () => {
+        const input = createCloudflareResourceFixture()
+        for (const name of ['pr-354', 'pr-355'])
+            Object.assign(input.previews![name]!, structuredClone(input.sharedPreviewStorage))
+        for (const mode of ['pr-354', 'pr-355'])
+            expect(
+                createCloudflareConfig({ mode, isPreview: true }, input).worker.env.APP_DB,
+            ).toMatchObject(input.sharedPreviewStorage.database)
+        input.sharedPreviewStorage.database = { ...input.production.database }
+        expect(() => createCloudflareConfig({ mode: 'pr-354', isPreview: true }, input)).toThrow(
+            /non-production/,
+        )
+    })
+
+    it('rejects sharing only half of the database/image-storage pair', () => {
+        const databaseOnly = createCloudflareResourceFixture()
+        databaseOnly.previews!['pr-354']!.database = {
+            ...databaseOnly.sharedPreviewStorage.database,
+        }
+        expect(() =>
+            createCloudflareConfig({ mode: 'pr-354', isPreview: true }, databaseOnly),
+        ).toThrow(/as a pair/)
+        const bucketOnly = createCloudflareResourceFixture()
+        bucketOnly.previews!['pr-354']!.bucket = bucketOnly.sharedPreviewStorage.bucket
+        bucketOnly.previews!['pr-354']!.imageBaseUrl = bucketOnly.sharedPreviewStorage.imageBaseUrl
+        expect(() =>
+            createCloudflareConfig({ mode: 'pr-354', isPreview: true }, bucketOnly),
+        ).toThrow(/as a pair/)
+    })
+
     it('rejects absent IDs, cross-target resources, production credentials, and unrestricted email', () => {
         const mutate = (
             fn: (input: ReturnType<typeof createCloudflareResourceFixture>) => void,

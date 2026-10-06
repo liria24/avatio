@@ -42,6 +42,14 @@ export const createCloudflareResourceFixture = (): CloudflareResourceInventory =
     }
     return {
         accountId: '0'.repeat(32),
+        sharedPreviewStorage: {
+            database: {
+                id: '00000000-0000-4000-8000-000000000003',
+                name: 'avatio-preview-shared',
+            },
+            bucket: 'avatio-preview-shared',
+            imageBaseUrl: 'https://shared.images.example.test',
+        },
         production: resources(1, 'production'),
         development: {
             ...resources(2, 'development'),

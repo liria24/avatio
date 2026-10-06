@@ -37,8 +37,11 @@ const evidence = (mode: string): CloudflareDeliveryEvidence => ({
     build: { sourceSha: sha, mode, isPreview: mode !== 'production', workerName: 'avatio' },
     state: { branch: null, commit: sha, dirty: false, ci: { ref: 'refs/heads/main', commit: sha } },
 })
-const output = (mode: string) => {
-    const config = createCloudflareConfig({ mode, isPreview: mode !== 'production' }, inventory)
+const output = (mode: string, resourceInventory = inventory) => {
+    const config = createCloudflareConfig(
+        { mode, isPreview: mode !== 'production' },
+        resourceInventory,
+    )
     const { entrypoint: _entrypoint, ...worker } = config.worker
     return {
         version: 'v0',
@@ -63,11 +66,11 @@ const output = (mode: string) => {
         },
     }
 }
-const plan = (mode = 'pr-354') =>
+const plan = (mode = 'pr-354', resourceInventory = inventory) =>
     createCloudflarePublishPlan({
         evidence: evidence(mode),
-        inventory,
-        buildOutput: output(mode),
+        inventory: resourceInventory,
+        buildOutput: output(mode, resourceInventory),
         migrationNames: names,
     })
 const receipt = () => ({
@@ -291,6 +294,18 @@ describe('inactive native publication execution path', () => {
         const { selected, input } = nativeFixture()
         input.api.query.mockResolvedValue([{ name: '__alchemy_migrations' }])
         await expect(publishCloudflareNative(selected, input)).rejects.toThrow(/Populated/)
+        expect(input.run).not.toHaveBeenCalled()
+        expect(input.api.preparePreview).not.toHaveBeenCalled()
+    })
+    it('does not apply pending PR migrations to a shared Preview database', async () => {
+        const { selected, input } = nativeFixture()
+        selected.resources.ownership = 'shared-preview'
+        input.api.query
+            .mockResolvedValueOnce([{ name: 'd1_migrations' }])
+            .mockResolvedValueOnce([{ name: names[0]! }])
+        await expect(publishCloudflareNative(selected, input)).rejects.toThrow(
+            /must not migrate shared/,
+        )
         expect(input.run).not.toHaveBeenCalled()
         expect(input.api.preparePreview).not.toHaveBeenCalled()
     })
@@ -584,5 +599,14 @@ describe('credentialless publisher sequencing simulation', () => {
         await expect(
             simulateCloudflarePublication(plan(), fixture({ verify: false }).fake),
         ).rejects.toThrow(/version verification/)
+    })
+})
+
+describe('shared Preview publication identity', () => {
+    it('classifies a normalized shared D1 as shared even when reviewed UUID input has uppercase letters', () => {
+        const shared = createCloudflareResourceFixture()
+        shared.sharedPreviewStorage.database.id = 'ABCDEFAB-CDEF-4ABC-8DEF-ABCDEFABCDEF'
+        Object.assign(shared.previews!['pr-354']!, structuredClone(shared.sharedPreviewStorage))
+        expect(plan('pr-354', shared).resources.ownership).toBe('shared-preview')
     })
 })

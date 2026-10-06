@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import type { CloudflareResourceInventory } from './cloudflare.ts'
 import { validateCloudflareBuildOutput } from './cloudflareBuildOutput.ts'
 import {
     validateCloudflareDeliveryEvidence,
@@ -98,7 +99,12 @@ export const createCloudflarePublishPlan = (input: {
             },
             bucket: { name: bucket.name },
             ownership: target.mode.startsWith('pr-')
-                ? ('dedicated-pr' as const)
+                ? database.id ===
+                  (
+                      input.inventory as CloudflareResourceInventory
+                  ).sharedPreviewStorage.database.id.toLowerCase()
+                    ? ('shared-preview' as const)
+                    : ('dedicated-pr' as const)
                 : ('existing' as const),
         },
         buildEnvironment: {

@@ -229,10 +229,14 @@ export const createCloudflareNativeApi = (
                 annotations: { 'workers/message': 'Reviewed Avatio Worker recovery; D1 retained' },
             })
         },
-        async bootstrapPr(mode: string) {
+        async bootstrapPr(
+            mode: string,
+            sharedStorage: CloudflareResourceInventory['sharedPreviewStorage'],
+        ) {
             if (!/^pr-[1-9]\d*$/.test(mode))
                 throw new Error('Only dedicated PR resources may be created.')
             const name = `avatio-${mode}`
+            const sharedDatabase = sharedStorage.database
             const named = async (path: string, key: string) => {
                 const matches: Record<string, unknown>[] = []
                 for (let page = 1; page <= 100; page++) {
@@ -247,28 +251,35 @@ export const createCloudflareNativeApi = (
                 throw new Error('Resource enumeration exceeded its bounded pagination.')
             }
             // Enumerate first. A denied read never causes a replacement allocation.
-            const database = await named('/d1/database', 'name')
+            // Ordinary PRs bind existing shared D1 and R2; bootstrap never creates either.
+            // Isolated PRs use a separately reviewed, explicitly provisioned storage pair.
+            if (!z.uuid().safeParse(sharedDatabase.id).success || !sharedDatabase.name)
+                throw new Error('A reviewed shared Preview D1 is required.')
+            const database = record(await request(`/d1/database/${sharedDatabase.id}`))
+            if (database.uuid !== sharedDatabase.id || database.name !== sharedDatabase.name)
+                throw new Error('Shared Preview D1 identity mismatch.')
             const cache = await named('/storage/kv/namespaces', 'title')
-            const bucket = await request(`/r2/buckets/${name}`, 'GET', undefined, true)
-            const createdDatabase =
-                database ?? record(await request('/d1/database', 'POST', { name }))
+            const bucket = record(
+                await request(`/r2/buckets/${encodeURIComponent(sharedStorage.bucket)}`),
+            )
+            if (bucket.name !== sharedStorage.bucket)
+                throw new Error('Shared Preview R2 identity mismatch.')
             const createdCache =
                 cache ?? record(await request('/storage/kv/namespaces', 'POST', { title: name }))
-            const createdBucket = bucket ?? (await request('/r2/buckets', 'POST', { name }))
             const result = {
-                database: { id: createdDatabase.uuid, name: createdDatabase.name },
+                database: { id: database.uuid, name: database.name },
                 cache: { id: createdCache.id, name: createdCache.title },
-                bucket: record(createdBucket).name,
+                bucket: bucket.name,
             }
             if (
                 !z.uuid().safeParse(result.database.id).success ||
-                result.database.name !== name ||
+                result.database.name !== sharedDatabase.name ||
                 !z
                     .string()
                     .regex(/^[a-f0-9]{32}$/)
                     .safeParse(result.cache.id).success ||
                 result.cache.name !== name ||
-                result.bucket !== name
+                result.bucket !== sharedStorage.bucket
             )
                 throw new Error(
                     'Allocated PR identities require private operator reconciliation; nothing is deleted.',
@@ -278,7 +289,7 @@ export const createCloudflareNativeApi = (
         async preparePreview(mode: string) {
             const existing = await preview(mode)
             if (existing) return existing
-            // Explicitly avoid copying the production Preview base config or its secrets.
+            // Preview Base is separate from production; avoid inheriting unreviewed Base settings.
             const created = previewIdentity.parse(
                 await request('/workers/workers/avatio/previews?ignore_base_config=true', 'POST', {
                     name: mode,
@@ -335,6 +346,17 @@ export const createCloudflareNativeApi = (
             inventory: CloudflareResourceInventory,
         ) {
             if (!/^pr-[1-9]\d*$/.test(mode)) throw new Error('Only PR resources can be deleted.')
+            if (
+                kind === 'database' &&
+                inventory.previews?.[mode]?.database.id.toLowerCase() ===
+                    inventory.sharedPreviewStorage.database.id.toLowerCase()
+            )
+                throw new Error('Shared Preview D1 must never be deleted during PR cleanup.')
+            if (
+                kind === 'bucket' &&
+                inventory.previews?.[mode]?.bucket === inventory.sharedPreviewStorage.bucket
+            )
+                throw new Error('Shared Preview R2 must never be deleted during PR cleanup.')
             const observed = await inspect(mode, inventory)
             const target = inventory.previews?.[mode]
             if (!target) throw new Error('Missing reviewed PR resources.')

@@ -14,7 +14,7 @@ on:
         type: string
         required: true
       operation:
-        description: Publish or separately approved dedicated PR resource bootstrap
+        description: Publish or approved PR KV bootstrap using existing shared Preview D1 and R2
         type: choice
         options: [deploy, bootstrap, rollback]
         default: deploy
