@@ -141,4 +141,33 @@ describe('read-only Cloudflare inventory', () => {
         ).rejects.toThrow()
         expect(fetcher).not.toHaveBeenCalled()
     })
+    it('retains zone-based Web Analytics configuration without its token or snippet', async () => {
+        const fetcher = vi.fn<typeof fetch>().mockImplementation(async () =>
+            Response.json({
+                success: true,
+                result: [
+                    {
+                        site_tag: 'analytics-site-id',
+                        site_token: 'private-analytics-token',
+                        snippet: 'private-analytics-snippet',
+                        auto_install: true,
+                        ruleset: { zone_name: 'avatio.me', enabled: true },
+                        rules: [{ host: 'avatio.me', is_paused: false }],
+                    },
+                ],
+            }),
+        )
+        const report = await collectCloudflareInventory('a'.repeat(32), 'token', fetcher)
+        expect(
+            report.results.find(({ label }) => label === 'Avatio Web Analytics settings')?.metadata,
+        ).toEqual([
+            {
+                site_tag: 'analytics-site-id',
+                auto_install: true,
+                ruleset: { zone_name: 'avatio.me', enabled: true },
+                rules: [{ host: 'avatio.me', is_paused: false }],
+            },
+        ])
+        expect(JSON.stringify(report)).not.toContain('private-')
+    })
 })

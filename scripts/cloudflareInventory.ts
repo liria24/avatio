@@ -183,14 +183,21 @@ export const collectCloudflareInventory = async (
                     .filter(
                         (item) =>
                             record(item).host === 'avatio.me' ||
+                            record(record(item).ruleset).zone_name === 'avatio.me' ||
                             array(record(item).rules).some(
                                 (rule) => record(rule).host === 'avatio.me',
                             ),
                     )
                     .map((item) => ({
                         ...fields(item, ['site_tag', 'host', 'auto_install', 'created']),
+                        ruleset: fields(record(item).ruleset, [
+                            'id',
+                            'enabled',
+                            'zone_name',
+                            'zone_tag',
+                        ]),
                         rules: array(record(item).rules).map((rule) =>
-                            fields(rule, ['id', 'host', 'inclusive', 'isPaused', 'priority']),
+                            fields(rule, ['id', 'host', 'inclusive', 'is_paused', 'priority']),
                         ),
                     })),
         },
