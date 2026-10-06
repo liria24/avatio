@@ -12,7 +12,8 @@
                 "vite.config.ts",
                 "probe.mjs",
                 "verify.mjs",
-                "runtime.mjs"
+                "runtime.mjs",
+                "migrations.mjs"
             ]
         },
         ".": {
