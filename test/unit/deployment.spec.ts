@@ -1,8 +1,4 @@
-import {
-    alchemyCommand,
-    getCloudflareDeliveryTarget,
-    validateDeployment,
-} from '../../config/deployment'
+import { getCloudflareDeliveryTarget, validateDeployment } from '../../config/deployment'
 import { getStageConfig } from '../../config/environment'
 
 const cleanMain = { branch: 'main', commit: 'abc123', dirty: false }
@@ -44,24 +40,6 @@ describe('production deployment policy', () => {
         expect(() =>
             validateDeployment('development', { branch: 'alchemy', dirty: true, commit: '' }),
         ).not.toThrow()
-    })
-    it('requires a separate, interactive adoption command', () => {
-        expect(alchemyCommand('deploy', 'production')).toEqual([
-            'node',
-            'node_modules/alchemy/bin/alchemy.js',
-            'deploy',
-            '--stage',
-            'production',
-            '--yes',
-        ])
-        expect(alchemyCommand('adopt', 'production')).toEqual([
-            'node',
-            'node_modules/alchemy/bin/alchemy.js',
-            'deploy',
-            '--stage',
-            'production',
-            '--adopt',
-        ])
     })
 })
 

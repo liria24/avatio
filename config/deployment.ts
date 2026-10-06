@@ -2,9 +2,6 @@ import { z } from 'zod'
 
 import type { AvatioStage } from './environment.ts'
 
-export const stageActions = ['check', 'plan', 'deploy', 'adopt'] as const
-export type StageAction = (typeof stageActions)[number]
-
 export interface DeploymentState {
     branch: string | null
     commit: string
@@ -29,16 +26,6 @@ export const validateDeployment = (stage: AvatioStage, state: DeploymentState) =
             throw new Error('Production CI commit must match the checked-out git commit.')
     }
 }
-
-export const alchemyCommand = (action: Exclude<StageAction, 'check'>, stage: AvatioStage) => [
-    // Keep Nuxt's production build on Node in memory-limited Workers Builds containers.
-    'node',
-    'node_modules/alchemy/bin/alchemy.js',
-    action === 'adopt' ? 'deploy' : action,
-    '--stage',
-    stage,
-    ...(action === 'deploy' ? ['--yes'] : action === 'adopt' ? ['--adopt'] : []),
-]
 
 const pullRequestEvent = z.object({
     action: z.enum(['opened', 'synchronize', 'reopened', 'closed']),

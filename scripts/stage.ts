@@ -2,12 +2,8 @@ import { execFileSync, spawn } from 'node:child_process'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import {
-    alchemyCommand,
-    stageActions,
-    validateDeployment,
-    type StageAction,
-} from '../config/deployment.ts'
+import { alchemyCommand, stageActions, type StageAction } from '../config/alchemyDeployment.ts'
+import { validateDeployment } from '../config/deployment.ts'
 import { getStageConfig, parseAvatioStage, type AvatioStage } from '../config/environment.ts'
 import { validateSecrets } from '../config/secrets.ts'
 
