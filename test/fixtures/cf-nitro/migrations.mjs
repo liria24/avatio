@@ -34,6 +34,7 @@ const cf = async (args) => {
                 HOME: root,
                 USERPROFILE: root,
                 CLOUDFLARE_ACCOUNT_ID: 'a'.repeat(32),
+                CF_SEND_TELEMETRY: 'false',
                 NODE_OPTIONS: `--import ${pathToFileURL(join(projectRoot, 'test/helpers/runtimeNetwork.mjs'))}`,
             },
             maxBuffer: 8 * 1024 * 1024,
@@ -62,6 +63,19 @@ const migrate = (id, directory = join(projectRoot, 'drizzle')) =>
 
 try {
     assert.ok(cutoff > 0)
+    const smoke = join(root, 'smoke')
+    const smokeFile = join(smoke, '20260101000000_smoke', 'migration.sql')
+    await mkdir(dirname(smokeFile), { recursive: true })
+    await writeFile(
+        smokeFile,
+        'CREATE TABLE smoke (id INTEGER PRIMARY KEY); INSERT INTO smoke VALUES (1);',
+    )
+    console.log(JSON.stringify({ cfMigrationProbeStage: 'minimal-multiple-statements' }))
+    await migrate('00000000-0000-4000-8000-000000003540', smoke)
+    assert.deepEqual(await query('00000000-0000-4000-8000-000000003540', 'SELECT id FROM smoke'), [
+        { id: 1 },
+    ])
+    console.log(JSON.stringify({ cfMigrationProbeStage: 'immutable-historical-sql' }))
     await migrate(freshId)
     assert.deepEqual(await migrate(freshId), [])
     assert.equal(
@@ -153,6 +167,25 @@ try {
             remoteMutation: false,
         }),
     )
+} catch (error) {
+    // Only synthetic isolated persistence exists here. Print counts rather than file paths or row values.
+    for (const candidate of await readdir(persistence, { recursive: true }).catch(() => [])) {
+        if (!candidate.endsWith('.sqlite')) continue
+        const database = new DatabaseSync(join(persistence, candidate), { readOnly: true })
+        try {
+            if (database.prepare('PRAGMA table_info(d1_migrations)').all().length)
+                console.log(
+                    JSON.stringify({
+                        syntheticAppliedMigrations: database
+                            .prepare('SELECT count(*) AS count FROM d1_migrations')
+                            .get().count,
+                    }),
+                )
+        } finally {
+            database.close()
+        }
+    }
+    throw error
 } finally {
     // The root is created by this probe; confirm its resolved identity before recursive removal.
     const target = await realpath(root)
