@@ -9,8 +9,19 @@ export const verifyCloudflarePreviewHttp = async (
     fetcher: typeof fetch = fetch,
 ) => {
     const deployment = parseCloudflarePreviewDeployment(input, expected)
+    await verifyCloudflareDeploymentHttp(deployment.deploymentUrl, fetcher)
+    return { ...deployment, httpVerified: true as const, realBindingsVerified: false as const }
+}
+
+export const verifyCloudflareDeploymentHttp = async (
+    origin: string,
+    fetcher: typeof fetch = fetch,
+) => {
+    const target = new URL(origin)
+    if (target.protocol !== 'https:' || origin !== target.origin)
+        throw new Error('An exact HTTPS deployment origin is required.')
     const request = async (path: string) => {
-        const response = await fetcher(new URL(path, deployment.deploymentUrl), {
+        const response = await fetcher(new URL(path, origin), {
             method: 'GET',
             redirect: 'error',
             cache: 'no-store',
@@ -56,7 +67,7 @@ export const verifyCloudflarePreviewHttp = async (
         (await session.json()) !== null
     )
         throw new Error('Preview anonymous session isolation verification failed.')
-    return { ...deployment, httpVerified: true as const, realBindingsVerified: false as const }
+    return { httpVerified: true as const }
 }
 
 // Explicit read-only operator/Actions entry point; no .env, credentials or real inventory reads.

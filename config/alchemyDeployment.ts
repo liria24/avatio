@@ -4,6 +4,16 @@ import type { AvatioStage } from './environment.ts'
 export const stageActions = ['check', 'plan', 'deploy', 'adopt'] as const
 export type StageAction = (typeof stageActions)[number]
 
+export const rejectLegacyPublisherAfterCutover = (
+    action: StageAction,
+    nativeDeliveryEnabled: boolean,
+) => {
+    if (nativeDeliveryEnabled && (action === 'deploy' || action === 'adopt'))
+        throw new Error(
+            'Native delivery owns publication; legacy Alchemy deploy/adopt is disabled.',
+        )
+}
+
 export const alchemyCommand = (action: Exclude<StageAction, 'check'>, stage: AvatioStage) => [
     // Keep Nuxt's production build on Node in memory-limited Workers Builds containers.
     'node',

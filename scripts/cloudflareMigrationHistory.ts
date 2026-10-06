@@ -135,18 +135,27 @@ export const convertCloudflareMigrationHistoryCopy = (
     return { importedCount: mapping.imports.length, pendingCount: mapping.pending.length }
 }
 
-export const readCommittedCloudflareMigrations = () => {
-    execFileSync('git', ['diff', '--exit-code', '--quiet', 'HEAD', '--', 'drizzle'])
-    const commit = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim()
+export const readCommittedCloudflareMigrations = (workspace = process.cwd()) => {
+    execFileSync('git', ['diff', '--exit-code', '--quiet', 'HEAD', '--', 'drizzle'], {
+        cwd: workspace,
+    })
+    const commit = execFileSync('git', ['rev-parse', 'HEAD'], {
+        encoding: 'utf8',
+        cwd: workspace,
+    }).trim()
     const paths = execFileSync('git', ['ls-tree', '-r', '--name-only', commit, 'drizzle'], {
         encoding: 'utf8',
+        cwd: workspace,
     })
         .trim()
         .split('\n')
         .filter((path) => path.endsWith('/migration.sql'))
         .sort()
     return paths.map((path) => {
-        const sql = execFileSync('git', ['show', `${commit}:${path}`], { encoding: 'utf8' })
+        const sql = execFileSync('git', ['show', `${commit}:${path}`], {
+            encoding: 'utf8',
+            cwd: workspace,
+        })
         return {
             name: path.slice('drizzle/'.length),
             hash: createHash('sha256').update(sql).digest('hex'),

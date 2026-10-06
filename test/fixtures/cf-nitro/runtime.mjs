@@ -13,7 +13,7 @@ import { verifyCloudflarePreviewHttp } from '../../../scripts/cloudflarePreviewS
 
 // Real bundled application, local bindings, disposable secrets. Never contact Cloudflare.
 const mode = process.argv[2]
-const output = await readBuildOutput(process.cwd())
+const output = await readBuildOutput(process.env.SPIKE_NATIVE_OUTPUT_ROOT ?? process.cwd())
 assert.equal(output.rootConfig.buildContext.mode, mode)
 const worker = output.workers.default
 const { manifest, ...config } = worker.config

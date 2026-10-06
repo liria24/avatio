@@ -1,6 +1,7 @@
 import { resolve } from 'node:path'
 
 import { createCloudflareConfig } from '../../config/cloudflare'
+import { cloudflareInventoryHash } from '../../config/cloudflareActivation'
 import { validateCloudflareBuildOutput } from '../../config/cloudflareBuildOutput'
 import type { CloudflareDeliveryEvidence } from '../../config/cloudflareDelivery'
 import {
@@ -9,6 +10,11 @@ import {
     simulateCloudflarePublication,
     verifyCloudflarePublisherResources,
 } from '../../config/cloudflarePublisher'
+import { createCloudflareNativeApi } from '../../scripts/cloudflareNativeApi'
+import {
+    publishCloudflareNative,
+    prepareCloudflareRuntimeSecrets,
+} from '../../scripts/cloudflareNativePublication'
 import { createCloudflareResourceFixture } from '../helpers/cloudflareResources'
 
 const inventory = createCloudflareResourceFixture()
@@ -81,6 +87,238 @@ const deployment = {
     deployment_id: 'version354',
     deployment_urls: ['https://version354-pr-354.previews.example.test'],
 }
+
+const runtimeInput = {
+    BETTER_AUTH_SECRET: 'synthetic-signing-key-'.repeat(3),
+    OG_IMAGE_SECRET: 'synthetic-og-signing-key',
+    TWITTER_CLIENT_SECRET: 'synthetic-oauth',
+}
+const activation = () => ({
+    version: 1,
+    repository: 'liria24/avatio',
+    action: 'deploy',
+    mode: 'pr-354',
+    sourceSha: sha,
+    trustedCodeSha: sha,
+    inventoryHash: cloudflareInventoryHash(inventory),
+    expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
+    proofs: {
+        buildAndBindings: 'https://github.com/liria24/avatio/actions/runs/1',
+        previewIsolationAndSecrets: 'https://github.com/liria24/avatio/actions/runs/2',
+        migrationHistoryAndRecovery: 'https://github.com/liria24/avatio/actions/runs/3',
+        environmentProtection: 'https://github.com/liria24/avatio/actions/runs/4',
+        singlePublisher: 'https://github.com/liria24/avatio/actions/runs/5',
+    },
+    previewSecretTransferApproved: true,
+    buildArtifactPublicationApproved: false,
+    ephemeralDeletionApproved: false,
+    resourceCreationApproved: false,
+    productionCutoverApproved: false,
+})
+const nativeFixture = () => {
+    const selected = plan()
+    const events: string[] = []
+    const bindings = createCloudflareConfig({ mode: 'pr-354', isPreview: true }, inventory).worker
+        .env
+    const rawEnv: Record<string, Record<string, unknown>> = Object.fromEntries(
+        Object.entries(bindings).map(([name, binding]) => {
+            switch (binding.type) {
+                case 'text':
+                    return [name, { type: 'plain_text', text: binding.value }]
+                case 'secret':
+                    return [name, { type: 'secret_text' }]
+                case 'd1':
+                    return [
+                        name,
+                        { type: 'd1', database_id: binding.id, database_name: binding.name },
+                    ]
+                case 'kv':
+                    return [name, { type: 'kv_namespace', namespace_id: binding.id }]
+                case 'r2':
+                    return [name, { type: 'r2_bucket', bucket_name: binding.name }]
+                case 'flagship':
+                    return [name, { type: 'flagship', app_id: binding.id }]
+                case 'rate-limit':
+                    return [
+                        name,
+                        {
+                            type: 'ratelimit',
+                            namespace_id: binding.namespace,
+                            simple: binding.simple,
+                        },
+                    ]
+                case 'send-email':
+                    return [
+                        name,
+                        {
+                            type: 'send_email',
+                            allowed_sender_addresses: binding.allowedSenderAddresses,
+                            allowed_destination_addresses: binding.allowedDestinationAddresses,
+                        },
+                    ]
+                default:
+                    return [name, { type: binding.type }]
+            }
+        }),
+    )
+    const client = createCloudflareNativeApi(inventory.accountId, 'synthetic-token', async () => {
+        throw new Error('No unexpected external API call permitted')
+    })
+    const api = {
+        ...client,
+        inspect: vi.fn(async () => ({
+            accountId: inventory.accountId,
+            workerName: 'avatio' as const,
+            complete: true as const,
+            resources: {
+                preview: null,
+                database: selected.resources.database,
+                cache: selected.resources.cache,
+                bucket: selected.resources.bucket,
+            },
+        })),
+        query: vi.fn(async (_id: string, sql: string) => {
+            events.push('query')
+            return sql.includes('sqlite_schema') ? [] : names.map((name) => ({ name }))
+        }),
+        preparePreview: vi.fn(async () => {
+            events.push('prepare-preview')
+            return { id: 'preview354', name: 'pr-354', slug: 'pr-354' }
+        }),
+        setPreviewSecrets: vi.fn(async () => {
+            events.push('secrets')
+        }),
+        previewDeployment: vi.fn(async () => ({
+            id: 'version354',
+            preview_name: 'pr-354',
+            env: rawEnv,
+        })),
+    }
+    const run = vi.fn(
+        async (
+            command: typeof selected.apply,
+        ): Promise<{ exitCode: number | null; signal: string | null; output: unknown }> => {
+            events.push(
+                command === selected.apply
+                    ? 'apply'
+                    : command === selected.pending
+                      ? 'pending'
+                      : 'deploy',
+            )
+            return {
+                exitCode: 0,
+                signal: null,
+                output:
+                    command === selected.apply
+                        ? names.map((name) => ({ name, status: '✅' }))
+                        : command === selected.pending
+                          ? []
+                          : deployment,
+            }
+        },
+    )
+    const httpFetch: typeof fetch = async (url) => {
+        events.push('http')
+        const path = new URL(
+            typeof url === 'string' ? url : url instanceof URL ? url.href : url.url,
+        ).pathname
+        if (path === '/' || path === '/en')
+            return new Response('<html data-ssr="true">__nuxt</html>', {
+                headers: { 'content-type': 'text/html' },
+            })
+        if (path === '/api/items')
+            return Response.json(
+                { data: [], pagination: {} },
+                { headers: { 'cache-control': 'public,max-age=0' } },
+            )
+        if (path === '/api/auth/get-session')
+            return Response.json(null, { headers: { 'cache-control': 'no-store' } })
+        return new Response(path.endsWith('webmanifest') ? '{}' : 'self.addEventListener', {
+            headers: { 'cache-control': 'must-revalidate' },
+        })
+    }
+    const input = {
+        inventory,
+        activation: activation(),
+        enabled: true,
+        trustedCodeSha: sha,
+        runtimeSecrets: prepareCloudflareRuntimeSecrets(selected, inventory, runtimeInput),
+        api,
+        run,
+        latestSourceSha: vi.fn(async () => sha),
+        verifyProduction: vi.fn(async () => {}),
+        httpFetch,
+    }
+    return { selected, input, events }
+}
+
+describe('inactive native publication execution path', () => {
+    it('keeps signing derivation canonical and excludes disabled PR OAuth', () => {
+        const secrets = prepareCloudflareRuntimeSecrets(plan(), inventory, runtimeInput)
+        expect(secrets.BETTER_AUTH_SECRET).toBe(runtimeInput.BETTER_AUTH_SECRET)
+        expect(secrets.NUXT_BETTER_AUTH_SECRET).toBe(runtimeInput.BETTER_AUTH_SECRET)
+        expect(secrets).not.toHaveProperty('TWITTER_CLIENT_SECRET')
+        expect(() =>
+            prepareCloudflareRuntimeSecrets(plan(), inventory, {
+                ...runtimeInput,
+                BETTER_AUTH_SECRET: 'short',
+            }),
+        ).toThrow()
+    })
+    it('runs reviewed resource inspection, fresh migration, deploy, secrets and version checks in order', async () => {
+        const { selected, input, events } = nativeFixture()
+        const result = await publishCloudflareNative(selected, input)
+        expect(result).toMatchObject({
+            sourceSha: sha,
+            publicationVerified: true,
+            deploymentId: 'version354',
+        })
+        expect(events.indexOf('apply')).toBeLessThan(events.indexOf('deploy'))
+        expect(events.indexOf('secrets')).toBeGreaterThan(events.indexOf('deploy'))
+        expect(events.indexOf('http')).toBeGreaterThan(events.indexOf('secrets'))
+        expect(input.api.previewDeployment).toHaveBeenCalledWith('pr-354', 'version354')
+        expect(input.verifyProduction).not.toHaveBeenCalled()
+    })
+    it('performs no remote calls when activation remains disabled', async () => {
+        const { selected, input } = nativeFixture()
+        await expect(
+            publishCloudflareNative(selected, { ...input, enabled: false }),
+        ).rejects.toThrow()
+        expect(input.api.inspect).not.toHaveBeenCalled()
+        expect(input.run).not.toHaveBeenCalled()
+    })
+    it('stops populated databases without a reconciled ledger before any migration', async () => {
+        const { selected, input } = nativeFixture()
+        input.api.query.mockResolvedValue([{ name: '__alchemy_migrations' }])
+        await expect(publishCloudflareNative(selected, input)).rejects.toThrow(/Populated/)
+        expect(input.run).not.toHaveBeenCalled()
+        expect(input.api.preparePreview).not.toHaveBeenCalled()
+    })
+    it.each([
+        { exitCode: 0, signal: 'SIGTERM', output: [] },
+        { exitCode: 1, signal: null, output: [] },
+    ])('never deploys after abnormal migration exit (%j)', async (result) => {
+        const { selected, input } = nativeFixture()
+        input.run.mockResolvedValue(result)
+        await expect(publishCloudflareNative(selected, input)).rejects.toThrow(/Migration/)
+        expect(input.run).toHaveBeenCalledTimes(1)
+        expect(input.api.setPreviewSecrets).not.toHaveBeenCalled()
+    })
+    it('does not deploy stale source after migrations finish', async () => {
+        const { selected, input } = nativeFixture()
+        input.latestSourceSha.mockResolvedValueOnce(sha).mockResolvedValueOnce('b'.repeat(40))
+        await expect(publishCloudflareNative(selected, input)).rejects.toThrow(/during migration/)
+        expect(input.run).toHaveBeenCalledTimes(2)
+    })
+    it('rejects a post-deploy binding mismatch even when HTTP would pass', async () => {
+        const { selected, input, events } = nativeFixture()
+        const value = await input.api.previewDeployment()
+        value.env.APP_DB = { type: 'd1', database_id: inventory.production.database.id }
+        input.api.previewDeployment.mockResolvedValue(value)
+        await expect(publishCloudflareNative(selected, input)).rejects.toThrow(/D1 identity/)
+        expect(events).not.toContain('http')
+    })
+})
 
 describe('complete native Build Output and reviewed resource assignment', () => {
     it.each(['production', 'development', 'pr-354', 'pr-355'])(

@@ -13,7 +13,8 @@
                 "probe.mjs",
                 "verify.mjs",
                 "runtime.mjs",
-                "migrations.mjs"
+                "migrations.mjs",
+                "native-delivery.mjs"
             ]
         },
         ".": {
