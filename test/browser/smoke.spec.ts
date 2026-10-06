@@ -31,10 +31,20 @@ test('login survives reload and logout revokes the browser session', async ({
     await page.reload()
     await page.waitForFunction('window.useNuxtApp?.().isHydrating === false')
     await page.getByRole('button', { name: labels.header.userMenu }).click()
-    await page.getByRole('menuitem', { name: labels.header.menu.logout, exact: true }).click()
-    await expect
-        .poll(async () => await (await page.request.get('/api/auth/get-session')).json())
-        .toBeNull()
+    // Logout reloads the document; inspect the session after that navigation finishes.
+    const [logout] = await Promise.all([
+        page.waitForResponse(
+            (response) =>
+                response.url().endsWith('/api/auth/sign-out') &&
+                response.request().method() === 'POST',
+        ),
+        page.waitForEvent('load'),
+        page.getByRole('menuitem', { name: labels.header.menu.logout, exact: true }).click(),
+    ])
+    expect(logout.status()).toBe(200)
+    await page.waitForFunction('window.useNuxtApp?.().isHydrating === false')
+    await expect(page.getByRole('button', { name: labels.header.userMenu })).toBeHidden()
+    expect(await (await page.request.get('/api/auth/get-session')).json()).toBeNull()
 })
 
 test('compose saves, publishes once and edits the same Setup', async ({
