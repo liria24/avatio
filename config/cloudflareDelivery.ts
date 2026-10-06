@@ -1,7 +1,7 @@
 import type { DeploymentState } from './deployment.ts'
 import { validateDeployment } from './deployment.ts'
 
-interface CloudflareDeliveryEvidence {
+export interface CloudflareDeliveryEvidence {
     repository: string
     sourceRepository: string
     eventName: 'push' | 'workflow_dispatch' | 'workflow_run'

@@ -10,6 +10,8 @@ on:
       - 'config/cloudflare.ts'
       - 'config/build.ts'
       - 'config/cloudflarePreviewLifecycle.ts'
+      - 'config/cloudflareBuildOutput.ts'
+      - 'config/cloudflarePublisher.ts'
       - 'scripts/cloudflarePreviewSmoke.ts'
       - 'scripts/cloudflareMigrationHistory.ts'
       - 'package.json'
@@ -101,7 +103,7 @@ jobs:
         env:
           CLOUDFLARE_PREVIEW_BUILD: ${{ matrix.preview }}
           NODE_OPTIONS: --max-old-space-size=4096
-      - name: Verify v2 Build Output, binding contract and PWA assets
+      - name: Verify complete v2 Build Output, assets and credentialless publisher simulation
         if: matrix.nodeCompat == 'v2'
         working-directory: test/fixtures/cf-nitro
         run: node verify.mjs '${{ matrix.mode }}' '${{ matrix.preview }}'
