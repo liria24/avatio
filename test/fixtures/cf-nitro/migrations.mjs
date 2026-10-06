@@ -29,9 +29,9 @@ const cutoff = files.findIndex((file) => file.name.startsWith('20260910151556_')
 const freshId = '00000000-0000-4000-8000-000000003541'
 const populatedId = '00000000-0000-4000-8000-000000003542'
 const cf = async (args) => {
-    const result = await execute(
+    const invocation = execute(
         process.execPath,
-        [cli, ...args, '--local', '--persist-to', persistence, '--quiet'],
+        [cli, ...args, '--local', '--persist-to', persistence],
         {
             cwd: root,
             env: {
@@ -46,6 +46,9 @@ const cf = async (args) => {
             timeout: 120_000,
         },
     )
+    // cf#64: an open non-TTY stdin pipe keeps the pinned CLI alive after local writes.
+    invocation.child.stdin.end()
+    const result = await invocation
     return JSON.parse(result.stdout)
 }
 const query = async (id, sql) => {
@@ -68,6 +71,8 @@ const migrate = (id, directory = join(projectRoot, 'drizzle')) =>
 
 try {
     assert.ok(cutoff > 0)
+    // cf#25: establish the empty simulator directory before its first migration.
+    await mkdir(join(persistence, 'v3'), { recursive: true })
     const smoke = join(root, 'smoke')
     const smokeFile = join(smoke, '20260101000000_smoke', 'migration.sql')
     await mkdir(dirname(smokeFile), { recursive: true })
