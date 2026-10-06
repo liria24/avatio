@@ -1,9 +1,7 @@
 import type { FetchResult } from 'nuxt/app'
 
-type SetupResponse = FetchResult<'/api/setups/:id', 'get'>
-
 export const useSetup = (id: MaybeRefOrGetter<Setup['id']>) =>
-    useFetch<SetupResponse>(
+    useFetch(
         computed(() => `/api/setups/${toValue(id)}` as '/api/setups/:id'),
         {
             key: computed(() => `setup-${toValue(id)}`),
@@ -12,8 +10,8 @@ export const useSetup = (id: MaybeRefOrGetter<Setup['id']>) =>
     )
 
 export const useViewerSetup = (id: MaybeRefOrGetter<Setup['id']>) =>
-    useFetch<SetupResponse>(
-        computed(() => `/api/me/setups/${toValue(id)}`),
+    useFetch(
+        computed(() => `/api/me/setups/${toValue(id)}` as '/api/me/setups/:id'),
         {
             key: computed(() => `viewer-setup-${toValue(id)}`),
             dedupe: 'defer',

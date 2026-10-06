@@ -1,0 +1,250 @@
+name: native delivery
+
+on:
+  workflow_run:
+    workflows: [quality]
+    types: [completed]
+  pull_request_target:
+    branches: [main, development]
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      quality_run_id:
+        description: Exact successful quality run to deliver
+        type: string
+        required: true
+      operation:
+        description: Publish or separately approved dedicated PR resource bootstrap
+        type: choice
+        options: [deploy, bootstrap, rollback]
+        default: deploy
+
+permissions:
+  contents: read
+
+# One lane covers migrations, publication, cleanup and reopen. Never cancel migrations.
+concurrency:
+  group: avatio-native-delivery
+  cancel-in-progress: false
+
+jobs:
+  select:
+    # Inactive until the real activation gates, protected environments and publisher freeze
+    # are reviewed. This variable is not set by this change; legacy deployment stays active.
+    if: vars.AVATIO_NATIVE_DELIVERY_ENABLED == 'true' && github.repository == 'liria24/avatio' && (github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/development') && (github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository)) && (github.event_name != 'pull_request_target' || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      mode: ${{ steps.target.outputs.mode }}
+      action: ${{ steps.target.outputs.action }}
+      source_sha: ${{ steps.target.outputs.source_sha }}
+      trusted_sha: ${{ steps.target.outputs.trusted_sha }}
+      trusted_ref: ${{ steps.target.outputs.trusted_ref }}
+      environment: ${{ steps.target.outputs.environment }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.event.pull_request.base.sha || github.workflow_sha }}
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
+        with:
+          node-version-file: .node-version
+          version-file: package.json
+          cache: true
+          run-install: false
+      - run: vp install --frozen-lockfile
+      - id: target
+        run: node scripts/cloudflareNativeCi.ts select
+        env:
+          QUALITY_RUN_ID: ${{ inputs.quality_run_id }}
+          NATIVE_OPERATION: ${{ inputs.operation }}
+          GITHUB_TOKEN: ${{ github.token }}
+
+  approve:
+    needs: select
+    environment: ${{ needs.select.outputs.environment }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ needs.select.outputs.trusted_sha }}
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
+        with:
+          node-version-file: .node-version
+          version-file: package.json
+          cache: true
+          run-install: false
+      - run: vp install --frozen-lockfile
+      - name: Verify the exact protected activation and artifact handling approval
+        run: node scripts/cloudflareNativeCi.ts approve
+        env:
+          QUALITY_RUN_ID: ${{ inputs.quality_run_id }}
+          NATIVE_OPERATION: ${{ inputs.operation }}
+          GITHUB_TOKEN: ${{ github.token }}
+          AVATIO_NATIVE_DELIVERY_ENABLED: ${{ vars.AVATIO_NATIVE_DELIVERY_ENABLED }}
+          AVATIO_CF_RESOURCES_JSON: ${{ secrets.AVATIO_CF_RESOURCES_JSON }}
+          AVATIO_CF_ACTIVATION_JSON: ${{ secrets.AVATIO_CF_ACTIVATION_JSON }}
+
+  build:
+    needs: [select, approve]
+    if: needs.select.outputs.action == 'deploy'
+    environment: ${{ needs.select.outputs.environment }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      # Application code gets public build inputs, never an API token or signing key.
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ needs.select.outputs.source_sha }}
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
+        with:
+          node-version-file: .node-version
+          version-file: package.json
+          cache: true
+          run-install: false
+      - run: vp install --frozen-lockfile
+      - run: bun install --frozen-lockfile
+        working-directory: test/fixtures/cf-nitro
+      - run: node scripts/cloudflareNativeCi.ts build
+        env:
+          QUALITY_RUN_ID: ${{ inputs.quality_run_id }}
+          AVATIO_NATIVE_DELIVERY_ENABLED: ${{ vars.AVATIO_NATIVE_DELIVERY_ENABLED }}
+          AVATIO_CF_RESOURCES_JSON: ${{ secrets.AVATIO_CF_RESOURCES_JSON }}
+          AVATIO_CF_ACTIVATION_JSON: ${{ secrets.AVATIO_CF_ACTIVATION_JSON }}
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: native-build-${{ needs.select.outputs.source_sha }}
+          path: .cloudflare/native-artifact/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+
+  deploy:
+    needs: [select, approve, build]
+    if: needs.select.outputs.action == 'deploy'
+    environment:
+      name: ${{ needs.select.outputs.environment }}
+      url: ${{ steps.publish.outputs.url }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      # A fresh runner with trusted code; no PR checkout, dependency installation or config
+      # evaluation from the artifact. The pinned CLI consumes prebuilt JSON and module bytes.
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ needs.select.outputs.trusted_sha }}
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
+        with:
+          node-version-file: .node-version
+          version-file: package.json
+          cache: true
+          run-install: false
+      - run: vp install --frozen-lockfile
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: native-build-${{ needs.select.outputs.source_sha }}
+          path: .cloudflare/native-incoming
+      - id: publish
+        name: Recheck identity, migrate, publish and verify the specific version
+        run: vp exec dotenvx run --strict -f ".env.${NATIVE_STAGE}" -- node scripts/cloudflareNativeCi.ts deploy
+        env:
+          NATIVE_STAGE: ${{ needs.select.outputs.mode == 'production' && 'production' || 'development' }}
+          QUALITY_RUN_ID: ${{ inputs.quality_run_id }}
+          GITHUB_TOKEN: ${{ github.token }}
+          AVATIO_NATIVE_DELIVERY_ENABLED: ${{ vars.AVATIO_NATIVE_DELIVERY_ENABLED }}
+          AVATIO_CF_RESOURCES_JSON: ${{ secrets.AVATIO_CF_RESOURCES_JSON }}
+          AVATIO_CF_ACTIVATION_JSON: ${{ secrets.AVATIO_CF_ACTIVATION_JSON }}
+          AVATIO_CF_PRODUCTION_VERSION_BASE: ${{ vars.AVATIO_CF_PRODUCTION_VERSION_BASE }}
+          DOTENV_PRIVATE_KEY_PRODUCTION: ${{ needs.select.outputs.mode == 'production' && secrets.DOTENV_PRIVATE_KEY_PRODUCTION || '' }}
+          DOTENV_PRIVATE_KEY_DEVELOPMENT: ${{ needs.select.outputs.mode != 'production' && secrets.DOTENV_PRIVATE_KEY_DEVELOPMENT || '' }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+  bootstrap:
+    needs: [select, approve]
+    if: needs.select.outputs.action == 'bootstrap'
+    environment: preview-bootstrap
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ needs.select.outputs.trusted_sha }}
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
+        with:
+          node-version-file: .node-version
+          version-file: package.json
+          cache: true
+          run-install: false
+      - run: vp install --frozen-lockfile
+      - name: Reuse or allocate only the exact approved PR names; retain all partial results
+        run: node scripts/cloudflareNativeCi.ts bootstrap
+        env:
+          NATIVE_OPERATION: bootstrap
+          QUALITY_RUN_ID: ${{ inputs.quality_run_id }}
+          GITHUB_TOKEN: ${{ github.token }}
+          AVATIO_NATIVE_DELIVERY_ENABLED: ${{ vars.AVATIO_NATIVE_DELIVERY_ENABLED }}
+          AVATIO_CF_RESOURCES_JSON: ${{ secrets.AVATIO_CF_RESOURCES_JSON }}
+          AVATIO_CF_ACTIVATION_JSON: ${{ secrets.AVATIO_CF_ACTIVATION_JSON }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+  rollback:
+    needs: [select, approve]
+    if: needs.select.outputs.action == 'rollback'
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ needs.select.outputs.trusted_sha }}
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
+        with:
+          node-version-file: .node-version
+          version-file: package.json
+          cache: true
+          run-install: false
+      - run: vp install --frozen-lockfile
+      - name: Validate rehearsed DB state and previous Worker bindings; recover Worker only
+        run: node scripts/cloudflareNativeCi.ts rollback
+        env:
+          NATIVE_OPERATION: rollback
+          QUALITY_RUN_ID: ${{ inputs.quality_run_id }}
+          GITHUB_TOKEN: ${{ github.token }}
+          AVATIO_NATIVE_DELIVERY_ENABLED: ${{ vars.AVATIO_NATIVE_DELIVERY_ENABLED }}
+          AVATIO_CF_RESOURCES_JSON: ${{ secrets.AVATIO_CF_RESOURCES_JSON }}
+          AVATIO_CF_ACTIVATION_JSON: ${{ secrets.AVATIO_CF_ACTIVATION_JSON }}
+          AVATIO_CF_RECOVERY_JSON: ${{ secrets.AVATIO_CF_RECOVERY_JSON }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+  cleanup:
+    needs: [select, approve]
+    if: needs.select.outputs.action == 'cleanup'
+    environment: preview-cleanup
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ needs.select.outputs.trusted_sha }}
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
+        with:
+          node-version-file: .node-version
+          version-file: package.json
+          cache: true
+          run-install: false
+      - run: vp install --frozen-lockfile
+      - name: Recheck closed PR and exact ownership before each deletion; verify absence
+        run: node scripts/cloudflareNativeCi.ts cleanup
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          AVATIO_NATIVE_DELIVERY_ENABLED: ${{ vars.AVATIO_NATIVE_DELIVERY_ENABLED }}
+          AVATIO_CF_RESOURCES_JSON: ${{ secrets.AVATIO_CF_RESOURCES_JSON }}
+          AVATIO_CF_ACTIVATION_JSON: ${{ secrets.AVATIO_CF_ACTIVATION_JSON }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

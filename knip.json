@@ -5,6 +5,18 @@
         "server/utils/createNotification.ts": ["exports"]
     },
     "workspaces": {
+        "test/fixtures/cf-nitro": {
+            "vite": false,
+            "entry": [
+                "cloudflare.config.ts",
+                "vite.config.ts",
+                "probe.mjs",
+                "verify.mjs",
+                "runtime.mjs",
+                "migrations.mjs",
+                "native-delivery.mjs"
+            ]
+        },
         ".": {
             "entry": [
                 "alchemy.run.ts",

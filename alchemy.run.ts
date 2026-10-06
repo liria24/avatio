@@ -185,11 +185,7 @@ export const Website = Cloudflare.Website.Nuxt(
             dev: { port: 3000, strictPort: true },
             compatibility: {
                 date: '2026-05-26',
-                flags: [
-                    'no_handle_cross_request_promise_resolution',
-                    'nodejs_compat',
-                    'no_nodejs_compat_v2',
-                ],
+                flags: ['no_handle_cross_request_promise_resolution', 'nodejs_compat'],
             },
             cache: { enabled: true },
             observability: {

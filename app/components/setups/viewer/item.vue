@@ -33,7 +33,7 @@ const providerIcon = computed(() => getCatalogProviderData(source.value?.provide
         <UDropdownMenu
             :items="[
                 {
-                    to: $localePath(`/search?itemId=${item.id}`),
+                    to: $localePath({ path: `/search?itemId=${item.id}` }),
                     icon: 'mingcute:search-line',
                     label: $t('setup.viewer.searchByItem'),
                 },

@@ -124,7 +124,7 @@ useSeo({
         >
             <template v-if="latestChangelog" #headline>
                 <UButton
-                    :to="$localePath('/changelogs')"
+                    :to="$localePath({ path: '/changelogs' })"
                     :label="latestChangelog.title"
                     variant="soft"
                     color="neutral"

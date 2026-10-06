@@ -29,7 +29,7 @@ const props = defineProps({
                     {{ props.error.statusText }}
                 </h2>
                 <UButton
-                    :to="$localePath('/')"
+                    :to="$localePath({ path: '/' })"
                     :label="$t('errors.backToHome')"
                     icon="mingcute:arrow-left-line"
                     variant="soft"

@@ -37,23 +37,9 @@ VRSNSユーザー向けのアバターセットアップ共有サービス。<br
 [![Drizzle ORM badge][badge-drizzle]][drizzle]
 [![Oxc badge][badge-oxc]][oxc]
 
-## Cloudflare Preview の準備状況（#354）
+Avatio is a Bun workspace modular monolith. Pure domains live in `@avatio/core`, Nuxt integration in `@avatio/nuxt`, and current infrastructure adapters in `@avatio/cloudflare`. Items and publishers use Avatio-owned identities across providers. Setup entries preserve category overrides, notes, and shapekeys; provider availability and refresh errors remain separate. Configuration, secret operations, and deployment guidance are maintained in [AGENTS.md](AGENTS.md).
 
-現在の実行環境は Nuxt 4.5.2、デプロイは引き続き Alchemy です。公開ビルド設定とサーバーの binding 型を Alchemy から分離し、`cf@1.0.0-beta.11` 用の `cloudflare.config.ts`、PR のメール・パスワード認証、lease で保護された inline Catalog 同期を用意しています。`vp run test:cloudflare` は、秘密情報や Cloudflare への書き込みなしで設定・対象判定・認証を検証します。同じテストは通常の quality workflow の全テスト検査にも含まれます。
-
-将来の `cf` 設定は Worker 名を `avatio` に固定し、`production`、永続 Preview の `development`、PR Preview の `pr-<番号>` を区別します。`AVATIO_CF_RESOURCES_FILE` には確認済みの実資源 ID を含む JSON を明示し、PR ごとに D1・KV・R2 を分離します。資源の自動作成やテスト用 ID へのフォールバックはありません。入力項目とビルド環境は [AGENTS.md](./AGENTS.md#native-cloudflare-preview-preparation-354) を参照してください。
-
-実デプロイと資源の作成・削除は未接続です。有効化には Nuxt/Nitro の Build Output と既存 tasks・plugins・cache の互換性、Preview secrets と close/reopen のライフサイクル、実資源 ID、既存データ入り D1 の migration 履歴移行の検証が必要です。Nuxt 4.6 のリリースだけでは切り替えません。Workers Builds、Alchemy、`avatio-development`、ローカル SQLite と seed 経路は現行運用を継続します。
-
-Setup画像の`stableId`は必須・一意です。追加migrationは既存IDを維持し、未設定の画像だけ数値主キーの文字列で補完します。衝突時はIDを振り直さず失敗するため、デプロイ前に対象DBのバックアップでmigrationを検証してください。
-
-ブックマーク一覧APIは`GET /api/setups?bookmarked=true`を使用します。旧`GET /api/setups/bookmarks`一覧は廃止し、個別ブックマークの取得・追加・削除は維持しています。
-
-## Testing
-
-`vp run test` and `vp run test:watch` run the fast local unit project. SQLite integration, Nuxt DOM, real HTTP contracts, Miniflare bindings, browser smoke, and the Cloudflare build run in CI. `vp run test:ci` selects the full Vitest suite; browser commands are separate.
-
-Every PR runs all existing regression coverage and Chromium smoke. Development/main pushes, daily runs, and manual runs also exercise extended Chromium, Firefox, WebKit, and mobile flows. The required `test` check succeeds only when all suites required for that event succeed. Browser tests use isolated temporary data and synthetic accounts, block external traffic, and preserve failure traces briefly. See [AGENTS.md](./AGENTS.md#testing) for commands and fixture boundaries.
+`bun run dev` serves `http://localhost:3000`, reads authored Markdown from `content/`, and saves uploads to gitignored `.data/uploads`. Its Alchemy state stays in `.alchemy/state`, separate from deployed resources in the Cloudflare state store. Deployed Workers read authored content from GitHub through the existing KV cache and store uploads in R2. Terms and Privacy keep independent versions and append-only acceptance history. PR quality checks run lint, typecheck, tests, and build without production secrets.
 
 ## 🤝 Contributions
 

@@ -12,7 +12,7 @@ const {
     removeShapekey,
     updateItem,
     reorderCategory,
-    itemSearchTerm,
+    itemSearch,
     itemScrollTop,
     values,
     openImagePoints,
@@ -79,24 +79,29 @@ onBeforeUnmount(() => {
         <p role="status" aria-live="polite" aria-atomic="true" class="sr-only">
             {{ announcement }}
         </p>
-        <div v-if="!totalItemsCount" class="m-auto flex flex-col items-center gap-6 text-center">
-            <p class="text-xl">
+        <div
+            :class="
+                !totalItemsCount
+                    ? 'm-auto flex w-full flex-col items-center gap-6 text-center'
+                    : 'w-full'
+            "
+        >
+            <p v-if="!totalItemsCount" class="text-xl">
                 {{ $t('setup.compose.items.emptyPrompt') }}
             </p>
 
             <UFormField
-                :help="$t('setup.compose.items.supportedPlatforms')"
+                :help="!totalItemsCount ? $t('setup.compose.items.supportedPlatforms') : undefined"
                 :ui="{ help: 'px-1 text-xs text-toned' }"
-                class="w-full max-w-sm"
+                :class="!totalItemsCount ? 'w-full max-w-sm' : 'w-full'"
             >
-                <CommandPaletteItemSearch
-                    v-model:search-term="itemSearchTerm"
-                    class="w-full min-w-0 sm:min-w-sm"
-                    @select="addItem"
-                />
+                <CommandPaletteItemSearch :session="itemSearch" class="w-full min-w-0" />
             </UFormField>
 
-            <div v-if="suggestedItems.length" class="flex max-w-md flex-wrap items-center gap-4">
+            <div
+                v-if="!totalItemsCount && suggestedItems.length"
+                class="flex max-w-md flex-wrap items-center gap-4"
+            >
                 <UTooltip
                     v-for="item in suggestedItems"
                     :key="item.id"
@@ -132,13 +137,6 @@ onBeforeUnmount(() => {
                 </UTooltip>
             </div>
         </div>
-
-        <CommandPaletteItemSearch
-            v-if="totalItemsCount"
-            v-model:search-term="itemSearchTerm"
-            class="w-full"
-            @select="addItem"
-        />
 
         <div
             v-if="totalItemsCount"

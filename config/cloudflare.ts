@@ -119,6 +119,7 @@ export const createCloudflareConfig = (context: ConfigContext, input: unknown) =
     const resources = previewKind === 'pr' ? inventory.previews[mode] : inventory[stage]
     if (!resources) throw new Error(`No reviewed resource inventory for ${mode}.`)
     const workerEnv: NonNullable<WorkerConfig['env']> = {
+        ASSETS: bindings.assets(),
         APP_DB: bindings.d1(resources.database),
         CONTENT_CACHE: bindings.kv({ id: resources.cache.id }),
         R2: bindings.r2({ name: resources.bucket }),
@@ -178,12 +179,10 @@ export const createCloudflareConfig = (context: ConfigContext, input: unknown) =
         accountId: inventory.accountId,
         worker: {
             name: 'avatio',
+            entrypoint: '.output/server/index.mjs',
+            assets: { runWorkerFirst: true },
             compatibilityDate: '2026-05-26',
-            compatibilityFlags: [
-                'no_handle_cross_request_promise_resolution',
-                'nodejs_compat',
-                'no_nodejs_compat_v2',
-            ],
+            compatibilityFlags: ['no_handle_cross_request_promise_resolution', 'nodejs_compat'],
             workersDev: true,
             previewUrls: true,
             domains: isPreview ? [] : [new URL(resources.siteUrl).hostname],

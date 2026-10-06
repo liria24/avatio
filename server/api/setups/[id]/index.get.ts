@@ -3,8 +3,8 @@ import { z } from 'zod'
 
 const params = z.object({ id: z.string() })
 
-export default promiseEventHandler<Setup>(async ({ event, db }) => {
-    const { id } = await validateParams(params)
+export default requestEventHandler<Setup>(async ({ event, db }) => {
+    const { id } = validateRequestParams(event, params)
     const result = await querySetupProjection(db, id)
     if (!result) throw serverError.notFound()
 
@@ -17,7 +17,7 @@ export default promiseEventHandler<Setup>(async ({ event, db }) => {
                 queue,
             }),
         )
-    applyPublicEdgeCache(event, [
+    applyPublicRequestCache(event, [
         getSetupCacheTag(id),
         ...result.catalogItemIds.map(getCatalogItemCacheTag),
     ])

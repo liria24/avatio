@@ -162,7 +162,7 @@ const { locale } = useI18n()
             <UButton
                 v-for="(tag, index) in setup.tags"
                 :key="'tag-' + index"
-                :to="$localePath(`/search?tag=${tag}`)"
+                :to="$localePath({ path: `/search?tag=${tag}` })"
                 :label="tag"
                 variant="link"
                 color="neutral"

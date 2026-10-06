@@ -8,7 +8,7 @@ import { contentConfig } from '#avatio/content-config'
 
 const log = logger('authoredContent')
 
-export const getContentService = async (event: H3Event) => {
+export const getContentService = async (event?: H3Event) => {
     if (import.meta.dev) {
         const { createLocalContentService } =
             await import('@avatio/nuxt/runtime/server/content/local')

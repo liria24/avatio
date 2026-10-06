@@ -44,9 +44,11 @@ export const test = nuxtTest.extend<{ account: FixtureUser }, { runtime: TestRun
 
 export const addCatalogItem = async (page: Page, runtime: TestRuntime, name: string) => {
     const item = await seedCatalogItem(runtime, name)
-    const search = page.getByRole('textbox', { name: labels.commandPalette.itemSearch.placeholder })
+    const search = page.getByRole('combobox', {
+        name: labels.commandPalette.itemSearch.placeholder,
+    })
     await search.fill(item.name)
-    await page.getByRole('button', { name: item.name, exact: true }).click()
+    await page.getByRole('option', { name: item.name, exact: true }).click()
     return item
 }
 export const openItems = async (page: Page) => {

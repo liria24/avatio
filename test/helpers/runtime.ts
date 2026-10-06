@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { setTimeout as delay } from 'node:timers/promises'
+import { pathToFileURL } from 'node:url'
 
 import { hashPassword } from 'better-auth/crypto'
 import { drizzle } from 'drizzle-orm/node-sqlite'
@@ -37,7 +38,7 @@ const childEnvironment = () => {
         CI: '1',
         VITEST: '1',
         NUXT_TELEMETRY_DISABLED: '1',
-        NODE_OPTIONS: `--max-old-space-size=4096 --import=${join(sourceRoot, 'test/helpers/runtimeNetwork.mjs')}`,
+        NODE_OPTIONS: `--max-old-space-size=4096 --import=${pathToFileURL(join(sourceRoot, 'test/helpers/runtimeNetwork.mjs')).href}`,
     }
 }
 

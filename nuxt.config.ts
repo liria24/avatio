@@ -1,17 +1,17 @@
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import { useNuxt } from '@nuxt/kit'
-import type { NitroConfig, NitroRouteConfig } from 'nitropack'
 import { defineOrganization } from 'nuxt-schema-org/schema'
+import type { RouteRuleConfig } from 'nuxt/schema'
 import { withLeadingSlash } from 'ufo'
 
-import { getBuildEnvironment } from './config/build'
-import { getLocalAuthSecret } from './config/localDevelopment'
+import { getBuildEnvironment } from './config/build.ts'
+import { getLocalAuthSecret } from './config/localDevelopment.ts'
 import {
     defaultI18nLocale,
     i18nRoutingStrategy,
     prefixedI18nLocales,
-} from './shared/utils/i18nRouting'
+} from './shared/utils/i18nRouting.ts'
 
 const buildEnvironment = getBuildEnvironment(process.env, process.env.NODE_ENV === 'development')
 const {
@@ -36,7 +36,7 @@ const normalizeRuntimeConfigForVitest = () => {
     nuxt.options.runtimeConfig = JSON.parse(JSON.stringify(nuxt.options.runtimeConfig))
 }
 
-const baseRouteRules: { [path: string]: NitroRouteConfig } = {
+const baseRouteRules: { [path: string]: RouteRuleConfig } = {
     '/admin/**': {
         appLayout: 'dashboard',
         auth: {
@@ -65,7 +65,7 @@ const baseRouteRules: { [path: string]: NitroRouteConfig } = {
     },
 }
 
-const routeRules: { [path: string]: NitroRouteConfig } = {
+const routeRules: { [path: string]: RouteRuleConfig } = {
     ...baseRouteRules,
     ...Object.fromEntries(
         prefixedI18nLocales.flatMap((locale) =>
@@ -90,6 +90,9 @@ export default defineNuxtConfig({
 
     future: { compatibilityVersion: 5 },
 
+    // The ownerWarning Vapor trial crashes in @comark/vue's VDOM-only slot transform.
+    vue: { vapor: false },
+
     devtools: { timeline: { enabled: true } },
 
     devServer: { port: 3000 },
@@ -105,9 +108,8 @@ export default defineNuxtConfig({
         'nitro:config': (config) => {
             // Better Auth populates this during modules:done. Clear it afterwards
             // so the Cloudflare secret binding remains authoritative at runtime.
-            const nitroConfig = config as NitroConfig
-            nitroConfig.runtimeConfig ??= {}
-            nitroConfig.runtimeConfig.betterAuthSecret = useNuxt().options.dev
+            config.runtimeConfig ??= {}
+            config.runtimeConfig.betterAuthSecret = useNuxt().options.dev
                 ? getLocalAuthSecret()
                 : ''
         },
@@ -175,6 +177,8 @@ export default defineNuxtConfig({
 
     nitro: {
         sourceMap: false,
+        // The Cloudflare preset must retain native Node crypto for Better Auth.
+        cloudflare: { nodeCompat: true },
         rollupConfig: {
             plugins: [
                 {
@@ -210,6 +214,14 @@ export default defineNuxtConfig({
 
     typescript: {
         typeCheck: 'build',
+        // These config/module sources share the application's bundled package graph.
+        nodeTsConfig: {
+            compilerOptions: {
+                module: 'esnext',
+                moduleResolution: 'bundler',
+                erasableSyntaxOnly: false,
+            },
+        },
         tsConfig: {
             compilerOptions: {
                 noUncheckedIndexedAccess: true,
@@ -516,6 +528,14 @@ export default defineNuxtConfig({
     },
 
     experimental: {
+        typedPages: true,
+        routeTypedFetch: true,
+        strictRouteTypes: true,
+        early404: true,
+        extractSerializablePageMeta: true,
+        payloadExtraction: 'client',
+        // Authored content is fetched at runtime with locale/slug closure parameters.
+        extractAsyncDataHandlers: false,
         crossOriginPrefetch: true,
         sharedPrerenderData: true,
         typescriptPlugin: true,

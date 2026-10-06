@@ -5,9 +5,10 @@ import { fileURLToPath } from 'node:url'
 import {
     alchemyCommand,
     stageActions,
-    validateDeployment,
+    rejectLegacyPublisherAfterCutover,
     type StageAction,
-} from '../config/deployment.ts'
+} from '../config/alchemyDeployment.ts'
+import { validateDeployment } from '../config/deployment.ts'
 import { getStageConfig, parseAvatioStage, type AvatioStage } from '../config/environment.ts'
 import { validateSecrets } from '../config/secrets.ts'
 
@@ -67,6 +68,7 @@ const stage = parseAvatioStage(process.argv[3] ?? '')
 const loaded = process.argv[4] === '--validated-env'
 
 validateBranchPolicy(action, stage)
+rejectLegacyPublisherAfterCutover(action, process.env.AVATIO_NATIVE_DELIVERY_ENABLED === 'true')
 
 if (!loaded) {
     const envFile = join(process.cwd(), `.env.${stage}`)

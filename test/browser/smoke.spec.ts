@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 
+import ja from '../../i18n/locales/ja-JP.json' with { type: 'json' }
 import { seedSetup, fixturePng } from '../helpers/seeds'
 import {
     addCatalogItem,
@@ -31,10 +32,20 @@ test('login survives reload and logout revokes the browser session', async ({
     await page.reload()
     await page.waitForFunction('window.useNuxtApp?.().isHydrating === false')
     await page.getByRole('button', { name: labels.header.userMenu }).click()
-    await page.getByRole('menuitem', { name: labels.header.menu.logout, exact: true }).click()
-    await expect
-        .poll(async () => await (await page.request.get('/api/auth/get-session')).json())
-        .toBeNull()
+    // Logout reloads the document; inspect the session after that navigation finishes.
+    const [logout] = await Promise.all([
+        page.waitForResponse(
+            (response) =>
+                response.url().endsWith('/api/auth/sign-out') &&
+                response.request().method() === 'POST',
+        ),
+        page.waitForEvent('load'),
+        page.getByRole('menuitem', { name: labels.header.menu.logout, exact: true }).click(),
+    ])
+    expect(logout.status()).toBe(200)
+    await page.waitForFunction('window.useNuxtApp?.().isHydrating === false')
+    await expect(page.getByRole('button', { name: labels.header.userMenu })).toBeHidden()
+    expect(await (await page.request.get('/api/auth/get-session')).json()).toBeNull()
 })
 
 test('compose saves, publishes once and edits the same Setup', async ({
@@ -113,27 +124,40 @@ test('initial legal review accepts both documents and stays accepted after reloa
     ).toMatchObject({ needsAgreement: false })
 })
 
-test('content works through direct requests and client links in Japanese and English', async ({
-    page,
-    goto,
-}) => {
-    await goto('/faq', { waitUntil: 'hydration' })
-    await expect(page.locator('main')).toContainText('Avatio')
-    await goto('/en/faq', { waitUntil: 'hydration' })
-    const response = await page.request.get('/api/avatio/content/terms?locale=en')
-    expect(response.status()).toBe(200)
-    expect(await response.json()).toMatchObject({
-        locale: 'ja',
-        requestedLocale: 'en',
-        isFallback: true,
+// Each locale is an independent direct entry, followed by its actual client link navigation.
+// This also verifies Japanese links instead of replacing a hydrated Japanese document via goto.
+for (const [locale, messages] of [
+    ['ja', ja],
+    ['en', labels],
+] as const)
+    test(`content works through direct requests and client links in ${locale}`, async ({
+        page,
+        goto,
+    }) => {
+        const prefix = locale === 'ja' ? '' : '/en'
+        const direct = await page.request.get(`${prefix}/faq`)
+        expect(direct.status()).toBe(200)
+        expect(await direct.text()).toContain('Avatio')
+        await goto(`${prefix}/faq`, { waitUntil: 'hydration' })
+        await expect(page.locator('main')).toContainText('Avatio')
+        const response = await page.request.get(`/api/avatio/content/terms?locale=${locale}`)
+        expect(response.status()).toBe(200)
+        expect(await response.json()).toMatchObject({
+            locale: 'ja',
+            requestedLocale: locale,
+            isFallback: locale === 'en',
+        })
+        await page
+            .getByRole('link', { name: messages.modal.login.footer.terms, exact: true })
+            .first()
+            .click()
+        await expect(page).toHaveURL(`${new URL(page.url()).origin}${prefix}/terms`)
+        await expect(page.locator('main')).toContainText(
+            locale === 'en'
+                ? messages.content.fallbackDescription
+                : messages.modal.login.footer.terms,
+        )
     })
-    await page
-        .getByRole('link', { name: labels.modal.login.footer.terms, exact: true })
-        .first()
-        .click()
-    await expect(page).toHaveURL(/\/en\/terms$/)
-    await expect(page.locator('main')).toContainText(labels.content.fallbackDescription)
-})
 
 test('keyboard item reordering and removal preserve focus and mobile tab search', async ({
     page,
@@ -168,7 +192,9 @@ test('keyboard item reordering and removal preserve focus and mobile tab search'
             exact: true,
         }),
     ).toBeFocused()
-    const search = page.getByRole('textbox', { name: labels.commandPalette.itemSearch.placeholder })
+    const search = page.getByRole('combobox', {
+        name: labels.commandPalette.itemSearch.placeholder,
+    })
     await search.fill('retained search')
     await openDetails(page)
     await openItems(page)

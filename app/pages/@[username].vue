@@ -149,7 +149,7 @@ useSeo({
                 <div class="flex items-center gap-1 self-end sm:self-auto">
                     <UButton
                         v-if="viewer?.username === user.username"
-                        :to="$localePath('/settings')"
+                        :to="$localePath({ path: '/settings' })"
                         :label="$t('user.editProfile')"
                         icon="mingcute:edit-3-fill"
                         variant="ghost"

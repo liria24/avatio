@@ -105,7 +105,7 @@ const agreeAndClose = async () => {
             </p>
             <UButton
                 v-if="needsTerms"
-                :to="$localePath('/terms')"
+                :to="$localePath({ path: '/terms' })"
                 target="_blank"
                 :label="$t('modal.agreeTerms.reviewTerms')"
                 variant="link"
@@ -114,7 +114,7 @@ const agreeAndClose = async () => {
             />
             <UButton
                 v-if="needsPrivacyPolicy"
-                :to="$localePath('/privacy-policy')"
+                :to="$localePath({ path: '/privacy-policy' })"
                 target="_blank"
                 :label="$t('modal.agreeTerms.reviewPrivacy')"
                 variant="link"

@@ -48,8 +48,8 @@ export const seedSetup = async (
 }
 
 export const draftContent = (name: string) => ({ ...createDefaultSetupComposeForm(), name })
-export const fixturePng = () => {
-    const png = new PNG({ width: 32, height: 32 })
+export const fixturePng = (width = 32, height = 32) => {
+    const png = new PNG({ width, height })
     for (let i = 0; i < png.data.length; i += 4) {
         png.data[i] = 80
         png.data[i + 1] = 120

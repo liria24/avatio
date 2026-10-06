@@ -1,6 +1,7 @@
 import type { CacheInvalidationInput, CacheInvalidator } from '@avatio/core'
 import type { H3Event } from '@nuxt/nitro-server/h3'
 import { eq, or } from 'drizzle-orm'
+import type { RequestEvent } from 'nuxt/server'
 import { setupCoauthors, setups } from '~~/database/schema'
 
 const log = logger('edgeCache')
@@ -77,6 +78,15 @@ export const applyPublicEdgeCache = (
     varyCookie = false,
 ) => {
     setResponseHeaders(event, getPublicEdgeCacheHeaders(tags, varyCookie))
+}
+
+export const applyPublicRequestCache = (
+    event: RequestEvent,
+    tags: Iterable<string>,
+    varyCookie = false,
+) => {
+    for (const [name, value] of Object.entries(getPublicEdgeCacheHeaders(tags, varyCookie)))
+        event.res.headers.set(name, value)
 }
 
 export const applyNoStoreCache = (event: H3Event) => {
