@@ -1,11 +1,10 @@
 import assert from 'node:assert/strict'
-import { execFile } from 'node:child_process'
+import { spawn } from 'node:child_process'
 import { mkdir, mkdtemp, readdir, realpath, rm, writeFile } from 'node:fs/promises'
 import { networkInterfaces, tmpdir } from 'node:os'
 import { basename, dirname, join, resolve } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { fileURLToPath } from 'node:url'
-import { promisify } from 'node:util'
 
 import {
     convertCloudflareMigrationHistoryCopy,
@@ -19,7 +18,6 @@ assert.equal(process.platform, 'linux')
 assert.deepEqual(Object.keys(interfaces), ['lo'])
 assert.ok(interfaces.lo.some((address) => address.address === '127.0.0.1'))
 assert.ok(interfaces.lo.every((address) => address.internal))
-const execute = promisify(execFile)
 const projectRoot = fileURLToPath(new URL('../../../', import.meta.url))
 const root = await mkdtemp(join(tmpdir(), 'avatio-cf-migrations-'))
 const persistence = join(root, '.cloudflare', 'verification', 'copies', 'runtime')
@@ -29,27 +27,49 @@ const cutoff = files.findIndex((file) => file.name.startsWith('20260910151556_')
 const freshId = '00000000-0000-4000-8000-000000003541'
 const populatedId = '00000000-0000-4000-8000-000000003542'
 const cf = async (args) => {
-    const invocation = execute(
-        process.execPath,
-        [cli, ...args, '--local', '--persist-to', persistence],
-        {
-            cwd: root,
-            env: {
-                PATH: process.env.PATH,
-                SystemRoot: process.env.SystemRoot,
-                HOME: root,
-                USERPROFILE: root,
-                CLOUDFLARE_ACCOUNT_ID: 'a'.repeat(32),
-                CF_SEND_TELEMETRY: 'false',
+    const stdout = await new Promise((resolveOutput, reject) => {
+        // cf#64 documents /dev/null; stdio ignore uses that exact OS-level stdin behavior.
+        const child = spawn(
+            process.execPath,
+            [cli, ...args, '--local', '--persist-to', persistence],
+            {
+                cwd: root,
+                env: {
+                    PATH: process.env.PATH,
+                    SystemRoot: process.env.SystemRoot,
+                    HOME: root,
+                    USERPROFILE: root,
+                    CLOUDFLARE_ACCOUNT_ID: 'a'.repeat(32),
+                    CF_SEND_TELEMETRY: 'false',
+                },
+                stdio: ['ignore', 'pipe', 'pipe'],
             },
-            maxBuffer: 8 * 1024 * 1024,
-            timeout: 120_000,
-        },
-    )
-    // cf#64: an open non-TTY stdin pipe keeps the pinned CLI alive after local writes.
-    invocation.child.stdin.end()
-    const result = await invocation
-    return JSON.parse(result.stdout)
+        )
+        let output = '',
+            diagnostics = ''
+        const timer = setTimeout(() => child.kill('SIGTERM'), 120_000)
+        child.stdout.setEncoding('utf8')
+        child.stderr.setEncoding('utf8')
+        child.stdout.on('data', (data) => {
+            output += data
+            if (Buffer.byteLength(output) > 8 * 1024 * 1024) child.kill('SIGTERM')
+        })
+        child.stderr.on('data', (data) => {
+            diagnostics += data
+            if (Buffer.byteLength(diagnostics) > 8 * 1024 * 1024) child.kill('SIGTERM')
+        })
+        child.once('error', (error) => {
+            clearTimeout(timer)
+            reject(error)
+        })
+        child.once('close', (code, signal) => {
+            clearTimeout(timer)
+            if (code !== 0)
+                reject(new Error(`Pinned cf failed (${code ?? signal}); ${diagnostics}`))
+            else resolveOutput(output)
+        })
+    })
+    return JSON.parse(stdout)
 }
 const query = async (id, sql) => {
     const response = await cf(['d1', 'raw', id, '--sql', sql])
