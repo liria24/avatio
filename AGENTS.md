@@ -4,6 +4,11 @@ Compact instruction for OpenCode sessions. If a fact is obvious from filenames, 
 
 ---
 
+## Documentation
+
+- `README.md` is user-maintained. Agents must not edit it; only the user changes it manually.
+- Do not create `docs/` without explicit user approval. Put implementation and migration reports in the PR description.
+
 ## Package manager & runtime
 
 - **Package manager:** `bun`. `bunfig.toml` uses `linker = "hoisted"` and disables Bun's automatic dotenv loading.
