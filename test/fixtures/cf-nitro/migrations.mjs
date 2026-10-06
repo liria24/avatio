@@ -27,7 +27,7 @@ const cf = async (args) => {
         process.execPath,
         [cli, ...args, '--local', '--persist-to', persistence, '--quiet'],
         {
-            cwd: projectRoot,
+            cwd: root,
             env: {
                 PATH: process.env.PATH,
                 SystemRoot: process.env.SystemRoot,
@@ -48,7 +48,7 @@ const query = async (id, sql) => {
     assert.equal(result[0]?.success, true)
     return result[0].results
 }
-const migrate = (id, directory = 'drizzle') =>
+const migrate = (id, directory = join(projectRoot, 'drizzle')) =>
     cf([
         'd1',
         'migrations',
