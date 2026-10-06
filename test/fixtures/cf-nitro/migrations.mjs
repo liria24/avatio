@@ -20,15 +20,18 @@ assert.ok(interfaces.lo.some((address) => address.address === '127.0.0.1'))
 assert.ok(interfaces.lo.every((address) => address.internal))
 const projectRoot = fileURLToPath(new URL('../../../', import.meta.url))
 const selection = process.argv[2] ?? 'root'
-assert.ok(['root', 'fixture'].includes(selection))
+assert.ok(['root', 'fixture', 'beta6'].includes(selection))
 assert.ok(process.argv.length <= 3)
-const cliRoot =
-    selection === 'fixture' ? fileURLToPath(new URL('./', import.meta.url)) : projectRoot
+const cliRoot = selection === 'root' ? projectRoot : fileURLToPath(new URL('./', import.meta.url))
+const cliPackage = selection === 'beta6' ? 'cf-beta6' : 'cf'
 const configured = JSON.parse(await readFile(join(cliRoot, 'package.json'), 'utf8'))
-const installed = JSON.parse(
-    await readFile(join(cliRoot, 'node_modules', 'cf', 'package.json'), 'utf8'),
-)
-assert.equal(installed.version, configured.devDependencies.cf)
+const installed =
+    selection === 'beta6'
+        ? (await import('cf-beta6/package.json', { with: { type: 'json' } })).default
+        : JSON.parse(
+              await readFile(join(cliRoot, 'node_modules', cliPackage, 'package.json'), 'utf8'),
+          )
+assert.equal(installed.version, configured.devDependencies[cliPackage].replace('npm:cf@', ''))
 console.log(
     JSON.stringify({
         cfMigrationProbeVersion: installed.version,
@@ -38,7 +41,7 @@ console.log(
 )
 const root = await mkdtemp(join(tmpdir(), 'avatio-cf-migrations-'))
 const persistence = join(root, '.cloudflare', 'verification', 'copies', 'runtime')
-const cli = join(cliRoot, 'node_modules', 'cf', 'bin', 'cf')
+const cli = join(cliRoot, 'node_modules', cliPackage, 'bin', 'cf')
 const files = readCommittedCloudflareMigrations()
 const cutoff = files.findIndex((file) => file.name.startsWith('20260910151556_'))
 const freshId = '00000000-0000-4000-8000-000000003541'

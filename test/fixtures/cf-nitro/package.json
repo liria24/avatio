@@ -5,7 +5,8 @@
     "devDependencies": {
         "@cloudflare/build-output-utils": "0.8.4",
         "@cloudflare/vite-plugin": "2.0.0-beta.sha-52b0dc0e9",
-        "cf": "1.0.0-beta.12",
+        "cf": "1.0.0-beta.10",
+        "cf-beta6": "npm:cf@1.0.0-beta.6",
         "drizzle-orm": "1.0.0-rc.4",
         "miniflare": "5.20260930.0-alpha",
         "pngjs": "7.0.0",
