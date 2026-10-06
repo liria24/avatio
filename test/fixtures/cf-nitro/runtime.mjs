@@ -9,6 +9,8 @@ import { migrate } from 'drizzle-orm/d1/migrator'
 import { Miniflare } from 'miniflare'
 import { PNG } from 'pngjs'
 
+import { verifyCloudflarePreviewHttp } from '../../../scripts/cloudflarePreviewSmoke.ts'
+
 // Real bundled application, local bindings, disposable secrets. Never contact Cloudflare.
 const mode = process.argv[2]
 const output = await readBuildOutput(process.cwd())
@@ -94,6 +96,27 @@ try {
             }),
         })
     if (output.rootConfig.buildContext.isPreview) {
+        // Exercise the delivery verifier against the actual bundled SSR/API/PWA application.
+        // Synthetic native URLs only; dispatch remains inside local workerd with denied egress.
+        const deploymentId = 'synthetic-ci-version'
+        const stableHost = new URL(origin).hostname
+        const deploymentUrl = `https://${deploymentId}-${stableHost}`
+        const verification = await verifyCloudflarePreviewHttp(
+            {
+                type: 'preview',
+                version: 1,
+                preview_id: 'synthetic-preview',
+                preview_name: mode,
+                preview_slug: mode,
+                preview_urls: [origin],
+                deployment_id: deploymentId,
+                deployment_urls: [deploymentUrl],
+            },
+            { mode, siteUrl: origin },
+            (url, options) => miniflare.dispatchFetch(url, options),
+        )
+        assert.equal(verification.httpVerified, true)
+        assert.equal(verification.realBindingsVerified, false)
         const suffixes = Array.from({ length: 2 }, () =>
             randomUUID().replaceAll('-', '').slice(0, 20),
         )

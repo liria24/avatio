@@ -9,6 +9,8 @@ on:
       - 'nuxt.config.ts'
       - 'config/cloudflare.ts'
       - 'config/build.ts'
+      - 'config/cloudflarePreviewLifecycle.ts'
+      - 'scripts/cloudflarePreviewSmoke.ts'
       - 'scripts/cloudflareMigrationHistory.ts'
       - 'package.json'
       - 'bun.lock'
@@ -46,6 +48,9 @@ jobs:
             nodeCompat: v2
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
       - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
         with:
           node-version-file: .node-version
@@ -119,6 +124,9 @@ jobs:
         cli: [root, fixture, beta6]
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
       - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
         with:
           node-version-file: .node-version
@@ -149,6 +157,9 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
       - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
         with:
           node-version-file: .node-version
