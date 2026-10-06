@@ -205,21 +205,22 @@ try {
             `${suffixes[1]}@example.test`,
         )
         const logins = await Promise.all(
-            suffixes.map((suffix, index) =>
-                request('/api/auth/sign-in/email', {
+            suffixes.map(async (suffix, index) => {
+                const response = await request('/api/auth/sign-in/email', {
                     method: 'POST',
                     headers: { origin, 'content-type': 'application/json' },
                     body: JSON.stringify({
                         email: `${suffix}@example.test`,
                         password: passwords[index],
                     }),
-                }),
-            ),
+                })
+                assert.equal(response.status, 200)
+                // Consume each stream in its request task, before comparing concurrent results.
+                return response.json()
+            }),
         )
-        for (const [index, response] of logins.entries()) {
-            assert.equal(response.status, 200)
-            assert.equal((await response.json()).user.email, `${suffixes[index]}@example.test`)
-        }
+        for (const [index, login] of logins.entries())
+            assert.equal(login.user.email, `${suffixes[index]}@example.test`)
     } else {
         assert.equal((await signup('disabled')).status, 400)
     }
