@@ -79,8 +79,16 @@ export const buildCloudflareNative = async (
         resolve(root, 'test/fixtures/cf-nitro/node_modules/vite/dist/node/index.js'),
     ).href
     Object.assign(process.env, buildEnv)
-    const { build } = (await import(tools)) as { build: (input: unknown) => Promise<unknown> }
-    await build({ root: directory, mode, configFile: resolve(directory, 'vite.config.mjs') })
+    const { createBuilder } = (await import(tools)) as {
+        createBuilder: (input: unknown) => Promise<{ buildApp: () => Promise<void> }>
+    }
+    // https://vite.dev/guide/api-environment-frameworks#building-programmatically-with-createbuilder
+    const builder = await createBuilder({
+        root: directory,
+        mode,
+        configFile: resolve(directory, 'vite.config.mjs'),
+    })
+    await builder.buildApp()
     const output = await readBuildOutput(directory)
     validateCloudflareBuildOutput(output, { mode, isPreview: mode !== 'production', inventory })
     for (const [name, worker] of Object.entries(output.workers)) {
