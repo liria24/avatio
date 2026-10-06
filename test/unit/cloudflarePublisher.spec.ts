@@ -340,9 +340,9 @@ describe('complete native Build Output and reviewed resource assignment', () => 
                 'apply',
                 target.database.id,
                 '--dir',
-                './drizzle',
+                'drizzle',
                 '--pattern',
-                '*/migration.sql',
+                'drizzle/*/migration.sql',
                 '--table',
                 'd1_migrations',
             ])
