@@ -12,8 +12,7 @@
                 "vite.config.ts",
                 "probe.mjs",
                 "verify.mjs",
-                "runtime.mjs",
-                "nuxt/nuxt.config.ts"
+                "runtime.mjs"
             ]
         },
         ".": {

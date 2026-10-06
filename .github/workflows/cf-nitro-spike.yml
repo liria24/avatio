@@ -6,6 +6,11 @@ on:
     paths:
       - 'test/fixtures/cf-nitro/**'
       - '.github/workflows/cf-nitro-spike.yml'
+      - 'nuxt.config.ts'
+      - 'config/cloudflare.ts'
+      - 'config/build.ts'
+      - 'package.json'
+      - 'bun.lock'
   workflow_dispatch:
 
 permissions:
@@ -69,26 +74,21 @@ jobs:
             Object.entries(values).map(([name, value]) => `${name}=${value}\n`).join(''))
           JS
       - name: Build actual Nuxt/Nitro application
-        run: |
-          if [ "$AVATIO_SPIKE_NODE_COMPAT" = v2 ]; then
-            vp run build --extends ./test/fixtures/cf-nitro/nuxt
-          else
-            vp run build
-          fi
+        run: vp run build
         env:
           NITRO_PRESET: cloudflare_module
           NODE_OPTIONS: --max-old-space-size=4096
       - name: Install isolated, pinned official packaging tools
         working-directory: test/fixtures/cf-nitro
         run: bun install --frozen-lockfile
-      - name: Reproduce the upstream compatibility refusal
+      - name: Reproduce the historical v1 compatibility refusal
         if: matrix.nodeCompat == 'v1'
         working-directory: test/fixtures/cf-nitro
         run: node probe.mjs '${{ matrix.mode }}'
         env:
           CLOUDFLARE_PREVIEW_BUILD: ${{ matrix.preview }}
           NODE_OPTIONS: --max-old-space-size=4096
-      - name: Package actual Nitro output under the isolated v2 trial
+      - name: Package actual Nitro output with formal v2 settings
         if: matrix.nodeCompat == 'v2'
         working-directory: test/fixtures/cf-nitro
         run: node node_modules/cf/bin/cf build --mode '${{ matrix.mode }}'

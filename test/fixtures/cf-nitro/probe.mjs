@@ -13,7 +13,7 @@ try {
 }
 assert.ok(
     failure,
-    'cf now accepts the preserved flags: replace this blocker probe with full activation verification',
+    'cf now accepts historical v1: review whether this diagnostic is still necessary',
 )
 const output = `${failure.stdout}\n${failure.stderr}`
 assert.notEqual(failure.status, 0)
@@ -21,8 +21,8 @@ assert.match(output, /Unsupported Node\.js compat mode \(v1\)\. Only the v2 mode
 process.stdout.write(output)
 const result = {
     mode,
-    blocked: true,
-    reason: 'The official Vite plugin rejects the preserved no_nodejs_compat_v2 flag.',
+    historicalV1Unsupported: true,
+    reason: 'The official Vite plugin rejects the historical no_nodejs_compat_v2 flag.',
     buildOutputVerified: false,
     deploymentVerified: false,
 }
@@ -30,5 +30,5 @@ console.log(JSON.stringify(result))
 if (process.env.GITHUB_STEP_SUMMARY)
     appendFileSync(
         process.env.GITHUB_STEP_SUMMARY,
-        `Native Preview activation is **BLOCKED** for ${mode}. This check verifies the upstream refusal; it does not verify deployable Build Output, runtime behavior, secrets, migrations, or lifecycle.\n`,
+        `Historical v1 remains unsupported for ${mode}. This diagnostic reproduces that refusal; the v2 rows verify actual Build Output and runtime separately. Remote secrets, populated migrations and Preview lifecycle remain activation gates.\n`,
     )

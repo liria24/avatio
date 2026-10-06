@@ -15,10 +15,11 @@ export default defineConfig((context) => {
         ...config,
         worker: {
             ...config.worker,
-            // Trial only: the application's formal compatibility flags stay unchanged.
-            compatibilityFlags: config.worker.compatibilityFlags.filter(
-                (flag) => nodeCompat !== 'v2' || flag !== 'no_nodejs_compat_v2',
-            ),
+            // Reproduce the historical opt-out only in v1 diagnostic rows.
+            compatibilityFlags:
+                nodeCompat === 'v1'
+                    ? [...config.worker.compatibilityFlags, 'no_nodejs_compat_v2']
+                    : config.worker.compatibilityFlags,
             entrypoint: fileURLToPath(
                 new URL('../../../.output/server/index.mjs', import.meta.url),
             ),

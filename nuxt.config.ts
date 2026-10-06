@@ -177,6 +177,8 @@ export default defineNuxtConfig({
 
     nitro: {
         sourceMap: false,
+        // The Cloudflare preset must retain native Node crypto for Better Auth.
+        cloudflare: { nodeCompat: true },
         rollupConfig: {
             plugins: [
                 {

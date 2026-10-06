@@ -179,11 +179,7 @@ export const createCloudflareConfig = (context: ConfigContext, input: unknown) =
         worker: {
             name: 'avatio',
             compatibilityDate: '2026-05-26',
-            compatibilityFlags: [
-                'no_handle_cross_request_promise_resolution',
-                'nodejs_compat',
-                'no_nodejs_compat_v2',
-            ],
+            compatibilityFlags: ['no_handle_cross_request_promise_resolution', 'nodejs_compat'],
             workersDev: true,
             previewUrls: true,
             domains: isPreview ? [] : [new URL(resources.siteUrl).hostname],

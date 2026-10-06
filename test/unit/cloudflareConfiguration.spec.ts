@@ -43,6 +43,10 @@ describe('prepared cf configuration', () => {
             .map(({ key }) => key)
         const { worker } = createCloudflareConfig({ mode: 'production', isPreview: false }, input)
         expect(worker.name).toBe('avatio')
+        expect(worker.compatibilityDate).toBe('2026-05-26')
+        expect(worker.compatibilityFlags).toContain('nodejs_compat')
+        expect(worker.compatibilityFlags).not.toContain('no_nodejs_compat_v2')
+        expect(worker.compatibilityFlags).toContain('no_handle_cross_request_promise_resolution')
         expect(worker.domains).toEqual(['avatio.me'])
         expect(worker.triggers).toEqual([
             { type: 'scheduled', schedule: '0 22 * * *' },
@@ -69,6 +73,9 @@ describe('prepared cf configuration', () => {
             const input = createCloudflareResourceFixture()
             const { worker } = createCloudflareConfig({ mode, isPreview: true }, input)
             expect(worker.name).toBe('avatio')
+            expect(worker.compatibilityDate).toBe('2026-05-26')
+            expect(worker.compatibilityFlags).toContain('nodejs_compat')
+            expect(worker.compatibilityFlags).not.toContain('no_nodejs_compat_v2')
             expect(worker.triggers).toEqual([])
             expect(worker.domains).toEqual([])
             expect(worker.env.STAGE).toEqual({ type: 'text', value: 'development' })
