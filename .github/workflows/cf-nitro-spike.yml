@@ -142,3 +142,30 @@ jobs:
             ip link set lo up
             exec setpriv --reuid="$1" --regid="$2" --clear-groups env HOME="$5" "$3" "$4" "$6"
           ' sh "$probe_uid" "$probe_gid" "$probe_node" test/fixtures/cf-nitro/migrations.mjs "$probe_home" "$PROBE_CLI"
+
+  wrangler-migrations:
+    name: temporary Wrangler local D1 verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
+        with:
+          node-version-file: .node-version
+          version-file: package.json
+          cache: true
+          run-install: false
+      - run: vp install --frozen-lockfile
+      - name: Install isolated, pinned migration tools
+        working-directory: test/fixtures/cf-nitro
+        run: bun install --frozen-lockfile
+      - name: Verify synthetic history, FK preservation, rollback and repeated exit zero
+        run: |
+          probe_uid=$(id -u)
+          probe_gid=$(id -g)
+          probe_node=$(node -p 'process.execPath')
+          probe_home="$HOME"
+          sudo unshare --net -- sh -c '
+            ip link set lo up
+            exec setpriv --reuid="$1" --regid="$2" --clear-groups env HOME="$5" "$3" "$4" wrangler
+          ' sh "$probe_uid" "$probe_gid" "$probe_node" test/fixtures/cf-nitro/migrations.mjs "$probe_home"
