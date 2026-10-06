@@ -1,5 +1,3 @@
-import { defineFilesConfig } from 'nuxt-files-sdk/config'
-
 import { getRuntimeEnv, getRuntimeEnvString } from './server/utils/runtimeEnv'
 
 export default defineFilesConfig({
