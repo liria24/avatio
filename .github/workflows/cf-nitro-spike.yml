@@ -126,8 +126,9 @@ jobs:
         run: |
           probe_uid=$(id -u)
           probe_gid=$(id -g)
-          probe_node=$(command -v node)
+          probe_node=$(node -p 'process.execPath')
+          probe_home="$HOME"
           sudo unshare --net -- sh -c '
             ip link set lo up
-            exec setpriv --reuid="$1" --regid="$2" --clear-groups "$3" "$4"
-          ' sh "$probe_uid" "$probe_gid" "$probe_node" test/fixtures/cf-nitro/migrations.mjs
+            exec setpriv --reuid="$1" --regid="$2" --clear-groups env HOME="$5" "$3" "$4"
+          ' sh "$probe_uid" "$probe_gid" "$probe_node" test/fixtures/cf-nitro/migrations.mjs "$probe_home"
