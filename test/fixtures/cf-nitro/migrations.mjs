@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
-import { mkdir, mkdtemp, readdir, realpath, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, readdir, realpath, rm, writeFile } from 'node:fs/promises'
 import { networkInterfaces, tmpdir } from 'node:os'
 import { basename, dirname, join, resolve } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
@@ -19,9 +19,26 @@ assert.deepEqual(Object.keys(interfaces), ['lo'])
 assert.ok(interfaces.lo.some((address) => address.address === '127.0.0.1'))
 assert.ok(interfaces.lo.every((address) => address.internal))
 const projectRoot = fileURLToPath(new URL('../../../', import.meta.url))
+const selection = process.argv[2] ?? 'root'
+assert.ok(['root', 'fixture'].includes(selection))
+assert.ok(process.argv.length <= 3)
+const cliRoot =
+    selection === 'fixture' ? fileURLToPath(new URL('./', import.meta.url)) : projectRoot
+const configured = JSON.parse(await readFile(join(cliRoot, 'package.json'), 'utf8'))
+const installed = JSON.parse(
+    await readFile(join(cliRoot, 'node_modules', 'cf', 'package.json'), 'utf8'),
+)
+assert.equal(installed.version, configured.devDependencies.cf)
+console.log(
+    JSON.stringify({
+        cfMigrationProbeVersion: installed.version,
+        selection,
+        nodeVersion: process.version,
+    }),
+)
 const root = await mkdtemp(join(tmpdir(), 'avatio-cf-migrations-'))
 const persistence = join(root, '.cloudflare', 'verification', 'copies', 'runtime')
-const cli = join(projectRoot, 'node_modules', 'cf', 'bin', 'cf')
+const cli = join(cliRoot, 'node_modules', 'cf', 'bin', 'cf')
 const files = readCommittedCloudflareMigrations()
 const cutoff = files.findIndex((file) => file.name.startsWith('20260910151556_'))
 const freshId = '00000000-0000-4000-8000-000000003541'
