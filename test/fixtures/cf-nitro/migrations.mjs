@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict'
 import { execFile } from 'node:child_process'
 import { mkdir, mkdtemp, readdir, realpath, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { networkInterfaces, tmpdir } from 'node:os'
 import { basename, dirname, join, resolve } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
-import { fileURLToPath, pathToFileURL } from 'node:url'
+import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 
 import {
@@ -12,7 +12,13 @@ import {
     readCommittedCloudflareMigrations,
 } from '../../../scripts/cloudflareMigrationHistory.ts'
 
-// Credentialless CI probe only. Every cf request is --local and outbound network is denied.
+// Credentialless CI probe only. The workflow creates a loopback-only network namespace.
+// Keep native Node networking intact so that denial instrumentation cannot affect cf/workerd.
+const interfaces = networkInterfaces()
+assert.equal(process.platform, 'linux')
+assert.deepEqual(Object.keys(interfaces), ['lo'])
+assert.ok(interfaces.lo.some((address) => address.address === '127.0.0.1'))
+assert.ok(interfaces.lo.every((address) => address.internal))
 const execute = promisify(execFile)
 const projectRoot = fileURLToPath(new URL('../../../', import.meta.url))
 const root = await mkdtemp(join(tmpdir(), 'avatio-cf-migrations-'))
@@ -35,7 +41,6 @@ const cf = async (args) => {
                 USERPROFILE: root,
                 CLOUDFLARE_ACCOUNT_ID: 'a'.repeat(32),
                 CF_SEND_TELEMETRY: 'false',
-                NODE_OPTIONS: `--import ${pathToFileURL(join(projectRoot, 'test/helpers/runtimeNetwork.mjs'))}`,
             },
             maxBuffer: 8 * 1024 * 1024,
             timeout: 120_000,

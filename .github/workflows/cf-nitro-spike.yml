@@ -123,4 +123,11 @@ jobs:
           run-install: false
       - run: vp install --frozen-lockfile
       - name: Verify pinned cf local migrations with synthetic populated data
-        run: node test/fixtures/cf-nitro/migrations.mjs
+        run: |
+          probe_uid=$(id -u)
+          probe_gid=$(id -g)
+          probe_node=$(command -v node)
+          sudo unshare --net -- sh -c '
+            ip link set lo up
+            exec setpriv --reuid="$1" --regid="$2" --clear-groups "$3" "$4"
+          ' sh "$probe_uid" "$probe_gid" "$probe_node" test/fixtures/cf-nitro/migrations.mjs
