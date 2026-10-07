@@ -33,10 +33,7 @@ export const createCloudflareResourceFixture = (): CloudflareResourceInventory =
             imageBaseUrl: previewName
                 ? `https://${previewName}.images.example.test`
                 : config.imageBaseUrl,
-            ogImageEndpoint:
-                stage === 'production' ? 'https://og.liria.me' : 'https://og.example.test',
-            emailFrom: stage === 'production' ? config.emailFrom : 'preview@example.test',
-            emailDestinations: stage === 'production' ? [] : ['tester@example.test'],
+            ...(stage === 'production' ? { emailFrom: config.emailFrom } : {}),
             ...(stage === 'production' ? { analyticsSiteTag: 'production-site' } : {}),
         }
     }

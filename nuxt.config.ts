@@ -1,5 +1,6 @@
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
+import type { ModuleOptions as OgImageModuleOptions } from '@liria24/og-image/nuxt'
 import { useNuxt } from '@nuxt/kit'
 import { defineOrganization } from 'nuxt-schema-org/schema'
 import type { RouteRuleConfig } from 'nuxt/schema'
@@ -137,10 +138,24 @@ export default defineNuxtConfig({
         'motion-v/nuxt',
         '@nuxt/a11y',
         '@nuxt/test-utils/module',
-        '@liria24/og-image/nuxt',
+        ...(buildEnvironment.dynamicOgImageEnabled ? ['@liria24/og-image/nuxt'] : []),
         'nuxt-files-sdk',
         ...(process.env.VITEST ? [] : ['@vite-pwa/nuxt']),
     ],
+
+    imports: {
+        imports: buildEnvironment.dynamicOgImageEnabled
+            ? []
+            : [
+                  {
+                      name: 'useDisabledOgImage',
+                      as: 'useOgImage',
+                      from: fileURLToPath(
+                          new URL('./config/runtime/disabledOgImage.ts', import.meta.url),
+                      ),
+                  },
+              ],
+    },
 
     css: ['~/assets/css/main.css'],
 
@@ -440,7 +455,6 @@ export default defineNuxtConfig({
 
     ogImage: {
         preset: 'avatio',
-        ...(buildEnvironment.previewKind ? { endpoint: buildEnvironment.ogImageEndpoint } : {}),
         // Nitro resolves the canonical Worker binding at runtime, keeping it out of builds.
         secret: '{{OG_IMAGE_SECRET}}',
         routes: {
@@ -448,7 +462,7 @@ export default defineNuxtConfig({
                 requireToken: true,
             },
         },
-    },
+    } satisfies OgImageModuleOptions,
 
     pwa: {
         disable: import.meta.test,

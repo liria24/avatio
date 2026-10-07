@@ -48,7 +48,6 @@ export const buildCloudflareNative = async (
         PREVIEW_NAME: mode === 'production' ? '' : mode,
         PUBLIC_SITE_URL: text('PUBLIC_SITE_URL'),
         R2_PUBLIC_BASE_URL: text('R2_PUBLIC_BASE_URL'),
-        OG_IMAGE_ENDPOINT: text('OG_IMAGE_ENDPOINT'),
         AVATIO_CF_RESOURCES_FILE: inventoryFile,
         NITRO_PRESET: 'cloudflare_module',
         NODE_OPTIONS: '--max-old-space-size=4096',

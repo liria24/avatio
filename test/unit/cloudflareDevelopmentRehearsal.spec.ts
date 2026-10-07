@@ -165,7 +165,7 @@ describe('manual development runtime rehearsal approval', () => {
                 ),
             ).toThrow()
         const context = expected()
-        context.inventory.development.emailDestinations = ['another@example.test']
+        context.inventory.development.siteUrl = 'https://development.other.example.test'
         expect(() => requireCloudflareDevelopmentRehearsal(approval(), context, now)).toThrow()
         expect(() => requireCloudflareDevelopmentRehearsal(null, expected(), now)).toThrow()
     })

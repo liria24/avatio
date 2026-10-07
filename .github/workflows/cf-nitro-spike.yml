@@ -80,7 +80,6 @@ jobs:
             PREVIEW_NAME: preview ? mode : '',
             PUBLIC_SITE_URL: target.siteUrl,
             R2_PUBLIC_BASE_URL: target.imageBaseUrl,
-            OG_IMAGE_ENDPOINT: target.ogImageEndpoint,
           }
           appendFileSync(process.env.GITHUB_ENV,
             Object.entries(values).map(([name, value]) => `${name}=${value}\n`).join(''))

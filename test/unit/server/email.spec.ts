@@ -10,6 +10,8 @@ type SendEmailMock = (message: EmailMessage) => Promise<{ messageId: string }>
 
 type RuntimeGlobal = typeof globalThis & {
     __env__?: {
+        STAGE?: string
+        PREVIEW_NAME?: string
         EMAIL_FROM?: string
         EMAIL?: {
             send: SendEmailMock
@@ -82,6 +84,29 @@ describe('email', () => {
             },
         })
     })
+
+    it.each(['development', 'pr-354'])(
+        'refuses %s email before sender fallback or binding access',
+        async (name) => {
+            const send = vi.fn<SendEmailMock>()
+            runtimeGlobal.__env__ = {
+                STAGE: 'development',
+                PREVIEW_NAME: name,
+                EMAIL_FROM: 'hello@avatio.me',
+                EMAIL: { send },
+            }
+            const { sendEmail, getEmailFromAddress } = await loadEmail()
+            expect(() => getEmailFromAddress()).toThrow(/disabled in Previews/)
+            await expect(
+                sendEmail({
+                    from: 'explicit@example.test',
+                    to: 'recipient@example.test',
+                    subject: 'Blocked',
+                }),
+            ).rejects.toMatchObject({ statusCode: 503 })
+            expect(send).not.toHaveBeenCalled()
+        },
+    )
 
     it('reports a missing Cloudflare Email binding clearly', async () => {
         runtimeGlobal.__env__ = {}

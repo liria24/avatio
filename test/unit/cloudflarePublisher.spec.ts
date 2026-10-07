@@ -518,6 +518,15 @@ describe('separately approved initial development runtime rehearsal', () => {
 })
 
 describe('inactive native publication execution path', () => {
+    it.each(['development', 'pr-354'])('never transfers an OG secret for %s', (mode) => {
+        const secrets = prepareCloudflareRuntimeSecrets(plan(mode), inventory, runtimeInput)
+        expect(secrets).not.toHaveProperty('OG_IMAGE_SECRET')
+        const value = output(mode)
+        Object.assign(value.workers.default.config.env, { EMAIL: { type: 'send-email' } })
+        expect(() =>
+            validateCloudflareBuildOutput(value, { mode, isPreview: true, inventory }),
+        ).toThrow()
+    })
     it('keeps signing derivation canonical and excludes disabled PR OAuth', () => {
         const secrets = prepareCloudflareRuntimeSecrets(plan(), inventory, runtimeInput)
         expect(secrets.BETTER_AUTH_SECRET).toBe(runtimeInput.BETTER_AUTH_SECRET)

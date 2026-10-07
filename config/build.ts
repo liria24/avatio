@@ -19,16 +19,9 @@ export const getBuildEnvironment = (env: Record<string, string | undefined>, dev
     const imageBaseUrl = previewKind
         ? requireHttpsOrigin(env.R2_PUBLIC_BASE_URL, 'R2_PUBLIC_BASE_URL')
         : (stage?.imageBaseUrl ?? env.R2_PUBLIC_BASE_URL)
-    const ogImageEndpoint = previewKind
-        ? requireHttpsOrigin(env.OG_IMAGE_ENDPOINT, 'OG_IMAGE_ENDPOINT')
-        : undefined
     if (previewKind) {
         const production = getStageConfig('production')
-        if (
-            siteUrl === production.siteUrl ||
-            imageBaseUrl === production.imageBaseUrl ||
-            ogImageEndpoint === 'https://og.liria.me'
-        )
+        if (siteUrl === production.siteUrl || imageBaseUrl === production.imageBaseUrl)
             throw new Error('Preview build URLs must not target production services.')
     }
     const publicUrl = ['localhost', '127.0.0.1'].includes(new URL(siteUrl).hostname)
@@ -39,7 +32,7 @@ export const getBuildEnvironment = (env: Record<string, string | undefined>, dev
         siteUrl,
         publicUrl,
         imageBaseUrl,
-        ogImageEndpoint,
+        dynamicOgImageEnabled: !previewKind,
         previewKind,
         twitterAuthEnabled:
             previewKind === 'pr'

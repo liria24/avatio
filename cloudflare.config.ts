@@ -15,16 +15,13 @@ export default defineConfig((context) => {
     const previewName = context.isPreview ? context.mode : undefined
     const site = config.worker.env.PUBLIC_SITE_URL
     const images = config.worker.env.R2_PUBLIC_BASE_URL
-    const ogImages = config.worker.env.OG_IMAGE_ENDPOINT
     if (
         process.env.STAGE !== (context.isPreview ? 'development' : 'production') ||
         (process.env.PREVIEW_NAME || undefined) !== previewName ||
         site?.type !== 'text' ||
         site.value !== build.siteUrl ||
         images?.type !== 'text' ||
-        images.value !== build.imageBaseUrl ||
-        (context.isPreview &&
-            (ogImages?.type !== 'text' || ogImages.value !== build.ogImageEndpoint))
+        images.value !== build.imageBaseUrl
     )
         throw new Error('Nuxt build environment must match the selected Cloudflare target.')
     return config

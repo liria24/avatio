@@ -112,9 +112,6 @@ export const createCloudflarePublishPlan = (input: {
             PREVIEW_NAME: target.isPreview ? target.mode : '',
             PUBLIC_SITE_URL: site.value,
             R2_PUBLIC_BASE_URL: images.value,
-            ...(env.OG_IMAGE_ENDPOINT?.type === 'text'
-                ? { OG_IMAGE_ENDPOINT: env.OG_IMAGE_ENDPOINT.value }
-                : {}),
         },
         commandEnvironment: {
             CLOUDFLARE_ACCOUNT_ID: configuration.accountId,

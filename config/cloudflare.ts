@@ -24,9 +24,7 @@ const resourceSchema = z.strictObject({
     rateLimitNamespaces: z.tuple([namespace, namespace, namespace, namespace]),
     siteUrl: origin,
     imageBaseUrl: origin,
-    ogImageEndpoint: origin,
-    emailFrom: z.email(),
-    emailDestinations: z.array(z.email()).default([]),
+    emailFrom: z.email().optional(),
     analyticsSiteTag: z.string().min(1).optional(),
     optionalSecrets: z.array(z.enum(secretDefinitions.map(({ key }) => key))).default([]),
 })
@@ -147,13 +145,11 @@ export const createCloudflareConfig = (context: ConfigContext, input: unknown) =
         if (name === 'production') continue
         if (
             resources.flagshipId === inventory.production.flagshipId ||
-            resources.ogImageEndpoint === inventory.production.ogImageEndpoint ||
-            resources.emailFrom === inventory.production.emailFrom ||
-            resources.emailDestinations.length === 0 ||
+            resources.emailFrom !== undefined ||
             resources.analyticsSiteTag
         )
             throw new Error(
-                `${name} requires non-production integrations and restricted email recipients.`,
+                `${name} requires non-production integrations with email and dynamic OG disabled.`,
             )
         if (resources.optionalSecrets.some((key) => key !== 'BOOTH_PROXY_URL'))
             throw new Error(
@@ -173,18 +169,9 @@ export const createCloudflareConfig = (context: ConfigContext, input: unknown) =
         FLAGS: bindings.flagship({ id: resources.flagshipId }),
         AI: bindings.ai(),
         IMAGES: bindings.images(),
-        EMAIL: bindings.sendEmail(
-            isPreview
-                ? {
-                      allowedSenderAddresses: [resources.emailFrom],
-                      allowedDestinationAddresses: resources.emailDestinations,
-                  }
-                : { allowedSenderAddresses: [resources.emailFrom] },
-        ),
         PUBLIC_SITE_URL: bindings.text(resources.siteUrl),
         R2_PUBLIC_BASE_URL: bindings.text(resources.imageBaseUrl),
         STAGE: bindings.text(stage),
-        EMAIL_FROM: bindings.text(resources.emailFrom),
         AI_MODEL_CATALOG_ENRICHMENT: bindings.text(config.aiModels.catalogEnrichment),
         AI_MODEL_CATALOG_CLASSIFICATION: bindings.text(config.aiModels.catalogClassification),
         AI_MODEL_CHANGELOG_TRANSLATION: bindings.text(config.aiModels.changelogTranslation),
@@ -207,6 +194,7 @@ export const createCloudflareConfig = (context: ConfigContext, input: unknown) =
             simple: { limit, period: 60 },
         })
     for (const secret of secretDefinitions) {
+        if (isPreview && secret.key === 'OG_IMAGE_SECRET') continue
         if (previewKind === 'pr' && secret.key === 'TWITTER_CLIENT_SECRET') continue
         if (secret.required || resources.optionalSecrets.includes(secret.key))
             workerEnv[secret.key] = bindings.secret()
@@ -214,8 +202,11 @@ export const createCloudflareConfig = (context: ConfigContext, input: unknown) =
     if (previewKind !== 'pr') workerEnv.TWITTER_CLIENT_ID = bindings.text(config.twitterClientId)
     if (previewName) {
         workerEnv.PREVIEW_NAME = bindings.text(previewName)
-        workerEnv.OG_IMAGE_ENDPOINT = bindings.text(resources.ogImageEndpoint)
     } else {
+        workerEnv.EMAIL = bindings.sendEmail({
+            allowedSenderAddresses: [inventory.production.emailFrom!],
+        })
+        workerEnv.EMAIL_FROM = bindings.text(inventory.production.emailFrom!)
         workerEnv.ITEM_REVALIDATION_QUEUE = bindings.queue({ name: config.infrastructure.queue })
         workerEnv.CLOUDFLARE_ANALYTICS_ACCOUNT_ID = bindings.text(inventory.accountId)
         workerEnv.CLOUDFLARE_ANALYTICS_SITE_TAG = bindings.text(resources.analyticsSiteTag!)

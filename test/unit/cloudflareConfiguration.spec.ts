@@ -24,7 +24,6 @@ describe('prepared cf configuration', () => {
             vi.stubEnv('PREVIEW_NAME', context.mode)
             vi.stubEnv('PUBLIC_SITE_URL', resources.siteUrl)
             vi.stubEnv('R2_PUBLIC_BASE_URL', resources.imageBaseUrl)
-            vi.stubEnv('OG_IMAGE_ENDPOINT', resources.ogImageEndpoint)
             expect(cloudflareConfig(context)).toEqual(createCloudflareConfig(context, input))
             vi.stubEnv('R2_PUBLIC_BASE_URL', input.development.imageBaseUrl)
             expect(() => cloudflareConfig(context)).toThrow('must match')
@@ -84,9 +83,8 @@ describe('prepared cf configuration', () => {
             expect(worker.env.CLOUDFLARE_ANALYTICS_READ_TOKEN).toBeUndefined()
             expect(worker.env.GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET).toBeUndefined()
             expect(worker.env.LIRIA_DISCORD_ACCESS_TOKEN).toBeUndefined()
-            expect(worker.env.EMAIL).toMatchObject({
-                allowedDestinationAddresses: ['tester@example.test'],
-            })
+            for (const key of ['EMAIL', 'EMAIL_FROM', 'OG_IMAGE_ENDPOINT', 'OG_IMAGE_SECRET'])
+                expect(worker.env[key]).toBeUndefined()
             if (mode.startsWith('pr-')) {
                 expect(worker.env.APP_DB).toMatchObject({ name: `avatio-${mode}` })
                 expect(worker.env.R2).toMatchObject({ name: `avatio-${mode}` })
@@ -146,7 +144,7 @@ describe('prepared cf configuration', () => {
         ).toThrow(/as a pair/)
     })
 
-    it('rejects absent IDs, cross-target resources, production credentials, and unrestricted email', () => {
+    it('rejects absent IDs, cross-target resources, production credentials, and disabled integration inputs', () => {
         const mutate = (
             fn: (input: ReturnType<typeof createCloudflareResourceFixture>) => void,
         ) => {
@@ -182,13 +180,15 @@ describe('prepared cf configuration', () => {
             input.previews!['pr-354']!.rateLimitNamespaces[0] = 2101
         })
         mutate((input) => {
-            input.previews!['pr-354']!.ogImageEndpoint = input.production.ogImageEndpoint
+            Object.assign(input.previews!['pr-354']!, { ogImageEndpoint: 'https://og.liria.me' })
         })
         mutate((input) => {
             input.previews!['pr-354']!.optionalSecrets = ['CLOUDFLARE_ANALYTICS_READ_TOKEN']
         })
         mutate((input) => {
-            input.previews!['pr-354']!.emailDestinations = []
+            Object.assign(input.previews!['pr-354']!, {
+                emailDestinations: ['tester@example.test'],
+            })
         })
     })
 })
@@ -222,6 +222,7 @@ describe('Nuxt public build settings', () => {
         }
         expect(getBuildEnvironment(env, false)).toMatchObject({
             previewKind: 'pr',
+            dynamicOgImageEnabled: false,
             emailPasswordAuthEnabled: true,
             twitterAuthEnabled: false,
         })

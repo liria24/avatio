@@ -32,7 +32,6 @@ for (const binding of [
     'FLAGS',
     'AI',
     'IMAGES',
-    'EMAIL',
     'RATE_LIMIT_USER_ACTION',
     'RATE_LIMIT_IMAGE',
     'RATE_LIMIT_DRAFT',
@@ -42,6 +41,14 @@ for (const binding of [
     'ASSETS',
 ])
     assert.ok(worker.config.env[binding], `Missing ${binding}`)
+if (mode === 'production') {
+    assert.ok(worker.config.env.EMAIL)
+    assert.ok(worker.config.env.EMAIL_FROM)
+    assert.ok(worker.config.env.OG_IMAGE_SECRET)
+} else {
+    for (const key of ['EMAIL', 'EMAIL_FROM', 'OG_IMAGE_ENDPOINT', 'OG_IMAGE_SECRET'])
+        assert.equal(worker.config.env[key], undefined)
+}
 assert.equal(worker.config.env.BETTER_AUTH_SECRET.type, 'secret')
 assert.equal(worker.config.env.NUXT_BETTER_AUTH_SECRET.type, 'secret')
 assert.equal(worker.config.env.APP_DB.id.startsWith('00000000-'), true)

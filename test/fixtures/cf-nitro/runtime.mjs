@@ -70,6 +70,17 @@ try {
     await migrate(drizzle(database), { migrationsFolder: resolve('../../../drizzle') })
     const origin = env.SELF_URL.value
     const request = (path, options) => miniflare.dispatchFetch(new URL(path, origin), options)
+    if (output.rootConfig.buildContext.isPreview) {
+        for (const method of ['POST', 'DELETE']) {
+            const disabled = await request('/api/og-image', {
+                method,
+                headers: { 'content-type': 'application/json' },
+                body: '{}',
+            })
+            assert.equal(disabled.status, 404)
+            await disabled.arrayBuffer()
+        }
+    }
     const anonymous = await request('/api/me/setups/fixture')
     assert.equal(anonymous.status, 401)
     const items = await request('/api/items')
