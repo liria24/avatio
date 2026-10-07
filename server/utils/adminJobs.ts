@@ -1,4 +1,6 @@
+import { createError } from '@nuxt/nitro-server/h3'
 import { lt } from 'drizzle-orm'
+import { getPreviewKind } from '~~/config/preview'
 import { idempotencyRequests } from '~~/database/schema'
 
 const reportLog = logger('/api/admin/job/report')
@@ -314,6 +316,15 @@ export const runReportJob = async () => {
 
 export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) => {
     const stage = getRuntimeEnvString('STAGE') ?? 'development'
+    if (
+        !dryRun &&
+        getPreviewKind(stage, getRuntimeEnvString('PREVIEW_NAME')) &&
+        getRuntimeEnvString('PREVIEW_STORAGE_ISOLATED') !== 'true'
+    )
+        throw createError({
+            statusCode: 403,
+            message: 'Destructive cleanup requires a preprovisioned isolated Preview storage pair.',
+        })
     const thresholdDate = new Date(Date.now() - IMAGE_DELETION_THRESHOLD)
     const storageContext = await getStorageContext()
     const db = useDB()

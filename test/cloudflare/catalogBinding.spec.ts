@@ -6,6 +6,7 @@ import { convertV4MiniflareOptions, Miniflare } from 'miniflare'
 import { createStorage } from 'unstorage'
 import kvDriver from 'unstorage/drivers/cloudflare-kv-binding'
 
+import { getPreviewCachePrefix } from '../../config/preview'
 import { relations } from '../../database/relations'
 
 let miniflare: Miniflare
@@ -106,5 +107,33 @@ it('keeps authored-content cache writes inside the prefix without changing retai
         expect(await binding.get('retained-key')).toBe('retained-content')
     } finally {
         await storage.dispose()
+    }
+})
+
+it('keeps two native Preview caches separate inside one KV namespace', async () => {
+    const binding = await miniflare.getKVNamespace('CONTENT_CACHE')
+    const base = 'authored-content:v1:fixture:development'
+    const storage = (name?: string) =>
+        createStorage({
+            driver: kvDriver({
+                binding: binding as unknown as KVNamespace,
+                base: getPreviewCachePrefix(base, 'development', name),
+            }),
+        })
+    const first = storage('pr-356'),
+        second = storage('pr-357'),
+        legacy = storage()
+    try {
+        await first.setItem('manifest', { revision: 'first' })
+        await second.setItem('manifest', { revision: 'second' })
+        await legacy.setItem('manifest', { revision: 'legacy' })
+        expect(await first.getItem('manifest')).toEqual({ revision: 'first' })
+        expect(await second.getItem('manifest')).toEqual({ revision: 'second' })
+        await first.removeItem('manifest')
+        expect(await second.getItem('manifest')).toEqual({ revision: 'second' })
+        expect(await binding.get(`${base}:manifest`, 'json')).toEqual({ revision: 'legacy' })
+        expect(() => getPreviewCachePrefix(base, 'production', 'pr-356')).toThrow()
+    } finally {
+        await Promise.all([first.dispose(), second.dispose(), legacy.dispose()])
     }
 })

@@ -3,6 +3,7 @@ import { createAvatioContentService } from '@avatio/nuxt/runtime/server/content/
 import type { H3Event } from '@nuxt/nitro-server/h3'
 import kvDriver from 'unstorage/drivers/cloudflare-kv-binding'
 import { getStageConfig } from '~~/config/environment'
+import { getPreviewCachePrefix } from '~~/config/preview'
 
 import { contentConfig } from '#avatio/content-config'
 
@@ -28,7 +29,11 @@ export const getContentService = async (event?: H3Event) => {
         cache: {
             driver: kvDriver({
                 binding: env.CONTENT_CACHE,
-                base: `authored-content:v1:${config.repo}:${config.branch}`,
+                base: getPreviewCachePrefix(
+                    `authored-content:v1:${config.repo}:${config.branch}`,
+                    env.STAGE,
+                    env.PREVIEW_NAME,
+                ),
             }),
             ttl: 300_000,
             swr: false,
