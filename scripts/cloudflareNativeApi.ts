@@ -64,6 +64,17 @@ export const createCloudflareNativeApi = (
             throw new Error('Preview ownership mismatch.')
         return parsed
     }
+    const createPreview = async (mode: string) => {
+        previewPath(mode)
+        const created = previewIdentity.parse(
+            await request('/workers/workers/avatio/previews?ignore_base_config=true', 'POST', {
+                name: mode,
+            }),
+        )
+        if (created.name !== mode || created.slug !== mode)
+            throw new Error('Created Preview identity mismatch.')
+        return created
+    }
     const inspect = async (mode: string, inventory: CloudflareResourceInventory) => {
         createCloudflareConfig({ mode, isPreview: mode !== 'production' }, inventory)
         const target = mode.startsWith('pr-')
@@ -290,14 +301,13 @@ export const createCloudflareNativeApi = (
             const existing = await preview(mode)
             if (existing) return existing
             // Preview Base is separate from production; avoid inheriting unreviewed Base settings.
-            const created = previewIdentity.parse(
-                await request('/workers/workers/avatio/previews?ignore_base_config=true', 'POST', {
-                    name: mode,
-                }),
-            )
-            if (created.name !== mode || created.slug !== mode)
-                throw new Error('Created Preview identity mismatch.')
-            return created
+            return createPreview(mode)
+        },
+        async createInitialDevelopmentPreview() {
+            if (await preview('development'))
+                throw new Error('Initial rehearsal must not reuse an existing Preview.')
+            // A create conflict is fatal; do not fall back to reuse or update.
+            return createPreview('development')
         },
         async previewDeployment(mode: string, version: string, allowUndeployed = false) {
             if (!/^[\w-]+$/.test(version)) throw new Error('Exact Preview version required.')

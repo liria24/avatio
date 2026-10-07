@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { resolve } from 'node:path'
 
 import { createCloudflareConfig } from '../../config/cloudflare'
@@ -15,6 +16,7 @@ import {
     publishCloudflareNative,
     prepareCloudflareRuntimeSecrets,
 } from '../../scripts/cloudflareNativePublication'
+import { rehearseCloudflareDevelopment } from '../../scripts/cloudflareRehearseDevelopment'
 import { createCloudflareResourceFixture } from '../helpers/cloudflareResources'
 
 const inventory = createCloudflareResourceFixture()
@@ -118,11 +120,19 @@ const activation = () => ({
     resourceCreationApproved: false,
     productionCutoverApproved: false,
 })
-const nativeFixture = () => {
-    const selected = plan()
+const nativeFixture = (mode = 'pr-354') => {
+    const selected = plan(mode)
+    const targetDeployment = {
+        ...deployment,
+        preview_name: mode,
+        preview_slug: mode,
+        preview_urls: [
+            mode === 'development' ? inventory.development.siteUrl : deployment.preview_urls[0]!,
+        ],
+        deployment_urls: [`https://version354-${mode}.previews.example.test`],
+    }
     const events: string[] = []
-    const bindings = createCloudflareConfig({ mode: 'pr-354', isPreview: true }, inventory).worker
-        .env
+    const bindings = createCloudflareConfig({ mode, isPreview: true }, inventory).worker.env
     const rawEnv: Record<string, Record<string, unknown>> = Object.fromEntries(
         Object.entries(bindings).map(([name, binding]) => {
             switch (binding.type) {
@@ -186,16 +196,25 @@ const nativeFixture = () => {
         }),
         preparePreview: vi.fn(async () => {
             events.push('prepare-preview')
-            return { id: 'preview354', name: 'pr-354', slug: 'pr-354' }
+            return { id: 'preview354', name: mode, slug: mode }
         }),
+        createInitialDevelopmentPreview: vi.fn(async () => {
+            events.push('create-initial-preview')
+            return { id: 'preview354', name: 'development', slug: 'development' }
+        }),
+        preview: vi.fn(async () => ({ id: 'preview354', name: mode, slug: mode })),
         setPreviewSecrets: vi.fn(async () => {
             events.push('secrets')
         }),
-        previewDeployment: vi.fn(async () => ({
-            id: 'version354',
-            preview_name: 'pr-354',
-            env: rawEnv,
-        })),
+        previewDeployment: vi.fn(async (_mode: string, version: string) =>
+            version === 'latest'
+                ? null
+                : {
+                      id: 'version354',
+                      preview_name: mode,
+                      env: rawEnv,
+                  },
+        ),
     }
     const run = vi.fn(
         async (
@@ -216,7 +235,7 @@ const nativeFixture = () => {
                         ? names.map((name) => ({ name, status: '✅' }))
                         : command === selected.pending
                           ? []
-                          : deployment,
+                          : targetDeployment,
             }
         },
     )
@@ -254,6 +273,249 @@ const nativeFixture = () => {
     }
     return { selected, input, events }
 }
+
+describe('separately approved initial development runtime rehearsal', () => {
+    const fixture = () => {
+        const value = nativeFixture('development')
+        const files = names.map((name, index) => {
+            const sql = `CREATE TABLE example${index} (id INTEGER PRIMARY KEY);`
+            return { name, sql, hash: createHash('sha256').update(sql).digest('hex') }
+        })
+        const schema = [
+            {
+                type: 'table',
+                name: '__alchemy_migrations',
+                tableName: '__alchemy_migrations',
+                sql: 'CREATE TABLE __alchemy_migrations (id INTEGER PRIMARY KEY, name TEXT, hash TEXT, applied_at TEXT)',
+            },
+        ]
+        const alchemy = files.map((file, index) => ({
+            id: index + 1,
+            name: file.name,
+            hash: file.hash,
+            appliedAt: '2026-10-01 00:00:00',
+        }))
+        value.input.api.query.mockImplementation(async (_id, sql) => {
+            if (!sql.startsWith('SELECT ')) throw new Error('Unexpected SQL mutation')
+            return structuredClone(sql.includes('sqlite_schema') ? schema : alchemy)
+        })
+        const approval = {
+            version: 1,
+            repository: 'liria24/avatio',
+            action: 'rehearse',
+            mode: 'development',
+            sourceSha: sha,
+            trustedCodeSha: sha,
+            qualityRunId: '1234',
+            inventoryHash: cloudflareInventoryHash(inventory),
+            expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
+            buildArtifactPublicationApproved: true,
+            previewSecretTransferApproved: true,
+            incidentalNonProductionRuntimeWritesApproved: true,
+            publicInitialPreviewApproved: true,
+        }
+        const input = {
+            ...value.input,
+            approval,
+            files,
+            filesSha: sha,
+            expected: {
+                action: 'rehearse',
+                mode: 'development',
+                eventName: 'workflow_dispatch',
+                sourceRef: 'refs/heads/development',
+                trustedRef: 'refs/heads/development',
+                sourceSha: sha,
+                latestSourceSha: sha,
+                trustedCodeSha: sha,
+                quality: { runId: '1234', sourceSha: sha, succeeded: true },
+                inventory,
+            },
+        }
+        return { ...value, input, schema, alchemy }
+    }
+    it('publishes only the initial Preview and keeps schema/ledger and activation gates separate', async () => {
+        const { selected, input } = fixture()
+        const result = await rehearseCloudflareDevelopment(selected, input)
+        expect(result).toMatchObject({
+            rehearsalVerified: true,
+            activationVerified: false,
+            migrationsExecuted: false,
+            populatedRecoveryVerified: false,
+        })
+        expect(input.run).toHaveBeenCalledExactlyOnceWith(selected.deploy)
+        expect(input.api.createInitialDevelopmentPreview).toHaveBeenCalledExactlyOnceWith()
+        expect(input.api.preparePreview).not.toHaveBeenCalled()
+        expect(input.api.setPreviewSecrets).toHaveBeenCalledExactlyOnceWith(
+            'development',
+            'version354',
+            input.runtimeSecrets,
+        )
+        expect(input.verifyProduction).not.toHaveBeenCalled()
+        expect(
+            input.api.query.mock.calls.every(
+                ([id, sql]) =>
+                    id === inventory.development.database.id && sql.startsWith('SELECT '),
+            ),
+        ).toBe(true)
+    })
+    it('requires the separate receipt before any remote operation', async () => {
+        const { selected, input } = fixture()
+        await expect(
+            rehearseCloudflareDevelopment(selected, { ...input, approval: activation() }),
+        ).rejects.toThrow()
+        expect(input.api.inspect).not.toHaveBeenCalled()
+        await expect(
+            publishCloudflareNative(selected, { ...input, activation: input.approval }),
+        ).rejects.toThrow()
+        expect(input.api.inspect).not.toHaveBeenCalled()
+    })
+    it('rejects production and PR plans before inspection', async () => {
+        for (const mode of ['production', 'pr-354']) {
+            const { input } = fixture()
+            await expect(rehearseCloudflareDevelopment(plan(mode), input)).rejects.toThrow()
+            expect(input.api.inspect).not.toHaveBeenCalled()
+        }
+    })
+    it('never replaces an existing Preview during the initial rehearsal', async () => {
+        const { selected, input } = fixture()
+        const existing = await input.api.inspect()
+        const api = {
+            ...input.api,
+            inspect: vi.fn(async () => ({
+                ...existing,
+                resources: {
+                    ...existing.resources,
+                    preview: { id: 'existing', name: 'development', slug: 'development' },
+                },
+            })),
+        }
+        await expect(rehearseCloudflareDevelopment(selected, { ...input, api })).rejects.toThrow(
+            /existing/,
+        )
+        expect(input.run).not.toHaveBeenCalled()
+        expect(input.api.preparePreview).not.toHaveBeenCalled()
+    })
+    it('rejects a newly introduced cf ledger without attempting repair', async () => {
+        const { selected, input, schema } = fixture()
+        schema.push({
+            type: 'table',
+            name: 'd1_migrations',
+            tableName: 'd1_migrations',
+            sql: 'CREATE TABLE d1_migrations (name TEXT)',
+        })
+        await expect(rehearseCloudflareDevelopment(selected, input)).rejects.toThrow()
+        expect(input.api.preparePreview).not.toHaveBeenCalled()
+        expect(input.run).not.toHaveBeenCalled()
+    })
+    it('stops if source changes before Preview creation', async () => {
+        const { selected, input } = fixture()
+        input.latestSourceSha.mockResolvedValueOnce(sha).mockResolvedValueOnce('b'.repeat(40))
+        await expect(rehearseCloudflareDevelopment(selected, input)).rejects.toThrow()
+        expect(input.api.preparePreview).not.toHaveBeenCalled()
+        expect(input.run).not.toHaveBeenCalled()
+    })
+    it('fails on an abnormal deploy result without patching secrets', async () => {
+        const { selected, input } = fixture()
+        input.run.mockResolvedValue({ exitCode: 1, signal: null, output: undefined })
+        await expect(rehearseCloudflareDevelopment(selected, input)).rejects.toThrow(/Publication/)
+        expect(input.api.setPreviewSecrets).not.toHaveBeenCalled()
+    })
+    it('retains a failed secret-patch outcome without claiming verification or attempting cleanup', async () => {
+        const { selected, input } = fixture()
+        input.api.setPreviewSecrets.mockRejectedValue(new Error('Synthetic patch rejection'))
+        await expect(rehearseCloudflareDevelopment(selected, input)).rejects.toThrow(
+            /patch rejection/,
+        )
+        expect(input.run).toHaveBeenCalledExactlyOnceWith(selected.deploy)
+        expect(input.api.previewDeployment).toHaveBeenCalledExactlyOnceWith(
+            'development',
+            'latest',
+            true,
+        )
+        expect(input.api.query).toHaveBeenCalledTimes(4)
+    })
+    it('rejects changed schema after HTTP verification', async () => {
+        const { selected, input, schema, alchemy } = fixture()
+        let schemaReads = 0
+        input.api.query.mockImplementation(async (_id, sql) => {
+            if (sql.includes('sqlite_schema')) {
+                const result = structuredClone(schema)
+                if (schemaReads++ > 0) result[0]!.sql += '; -- concurrent schema change'
+                return result
+            }
+            return structuredClone(alchemy)
+        })
+        await expect(rehearseCloudflareDevelopment(selected, input)).rejects.toThrow(/changed/)
+        expect(input.run).toHaveBeenCalledExactlyOnceWith(selected.deploy)
+    })
+    it('stops before deploy when the created Preview identity changes', async () => {
+        const { selected, input } = fixture()
+        input.api.preview.mockResolvedValue({
+            id: 'other',
+            name: 'development',
+            slug: 'development',
+        })
+        await expect(rehearseCloudflareDevelopment(selected, input)).rejects.toThrow(/changed/)
+        expect(input.run).not.toHaveBeenCalled()
+        expect(input.api.query).toHaveBeenCalledTimes(4)
+    })
+    it('stops before deploy when the new Preview already has a deployment', async () => {
+        const { selected, input } = fixture()
+        input.api.previewDeployment.mockResolvedValue({
+            id: 'unexpected',
+            preview_name: 'development',
+            env: {},
+        })
+        await expect(rehearseCloudflareDevelopment(selected, input)).rejects.toThrow(/already/)
+        expect(input.run).not.toHaveBeenCalled()
+        expect(input.api.query).toHaveBeenCalledTimes(4)
+    })
+    it('refuses secret transfer when cf publishes a different Preview identity', async () => {
+        const { selected, input } = fixture()
+        const original = input.run.getMockImplementation()!
+        input.run.mockImplementation(async (command) => {
+            const result = await original(command)
+            return {
+                ...result,
+                output: { ...(result.output as typeof deployment), preview_id: 'other' },
+            }
+        })
+        await expect(rehearseCloudflareDevelopment(selected, input)).rejects.toThrow(
+            /identity changed/,
+        )
+        expect(input.api.setPreviewSecrets).not.toHaveBeenCalled()
+        expect(input.api.query).toHaveBeenCalledTimes(4)
+    })
+    it('preserves publication and postflight failures together', async () => {
+        const { selected, input } = fixture()
+        const primary = new Error('Synthetic publication failure')
+        const postflight = new Error('Synthetic postflight failure')
+        input.run.mockRejectedValue(primary)
+        const query = input.api.query.getMockImplementation()!
+        let reads = 0
+        input.api.query.mockImplementation(async (...args) => {
+            if (++reads > 2) throw postflight
+            return query(...args)
+        })
+        const reportPostflight = vi.fn()
+        const failure = await rehearseCloudflareDevelopment(selected, {
+            ...input,
+            reportPostflight,
+        }).catch((error: unknown) => error)
+        expect(failure).toBeInstanceOf(AggregateError)
+        expect((failure as AggregateError).errors).toEqual([primary, postflight])
+        expect(reportPostflight).toHaveBeenCalledExactlyOnceWith(false)
+    })
+    it('keeps HTTP failures fatal after publication', async () => {
+        const { selected, input } = fixture()
+        const httpFetch: typeof fetch = async () => new Response('unhealthy', { status: 500 })
+        await expect(
+            rehearseCloudflareDevelopment(selected, { ...input, httpFetch }),
+        ).rejects.toThrow()
+        expect(input.api.query).toHaveBeenCalledTimes(4)
+    })
+})
 
 describe('inactive native publication execution path', () => {
     it('keeps signing derivation canonical and excludes disabled PR OAuth', () => {
@@ -327,7 +589,8 @@ describe('inactive native publication execution path', () => {
     })
     it('rejects a post-deploy binding mismatch even when HTTP would pass', async () => {
         const { selected, input, events } = nativeFixture()
-        const value = await input.api.previewDeployment()
+        const value = await input.api.previewDeployment(selected.mode, 'version354')
+        if (!value) throw new Error('Synthetic deployment required')
         value.env.APP_DB = { type: 'd1', database_id: inventory.production.database.id }
         input.api.previewDeployment.mockResolvedValue(value)
         await expect(publishCloudflareNative(selected, input)).rejects.toThrow(/D1 identity/)

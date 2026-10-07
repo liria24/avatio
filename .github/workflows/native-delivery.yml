@@ -1,6 +1,14 @@
 name: native delivery
 
 on:
+  workflow_call:
+    inputs:
+      quality_run_id:
+        type: string
+        required: true
+      operation:
+        type: string
+        default: deploy
   workflow_run:
     workflows: [quality]
     types: [completed]
@@ -16,11 +24,12 @@ on:
       operation:
         description: Publish or approved PR KV bootstrap using existing shared Preview D1 and R2
         type: choice
-        options: [deploy, bootstrap, rollback]
+        options: [deploy, bootstrap, rollback, rehearse]
         default: deploy
 
 permissions:
   contents: read
+  actions: read
 
 # One lane covers migrations, publication, cleanup and reopen. Never cancel migrations.
 concurrency:
@@ -29,9 +38,9 @@ concurrency:
 
 jobs:
   select:
-    # Inactive until the real activation gates, protected environments and publisher freeze
-    # are reviewed. This variable is not set by this change; legacy deployment stays active.
-    if: vars.AVATIO_NATIVE_DELIVERY_ENABLED == 'true' && github.repository == 'liria24/avatio' && (github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/development') && (github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository)) && (github.event_name != 'pull_request_target' || github.event.pull_request.head.repo.full_name == github.repository)
+    # Automatic delivery stays inactive. A separate owner-initiated development rehearsal
+    # still requires its exact protected receipt and never applies migrations or touches production.
+    if: (vars.AVATIO_NATIVE_DELIVERY_ENABLED == 'true' || (github.event_name == 'workflow_dispatch' && inputs.operation == 'rehearse' && github.ref == 'refs/heads/development' && github.actor == 'liry24' && github.triggering_actor == 'liry24')) && github.repository == 'liria24/avatio' && (github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/development') && (github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository)) && (github.event_name != 'pull_request_target' || github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -89,7 +98,7 @@ jobs:
 
   build:
     needs: [select, approve]
-    if: needs.select.outputs.action == 'deploy'
+    if: needs.select.outputs.action == 'deploy' || needs.select.outputs.action == 'rehearse'
     environment: ${{ needs.select.outputs.environment }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -110,6 +119,7 @@ jobs:
         working-directory: test/fixtures/cf-nitro
       - run: node scripts/cloudflareNativeCi.ts build
         env:
+          NATIVE_OPERATION: ${{ inputs.operation }}
           QUALITY_RUN_ID: ${{ inputs.quality_run_id }}
           AVATIO_NATIVE_DELIVERY_ENABLED: ${{ vars.AVATIO_NATIVE_DELIVERY_ENABLED }}
           AVATIO_CF_RESOURCES_JSON: ${{ secrets.AVATIO_CF_RESOURCES_JSON }}
@@ -124,7 +134,7 @@ jobs:
 
   deploy:
     needs: [select, approve, build]
-    if: needs.select.outputs.action == 'deploy'
+    if: needs.select.outputs.action == 'deploy' || needs.select.outputs.action == 'rehearse'
     environment:
       name: ${{ needs.select.outputs.environment }}
       url: ${{ steps.publish.outputs.url }}
@@ -152,6 +162,7 @@ jobs:
         name: Recheck identity, migrate, publish and verify the specific version
         run: vp exec dotenvx run --strict -f ".env.${NATIVE_STAGE}" -- node scripts/cloudflareNativeCi.ts deploy
         env:
+          NATIVE_OPERATION: ${{ inputs.operation }}
           NATIVE_STAGE: ${{ needs.select.outputs.mode == 'production' && 'production' || 'development' }}
           QUALITY_RUN_ID: ${{ inputs.quality_run_id }}
           GITHUB_TOKEN: ${{ github.token }}

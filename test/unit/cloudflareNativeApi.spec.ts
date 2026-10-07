@@ -121,6 +121,33 @@ describe('native Cloudflare REST boundary', () => {
         expect(JSON.parse(bodyText(calls[1]?.init?.body))).toEqual({ name: 'pr-354' })
         expect(calls.every(({ init }) => init?.redirect === 'error')).toBe(true)
     })
+    it('creates the initial development Preview only after an absent read', async () => {
+        const fetcher = vi.fn<typeof fetch>(async (_url, init) =>
+            init?.method === 'GET'
+                ? response(null, 404)
+                : response({ id: 'new', name: 'development', slug: 'development' }),
+        )
+        const api = createCloudflareNativeApi(inventory.accountId, 'synthetic-token', fetcher)
+        expect((await api.createInitialDevelopmentPreview()).id).toBe('new')
+        expect(fetcher).toHaveBeenCalledTimes(2)
+    })
+    it('does not reuse a development Preview that appeared after inspection', async () => {
+        const fetcher = vi.fn<typeof fetch>(async () =>
+            response({ id: 'other', name: 'development', slug: 'development' }),
+        )
+        const api = createCloudflareNativeApi(inventory.accountId, 'synthetic-token', fetcher)
+        await expect(api.createInitialDevelopmentPreview()).rejects.toThrow(/existing/)
+        expect(fetcher).toHaveBeenCalledTimes(1)
+    })
+    it('does not retry a create conflict as an update', async () => {
+        const fetcher = vi.fn<typeof fetch>(async (_url, init) =>
+            init?.method === 'GET' ? response(null, 404) : response(null, 409),
+        )
+        const api = createCloudflareNativeApi(inventory.accountId, 'synthetic-token', fetcher)
+        await expect(api.createInitialDevelopmentPreview()).rejects.toThrow()
+        expect(fetcher).toHaveBeenCalledTimes(2)
+        expect(fetcher.mock.calls.map(([, init]) => init?.method)).toEqual(['GET', 'POST'])
+    })
     it.each([403, 429, 500])('never treats HTTP %i as a missing Preview', async (status) => {
         const fetcher = vi.fn<typeof fetch>(async () => response(null, status))
         const api = createCloudflareNativeApi(inventory.accountId, 'synthetic-token', fetcher)

@@ -18,9 +18,12 @@ import { readBuildOutput } from '@cloudflare/build-output-utils'
 
 import { createCloudflareConfig, type CloudflareResourceInventory } from '../config/cloudflare.ts'
 import { requireCloudflareActivation } from '../config/cloudflareActivation.ts'
+import { parseCloudflarePreviewDeployment } from '../config/cloudflarePreviewLifecycle.ts'
 import { createCloudflarePublishPlan } from '../config/cloudflarePublisher.ts'
 import { requireCloudflareRecovery } from '../config/cloudflareRecovery.ts'
 import { resolveCloudflareDeliveryPreflight } from './cloudflareDeliveryPreflight.ts'
+import { requireCloudflareDevelopmentRehearsal } from './cloudflareDevelopmentRehearsal.ts'
+import { readCommittedCloudflareMigrations } from './cloudflareMigrationHistory.ts'
 import { createCloudflareNativeApi } from './cloudflareNativeApi.ts'
 import { buildCloudflareNative } from './cloudflareNativeBuild.ts'
 import {
@@ -30,6 +33,7 @@ import {
     prepareCloudflareRuntimeSecrets,
 } from './cloudflareNativePublication.ts'
 import { verifyCloudflareDeploymentHttp } from './cloudflarePreviewSmoke.ts'
+import { rehearseCloudflareDevelopment } from './cloudflareRehearseDevelopment.ts'
 
 const object = (value: unknown): Record<string, unknown> =>
     value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -79,6 +83,16 @@ const selection = async () => {
     const trustedSha = String(object(object(await githubRead(`/branches/${branch}`)).commit).sha)
     if (!/^[a-f0-9]{40}$/.test(trustedSha)) throw new Error('Immutable trusted code required.')
     const operation = process.env.NATIVE_OPERATION
+    if (
+        operation === 'rehearse' &&
+        (selected.mode !== 'development' ||
+            selected.action !== 'deploy' ||
+            process.env.GITHUB_EVENT_NAME !== 'workflow_dispatch' ||
+            process.env.GITHUB_REF !== 'refs/heads/development' ||
+            process.env.GITHUB_ACTOR !== 'liry24' ||
+            process.env.GITHUB_TRIGGERING_ACTOR !== 'liry24')
+    )
+        throw new Error('Rehearsal requires an owner-initiated manual development run.')
     if (operation === 'bootstrap' && (!pr || selected.action !== 'deploy'))
         throw new Error('Bootstrap requires a fresh open trusted PR quality run.')
     if (
@@ -89,17 +103,37 @@ const selection = async () => {
     return {
         ...selected,
         action:
-            operation === 'bootstrap'
-                ? ('bootstrap' as const)
-                : operation === 'rollback'
-                  ? ('rollback' as const)
-                  : selected.action,
+            operation === 'rehearse'
+                ? ('rehearse' as const)
+                : operation === 'bootstrap'
+                  ? ('bootstrap' as const)
+                  : operation === 'rollback'
+                    ? ('rollback' as const)
+                    : selected.action,
         sourceSha: 'sourceSha' in selected ? selected.sourceSha : trustedSha,
         trustedSha,
         trustedRef: `refs/heads/${branch}`,
         sourceRef: pr ? `refs/pull/${selected.mode.slice(3)}/head` : `refs/heads/${branch}`,
+        qualityRunId: process.env.QUALITY_RUN_ID ?? '',
     }
 }
+
+const developmentRehearsalExpected = (
+    selected: Awaited<ReturnType<typeof selection>>,
+    inventory: CloudflareResourceInventory,
+) => ({
+    action: selected.action,
+    mode: selected.mode,
+    eventName: process.env.GITHUB_EVENT_NAME ?? '',
+    sourceRef: selected.sourceRef,
+    trustedRef: selected.trustedRef,
+    sourceSha: selected.sourceSha,
+    latestSourceSha: selected.sourceSha,
+    trustedCodeSha: selected.trustedSha,
+    // selection() has freshly verified the exact successful quality run and current branch.
+    quality: { runId: selected.qualityRunId, sourceSha: selected.sourceSha, succeeded: true },
+    inventory,
+})
 
 /** Inspect data files only. Never evaluate a config, import code, or install artifact dependencies. */
 export const validateCloudflareNativeArtifact = async (
@@ -200,20 +234,31 @@ if (import.meta.main) {
             const activation = JSON.parse(process.env.AVATIO_CF_ACTIVATION_JSON ?? '') as unknown
             const enabled = process.env.AVATIO_NATIVE_DELIVERY_ENABLED === 'true'
             const expected = {
-                action: selected.action,
                 mode: selected.mode,
                 sourceSha: selected.sourceSha,
                 trustedCodeSha: selected.trustedSha,
                 inventory,
                 enabled,
             }
-            const approval = requireCloudflareActivation(activation, expected)
+            const approval =
+                selected.action === 'rehearse'
+                    ? requireCloudflareDevelopmentRehearsal(
+                          activation,
+                          developmentRehearsalExpected(selected, inventory),
+                      )
+                    : requireCloudflareActivation(activation, {
+                          ...expected,
+                          action: selected.action,
+                      })
             if (action === 'approve') {
-                if (selected.action === 'deploy' && !approval.buildArtifactPublicationApproved)
+                if (
+                    (selected.action === 'deploy' || selected.action === 'rehearse') &&
+                    !approval.buildArtifactPublicationApproved
+                )
                     throw new Error('Build artifact metadata handling requires explicit review.')
             } else if (action === 'build') {
                 if (
-                    selected.action !== 'deploy' ||
+                    (selected.action !== 'deploy' && selected.action !== 'rehearse') ||
                     !approval.buildArtifactPublicationApproved ||
                     git('rev-parse', 'HEAD') !== selected.sourceSha
                 )
@@ -298,7 +343,10 @@ if (import.meta.main) {
                         api,
                         readPr: () => githubRead(`/pulls/${selected.mode.slice(3)}`),
                     })
-                } else if (action === 'deploy' && selected.action === 'deploy') {
+                } else if (
+                    action === 'deploy' &&
+                    (selected.action === 'deploy' || selected.action === 'rehearse')
+                ) {
                     const artifact = resolve('.cloudflare/native-incoming')
                     // Fetch objects only; never checkout or execute PR code in this job.
                     execFileSync('git', ['fetch', '--no-tags', 'origin', selected.sourceSha], {
@@ -377,7 +425,7 @@ if (import.meta.main) {
                         CLOUDFLARE_API_TOKEN: process.env.CLOUDFLARE_API_TOKEN ?? '',
                         ...plan.commandEnvironment,
                     }
-                    const result = await publishCloudflareNative(plan, {
+                    const publicationInput: Parameters<typeof publishCloudflareNative>[1] = {
                         inventory,
                         activation,
                         enabled,
@@ -385,8 +433,8 @@ if (import.meta.main) {
                         runtimeSecrets: secrets,
                         api,
                         latestSourceSha: async () => (await selection()).sourceSha,
-                        run: (command) =>
-                            runCloudflareNativeCommand(
+                        run: async (command) => {
+                            const result = await runCloudflareNativeCommand(
                                 command === plan.deploy && secretFile
                                     ? {
                                           ...command,
@@ -395,7 +443,25 @@ if (import.meta.main) {
                                     : command,
                                 artifact,
                                 commandEnv,
-                            ),
+                            )
+                            if (
+                                command === plan.deploy &&
+                                plan.isPreview &&
+                                result.exitCode === 0 &&
+                                !result.signal &&
+                                process.env.GITHUB_STEP_SUMMARY
+                            ) {
+                                const deployed = parseCloudflarePreviewDeployment(result.output, {
+                                    mode: plan.mode,
+                                    siteUrl: plan.buildEnvironment.PUBLIC_SITE_URL,
+                                })
+                                appendFileSync(
+                                    process.env.GITHUB_STEP_SUMMARY,
+                                    `Published ${plan.mode}; secret and runtime verification pending.\nSpecific version: ${deployed.deploymentUrl}\nDeployment ID: ${deployed.deploymentId}\nDo not treat publication alone as verification.\n`,
+                                )
+                            }
+                            return result
+                        },
                         verifyProduction: async (value) => {
                             const versionId = String(object(value).versionId)
                             const configuration = createCloudflareConfig(
@@ -417,14 +483,40 @@ if (import.meta.main) {
                             )
                             await api.verifyProductionVersion(versionId, configuration)
                         },
-                    })
+                    }
+                    const result =
+                        selected.action === 'rehearse'
+                            ? await rehearseCloudflareDevelopment(plan, {
+                                  ...publicationInput,
+                                  approval: activation,
+                                  expected: developmentRehearsalExpected(selected, inventory),
+                                  files: readCommittedCloudflareMigrations(),
+                                  filesSha: state.commit,
+                                  reportPostflight: (verified) => {
+                                      if (process.env.GITHUB_STEP_SUMMARY)
+                                          appendFileSync(
+                                              process.env.GITHUB_STEP_SUMMARY,
+                                              `Development source/schema/ledger postflight: ${verified ? 'verified unchanged' : 'not verified; private inspection required'}.\n`,
+                                          )
+                                  },
+                              })
+                            : await publishCloudflareNative(plan, publicationInput)
+                    const preview =
+                        'stableUrl' in result &&
+                        'deploymentUrl' in result &&
+                        typeof result.stableUrl === 'string' &&
+                        typeof result.deploymentUrl === 'string'
+                            ? { stableUrl: result.stableUrl, deploymentUrl: result.deploymentUrl }
+                            : undefined
+                    if (result.mode !== 'production' && !preview)
+                        throw new Error('Verified Preview URLs are unavailable.')
                     if (process.env.GITHUB_STEP_SUMMARY)
                         appendFileSync(
                             process.env.GITHUB_STEP_SUMMARY,
-                            `Verified ${result.mode} for ${result.sourceSha}.\n${'stableUrl' in result ? `Stable URL: ${result.stableUrl}\nSpecific version: ${result.deploymentUrl}\n` : ''}`,
+                            `Verified ${result.mode} for ${result.sourceSha}.\n${preview ? `Stable URL: ${preview.stableUrl}\nSpecific version: ${preview.deploymentUrl}\n` : ''}${selected.action === 'rehearse' ? 'Runtime rehearsal only; migrations, populated recovery and ordinary activation remain unverified.\n' : ''}`,
                         )
-                    if ('stableUrl' in result && process.env.GITHUB_OUTPUT)
-                        appendFileSync(process.env.GITHUB_OUTPUT, `url=${result.stableUrl}\n`)
+                    if (preview && process.env.GITHUB_OUTPUT)
+                        appendFileSync(process.env.GITHUB_OUTPUT, `url=${preview.stableUrl}\n`)
                 } else throw new Error('Unsupported native CI action.')
             }
             console.info(JSON.stringify({ action, mode: selected.mode, completed: true }))

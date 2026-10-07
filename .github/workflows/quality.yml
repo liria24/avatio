@@ -16,6 +16,14 @@ on:
         description: Exact reviewed commit SHA for the read-only inventory
         type: string
         default: ''
+      preview_rehearsal:
+        description: Run the separately approved initial development Preview rehearsal
+        type: boolean
+        default: false
+      preview_quality_run_id:
+        description: Exact previously successful development quality run for this SHA
+        type: string
+        default: ''
   schedule:
     - cron: '0 8 * * *'
 
@@ -23,10 +31,20 @@ permissions:
   contents: read
 
 concurrency:
-  group: quality-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: quality-${{ github.workflow }}-${{ github.ref }}-${{ inputs.preview_rehearsal && 'rehearsal' || 'checks' }}
+  cancel-in-progress: ${{ !inputs.preview_rehearsal }}
 
 jobs:
+  preview-rehearsal:
+    if: github.event_name == 'workflow_dispatch' && inputs.preview_rehearsal && github.repository == 'liria24/avatio' && github.ref == 'refs/heads/development' && github.actor == 'liry24' && github.triggering_actor == 'liry24'
+    uses: ./.github/workflows/native-delivery.yml
+    permissions:
+      contents: read
+      actions: read
+    with:
+      operation: rehearse
+      quality_run_id: ${{ inputs.preview_quality_run_id }}
+
   cloudflare-inventory:
     name: Cloudflare read-only inventory
     if: github.event_name == 'workflow_dispatch' && inputs.cloudflare_inventory && github.repository == 'liria24/avatio' && github.ref == 'refs/heads/development' && github.actor == 'liry24' && github.triggering_actor == 'liry24'

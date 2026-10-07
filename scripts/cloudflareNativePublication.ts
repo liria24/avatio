@@ -23,6 +23,46 @@ import { verifyCloudflarePreviewHttp } from './cloudflarePreviewSmoke.ts'
 type Plan = ReturnType<typeof createCloudflarePublishPlan>
 type Result = { exitCode: number | null; signal: string | null; output: unknown }
 
+/** Shared final Preview step; callers must establish their distinct approval and data gates. */
+export const publishCloudflarePreviewArtifact = async (
+    plan: Plan,
+    input: {
+        inventory: CloudflareResourceInventory
+        runtimeSecrets: Record<string, string>
+        api: ReturnType<typeof createCloudflareNativeApi>
+        run: (command: Plan['apply']) => Promise<Result>
+        httpFetch?: typeof fetch
+        expectedPreviewId?: string
+    },
+    previousDeploymentId?: string,
+) => {
+    if (!plan.isPreview || plan.mode === 'production')
+        throw new Error('Only native Preview output can use this publication step.')
+    if (previousDeploymentId)
+        await input.api.setPreviewSecrets(plan.mode, previousDeploymentId, input.runtimeSecrets)
+    const result = await input.run(plan.deploy)
+    if (result.exitCode !== 0 || result.signal)
+        throw new Error('Publication did not exit normally; inspect the current version.')
+    const deployment = parseCloudflarePreviewDeployment(result.output, {
+        mode: plan.mode,
+        siteUrl: plan.buildEnvironment.PUBLIC_SITE_URL,
+    })
+    if (input.expectedPreviewId && deployment.previewId !== input.expectedPreviewId)
+        throw new Error('Published Preview identity changed; secret transfer is refused.')
+    await input.api.setPreviewSecrets(plan.mode, deployment.deploymentId, input.runtimeSecrets)
+    verifyCloudflarePreviewBindings(
+        await input.api.previewDeployment(plan.mode, deployment.deploymentId),
+        createCloudflareConfig({ mode: plan.mode, isPreview: true }, input.inventory).worker.env,
+        deployment,
+    )
+    await verifyCloudflarePreviewHttp(
+        result.output,
+        { mode: plan.mode, siteUrl: plan.buildEnvironment.PUBLIC_SITE_URL },
+        input.httpFetch,
+    )
+    return { ...deployment, sourceSha: plan.sourceSha, publicationVerified: true as const }
+}
+
 /** No shell, no raw CLI logging, bounded execution, no credentials supplied to application code. */
 export const runCloudflareNativeCommand = (
     command: Plan['apply'],
@@ -214,33 +254,10 @@ export const publishCloudflareNative = async (
     })
     if ((await input.latestSourceSha()) !== plan.sourceSha)
         throw new Error('Source changed during migration; do not deploy.')
-    if (previousDeploymentId)
-        await input.api.setPreviewSecrets(plan.mode, previousDeploymentId, input.runtimeSecrets)
+    if (plan.isPreview) return publishCloudflarePreviewArtifact(plan, input, previousDeploymentId)
     const result = await input.run(plan.deploy)
     if (result.exitCode !== 0 || result.signal)
         throw new Error('Publication did not exit normally; inspect the current version.')
-    if (plan.isPreview) {
-        const deployment = parseCloudflarePreviewDeployment(result.output, {
-            mode: plan.mode,
-            siteUrl: plan.buildEnvironment.PUBLIC_SITE_URL,
-        })
-        await input.api.setPreviewSecrets(plan.mode, deployment.deploymentId, input.runtimeSecrets)
-        verifyCloudflarePreviewBindings(
-            await input.api.previewDeployment(plan.mode, deployment.deploymentId),
-            createCloudflareConfig({ mode: plan.mode, isPreview: true }, input.inventory).worker
-                .env,
-            deployment,
-        )
-        await verifyCloudflarePreviewHttp(
-            result.output,
-            {
-                mode: plan.mode,
-                siteUrl: plan.buildEnvironment.PUBLIC_SITE_URL,
-            },
-            input.httpFetch,
-        )
-        return { ...deployment, sourceSha: plan.sourceSha, publicationVerified: true as const }
-    }
     await input.verifyProduction(result.output)
     return { mode: plan.mode, sourceSha: plan.sourceSha, publicationVerified: true as const }
 }
