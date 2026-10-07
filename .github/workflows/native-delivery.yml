@@ -9,6 +9,15 @@ on:
       operation:
         type: string
         default: deploy
+    secrets:
+      AVATIO_CF_RESOURCES_JSON:
+        required: false
+      AVATIO_CF_ACTIVATION_JSON:
+        required: false
+      CLOUDFLARE_API_TOKEN:
+        required: false
+      DOTENV_PRIVATE_KEY_DEVELOPMENT:
+        required: false
   workflow_run:
     workflows: [quality]
     types: [completed]
@@ -75,6 +84,27 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - name: Verify development rehearsal inputs are available
+        if: needs.select.outputs.action == 'rehearse'
+        env:
+          HAS_RESOURCES: ${{ secrets.AVATIO_CF_RESOURCES_JSON != '' }}
+          HAS_APPROVAL: ${{ secrets.AVATIO_CF_ACTIVATION_JSON != '' }}
+          HAS_CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+          HAS_DEVELOPMENT_KEY: ${{ secrets.DOTENV_PRIVATE_KEY_DEVELOPMENT != '' }}
+        run: |
+          python3 - <<'PYCODE'
+          import os, sys
+          names = {
+              'HAS_RESOURCES': 'AVATIO_CF_RESOURCES_JSON',
+              'HAS_APPROVAL': 'AVATIO_CF_ACTIVATION_JSON',
+              'HAS_CF_TOKEN': 'CLOUDFLARE_API_TOKEN',
+              'HAS_DEVELOPMENT_KEY': 'DOTENV_PRIVATE_KEY_DEVELOPMENT',
+          }
+          missing = [name for flag, name in names.items() if os.environ.get(flag) != 'true']
+          for name in missing:
+              print(f'::error::Required preview input is unavailable: {name}')
+          sys.exit(bool(missing))
+          PYCODE
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           ref: ${{ needs.select.outputs.trusted_sha }}
