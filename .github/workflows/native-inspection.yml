@@ -1,0 +1,79 @@
+name: native development inspection
+
+on:
+  workflow_call:
+    inputs:
+      historical_source_sha:
+        type: string
+        required: true
+      preview_id:
+        type: string
+        default: ''
+      deployment_id:
+        type: string
+        default: latest
+      immutable_url:
+        type: string
+        default: ''
+    secrets:
+      AVATIO_CF_RESOURCES_JSON:
+        required: false
+      CLOUDFLARE_API_TOKEN:
+        required: false
+  workflow_dispatch:
+    inputs:
+      historical_source_sha:
+        description: Reviewed historical deployed source SHA (not the inspection code SHA)
+        type: string
+        required: true
+      preview_id:
+        description: Reviewed parent Preview ID; omit for metadata inspection without identity approval
+        type: string
+        required: false
+      deployment_id:
+        description: Exact deployment ID or latest (API metadata only)
+        type: string
+        default: latest
+        required: true
+      immutable_url:
+        description: Optional reviewed exact immutable origin for static HTTP verification (requires Preview ID)
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+# Serialize with native delivery; inspecting does not authorize or enable that publisher.
+concurrency:
+  group: avatio-native-delivery
+  cancel-in-progress: false
+
+jobs:
+  inspect:
+    if: github.repository == 'liria24/avatio' && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/development' && github.actor == 'liry24' && github.triggering_actor == 'liry24'
+    environment: preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
+        with:
+          node-version-file: .node-version
+          version-file: package.json
+          cache: true
+          run-install: false
+      - run: vp install --frozen-lockfile
+      # No dotenv invocation/key, signing secret, artifact evaluation, publisher or cleanup command.
+      - name: Inspect development metadata and ledger; optionally verify reviewed immutable origin
+        run: node scripts/cloudflareInspectDevelopmentCi.ts
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          AVATIO_CF_RESOURCES_JSON: ${{ secrets.AVATIO_CF_RESOURCES_JSON }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          REVIEWED_HISTORICAL_SOURCE_SHA: ${{ inputs.historical_source_sha }}
+          REVIEWED_PREVIEW_ID: ${{ inputs.preview_id }}
+          REVIEWED_DEPLOYMENT_ID: ${{ inputs.deployment_id }}
+          REVIEWED_IMMUTABLE_URL: ${{ inputs.immutable_url }}

@@ -46,6 +46,10 @@ export const createCloudflareResourceFixture = (): CloudflareResourceInventory =
             },
             bucket: 'avatio-preview-shared',
             imageBaseUrl: 'https://shared.images.example.test',
+            cache: { id: '3'.padStart(32, '0'), name: 'avatio-preview-shared' },
+            flagshipId: 'test-flags',
+            rateLimitNamespaces: [9001, 9002, 9003, 9004],
+            siteUrlSuffix: '.previews.example.test',
         },
         production: resources(1, 'production'),
         development: {

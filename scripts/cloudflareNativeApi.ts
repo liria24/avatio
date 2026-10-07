@@ -1,6 +1,19 @@
+import { isDeepStrictEqual } from 'node:util'
+
 import { z } from 'zod'
 
-import { createCloudflareConfig, type CloudflareResourceInventory } from '../config/cloudflare.ts'
+import {
+    createCloudflareConfig,
+    getCloudflareTargetResources,
+    getCloudflareDevelopmentInspectionConfiguration,
+    type CloudflareResourceInventory,
+} from '../config/cloudflare.ts'
+import { developmentSchemaSql, developmentLedgerSql } from './cloudflareDevelopmentLedger.ts'
+import {
+    NativeHttpError,
+    NativeDiagnosticError,
+    type NativeReporter,
+} from './cloudflareNativeDiagnostics.ts'
 
 const record = (value: unknown): Record<string, unknown> =>
     value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -12,11 +25,92 @@ const previewIdentity = z.object({
     slug: z.string(),
 })
 
+const isObject = (value: unknown): value is Record<string, unknown> =>
+    value !== null && typeof value === 'object' && !Array.isArray(value)
+const present = (value: Record<string, unknown>, name: string) => Object.hasOwn(value, name)
+
+/** The upstream DeploymentResource fields, projected before normalization; no values or arbitrary keys. */
+const deploymentShape = (raw: unknown) => {
+    const value = record(raw)
+    return {
+        deploymentObject: isObject(raw),
+        idPresent: present(value, 'id'),
+        idString: typeof value.id === 'string',
+        idValidIdentifier: typeof value.id === 'string' && /^[\w-]+$/.test(value.id),
+        previewIdPresent: present(value, 'preview_id'),
+        previewIdString: typeof value.preview_id === 'string',
+        previewIdValidIdentifier:
+            typeof value.preview_id === 'string' && /^[\w-]+$/.test(value.preview_id),
+        previewNamePresent: present(value, 'preview_name'),
+        previewNameString: typeof value.preview_name === 'string',
+        urlsPresent: present(value, 'urls'),
+        urlsArray: Array.isArray(value.urls),
+        urlsNonEmpty: Array.isArray(value.urls) && value.urls.length > 0,
+        urlsStrings:
+            Array.isArray(value.urls) && value.urls.every((url) => typeof url === 'string'),
+        envPresent: present(value, 'env'),
+        envObject: isObject(value.env),
+        annotationsPresent: present(value, 'annotations'),
+        annotationsObject: isObject(value.annotations),
+    }
+}
+
+/** Project only reviewed binding fields; never retain API extensions or secret payloads. */
+const sanitizePreviewDeployment = (raw: unknown) => {
+    const value = record(raw)
+    const keys = [
+        'type',
+        'text',
+        'database_id',
+        'namespace_id',
+        'bucket_name',
+        'queue_name',
+        'id',
+        'app_id',
+        'simple',
+        'allowed_sender_addresses',
+        'allowed_destination_addresses',
+    ]
+    const env = Object.fromEntries(
+        Object.entries(record(value.env)).map(([name, binding]) => {
+            const item = record(binding)
+            return [
+                name,
+                item.type === 'secret_text' ||
+                item.type === 'secret' ||
+                ['BETTER_AUTH_SECRET', 'NUXT_BETTER_AUTH_SECRET', 'TWITTER_CLIENT_SECRET'].includes(
+                    name,
+                )
+                    ? { type: item.type }
+                    : Object.fromEntries(
+                          keys
+                              .filter(
+                                  (key) =>
+                                      key in item && (key !== 'text' || item.type === 'plain_text'),
+                              )
+                              .map((key) => [key, item[key]]),
+                      ),
+            ]
+        }),
+    )
+    return {
+        id: value.id,
+        preview_id: value.preview_id,
+        preview_name: value.preview_name,
+        urls: value.urls,
+        sourceSha: record(value.annotations)['workers/commit_sha'],
+        env,
+    }
+}
+
 /** Thin beta REST calls used by the pinned official Preview implementation. Never log responses. */
 export const createCloudflareNativeApi = (
     accountId: string,
     token: string,
     fetcher: typeof fetch = fetch,
+    inspection?: { databaseId: string; bucket: string },
+    reportDiagnostic?: NativeReporter,
+    inspectionBindingNames?: readonly string[],
 ) => {
     if (!/^[a-f0-9]{32}$/.test(accountId) || !token)
         throw new Error('Explicit account and credential required.')
@@ -25,30 +119,200 @@ export const createCloudflareNativeApi = (
         method = 'GET',
         body?: unknown,
         absent = false,
+        responseKind?: 'preview-deployment',
     ): Promise<unknown> => {
-        const response = await fetcher(
-            `https://api.cloudflare.com/client/v4/accounts/${accountId}${path}`,
-            {
-                method,
-                redirect: 'error',
-                signal: AbortSignal.timeout(30_000),
-                headers: {
-                    authorization: `Bearer ${token}`,
-                    'content-type':
-                        method === 'PATCH' ? 'application/merge-patch+json' : 'application/json',
+        if (inspection) {
+            const reads = [
+                previewPath('development'),
+                `/d1/database/${inspection.databaseId}`,
+                `/r2/buckets/${encodeURIComponent(inspection.bucket)}`,
+            ]
+            const queryBody = record(body)
+            const sql = queryBody.sql
+            const readQuery =
+                method === 'POST' &&
+                path === `/d1/database/${inspection.databaseId}/query` &&
+                (sql === developmentSchemaSql || sql === developmentLedgerSql) &&
+                Array.isArray(queryBody.params) &&
+                queryBody.params.length === 0
+            const read =
+                method === 'GET' &&
+                (reads.includes(path) ||
+                    /^\/storage\/kv\/namespaces\?per_page=100&page=[1-9]\d*$/.test(path) ||
+                    /^\/workers\/workers\/avatio\/previews\/development\/deployments\/[\w-]+$/.test(
+                        path,
+                    ))
+            if (!read && !readQuery)
+                throw new Error('Inspection permits reviewed development metadata reads only.')
+        }
+        let response: Response
+        try {
+            response = await fetcher(
+                `https://api.cloudflare.com/client/v4/accounts/${accountId}${path}`,
+                {
+                    method,
+                    redirect: 'error',
+                    signal: AbortSignal.timeout(30_000),
+                    headers: {
+                        authorization: `Bearer ${token}`,
+                        'content-type': 'application/json',
+                    },
+                    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
                 },
-                ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-            },
-        )
-        // A 403, transport failure, or unsuccessful envelope is never resource absence.
-        if (absent && response.status === 404) return null
-        if (!response.ok)
-            throw new Error(
-                `Cloudflare operation failed (HTTP ${response.status}); inspect privately.`,
             )
-        const envelope = record(await response.json())
-        if (envelope.success !== true || !('result' in envelope))
-            throw new Error('Cloudflare operation was not confirmed.')
+        } catch (cause) {
+            throw new NativeDiagnosticError(
+                'api-transport-failed',
+                {
+                    responseShape: { httpResponseReceived: false, jsonParsed: false },
+                },
+                cause,
+            )
+        }
+        if (
+            response.url &&
+            response.url !== `https://api.cloudflare.com/client/v4/accounts/${accountId}${path}`
+        )
+            throw new NativeDiagnosticError('api-response-scope-mismatch', {
+                responseShape: { httpResponseReceived: true },
+            })
+        // A 403, transport failure, or unsuccessful envelope is never resource absence.
+        if (absent && response.status === 404) {
+            if (responseKind)
+                reportDiagnostic?.({
+                    phase: 'preview-api-response',
+                    outcome: 'verified',
+                    httpStatus: 404,
+                    evidence: { deploymentPresent: false },
+                })
+            return null
+        }
+        if (!response.ok) {
+            // Bound the body before parsing; never retain or report provider messages/secret echoes.
+            const reader = response.body?.getReader()
+            const chunks: Uint8Array[] = []
+            let length = 0,
+                withinLimit = true,
+                parsed = false
+            let codes: number[] = []
+            try {
+                if (reader)
+                    while (true) {
+                        const item = await reader.read()
+                        if (item.done) break
+                        length += item.value.byteLength
+                        if (length > 16_384) {
+                            withinLimit = false
+                            await reader.cancel()
+                            break
+                        }
+                        chunks.push(item.value)
+                    }
+                if (withinLimit) {
+                    const bytes = new Uint8Array(length)
+                    let offset = 0
+                    for (const chunk of chunks) {
+                        bytes.set(chunk, offset)
+                        offset += chunk.byteLength
+                    }
+                    const value = record(JSON.parse(new TextDecoder().decode(bytes)))
+                    parsed = true
+                    if (Array.isArray(value.errors))
+                        codes = [
+                            ...new Set(
+                                value.errors
+                                    .slice(0, 8)
+                                    .map((error: unknown) => record(error).code)
+                                    .filter(
+                                        (code: unknown): code is number =>
+                                            typeof code === 'number' &&
+                                            Number.isInteger(code) &&
+                                            code >= 0 &&
+                                            code <= 999_999,
+                                    ),
+                            ),
+                        ]
+                }
+            } catch {
+                /* A malformed/failed error body must not hide the HTTP failure. */
+            } finally {
+                reader?.releaseLock()
+            }
+            throw new NativeHttpError(response.status, {
+                jsonParsed: parsed,
+                bodyWithinLimit: withinLimit,
+                codes,
+                classification: codes.includes(10025)
+                    ? 'preview-not-found'
+                    : codes.includes(10222)
+                      ? 'deployment-not-found'
+                      : codes.includes(10032)
+                        ? 'deployment-not-patchable'
+                        : 'unclassified',
+            })
+        }
+        let rawEnvelope: unknown
+        try {
+            rawEnvelope = await response.json()
+        } catch (cause) {
+            throw new NativeDiagnosticError(
+                'api-json-invalid',
+                {
+                    responseShape: { httpResponseReceived: true, jsonParsed: false },
+                },
+                cause,
+                response.status,
+            )
+        }
+        const envelope = record(rawEnvelope)
+        const shape = {
+            httpResponseReceived: true,
+            jsonParsed: true,
+            envelopeObject: isObject(rawEnvelope),
+            successPresent: present(envelope, 'success'),
+            successBoolean: typeof envelope.success === 'boolean',
+            successTrue: envelope.success === true,
+            resultPresent: present(envelope, 'result'),
+            resultObject: isObject(envelope.result),
+            resultArray: Array.isArray(envelope.result),
+            resultNull: envelope.result === null,
+            ...(responseKind ? deploymentShape(envelope.result) : {}),
+        }
+        if (responseKind)
+            reportDiagnostic?.({
+                phase: 'preview-api-response',
+                outcome: 'started',
+                httpStatus: response.status,
+                evidence: { responseShape: shape },
+            })
+        if (!shape.envelopeObject || !shape.successBoolean)
+            throw new NativeDiagnosticError(
+                'api-envelope-shape',
+                { responseShape: shape },
+                undefined,
+                response.status,
+            )
+        if (!shape.successTrue)
+            throw new NativeDiagnosticError(
+                'api-envelope-rejected',
+                { responseShape: shape },
+                undefined,
+                response.status,
+            )
+        if (!shape.resultPresent)
+            throw new NativeDiagnosticError(
+                'api-result-missing',
+                { responseShape: shape },
+                undefined,
+                response.status,
+            )
+        if (responseKind && !shape.resultObject)
+            throw new NativeDiagnosticError(
+                'api-deployment-shape',
+                { responseShape: shape },
+                undefined,
+                response.status,
+            )
         return envelope.result
     }
     const previewPath = (mode: string) => {
@@ -64,22 +328,188 @@ export const createCloudflareNativeApi = (
             throw new Error('Preview ownership mismatch.')
         return parsed
     }
-    const createPreview = async (mode: string) => {
-        previewPath(mode)
-        const created = previewIdentity.parse(
-            await request('/workers/workers/avatio/previews?ignore_base_config=true', 'POST', {
-                name: mode,
-            }),
+    // Official GET/PATCH deployment endpoints are account/worker/Preview scoped. Actual beta
+    // https://github.com/cloudflare/workers-sdk/blob/main/packages/deploy-helpers/src/preview/api.ts
+    // Responses can omit the interface's preview_id/name: never treat omission as a conflict,
+    // and never accept it without fresh, matching Preview identities around exact-ID reads.
+    const scopedDeployment = async (
+        mode: string,
+        version: string,
+        absent = false,
+        expectedPreviewId?: string,
+    ) => {
+        if (!/^[\w-]+$/.test(version)) throw new Error('Exact Preview version required.')
+        const before = await preview(mode)
+        if (!before || (expectedPreviewId !== undefined && before.id !== expectedPreviewId))
+            throw new NativeDiagnosticError('preview-parent-id-mismatch', { parentMatches: false })
+        const associate = (raw: unknown, exactId?: string) => {
+            const value = record(raw)
+            if (typeof value.id !== 'string' || !/^[\w-]+$/.test(value.id) || value.id === 'latest')
+                throw new NativeDiagnosticError('preview-deployment-id-invalid', {
+                    deploymentIdValid: false,
+                })
+            if (
+                !inspection &&
+                (!Array.isArray(value.urls) ||
+                    !value.urls.length ||
+                    !value.urls.every((url) => typeof url === 'string'))
+            )
+                throw new NativeDiagnosticError('preview-url-contract-mismatch')
+            if (!inspection && present(value, 'env') && !isObject(value.env))
+                throw new NativeDiagnosticError('preview-bindings-mismatch', {
+                    bindingsVerified: false,
+                })
+            if (present(value, 'preview_id') && value.preview_id !== before.id)
+                throw new NativeDiagnosticError('preview-parent-id-mismatch', {
+                    parentMatches: false,
+                })
+            if (present(value, 'preview_name') && value.preview_name !== before.name)
+                throw new NativeDiagnosticError('preview-name-mismatch', {
+                    previewNameMatches: false,
+                })
+            if (exactId !== undefined && value.id !== exactId)
+                throw new NativeDiagnosticError('preview-exact-id-mismatch', {
+                    exactIdMatches: false,
+                })
+            // Internal normalized identity comes from the verified endpoint association,
+            // not from unreported wire fields; their original presence remains in diagnostics.
+            return {
+                ...sanitizePreviewDeployment(raw),
+                ...(inspection && inspectionBindingNames
+                    ? {
+                          wireEnvEvidence: {
+                              object: isObject(value.env),
+                              entryCount: Math.min(Object.keys(record(value.env)).length, 256),
+                              truncated: Object.keys(record(value.env)).length > 256,
+                              bindingsContainerObject: isObject(record(value.env).bindings),
+                              bindingsContainerArray: Array.isArray(record(value.env).bindings),
+                              varsContainerObject: isObject(record(value.env).vars),
+                              secretsContainerObject: isObject(record(value.env).secrets),
+                              names: Object.fromEntries(
+                                  inspectionBindingNames.map((name) => {
+                                      const item = record(record(value.env)[name])
+                                      const kinds = [
+                                          'plain_text',
+                                          'json',
+                                          'secret_text',
+                                          'secret',
+                                          'text',
+                                          'd1',
+                                          'kv_namespace',
+                                          'kv',
+                                          'r2',
+                                          'rate-limit',
+                                          'send-email',
+                                          'r2_bucket',
+                                          'assets',
+                                          'flagship',
+                                          'ratelimit',
+                                          'send_email',
+                                          'ai',
+                                          'images',
+                                          'queue',
+                                      ]
+                                      return [
+                                          name,
+                                          {
+                                              present: present(record(value.env), name),
+                                              object: isObject(record(value.env)[name]),
+                                              entryShape: !present(record(value.env), name)
+                                                  ? 'absent'
+                                                  : record(value.env)[name] === null
+                                                    ? 'null'
+                                                    : Array.isArray(record(value.env)[name])
+                                                      ? 'array'
+                                                      : typeof record(value.env)[name],
+                                              valuePresent: present(item, 'value'),
+                                              valueObject: isObject(item.value),
+                                              textPresent: present(item, 'text'),
+                                              fields: Object.fromEntries(
+                                                  [
+                                                      'database_id',
+                                                      'namespace_id',
+                                                      'bucket_name',
+                                                      'id',
+                                                      'app_id',
+                                                      'simple',
+                                                      'allowed_sender_addresses',
+                                                      'allowed_destination_addresses',
+                                                  ].map((key) => [key, present(item, key)]),
+                                              ),
+                                              typePresent: present(item, 'type'),
+                                              typeString: typeof item.type === 'string',
+                                              fixedType:
+                                                  typeof item.type === 'string' &&
+                                                  kinds.includes(item.type)
+                                                      ? item.type
+                                                      : 'unrecognized-or-absent',
+                                          },
+                                      ]
+                                  }),
+                              ),
+                          },
+                      }
+                    : {}),
+                id: value.id,
+                preview_id: before.id,
+                preview_name: before.name,
+            }
+        }
+        const path = `${previewPath(mode)}/deployments/`
+        const raw = await request(
+            `${path}${version}`,
+            'GET',
+            undefined,
+            absent,
+            'preview-deployment',
         )
-        if (created.name !== mode || created.slug !== mode)
-            throw new Error('Created Preview identity mismatch.')
-        return created
+        let result =
+            raw === null ? null : associate(raw, version !== 'latest' ? version : undefined)
+        if (result && version === 'latest') {
+            const exact = associate(
+                await request(`${path}${result.id}`, 'GET', undefined, false, 'preview-deployment'),
+                result.id,
+            )
+            if (
+                !isDeepStrictEqual(result.urls, exact.urls) ||
+                (result.sourceSha !== undefined && result.sourceSha !== exact.sourceSha) ||
+                !isDeepStrictEqual(result.env, exact.env)
+            )
+                throw new NativeDiagnosticError('preview-deployment-receipt-mismatch')
+            result = exact
+        }
+        const after = await preview(mode)
+        const stable =
+            after !== null &&
+            before.id === after.id &&
+            before.name === after.name &&
+            before.slug === after.slug
+        if (!stable)
+            throw new NativeDiagnosticError('preview-parent-changed', {
+                parentMatches: false,
+                previewParentStable: false,
+            })
+        reportDiagnostic?.({
+            phase: 'preview-endpoint-association',
+            outcome: 'verified',
+            evidence: {
+                parentMatches: true,
+                previewParentStable: true,
+                deploymentPresent: result !== null,
+                endpointAssociationVerified: true,
+            },
+        })
+        return result === null
+            ? null
+            : { ...result, parentAssociation: 'verified-preview-endpoint' as const }
     }
     const inspect = async (mode: string, inventory: CloudflareResourceInventory) => {
-        createCloudflareConfig({ mode, isPreview: mode !== 'production' }, inventory)
-        const target = mode.startsWith('pr-')
-            ? inventory.previews?.[mode]
-            : inventory[mode === 'production' ? 'production' : 'development']
+        if (inspection && mode !== 'development')
+            throw new Error('Only development metadata inspection is allowed.')
+        const target = inspection
+            ? getCloudflareDevelopmentInspectionConfiguration(inventory).resources
+            : (createCloudflareConfig({ mode, isPreview: mode !== 'production' }, inventory),
+              getCloudflareTargetResources(mode, inventory))
         if (!target || inventory.accountId !== accountId)
             throw new Error('Missing reviewed target.')
         const database = await request(`/d1/database/${target.database.id}`, 'GET', undefined, true)
@@ -126,220 +556,27 @@ export const createCloudflareNativeApi = (
             !Array.isArray(record(results[0]).results)
         )
             throw new Error('D1 query did not succeed.')
+        if (inspection && record(record(results[0]).meta).rows_written !== 0)
+            throw new Error('Read-only D1 query did not confirm zero written rows.')
         return record(results[0]).results as unknown[]
     }
     return {
         inspect,
         query,
         preview,
-        async verifyProductionVersion(
-            versionId: string,
-            configuration: ReturnType<typeof createCloudflareConfig>,
-        ) {
-            if (
-                !z.uuid().safeParse(versionId).success ||
-                configuration.accountId !== accountId ||
-                configuration.worker.name !== 'avatio'
-            )
-                throw new Error('Exact production version and reviewed account required.')
-            const active = record(await request('/workers/scripts/avatio/deployments'))
-            const deployments = active.deployments
-            if (!Array.isArray(deployments))
-                throw new Error('Active production deployment is unavailable.')
-            const versions = record(deployments[0]).versions
-            if (
-                !Array.isArray(versions) ||
-                versions.length !== 1 ||
-                record(versions[0]).version_id !== versionId ||
-                record(versions[0]).percentage !== 100
-            )
-                throw new Error('Production is not serving the exact published version.')
-            const value = record(await request(`/workers/scripts/avatio/versions/${versionId}`))
-            const resources = record(value.resources)
-            const bindings = resources.bindings
-            if (!Array.isArray(bindings))
-                throw new Error('Specific version bindings are unavailable.')
-            verifyCloudflarePreviewBindings(
-                {
-                    id: value.id,
-                    preview_name: 'production',
-                    env: Object.fromEntries(
-                        bindings.map((binding) => [String(record(binding).name), record(binding)]),
-                    ),
-                },
-                configuration.worker.env,
-                { mode: 'production', deploymentId: versionId },
-            )
-            const runtime = record(resources.script_runtime)
-            const flags = runtime.compatibility_flags
-            if (
-                runtime.compatibility_date !== configuration.worker.compatibilityDate ||
-                !Array.isArray(flags) ||
-                flags.includes('no_nodejs_compat_v2') ||
-                configuration.worker.compatibilityFlags.some((flag) => !flags.includes(flag))
-            )
-                throw new Error('Production compatibility settings differ.')
-            const schedules = record(await request('/workers/scripts/avatio/schedules')).schedules
-            if (
-                !Array.isArray(schedules) ||
-                schedules.length !== 1 ||
-                record(schedules[0]).cron !== '0 22 * * *'
-            )
-                throw new Error('Production Cron differs.')
-            const queues = await request('/queues?per_page=100&page=1')
-            if (!Array.isArray(queues) || queues.length >= 100)
-                throw new Error('Queue enumeration is incomplete.')
-            const expectedQueue = configuration.worker.env.ITEM_REVALIDATION_QUEUE
-            if (expectedQueue?.type !== 'queue')
-                throw new Error('Production Queue contract missing.')
-            const matches = queues.filter(
-                (queue) => record(queue).queue_name === expectedQueue.name,
-            )
-            if (matches.length !== 1 || typeof record(matches[0]).queue_id !== 'string')
-                throw new Error('Production Queue identity is ambiguous.')
-            const queueId = record(matches[0]).queue_id
-            if (typeof queueId !== 'string') throw new Error('Exact Queue ID required.')
-            const consumers = await request(`/queues/${queueId}/consumers`)
-            if (!Array.isArray(consumers) || consumers.length !== 1)
-                throw new Error('Production must have one Queue consumer.')
-            const consumer = record(consumers[0])
-            const settings = record(consumer.settings)
-            if (
-                consumer.script_name !== 'avatio' ||
-                settings.batch_size !== 10 ||
-                settings.max_wait_time_ms !== 5000 ||
-                settings.max_retries !== 3
-            )
-                throw new Error('Production Queue consumer differs.')
-            return { versionId, realBindingsVerified: true as const }
+        async previewBaseBindings() {
+            const worker = record(await request('/workers/workers/avatio'))
+            const base = record(worker.previews_base_config)
+            if (!isObject(base.env)) throw new Error('Preview Base settings are unavailable.')
+            return sanitizePreviewDeployment({ env: base.env }).env
         },
-        async rollbackProductionVersion(
-            versionId: string,
-            configuration: ReturnType<typeof createCloudflareConfig>,
-        ) {
-            if (!z.uuid().safeParse(versionId).success || configuration.accountId !== accountId)
-                throw new Error('Reviewed prior Worker version required.')
-            const previous = record(await request(`/workers/scripts/avatio/versions/${versionId}`))
-            const bindings = record(previous.resources).bindings
-            if (!Array.isArray(bindings)) throw new Error('Prior Worker bindings are unavailable.')
-            verifyCloudflarePreviewBindings(
-                {
-                    id: previous.id,
-                    preview_name: 'production',
-                    env: Object.fromEntries(
-                        bindings.map((binding) => [String(record(binding).name), record(binding)]),
-                    ),
-                },
-                configuration.worker.env,
-                { mode: 'production', deploymentId: versionId },
-            )
-            // Standard Worker deployment API. No Alchemy replay or D1 restore/query here.
-            await request('/workers/scripts/avatio/deployments', 'POST', {
-                strategy: 'percentage',
-                versions: [{ version_id: versionId, percentage: 100 }],
-                annotations: { 'workers/message': 'Reviewed Avatio Worker recovery; D1 retained' },
-            })
-        },
-        async bootstrapPr(
+        async previewDeployment(
             mode: string,
-            sharedStorage: CloudflareResourceInventory['sharedPreviewStorage'],
+            version: string,
+            allowUndeployed = false,
+            expectedPreviewId?: string,
         ) {
-            if (!/^pr-[1-9]\d*$/.test(mode))
-                throw new Error('Only dedicated PR resources may be created.')
-            const name = `avatio-${mode}`
-            const sharedDatabase = sharedStorage.database
-            const named = async (path: string, key: string) => {
-                const matches: Record<string, unknown>[] = []
-                for (let page = 1; page <= 100; page++) {
-                    const rows = await request(`${path}?per_page=100&page=${page}`)
-                    if (!Array.isArray(rows))
-                        throw new Error('Resource identity enumeration is incomplete.')
-                    matches.push(...rows.map(record).filter((row) => row[key] === name))
-                    if (matches.length > 1)
-                        throw new Error('Duplicate PR resource names require operator inspection.')
-                    if (rows.length < 100) return matches[0]
-                }
-                throw new Error('Resource enumeration exceeded its bounded pagination.')
-            }
-            // Enumerate first. A denied read never causes a replacement allocation.
-            // Ordinary PRs bind existing shared D1 and R2; bootstrap never creates either.
-            // Isolated PRs use a separately reviewed, explicitly provisioned storage pair.
-            if (!z.uuid().safeParse(sharedDatabase.id).success || !sharedDatabase.name)
-                throw new Error('A reviewed shared Preview D1 is required.')
-            const database = record(await request(`/d1/database/${sharedDatabase.id}`))
-            if (database.uuid !== sharedDatabase.id || database.name !== sharedDatabase.name)
-                throw new Error('Shared Preview D1 identity mismatch.')
-            const cache = await named('/storage/kv/namespaces', 'title')
-            const bucket = record(
-                await request(`/r2/buckets/${encodeURIComponent(sharedStorage.bucket)}`),
-            )
-            if (bucket.name !== sharedStorage.bucket)
-                throw new Error('Shared Preview R2 identity mismatch.')
-            const createdCache =
-                cache ?? record(await request('/storage/kv/namespaces', 'POST', { title: name }))
-            const result = {
-                database: { id: database.uuid, name: database.name },
-                cache: { id: createdCache.id, name: createdCache.title },
-                bucket: bucket.name,
-            }
-            if (
-                !z.uuid().safeParse(result.database.id).success ||
-                result.database.name !== sharedDatabase.name ||
-                !z
-                    .string()
-                    .regex(/^[a-f0-9]{32}$/)
-                    .safeParse(result.cache.id).success ||
-                result.cache.name !== name ||
-                result.bucket !== sharedStorage.bucket
-            )
-                throw new Error(
-                    'Allocated PR identities require private operator reconciliation; nothing is deleted.',
-                )
-            return result
-        },
-        async preparePreview(mode: string) {
-            const existing = await preview(mode)
-            if (existing) return existing
-            // Preview Base is separate from production; avoid inheriting unreviewed Base settings.
-            return createPreview(mode)
-        },
-        async createInitialDevelopmentPreview() {
-            if (await preview('development'))
-                throw new Error('Initial rehearsal must not reuse an existing Preview.')
-            // A create conflict is fatal; do not fall back to reuse or update.
-            return createPreview('development')
-        },
-        async previewDeployment(mode: string, version: string, allowUndeployed = false) {
-            if (!/^[\w-]+$/.test(version)) throw new Error('Exact Preview version required.')
-            const raw = await request(
-                `${previewPath(mode)}/deployments/${version}`,
-                'GET',
-                undefined,
-                allowUndeployed,
-            )
-            if (raw === null) return null
-            const value = record(raw)
-            // The API may echo secret values. Strip them before returning even to trusted callers.
-            const env = Object.fromEntries(
-                Object.entries(record(value.env)).map(([name, binding]) => {
-                    const item = record(binding)
-                    return [name, item.type === 'secret_text' ? { type: 'secret_text' } : item]
-                }),
-            )
-            return { id: value.id, preview_name: value.preview_name, env }
-        },
-        async setPreviewSecrets(mode: string, version: string, secrets: Record<string, string>) {
-            if (!/^[\w-]+$/.test(version)) throw new Error('Exact Preview version required.')
-            // The documented cf deploy command has no secrets-file option for Previews.
-            // Contain its upstream REST merge-patch alternative here, not in app/runtime code.
-            await request(`${previewPath(mode)}/deployments/${version}`, 'PATCH', {
-                env: Object.fromEntries(
-                    Object.entries(secrets).map(([name, text]) => [
-                        name,
-                        { type: 'secret_text', text },
-                    ]),
-                ),
-            })
+            return scopedDeployment(mode, version, allowUndeployed, expectedPreviewId)
         },
         async deletePreview(mode: string, expectedId: string) {
             if (!/^pr-[1-9]\d*$/.test(mode)) throw new Error('Only PR Previews can be deleted.')
@@ -349,55 +586,6 @@ export const createCloudflareNativeApi = (
                 throw new Error('Preview was replaced; deletion refused.')
             await request(`${previewPath(mode)}`, 'DELETE')
             if (await preview(mode)) throw new Error('Preview deletion remains unverified.')
-        },
-        async deletePrResource(
-            mode: string,
-            kind: 'database' | 'cache' | 'bucket',
-            inventory: CloudflareResourceInventory,
-        ) {
-            if (!/^pr-[1-9]\d*$/.test(mode)) throw new Error('Only PR resources can be deleted.')
-            if (
-                kind === 'database' &&
-                inventory.previews?.[mode]?.database.id.toLowerCase() ===
-                    inventory.sharedPreviewStorage.database.id.toLowerCase()
-            )
-                throw new Error('Shared Preview D1 must never be deleted during PR cleanup.')
-            if (
-                kind === 'bucket' &&
-                inventory.previews?.[mode]?.bucket === inventory.sharedPreviewStorage.bucket
-            )
-                throw new Error('Shared Preview R2 must never be deleted during PR cleanup.')
-            const observed = await inspect(mode, inventory)
-            const target = inventory.previews?.[mode]
-            if (!target) throw new Error('Missing reviewed PR resources.')
-            const value = observed.resources[kind]
-            if (value === null) return
-            if (
-                kind === 'database' &&
-                (record(value).id !== target.database.id || record(value).name !== `avatio-${mode}`)
-            )
-                throw new Error('D1 ownership mismatch.')
-            if (
-                kind === 'cache' &&
-                (record(value).id !== target.cache.id || record(value).name !== `avatio-${mode}`)
-            )
-                throw new Error('KV ownership mismatch.')
-            if (kind === 'bucket' && record(value).name !== `avatio-${mode}`)
-                throw new Error('R2 ownership mismatch.')
-            const path =
-                kind === 'database'
-                    ? `/d1/database/${target.database.id}`
-                    : kind === 'cache'
-                      ? `/storage/kv/namespaces/${target.cache.id}`
-                      : `/r2/buckets/${encodeURIComponent(target.bucket)}`
-            // R2 deletion deliberately fails for a nonempty bucket. Never purge objects implicitly.
-            await request(path, 'DELETE')
-            if (
-                kind === 'cache'
-                    ? (await namespaces()).some((value) => value.id === target.cache.id)
-                    : (await request(path, 'GET', undefined, true)) !== null
-            )
-                throw new Error('Resource deletion remains unverified.')
         },
     }
 }

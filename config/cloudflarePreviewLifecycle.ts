@@ -1,7 +1,11 @@
 import { z } from 'zod'
 
 import { requireHttpsOrigin } from './build.ts'
-import { createCloudflareConfig, type CloudflareResourceInventory } from './cloudflare.ts'
+import {
+    createCloudflareConfig,
+    getCloudflareTargetResources,
+    type CloudflareResourceInventory,
+} from './cloudflare.ts'
 import type { DeploymentState } from './deployment.ts'
 
 const identifier = z.string().regex(/^[a-zA-Z0-9_-]+$/)
@@ -47,7 +51,15 @@ export const parseCloudflarePreviewDeployment = (
             `${expected.mode}${stable.hostname.endsWith('.workers.dev') ? '-avatio' : ''}${suffix}`
     )
         throw new Error('The reviewed URL must identify this native Preview.')
-    const deploymentUrl = `https://${result.deployment_id}${stable.hostname.endsWith('.workers.dev') ? '-avatio' : `-${expected.mode}`}${suffix}`
+    const workersDev = stable.hostname.endsWith('.workers.dev')
+    // Version URLs use the UUID's first eight characters (official Wrangler + live Preview API).
+    // They carry no Preview name: callers must associate the FULL UUID through the scoped API.
+    if (workersDev && !z.uuid().safeParse(result.deployment_id).success)
+        throw new Error('A full UUID is required for a workers.dev deployment.')
+    const versionPrefix = workersDev
+        ? result.deployment_id.slice(0, 8).toLowerCase()
+        : result.deployment_id
+    const deploymentUrl = `https://${versionPrefix}${workersDev ? '-avatio' : `-${expected.mode}`}${suffix}`
     if (stable.port || !deployments.includes(deploymentUrl))
         throw new Error('The exact deployment URL does not match the reviewed Preview host.')
     return {
@@ -74,7 +86,7 @@ const inspectionSchema = z.strictObject({
     workerName: z.literal('avatio'),
     complete: z.literal(true),
     resources: z.strictObject({
-        preview: z.strictObject({ id: identifier, name: z.string() }).nullable(),
+        preview: z.object({ id: identifier, name: z.string() }).nullable(),
         database: z.strictObject({ id: z.string(), name: z.string() }).nullable(),
         cache: z.strictObject({ id: z.string(), name: z.string() }).nullable(),
         bucket: z.strictObject({ name: z.string() }).nullable(),
@@ -104,18 +116,14 @@ export const createCloudflarePreviewCleanupPlan = (input: {
         throw new Error('Cleanup requires the exact clean trusted base-branch checkout.')
     // Reuse the full binding/isolation policy; no weaker cleanup-specific inventory schema.
     createCloudflareConfig({ mode, isPreview: true }, input.inventory)
-    const target = input.inventory.previews?.[mode]
+    const target = getCloudflareTargetResources(mode, input.inventory)
     if (!target) throw new Error('Cleanup requires a reviewed PR resource identity.')
     const inspection = inspectionSchema.parse(input.inspection)
     if (inspection.accountId !== input.inventory.accountId || inspection.workerName !== 'avatio')
         throw new Error('Cleanup requires successful reads of all resources in the exact account.')
     const { preview, database, cache, bucket } = inspection.resources
-    if (
-        target.database.id.toLowerCase() ===
-            input.inventory.sharedPreviewStorage.database.id.toLowerCase() &&
-        (!database || !bucket)
-    )
-        throw new Error('Shared Preview D1 and R2 must exist before cleanup can proceed.')
+    if (!database || !cache || !bucket)
+        throw new Error('Preprovisioned resources must exist before cleanup.')
     if (
         (preview && (!identifier.safeParse(preview.id).success || preview.name !== mode)) ||
         (database &&
@@ -128,15 +136,9 @@ export const createCloudflarePreviewCleanupPlan = (input: {
         mode,
         accountId: input.inventory.accountId,
         workerName: 'avatio' as const,
-        retainedDatabase:
-            target.database.id.toLowerCase() ===
-            input.inventory.sharedPreviewStorage.database.id.toLowerCase()
-                ? target.database
-                : null,
-        retainedBucket:
-            target.bucket === input.inventory.sharedPreviewStorage.bucket
-                ? { name: target.bucket }
-                : null,
+        retainedDatabase: target.database,
+        retainedCache: target.cache,
+        retainedBucket: { name: target.bucket },
         // Absent resources make retries idempotent, but unavailable reads are never absence.
         resources: { preview, database, cache, bucket },
     }
@@ -156,14 +158,11 @@ export const verifyCloudflarePreviewCleanup = (
         inspection.accountId !== plan.accountId ||
         inspection.workerName !== plan.workerName ||
         inspection.resources.preview !== null ||
-        inspection.resources.cache !== null ||
-        (plan.retainedBucket
-            ? inspection.resources.bucket?.name !== plan.retainedBucket.name
-            : inspection.resources.bucket !== null) ||
-        (plan.retainedDatabase
-            ? inspection.resources.database?.id !== plan.retainedDatabase.id ||
-              inspection.resources.database?.name !== plan.retainedDatabase.name
-            : inspection.resources.database !== null)
+        inspection.resources.cache?.id !== plan.retainedCache.id ||
+        inspection.resources.cache?.name !== plan.retainedCache.name ||
+        inspection.resources.bucket?.name !== plan.retainedBucket.name ||
+        inspection.resources.database?.id !== plan.retainedDatabase.id ||
+        inspection.resources.database?.name !== plan.retainedDatabase.name
     )
         throw new Error('Cleanup is incomplete or PR identity/state changed; stop and inspect.')
     return { mode: plan.mode, absenceVerified: true as const }

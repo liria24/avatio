@@ -1,39 +1,25 @@
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { appendFileSync, readFileSync, existsSync } from 'node:fs'
-import {
-    readFile,
-    readdir,
-    lstat,
-    realpath,
-    writeFile,
-    mkdtemp,
-    unlink,
-    mkdir,
-} from 'node:fs/promises'
+import { appendFileSync, readFileSync, existsSync, writeFileSync } from 'node:fs'
+import { readFile, readdir, lstat, realpath, mkdir, mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { resolve, relative, isAbsolute, join } from 'node:path'
 
 import { readBuildOutput } from '@cloudflare/build-output-utils'
 
-import { createCloudflareConfig, type CloudflareResourceInventory } from '../config/cloudflare.ts'
-import { requireCloudflareActivation } from '../config/cloudflareActivation.ts'
-import { parseCloudflarePreviewDeployment } from '../config/cloudflarePreviewLifecycle.ts'
+import type { CloudflareResourceInventory } from '../config/cloudflare.ts'
 import { createCloudflarePublishPlan } from '../config/cloudflarePublisher.ts'
-import { requireCloudflareRecovery } from '../config/cloudflareRecovery.ts'
 import { resolveCloudflareDeliveryPreflight } from './cloudflareDeliveryPreflight.ts'
-import { requireCloudflareDevelopmentRehearsal } from './cloudflareDevelopmentRehearsal.ts'
 import { readCommittedCloudflareMigrations } from './cloudflareMigrationHistory.ts'
 import { createCloudflareNativeApi } from './cloudflareNativeApi.ts'
 import { buildCloudflareNative } from './cloudflareNativeBuild.ts'
+import { nativePhase, type NativeReporter } from './cloudflareNativeDiagnostics.ts'
 import {
     publishCloudflareNative,
+    migrateCloudflareSharedPreview,
     cleanupCloudflareNativePr,
     runCloudflareNativeCommand,
-    prepareCloudflareRuntimeSecrets,
 } from './cloudflareNativePublication.ts'
-import { verifyCloudflareDeploymentHttp } from './cloudflarePreviewSmoke.ts'
-import { rehearseCloudflareDevelopment } from './cloudflareRehearseDevelopment.ts'
 
 const object = (value: unknown): Record<string, unknown> =>
     value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -82,58 +68,44 @@ const selection = async () => {
     if (!['main', 'development'].includes(branch)) throw new Error('Untrusted base branch.')
     const trustedSha = String(object(object(await githubRead(`/branches/${branch}`)).commit).sha)
     if (!/^[a-f0-9]{40}$/.test(trustedSha)) throw new Error('Immutable trusted code required.')
-    const operation = process.env.NATIVE_OPERATION
+    if (selected.mode === 'production') throw new Error('Production cutover remains on hold.')
     if (
-        operation === 'rehearse' &&
-        (selected.mode !== 'development' ||
+        process.env.NATIVE_OPERATION &&
+        !['deploy', 'migrate-shared'].includes(process.env.NATIVE_OPERATION)
+    )
+        throw new Error('Unsupported native operation.')
+    const manualDevelopmentApproved =
+        process.env.GITHUB_EVENT_NAME === 'workflow_dispatch' &&
+        process.env.GITHUB_REF === 'refs/heads/development' &&
+        selected.mode === 'development' &&
+        process.env.GITHUB_ACTOR === 'liry24' &&
+        process.env.GITHUB_TRIGGERING_ACTOR === 'liry24'
+    if (process.env.GITHUB_EVENT_NAME === 'workflow_dispatch' && !manualDevelopmentApproved)
+        throw new Error('Manual Preview delivery requires the owner and development branch.')
+    if (process.env.AVATIO_NATIVE_DELIVERY_ENABLED !== 'true' && !manualDevelopmentApproved)
+        throw new Error('Native automatic delivery remains disabled.')
+    const migrateShared = process.env.NATIVE_OPERATION === 'migrate-shared'
+    if (
+        migrateShared &&
+        (!manualDevelopmentApproved ||
             selected.action !== 'deploy' ||
-            process.env.GITHUB_EVENT_NAME !== 'workflow_dispatch' ||
-            process.env.GITHUB_REF !== 'refs/heads/development' ||
-            process.env.GITHUB_ACTOR !== 'liry24' ||
-            process.env.GITHUB_TRIGGERING_ACTOR !== 'liry24')
+            !('sourceSha' in selected) ||
+            selected.sourceSha !== trustedSha)
     )
-        throw new Error('Rehearsal requires an owner-initiated manual development run.')
-    if (operation === 'bootstrap' && (!pr || selected.action !== 'deploy'))
-        throw new Error('Bootstrap requires a fresh open trusted PR quality run.')
-    if (
-        operation === 'rollback' &&
-        (selected.mode !== 'production' || selected.action !== 'deploy')
-    )
-        throw new Error('Recovery requires the current successful main quality run.')
+        throw new Error(
+            'Shared migration requires an owner manual run of the current trusted base.',
+        )
     return {
         ...selected,
-        action:
-            operation === 'rehearse'
-                ? ('rehearse' as const)
-                : operation === 'bootstrap'
-                  ? ('bootstrap' as const)
-                  : operation === 'rollback'
-                    ? ('rollback' as const)
-                    : selected.action,
+        action: migrateShared ? ('migrate-shared' as const) : selected.action,
         sourceSha: 'sourceSha' in selected ? selected.sourceSha : trustedSha,
         trustedSha,
         trustedRef: `refs/heads/${branch}`,
         sourceRef: pr ? `refs/pull/${selected.mode.slice(3)}/head` : `refs/heads/${branch}`,
+        manualDevelopmentApproved,
         qualityRunId: process.env.QUALITY_RUN_ID ?? '',
     }
 }
-
-const developmentRehearsalExpected = (
-    selected: Awaited<ReturnType<typeof selection>>,
-    inventory: CloudflareResourceInventory,
-) => ({
-    action: selected.action,
-    mode: selected.mode,
-    eventName: process.env.GITHUB_EVENT_NAME ?? '',
-    sourceRef: selected.sourceRef,
-    trustedRef: selected.trustedRef,
-    sourceSha: selected.sourceSha,
-    latestSourceSha: selected.sourceSha,
-    trustedCodeSha: selected.trustedSha,
-    // selection() has freshly verified the exact successful quality run and current branch.
-    quality: { runId: selected.qualityRunId, sourceSha: selected.sourceSha, succeeded: true },
-    inventory,
-})
 
 /** Inspect data files only. Never evaluate a config, import code, or install artifact dependencies. */
 export const validateCloudflareNativeArtifact = async (
@@ -142,6 +114,7 @@ export const validateCloudflareNativeArtifact = async (
     readCommitted: (name: string) => string,
 ) => {
     const root = await realpath(directory)
+    const artifactFiles: { path: string; sha256: string }[] = []
     const visit = async (path: string) => {
         const entry = await lstat(path)
         if (entry.isSymbolicLink()) throw new Error('Build artifact contains a symbolic link.')
@@ -152,6 +125,13 @@ export const validateCloudflareNativeArtifact = async (
         if (entry.isDirectory())
             for (const name of await readdir(path)) await visit(join(path, name))
         else if (!entry.isFile()) throw new Error('Unexpected artifact file type.')
+        else
+            artifactFiles.push({
+                path: local.split('\\').join('/'),
+                sha256: createHash('sha256')
+                    .update(await readFile(path))
+                    .digest('hex'),
+            })
     }
     await visit(root)
     if (
@@ -208,14 +188,24 @@ export const validateCloudflareNativeArtifact = async (
             if (!(await lstat(resolve(worker.assetsDir!, name))).isFile())
                 throw new Error('PWA asset is missing.')
     }
-    return { output, migrationNames: names }
+    artifactFiles.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0))
+    return {
+        output,
+        migrationNames: names,
+        artifactHash: createHash('sha256').update(JSON.stringify(artifactFiles)).digest('hex'),
+    }
 }
 
 if (import.meta.main) {
-    let secretFile: string | undefined
+    const reportDiagnostic: NativeReporter = (diagnostic) => {
+        const line = JSON.stringify(diagnostic)
+        console.info(line)
+        if (process.env.GITHUB_STEP_SUMMARY)
+            appendFileSync(process.env.GITHUB_STEP_SUMMARY, `Native diagnostic: ${line}\n`)
+    }
     try {
         const action = process.argv[2]
-        const selected = await selection()
+        const selected = await nativePhase('source-selection', reportDiagnostic, selection)
         if (action === 'select') {
             if (!process.env.GITHUB_OUTPUT) throw new Error('Actions output destination required.')
             for (const [name, value] of Object.entries({
@@ -224,57 +214,33 @@ if (import.meta.main) {
                 source_sha: selected.sourceSha,
                 trusted_sha: selected.trustedSha,
                 trusted_ref: selected.trustedRef,
-                environment: selected.mode === 'production' ? 'production' : 'preview',
             }))
                 appendFileSync(process.env.GITHUB_OUTPUT, `${name}=${value}\n`)
         } else {
-            const inventory = JSON.parse(
-                process.env.AVATIO_CF_RESOURCES_JSON ?? '',
-            ) as CloudflareResourceInventory
-            const activation = JSON.parse(process.env.AVATIO_CF_ACTIVATION_JSON ?? '') as unknown
-            const enabled = process.env.AVATIO_NATIVE_DELIVERY_ENABLED === 'true'
-            const expected = {
-                mode: selected.mode,
-                sourceSha: selected.sourceSha,
-                trustedCodeSha: selected.trustedSha,
-                inventory,
-                enabled,
-            }
-            const approval =
-                selected.action === 'rehearse'
-                    ? requireCloudflareDevelopmentRehearsal(
-                          activation,
-                          developmentRehearsalExpected(selected, inventory),
-                      )
-                    : requireCloudflareActivation(activation, {
-                          ...expected,
-                          action: selected.action,
-                      })
-            if (action === 'approve') {
-                if (
-                    (selected.action === 'deploy' || selected.action === 'rehearse') &&
-                    !approval.buildArtifactPublicationApproved
-                )
-                    throw new Error('Build artifact metadata handling requires explicit review.')
-            } else if (action === 'build') {
-                if (
-                    (selected.action !== 'deploy' && selected.action !== 'rehearse') ||
-                    !approval.buildArtifactPublicationApproved ||
-                    git('rev-parse', 'HEAD') !== selected.sourceSha
-                )
-                    throw new Error(
-                        'Credentialless build source was superseded or lacks metadata approval.',
-                    )
+            const inventory = await nativePhase(
+                'protected-approval',
+                reportDiagnostic,
+                () =>
+                    JSON.parse(
+                        process.env.AVATIO_CF_RESOURCES_JSON ?? '',
+                    ) as CloudflareResourceInventory,
+            )
+            if (action === 'build') {
+                if (selected.action !== 'deploy' || git('rev-parse', 'HEAD') !== selected.sourceSha)
+                    throw new Error('Credentialless build source was superseded.')
                 await buildCloudflareNative(selected.mode, inventory)
             } else {
                 if (
                     git('rev-parse', 'HEAD') !== selected.trustedSha ||
                     git('status', '--porcelain', '--untracked-files=no')
                 )
-                    throw new Error('Privileged execution requires clean, current trusted code.')
+                    throw new Error('Privileged execution requires clean current trusted code.')
                 const api = createCloudflareNativeApi(
                     inventory.accountId,
                     process.env.CLOUDFLARE_API_TOKEN ?? '',
+                    fetch,
+                    undefined,
+                    reportDiagnostic,
                 )
                 const state = {
                     branch: null,
@@ -282,60 +248,45 @@ if (import.meta.main) {
                     dirty: false,
                     ci: { ref: selected.trustedRef, commit: selected.trustedSha },
                 }
-                if (action === 'rollback' && selected.action === 'rollback') {
-                    const recovery = requireCloudflareRecovery(
-                        JSON.parse(process.env.AVATIO_CF_RECOVERY_JSON ?? ''),
-                        {
-                            accountId: inventory.accountId,
-                            databaseId: inventory.production.database.id,
-                            inventory,
-                        },
-                    )
-                    const names = async () =>
-                        (
-                            await api.query(
-                                inventory.production.database.id,
-                                'SELECT name FROM d1_migrations ORDER BY id',
-                            )
-                        ).map((row) => String(object(row).name))
-                    if (
-                        JSON.stringify(await names()) !==
-                        JSON.stringify(recovery.appliedMigrationNames)
-                    )
-                        throw new Error('Recovery DB differs from the rehearsed migration state.')
-                    const configuration = createCloudflareConfig(
-                        { mode: 'production', isPreview: false },
+                if (action === 'approve') {
+                    // GitHub protected Environment is the approval boundary, not a custom secret receipt.
+                    if (!process.env.CLOUDFLARE_API_TOKEN)
+                        throw new Error('Protected Cloudflare credential is unavailable.')
+                } else if (action === 'migrate-shared' && selected.action === 'migrate-shared') {
+                    const files = readCommittedCloudflareMigrations()
+                    const directory = await mkdtemp(join(tmpdir(), 'avatio-shared-migrations-'))
+                    for (const file of files) {
+                        const path = resolve(directory, 'drizzle', file.name)
+                        await mkdir(resolve(path, '..'), { recursive: true })
+                        await writeFile(path, file.sql, { mode: 0o600 })
+                    }
+                    const result = await migrateCloudflareSharedPreview({
                         inventory,
-                    )
-                    await api.rollbackProductionVersion(recovery.previousVersionId, configuration)
-                    await api.verifyProductionVersion(recovery.previousVersionId, configuration)
-                    await verifyCloudflareDeploymentHttp(inventory.production.siteUrl)
-                    if (
-                        JSON.stringify(await names()) !==
-                        JSON.stringify(recovery.appliedMigrationNames)
-                    )
-                        throw new Error(
-                            'D1 changed during Worker recovery; stop for private inspection.',
+                        api,
+                        manualDevelopmentApproved: selected.manualDevelopmentApproved,
+                        sourceSha: selected.sourceSha,
+                        migrationNames: files.map((file) => file.name).sort(),
+                        latestSourceSha: async () => (await selection()).sourceSha,
+                        reportDiagnostic,
+                        run: (command) =>
+                            runCloudflareNativeCommand(command, directory, {
+                                PATH: process.env.PATH ?? '',
+                                HOME: process.env.HOME ?? '',
+                                CI: 'true',
+                                CLOUDFLARE_ACCOUNT_ID: inventory.accountId,
+                                CLOUDFLARE_API_TOKEN: process.env.CLOUDFLARE_API_TOKEN ?? '',
+                                CF_SEND_TELEMETRY: 'false',
+                            }),
+                    })
+                    if (process.env.GITHUB_STEP_SUMMARY)
+                        appendFileSync(
+                            process.env.GITHUB_STEP_SUMMARY,
+                            `Shared PR migrations verified for ${result.sourceSha}; no Preview publication.\n`,
                         )
-                } else if (action === 'bootstrap' && selected.action === 'bootstrap') {
-                    createCloudflareConfig({ mode: 'production', isPreview: false }, inventory)
-                    const resources = await api.bootstrapPr(
-                        selected.mode,
-                        inventory.sharedPreviewStorage,
-                    )
-                    // Operator retrieves identities privately from Cloudflare, reviews non-production
-                    // domains/CORS/integrations and supplies the complete inventory before publishing.
-                    await mkdir(resolve('.cloudflare'), { recursive: true })
-                    await writeFile(
-                        resolve('.cloudflare/bootstrap-result.json'),
-                        JSON.stringify(resources),
-                        { mode: 0o600 },
-                    )
                 } else if (action === 'cleanup' && selected.action === 'cleanup') {
                     await cleanupCloudflareNativePr({
                         inventory,
-                        activation,
-                        enabled,
+                        enabled: process.env.AVATIO_NATIVE_DELIVERY_ENABLED === 'true',
                         mode: selected.mode,
                         trustedCode: state,
                         trustedRef: selected.trustedRef,
@@ -343,22 +294,25 @@ if (import.meta.main) {
                         api,
                         readPr: () => githubRead(`/pulls/${selected.mode.slice(3)}`),
                     })
-                } else if (
-                    action === 'deploy' &&
-                    (selected.action === 'deploy' || selected.action === 'rehearse')
-                ) {
+                } else if (action === 'deploy' && selected.action === 'deploy') {
                     const artifact = resolve('.cloudflare/native-incoming')
-                    // Fetch objects only; never checkout or execute PR code in this job.
                     execFileSync('git', ['fetch', '--no-tags', 'origin', selected.sourceSha], {
                         stdio: 'ignore',
                     })
-                    const verified = await validateCloudflareNativeArtifact(
-                        artifact,
-                        { sourceSha: selected.sourceSha, mode: selected.mode },
-                        (name) =>
-                            execFileSync('git', ['show', `${selected.sourceSha}:drizzle/${name}`], {
-                                encoding: 'utf8',
-                            }),
+                    const verified = await nativePhase(
+                        'artifact-validation',
+                        reportDiagnostic,
+                        () =>
+                            validateCloudflareNativeArtifact(
+                                artifact,
+                                { sourceSha: selected.sourceSha, mode: selected.mode },
+                                (name) =>
+                                    execFileSync(
+                                        'git',
+                                        ['show', `${selected.sourceSha}:drizzle/${name}`],
+                                        { encoding: 'utf8' },
+                                    ),
+                            ),
                     )
                     const committedNames = git(
                         'ls-tree',
@@ -373,160 +327,94 @@ if (import.meta.main) {
                         .sort()
                     if (JSON.stringify(committedNames) !== JSON.stringify(verified.migrationNames))
                         throw new Error('Artifact omits committed migrations.')
-                    const plan = createCloudflarePublishPlan({
-                        inventory,
-                        buildOutput: verified.output,
-                        migrationNames: verified.migrationNames,
-                        evidence: {
-                            repository,
-                            sourceRepository: repository,
-                            eventName: selected.mode.startsWith('pr-') ? 'workflow_run' : 'push',
-                            ref: selected.sourceRef,
-                            mode: selected.mode,
-                            sourceSha: selected.sourceSha,
-                            latestSourceSha: selected.sourceSha,
-                            trustedCodeSha: selected.trustedSha,
-                            checkedOutCodeSha: state.commit,
-                            trustedCodeRef: selected.trustedRef,
-                            state,
-                            buildSucceeded: true,
-                            build: {
-                                sourceSha: selected.sourceSha,
+                    const plan = await nativePhase('publish-plan', reportDiagnostic, () =>
+                        createCloudflarePublishPlan({
+                            inventory,
+                            buildOutput: verified.output,
+                            migrationNames: verified.migrationNames,
+                            evidence: {
+                                repository,
+                                sourceRepository: repository,
+                                eventName: selected.mode.startsWith('pr-')
+                                    ? 'workflow_run'
+                                    : 'push',
+                                ref: selected.sourceRef,
                                 mode: selected.mode,
-                                isPreview: selected.isPreview,
-                                workerName: 'avatio',
+                                sourceSha: selected.sourceSha,
+                                latestSourceSha: selected.sourceSha,
+                                trustedCodeSha: selected.trustedSha,
+                                checkedOutCodeSha: state.commit,
+                                trustedCodeRef: selected.trustedRef,
+                                state,
+                                buildSucceeded: true,
+                                build: {
+                                    sourceSha: selected.sourceSha,
+                                    mode: selected.mode,
+                                    isPreview: true,
+                                    workerName: 'avatio',
+                                },
                             },
-                        },
-                    })
-                    if (
-                        plan.resources.ownership === 'shared-preview' &&
-                        git(
-                            'diff',
-                            '--name-only',
-                            selected.trustedSha,
-                            selected.sourceSha,
-                            '--',
-                            'drizzle',
-                        )
+                        }),
                     )
-                        throw new Error(
-                            'PR migration changes require an isolated D1; shared Preview D1 follows the trusted base schema.',
-                        )
-                    const secrets = prepareCloudflareRuntimeSecrets(plan, inventory, process.env)
-                    if (!plan.isPreview) {
-                        const directory = await mkdtemp(join(tmpdir(), 'avatio-runtime-'))
-                        secretFile = join(directory, 'secrets.json')
-                        await writeFile(secretFile, JSON.stringify(secrets), { mode: 0o600 })
-                    }
-                    const commandEnv = {
-                        PATH: process.env.PATH ?? '',
-                        HOME: process.env.HOME ?? '',
-                        CI: 'true',
-                        CLOUDFLARE_API_TOKEN: process.env.CLOUDFLARE_API_TOKEN ?? '',
-                        ...plan.commandEnvironment,
-                    }
-                    const publicationInput: Parameters<typeof publishCloudflareNative>[1] = {
+                    const sharedMigrationsCompatible = !git(
+                        'diff',
+                        '--name-only',
+                        selected.trustedSha,
+                        selected.sourceSha,
+                        '--',
+                        'drizzle',
+                    )
+                    await mkdir(resolve('.cloudflare'), { recursive: true })
+                    const result = await publishCloudflareNative(plan, {
                         inventory,
-                        activation,
-                        enabled,
-                        trustedCodeSha: selected.trustedSha,
-                        runtimeSecrets: secrets,
                         api,
+                        enabled: process.env.AVATIO_NATIVE_DELIVERY_ENABLED === 'true',
+                        manualDevelopmentApproved: selected.manualDevelopmentApproved,
+                        sharedMigrationsCompatible,
+                        reportDiagnostic,
                         latestSourceSha: async () => (await selection()).sourceSha,
-                        run: async (command) => {
-                            const result = await runCloudflareNativeCommand(
-                                command === plan.deploy && secretFile
-                                    ? {
-                                          ...command,
-                                          args: [...command.args, '--secrets-file', secretFile],
-                                      }
-                                    : command,
-                                artifact,
-                                commandEnv,
+                        run: (command) =>
+                            runCloudflareNativeCommand(command, artifact, {
+                                PATH: process.env.PATH ?? '',
+                                HOME: process.env.HOME ?? '',
+                                CI: 'true',
+                                CLOUDFLARE_API_TOKEN: process.env.CLOUDFLARE_API_TOKEN ?? '',
+                                ...plan.commandEnvironment,
+                            }),
+                        reportPublication: (receipt) => {
+                            // Only actual CLI identity plus validated source/artifact hash. Preserve partial evidence.
+                            const record = {
+                                ...receipt,
+                                artifactHash: verified.artifactHash,
+                                trustedCodeSha: selected.trustedSha,
+                            }
+                            writeFileSync(
+                                resolve('.cloudflare/native-publication.json'),
+                                JSON.stringify(record),
+                                { mode: 0o600 },
                             )
-                            if (
-                                command === plan.deploy &&
-                                plan.isPreview &&
-                                result.exitCode === 0 &&
-                                !result.signal &&
-                                process.env.GITHUB_STEP_SUMMARY
-                            ) {
-                                const deployed = parseCloudflarePreviewDeployment(result.output, {
-                                    mode: plan.mode,
-                                    siteUrl: plan.buildEnvironment.PUBLIC_SITE_URL,
-                                })
+                            if (process.env.GITHUB_STEP_SUMMARY)
                                 appendFileSync(
                                     process.env.GITHUB_STEP_SUMMARY,
-                                    `Published ${plan.mode}; secret and runtime verification pending.\nSpecific version: ${deployed.deploymentUrl}\nDeployment ID: ${deployed.deploymentId}\nDo not treat publication alone as verification.\n`,
+                                    `Published receipt (${receipt.stage}): ${receipt.sourceSha}; Preview ${receipt.previewId}; deployment ${receipt.deploymentId}; ${receipt.deploymentUrl}\n`,
                                 )
-                            }
-                            return result
                         },
-                        verifyProduction: async (value) => {
-                            const versionId = String(object(value).versionId)
-                            const configuration = createCloudflareConfig(
-                                { mode: 'production', isPreview: false },
-                                inventory,
-                            )
-                            await api.verifyProductionVersion(versionId, configuration)
-                            const base = new URL(
-                                process.env.AVATIO_CF_PRODUCTION_VERSION_BASE ?? '',
-                            )
-                            if (
-                                base.protocol !== 'https:' ||
-                                base.origin !== process.env.AVATIO_CF_PRODUCTION_VERSION_BASE ||
-                                !/^avatio\.[a-z0-9-]+\.workers\.dev$/.test(base.hostname)
-                            )
-                                throw new Error('Reviewed production version URL base required.')
-                            await verifyCloudflareDeploymentHttp(
-                                `https://${versionId.slice(0, 8)}-${base.hostname}`,
-                            )
-                            await api.verifyProductionVersion(versionId, configuration)
-                        },
-                    }
-                    const result =
-                        selected.action === 'rehearse'
-                            ? await rehearseCloudflareDevelopment(plan, {
-                                  ...publicationInput,
-                                  approval: activation,
-                                  expected: developmentRehearsalExpected(selected, inventory),
-                                  files: readCommittedCloudflareMigrations(),
-                                  filesSha: state.commit,
-                                  reportPostflight: (verified) => {
-                                      if (process.env.GITHUB_STEP_SUMMARY)
-                                          appendFileSync(
-                                              process.env.GITHUB_STEP_SUMMARY,
-                                              `Development source/schema/ledger postflight: ${verified ? 'verified unchanged' : 'not verified; private inspection required'}.\n`,
-                                          )
-                                  },
-                              })
-                            : await publishCloudflareNative(plan, publicationInput)
-                    const preview =
-                        'stableUrl' in result &&
-                        'deploymentUrl' in result &&
-                        typeof result.stableUrl === 'string' &&
-                        typeof result.deploymentUrl === 'string'
-                            ? { stableUrl: result.stableUrl, deploymentUrl: result.deploymentUrl }
-                            : undefined
-                    if (result.mode !== 'production' && !preview)
-                        throw new Error('Verified Preview URLs are unavailable.')
+                    })
                     if (process.env.GITHUB_STEP_SUMMARY)
                         appendFileSync(
                             process.env.GITHUB_STEP_SUMMARY,
-                            `Verified ${result.mode} for ${result.sourceSha}.\n${preview ? `Stable URL: ${preview.stableUrl}\nSpecific version: ${preview.deploymentUrl}\n` : ''}${selected.action === 'rehearse' ? 'Runtime rehearsal only; migrations, populated recovery and ordinary activation remain unverified.\n' : ''}`,
+                            `Verified ${result.mode} for ${result.sourceSha}.\nStable URL: ${result.stableUrl}\nSpecific version: ${result.deploymentUrl}\n`,
                         )
-                    if (preview && process.env.GITHUB_OUTPUT)
-                        appendFileSync(process.env.GITHUB_OUTPUT, `url=${preview.stableUrl}\n`)
+                    if (process.env.GITHUB_OUTPUT)
+                        appendFileSync(process.env.GITHUB_OUTPUT, `url=${result.stableUrl}\n`)
                 } else throw new Error('Unsupported native CI action.')
             }
             console.info(JSON.stringify({ action, mode: selected.mode, completed: true }))
         }
     } catch {
         console.error(
-            'Native operation failed closed. Inspect protected inputs/current resources privately; no automatic DB rollback or legacy deletion is performed.',
+            'Native operation failed closed; retained publication evidence requires inspection. No automatic recovery or resource deletion is performed.',
         )
         process.exitCode = 1
-    } finally {
-        if (secretFile) await unlink(secretFile)
     }
 }

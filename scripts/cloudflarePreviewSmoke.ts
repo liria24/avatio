@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 
 import { parseCloudflarePreviewDeployment } from '../config/cloudflarePreviewLifecycle.ts'
+import { NativeHttpError } from './cloudflareNativeDiagnostics.ts'
 
 /** Read-only checks against the immutable deployment URL, without cookies or response logging. */
 export const verifyCloudflarePreviewHttp = async (
@@ -27,8 +28,7 @@ export const verifyCloudflareDeploymentHttp = async (
             cache: 'no-store',
             signal: AbortSignal.timeout(10_000),
         })
-        if (response.status !== 200)
-            throw new Error(`Preview verification failed at ${path} (HTTP ${response.status}).`)
+        if (response.status !== 200) throw new NativeHttpError(response.status)
         return response
     }
     for (const path of ['/', '/en']) {
@@ -68,6 +68,31 @@ export const verifyCloudflareDeploymentHttp = async (
     )
         throw new Error('Preview anonymous session isolation verification failed.')
     return { httpVerified: true as const }
+}
+
+/** Inspection avoids auth/session and SSR paths: even anonymous session checks can write rate-limit rows. */
+export const verifyCloudflareStaticDeploymentHttp = async (
+    origin: string,
+    fetcher: typeof fetch = fetch,
+) => {
+    const target = new URL(origin)
+    if (target.protocol !== 'https:' || origin !== target.origin)
+        throw new Error('An exact HTTPS deployment origin is required.')
+    for (const path of ['/sw.js', '/manifest.webmanifest']) {
+        const response = await fetcher(new URL(path, origin), {
+            method: 'GET',
+            redirect: 'error',
+            cache: 'no-store',
+            signal: AbortSignal.timeout(10_000),
+        })
+        if (response.status !== 200) throw new NativeHttpError(response.status)
+        if (!response.headers.get('cache-control')?.includes('must-revalidate'))
+            throw new Error('Immutable static HTTP inspection failed.')
+        if (path === '/manifest.webmanifest') await response.json()
+        else if (!(await response.text()).length)
+            throw new Error('Preview service worker is empty.')
+    }
+    return { staticHttpVerified: true as const, applicationRuntimeVerified: false as const }
 }
 
 // Explicit read-only operator/Actions entry point; no .env, credentials or real inventory reads.

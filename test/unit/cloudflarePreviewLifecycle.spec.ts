@@ -51,7 +51,7 @@ const cleanup = {
 }
 const absent = {
     ...inspection,
-    resources: { preview: null, database: null, cache: null, bucket: null },
+    resources: { ...inspection.resources, preview: null },
 }
 
 describe('native Preview version URL verification', () => {
@@ -69,11 +69,12 @@ describe('native Preview version URL verification', () => {
                 {
                     ...result,
                     preview_urls: [siteUrl],
-                    deployment_urls: ['https://version354-avatio.account.workers.dev'],
+                    deployment_id: '98137eba-5a9a-4d89-894d-9c916ccd8d14',
+                    deployment_urls: ['https://98137eba-avatio.account.workers.dev'],
                 },
                 { ...expected, siteUrl },
             ).deploymentUrl,
-        ).toBe('https://version354-avatio.account.workers.dev')
+        ).toBe('https://98137eba-avatio.account.workers.dev')
     })
     it.each([
         { preview_name: 'development' },
@@ -114,8 +115,9 @@ describe('trusted PR cleanup and reopen guards', () => {
             mode: 'pr-354',
             accountId: inventory.accountId,
             workerName: 'avatio',
-            retainedDatabase: null,
-            retainedBucket: null,
+            retainedDatabase: target.database,
+            retainedCache: target.cache,
+            retainedBucket: { name: target.bucket },
             resources: inspection.resources,
         })
     })
@@ -251,7 +253,7 @@ describe('read-only HTTP verification against a specific Preview deployment', ()
     it('does not follow an Access/login redirect or count a missing binding as success', async () => {
         const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(null, { status: 302 }))
         await expect(verifyCloudflarePreviewHttp(result, expected, fetcher)).rejects.toThrow(
-            'HTTP 302',
+            /HTTP operation failed/,
         )
     })
 })
@@ -259,12 +261,13 @@ describe('read-only HTTP verification against a specific Preview deployment', ()
 describe('shared Preview storage cleanup', () => {
     it('requires the shared database to survive cleanup and rejects missing or replaced data', () => {
         const shared = createCloudflareResourceFixture()
-        Object.assign(shared.previews!['pr-354']!, structuredClone(shared.sharedPreviewStorage))
+        delete shared.previews!['pr-354']
         const before = {
             ...inspection,
             resources: {
                 ...inspection.resources,
                 database: shared.sharedPreviewStorage.database,
+                cache: shared.sharedPreviewStorage.cache,
                 bucket: { name: shared.sharedPreviewStorage.bucket },
             },
         }
@@ -280,6 +283,7 @@ describe('shared Preview storage cleanup', () => {
             resources: {
                 ...absent.resources,
                 database: shared.sharedPreviewStorage.database,
+                cache: shared.sharedPreviewStorage.cache,
                 bucket: { name: shared.sharedPreviewStorage.bucket },
             },
         }
@@ -297,5 +301,62 @@ describe('shared Preview storage cleanup', () => {
                 resources: { ...after.resources, database: inventory.production.database },
             }),
         ).toThrow(/incomplete/)
+    })
+})
+
+describe('exact workers.dev UUID prefix receipt contract', () => {
+    const id = '98137eba-5a9a-4d89-894d-9c916ccd8d14'
+    const site = 'https://development-avatio.liry.workers.dev'
+    const receipt = {
+        ...result,
+        preview_name: 'development',
+        preview_slug: 'development',
+        preview_urls: [site],
+        deployment_id: id,
+        deployment_urls: ['https://98137eba-avatio.liry.workers.dev'],
+    }
+    it('accepts the actual audited short UUID URL while retaining the full UUID identity', () => {
+        expect(
+            parseCloudflarePreviewDeployment(receipt, { mode: 'development', siteUrl: site }),
+        ).toMatchObject({ deploymentId: id, deploymentUrl: receipt.deployment_urls[0] })
+    })
+    it.each([
+        'https://98137ebb-avatio.liry.workers.dev',
+        'https://98137eba-avatio.another.workers.dev',
+        'https://98137eba-other.liry.workers.dev',
+        'https://98137eba-development-avatio.liry.workers.dev',
+        'https://98137eba-5a9a-4d89-894d-9c916ccd8d14-avatio.liry.workers.dev',
+        site,
+        'https://avatio.liry.workers.dev',
+        'https://98137eba-avatio.liry.workers.dev/path',
+        'https://98137eba-avatio.liry.workers.dev?secret=synthetic',
+        'https://user:secret@98137eba-avatio.liry.workers.dev',
+        'https://98137eba-avatio.liry.workers.dev:8443',
+    ])('rejects unsupported or foreign URL %s', (url) => {
+        expect(() =>
+            parseCloudflarePreviewDeployment(
+                { ...receipt, deployment_urls: [url] },
+                { mode: 'development', siteUrl: site },
+            ),
+        ).toThrow()
+    })
+    it.each(['98137eba', 'version354', 'latest'])(
+        'requires a full UUID rather than %s',
+        (deployment_id) => {
+            expect(() =>
+                parseCloudflarePreviewDeployment(
+                    { ...receipt, deployment_id },
+                    { mode: 'development', siteUrl: site },
+                ),
+            ).toThrow()
+        },
+    )
+    it('rejects another Preview even though workers.dev does not encode its name', () => {
+        expect(() =>
+            parseCloudflarePreviewDeployment(
+                { ...receipt, preview_name: 'pr-354', preview_slug: 'pr-354' },
+                { mode: 'development', siteUrl: site },
+            ),
+        ).toThrow()
     })
 })

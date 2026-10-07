@@ -1,208 +1,20 @@
 import { createCloudflareConfig } from '../../config/cloudflare'
 import {
-    cloudflareInventoryHash,
-    requireCloudflareActivation,
-} from '../../config/cloudflareActivation'
-import {
     createCloudflareNativeApi,
     verifyCloudflarePreviewBindings,
 } from '../../scripts/cloudflareNativeApi'
+import { nativePhase } from '../../scripts/cloudflareNativeDiagnostics'
 import { createCloudflareResourceFixture } from '../helpers/cloudflareResources'
-
 const inventory = createCloudflareResourceFixture()
 const address = (value: Parameters<typeof fetch>[0]) =>
-    typeof value === 'string' ? value : value instanceof URL ? value.href : value.url
-const bodyText = (value: BodyInit | null | undefined) => {
-    if (typeof value !== 'string') throw new Error('Expected a JSON string request body')
-    return value
-}
-const sha = 'a'.repeat(40)
-const now = Date.parse('2026-10-06T07:00:00Z')
-const expected = {
-    action: 'deploy' as const,
-    mode: 'pr-354',
-    sourceSha: sha,
-    trustedCodeSha: sha,
-    inventory,
-    enabled: true,
-}
-const approval = () => ({
-    version: 1,
-    repository: 'liria24/avatio',
-    ...expected,
-    inventory: undefined,
-    enabled: undefined,
-    inventoryHash: cloudflareInventoryHash(inventory),
-    expiresAt: '2026-10-06T08:00:00Z',
-    proofs: {
-        buildAndBindings: 'https://github.com/liria24/avatio/actions/runs/1',
-        previewIsolationAndSecrets: 'https://github.com/liria24/avatio/actions/runs/2',
-        migrationHistoryAndRecovery: 'https://github.com/liria24/avatio/actions/runs/3',
-        environmentProtection: 'https://github.com/liria24/avatio/actions/runs/4',
-        singlePublisher: 'https://github.com/liria24/avatio/actions/runs/5',
-    },
-    previewSecretTransferApproved: true,
-    buildArtifactPublicationApproved: false,
-    ephemeralDeletionApproved: false,
-    resourceCreationApproved: false,
-    productionCutoverApproved: false,
-})
-const cleanApproval = () => {
-    const { inventory: _inventory, enabled: _enabled, ...result } = approval()
-    return result
-}
+    value instanceof Request ? value.url : String(value)
 const response = (result: unknown, status = 200) =>
     new Response(JSON.stringify({ success: status === 200, result }), {
         status,
         headers: { 'content-type': 'application/json' },
     })
 
-describe('protected native activation evidence', () => {
-    it('accepts only exact short-lived reviewed inputs', () => {
-        expect(requireCloudflareActivation(cleanApproval(), expected, now).mode).toBe('pr-354')
-    })
-    it.each([
-        { enabled: false },
-        { mode: 'production' },
-        { sourceSha: 'b'.repeat(40) },
-        { trustedCodeSha: 'b'.repeat(40) },
-        { inventory: { ...inventory, accountId: 'b'.repeat(32) } },
-    ])('stops mismatched or inactive execution before any effect (%j)', (patch) => {
-        expect(() =>
-            requireCloudflareActivation(cleanApproval(), { ...expected, ...patch }, now),
-        ).toThrow()
-    })
-    it.each([
-        { expiresAt: '2026-10-06T07:00:00Z' },
-        { expiresAt: '2026-10-08T07:00:00Z' },
-        { previewSecretTransferApproved: false },
-        { repository: 'attacker/avatio' },
-        { unexpected: true },
-        { proofs: {} },
-    ])('rejects expired, broad or incomplete approvals (%j)', (patch) => {
-        expect(() =>
-            requireCloudflareActivation({ ...cleanApproval(), ...patch }, expected, now),
-        ).toThrow()
-    })
-    it('requires separate production, bootstrap and deletion authorization', () => {
-        for (const action of ['cleanup', 'bootstrap'] as const)
-            expect(() =>
-                requireCloudflareActivation(
-                    { ...cleanApproval(), action },
-                    { ...expected, action },
-                    now,
-                ),
-            ).toThrow()
-        expect(() =>
-            requireCloudflareActivation(
-                { ...cleanApproval(), mode: 'production' },
-                { ...expected, mode: 'production' },
-                now,
-            ),
-        ).toThrow()
-    })
-})
-
-describe('native Cloudflare REST boundary', () => {
-    it('creates a named Preview without inheriting the production base', async () => {
-        const calls: { url: string; init?: RequestInit }[] = []
-        const fetcher: typeof fetch = async (url, init) => {
-            calls.push({ url: address(url), init })
-            return init?.method === 'GET'
-                ? response(null, 404)
-                : response({ id: 'p354', name: 'pr-354', slug: 'pr-354' })
-        }
-        const api = createCloudflareNativeApi(inventory.accountId, 'synthetic-token', fetcher)
-        await api.preparePreview('pr-354')
-        expect(calls).toHaveLength(2)
-        expect(
-            calls[1]?.url.endsWith('/workers/workers/avatio/previews?ignore_base_config=true'),
-        ).toBe(true)
-        expect(JSON.parse(bodyText(calls[1]?.init?.body))).toEqual({ name: 'pr-354' })
-        expect(calls.every(({ init }) => init?.redirect === 'error')).toBe(true)
-    })
-    it('creates the initial development Preview only after an absent read', async () => {
-        const fetcher = vi.fn<typeof fetch>(async (_url, init) =>
-            init?.method === 'GET'
-                ? response(null, 404)
-                : response({ id: 'new', name: 'development', slug: 'development' }),
-        )
-        const api = createCloudflareNativeApi(inventory.accountId, 'synthetic-token', fetcher)
-        expect((await api.createInitialDevelopmentPreview()).id).toBe('new')
-        expect(fetcher).toHaveBeenCalledTimes(2)
-    })
-    it('does not reuse a development Preview that appeared after inspection', async () => {
-        const fetcher = vi.fn<typeof fetch>(async () =>
-            response({ id: 'other', name: 'development', slug: 'development' }),
-        )
-        const api = createCloudflareNativeApi(inventory.accountId, 'synthetic-token', fetcher)
-        await expect(api.createInitialDevelopmentPreview()).rejects.toThrow(/existing/)
-        expect(fetcher).toHaveBeenCalledTimes(1)
-    })
-    it('does not retry a create conflict as an update', async () => {
-        const fetcher = vi.fn<typeof fetch>(async (_url, init) =>
-            init?.method === 'GET' ? response(null, 404) : response(null, 409),
-        )
-        const api = createCloudflareNativeApi(inventory.accountId, 'synthetic-token', fetcher)
-        await expect(api.createInitialDevelopmentPreview()).rejects.toThrow()
-        expect(fetcher).toHaveBeenCalledTimes(2)
-        expect(fetcher.mock.calls.map(([, init]) => init?.method)).toEqual(['GET', 'POST'])
-    })
-    it.each([403, 429, 500])('never treats HTTP %i as a missing Preview', async (status) => {
-        const fetcher = vi.fn<typeof fetch>(async () => response(null, status))
-        const api = createCloudflareNativeApi(inventory.accountId, 'synthetic-token', fetcher)
-        await expect(api.preparePreview('pr-354')).rejects.toThrow()
-        expect(fetcher).toHaveBeenCalledTimes(1)
-    })
-    it('reuses exactly the same PR identity on updates', async () => {
-        const fetcher = vi.fn<typeof fetch>(async () =>
-            response({ id: 'p354', name: 'pr-354', slug: 'pr-354' }),
-        )
-        await createCloudflareNativeApi(
-            inventory.accountId,
-            'synthetic-token',
-            fetcher,
-        ).preparePreview('pr-354')
-        expect(fetcher).toHaveBeenCalledTimes(1)
-    })
-    it('refuses an existing Preview belonging to another PR', async () => {
-        const api = createCloudflareNativeApi(inventory.accountId, 'synthetic-token', async () =>
-            response({ id: 'p355', name: 'pr-355', slug: 'pr-355' }),
-        )
-        await expect(api.preparePreview('pr-354')).rejects.toThrow(/ownership/)
-    })
-    it('strips echoed secret values and binds secret PATCH to a specific Preview version', async () => {
-        const calls: string[] = []
-        const api = createCloudflareNativeApi(
-            inventory.accountId,
-            'synthetic-token',
-            async (url, init) => {
-                calls.push(`${init?.method} ${address(url)}`)
-                if (init?.method === 'PATCH') {
-                    expect(init.headers).toMatchObject({
-                        'content-type': 'application/merge-patch+json',
-                    })
-                    expect(JSON.parse(bodyText(init.body))).toEqual({
-                        env: {
-                            BETTER_AUTH_SECRET: { type: 'secret_text', text: 'synthetic-only' },
-                        },
-                    })
-                }
-                return response({
-                    id: 'v354',
-                    preview_name: 'pr-354',
-                    env: {
-                        BETTER_AUTH_SECRET: { type: 'secret_text', text: 'synthetic-only' },
-                        STAGE: { type: 'plain_text', text: 'development' },
-                    },
-                })
-            },
-        )
-        await api.setPreviewSecrets('pr-354', 'v354', { BETTER_AUTH_SECRET: 'synthetic-only' })
-        const value = await api.previewDeployment('pr-354', 'v354')
-        expect(JSON.stringify(value)).not.toContain('synthetic-only')
-        expect(calls.every((url) => url.endsWith('/pr-354/deployments/v354'))).toBe(true)
-    })
+describe('PR-only Preview deletion', () => {
     it.each(['production', 'development', 'pr-0', 'pr-354/../../avatio'])(
         'never deletes %s',
         async (mode) => {
@@ -243,18 +55,7 @@ describe('native Cloudflare REST boundary', () => {
         ).rejects.toThrow(/replaced/)
         expect(fetcher).toHaveBeenCalledTimes(1)
     })
-    it('does not allocate replacements after a denied identity read', async () => {
-        const fetcher = vi.fn<typeof fetch>(async () => response(null, 403))
-        await expect(
-            createCloudflareNativeApi(inventory.accountId, 'synthetic-token', fetcher).bootstrapPr(
-                'pr-354',
-                inventory.sharedPreviewStorage,
-            ),
-        ).rejects.toThrow()
-        expect(fetcher).toHaveBeenCalledTimes(1)
-    })
 })
-
 describe('specific deployed Preview binding verification', () => {
     const config = createCloudflareConfig({ mode: 'pr-354', isPreview: true }, inventory)
     it('rejects an extra inherited production secret before HTTP health can mask it', () => {
@@ -295,44 +96,260 @@ describe('specific deployed Preview binding verification', () => {
     })
 })
 
-describe('shared storage deletion guard', () => {
-    it.each(['database', 'bucket'] as const)(
-        'refuses shared %s deletion before making any API call',
+describe('Preview-scoped deployment association with the observed beta response', () => {
+    const setup = (
+        options: {
+            conflict?: Record<string, unknown>
+            replaceAfter?: boolean
+            replaceBefore?: boolean
+            wrongEndpoint?: boolean
+            inconsistentExact?: boolean
+        } = {},
+    ) => {
+        let parents = 0
+        const calls: { url: string; method: string }[] = []
+        const fetcher = vi.fn<typeof fetch>(async (url, init) => {
+            const target = address(url)
+            calls.push({ url: target, method: init?.method ?? 'GET' })
+            const path = new URL(target).pathname
+            if (!path.includes('/deployments/')) {
+                parents++
+                return response({
+                    id:
+                        options.replaceBefore || (options.replaceAfter && parents > 1)
+                            ? 'replacement'
+                            : 'reviewed',
+                    name: 'development',
+                    slug: 'development',
+                })
+            }
+            const id =
+                init?.method === 'PATCH'
+                    ? 'patched'
+                    : path.endsWith('/latest')
+                      ? 'original'
+                      : path.split('/').at(-1)
+            const result = response({
+                id: options.inconsistentExact && path.endsWith('/original') ? 'unexpected' : id,
+                urls: [`https://${id}-development.previews.example.test`],
+                env: { BETTER_AUTH_SECRET: { type: 'secret_text', text: 'synthetic-do-not-log' } },
+                annotations: {},
+                ...options.conflict,
+            })
+            if (options.wrongEndpoint)
+                Object.defineProperty(result, 'url', {
+                    value: target.replace('/previews/development/', '/previews/other/'),
+                })
+            return result
+        })
+        return {
+            api: createCloudflareNativeApi(inventory.accountId, 'synthetic-token', fetcher),
+            calls,
+        }
+    }
+    it.each(['exact', 'latest'])(
+        'proves %s association without echoed parent fields using fresh parent and exact-ID reads',
         async (kind) => {
-            const shared = createCloudflareResourceFixture()
-            Object.assign(shared.previews!['pr-354']!, structuredClone(shared.sharedPreviewStorage))
-            const fetcher = vi.fn<typeof fetch>()
-            const api = createCloudflareNativeApi(shared.accountId, 'synthetic-token', fetcher)
-            await expect(api.deletePrResource('pr-354', kind, shared)).rejects.toThrow(
-                /never be deleted/,
+            const { api, calls } = setup()
+            const result = await api.previewDeployment(
+                'development',
+                kind === 'latest' ? 'latest' : 'original',
+                false,
+                'reviewed',
             )
-            expect(fetcher).not.toHaveBeenCalled()
+            expect(result).toMatchObject({
+                preview_id: 'reviewed',
+                preview_name: 'development',
+                parentAssociation: 'verified-preview-endpoint',
+            })
+            expect(JSON.stringify(result)).not.toContain('synthetic-do-not-log')
+            expect(calls[0]!.url).toBe(
+                `https://api.cloudflare.com/client/v4/accounts/${inventory.accountId}/workers/workers/avatio/previews/development`,
+            )
+            expect(calls.at(-1)).toEqual(calls[0])
+            expect(calls.every((call) => call.url.startsWith(calls[0]!.url))).toBe(true)
+            if (kind !== 'exact')
+                expect(calls).toContainEqual({
+                    url: `${calls[0]!.url}/deployments/original`,
+                    method: 'GET',
+                })
+        },
+    )
+    it.each([
+        { preview_id: 'other' },
+        { preview_id: null },
+        { preview_name: 'production' },
+        { preview_name: null },
+    ])('rejects explicit parent conflicts %j', async (conflict) => {
+        const { api } = setup({ conflict })
+        await expect(
+            api.previewDeployment('development', 'latest', false, 'reviewed'),
+        ).rejects.toThrow(/preview-(parent-id|name)-mismatch/)
+    })
+    it('rejects a replaced Preview around an exact read', async () => {
+        const { api } = setup({ replaceAfter: true })
+        await expect(
+            api.previewDeployment('development', 'latest', false, 'reviewed'),
+        ).rejects.toThrow(/preview-parent-changed/)
+    })
+    it('rejects a returned mutable alias masquerading as an exact deployment ID', async () => {
+        const { api } = setup({ conflict: { id: 'latest' } })
+        await expect(
+            api.previewDeployment('development', 'latest', false, 'reviewed'),
+        ).rejects.toThrow(/preview-deployment-id-invalid/)
+    })
+    it('refuses a parent replaced before the read', async () => {
+        const { api, calls } = setup({ replaceBefore: true })
+        await expect(
+            api.previewDeployment('development', 'original', false, 'reviewed'),
+        ).rejects.toThrow(/preview-parent-id-mismatch/)
+        expect(calls.every((call) => call.method === 'GET')).toBe(true)
+    })
+    it('rejects a response from another Preview endpoint', async () => {
+        const { api } = setup({ wrongEndpoint: true })
+        await expect(
+            api.previewDeployment('development', 'latest', false, 'reviewed'),
+        ).rejects.toThrow(/api-response-scope-mismatch/)
+    })
+    it('rejects a latest receipt whose exact read returns another deployment', async () => {
+        const { api } = setup({ inconsistentExact: true })
+        await expect(
+            api.previewDeployment('development', 'latest', false, 'reviewed'),
+        ).rejects.toThrow(/preview-exact-id-mismatch/)
+    })
+})
+
+describe('bounded provider failure evidence', () => {
+    it.each([
+        [10025, 'preview-not-found'],
+        [10222, 'deployment-not-found'],
+        [10032, 'deployment-not-patchable'],
+        [12345, 'unclassified'],
+    ] as const)(
+        'reports only numeric code %s and a static classification',
+        async (code, classification) => {
+            const report = vi.fn()
+            const api = createCloudflareNativeApi(
+                inventory.accountId,
+                'synthetic-token',
+                async () =>
+                    Response.json(
+                        {
+                            success: false,
+                            errors: [{ code, message: 'synthetic-signing-secret/raw-token' }],
+                        },
+                        { status: 400 },
+                    ),
+            )
+            await expect(
+                nativePhase('preview-base', report, () => api.preview('development')),
+            ).rejects.toThrow()
+            expect(report).toHaveBeenLastCalledWith(
+                expect.objectContaining({
+                    httpStatus: 400,
+                    evidence: expect.objectContaining({
+                        providerError: {
+                            codes: [code],
+                            classification,
+                            jsonParsed: true,
+                            bodyWithinLimit: true,
+                        },
+                    }),
+                }),
+            )
+            expect(JSON.stringify(report.mock.calls)).not.toContain('synthetic-signing-secret')
+            expect(JSON.stringify(report.mock.calls)).not.toContain('raw-token')
+        },
+    )
+    it('bounds count and rejects strings, negative and oversized error codes', async () => {
+        const report = vi.fn()
+        const api = createCloudflareNativeApi(inventory.accountId, 'synthetic-token', async () =>
+            Response.json(
+                {
+                    errors: [
+                        'secret',
+                        { code: '10025' },
+                        { code: -1 },
+                        { code: 1e10 },
+                        ...Array.from({ length: 30 }, (_, code) => ({ code })),
+                    ],
+                },
+                { status: 400 },
+            ),
+        )
+        await expect(
+            nativePhase('preview-base', report, () => api.preview('development')),
+        ).rejects.toThrow()
+        expect(report.mock.calls.at(-1)?.[0].evidence.providerError.codes).toEqual([0, 1, 2, 3])
+    })
+    it.each(['malformed', 'oversized'])(
+        'retains HTTP status for %s bodies without raw text',
+        async (kind) => {
+            const report = vi.fn()
+            const api = createCloudflareNativeApi(
+                inventory.accountId,
+                'synthetic-token',
+                async () =>
+                    new Response(kind === 'oversized' ? 'secret'.repeat(4000) : 'secret', {
+                        status: 400,
+                    }),
+            )
+            await expect(
+                nativePhase('preview-base', report, () => api.preview('development')),
+            ).rejects.toThrow()
+            expect(report.mock.calls.at(-1)?.[0]).toMatchObject({
+                httpStatus: 400,
+                evidence: {
+                    providerError: {
+                        jsonParsed: false,
+                        codes: [],
+                        bodyWithinLimit: kind !== 'oversized',
+                    },
+                },
+            })
+            expect(JSON.stringify(report.mock.calls)).not.toContain('secretsecret')
         },
     )
 })
-
-describe('shared Preview storage bootstrap', () => {
-    it('reuses existing shared D1 and R2 without allocating either', async () => {
-        const name = 'avatio-pr-354'
-        const database = inventory.sharedPreviewStorage.database
-        const fetcher = vi.fn<typeof fetch>(async (url, init) => {
-            expect(init?.method).toBe('GET')
-            const path = new URL(address(url)).pathname
-            if (path.endsWith(`/d1/database/${database.id}`))
-                return response({ uuid: database.id, name: database.name })
-            if (path.endsWith('/storage/kv/namespaces'))
-                return response([{ id: '3'.repeat(32), title: name }])
-            if (path.endsWith(`/r2/buckets/${inventory.sharedPreviewStorage.bucket}`))
-                return response({ name: inventory.sharedPreviewStorage.bucket })
-            throw new Error('Unexpected bootstrap request')
+describe('read-only Base settings', () => {
+    it('projects binding names/types without transmitting secret values', async () => {
+        const fetcher = vi.fn<typeof fetch>(async () =>
+            response({
+                previews_base_config: {
+                    env: {
+                        BETTER_AUTH_SECRET: {
+                            type: 'secret_text',
+                            text: 'synthetic-signing-do-not-log',
+                        },
+                        NUXT_BETTER_AUTH_SECRET: {
+                            type: 'secret_text',
+                            text: 'synthetic-signing-do-not-log',
+                        },
+                    },
+                },
+            }),
+        )
+        const api = createCloudflareNativeApi(inventory.accountId, 'synthetic-token', fetcher)
+        expect(await api.previewBaseBindings()).toEqual({
+            BETTER_AUTH_SECRET: { type: 'secret_text' },
+            NUXT_BETTER_AUTH_SECRET: { type: 'secret_text' },
         })
-        const result = await createCloudflareNativeApi(
-            inventory.accountId,
-            'synthetic-token',
-            fetcher,
-        ).bootstrapPr('pr-354', inventory.sharedPreviewStorage)
-        expect(result.database).toEqual(database)
-        expect(result.bucket).toBe(inventory.sharedPreviewStorage.bucket)
-        expect(fetcher).toHaveBeenCalledTimes(3)
+        expect(fetcher.mock.calls[0]?.[1]?.method).toBe('GET')
+        expect(fetcher.mock.calls[0]?.[1]?.body).toBeUndefined()
+        expect(Object.keys(api)).not.toEqual(
+            expect.arrayContaining([
+                'setPreviewSecrets',
+                'bootstrapPr',
+                'deletePrResource',
+                'preparePreview',
+                'rollbackProductionVersion',
+            ]),
+        )
+    })
+    it.each([403, 429, 500])('fails closed for denied metadata HTTP %i', async (status) => {
+        const api = createCloudflareNativeApi(inventory.accountId, 'synthetic-token', async () =>
+            response(null, status),
+        )
+        await expect(api.preview('development')).rejects.toThrow()
     })
 })

@@ -4,6 +4,7 @@ import { join } from 'node:path'
 
 import { readBuildOutput } from '@cloudflare/build-output-utils'
 
+import { getCloudflareTargetResources } from '../../../config/cloudflare.ts'
 import { validateCloudflareBuildOutput } from '../../../config/cloudflareBuildOutput.ts'
 import {
     createCloudflarePublishPlan,
@@ -95,7 +96,7 @@ const plan = createCloudflarePublishPlan({
         },
     },
 })
-const target = preview === 'true' ? inventory.previews[mode] : inventory.production
+const target = getCloudflareTargetResources(mode, inventory)
 const calls = []
 const simulation = await simulateCloudflarePublication(plan, {
     simulation: true,
@@ -137,7 +138,7 @@ const simulation = await simulateCloudflarePublication(plan, {
     latestSourceSha: async () => sourceSha,
     verifyVersion: async () => true,
 })
-assert.equal(calls.length, 3)
+assert.equal(calls.length, plan.resources.ownership === 'shared-preview' ? 1 : 3)
 assert.equal(simulation.activationVerified, false)
 assert.equal(simulation.cloudflareOperations, 0)
 console.log(

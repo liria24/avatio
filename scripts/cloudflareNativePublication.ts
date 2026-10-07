@@ -1,8 +1,11 @@
 import { spawn } from 'node:child_process'
 import { resolve } from 'node:path'
 
-import { createCloudflareConfig, type CloudflareResourceInventory } from '../config/cloudflare.ts'
-import { requireCloudflareActivation } from '../config/cloudflareActivation.ts'
+import {
+    createCloudflareConfig,
+    getCloudflareTargetResources,
+    type CloudflareResourceInventory,
+} from '../config/cloudflare.ts'
 import {
     parseCloudflarePreviewDeployment,
     createCloudflarePreviewCleanupPlan,
@@ -10,57 +13,158 @@ import {
 } from '../config/cloudflarePreviewLifecycle.ts'
 import {
     confirmCloudflarePublisherMigrations,
+    createCloudflareMigrationCommands,
     verifyCloudflarePublisherResources,
     type createCloudflarePublishPlan,
 } from '../config/cloudflarePublisher.ts'
-import { validateSecrets } from '../config/secrets.ts'
 import {
     type createCloudflareNativeApi,
     verifyCloudflarePreviewBindings,
 } from './cloudflareNativeApi.ts'
-import { verifyCloudflarePreviewHttp } from './cloudflarePreviewSmoke.ts'
+import { nativePhase, type NativeReporter } from './cloudflareNativeDiagnostics.ts'
+import { verifyCloudflareDeploymentHttp } from './cloudflarePreviewSmoke.ts'
 
 type Plan = ReturnType<typeof createCloudflarePublishPlan>
 type Result = { exitCode: number | null; signal: string | null; output: unknown }
 
-/** Shared final Preview step; callers must establish their distinct approval and data gates. */
+/** Publish once using cf's normal Previews Base inheritance; transfer no runtime secrets. */
 export const publishCloudflarePreviewArtifact = async (
     plan: Plan,
     input: {
         inventory: CloudflareResourceInventory
-        runtimeSecrets: Record<string, string>
         api: ReturnType<typeof createCloudflareNativeApi>
         run: (command: Plan['apply']) => Promise<Result>
         httpFetch?: typeof fetch
         expectedPreviewId?: string
+        reportDiagnostic?: NativeReporter
+        reportPublication?: (receipt: {
+            sourceSha: string
+            previewId: string
+            deploymentId: string
+            deploymentUrl: string
+            stage: 'cli-receipt' | 'bindings-verified' | 'http-verified'
+        }) => void
     },
-    previousDeploymentId?: string,
 ) => {
     if (!plan.isPreview || plan.mode === 'production')
-        throw new Error('Only native Preview output can use this publication step.')
-    if (previousDeploymentId)
-        await input.api.setPreviewSecrets(plan.mode, previousDeploymentId, input.runtimeSecrets)
-    const result = await input.run(plan.deploy)
-    if (result.exitCode !== 0 || result.signal)
-        throw new Error('Publication did not exit normally; inspect the current version.')
-    const deployment = parseCloudflarePreviewDeployment(result.output, {
-        mode: plan.mode,
-        siteUrl: plan.buildEnvironment.PUBLIC_SITE_URL,
+        throw new Error('Production cutover remains on hold.')
+    const phase = <T>(name: Parameters<typeof nativePhase>[0], operation: () => Promise<T> | T) =>
+        nativePhase(name, input.reportDiagnostic, operation)
+    const result = await phase('preview-publish', async () => {
+        const result = await input.run(plan.deploy)
+        input.reportDiagnostic?.({
+            phase: 'preview-publish',
+            outcome: 'started',
+            evidence: {
+                cliExitedNormally: result.exitCode === 0 && !result.signal,
+                cliJsonAvailable: result.output !== undefined,
+            },
+        })
+        if (result.exitCode !== 0 || result.signal)
+            throw new Error('Publication did not exit normally; inspect the current version.')
+        return result
     })
-    if (input.expectedPreviewId && deployment.previewId !== input.expectedPreviewId)
-        throw new Error('Published Preview identity changed; secret transfer is refused.')
-    await input.api.setPreviewSecrets(plan.mode, deployment.deploymentId, input.runtimeSecrets)
-    verifyCloudflarePreviewBindings(
-        await input.api.previewDeployment(plan.mode, deployment.deploymentId),
-        createCloudflareConfig({ mode: plan.mode, isPreview: true }, input.inventory).worker.env,
-        deployment,
+    const deployment = await phase('cli-receipt', () =>
+        parseCloudflarePreviewDeployment(result.output, {
+            mode: plan.mode,
+            siteUrl: plan.buildEnvironment.PUBLIC_SITE_URL,
+        }),
     )
-    await verifyCloudflarePreviewHttp(
-        result.output,
-        { mode: plan.mode, siteUrl: plan.buildEnvironment.PUBLIC_SITE_URL },
-        input.httpFetch,
+    const report = (stage: 'cli-receipt' | 'bindings-verified' | 'http-verified') =>
+        input.reportPublication?.({
+            sourceSha: plan.sourceSha,
+            previewId: deployment.previewId,
+            deploymentId: deployment.deploymentId,
+            deploymentUrl: deployment.deploymentUrl,
+            stage,
+        })
+    // Retain actual CLI identity even if later inspection fails. This is not a success claim.
+    report('cli-receipt')
+    await phase('preview-parent', async () => {
+        const parent = await input.api.preview(plan.mode)
+        if (
+            (input.expectedPreviewId && deployment.previewId !== input.expectedPreviewId) ||
+            parent?.id !== deployment.previewId
+        )
+            throw new Error('Published Preview identity changed.')
+    })
+    const fresh = await phase('deployment-read', () =>
+        input.api.previewDeployment(
+            plan.mode,
+            deployment.deploymentId,
+            false,
+            deployment.previewId,
+        ),
     )
+    await phase('binding-verification', () => {
+        if (
+            !fresh ||
+            fresh.id !== deployment.deploymentId ||
+            fresh.preview_id !== deployment.previewId ||
+            fresh.preview_name !== plan.mode ||
+            !Array.isArray(fresh.urls) ||
+            !fresh.urls.includes(deployment.deploymentUrl) ||
+            (fresh.sourceSha !== undefined && fresh.sourceSha !== plan.sourceSha)
+        )
+            throw new Error('Exact published deployment identity, URL or source differs.')
+        verifyCloudflarePreviewBindings(
+            fresh,
+            createCloudflareConfig({ mode: plan.mode, isPreview: true }, input.inventory).worker
+                .env,
+            deployment,
+        )
+    })
+    report('bindings-verified')
+    await phase('immutable-http', () =>
+        verifyCloudflareDeploymentHttp(deployment.deploymentUrl, input.httpFetch),
+    )
+    await phase('deployment-read', async () => {
+        const latest = await input.api.previewDeployment(
+            plan.mode,
+            'latest',
+            false,
+            deployment.previewId,
+        )
+        if (latest?.id !== deployment.deploymentId)
+            throw new Error('Published version is no longer latest.')
+    })
+    report('http-verified')
     return { ...deployment, sourceSha: plan.sourceSha, publicationVerified: true as const }
+}
+
+/** Base inheritance is not an allowlist: reject unreviewed inherited settings before publishing. */
+export const verifyCloudflarePreviewBase = (
+    input: unknown,
+    inventory: CloudflareResourceInventory,
+) => {
+    if (!input || typeof input !== 'object' || Array.isArray(input))
+        throw new Error('Preview Base is unavailable.')
+    const env = input as Record<string, unknown>
+    const expected = createCloudflareConfig(
+        { mode: 'pr-1', isPreview: true },
+        { ...inventory, previews: {} },
+    ).worker.env
+    const auth = ['BETTER_AUTH_SECRET', 'NUXT_BETTER_AUTH_SECRET']
+    for (const name of auth) {
+        const binding = env[name] as { type?: unknown } | undefined
+        if (binding?.type !== 'secret_text')
+            throw new Error('Preconfigured Base auth secret types are required.')
+    }
+    for (const [name, value] of Object.entries(env)) {
+        if (
+            !Object.hasOwn(expected, name) ||
+            ['PREVIEW_NAME', 'SELF_URL', 'PUBLIC_SITE_URL', 'AUTH_TRUSTED_ORIGINS'].includes(name)
+        )
+            throw new Error('Preview Base contains unreviewed inherited bindings.')
+        if (auth.includes(name)) continue
+        // Every supplied non-secret Base binding must match the shared non-production contract.
+        verifyCloudflarePreviewBindings(
+            { id: 'base', preview_name: 'pr-1', env: { [name]: value } },
+            { [name]: expected[name]! },
+            { mode: 'pr-1', deploymentId: 'base' },
+        )
+    }
+    return { baseVerified: true as const }
 }
 
 /** No shell, no raw CLI logging, bounded execution, no credentials supplied to application code. */
@@ -81,19 +185,23 @@ export const runCloudflareNativeCommand = (
         let stdout = ''
         let bytes = 0
         let overflow = false
-        const timer = setTimeout(() => child.kill(), 120_000)
+        let timedOut = false
+        const timer = setTimeout(() => {
+            timedOut = true
+            child.kill('SIGKILL')
+        }, 120_000)
         child.stdout.on('data', (chunk: Buffer) => {
             bytes += chunk.length
             if (bytes > 4_194_304) {
                 overflow = true
-                child.kill()
+                child.kill('SIGKILL')
             } else stdout += chunk.toString()
         })
         child.stderr.on('data', (chunk: Buffer) => {
             bytes += chunk.length
             if (bytes > 4_194_304) {
                 overflow = true
-                child.kill()
+                child.kill('SIGKILL')
             }
         })
         child.on('error', () => {
@@ -102,6 +210,10 @@ export const runCloudflareNativeCommand = (
         })
         child.on('close', (exitCode, signal) => {
             clearTimeout(timer)
+            if (timedOut) {
+                reject(new Error('Pinned cf command exceeded its execution deadline.'))
+                return
+            }
             if (overflow) {
                 reject(new Error('Pinned cf output exceeded its private capture limit.'))
                 return
@@ -110,162 +222,245 @@ export const runCloudflareNativeCommand = (
             try {
                 output = JSON.parse(stdout)
             } catch {
-                const version = /^(?:Current|Worker) Version ID:\s*([a-f0-9-]{36})\s*$/m.exec(
-                    stdout,
-                )?.[1]
-                output = version ? { type: 'production', versionId: version } : undefined
+                output = undefined
             }
             done({ exitCode, signal, output })
         })
     })
 
-export const prepareCloudflareRuntimeSecrets = (
-    plan: Plan,
-    inventory: CloudflareResourceInventory,
-    input: Record<string, string | undefined>,
-) => {
-    const env = createCloudflareConfig({ mode: plan.mode, isPreview: plan.isPreview }, inventory)
-        .worker.env
-    const required = Object.entries(env)
-        .filter(([, binding]) => binding.type === 'secret')
-        .map(([name]) => name)
-    // The canonical validator remains authoritative; PRs deliberately omit Twitter.
-    const validated = validateSecrets({
-        ...input,
-        ...(plan.mode.startsWith('pr-') ? { TWITTER_CLIENT_SECRET: 'disabled-pr' } : {}),
-    })
-    if (!validated.success)
-        throw new Error('Canonical runtime secret validation failed; values are omitted.')
-    return Object.fromEntries(
-        required.map((name) => {
-            const value =
-                name === 'NUXT_BETTER_AUTH_SECRET'
-                    ? validated.value.BETTER_AUTH_SECRET
-                    : validated.value[name as keyof typeof validated.value]
-            if (!value) throw new Error('A declared runtime secret is missing.')
-            return [name, value]
-        }),
+/** Shared schema changes are owner/manual trusted-base work, serialized with all Preview delivery. */
+export const migrateCloudflareSharedPreview = async (input: {
+    inventory: CloudflareResourceInventory
+    manualDevelopmentApproved: boolean
+    sourceSha: string
+    migrationNames: readonly string[]
+    api: ReturnType<typeof createCloudflareNativeApi>
+    run: (command: Plan['apply']) => Promise<Result>
+    latestSourceSha: () => Promise<string>
+    reportDiagnostic?: NativeReporter
+}) => {
+    if (!input.manualDevelopmentApproved || !/^[a-f0-9]{40}$/.test(input.sourceSha))
+        throw new Error(
+            'Shared migrations require owner approval and current trusted development source.',
+        )
+    createCloudflareConfig({ mode: 'development', isPreview: true }, input.inventory)
+    const sharedInventory = { ...input.inventory, previews: {} }
+    const target = getCloudflareTargetResources('pr-1', sharedInventory)
+    const plan = {
+        workerName: 'avatio' as const,
+        migrationNames: [...input.migrationNames],
+        resources: {
+            accountId: input.inventory.accountId,
+            database: target.database,
+            cache: target.cache,
+            bucket: { name: target.bucket },
+            ownership: 'shared-preview' as const,
+        },
+    }
+    if (
+        !plan.migrationNames.length ||
+        new Set(plan.migrationNames).size !== plan.migrationNames.length ||
+        plan.migrationNames.some(
+            (name, index) =>
+                !/^\d{14}_[\w-]+\/migration\.sql$/.test(name) ||
+                (index > 0 && name <= plan.migrationNames[index - 1]!),
+        )
     )
+        throw new Error('Ordered immutable trusted-base migrations are required.')
+    if ((await input.latestSourceSha()) !== input.sourceSha)
+        throw new Error('Shared migration source changed.')
+    const inspected = await nativePhase('resource-inspection', input.reportDiagnostic, () =>
+        input.api.inspect('pr-1', sharedInventory),
+    )
+    const { preview: _preview, ...resources } = inspected.resources
+    verifyCloudflarePublisherResources(plan, { ...inspected, resources })
+    await nativePhase('migration-ledger', input.reportDiagnostic, async () => {
+        const tables = await input.api.query(
+            target.database.id,
+            "SELECT name FROM sqlite_schema WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%'",
+        )
+        const hasLedger = tables.some((row) => (row as { name?: unknown }).name === 'd1_migrations')
+        if (!hasLedger && tables.length)
+            throw new Error('Populated shared D1 requires reconciled migration history.')
+        const before = hasLedger
+            ? (
+                  await input.api.query(
+                      target.database.id,
+                      'SELECT name FROM d1_migrations ORDER BY id',
+                  )
+              ).map((row) => String((row as { name?: unknown }).name))
+            : []
+        if (
+            new Set(before).size !== before.length ||
+            before.some((name, index) => name !== plan.migrationNames[index])
+        )
+            throw new Error('Shared D1 ledger differs from the immutable trusted-base prefix.')
+    })
+    if ((await input.latestSourceSha()) !== input.sourceSha)
+        throw new Error('Shared migration source changed before apply.')
+    const commands = createCloudflareMigrationCommands(target.database.id)
+    const apply = await nativePhase('migration-apply', input.reportDiagnostic, async () => {
+        const result = await input.run(commands.apply)
+        if (result.exitCode !== 0 || result.signal)
+            throw new Error('Shared migration did not exit normally; stop for inspection.')
+        return result
+    })
+    await nativePhase('migration-postflight', input.reportDiagnostic, async () => {
+        const pending = await input.run(commands.pending)
+        const rows = await input.api.query(
+            target.database.id,
+            'SELECT name FROM d1_migrations ORDER BY id',
+        )
+        confirmCloudflarePublisherMigrations(plan, {
+            accountId: input.inventory.accountId,
+            databaseId: target.database.id,
+            apply,
+            pending,
+            appliedNames: rows.map((row) => String((row as { name?: unknown }).name)),
+        })
+        if ((await input.latestSourceSha()) !== input.sourceSha)
+            throw new Error('Shared migration source changed during execution.')
+    })
+    return {
+        sharedMigrationsVerified: true as const,
+        sourceSha: input.sourceSha,
+        publicationPerformed: false as const,
+    }
 }
 
-/** App-specific sequence. A failed migration never falls through to deploy or DB rollback. */
+/** Serialized by Actions. Shared PRs never apply migrations, including no-op commands. */
 export const publishCloudflareNative = async (
     plan: Plan,
     input: {
         inventory: CloudflareResourceInventory
-        activation: unknown
         enabled: boolean
-        trustedCodeSha: string
-        runtimeSecrets: Record<string, string>
+        manualDevelopmentApproved: boolean
+        sharedMigrationsCompatible: boolean
         api: ReturnType<typeof createCloudflareNativeApi>
         run: (command: Plan['apply']) => Promise<Result>
         latestSourceSha: () => Promise<string>
-        verifyProduction: (result: unknown) => Promise<void>
         httpFetch?: typeof fetch
+        reportDiagnostic?: NativeReporter
+        reportPublication?: Parameters<
+            typeof publishCloudflarePreviewArtifact
+        >[1]['reportPublication']
     },
 ) => {
-    requireCloudflareActivation(input.activation, {
-        action: 'deploy',
-        mode: plan.mode,
-        sourceSha: plan.sourceSha,
-        trustedCodeSha: input.trustedCodeSha,
-        inventory: input.inventory,
-        enabled: input.enabled,
-    })
+    if (!plan.isPreview || plan.mode === 'production')
+        throw new Error('Production cutover remains on hold.')
+    if (!input.enabled && !(plan.mode === 'development' && input.manualDevelopmentApproved))
+        throw new Error('Native automatic delivery remains disabled.')
+    if (plan.resources.ownership === 'shared-preview' && !input.sharedMigrationsCompatible)
+        throw new Error('Shared PR migrations differ from the trusted base.')
     if ((await input.latestSourceSha()) !== plan.sourceSha)
-        throw new Error('Source changed before migration.')
-    const inspected = await input.api.inspect(plan.mode, input.inventory)
-    const { preview: _preview, ...resources } = inspected.resources
+        throw new Error('Source changed before publication.')
+    await nativePhase('preview-base', input.reportDiagnostic, async () =>
+        verifyCloudflarePreviewBase(await input.api.previewBaseBindings(), input.inventory),
+    )
+    const inspected = await nativePhase('resource-inspection', input.reportDiagnostic, () =>
+        input.api.inspect(plan.mode, input.inventory),
+    )
+    const { preview, ...resources } = inspected.resources
     verifyCloudflarePublisherResources(plan, { ...inspected, resources })
-    // Existing/populated databases require the separately rehearsed ledger translation first.
-    // Never create a ledger or import guessed applied names in the publisher.
-    const tables = await input.api.query(
-        plan.resources.database.id,
-        "SELECT name FROM sqlite_schema WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%'",
-    )
-    const hasLedger = tables.some((row) => (row as { name?: unknown }).name === 'd1_migrations')
-    if (!hasLedger && tables.length > 0)
-        throw new Error('Populated D1 has no reconciled cf ledger; stop for a copy rehearsal.')
-    const before = hasLedger
-        ? await input.api.query(
-              plan.resources.database.id,
-              'SELECT name FROM d1_migrations ORDER BY id',
-          )
-        : []
-    const beforeNames = before.map((row) => String((row as { name?: unknown }).name))
-    if (
-        new Set(beforeNames).size !== beforeNames.length ||
-        beforeNames.some((name, index) => name !== plan.migrationNames[index])
-    )
-        throw new Error('Remote ledger is not a committed migration prefix.')
-    if (
-        plan.resources.ownership === 'shared-preview' &&
-        beforeNames.length !== plan.migrationNames.length
-    )
-        throw new Error(
-            'PRs must not migrate shared Preview D1. Apply reviewed base migrations first or use an isolated D1.',
-        )
-    let previousDeploymentId: string | undefined
-    if (plan.isPreview) {
-        const existing = inspected.resources.preview
-        if (existing) {
-            const latest = await input.api.previewDeployment(plan.mode, 'latest', true)
+    if (preview)
+        await nativePhase('existing-preview', input.reportDiagnostic, async () => {
+            const latest = await input.api.previewDeployment(plan.mode, 'latest', true, preview.id)
+            // Existing missing/incompatible secrets require owner one-time initialization; no repair loop.
             if (latest) {
                 const expected = createCloudflareConfig(
                     { mode: plan.mode, isPreview: true },
                     input.inventory,
                 ).worker.env
-                if (Object.keys(latest.env).some((name) => !(name in expected)))
-                    throw new Error('Existing Preview contains unreviewed inherited bindings.')
-                for (const name of ['APP_DB', 'CONTENT_CACHE', 'R2']) {
-                    const value = latest.env[name]
-                    if (!value || typeof value !== 'object')
-                        throw new Error('Existing Preview data identity is unavailable.')
-                    const actual = value as Record<string, unknown>
-                    if (
-                        (name === 'APP_DB' && actual.database_id !== plan.resources.database.id) ||
-                        (name === 'CONTENT_CACHE' &&
-                            actual.namespace_id !== plan.resources.cache.id) ||
-                        (name === 'R2' && actual.bucket_name !== plan.resources.bucket.name)
-                    )
-                        throw new Error('Existing Preview uses different data resources.')
-                }
-                if (typeof latest.id !== 'string' || !/^[\w-]+$/.test(latest.id))
-                    throw new Error('Exact previous Preview version required.')
-                previousDeploymentId = latest.id
+                if (Object.keys(latest.env).some((name) => !Object.hasOwn(expected, name)))
+                    throw new Error('Existing Preview has unreviewed inherited bindings.')
+                // Fixed data/integration identities and secrets must already be safe. Other declared
+                // non-secret settings may evolve; the NEW deployment still gets a full exact check.
+                const critical = Object.fromEntries(
+                    Object.entries(expected).filter(
+                        ([name, binding]) =>
+                            binding.type !== 'text' ||
+                            [
+                                'STAGE',
+                                'PREVIEW_NAME',
+                                'PUBLIC_SITE_URL',
+                                'SELF_URL',
+                                'AUTH_TRUSTED_ORIGINS',
+                                'R2_PUBLIC_BASE_URL',
+                            ].includes(name),
+                    ),
+                )
+                const observed = Object.fromEntries(
+                    Object.entries(latest.env).filter(([name]) => Object.hasOwn(critical, name)),
+                )
+                verifyCloudflarePreviewBindings({ ...latest, env: observed }, critical, {
+                    mode: plan.mode,
+                    deploymentId: latest.id,
+                })
             }
-        }
-        await input.api.preparePreview(plan.mode)
-    }
-    const apply = await input.run(plan.apply)
-    if (apply.exitCode !== 0 || apply.signal)
-        throw new Error('Migration did not exit normally; inspect D1 before retry.')
-    const pending = await input.run(plan.pending)
-    const rows = await input.api.query(
-        plan.resources.database.id,
-        'SELECT name FROM d1_migrations ORDER BY id',
-    )
-    confirmCloudflarePublisherMigrations(plan, {
-        accountId: plan.resources.accountId,
-        databaseId: plan.resources.database.id,
-        apply,
-        pending,
-        appliedNames: rows.map((row) => String((row as { name?: unknown }).name)),
+        })
+    const names = async () =>
+        (
+            await input.api.query(
+                plan.resources.database.id,
+                'SELECT name FROM d1_migrations ORDER BY id',
+            )
+        ).map((row) => String((row as { name?: unknown }).name))
+    const before = await nativePhase('migration-ledger', input.reportDiagnostic, async () => {
+        const tables = await input.api.query(
+            plan.resources.database.id,
+            "SELECT name FROM sqlite_schema WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%'",
+        )
+        const hasLedger = tables.some((row) => (row as { name?: unknown }).name === 'd1_migrations')
+        if (!hasLedger && tables.length)
+            throw new Error('Populated D1 has no reconciled cf ledger; stop for a copy rehearsal.')
+        const before = hasLedger ? await names() : []
+        if (
+            new Set(before).size !== before.length ||
+            before.some((name, index) => name !== plan.migrationNames[index])
+        )
+            throw new Error('Remote ledger is not a committed migration prefix.')
+        return before
     })
+    if (plan.resources.ownership === 'shared-preview') {
+        if (JSON.stringify(before) !== JSON.stringify(plan.migrationNames))
+            throw new Error('Shared PR D1 requires already-applied trusted base migrations.')
+    } else {
+        const apply = await nativePhase('migration-apply', input.reportDiagnostic, async () => {
+            const result = await input.run(plan.apply)
+            if (result.exitCode !== 0 || result.signal)
+                throw new Error('Migration did not exit normally; inspect D1 before retry.')
+            return result
+        })
+        await nativePhase('migration-postflight', input.reportDiagnostic, async () => {
+            const pending = await input.run(plan.pending)
+            confirmCloudflarePublisherMigrations(plan, {
+                accountId: plan.resources.accountId,
+                databaseId: plan.resources.database.id,
+                apply,
+                pending,
+                appliedNames: await names(),
+            })
+        })
+    }
     if ((await input.latestSourceSha()) !== plan.sourceSha)
         throw new Error('Source changed during migration; do not deploy.')
-    if (plan.isPreview) return publishCloudflarePreviewArtifact(plan, input, previousDeploymentId)
-    const result = await input.run(plan.deploy)
-    if (result.exitCode !== 0 || result.signal)
-        throw new Error('Publication did not exit normally; inspect the current version.')
-    await input.verifyProduction(result.output)
-    return { mode: plan.mode, sourceSha: plan.sourceSha, publicationVerified: true as const }
+    const result = await publishCloudflarePreviewArtifact(plan, {
+        ...input,
+        expectedPreviewId: preview?.id,
+    })
+    await nativePhase('publication-postflight', input.reportDiagnostic, async () => {
+        if (
+            JSON.stringify(await names()) !== JSON.stringify(plan.migrationNames) ||
+            (await input.latestSourceSha()) !== plan.sourceSha
+        )
+            throw new Error('Source or migration ledger changed during publication.')
+    })
+    return result
 }
 
 /** Serial Actions concurrency must cover this whole close/reopen sequence. */
 export const cleanupCloudflareNativePr = async (input: {
     inventory: CloudflareResourceInventory
-    activation: unknown
     enabled: boolean
     trustedCode: Parameters<typeof createCloudflarePreviewCleanupPlan>[0]['trustedCode']
     trustedRef: string
@@ -274,14 +469,7 @@ export const cleanupCloudflareNativePr = async (input: {
     api: ReturnType<typeof createCloudflareNativeApi>
     mode: string
 }) => {
-    requireCloudflareActivation(input.activation, {
-        action: 'cleanup',
-        mode: input.mode,
-        sourceSha: input.trustedSha,
-        trustedCodeSha: input.trustedSha,
-        inventory: input.inventory,
-        enabled: input.enabled,
-    })
+    if (!input.enabled) throw new Error('Native automatic cleanup remains disabled.')
     const pr = await input.readPr()
     const plan = createCloudflarePreviewCleanupPlan({
         ...input,
@@ -289,20 +477,17 @@ export const cleanupCloudflareNativePr = async (input: {
         inspection: await input.api.inspect(input.mode, input.inventory),
     })
     if (plan.mode !== input.mode) throw new Error('Cleanup target differs from fresh PR state.')
-    const checkClosed = async () =>
-        createCloudflarePreviewCleanupPlan({
+    const checkClosed = async () => {
+        const fresh = createCloudflarePreviewCleanupPlan({
             ...input,
             pr: await input.readPr(),
             inspection: await input.api.inspect(input.mode, input.inventory),
         })
+        if (fresh.mode !== plan.mode) throw new Error('PR identity changed before cleanup.')
+        return fresh
+    }
     await checkClosed()
     if (plan.resources.preview) await input.api.deletePreview(input.mode, plan.resources.preview.id)
-    for (const kind of ['database', 'cache', 'bucket'] as const) {
-        if (kind === 'database' && plan.retainedDatabase) continue
-        if (kind === 'bucket' && plan.retainedBucket) continue
-        await checkClosed()
-        await input.api.deletePrResource(input.mode, kind, input.inventory)
-    }
     return verifyCloudflarePreviewCleanup(
         plan,
         await input.readPr(),

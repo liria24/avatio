@@ -7,6 +7,7 @@ import { readBuildOutput } from '@cloudflare/build-output-utils'
 
 import { createCloudflareConfig } from '../config/cloudflare.ts'
 import { validateCloudflareBuildOutput } from '../config/cloudflareBuildOutput.ts'
+import { secretDefinitions } from '../config/secrets.ts'
 import { readCommittedCloudflareMigrations } from './cloudflareMigrationHistory.ts'
 
 /** A Nuxt/Nitro build followed by the pinned official Vite packager, without a custom output writer.
@@ -23,7 +24,8 @@ export const buildCloudflareNative = async (
         process.env.CLOUDFLARE_API_TOKEN ||
         process.env.DOTENV_PRIVATE_KEY_PRODUCTION ||
         process.env.DOTENV_PRIVATE_KEY_DEVELOPMENT ||
-        process.env.BETTER_AUTH_SECRET
+        process.env.NUXT_BETTER_AUTH_SECRET ||
+        secretDefinitions.some(({ key }) => Boolean(process.env[key]))
     )
         throw new Error(
             'Native application build must not receive deployment or signing credentials.',

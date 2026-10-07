@@ -9,7 +9,10 @@ import { migrate } from 'drizzle-orm/d1/migrator'
 import { Miniflare } from 'miniflare'
 import { PNG } from 'pngjs'
 
-import { verifyCloudflarePreviewHttp } from '../../../scripts/cloudflarePreviewSmoke.ts'
+import {
+    verifyCloudflarePreviewHttp,
+    verifyCloudflareStaticDeploymentHttp,
+} from '../../../scripts/cloudflarePreviewSmoke.ts'
 
 // Real bundled application, local bindings, disposable secrets. Never contact Cloudflare.
 const mode = process.argv[2]
@@ -81,6 +84,22 @@ try {
             await disabled.arrayBuffer()
         }
     }
+    // Inspection must fetch static assets without entering auth or changing its rate-limit rows.
+    const rateLimitsBefore = await database
+        .prepare('SELECT COUNT(*) AS count FROM rate_limits')
+        .first('count')
+    const staticPaths = []
+    const staticInspection = await verifyCloudflareStaticDeploymentHttp(origin, (url, options) => {
+        staticPaths.push(new URL(url).pathname)
+        return miniflare.dispatchFetch(url, options)
+    })
+    assert.deepEqual(staticPaths, ['/sw.js', '/manifest.webmanifest'])
+    assert.equal(staticInspection.staticHttpVerified, true)
+    assert.equal(staticInspection.applicationRuntimeVerified, false)
+    assert.equal(
+        await database.prepare('SELECT COUNT(*) AS count FROM rate_limits').first('count'),
+        rateLimitsBefore,
+    )
     const anonymous = await request('/api/me/setups/fixture')
     assert.equal(anonymous.status, 401)
     const items = await request('/api/items')

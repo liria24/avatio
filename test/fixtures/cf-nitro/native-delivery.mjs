@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
+import { appendFile, readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
 import { validateCloudflareBuildOutput } from '../../../config/cloudflareBuildOutput.ts'
@@ -17,6 +18,23 @@ const result = await validateCloudflareNativeArtifact(artifact, { sourceSha, mod
     execFileSync('git', ['show', `${sourceSha}:drizzle/${name}`], { cwd: root, encoding: 'utf8' }),
 )
 validateCloudflareBuildOutput(result.output, { mode, isPreview: mode !== 'production', inventory })
+assert.match(result.artifactHash, /^[a-f0-9]{64}$/)
+const revalidate = () =>
+    validateCloudflareNativeArtifact(artifact, { sourceSha, mode }, (name) =>
+        execFileSync('git', ['show', `${sourceSha}:drizzle/${name}`], {
+            cwd: root,
+            encoding: 'utf8',
+        }),
+    )
+assert.equal((await revalidate()).artifactHash, result.artifactHash)
+const asset = resolve(result.output.workers.default.assetsDir, 'sw.js')
+const originalAsset = await readFile(asset)
+try {
+    await appendFile(asset, '\n// synthetic artifact-integrity regression\n')
+    assert.notEqual((await revalidate()).artifactHash, result.artifactHash)
+} finally {
+    await writeFile(asset, originalAsset)
+}
 assert.equal(result.migrationNames.length, 17)
 assert.equal(result.output.workers.default.config.name, 'avatio')
 console.log(

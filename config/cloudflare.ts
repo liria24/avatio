@@ -38,6 +38,10 @@ const inventorySchema = z.strictObject({
         database: databaseSchema,
         bucket: z.string().min(1),
         imageBaseUrl: origin,
+        cache: z.strictObject({ id, name: z.string().min(1) }),
+        flagshipId: z.string().min(1),
+        rateLimitNamespaces: z.tuple([namespace, namespace, namespace, namespace]),
+        siteUrlSuffix: z.string().regex(/^(?:\.|-avatio\.)[a-z0-9.-]+$/),
     }),
     previews: z.record(z.string().regex(/^pr-[1-9]\d*$/), resourceSchema).default({}),
 })
@@ -54,112 +58,109 @@ export const createCloudflareConfig = (context: ConfigContext, input: unknown) =
         throw new Error('Cloudflare mode and isPreview do not match.')
 
     const inventory = inventorySchema.parse(input)
-    const permanent = [
-        ['production', inventory.production],
-        ['development', inventory.development],
-    ] as const
-    for (const [name, resources] of permanent) {
-        const expected = getStageConfig(name)
+    validateExistingCloudflareResources(inventory)
+    const shared = inventory.sharedPreviewStorage
+    const nonProduction = [inventory.development, shared, ...Object.values(inventory.previews)]
+    for (const target of nonProduction) {
         if (
-            resources.database.name !== expected.infrastructure.appDatabase ||
-            resources.cache.name !== expected.infrastructure.cache ||
-            resources.bucket !== expected.infrastructure.bucket ||
-            resources.imageBaseUrl !== expected.imageBaseUrl ||
-            resources.rateLimitNamespaces.some(
-                (value, index) => value !== expected.infrastructure.rateLimitNamespaces[index],
-            ) ||
-            (name === 'production' &&
-                (resources.siteUrl !== expected.siteUrl ||
-                    resources.emailFrom !== expected.emailFrom ||
-                    !resources.analyticsSiteTag))
-        )
-            throw new Error(
-                `Existing ${name} resource identity does not match stage configuration.`,
+            target.database.id === inventory.production.database.id ||
+            target.database.name === inventory.production.database.name ||
+            target.cache.id === inventory.production.cache.id ||
+            target.cache.name === inventory.production.cache.name ||
+            target.bucket === inventory.production.bucket ||
+            target.imageBaseUrl === inventory.production.imageBaseUrl ||
+            target.flagshipId === inventory.production.flagshipId ||
+            target.rateLimitNamespaces.some((value) =>
+                inventory.production.rateLimitNamespaces.includes(value),
             )
+        )
+            throw new Error('Preview resources and integrations must be non-production.')
     }
-    const allResources = [...permanent, ...Object.entries(inventory.previews)]
-    const sharedStorage = inventory.sharedPreviewStorage
-    const sharedDatabase = sharedStorage.database
     if (
-        sharedDatabase.id === inventory.production.database.id ||
-        sharedDatabase.name === inventory.production.database.name ||
-        sharedStorage.bucket === inventory.production.bucket ||
-        sharedStorage.imageBaseUrl === inventory.production.imageBaseUrl ||
-        (sharedDatabase.id === inventory.development.database.id &&
-            sharedDatabase.name !== inventory.development.database.name)
+        shared.database.id === inventory.development.database.id ||
+        shared.database.name === inventory.development.database.name ||
+        shared.cache.id === inventory.development.cache.id ||
+        shared.cache.name === inventory.development.cache.name ||
+        shared.bucket === inventory.development.bucket ||
+        shared.imageBaseUrl === inventory.development.imageBaseUrl ||
+        shared.rateLimitNamespaces.some((value) =>
+            inventory.development.rateLimitNamespaces.includes(value),
+        )
     )
-        throw new Error('Shared Preview storage must be reviewed non-production D1 and R2.')
-    for (const [, resources] of allResources) {
-        const sharedDatabaseBinding = resources.database.id === sharedDatabase.id
-        const sharedBucketBinding = resources.bucket === sharedStorage.bucket
-        const sharedImageOrigin = resources.imageBaseUrl === sharedStorage.imageBaseUrl
-        if (
-            sharedDatabaseBinding !== sharedBucketBinding ||
-            sharedDatabaseBinding !== sharedImageOrigin
-        )
-            throw new Error('Preview D1 and R2 must be shared or isolated as a pair.')
-    }
+        throw new Error('Shared PR resources must be separate from development data.')
     for (const [name, resources] of Object.entries(inventory.previews)) {
-        const expectedName = `avatio-${name}`
+        // Overrides are preprovisioned isolated pairs, never allocator instructions.
         if (
-            resources.cache.name !== expectedName ||
-            (resources.database.id !== sharedDatabase.id && resources.bucket !== expectedName)
-        )
-            throw new Error(`${name} requires dedicated resources named ${expectedName}.`)
-        if (
-            resources.database.id === sharedDatabase.id
-                ? resources.database.name !== sharedDatabase.name
-                : resources.database.name !== expectedName
-        )
-            throw new Error(
-                `${name} requires the shared Preview D1 or a dedicated ${expectedName} D1.`,
+            resources.database.id === shared.database.id ||
+            resources.bucket === shared.bucket ||
+            resources.database.id === inventory.development.database.id ||
+            resources.bucket === inventory.development.bucket ||
+            resources.imageBaseUrl === shared.imageBaseUrl ||
+            resources.imageBaseUrl === inventory.development.imageBaseUrl ||
+            resources.cache.id === inventory.development.cache.id ||
+            resources.cache.name === inventory.development.cache.name ||
+            (resources.cache.id === shared.cache.id &&
+                resources.cache.name !== shared.cache.name) ||
+            resources.rateLimitNamespaces.some((value) =>
+                inventory.development.rateLimitNamespaces.includes(value),
             )
-    }
-    const isolatedDatabaseIds = allResources
-        .filter(
-            ([name, resources]) =>
-                name === 'production' || resources.database.id !== sharedDatabase.id,
         )
-        .map(([, resources]) => resources.database.id)
-    if (new Set(isolatedDatabaseIds).size !== isolatedDatabaseIds.length)
-        throw new Error('Only the reviewed shared Preview D1 may be shared across targets.')
-    for (const [select, sharedValue] of [
-        [(value: z.output<typeof resourceSchema>) => value.cache.id, undefined],
-        [(value: z.output<typeof resourceSchema>) => value.bucket, sharedStorage.bucket],
-        [(value: z.output<typeof resourceSchema>) => value.siteUrl, undefined],
-        [
-            (value: z.output<typeof resourceSchema>) => value.imageBaseUrl,
-            sharedStorage.imageBaseUrl,
-        ],
-    ] as const) {
-        const values = allResources
-            .map(([, value]) => select(value))
-            .filter((value) => value !== sharedValue)
+            throw new Error(`${name} requires an isolated database/image-storage pair.`)
+    }
+    const isolated = [
+        inventory.production,
+        inventory.development,
+        shared,
+        ...Object.values(inventory.previews),
+    ]
+    for (const select of [
+        (value: Pick<typeof inventory.development, 'database' | 'bucket' | 'imageBaseUrl'>) =>
+            value.database.id,
+        (value: Pick<typeof inventory.development, 'database' | 'bucket' | 'imageBaseUrl'>) =>
+            value.database.name,
+        (value: Pick<typeof inventory.development, 'database' | 'bucket' | 'imageBaseUrl'>) =>
+            value.bucket,
+        (value: Pick<typeof inventory.development, 'database' | 'bucket' | 'imageBaseUrl'>) =>
+            value.imageBaseUrl,
+    ]) {
+        const values = isolated.map(select)
         if (new Set(values).size !== values.length)
-            throw new Error('Production, development, and isolated PR resources must be distinct.')
+            throw new Error('Preprovisioned storage pairs must be distinct.')
     }
-    const namespaces = allResources.flatMap(([, value]) => value.rateLimitNamespaces)
-    if (new Set(namespaces).size !== namespaces.length)
-        throw new Error('Rate limit namespaces must be distinct across targets and bindings.')
-    for (const [name, resources] of allResources) {
-        if (name === 'production') continue
+    for (const resources of [inventory.development, ...Object.values(inventory.previews)]) {
         if (
-            resources.flagshipId === inventory.production.flagshipId ||
             resources.emailFrom !== undefined ||
-            resources.analyticsSiteTag
+            resources.analyticsSiteTag ||
+            resources.optionalSecrets.length
         )
-            throw new Error(
-                `${name} requires non-production integrations with email and dynamic OG disabled.`,
-            )
-        if (resources.optionalSecrets.some((key) => key !== 'BOOTH_PROXY_URL'))
-            throw new Error(
-                'Preview operational analytics and notification credentials are not enabled.',
-            )
+            throw new Error('Preview email, analytics and optional credentials are disabled.')
     }
+    for (const resources of isolated) {
+        if (new Set(resources.rateLimitNamespaces).size !== 4)
+            throw new Error('Rate limit namespaces must be distinct across bindings.')
+    }
+    return createCloudflareWorkerConfiguration(
+        mode,
+        isPreview,
+        inventory.accountId,
+        getCloudflareTargetResources(mode, inventory),
+        inventory.production,
+        previewKind === 'pr' && Boolean(inventory.previews[mode]),
+    )
+}
 
+const createCloudflareWorkerConfiguration = (
+    mode: string,
+    isPreview: boolean,
+    accountId: string,
+    resources: z.output<typeof resourceSchema>,
+    production: z.output<typeof resourceSchema>,
+    isolatedPreview: boolean,
+) => {
+    const stage = mode === 'production' ? 'production' : 'development'
+    const previewName = mode === 'production' ? undefined : mode
+    const previewKind = getPreviewKind(stage, previewName)
     const config = getStageConfig(stage)
-    const resources = previewKind === 'pr' ? inventory.previews[mode] : inventory[stage]
-    if (!resources) throw new Error(`No reviewed resource inventory for ${mode}.`)
     const workerEnv: NonNullable<WorkerConfig['env']> = {
         ASSETS: bindings.assets(),
         APP_DB: bindings.d1(resources.database),
@@ -179,7 +180,7 @@ export const createCloudflareConfig = (context: ConfigContext, input: unknown) =
         AUTH_TRUSTED_ORIGINS: bindings.text(
             JSON.stringify(isPreview ? [resources.siteUrl] : config.trustedOrigins),
         ),
-        // The eventual publisher must derive this value from canonical BETTER_AUTH_SECRET.
+        // Operators configure both auth names with the same non-production value in Previews Base.
         NUXT_BETTER_AUTH_SECRET: bindings.secret(),
     }
     const limits = [
@@ -201,19 +202,20 @@ export const createCloudflareConfig = (context: ConfigContext, input: unknown) =
     }
     if (previewKind !== 'pr') workerEnv.TWITTER_CLIENT_ID = bindings.text(config.twitterClientId)
     if (previewName) {
+        workerEnv.PREVIEW_STORAGE_ISOLATED = bindings.text(String(isolatedPreview))
         workerEnv.PREVIEW_NAME = bindings.text(previewName)
     } else {
         workerEnv.EMAIL = bindings.sendEmail({
-            allowedSenderAddresses: [inventory.production.emailFrom!],
+            allowedSenderAddresses: [production.emailFrom!],
         })
-        workerEnv.EMAIL_FROM = bindings.text(inventory.production.emailFrom!)
+        workerEnv.EMAIL_FROM = bindings.text(production.emailFrom!)
         workerEnv.ITEM_REVALIDATION_QUEUE = bindings.queue({ name: config.infrastructure.queue })
-        workerEnv.CLOUDFLARE_ANALYTICS_ACCOUNT_ID = bindings.text(inventory.accountId)
+        workerEnv.CLOUDFLARE_ANALYTICS_ACCOUNT_ID = bindings.text(accountId)
         workerEnv.CLOUDFLARE_ANALYTICS_SITE_TAG = bindings.text(resources.analyticsSiteTag!)
         workerEnv.CLOUDFLARE_ANALYTICS_HOST = bindings.text(new URL(resources.siteUrl).hostname)
     }
     return {
-        accountId: inventory.accountId,
+        accountId: accountId,
         worker: {
             name: 'avatio',
             entrypoint: '.output/server/index.mjs',
@@ -243,5 +245,83 @@ export const createCloudflareConfig = (context: ConfigContext, input: unknown) =
                   ],
             env: workerEnv,
         } satisfies WorkerConfig,
+    }
+}
+
+/** Fixed reviewed bindings: ordinary PRs share test resources; overrides are preprovisioned. */
+export const getCloudflareTargetResources = (mode: string, input: unknown) => {
+    const inventory = inventorySchema.parse(input)
+    if (mode === 'production' || mode === 'development') return inventory[mode]
+    if (!/^pr-[1-9]\d*$/.test(mode)) throw new Error('Invalid Preview target.')
+    if (inventory.previews[mode]) return inventory.previews[mode]
+    const { siteUrlSuffix, ...resources } = inventory.sharedPreviewStorage
+    return { ...resources, siteUrl: `https://${mode}${siteUrlSuffix}`, optionalSecrets: [] }
+}
+
+const inspectionInventorySchema = inventorySchema
+    .pick({ accountId: true, production: true, development: true })
+    .strip()
+
+const validateExistingCloudflareResources = (
+    inventory: z.output<typeof inspectionInventorySchema>,
+) => {
+    const permanent = [
+        ['production', inventory.production],
+        ['development', inventory.development],
+    ] as const
+    for (const [name, resources] of permanent) {
+        const expected = getStageConfig(name)
+        if (
+            resources.database.name !== expected.infrastructure.appDatabase ||
+            resources.cache.name !== expected.infrastructure.cache ||
+            resources.bucket !== expected.infrastructure.bucket ||
+            resources.imageBaseUrl !== expected.imageBaseUrl ||
+            resources.rateLimitNamespaces.some(
+                (value, index) => value !== expected.infrastructure.rateLimitNamespaces[index],
+            ) ||
+            (name === 'production' &&
+                (resources.siteUrl !== expected.siteUrl ||
+                    resources.emailFrom !== expected.emailFrom ||
+                    !resources.analyticsSiteTag))
+        )
+            throw new Error(
+                `Existing ${name} resource identity does not match stage configuration.`,
+            )
+    }
+
+    const prod = inventory.production,
+        dev = inventory.development
+    if (
+        dev.database.id === prod.database.id ||
+        dev.database.name === prod.database.name ||
+        dev.cache.id === prod.cache.id ||
+        dev.cache.name === prod.cache.name ||
+        dev.bucket === prod.bucket ||
+        dev.imageBaseUrl === prod.imageBaseUrl ||
+        dev.siteUrl === prod.siteUrl ||
+        dev.flagshipId === prod.flagshipId ||
+        dev.rateLimitNamespaces.some((value) => prod.rateLimitNamespaces.includes(value))
+    )
+        throw new Error('Development inspection must not use production resources or integrations.')
+    if (dev.emailFrom !== undefined || dev.analyticsSiteTag || dev.optionalSecrets.length)
+        throw new Error(
+            'Development Preview email, analytics and optional credentials are disabled.',
+        )
+}
+
+/** Read-only development metadata needs no PR pool, allocator, Base secrets or publication settings. */
+export const getCloudflareDevelopmentInspectionConfiguration = (input: unknown) => {
+    const inventory = inspectionInventorySchema.parse(input)
+    validateExistingCloudflareResources(inventory)
+    return {
+        resources: inventory.development,
+        configuration: createCloudflareWorkerConfiguration(
+            'development',
+            true,
+            inventory.accountId,
+            inventory.development,
+            inventory.production,
+            false,
+        ),
     }
 }

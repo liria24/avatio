@@ -109,25 +109,39 @@ describe('prepared cf configuration', () => {
         { mode: 'development', isPreview: false },
         { mode: 'pr-354', isPreview: false },
         { mode: 'pr-0', isPreview: true },
-        { mode: 'pr-999', isPreview: true },
     ])('rejects missing, invalid, or mismatched targets %j', (context) => {
         expect(() => createCloudflareConfig(context, createCloudflareResourceFixture())).toThrow()
     })
 
-    it('allows reviewed shared Preview D1 across PRs while retaining isolated overrides', () => {
+    it('uses fixed shared PR D1/R2/KV by default, retaining preprovisioned isolated overrides', () => {
         const input = createCloudflareResourceFixture()
-        for (const name of ['pr-354', 'pr-355'])
-            Object.assign(input.previews![name]!, structuredClone(input.sharedPreviewStorage))
-        for (const mode of ['pr-354', 'pr-355'])
-            expect(
-                createCloudflareConfig({ mode, isPreview: true }, input).worker.env.APP_DB,
-            ).toMatchObject(input.sharedPreviewStorage.database)
+        for (const mode of ['pr-356', 'pr-357']) {
+            const env = createCloudflareConfig({ mode, isPreview: true }, input).worker.env
+            expect(env.APP_DB).toMatchObject(input.sharedPreviewStorage.database)
+            expect(env.CONTENT_CACHE).toMatchObject({ id: input.sharedPreviewStorage.cache.id })
+            expect(env.PREVIEW_STORAGE_ISOLATED).toEqual({ type: 'text', value: 'false' })
+            expect(env.R2).toMatchObject({ name: input.sharedPreviewStorage.bucket })
+            expect(env.SELF_URL).toEqual({
+                type: 'text',
+                value: `https://${mode}.previews.example.test`,
+            })
+        }
+        expect(
+            createCloudflareConfig({ mode: 'pr-354', isPreview: true }, input).worker.env.APP_DB,
+        ).toMatchObject(input.previews!['pr-354']!.database)
+        expect(
+            createCloudflareConfig({ mode: 'pr-354', isPreview: true }, input).worker.env
+                .PREVIEW_STORAGE_ISOLATED,
+        ).toEqual({ type: 'text', value: 'true' })
+        expect(
+            createCloudflareConfig({ mode: 'development', isPreview: true }, input).worker.env
+                .PREVIEW_STORAGE_ISOLATED,
+        ).toEqual({ type: 'text', value: 'false' })
         input.sharedPreviewStorage.database = { ...input.production.database }
         expect(() => createCloudflareConfig({ mode: 'pr-354', isPreview: true }, input)).toThrow(
             /non-production/,
         )
     })
-
     it('rejects sharing only half of the database/image-storage pair', () => {
         const databaseOnly = createCloudflareResourceFixture()
         databaseOnly.previews!['pr-354']!.database = {
@@ -135,13 +149,13 @@ describe('prepared cf configuration', () => {
         }
         expect(() =>
             createCloudflareConfig({ mode: 'pr-354', isPreview: true }, databaseOnly),
-        ).toThrow(/as a pair/)
+        ).toThrow(/pair/)
         const bucketOnly = createCloudflareResourceFixture()
         bucketOnly.previews!['pr-354']!.bucket = bucketOnly.sharedPreviewStorage.bucket
         bucketOnly.previews!['pr-354']!.imageBaseUrl = bucketOnly.sharedPreviewStorage.imageBaseUrl
         expect(() =>
             createCloudflareConfig({ mode: 'pr-354', isPreview: true }, bucketOnly),
-        ).toThrow(/as a pair/)
+        ).toThrow(/pair/)
     })
 
     it('rejects absent IDs, cross-target resources, production credentials, and disabled integration inputs', () => {

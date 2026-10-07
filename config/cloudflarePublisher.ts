@@ -1,13 +1,12 @@
 import { z } from 'zod'
 
-import type { CloudflareResourceInventory } from './cloudflare.ts'
+import { getCloudflareTargetResources, type CloudflareResourceInventory } from './cloudflare.ts'
 import { validateCloudflareBuildOutput } from './cloudflareBuildOutput.ts'
 import {
     validateCloudflareDeliveryEvidence,
     type CloudflareDeliveryEvidence,
 } from './cloudflareDelivery.ts'
 import { parseCloudflarePreviewDeployment } from './cloudflarePreviewLifecycle.ts'
-import { getStageConfig } from './environment.ts'
 
 interface CommandResult {
     exitCode: number | null
@@ -70,19 +69,6 @@ export const createCloudflarePublishPlan = (input: {
         executable: 'node' as const,
         args: ['node_modules/cf/bin/cf', ...args],
     })
-    const migrations = (action: 'apply' | 'list') =>
-        command([
-            'd1',
-            'migrations',
-            action,
-            database.id!,
-            '--dir',
-            'drizzle',
-            '--pattern',
-            'drizzle/*/migration.sql',
-            '--table',
-            'd1_migrations',
-        ])
     return {
         ...target,
         sourceSha: input.evidence.sourceSha,
@@ -92,10 +78,7 @@ export const createCloudflarePublishPlan = (input: {
             database: { id: database.id, name: database.name },
             cache: {
                 id: cache.id,
-                name: target.mode.startsWith('pr-')
-                    ? `avatio-${target.mode}`
-                    : getStageConfig(target.isPreview ? 'development' : 'production').infrastructure
-                          .cache,
+                name: getCloudflareTargetResources(target.mode, input.inventory).cache.name,
             },
             bucket: { name: bucket.name },
             ownership: target.mode.startsWith('pr-')
@@ -120,8 +103,7 @@ export const createCloudflarePublishPlan = (input: {
         // apply defaults to remote in this pinned CLI; never add --local or use a database name.
         remoteMigrations: true as const,
         migrationNames: names,
-        apply: migrations('apply'),
-        pending: migrations('list'),
+        ...createCloudflareMigrationCommands(database.id),
         deploy: command(
             target.isPreview
                 ? [
@@ -151,7 +133,7 @@ export const createCloudflarePublishPlan = (input: {
 
 /** Reject silent abort/failure and incomplete bookkeeping before preparing a deploy step. */
 export const confirmCloudflarePublisherMigrations = (
-    plan: ReturnType<typeof createCloudflarePublishPlan>,
+    plan: Pick<ReturnType<typeof createCloudflarePublishPlan>, 'resources' | 'migrationNames'>,
     evidence: {
         accountId: string
         databaseId: string
@@ -190,7 +172,7 @@ export const confirmCloudflarePublisherMigrations = (
 
 /** A fresh positive inspection, never treating a denied read as a missing resource to create. */
 export const verifyCloudflarePublisherResources = (
-    plan: ReturnType<typeof createCloudflarePublishPlan>,
+    plan: Pick<ReturnType<typeof createCloudflarePublishPlan>, 'resources' | 'workerName'>,
     input: unknown,
 ) => {
     const parsed = inspectionSchema.safeParse(input)
@@ -224,17 +206,24 @@ export const simulateCloudflarePublication = async (
     if (fixture.simulation !== true || plan.executionEnabled !== false)
         throw new Error('Only a credentialless simulation is supported.')
     verifyCloudflarePublisherResources(plan, await fixture.inspectedResources())
-    const apply = await fixture.run(plan.apply)
-    if (apply.exitCode !== 0 || apply.signal)
-        throw new Error('Migration command did not exit normally; deployment is forbidden.')
-    const pending = await fixture.run(plan.pending)
-    confirmCloudflarePublisherMigrations(plan, {
-        accountId: plan.resources.accountId,
-        databaseId: plan.resources.database.id,
-        apply,
-        pending,
-        appliedNames: await fixture.appliedNames(),
-    })
+    if (plan.resources.ownership === 'shared-preview') {
+        if (JSON.stringify(await fixture.appliedNames()) !== JSON.stringify(plan.migrationNames))
+            throw new Error(
+                'Shared PR simulation requires the already-applied trusted-base ledger.',
+            )
+    } else {
+        const apply = await fixture.run(plan.apply)
+        if (apply.exitCode !== 0 || apply.signal)
+            throw new Error('Migration command did not exit normally; deployment is forbidden.')
+        const pending = await fixture.run(plan.pending)
+        confirmCloudflarePublisherMigrations(plan, {
+            accountId: plan.resources.accountId,
+            databaseId: plan.resources.database.id,
+            apply,
+            pending,
+            appliedNames: await fixture.appliedNames(),
+        })
+    }
     if ((await fixture.latestSourceSha()) !== plan.sourceSha)
         throw new Error('The source was superseded during migration; do not deploy stale output.')
     const deployed = await fixture.run(plan.deploy)
@@ -252,4 +241,26 @@ export const simulateCloudflarePublication = async (
         activationVerified: false as const,
         cloudflareOperations: 0 as const,
     }
+}
+
+/** The same physical reviewed D1 ID is used by apply and its pending check. */
+export const createCloudflareMigrationCommands = (databaseId: string) => {
+    if (!z.uuid().safeParse(databaseId).success) throw new Error('Reviewed D1 ID required.')
+    const command = (action: 'apply' | 'list') => ({
+        executable: 'node' as const,
+        args: [
+            'node_modules/cf/bin/cf',
+            'd1',
+            'migrations',
+            action,
+            databaseId,
+            '--dir',
+            'drizzle',
+            '--pattern',
+            'drizzle/*/migration.sql',
+            '--table',
+            'd1_migrations',
+        ],
+    })
+    return { apply: command('apply'), pending: command('list') }
 }

@@ -12,8 +12,9 @@ on:
       - 'config/cloudflarePreviewLifecycle.ts'
       - 'config/cloudflareBuildOutput.ts'
       - 'config/cloudflarePublisher.ts'
-      - 'config/cloudflareActivation.ts'
-      - 'config/cloudflareRecovery.ts'
+      - 'config/preview.ts'
+      - 'server/utils/content.ts'
+      - 'server/utils/adminJobs.ts'
       - 'scripts/cloudflareNative*.ts'
       - '.github/workflows/native-delivery.yml'
       - 'scripts/cloudflarePreviewSmoke.ts'
@@ -52,6 +53,9 @@ jobs:
           - mode: pr-354
             preview: 'true'
             nodeCompat: v2
+          - mode: pr-356
+            preview: 'true'
+            nodeCompat: v2
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -70,11 +74,12 @@ jobs:
         run: |
           node --input-type=module <<'JS'
           import { appendFileSync } from 'node:fs'
+          import {getCloudflareTargetResources} from './config/cloudflare.ts'
           import { createCloudflareResourceFixture } from './test/helpers/cloudflareResources.ts'
           const mode = process.env.SPIKE_MODE
           const preview = mode !== 'production'
           const inventory = createCloudflareResourceFixture()
-          const target = preview ? inventory.previews[mode] : inventory.production
+          const target = getCloudflareTargetResources(mode,inventory)
           const values = {
             STAGE: preview ? 'development' : 'production',
             PREVIEW_NAME: preview ? mode : '',

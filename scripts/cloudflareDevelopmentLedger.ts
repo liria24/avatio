@@ -2,79 +2,14 @@ import { createHash } from 'node:crypto'
 
 import { z } from 'zod'
 
-import { createCloudflareConfig, type CloudflareResourceInventory } from '../config/cloudflare.ts'
-import { cloudflareInventoryHash } from '../config/cloudflareActivation.ts'
+import {
+    getCloudflareDevelopmentInspectionConfiguration,
+    type CloudflareResourceInventory,
+} from '../config/cloudflare.ts'
 import { mapCloudflareMigrationHistory } from './cloudflareMigrationHistory.ts'
 
 const sha = /^[a-f0-9]{40}$/
 const digest = /^[a-f0-9]{64}$/
-const runId = /^[1-9]\d*$/
-const developmentRef = 'refs/heads/development'
-const receipt = z.strictObject({
-    version: z.literal(1),
-    repository: z.literal('liria24/avatio'),
-    action: z.literal('rehearse'),
-    mode: z.literal('development'),
-    sourceSha: z.string().regex(sha),
-    trustedCodeSha: z.string().regex(sha),
-    qualityRunId: z.string().regex(runId),
-    inventoryHash: z.string().regex(digest),
-    expiresAt: z.iso.datetime(),
-    buildArtifactPublicationApproved: z.literal(true),
-    previewSecretTransferApproved: z.literal(true),
-    incidentalNonProductionRuntimeWritesApproved: z.literal(true),
-    publicInitialPreviewApproved: z.literal(true),
-})
-
-/** Separate manual runtime approval. It does not establish migration or publisher activation. */
-export const requireCloudflareDevelopmentRehearsal = (
-    input: unknown,
-    expected: {
-        action: string
-        mode: string
-        eventName: string
-        sourceRef: string
-        trustedRef: string
-        sourceSha: string
-        latestSourceSha: string
-        trustedCodeSha: string
-        // Fresh successful development quality, selected by resolveCloudflareDeliveryPreflight.
-        quality: { runId: string; sourceSha: string; succeeded: boolean }
-        inventory: CloudflareResourceInventory
-    },
-    now = Date.now(),
-) => {
-    const parsed = receipt.safeParse(input)
-    if (!parsed.success)
-        throw new Error('Explicit development runtime rehearsal approval required.')
-    const approval = parsed.data
-    const expires = Date.parse(approval.expiresAt)
-    if (
-        expected.action !== 'rehearse' ||
-        expected.mode !== 'development' ||
-        expected.eventName !== 'workflow_dispatch' ||
-        expected.sourceRef !== developmentRef ||
-        expected.trustedRef !== developmentRef ||
-        expected.quality.succeeded !== true ||
-        approval.qualityRunId !== expected.quality.runId ||
-        [
-            expected.sourceSha,
-            expected.latestSourceSha,
-            expected.trustedCodeSha,
-            expected.quality.sourceSha,
-        ].some((value) => value !== approval.sourceSha) ||
-        approval.trustedCodeSha !== approval.sourceSha ||
-        approval.inventoryHash !== cloudflareInventoryHash(expected.inventory) ||
-        !Number.isFinite(now) ||
-        expires <= now ||
-        expires > now + 86_400_000
-    )
-        throw new Error(
-            'Rehearsal approval differs from current reviewed development quality or is expired.',
-        )
-    createCloudflareConfig({ mode: 'development', isPreview: true }, expected.inventory)
-    return approval
-}
 
 const snapshotSchema = z.strictObject({
     complete: z.literal(true),
@@ -122,10 +57,7 @@ export const requireCloudflareDevelopmentLedger = (input: unknown, expected: Led
     if (!parsed.success)
         throw new Error('Complete successful development ledger/schema reads required.')
     const snapshot = parsed.data
-    const configuration = createCloudflareConfig(
-        { mode: 'development', isPreview: true },
-        expected.inventory,
-    )
+    const { configuration } = getCloudflareDevelopmentInspectionConfiguration(expected.inventory)
     const database = configuration.worker.env.APP_DB
     const names = expected.files.map((file) => file.name).sort()
     if (
@@ -148,12 +80,12 @@ export const requireCloudflareDevelopmentLedger = (input: unknown, expected: Led
         new Set(snapshot.alchemy.map((row) => row.id)).size !== snapshot.alchemy.length
     )
         throw new Error(
-            'Development ledger target, trusted SQL set or schema differs from the reviewed rehearsal.',
+            'Development ledger target, trusted SQL set or schema differs from the reviewed inspection.',
         )
     const mapping = mapCloudflareMigrationHistory(expected.files, snapshot.alchemy, [])
     if (mapping.pending.length || mapping.imports.length !== expected.files.length)
         throw new Error(
-            'Runtime rehearsal requires every trusted migration already applied by Alchemy.',
+            'Read-only inspection requires every trusted migration already applied by Alchemy.',
         )
     return {
         ...snapshot,
@@ -174,6 +106,12 @@ export const confirmCloudflareDevelopmentLedgerUnchanged = (
         JSON.stringify(requireCloudflareDevelopmentLedger(before, expected)) !==
         JSON.stringify(requireCloudflareDevelopmentLedger(after, expected))
     )
-        throw new Error('Development migration history or schema changed during runtime rehearsal.')
+        throw new Error('Development migration history or schema changed during inspection.')
     return { ledgerUnchanged: true as const, migrationCompatibilityVerified: false as const }
 }
+
+// Fixed metadata queries shared by development inspection and the inspection-only REST allowlist.
+export const developmentSchemaSql =
+    "SELECT type, name, tbl_name AS tableName, sql FROM sqlite_schema WHERE name NOT GLOB 'sqlite_*' AND name NOT GLOB '_cf_*' ORDER BY type, name"
+export const developmentLedgerSql =
+    'SELECT id, name, hash, applied_at AS appliedAt FROM __alchemy_migrations ORDER BY id'
