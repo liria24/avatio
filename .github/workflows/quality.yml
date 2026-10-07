@@ -29,7 +29,7 @@ concurrency:
 jobs:
   cloudflare-inventory:
     name: Cloudflare read-only inventory
-    if: github.event_name == 'workflow_dispatch' && inputs.cloudflare_inventory && github.repository == 'liria24/avatio' && github.ref == 'refs/heads/codex/nuxt46-native-preview-gates' && github.actor == 'liry24' && github.triggering_actor == 'liry24'
+    if: github.event_name == 'workflow_dispatch' && inputs.cloudflare_inventory && github.repository == 'liria24/avatio' && github.ref == 'refs/heads/development' && github.actor == 'liry24' && github.triggering_actor == 'liry24'
     environment: preview
     runs-on: ubuntu-latest
     timeout-minutes: 5
