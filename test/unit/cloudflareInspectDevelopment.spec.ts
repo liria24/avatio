@@ -186,7 +186,7 @@ describe('development inspection only', () => {
                     type: 'd1',
                     database_id: inventory.production.database.id,
                 }
-            if (kind === 'secret') delete deployment.env.BETTER_AUTH_SECRET
+            if (kind === 'secret') delete deployment.env.NUXT_BETTER_AUTH_SECRET
             if (kind === 'url') deployment.urls = ['https://attacker.example.test']
             const httpFetch = vi.fn<typeof fetch>()
             await expect(inspectCloudflareDevelopment({ ...input, httpFetch })).rejects.toThrow()
@@ -614,8 +614,7 @@ describe('complete safe metadata contract audit before rejection', () => {
         deployment.urls = ['https://12345679-avatio.liry.workers.dev']
         deployment.annotations['workers/commit_sha'] = 'c'.repeat(40)
         deployment.env.APP_DB = { type: 'd1', database_id: 'synthetic-private-wrong-id' }
-        deployment.env.BETTER_AUTH_SECRET = { type: 'secret', text: 'synthetic-never-print' }
-        delete deployment.env.NUXT_BETTER_AUTH_SECRET
+        deployment.env.NUXT_BETTER_AUTH_SECRET = { type: 'secret', text: 'synthetic-never-print' }
         delete deployment.env.TWITTER_CLIENT_SECRET
         const localInventory = structuredClone(inventory)
         localInventory.development.siteUrl = 'https://development-avatio.liry.workers.dev'
@@ -645,7 +644,7 @@ describe('complete safe metadata contract audit before rejection', () => {
         })
         expect(audit?.bindings).toContainEqual(
             expect.objectContaining({
-                name: 'BETTER_AUTH_SECRET',
+                name: 'NUXT_BETTER_AUTH_SECRET',
                 namePresent: true,
                 wire: expect.objectContaining({ fixedType: 'secret' }),
                 contractMatches: false,
@@ -707,7 +706,7 @@ describe('complete safe metadata contract audit before rejection', () => {
         deployment.urls = [
             'https://synthetic-secret-value@attacker.example.test/private?token=synthetic-secret-value',
         ]
-        delete deployment.env.BETTER_AUTH_SECRET
+        delete deployment.env.NUXT_BETTER_AUTH_SECRET
         await expect(inspectCloudflareDevelopment(input)).rejects.toThrow(
             /preview-url-contract-mismatch.*preview-bindings-mismatch/,
         )
@@ -722,7 +721,7 @@ describe('complete safe metadata contract audit before rejection', () => {
     })
 })
 
-describe('reviewable recovery assessment for the actual partial-publication pattern', () => {
+describe('reviewable partial-publication assessment against the current binding contract', () => {
     it('accepts the short UUID URL and recommends a fresh reviewed artifact, without authorizing missing-secret repair or HTTP', async () => {
         const { input, deployment } = fixture()
         const localInventory = structuredClone(inventory)
@@ -735,7 +734,6 @@ describe('reviewable recovery assessment for the actual partial-publication patt
             if (binding.type === 'text')
                 deployment.env[name] = { type: 'plain_text', text: binding.value }
         }
-        delete deployment.env.BETTER_AUTH_SECRET
         delete deployment.env.NUXT_BETTER_AUTH_SECRET
         delete deployment.env.TWITTER_CLIENT_SECRET
         deployment.id = '98137eba-5a9a-4d89-894d-9c916ccd8d14'
@@ -754,7 +752,6 @@ describe('reviewable recovery assessment for the actual partial-publication patt
                 exactMissingSecretPattern: true,
                 matchingNonSecretBindings: 23,
                 missingDeclaredSecretNames: expect.arrayContaining([
-                    'BETTER_AUTH_SECRET',
                     'NUXT_BETTER_AUTH_SECRET',
                     'TWITTER_CLIENT_SECRET',
                 ]),

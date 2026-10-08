@@ -19,7 +19,6 @@
         },
         ".": {
             "entry": [
-                "alchemy.run.ts",
                 "cloudflare.config.ts",
                 "auth.config.ts",
                 "files.config.ts",

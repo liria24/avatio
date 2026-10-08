@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process'
-import { copyFile, mkdtemp, readFile, rm } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
@@ -65,7 +65,6 @@ describe('stage configuration', () => {
             import { loadNuxt } from '@nuxt/kit'
             const authSecret = 'synthetic-build-secret-never-inline-123456789'
             const ogSecret = 'synthetic-og-secret-never-inline-123456789'
-            process.env.BETTER_AUTH_SECRET = authSecret
             process.env.NUXT_BETTER_AUTH_SECRET = authSecret
             process.env.OG_IMAGE_SECRET = ogSecret
             process.env.STAGE = ${JSON.stringify(stage)}
@@ -113,11 +112,14 @@ describe('stage configuration', () => {
     it('stops stage commands when the dotenv private key cannot decrypt the stage file', async () => {
         const directory = await mkdtemp(join(tmpdir(), 'avatio-dotenv-'))
         try {
-            await copyFile('.env.development', join(directory, '.env.development'))
+            await writeFile(
+                join(directory, '.env.development'),
+                'NUXT_BETTER_AUTH_SECRET=encrypted:synthetic-invalid-ciphertext\n',
+            )
             await expect(
                 execFileAsync(
                     process.execPath,
-                    [join(process.cwd(), 'scripts/stage.ts'), 'check', 'development'],
+                    [join(process.cwd(), 'scripts/checkStageConfig.ts'), 'development'],
                     {
                         cwd: directory,
                         env: { ...process.env, DOTENV_PRIVATE_KEY_DEVELOPMENT: '0'.repeat(64) },

@@ -144,7 +144,7 @@ export const verifyCloudflarePreviewBase = (
         { mode: 'pr-1', isPreview: true },
         { ...inventory, previews: {} },
     ).worker.env
-    const auth = ['BETTER_AUTH_SECRET', 'NUXT_BETTER_AUTH_SECRET']
+    const auth = ['NUXT_BETTER_AUTH_SECRET']
     for (const name of auth) {
         const binding = env[name] as { type?: unknown } | undefined
         if (binding?.type !== 'secret_text')

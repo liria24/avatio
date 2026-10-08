@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 export const secretDefinitions = [
     {
-        key: 'BETTER_AUTH_SECRET',
+        key: 'NUXT_BETTER_AUTH_SECRET',
         required: true,
         purpose: 'Better Auth session and token signing',
     },
@@ -62,7 +62,7 @@ const optionalNonEmpty = z.preprocess(
 
 const avatioSecretsSchema = z
     .object({
-        BETTER_AUTH_SECRET: z.string().min(32, 'must contain at least 32 characters'),
+        NUXT_BETTER_AUTH_SECRET: z.string().min(32, 'must contain at least 32 characters'),
         BOOTH_PROXY_URL: optionalNonEmpty.pipe(z.url('must be a valid URL').optional()),
         TWITTER_CLIENT_SECRET: z.string().min(1, 'must not be empty'),
         OG_IMAGE_SECRET: z.string().min(16, 'must contain at least 16 characters'),

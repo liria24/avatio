@@ -156,7 +156,7 @@ describe('complete native Build Output and reviewed resource assignment', () => 
             delete value.workers.default.config.env.IMAGES
         },
         (value: ReturnType<typeof output>) => {
-            value.workers.default.config.env.BETTER_AUTH_SECRET = {
+            value.workers.default.config.env.NUXT_BETTER_AUTH_SECRET = {
                 type: 'text',
                 value: 'synthetic-secret-must-not-be-printed',
             }

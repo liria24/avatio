@@ -180,8 +180,6 @@ const createCloudflareWorkerConfiguration = (
         AUTH_TRUSTED_ORIGINS: bindings.text(
             JSON.stringify(isPreview ? [resources.siteUrl] : config.trustedOrigins),
         ),
-        // Operators configure both auth names with the same non-production value in Previews Base.
-        NUXT_BETTER_AUTH_SECRET: bindings.secret(),
     }
     const limits = [
         ['RATE_LIMIT_USER_ACTION', 5],

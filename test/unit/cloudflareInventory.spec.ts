@@ -26,7 +26,7 @@ describe('read-only Cloudflare inventory', () => {
             compatibility_date: '2026-05-26',
             bindings: [
                 {
-                    name: 'BETTER_AUTH_SECRET',
+                    name: 'NUXT_BETTER_AUTH_SECRET',
                     type: 'secret_text',
                     text: 'private-signing-value',
                     id: 'private-signing-value',
@@ -38,7 +38,7 @@ describe('read-only Cloudflare inventory', () => {
             secret: 'private-extra-value',
         })
         expect(result.bindings).toEqual([
-            { name: 'BETTER_AUTH_SECRET', type: 'secret_text' },
+            { name: 'NUXT_BETTER_AUTH_SECRET', type: 'secret_text' },
             { name: 'PUBLIC_SITE_URL', type: 'plain_text' },
             { name: 'KEY', type: 'secret_key' },
             { name: 'APP_DB', type: 'd1', id: 'database-id' },
@@ -68,14 +68,14 @@ describe('read-only Cloudflare inventory', () => {
         const result = projectPreviewBaseMetadata({
             previews_base_config: {
                 env: {
-                    BETTER_AUTH_SECRET: { type: 'secret_text', text: 'private-signing-value' },
+                    NUXT_BETTER_AUTH_SECRET: { type: 'secret_text', text: 'private-signing-value' },
                     APP_DB: { type: 'd1', id: 'preview-database-id' },
                 },
                 secret: 'private-extra-value',
             },
         })
         expect(result.bindings).toEqual([
-            { name: 'BETTER_AUTH_SECRET', type: 'secret_text' },
+            { name: 'NUXT_BETTER_AUTH_SECRET', type: 'secret_text' },
             { name: 'APP_DB', type: 'd1', id: 'preview-database-id' },
         ])
         expect(JSON.stringify(result)).not.toContain('private-')

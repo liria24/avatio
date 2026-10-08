@@ -66,7 +66,7 @@ type NativeDiagnostic = {
         sourceAnnotationMatches?: boolean
         requiredSecretTypesPresent?: boolean
         requiredSecrets?: {
-            name: 'BETTER_AUTH_SECRET' | 'NUXT_BETTER_AUTH_SECRET' | 'TWITTER_CLIENT_SECRET'
+            name: 'NUXT_BETTER_AUTH_SECRET' | 'TWITTER_CLIENT_SECRET'
             secretTypePresent: boolean
         }[]
         bindingsVerified?: boolean

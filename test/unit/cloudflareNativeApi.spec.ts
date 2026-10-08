@@ -123,16 +123,13 @@ describe('Preview-scoped deployment association with the observed beta response'
                     slug: 'development',
                 })
             }
-            const id =
-                init?.method === 'PATCH'
-                    ? 'patched'
-                    : path.endsWith('/latest')
-                      ? 'original'
-                      : path.split('/').at(-1)
+            const id = path.endsWith('/latest') ? 'original' : path.split('/').at(-1)
             const result = response({
                 id: options.inconsistentExact && path.endsWith('/original') ? 'unexpected' : id,
                 urls: [`https://${id}-development.previews.example.test`],
-                env: { BETTER_AUTH_SECRET: { type: 'secret_text', text: 'synthetic-do-not-log' } },
+                env: {
+                    NUXT_BETTER_AUTH_SECRET: { type: 'secret_text', text: 'synthetic-do-not-log' },
+                },
                 annotations: {},
                 ...options.conflict,
             })
@@ -147,6 +144,20 @@ describe('Preview-scoped deployment association with the observed beta response'
             calls,
         }
     }
+    it('redacts retired signing values even when historical metadata incorrectly marks them as plaintext', async () => {
+        const { api } = setup({
+            conflict: {
+                env: {
+                    BETTER_AUTH_SECRET: {
+                        type: 'plain_text',
+                        text: 'synthetic-retired-secret-never-log',
+                    },
+                },
+            },
+        })
+        const result = await api.previewDeployment('development', 'original', false, 'reviewed')
+        expect(JSON.stringify(result)).not.toContain('synthetic-retired-secret-never-log')
+    })
     it.each(['exact', 'latest'])(
         'proves %s association without echoed parent fields using fresh parent and exact-ID reads',
         async (kind) => {
@@ -317,10 +328,6 @@ describe('read-only Base settings', () => {
             response({
                 previews_base_config: {
                     env: {
-                        BETTER_AUTH_SECRET: {
-                            type: 'secret_text',
-                            text: 'synthetic-signing-do-not-log',
-                        },
                         NUXT_BETTER_AUTH_SECRET: {
                             type: 'secret_text',
                             text: 'synthetic-signing-do-not-log',
@@ -331,7 +338,6 @@ describe('read-only Base settings', () => {
         )
         const api = createCloudflareNativeApi(inventory.accountId, 'synthetic-token', fetcher)
         expect(await api.previewBaseBindings()).toEqual({
-            BETTER_AUTH_SECRET: { type: 'secret_text' },
             NUXT_BETTER_AUTH_SECRET: { type: 'secret_text' },
         })
         expect(fetcher.mock.calls[0]?.[1]?.method).toBe('GET')

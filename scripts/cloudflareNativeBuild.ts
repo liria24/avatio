@@ -24,7 +24,7 @@ export const buildCloudflareNative = async (
         process.env.CLOUDFLARE_API_TOKEN ||
         process.env.DOTENV_PRIVATE_KEY_PRODUCTION ||
         process.env.DOTENV_PRIVATE_KEY_DEVELOPMENT ||
-        process.env.NUXT_BETTER_AUTH_SECRET ||
+        process.env.BETTER_AUTH_SECRET ||
         secretDefinitions.some(({ key }) => Boolean(process.env[key]))
     )
         throw new Error(

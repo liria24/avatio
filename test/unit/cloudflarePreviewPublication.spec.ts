@@ -141,7 +141,6 @@ const fixture = (mode = 'pr-356') => {
     const api = {
         ...client,
         previewBaseBindings: vi.fn(async () => ({
-            BETTER_AUTH_SECRET: { type: 'secret_text' },
             NUXT_BETTER_AUTH_SECRET: { type: 'secret_text' },
         })),
         inspect: vi.fn(async () => ({
@@ -356,7 +355,6 @@ describe('Base inheritance allowlist', () => {
         expect(
             verifyCloudflarePreviewBase(
                 {
-                    BETTER_AUTH_SECRET: { type: 'secret_text' },
                     NUXT_BETTER_AUTH_SECRET: { type: 'secret_text' },
                 },
                 inventory,
@@ -364,6 +362,7 @@ describe('Base inheritance allowlist', () => {
         ).toEqual({ baseVerified: true })
     })
     it.each([
+        'BETTER_AUTH_SECRET',
         'TWITTER_CLIENT_SECRET',
         'OG_IMAGE_SECRET',
         'EMAIL',
@@ -372,25 +371,20 @@ describe('Base inheritance allowlist', () => {
         'UNKNOWN_SECRET',
     ])('rejects inherited %s even when omitted from PR config', (name) => {
         const env = {
-            BETTER_AUTH_SECRET: { type: 'secret_text' },
             NUXT_BETTER_AUTH_SECRET: { type: 'secret_text' },
             [name]: { type: 'secret_text', text: 'never-log' },
         }
         expect(() => verifyCloudflarePreviewBase(env, inventory)).toThrow()
     })
-    it.each(['BETTER_AUTH_SECRET', 'NUXT_BETTER_AUTH_SECRET'])(
-        'rejects absent or plain-text %s',
-        (name) => {
-            const env: Record<string, unknown> = {
-                BETTER_AUTH_SECRET: { type: 'secret_text' },
-                NUXT_BETTER_AUTH_SECRET: { type: 'secret_text' },
-            }
-            const absent = Object.fromEntries(Object.entries(env).filter(([key]) => key !== name))
-            expect(() => verifyCloudflarePreviewBase(absent, inventory)).toThrow()
-            env[name] = { type: 'plain_text', text: 'never-log' }
-            expect(() => verifyCloudflarePreviewBase(env, inventory)).toThrow()
-        },
-    )
+    it.each(['NUXT_BETTER_AUTH_SECRET'])('rejects absent or plain-text %s', (name) => {
+        const env: Record<string, unknown> = {
+            NUXT_BETTER_AUTH_SECRET: { type: 'secret_text' },
+        }
+        const absent = Object.fromEntries(Object.entries(env).filter(([key]) => key !== name))
+        expect(() => verifyCloudflarePreviewBase(absent, inventory)).toThrow()
+        env[name] = { type: 'plain_text', text: 'never-log' }
+        expect(() => verifyCloudflarePreviewBase(env, inventory)).toThrow()
+    })
     it.each(['APP_DB', 'CONTENT_CACHE', 'R2'])(
         'rejects inherited production data for %s',
         (name) => {
@@ -398,7 +392,6 @@ describe('Base inheritance allowlist', () => {
             expect(() =>
                 verifyCloudflarePreviewBase(
                     {
-                        BETTER_AUTH_SECRET: { type: 'secret_text' },
                         NUXT_BETTER_AUTH_SECRET: { type: 'secret_text' },
                         [name]: env[name],
                     },

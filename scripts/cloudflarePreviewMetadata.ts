@@ -103,8 +103,8 @@ export const inspectCloudflarePreviewMetadata = (
         (name) => !Object.hasOwn(expected, name),
     ).length
     const partialPublication =
-        secretNames.length === 3 &&
-        ['BETTER_AUTH_SECRET', 'NUXT_BETTER_AUTH_SECRET', 'TWITTER_CLIENT_SECRET'].every((name) =>
+        secretNames.length === 2 &&
+        ['NUXT_BETTER_AUTH_SECRET', 'TWITTER_CLIENT_SECRET'].every((name) =>
             missingSecrets.includes(name),
         ) &&
         nonSecrets.length > 0 &&

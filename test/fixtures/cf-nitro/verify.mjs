@@ -37,7 +37,6 @@ for (const binding of [
     'RATE_LIMIT_IMAGE',
     'RATE_LIMIT_DRAFT',
     'RATE_LIMIT_ITEM_RESOLUTION',
-    'BETTER_AUTH_SECRET',
     'NUXT_BETTER_AUTH_SECRET',
     'ASSETS',
 ])
@@ -50,8 +49,8 @@ if (mode === 'production') {
     for (const key of ['EMAIL', 'EMAIL_FROM', 'OG_IMAGE_ENDPOINT', 'OG_IMAGE_SECRET'])
         assert.equal(worker.config.env[key], undefined)
 }
-assert.equal(worker.config.env.BETTER_AUTH_SECRET.type, 'secret')
 assert.equal(worker.config.env.NUXT_BETTER_AUTH_SECRET.type, 'secret')
+assert.equal(Object.hasOwn(worker.config.env, 'BETTER_AUTH_SECRET'), false)
 assert.equal(worker.config.env.APP_DB.id.startsWith('00000000-'), true)
 assert.ok(worker.bundleDir)
 assert.ok(worker.assetsDir)

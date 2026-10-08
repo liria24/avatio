@@ -61,6 +61,7 @@ describe('prepared cf configuration', () => {
         expect(worker.env.CONTENT_CACHE).toMatchObject({ id: input.production.cache.id })
         for (const { key } of secretDefinitions) expect(worker.env[key]).toEqual({ type: 'secret' })
         expect(worker.env.NUXT_BETTER_AUTH_SECRET).toEqual({ type: 'secret' })
+        expect(Object.hasOwn(worker.env, 'BETTER_AUTH_SECRET')).toBe(false)
         expect(
             Object.values(worker.env).filter((binding) => binding.type === 'rate-limit'),
         ).toHaveLength(4)

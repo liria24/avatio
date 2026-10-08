@@ -78,6 +78,7 @@ const sanitizePreviewDeployment = (raw: unknown) => {
                 name,
                 item.type === 'secret_text' ||
                 item.type === 'secret' ||
+                // Retired signing-name values are still sensitive when inspecting historical deployments.
                 ['BETTER_AUTH_SECRET', 'NUXT_BETTER_AUTH_SECRET', 'TWITTER_CLIENT_SECRET'].includes(
                     name,
                 )

@@ -186,13 +186,7 @@ export const inspectCloudflareDevelopment = async (input: {
                 parentMatches: !!exact && exact.preview_id === observed.resources.preview?.id,
                 sourceAnnotationPresent: exact?.sourceSha !== undefined,
                 sourceAnnotationMatches: exact?.sourceSha === input.historicalSourceSha,
-                requiredSecrets: (
-                    [
-                        'BETTER_AUTH_SECRET',
-                        'NUXT_BETTER_AUTH_SECRET',
-                        'TWITTER_CLIENT_SECRET',
-                    ] as const
-                )
+                requiredSecrets: (['NUXT_BETTER_AUTH_SECRET', 'TWITTER_CLIENT_SECRET'] as const)
                     .filter((name) => configuration.worker.env[name]?.type === 'secret')
                     .map((name) => ({
                         name,
