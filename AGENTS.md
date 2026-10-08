@@ -11,7 +11,7 @@ Compact instruction for OpenCode sessions. If a fact is obvious from filenames, 
 
 ## Package manager & runtime
 
-- **Package manager:** `bun`. `bunfig.toml` uses `linker = "hoisted"` and disables Bun's automatic dotenv loading.
+- **Package manager:** `bun`. `bunfig.toml` uses `linker = "hoisted"` and disables runtime dotenv loading. Bun 1.4.2 installation still loads `.env.production` despite `env = false` and `--no-env-file`. Workers Builds installation disables all lifecycle scripts; fresh credential-free environments for Nuxt preparation/build do not inherit those ciphertext values. Never provide dotenv private keys or plaintext application secrets to installation.
 - **Toolchain:** Vite+ runs package scripts, lint, format, and tests. Node 26 runs Nuxt, TypeScript scripts, tests, and configuration tooling; Bun only installs dependencies. Cloudflare builds use `NODE_OPTIONS=--max-old-space-size=4096` to leave memory for the remaining build processes.
 - **Postinstall:** `vp install` uses Bun and runs `nuxt prepare` only.
 - **Development URL:** `vp run dev` runs the Node.js Nuxt dev server at `http://localhost:3000`; the port is fixed and fails if already in use.
@@ -107,9 +107,9 @@ PRs into `main` require the `format`, `lint`, `lint:unused`, `typecheck`, `test`
 ### Local configuration
 
 1. Run `vp install` and `vp run dev`; no Cloudflare credentials or `.env.keys` are required.
-2. Optional local overrides use Nuxt's standard `.env` loading. Bun does not automatically load dotenv files.
+2. Optional local overrides use Nuxt's standard `.env` loading. Bun runtime dotenv loading is disabled; its installer limitation is described above.
 3. Local state is gitignored under `.data/`: `avatio.sqlite`, `local-auth-secret`, `uploads/`, and `mail/`.
-4. Do not point normal local startup at deployed development resources. Stage ciphertext is read only by explicit config check commands.
+4. Do not point normal local startup at deployed development resources. Stage secrets are decrypted only by explicit config check commands.
 
 ### Secret rotation
 

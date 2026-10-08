@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { access, mkdir, mkdtemp, readFile, readdir, rm, symlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { dirname, join, relative, resolve } from 'node:path'
+import { delimiter, dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { createCloudflareConfig } from '../../config/cloudflare.ts'
@@ -80,17 +80,35 @@ try {
             await assert.rejects(access(join(root, name)), { code: 'ENOENT' })
         const buildTools = join(temporary, 'build-tools')
         await mkdir(buildTools)
-        // Only the three platform tools exist before install; setup-vp cannot mask bootstrap gaps.
+        // Resolve actual platform binaries; a setup-vp shim must not become a build prerequisite.
         for (const name of ['node', 'bun', 'git']) {
             const target =
                 name === 'node'
                     ? process.execPath
-                    : execFileSync('which', [name], {
-                          env: cleanEnvironment,
-                          encoding: 'utf8',
-                      }).trim()
+                    : name === 'bun'
+                      ? execFileSync(
+                            'bun',
+                            ['--no-env-file', '-e', 'process.stdout.write(process.execPath)'],
+                            {
+                                env: cleanEnvironment,
+                                cwd: projectRoot,
+                                encoding: 'utf8',
+                            },
+                        ).trim()
+                      : execFileSync('which', [name], {
+                            env: cleanEnvironment,
+                            encoding: 'utf8',
+                        }).trim()
             await symlink(target, join(buildTools, name))
         }
+        // Standard POSIX utilities remain available; any preinstalled Vite+ is excluded.
+        const buildPath = [buildTools, '/usr/bin', '/bin'].join(delimiter)
+        assert.throws(() =>
+            execFileSync('/usr/bin/which', ['vp'], {
+                env: { ...cleanEnvironment, PATH: buildPath },
+                stdio: 'pipe',
+            }),
+        )
         const sourceSha = execFileSync('git', ['rev-parse', 'HEAD'], {
             cwd: root,
             env: cleanEnvironment,
@@ -101,7 +119,7 @@ try {
             env: {
                 ...cleanEnvironment,
                 ...buildProxy,
-                PATH: buildTools,
+                PATH: buildPath,
                 WORKERS_CI: '1',
                 WORKERS_CI_BRANCH: mode === 'production' ? 'main' : 'development',
                 WORKERS_CI_COMMIT_SHA: sourceSha,
