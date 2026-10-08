@@ -1,0 +1,35 @@
+name: native development inspection
+
+on:
+  workflow_dispatch:
+    inputs:
+      historical_source_sha:
+        description: Reviewed historical deployed source SHA (not the inspection code SHA)
+        type: string
+        required: true
+      preview_id:
+        description: Reviewed existing development Preview ID
+        type: string
+        required: true
+      deployment_id:
+        description: Exact deployment ID or latest (API metadata only)
+        type: string
+        default: latest
+        required: true
+      immutable_url:
+        description: Optional reviewed exact immutable origin for static HTTP verification (requires Preview ID)
+        type: string
+        required: false
+
+permissions: {}
+
+# Registration only. Selecting development runs its reviewed inspection workflow.
+jobs:
+  require-development:
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: Require the development branch
+        run: |
+          echo "::error::Select the development branch to run its reviewed native inspection workflow. This registration workflow cannot access live resources."
+          exit 1

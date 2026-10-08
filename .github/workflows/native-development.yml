@@ -1,0 +1,22 @@
+name: native development delivery
+
+on:
+  workflow_dispatch:
+    inputs:
+      quality_run_id:
+        description: Exact successful push quality run for the current development SHA
+        type: string
+        required: true
+
+permissions: {}
+
+# Registration only. Selecting development runs its reviewed workflow and existing gates.
+jobs:
+  require-development:
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: Require the development branch
+        run: |
+          echo "::error::Select the development branch to run its reviewed native delivery workflow. This registration workflow cannot deploy."
+          exit 1
