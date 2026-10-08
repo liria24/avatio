@@ -2,8 +2,7 @@ import { bindings, triggers, type ConfigContext, type WorkerConfig } from 'cf/co
 import { z } from 'zod'
 
 import { requireHttpsOrigin } from './build.ts'
-import { getStageConfig } from './environment.ts'
-import { getPreviewKind } from './preview.ts'
+import { getStageConfig, parseAvatioStage, type AvatioStage } from './environment.ts'
 import { secretDefinitions } from './secrets.ts'
 
 const id = z.string().regex(/^[a-f0-9]{32}$/)
@@ -34,16 +33,6 @@ const inventorySchema = z.strictObject({
     accountId: id,
     production: resourceSchema,
     development: resourceSchema,
-    sharedPreviewStorage: z.strictObject({
-        database: databaseSchema,
-        bucket: z.string().min(1),
-        imageBaseUrl: origin,
-        cache: z.strictObject({ id, name: z.string().min(1) }),
-        flagshipId: z.string().min(1),
-        rateLimitNamespaces: z.tuple([namespace, namespace, namespace, namespace]),
-        siteUrlSuffix: z.string().regex(/^(?:\.|-avatio\.)[a-z0-9.-]+$/),
-    }),
-    previews: z.record(z.string().regex(/^pr-[1-9]\d*$/), resourceSchema).default({}),
 })
 
 export type CloudflareResourceInventory = z.input<typeof inventorySchema>
@@ -51,115 +40,26 @@ export type CloudflareResourceInventory = z.input<typeof inventorySchema>
 export const createCloudflareConfig = (context: ConfigContext, input: unknown) => {
     const { mode, isPreview } = context
     if (!mode) throw new Error('An explicit Cloudflare mode is required.')
-    const stage = mode === 'production' ? 'production' : 'development'
-    const previewName = mode === 'production' ? undefined : mode
-    const previewKind = getPreviewKind(stage, previewName)
-    if (isPreview !== Boolean(previewKind))
+    const stage = parseAvatioStage(mode)
+    if (isPreview !== (stage === 'development'))
         throw new Error('Cloudflare mode and isPreview do not match.')
 
     const inventory = inventorySchema.parse(input)
     validateExistingCloudflareResources(inventory)
-    const shared = inventory.sharedPreviewStorage
-    const nonProduction = [inventory.development, shared, ...Object.values(inventory.previews)]
-    for (const target of nonProduction) {
-        if (
-            target.database.id === inventory.production.database.id ||
-            target.database.name === inventory.production.database.name ||
-            target.cache.id === inventory.production.cache.id ||
-            target.cache.name === inventory.production.cache.name ||
-            target.bucket === inventory.production.bucket ||
-            target.imageBaseUrl === inventory.production.imageBaseUrl ||
-            target.flagshipId === inventory.production.flagshipId ||
-            target.rateLimitNamespaces.some((value) =>
-                inventory.production.rateLimitNamespaces.includes(value),
-            )
-        )
-            throw new Error('Preview resources and integrations must be non-production.')
-    }
-    if (
-        shared.database.id === inventory.development.database.id ||
-        shared.database.name === inventory.development.database.name ||
-        shared.cache.id === inventory.development.cache.id ||
-        shared.cache.name === inventory.development.cache.name ||
-        shared.bucket === inventory.development.bucket ||
-        shared.imageBaseUrl === inventory.development.imageBaseUrl ||
-        shared.rateLimitNamespaces.some((value) =>
-            inventory.development.rateLimitNamespaces.includes(value),
-        )
-    )
-        throw new Error('Shared PR resources must be separate from development data.')
-    for (const [name, resources] of Object.entries(inventory.previews)) {
-        // Overrides are preprovisioned isolated pairs, never allocator instructions.
-        if (
-            resources.database.id === shared.database.id ||
-            resources.bucket === shared.bucket ||
-            resources.database.id === inventory.development.database.id ||
-            resources.bucket === inventory.development.bucket ||
-            resources.imageBaseUrl === shared.imageBaseUrl ||
-            resources.imageBaseUrl === inventory.development.imageBaseUrl ||
-            resources.cache.id === inventory.development.cache.id ||
-            resources.cache.name === inventory.development.cache.name ||
-            (resources.cache.id === shared.cache.id &&
-                resources.cache.name !== shared.cache.name) ||
-            resources.rateLimitNamespaces.some((value) =>
-                inventory.development.rateLimitNamespaces.includes(value),
-            )
-        )
-            throw new Error(`${name} requires an isolated database/image-storage pair.`)
-    }
-    const isolated = [
-        inventory.production,
-        inventory.development,
-        shared,
-        ...Object.values(inventory.previews),
-    ]
-    for (const select of [
-        (value: Pick<typeof inventory.development, 'database' | 'bucket' | 'imageBaseUrl'>) =>
-            value.database.id,
-        (value: Pick<typeof inventory.development, 'database' | 'bucket' | 'imageBaseUrl'>) =>
-            value.database.name,
-        (value: Pick<typeof inventory.development, 'database' | 'bucket' | 'imageBaseUrl'>) =>
-            value.bucket,
-        (value: Pick<typeof inventory.development, 'database' | 'bucket' | 'imageBaseUrl'>) =>
-            value.imageBaseUrl,
-    ]) {
-        const values = isolated.map(select)
-        if (new Set(values).size !== values.length)
-            throw new Error('Preprovisioned storage pairs must be distinct.')
-    }
-    for (const resources of [inventory.development, ...Object.values(inventory.previews)]) {
-        if (
-            resources.emailFrom !== undefined ||
-            resources.analyticsSiteTag ||
-            resources.optionalSecrets.length
-        )
-            throw new Error('Preview email, analytics and optional credentials are disabled.')
-    }
-    for (const resources of isolated) {
-        if (new Set(resources.rateLimitNamespaces).size !== 4)
-            throw new Error('Rate limit namespaces must be distinct across bindings.')
-    }
     return createCloudflareWorkerConfiguration(
-        mode,
+        stage,
         isPreview,
         inventory.accountId,
-        getCloudflareTargetResources(mode, inventory),
-        inventory.production,
-        previewKind === 'pr' && Boolean(inventory.previews[mode]),
+        inventory[stage],
     )
 }
 
 const createCloudflareWorkerConfiguration = (
-    mode: string,
+    stage: AvatioStage,
     isPreview: boolean,
     accountId: string,
     resources: z.output<typeof resourceSchema>,
-    production: z.output<typeof resourceSchema>,
-    isolatedPreview: boolean,
 ) => {
-    const stage = mode === 'production' ? 'production' : 'development'
-    const previewName = mode === 'production' ? undefined : mode
-    const previewKind = getPreviewKind(stage, previewName)
     const config = getStageConfig(stage)
     const workerEnv: NonNullable<WorkerConfig['env']> = {
         ASSETS: bindings.assets(),
@@ -194,19 +94,17 @@ const createCloudflareWorkerConfiguration = (
         })
     for (const secret of secretDefinitions) {
         if (isPreview && secret.key === 'OG_IMAGE_SECRET') continue
-        if (previewKind === 'pr' && secret.key === 'TWITTER_CLIENT_SECRET') continue
         if (secret.required || resources.optionalSecrets.includes(secret.key))
             workerEnv[secret.key] = bindings.secret()
     }
-    if (previewKind !== 'pr') workerEnv.TWITTER_CLIENT_ID = bindings.text(config.twitterClientId)
-    if (previewName) {
-        workerEnv.PREVIEW_STORAGE_ISOLATED = bindings.text(String(isolatedPreview))
-        workerEnv.PREVIEW_NAME = bindings.text(previewName)
+    workerEnv.TWITTER_CLIENT_ID = bindings.text(config.twitterClientId)
+    if (isPreview) {
+        workerEnv.PREVIEW_NAME = bindings.text('development')
     } else {
         workerEnv.EMAIL = bindings.sendEmail({
-            allowedSenderAddresses: [production.emailFrom!],
+            allowedSenderAddresses: [resources.emailFrom!],
         })
-        workerEnv.EMAIL_FROM = bindings.text(production.emailFrom!)
+        workerEnv.EMAIL_FROM = bindings.text(resources.emailFrom!)
         workerEnv.ITEM_REVALIDATION_QUEUE = bindings.queue({ name: config.infrastructure.queue })
         workerEnv.CLOUDFLARE_ANALYTICS_ACCOUNT_ID = bindings.text(accountId)
         workerEnv.CLOUDFLARE_ANALYTICS_SITE_TAG = bindings.text(resources.analyticsSiteTag!)
@@ -246,23 +144,15 @@ const createCloudflareWorkerConfiguration = (
     }
 }
 
-/** Fixed reviewed bindings: ordinary PRs share test resources; overrides are preprovisioned. */
+/** Reviewed existing targets only; configuration never provisions resources. */
 export const getCloudflareTargetResources = (mode: string, input: unknown) => {
+    const stage = parseAvatioStage(mode)
     const inventory = inventorySchema.parse(input)
-    if (mode === 'production' || mode === 'development') return inventory[mode]
-    if (!/^pr-[1-9]\d*$/.test(mode)) throw new Error('Invalid Preview target.')
-    if (inventory.previews[mode]) return inventory.previews[mode]
-    const { siteUrlSuffix, ...resources } = inventory.sharedPreviewStorage
-    return { ...resources, siteUrl: `https://${mode}${siteUrlSuffix}`, optionalSecrets: [] }
+    validateExistingCloudflareResources(inventory)
+    return inventory[stage]
 }
 
-const inspectionInventorySchema = inventorySchema
-    .pick({ accountId: true, production: true, development: true })
-    .strip()
-
-const validateExistingCloudflareResources = (
-    inventory: z.output<typeof inspectionInventorySchema>,
-) => {
+const validateExistingCloudflareResources = (inventory: z.output<typeof inventorySchema>) => {
     const permanent = [
         ['production', inventory.production],
         ['development', inventory.development],
@@ -300,16 +190,16 @@ const validateExistingCloudflareResources = (
         dev.flagshipId === prod.flagshipId ||
         dev.rateLimitNamespaces.some((value) => prod.rateLimitNamespaces.includes(value))
     )
-        throw new Error('Development inspection must not use production resources or integrations.')
+        throw new Error('Development Preview must not use production resources or integrations.')
     if (dev.emailFrom !== undefined || dev.analyticsSiteTag || dev.optionalSecrets.length)
         throw new Error(
             'Development Preview email, analytics and optional credentials are disabled.',
         )
 }
 
-/** Read-only development metadata needs no PR pool, allocator, Base secrets or publication settings. */
+/** Read-only metadata for the persistent development Preview. */
 export const getCloudflareDevelopmentInspectionConfiguration = (input: unknown) => {
-    const inventory = inspectionInventorySchema.parse(input)
+    const inventory = inventorySchema.parse(input)
     validateExistingCloudflareResources(inventory)
     return {
         resources: inventory.development,
@@ -318,8 +208,6 @@ export const getCloudflareDevelopmentInspectionConfiguration = (input: unknown) 
             true,
             inventory.accountId,
             inventory.development,
-            inventory.production,
-            false,
         ),
     }
 }

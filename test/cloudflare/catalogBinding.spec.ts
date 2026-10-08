@@ -110,7 +110,7 @@ it('keeps authored-content cache writes inside the prefix without changing retai
     }
 })
 
-it('keeps two native Preview caches separate inside one KV namespace', async () => {
+it('keeps persistent development Preview cache writes separate from retained KV keys', async () => {
     const binding = await miniflare.getKVNamespace('CONTENT_CACHE')
     const base = 'authored-content:v1:fixture:development'
     const storage = (name?: string) =>
@@ -120,20 +120,18 @@ it('keeps two native Preview caches separate inside one KV namespace', async () 
                 base: getPreviewCachePrefix(base, 'development', name),
             }),
         })
-    const first = storage('pr-356'),
-        second = storage('pr-357'),
-        legacy = storage()
+    const preview = storage('development'),
+        retained = storage()
     try {
-        await first.setItem('manifest', { revision: 'first' })
-        await second.setItem('manifest', { revision: 'second' })
-        await legacy.setItem('manifest', { revision: 'legacy' })
-        expect(await first.getItem('manifest')).toEqual({ revision: 'first' })
-        expect(await second.getItem('manifest')).toEqual({ revision: 'second' })
-        await first.removeItem('manifest')
-        expect(await second.getItem('manifest')).toEqual({ revision: 'second' })
-        expect(await binding.get(`${base}:manifest`, 'json')).toEqual({ revision: 'legacy' })
-        expect(() => getPreviewCachePrefix(base, 'production', 'pr-356')).toThrow()
+        await preview.setItem('manifest', { revision: 'preview' })
+        await retained.setItem('manifest', { revision: 'retained' })
+        expect(await preview.getItem('manifest')).toEqual({ revision: 'preview' })
+        expect(await retained.getItem('manifest')).toEqual({ revision: 'retained' })
+        await preview.removeItem('manifest')
+        expect(await binding.get(`${base}:manifest`, 'json')).toEqual({ revision: 'retained' })
+        expect(() => getPreviewCachePrefix(base, 'development', 'pr-356')).toThrow()
+        expect(() => getPreviewCachePrefix(base, 'production', 'development')).toThrow()
     } finally {
-        await Promise.all([first.dispose(), second.dispose(), legacy.dispose()])
+        await Promise.all([preview.dispose(), retained.dispose()])
     }
 })

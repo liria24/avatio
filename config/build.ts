@@ -34,10 +34,7 @@ export const getBuildEnvironment = (env: Record<string, string | undefined>, dev
         imageBaseUrl,
         dynamicOgImageEnabled: !previewKind,
         previewKind,
-        twitterAuthEnabled:
-            previewKind === 'pr'
-                ? false
-                : Boolean(stage || (env.TWITTER_CLIENT_ID && env.TWITTER_CLIENT_SECRET)),
-        emailPasswordAuthEnabled: dev || previewKind === 'pr',
+        twitterAuthEnabled: Boolean(stage || (env.TWITTER_CLIENT_ID && env.TWITTER_CLIENT_SECRET)),
+        emailPasswordAuthEnabled: dev,
     }
 }

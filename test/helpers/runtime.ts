@@ -38,6 +38,8 @@ const childEnvironment = () => {
         CI: '1',
         VITEST: '1',
         NUXT_TELEMETRY_DISABLED: '1',
+        // Nitro's supported TCP dev-worker transport also works in Unix-socket-restricted executors.
+        NITRO_NO_UNIX_SOCKET: '1',
         NODE_OPTIONS: `--max-old-space-size=4096 --import=${pathToFileURL(join(sourceRoot, 'test/helpers/runtimeNetwork.mjs')).href}`,
     }
 }
@@ -66,6 +68,8 @@ const stopChild = async (child: ChildProcess) => {
 }
 
 export const startTestRuntime = async () => {
+    // Leave time for failure logs and child cleanup before the 120-second HTTP hook expires.
+    const deadline = Date.now() + 110_000
     const root = await mkdtemp(fixturePrefix)
     // Never recursively delete a caller-supplied path or the normal workspace/local state.
     if (dirname(root) !== tmpdir() || !root.startsWith(fixturePrefix))
@@ -114,7 +118,7 @@ export const startTestRuntime = async () => {
         await writeFile(
             join(root, 'nuxt.config.ts'),
             `
-import application from './application.config'
+import application from './application.config.ts'
 export default defineNuxtConfig({
     ...application,
     devtools: { enabled: false },
@@ -153,7 +157,6 @@ export default defineNuxtConfig({
         )
         child.stdout?.on('data', (chunk: Buffer) => log.push(chunk.toString()))
         child.stderr?.on('data', (chunk: Buffer) => log.push(chunk.toString()))
-        const deadline = Date.now() + 120_000
         let ready = false
         while (Date.now() < deadline && child.exitCode === null) {
             try {

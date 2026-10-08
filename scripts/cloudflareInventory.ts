@@ -88,7 +88,8 @@ export const collectCloudflareInventory = async (
 ) => {
     if (!/^[a-f0-9]{32}$/.test(accountId) || !token)
         throw new Error('The existing preview Environment requires both valid credential inputs.')
-    const workers = ['avatio', 'avatio-development']
+    const workers = ['avatio']
+    const databases = ['avatio', 'avatio-development']
     type ReadRequest = {
         label: string
         path: string
@@ -170,12 +171,9 @@ export const collectCloudflareInventory = async (
             project: projectPreviewBaseMetadata,
         },
         {
-            label: 'Existing avatio native Previews',
-            path: '/workers/workers/avatio/previews',
-            project: (value) =>
-                array(value).map((item) =>
-                    fields(item, ['id', 'name', 'created_on', 'modified_on']),
-                ),
+            label: 'Existing persistent development Preview',
+            path: '/workers/workers/avatio/previews/development',
+            project: (value) => fields(value, ['id', 'name', 'created_on', 'modified_on']),
         },
         {
             label: 'Avatio Web Analytics settings',
@@ -353,7 +351,7 @@ export const collectCloudflareInventory = async (
         const database = record(item)
         if (
             typeof database.name !== 'string' ||
-            !workers.includes(database.name) ||
+            !databases.includes(database.name) ||
             typeof database.uuid !== 'string' ||
             !/^[a-f0-9-]{36}$/.test(database.uuid)
         )

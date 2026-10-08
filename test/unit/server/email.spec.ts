@@ -85,7 +85,7 @@ describe('email', () => {
         })
     })
 
-    it.each(['development', 'pr-354'])(
+    it.each(['development'])(
         'refuses %s email before sender fallback or binding access',
         async (name) => {
             const send = vi.fn<SendEmailMock>()

@@ -2,52 +2,10 @@ name: quality
 
 on:
   pull_request:
-    branches: [main, development]
   push:
     branches: [main, development]
   merge_group:
   workflow_dispatch:
-    inputs:
-      cloudflare_inventory:
-        description: Read existing Cloudflare metadata without mutations
-        type: boolean
-        default: false
-      cloudflare_inventory_sha:
-        description: Exact reviewed commit SHA for the read-only inventory
-        type: string
-        default: ''
-      preview_delivery:
-        description: Publish reviewed development Preview using preconfigured Base secrets
-        type: boolean
-        default: false
-      shared_preview_migrations:
-        description: Apply current trusted-base migrations to preprovisioned shared PR D1; no publication
-        type: boolean
-        default: false
-      preview_quality_run_id:
-        description: Exact previously successful development quality run for this SHA
-        type: string
-        default: ''
-      preview_inspection:
-        description: Inspect existing development Preview without publication or secret transfer
-        type: boolean
-        default: false
-      inspection_historical_source_sha:
-        description: Reviewed historical deployed source SHA (separate from current inspection code)
-        type: string
-        default: ''
-      inspection_preview_id:
-        description: Optional reviewed Preview ID (required for static HTTP verification)
-        type: string
-        default: ''
-      inspection_deployment_id:
-        description: Exact deployment ID or latest
-        type: string
-        default: latest
-      inspection_immutable_url:
-        description: Optional reviewed immutable HTTPS origin for static HTTP checks
-        type: string
-        default: ''
   schedule:
     - cron: '0 8 * * *'
 
@@ -55,66 +13,10 @@ permissions:
   contents: read
 
 concurrency:
-  group: quality-${{ github.workflow }}-${{ github.ref }}-${{ (inputs.preview_delivery || inputs.shared_preview_migrations) && 'delivery' || inputs.preview_inspection && 'inspection' || 'checks' }}
-  cancel-in-progress: ${{ !inputs.preview_delivery && !inputs.shared_preview_migrations && !inputs.preview_inspection }}
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  preview-inspection:
-    if: github.event_name == 'workflow_dispatch' && inputs.preview_inspection && !inputs.preview_delivery && !inputs.shared_preview_migrations && github.repository == 'liria24/avatio' && github.ref == 'refs/heads/development' && github.actor == 'liry24' && github.triggering_actor == 'liry24'
-    uses: ./.github/workflows/native-inspection.yml
-    permissions:
-      contents: read
-    secrets:
-      AVATIO_CF_RESOURCES_JSON: ${{ secrets.AVATIO_CF_RESOURCES_JSON }}
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-    with:
-      historical_source_sha: ${{ inputs.inspection_historical_source_sha }}
-      preview_id: ${{ inputs.inspection_preview_id }}
-      deployment_id: ${{ inputs.inspection_deployment_id }}
-      immutable_url: ${{ inputs.inspection_immutable_url }}
-
-  preview-delivery:
-    if: github.event_name == 'workflow_dispatch' && (inputs.preview_delivery || inputs.shared_preview_migrations) && !inputs.preview_inspection && !inputs.cloudflare_inventory && github.repository == 'liria24/avatio' && github.ref == 'refs/heads/development' && github.actor == 'liry24' && github.triggering_actor == 'liry24'
-    uses: ./.github/workflows/native-delivery.yml
-    permissions:
-      contents: read
-      actions: read
-    # Name-scoped forwarding also enables the called job's Environment secret resolution.
-    # Do not inherit unrelated repository or production credentials.
-    secrets:
-      AVATIO_CF_RESOURCES_JSON: ${{ secrets.AVATIO_CF_RESOURCES_JSON }}
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-    with:
-      quality_run_id: ${{ inputs.preview_quality_run_id }}
-      operation: ${{ inputs.shared_preview_migrations && inputs.preview_delivery && 'ambiguous' || inputs.shared_preview_migrations && 'migrate-shared' || 'deploy' }}
-
-  cloudflare-inventory:
-    name: Cloudflare read-only inventory
-    if: github.event_name == 'workflow_dispatch' && inputs.cloudflare_inventory && github.repository == 'liria24/avatio' && github.ref == 'refs/heads/development' && github.actor == 'liry24' && github.triggering_actor == 'liry24'
-    environment: preview
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: Require the exact reviewed commit
-        env:
-          EXPECTED_SHA: ${{ inputs.cloudflare_inventory_sha }}
-          ACTUAL_SHA: ${{ github.sha }}
-        run: |
-          test "${#EXPECTED_SHA}" -eq 40
-          test "$EXPECTED_SHA" = "$ACTUAL_SHA"
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-        with:
-          ref: ${{ github.sha }}
-          persist-credentials: false
-      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
-        with:
-          node-version-file: .node-version
-      - name: Read only existing account resource metadata
-        run: node scripts/cloudflareInventory.ts
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-
   quality:
     name: ${{ matrix.check }}
     runs-on: ubuntu-latest
@@ -125,6 +27,8 @@ jobs:
         check: [format, lint, 'lint:unused', typecheck, build]
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
       - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
         with:
           node-version-file: .node-version
@@ -147,6 +51,8 @@ jobs:
         suite: [unit, integration, nuxt, http, bindings]
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
       - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
         with:
           node-version-file: .node-version
@@ -158,12 +64,41 @@ jobs:
         env:
           NODE_OPTIONS: --max-old-space-size=4096
 
+  cloudflare-application:
+    name: Cloudflare application (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [production, development]
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
+        with:
+          node-version-file: .node-version
+          version-file: package.json
+          cache: true
+          run-install: false
+      - run: vp install --frozen-lockfile
+      - name: Verify the standard build and local synthetic bindings without credentials
+        run: node test/cloudflare/application.mjs "${{ matrix.target }}"
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+      - name: Verify local migration history, integrity, and idempotency
+        if: matrix.target == 'development'
+        run: node test/cloudflare/migrations.mjs
+
   browser-smoke:
     name: browser smoke
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
       - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
         with:
           node-version-file: .node-version
@@ -201,6 +136,8 @@ jobs:
             browser: chromium
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
       - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
         with:
           node-version-file: .node-version
@@ -222,7 +159,7 @@ jobs:
   test:
     name: test
     if: always()
-    needs: [test-suites, browser-smoke, browser-extended]
+    needs: [test-suites, cloudflare-application, browser-smoke, browser-extended]
     runs-on: ubuntu-latest
     steps:
       - name: Require every applicable suite to succeed
@@ -234,6 +171,7 @@ jobs:
           import assert from 'node:assert/strict'
           const results = JSON.parse(process.env.RESULTS)
           assert.equal(results['test-suites'].result, 'success', 'Every Vitest suite must succeed')
+          assert.equal(results['cloudflare-application'].result, 'success', 'Cloudflare build and migration safety must succeed')
           assert.equal(results['browser-smoke'].result, 'success', 'Browser smoke must succeed')
           assert.equal(results['browser-extended'].result,
             process.env.EXPECT_EXTENDED === 'true' ? 'success' : 'skipped',

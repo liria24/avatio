@@ -36,11 +36,14 @@
         "test:browser:smoke": "playwright test --project chromium-smoke",
         "test:browser:extended": "playwright test --project chromium-extended --project firefox --project webkit --project mobile",
         "test:nuxt": "vp test run --project nuxt",
-        "test:cloudflare": "vp test run --project unit --project integration test/unit/cloudflareConfiguration.spec.ts test/unit/deployment.spec.ts test/unit/server/previewRuntime.spec.ts test/integration/server/previewRuntime.spec.ts test/integration/catalog/leaseFencing.spec.ts",
+        "test:cloudflare": "vp test run --project unit --project integration test/unit/cloudflareConfiguration.spec.ts test/unit/server/previewRuntime.spec.ts test/integration/server/previewRuntime.spec.ts test/integration/catalog/leaseFencing.spec.ts",
         "config:check:development": "node scripts/checkStageConfig.ts development",
         "config:check:production": "node scripts/checkStageConfig.ts production",
         "db:seed:local": "node scripts/seedLocalD1.ts",
-        "db:generate": "drizzle-kit generate"
+        "db:generate": "drizzle-kit generate",
+        "build:cloudflare": "node scripts/cloudflareBuild.ts",
+        "test:cloudflare:build": "node test/cloudflare/application.mjs development",
+        "test:cloudflare:migrations": "node test/cloudflare/migrations.mjs"
     },
     "dependencies": {
         "@avatio/cloudflare": "workspace:*",
@@ -95,7 +98,6 @@
     },
     "devDependencies": {
         "@axe-core/playwright": "4.13.0",
-        "@cloudflare/build-output-utils": "0.8.4",
         "@cloudflare/workers-types": "^5.20260924.1",
         "@dotenvx/dotenvx": "2.30.0",
         "@nuxt/a11y": "1.0.0-alpha.1",
@@ -121,7 +123,8 @@
         "vite-plus": "catalog:",
         "vitest": "catalog:",
         "vitest-environment-nuxt": "2.0.0",
-        "vue-tsc": "^3.3.11"
+        "vue-tsc": "^3.3.11",
+        "wrangler": "4.147.0"
     },
     "overrides": {
         "vite": "catalog:",

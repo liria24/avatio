@@ -122,35 +122,23 @@ describe('runCleanupJob', () => {
         delete runtimeGlobal.__env__
     })
 
-    it.each(['pr-356', 'development'])(
-        'rejects destructive cleanup for shared %s data before reading or writing storage',
-        async (name) => {
-            arrange({ setupObjects: [{ key: 'setup/old-orphan.jpg', lastModified: oldDate }] })
-            runtimeGlobal.__env__ = {
-                STAGE: 'development',
-                PREVIEW_NAME: name,
-                PREVIEW_STORAGE_ISOLATED: 'false',
-            }
-            await expect(runCleanupJob()).rejects.toMatchObject({ statusCode: 403 })
-            expect(storage.listAll).not.toHaveBeenCalled()
-            expect(storage.copy).not.toHaveBeenCalled()
-            expect(storage.delete).not.toHaveBeenCalled()
-        },
-    )
-    it('allows shared Preview dry-run and destructive cleanup only for an explicit isolated pair', async () => {
+    it('rejects destructive development Preview cleanup before reading or writing storage', async () => {
         arrange({ setupObjects: [{ key: 'setup/old-orphan.jpg', lastModified: oldDate }] })
-        runtimeGlobal.__env__ = {
-            STAGE: 'development',
-            PREVIEW_NAME: 'pr-356',
-            PREVIEW_STORAGE_ISOLATED: 'false',
-        }
+        runtimeGlobal.__env__ = { STAGE: 'development', PREVIEW_NAME: 'development' }
+        await expect(runCleanupJob()).rejects.toMatchObject({ statusCode: 403 })
+        expect(storage.listAll).not.toHaveBeenCalled()
+        expect(storage.copy).not.toHaveBeenCalled()
+        expect(storage.delete).not.toHaveBeenCalled()
+    })
+
+    it('allows only dry-run cleanup for the persistent development Preview', async () => {
+        arrange({ setupObjects: [{ key: 'setup/old-orphan.jpg', lastModified: oldDate }] })
+        runtimeGlobal.__env__ = { STAGE: 'development', PREVIEW_NAME: 'development' }
         expect((await runCleanupJob(true)).success).toBe(true)
         expect(storage.delete).not.toHaveBeenCalled()
-        storage.copy.mockResolvedValue(undefined)
-        storage.delete.mockResolvedValue({ deleted: ['setup/old-orphan.jpg'] })
-        runtimeGlobal.__env__.PREVIEW_STORAGE_ISOLATED = 'true'
-        expect((await runCleanupJob()).success).toBe(true)
-        expect(storage.delete).toHaveBeenCalled()
+        await expect(runCleanupJob()).rejects.toMatchObject({ statusCode: 403 })
+        expect(storage.copy).not.toHaveBeenCalled()
+        expect(storage.delete).not.toHaveBeenCalled()
     })
     it('keeps referenced setup and avatar images and skips recent orphan images', async () => {
         arrange({

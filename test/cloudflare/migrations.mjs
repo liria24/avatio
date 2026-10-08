@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { mkdir, mkdtemp, readFile, readdir, realpath, rm, writeFile } from 'node:fs/promises'
-import { networkInterfaces, tmpdir } from 'node:os'
+import { tmpdir } from 'node:os'
 import { basename, dirname, join, relative, resolve } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { fileURLToPath } from 'node:url'
@@ -9,43 +9,30 @@ import { fileURLToPath } from 'node:url'
 import {
     convertCloudflareMigrationHistoryCopy,
     readCommittedCloudflareMigrations,
-} from '../../../scripts/cloudflareMigrationHistory.ts'
+} from '../../scripts/cloudflareMigrationHistory.ts'
 
-// Credentialless CI probe only. The workflow creates a loopback-only network namespace.
-// Keep native Node networking intact so that denial instrumentation cannot affect cf/workerd.
-const interfaces = networkInterfaces()
-assert.equal(process.platform, 'linux')
-assert.deepEqual(Object.keys(interfaces), ['lo'])
-assert.ok(interfaces.lo.some((address) => address.address === '127.0.0.1'))
-assert.ok(interfaces.lo.every((address) => address.internal))
-const projectRoot = fileURLToPath(new URL('../../../', import.meta.url))
-const selection = process.argv[2] ?? 'root'
-assert.ok(['root', 'fixture', 'beta6', 'wrangler'].includes(selection))
-assert.ok(process.argv.length <= 3)
-const wrangler = selection === 'wrangler'
-const cliRoot = selection === 'root' ? projectRoot : fileURLToPath(new URL('./', import.meta.url))
-const cliPackage = wrangler ? 'wrangler' : selection === 'beta6' ? 'cf-beta6' : 'cf'
+// Only the root pinned Wrangler and synthetic local persistence are exercised.
+const projectRoot = fileURLToPath(new URL('../../', import.meta.url))
+assert.equal(process.argv.length, 2, 'This local migration test accepts no target or credentials')
+assert.equal(Number(process.versions.node.split('.')[0]), 26)
+const cliPackage = 'wrangler'
+const cliRoot = projectRoot
 const configured = JSON.parse(await readFile(join(cliRoot, 'package.json'), 'utf8'))
-const installed = wrangler
-    ? (await import('wrangler/package.json', { with: { type: 'json' } })).default
-    : selection === 'beta6'
-      ? (await import('cf-beta6/package.json', { with: { type: 'json' } })).default
-      : JSON.parse(
-            await readFile(join(cliRoot, 'node_modules', cliPackage, 'package.json'), 'utf8'),
-        )
-assert.equal(installed.version, configured.devDependencies[cliPackage].replace('npm:cf@', ''))
+const installed = (await import('wrangler/package.json', { with: { type: 'json' } })).default
+assert.equal(installed.version, '4.147.0')
+assert.equal(installed.version, configured.devDependencies[cliPackage])
 console.log(
     JSON.stringify({
-        migrationProbeCli: wrangler ? 'wrangler' : 'cf',
-        migrationProbeVersion: installed.version,
-        selection,
+        migrationTestCli: cliPackage,
+        migrationTestVersion: installed.version,
         nodeVersion: process.version,
     }),
 )
-const root = await mkdtemp(join(tmpdir(), 'avatio-cf-migrations-'))
+const root = await mkdtemp(join(tmpdir(), 'avatio-cloudflare-migrations-'))
 const persistence = join(root, '.cloudflare', 'verification', 'copies', 'runtime')
-const cli = join(cliRoot, 'node_modules', cliPackage, 'bin', wrangler ? 'wrangler.js' : 'cf')
-const files = readCommittedCloudflareMigrations()
+const cli = join(cliRoot, 'node_modules', cliPackage, 'bin', 'wrangler.js')
+const files = readCommittedCloudflareMigrations(projectRoot)
+assert.equal(files.length, 17, 'Review migration coverage when adding committed history')
 const historyDirectory = join(root, 'history')
 const cutoff = files.findIndex((file) => file.name.startsWith('20260910151556_'))
 const freshId = '00000000-0000-4000-8000-000000003541'
@@ -53,7 +40,6 @@ const populatedId = '00000000-0000-4000-8000-000000003542'
 let successfulCommands = 0
 const run = async (args) => {
     const stdout = await new Promise((resolveOutput, reject) => {
-        // cf#64 documents /dev/null; stdio ignore uses that exact OS-level stdin behavior.
         const child = spawn(
             process.execPath,
             [cli, ...args, '--local', '--persist-to', persistence],
@@ -61,28 +47,33 @@ const run = async (args) => {
                 cwd: root,
                 env: {
                     PATH: process.env.PATH,
-                    SystemRoot: process.env.SystemRoot,
+                    ...(process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {}),
                     HOME: root,
                     USERPROFILE: root,
-                    CLOUDFLARE_ACCOUNT_ID: 'a'.repeat(32),
-                    CF_SEND_TELEMETRY: 'false',
-                    ...(wrangler ? { WRANGLER_SEND_METRICS: 'false', CI: 'true' } : {}),
+                    XDG_CONFIG_HOME: root,
+                    NODE_OPTIONS: `--import=${fileURLToPath(new URL('../helpers/runtimeNetwork.mjs', import.meta.url))}`,
+                    WRANGLER_SEND_METRICS: 'false',
+                    CI: 'true',
                 },
                 stdio: ['ignore', 'pipe', 'pipe'],
             },
         )
         let output = '',
             diagnostics = ''
-        const timer = setTimeout(() => child.kill('SIGTERM'), 120_000)
+        let timedOut = false
+        const timer = setTimeout(() => {
+            timedOut = true
+            child.kill('SIGKILL')
+        }, 120_000)
         child.stdout.setEncoding('utf8')
         child.stderr.setEncoding('utf8')
         child.stdout.on('data', (data) => {
             output += data
-            if (Buffer.byteLength(output) > 8 * 1024 * 1024) child.kill('SIGTERM')
+            if (Buffer.byteLength(output) > 8 * 1024 * 1024) child.kill('SIGKILL')
         })
         child.stderr.on('data', (data) => {
             diagnostics += data
-            if (Buffer.byteLength(diagnostics) > 8 * 1024 * 1024) child.kill('SIGTERM')
+            if (Buffer.byteLength(diagnostics) > 8 * 1024 * 1024) child.kill('SIGKILL')
         })
         child.once('error', (error) => {
             clearTimeout(timer)
@@ -90,7 +81,8 @@ const run = async (args) => {
         })
         child.once('close', (code, signal) => {
             clearTimeout(timer)
-            if (code !== 0)
+            if (timedOut) reject(new Error('Local Wrangler exceeded its 120-second command budget'))
+            else if (code !== 0)
                 reject(new Error(`Pinned ${cliPackage} failed (${code ?? signal}); ${diagnostics}`))
             else {
                 successfulCommands++
@@ -125,57 +117,26 @@ const wranglerConfig = async (id, directory = historyDirectory) => {
 }
 const query = async (id, sql) => {
     const response = JSON.parse(
-        wrangler
-            ? await run([
-                  'd1',
-                  'execute',
-                  'DATABASE',
-                  '--config',
-                  await wranglerConfig(id),
-                  '--command',
-                  sql,
-                  '--json',
-              ])
-            : await run(['d1', 'raw', id, '--sql', sql]),
+        await run([
+            'd1',
+            'execute',
+            'DATABASE',
+            '--config',
+            await wranglerConfig(id),
+            '--command',
+            sql,
+            '--json',
+        ]),
     )
-    const result = Array.isArray(response) ? response : response.result
-    assert.ok(Array.isArray(result), 'Expected the pinned CLI D1 query result array')
-    assert.ok(result.length > 0 && result.every((entry) => entry.success === true))
-    if (wrangler) {
-        assert.ok(Array.isArray(result[0].results))
-        return result[0].results
-    }
-    const { columns, rows } = result[0].results
-    assert.ok(Array.isArray(columns) && Array.isArray(rows))
-    return rows.map((row) =>
-        Object.fromEntries(columns.map((column, index) => [column, row[index]])),
-    )
+    assert.ok(Array.isArray(response), 'Expected the pinned Wrangler D1 result array')
+    assert.ok(response.length > 0 && response.every((entry) => entry.success === true))
+    assert.ok(Array.isArray(response[0].results))
+    return response[0].results
 }
-const migrate = async (
-    id,
-    directory = wrangler ? historyDirectory : join(projectRoot, 'drizzle'),
-) =>
-    wrangler
-        ? run([
-              'd1',
-              'migrations',
-              'apply',
-              'DATABASE',
-              '--config',
-              await wranglerConfig(id, directory),
-          ])
-        : run([
-              'd1',
-              'migrations',
-              'apply',
-              id,
-              '--dir',
-              directory,
-              '--pattern',
-              `${directory.replaceAll('\\', '/')}/*/migration.sql`,
-          ])
+const migrate = async (id, directory = historyDirectory) =>
+    run(['d1', 'migrations', 'apply', 'DATABASE', '--config', await wranglerConfig(id, directory)])
 
-// The pinned cf and Wrangler sources declare this same three-column wire contract.
+// Assert the pinned Wrangler D1 migration ledger wire contract, not only row counts.
 const ledgerSchema = {
     columns: [
         ['id', 'INTEGER', 0, null, 1],
@@ -204,6 +165,7 @@ const inspectLedgerSchema = (database) => ({
         }),
 })
 const requireLedger = async (id) => {
+    assert.deepEqual(await query(id, 'PRAGMA quick_check'), [{ quick_check: 'ok' }])
     const rows = await query(id, 'SELECT id, name, applied_at FROM d1_migrations ORDER BY id')
     assert.deepEqual(
         rows.map((row) => row.name),
@@ -219,13 +181,11 @@ const requireLedger = async (id) => {
 
 try {
     assert.ok(cutoff > 0)
-    if (wrangler)
-        for (const file of files) {
-            const path = join(historyDirectory, file.name)
-            await mkdir(dirname(path), { recursive: true })
-            await writeFile(path, file.sql)
-        }
-    // cf#25: establish the empty simulator directory before its first migration.
+    for (const file of files) {
+        const path = join(historyDirectory, file.name)
+        await mkdir(dirname(path), { recursive: true })
+        await writeFile(path, file.sql)
+    }
     await mkdir(join(persistence, 'v3'), { recursive: true })
     const smoke = join(root, 'smoke')
     const smokeFile = join(smoke, '20260101000000_smoke', 'migration.sql')
@@ -234,12 +194,12 @@ try {
         smokeFile,
         'CREATE TABLE smoke (id INTEGER PRIMARY KEY); INSERT INTO smoke VALUES (1);',
     )
-    console.log(JSON.stringify({ cfMigrationProbeStage: 'minimal-multiple-statements' }))
+    console.log(JSON.stringify({ migrationTestStage: 'minimal-multiple-statements' }))
     await migrate('00000000-0000-4000-8000-000000003540', smoke)
     assert.deepEqual(await query('00000000-0000-4000-8000-000000003540', 'SELECT id FROM smoke'), [
         { id: 1 },
     ])
-    console.log(JSON.stringify({ cfMigrationProbeStage: 'immutable-historical-sql' }))
+    console.log(JSON.stringify({ migrationTestStage: 'immutable-historical-sql' }))
     await migrate(freshId)
     await requireLedger(freshId)
     assert.equal(
@@ -325,7 +285,7 @@ try {
     ])
     assert.equal((await query(populatedId, 'PRAGMA foreign_keys'))[0].foreign_keys, 1)
     assert.deepEqual(await query(populatedId, 'PRAGMA foreign_key_check'), [])
-    if (wrangler) {
+    {
         const failure = join(root, 'failure')
         const failureFile = join(failure, '20260101000000_failure', 'migration.sql')
         const failureId = '00000000-0000-4000-8000-000000003543'
@@ -363,8 +323,8 @@ try {
             foreignKeysPreserved: true,
             ledgerSchemaMatched: true,
             filenameOrderMatched: true,
-            failedMigrationRolledBack: wrangler,
-            cfRemoteVerified: false,
+            failedMigrationRolledBack: true,
+            remoteVerified: false,
             realDataVerified: false,
             remoteMutation: false,
         }),
@@ -396,7 +356,7 @@ try {
     const target = await realpath(root)
     const permittedParent = await realpath(tmpdir())
     assert.equal(dirname(target), permittedParent)
-    assert.ok(basename(target).startsWith('avatio-cf-migrations-'))
+    assert.ok(basename(target).startsWith('avatio-cloudflare-migrations-'))
     assert.equal(resolve(root), target)
     await rm(target, { recursive: true, force: true })
 }

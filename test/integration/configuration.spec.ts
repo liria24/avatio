@@ -53,7 +53,6 @@ describe('stage configuration', () => {
         ['production', ''],
         ['development', ''],
         ['development', 'development'],
-        ['development', 'pr-354'],
     ])(
         'keeps secrets out of Nuxt configuration for %s / %s',
         async (stage, preview) => {
@@ -73,7 +72,6 @@ describe('stage configuration', () => {
             process.env.R2_PUBLIC_BASE_URL = 'https://preview-images.example.test'
             process.env.OG_IMAGE_ENDPOINT = 'https://preview-og.example.test'
             const preview = Boolean(process.env.PREVIEW_NAME)
-            const pr = process.env.PREVIEW_NAME.startsWith('pr-')
             const siteUrl = preview ? process.env.PUBLIC_SITE_URL
                 : process.env.STAGE === 'production' ? 'https://avatio.me' : 'https://dev.avatio.me'
             const nuxt = await loadNuxt({ cwd: process.cwd(), dev: false, ready: true })
@@ -86,9 +84,9 @@ describe('stage configuration', () => {
                 assert.equal(runtimeConfig.public.siteUrl, siteUrl)
                 assert.equal(nuxt.options.appConfig.app.site, siteUrl)
                 assert.equal(nuxt.options.i18n.baseUrl, siteUrl)
-                assert.equal(runtimeConfig.public.emailPasswordAuthEnabled, pr)
-                assert.equal(runtimeConfig.public.twitterAuthEnabled, !pr)
-                assert.equal(nuxt.options.image.provider, pr ? 'none' : 'cloudflare')
+                assert.equal(runtimeConfig.public.emailPasswordAuthEnabled, false)
+                assert.equal(runtimeConfig.public.twitterAuthEnabled, true)
+                assert.equal(nuxt.options.image.provider, 'cloudflare')
                 if (preview) {
                     assert.equal(runtimeConfig.ogImage, undefined)
                     assert.equal(nuxt._nitro.options.handlers.some(handler => handler.route === '/api/og-image'), false)

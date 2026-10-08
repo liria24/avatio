@@ -49,10 +49,8 @@ export const createAvatioAuthOptions = ({ runtimeConfig }: ServerAuthContext) =>
     const publicConfig = runtimeConfig.public as { siteUrl?: unknown } | undefined
     if (!previewKind && typeof publicConfig?.siteUrl === 'string')
         configuredOrigins.push(publicConfig.siteUrl)
-    const twitterClientId =
-        previewKind === 'pr' ? undefined : getRuntimeEnvString('TWITTER_CLIENT_ID')
-    const twitterClientSecret =
-        previewKind === 'pr' ? undefined : getRuntimeEnvString('TWITTER_CLIENT_SECRET')
+    const twitterClientId = getRuntimeEnvString('TWITTER_CLIENT_ID')
+    const twitterClientSecret = getRuntimeEnvString('TWITTER_CLIENT_SECRET')
 
     const options = {
         ...authSchemaOptions,
@@ -97,7 +95,7 @@ export const createAvatioAuthOptions = ({ runtimeConfig }: ServerAuthContext) =>
         },
 
         emailAndPassword: {
-            enabled: import.meta.dev || previewKind === 'pr',
+            enabled: Boolean(import.meta.dev),
         },
 
         socialProviders:

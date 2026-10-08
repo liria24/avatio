@@ -39,12 +39,12 @@ describe('Better Auth trusted origins', () => {
     it('uses only explicit origins for native Previews', () => {
         expect(
             resolveAuthTrustedOrigins({
-                configuredOrigins: ['https://pr-354.example.test'],
+                configuredOrigins: ['https://development.example.test'],
                 configuredOnly: true,
                 request: new Request(
                     'https://other-avatio.account.workers.dev/api/auth/sign-in/email',
                 ),
             }),
-        ).toEqual(['https://pr-354.example.test'])
+        ).toEqual(['https://development.example.test'])
     })
 })

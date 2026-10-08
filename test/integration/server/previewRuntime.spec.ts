@@ -18,70 +18,46 @@ afterEach(() => {
     vi.clearAllMocks()
 })
 
-describe('PR Preview runtime boundaries', () => {
-    const url = 'https://pr-354.previews.example.test'
+describe('development Preview runtime boundaries', () => {
+    const url = 'https://development.previews.example.test'
     const authOptions = () =>
         createAvatioAuthOptions({
             runtimeConfig: { public: { siteUrl: url, emailPasswordAuthEnabled: true } },
         } as Parameters<typeof createAvatioAuthOptions>[0])
 
-    it('registers and signs in a normal user in migrated PR D1, without installing the local admin trigger', async () => {
-        const database = createTestD1()
+    it('keeps Twitter OAuth and exact configured origins in the persistent development Preview', () => {
         vi.stubGlobal('__env__', {
-            APP_DB: database.binding,
             STAGE: 'development',
-            PREVIEW_NAME: 'pr-354',
+            PREVIEW_NAME: 'development',
             AUTH_TRUSTED_ORIGINS: JSON.stringify([url]),
+            TWITTER_CLIENT_ID: 'synthetic-client-id',
+            TWITTER_CLIENT_SECRET: 'synthetic-client-secret',
         })
         const options = authOptions()
-        const auth = betterAuth({
-            ...options,
-            baseURL: url,
-            secret: 'preview-test-secret-with-more-than-32-characters',
+        expect(options.emailAndPassword.enabled).toBe(false)
+        expect(options.socialProviders).toMatchObject({
+            twitter: { clientId: 'synthetic-client-id', clientSecret: 'synthetic-client-secret' },
         })
-        try {
-            expect(options.emailAndPassword.enabled).toBe(true)
-            expect(options.socialProviders).toEqual({})
-            expect(
-                options.trustedOrigins(
-                    new Request(
-                        'https://unrelated-avatio.account.workers.dev/api/auth/get-session',
-                    ),
-                ),
-            ).toEqual([url])
-            const credentials = { email: 'preview@example.test', password: 'test-password-12345' }
-            const registered = await auth.api.signUpEmail({
-                body: { ...credentials, name: 'Preview User', username: 'preview_user' },
-            })
-            const signedIn = await auth.api.signInEmail({ body: credentials, returnHeaders: true })
-            expect(signedIn.response.user.id).toBe(registered.user.id)
-            expect(database.sqlite.prepare('SELECT role FROM users').get()).toMatchObject({
-                role: 'user',
-            })
-            expect(
-                database.sqlite
-                    .prepare("SELECT name FROM sqlite_schema WHERE type = 'trigger'")
-                    .all(),
-            ).toEqual([])
-            const session = await auth.api.getSession({
-                headers: new Headers({
-                    cookie: signedIn.headers
-                        .getSetCookie()
-                        .map((cookie) => cookie.split(';')[0])
-                        .join('; '),
-                }),
-            })
-            expect(session?.user.id).toBe(registered.user.id)
-        } finally {
-            database.sqlite.close()
-        }
+        expect(
+            options.trustedOrigins(
+                new Request('https://unrelated.example.test/api/auth/get-session'),
+            ),
+        ).toEqual([url])
     })
 
-    it.each(['production', 'development'])(
-        'rejects email registration in %s despite the public UI flag',
-        async (stage) => {
+    it.each([
+        ['production', undefined],
+        ['development', undefined],
+        ['development', 'development'],
+    ])(
+        'rejects email registration in %s / %s despite the public UI flag',
+        async (stage, previewName) => {
             const database = createTestD1()
-            vi.stubGlobal('__env__', { APP_DB: database.binding, STAGE: stage })
+            vi.stubGlobal('__env__', {
+                APP_DB: database.binding,
+                STAGE: stage,
+                PREVIEW_NAME: previewName,
+            })
             const options = authOptions()
             const auth = betterAuth({
                 ...options,
@@ -109,7 +85,7 @@ describe('PR Preview runtime boundaries', () => {
         },
     )
 
-    it.each(['development', 'pr-354'])(
+    it.each(['development'])(
         'awaits fenced inline Catalog sync in %s instead of sending Queue messages',
         async (name) => {
             const database = createTestD1()

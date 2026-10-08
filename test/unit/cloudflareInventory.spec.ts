@@ -15,7 +15,7 @@ describe('read-only Cloudflare inventory', () => {
         )
         const report = await collectCloudflareInventory('a'.repeat(32), 'private-token', fetcher)
         const summary = summarizeCloudflareInventory(report)
-        expect(summary.successfulReads).toBe(19)
+        expect(summary.successfulReads).toBe(17)
         expect(summary.unavailable).toEqual([])
         expect(JSON.stringify(summary)).not.toMatch(
             /PRIVATE_RUNTIME_NAME|bindings|private-token|avatio/,
@@ -54,7 +54,7 @@ describe('read-only Cloudflare inventory', () => {
             'private-api-token',
             fetcher,
         )
-        expect(fetcher).toHaveBeenCalledTimes(19)
+        expect(fetcher).toHaveBeenCalledTimes(17)
         for (const [url, options] of fetcher.mock.calls) {
             expect(url).toMatch(/^https:\/\/api\.cloudflare\.com\/client\/v4\/accounts\/a{32}\//)
             expect(options?.method).toBe('GET')

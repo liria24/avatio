@@ -30,8 +30,7 @@ export type AvatioWorkerEnv = Partial<Record<AvatioSecretName, string>> & {
     PUBLIC_SITE_URL: string
     R2_PUBLIC_BASE_URL: string
     STAGE: AvatioStage
-    PREVIEW_NAME?: string
-    PREVIEW_STORAGE_ISOLATED?: string
+    PREVIEW_NAME?: 'development'
     OG_IMAGE_ENDPOINT?: string
     EMAIL_FROM: string
     NUXT_BETTER_AUTH_SECRET: string

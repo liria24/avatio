@@ -1,163 +1,50 @@
-/** Static phases only. Neither thrown messages nor CLI/API bodies reach Actions diagnostics. */
+/** Development inspection diagnostics contain only fixed codes and typed HTTP statuses. */
 export type NativePhase =
-    | 'source-selection'
-    | 'protected-approval'
-    | 'artifact-validation'
-    | 'publish-plan'
-    | 'preview-base'
-    | 'resource-inspection'
-    | 'migration-ledger'
-    | 'migration-apply'
-    | 'migration-postflight'
-    | 'publication-postflight'
-    | 'preview-publish'
-    | 'cli-receipt'
-    | 'preview-parent'
-    | 'existing-preview'
-    | 'deployment-read'
-    | 'binding-verification'
-    | 'immutable-http'
     | 'inspection-inputs'
     | 'inspection-resources'
-    | 'inspection-deployment'
-    | 'inspection-metadata-collection'
-    | 'inspection-contract-audit'
-    | 'inspection-latest-read'
-    | 'inspection-latest-identity'
-    | 'inspection-exact-read'
-    | 'inspection-exact-identity'
-    | 'preview-api-response'
-    | 'preview-endpoint-association'
     | 'inspection-ledger'
+    | 'inspection-deployment'
     | 'inspection-http'
     | 'inspection-postflight'
 
-type NativeFailureCode =
+export type NativeFailureCode =
     | 'operation-failed'
-    | 'api-response-scope-mismatch'
-    | 'preview-parent-changed'
-    | 'preview-deployment-receipt-mismatch'
     | 'api-transport-failed'
     | 'api-http-failed'
-    | 'api-json-invalid'
-    | 'api-envelope-shape'
-    | 'api-envelope-rejected'
-    | 'api-result-missing'
-    | 'api-deployment-shape'
-    | 'preview-parent-id-mismatch'
-    | 'preview-name-mismatch'
-    | 'preview-deployment-id-invalid'
-    | 'preview-exact-id-mismatch'
-    | 'preview-url-contract-mismatch'
+    | 'api-response-scope-mismatch'
+    | 'api-response-invalid'
+    | 'preview-parent-mismatch'
+    | 'preview-parent-changed'
+    | 'preview-deployment-mismatch'
     | 'preview-bindings-mismatch'
     | 'preview-source-mismatch'
+    | 'preview-url-mismatch'
 
-type NativeDiagnostic = {
+export type NativeReporter = (diagnostic: {
     phase: NativePhase
     outcome: 'started' | 'verified' | 'failed'
     code?: NativeFailureCode
-    evidence?: {
-        previewPresent?: boolean
-        deploymentPresent?: boolean
-        parentMatches?: boolean
-        previewParentStable?: boolean
-        endpointAssociationVerified?: boolean
-        sourceAnnotationPresent?: boolean
-        sourceAnnotationMatches?: boolean
-        requiredSecretTypesPresent?: boolean
-        requiredSecrets?: {
-            name: 'NUXT_BETTER_AUTH_SECRET' | 'TWITTER_CLIENT_SECRET'
-            secretTypePresent: boolean
-        }[]
-        bindingsVerified?: boolean
-        cliExitedNormally?: boolean
-        cliJsonAvailable?: boolean
-        contractAudit?: ReturnType<
-            typeof import('./cloudflarePreviewMetadata.ts').inspectCloudflarePreviewMetadata
-        > & {
-            issues: (
-                | 'url-contract-mismatch'
-                | 'bindings-mismatch'
-                | 'source-mismatch'
-                | 'reviewed-url-mismatch'
-            )[]
-        }
-        responseShape?: {
-            httpResponseReceived?: boolean
-            jsonParsed?: boolean
-            envelopeObject?: boolean
-            successPresent?: boolean
-            successBoolean?: boolean
-            successTrue?: boolean
-            resultPresent?: boolean
-            resultObject?: boolean
-            resultArray?: boolean
-            resultNull?: boolean
-            deploymentObject?: boolean
-            idPresent?: boolean
-            idString?: boolean
-            idValidIdentifier?: boolean
-            previewIdPresent?: boolean
-            previewIdString?: boolean
-            previewIdValidIdentifier?: boolean
-            previewNamePresent?: boolean
-            previewNameString?: boolean
-            urlsPresent?: boolean
-            urlsArray?: boolean
-            urlsNonEmpty?: boolean
-            urlsStrings?: boolean
-            envPresent?: boolean
-            envObject?: boolean
-            annotationsPresent?: boolean
-            annotationsObject?: boolean
-        }
-        providerError?: {
-            jsonParsed: boolean
-            bodyWithinLimit: boolean
-            codes: number[]
-            classification:
-                | 'preview-not-found'
-                | 'deployment-not-found'
-                | 'deployment-not-patchable'
-                | 'unclassified'
-        }
-        previewNameMatches?: boolean
-        deploymentIdValid?: boolean
-        exactIdMatches?: boolean
-    }
     httpStatus?: number
-}
-export type NativeReporter = (diagnostic: NativeDiagnostic) => void
+    bindingsVerified?: boolean
+    unexpectedBindingCount?: number
+    requiredSecrets?: { name: string; type: string; secretTypePresent: boolean }[]
+}) => void
 
-/** Closed error categories and bounded projections only; original failures stay in non-enumerable cause. */
+/** No provider body, arbitrary message or original exception is retained. */
 export class NativeDiagnosticError extends Error {
     readonly code: NativeFailureCode
-    readonly evidence: NonNullable<NativeDiagnostic['evidence']>
-    readonly httpStatus: number | undefined
-    constructor(
-        code: NativeFailureCode,
-        evidence: NonNullable<NativeDiagnostic['evidence']> = {},
-        cause?: unknown,
-        httpStatus?: number,
-    ) {
-        super(`Native verification failed (${code}); values omitted.`, { cause })
+    constructor(code: NativeFailureCode) {
+        super(`Development inspection failed (${code}); values omitted.`)
         this.code = code
-        this.evidence = evidence
-        this.httpStatus = httpStatus
     }
 }
 
-/** HTTP status is explicitly typed at the transport boundary, never extracted from error text. */
-export class NativeHttpError extends Error {
-    readonly status: number
-    readonly providerError: NonNullable<NativeDiagnostic['evidence']>['providerError']
-    constructor(
-        status: number,
-        providerError?: NonNullable<NativeDiagnostic['evidence']>['providerError'],
-    ) {
-        super('Cloudflare HTTP operation failed; response omitted.')
-        this.status = status
-        this.providerError = providerError
+export class NativeHttpError extends NativeDiagnosticError {
+    readonly status: number | undefined
+    constructor(status: number) {
+        super('api-http-failed')
+        this.status =
+            Number.isInteger(status) && status >= 100 && status <= 599 ? status : undefined
     }
 }
 
@@ -168,46 +55,21 @@ export const nativePhase = async <T>(
 ): Promise<T> => {
     report?.({ phase, outcome: 'started' })
     try {
-        const value = await operation()
+        const result = await operation()
         report?.({ phase, outcome: 'verified' })
-        return value
-    } catch (error) {
+        return result
+    } catch (cause) {
+        const error =
+            cause instanceof NativeDiagnosticError
+                ? cause
+                : new NativeDiagnosticError('operation-failed')
         report?.({
             phase,
             outcome: 'failed',
-            code:
-                error instanceof NativeDiagnosticError
-                    ? error.code
-                    : error instanceof NativeHttpError
-                      ? 'api-http-failed'
-                      : 'operation-failed',
-            ...(error instanceof NativeDiagnosticError
-                ? { evidence: error.evidence }
-                : error instanceof NativeHttpError
-                  ? {
-                        evidence: {
-                            responseShape: {
-                                httpResponseReceived: true,
-                                jsonParsed: error.providerError?.jsonParsed ?? false,
-                            },
-                            ...(error.providerError ? { providerError: error.providerError } : {}),
-                        },
-                    }
-                  : {}),
-            ...(() => {
-                const status =
-                    error instanceof NativeHttpError
-                        ? error.status
-                        : error instanceof NativeDiagnosticError
-                          ? error.httpStatus
-                          : undefined
-                return status !== undefined &&
-                    Number.isInteger(status) &&
-                    status >= 100 &&
-                    status <= 599
-                    ? { httpStatus: status }
-                    : {}
-            })(),
+            code: error.code,
+            ...(error instanceof NativeHttpError && error.status !== undefined
+                ? { httpStatus: error.status }
+                : {}),
         })
         throw error
     }

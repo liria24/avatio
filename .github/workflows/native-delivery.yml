@@ -1,111 +1,112 @@
-name: native Preview delivery
+name: native delivery
 
 on:
   workflow_call:
     inputs:
+      target:
+        type: string
+        required: true
+      source_sha:
+        type: string
+        required: true
       quality_run_id:
         type: string
         required: true
-      operation:
-        type: string
-        default: deploy
     secrets:
-      AVATIO_CF_RESOURCES_JSON:
-        required: false
       CLOUDFLARE_API_TOKEN:
         required: false
-  workflow_run:
-    workflows: [quality]
-    types: [completed]
-  pull_request_target:
-    types: [closed]
-    branches: [main, development]
-  workflow_dispatch:
-    inputs:
-      quality_run_id:
-        description: Exact successful quality run for the current development SHA
-        type: string
-        required: true
-
-      operation:
-        description: Publish development or apply trusted-base shared PR migrations only
-        type: choice
-        options: [deploy, migrate-shared]
-        default: deploy
 
 permissions:
   contents: read
   actions: read
 
-# Shared D1 migration/publication and close/reopen use one non-cancelling lane.
+# Migration and publication occupy the same non-cancelling target lane.
 concurrency:
-  group: avatio-native-delivery
+  group: avatio-native-${{ inputs.target }}
   cancel-in-progress: false
 
 jobs:
   select:
-    if: github.repository == 'liria24/avatio' && (vars.AVATIO_NATIVE_DELIVERY_ENABLED == 'true' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/development' && github.actor == 'liry24' && github.triggering_actor == 'liry24'))
+    if: github.repository == 'liria24/avatio' && vars.AVATIO_NATIVE_DELIVERY_ENABLED == 'true' && (inputs.target != 'production' || vars.AVATIO_PRODUCTION_DELIVERY_ENABLED == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
-      action: ${{ steps.select.outputs.action }}
-      mode: ${{ steps.select.outputs.mode }}
-      source_sha: ${{ steps.select.outputs.source_sha }}
-      trusted_sha: ${{ steps.select.outputs.trusted_sha }}
-      trusted_ref: ${{ steps.select.outputs.trusted_ref }}
+      source_sha: ${{ steps.source.outputs.source_sha }}
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
-          ref: ${{ github.workflow_sha }}
-          persist-credentials: false
-      - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
-        with:
-          node-version-file: .node-version
-          version-file: package.json
-          cache: true
-          run-install: false
-      - run: vp install --frozen-lockfile
-      - id: select
-        run: node scripts/cloudflareNativeCi.ts select
+          node-version: '26'
+      - &verify-source
+        name: Require exact successful branch quality and current source
+        id: source
         env:
-          GITHUB_TOKEN: ${{ github.token }}
-          NATIVE_OPERATION: ${{ inputs.operation || 'deploy' }}
+          DELIVERY_TARGET: ${{ inputs.target }}
+          EXPECTED_SOURCE_SHA: ${{ inputs.source_sha }}
           QUALITY_RUN_ID: ${{ inputs.quality_run_id }}
-          AVATIO_NATIVE_DELIVERY_ENABLED: ${{ vars.AVATIO_NATIVE_DELIVERY_ENABLED }}
-
-  approve:
-    needs: select
-    if: needs.select.outputs.action == 'deploy' || needs.select.outputs.action == 'migrate-shared'
-    environment: preview
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-        with:
-          ref: ${{ needs.select.outputs.trusted_sha }}
-          persist-credentials: false
-      - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
-        with:
-          node-version-file: .node-version
-          version-file: package.json
-          cache: true
-          run-install: false
-      - run: vp install --frozen-lockfile
-      - run: node scripts/cloudflareNativeCi.ts approve
-        env:
           GITHUB_TOKEN: ${{ github.token }}
-          NATIVE_OPERATION: ${{ inputs.operation || 'deploy' }}
-          QUALITY_RUN_ID: ${{ inputs.quality_run_id }}
-          AVATIO_NATIVE_DELIVERY_ENABLED: ${{ vars.AVATIO_NATIVE_DELIVERY_ENABLED }}
-          AVATIO_CF_RESOURCES_JSON: ${{ secrets.AVATIO_CF_RESOURCES_JSON }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict'
+          import { appendFileSync, readFileSync } from 'node:fs'
+          const env = process.env
+          const branch = { production: 'main', development: 'development' }[env.DELIVERY_TARGET]
+          assert.ok(branch, 'Only production and persistent development are delivery targets')
+          assert.equal(env.GITHUB_REPOSITORY, 'liria24/avatio')
+          assert.match(env.EXPECTED_SOURCE_SHA, /^[a-f0-9]{40}$/)
+          assert.match(env.QUALITY_RUN_ID, /^[1-9][0-9]*$/)
+          const runId = Number(env.QUALITY_RUN_ID)
+          assert.ok(Number.isSafeInteger(runId))
+          const event = JSON.parse(readFileSync(env.GITHUB_EVENT_PATH, 'utf8'))
+          if (env.GITHUB_EVENT_NAME === 'workflow_run') {
+            assert.equal(event.workflow_run.id, runId)
+            assert.equal(event.workflow_run.head_sha, env.EXPECTED_SOURCE_SHA)
+          } else {
+            assert.equal(env.GITHUB_EVENT_NAME, 'workflow_dispatch', 'PRs cannot publish')
+            assert.equal(env.GITHUB_REF, `refs/heads/${branch}`)
+            assert.equal(env.GITHUB_SHA, env.EXPECTED_SOURCE_SHA)
+            assert.equal(env.GITHUB_ACTOR, 'liry24')
+            assert.equal(env.GITHUB_TRIGGERING_ACTOR, 'liry24')
+          }
+          const get = async (path) => {
+            const response = await fetch(`https://api.github.com/repos/liria24/avatio/${path}`, {
+              headers: { accept: 'application/vnd.github+json', authorization: `Bearer ${env.GITHUB_TOKEN}` },
+              redirect: 'error', signal: AbortSignal.timeout(10000),
+            })
+            assert.ok(response.ok, 'Fresh GitHub quality/source evidence is required')
+            return response.json()
+          }
+          const [workflow, run, current, jobs] = await Promise.all([
+            get('actions/workflows/quality.yml'), get(`actions/runs/${runId}`),
+            get(`git/ref/heads/${branch}`), get(`actions/runs/${runId}/jobs?per_page=100`),
+          ])
+          assert.equal(run.workflow_id, workflow.id)
+          assert.equal(run.path, '.github/workflows/quality.yml')
+          assert.equal(run.repository.full_name, env.GITHUB_REPOSITORY)
+          assert.equal(run.head_repository.full_name, env.GITHUB_REPOSITORY)
+          assert.equal(run.event, 'push', 'Only branch push quality authorizes delivery')
+          assert.equal(run.head_branch, branch)
+          assert.equal(run.status, 'completed')
+          assert.equal(run.conclusion, 'success')
+          assert.equal(run.head_sha, env.EXPECTED_SOURCE_SHA)
+          assert.equal(current.object.sha, env.EXPECTED_SOURCE_SHA, 'Stale source cannot publish')
+          assert.equal(jobs.jobs.length, jobs.total_count, 'Complete quality evidence is required')
+          for (const name of ['format', 'lint', 'lint:unused', 'typecheck', 'test', 'build']) {
+            const matches = jobs.jobs.filter((job) => job.name === name)
+            assert.equal(matches.length, 1, `Exactly one ${name} check is required`)
+            assert.equal(matches[0].conclusion, 'success', `${name} must succeed`)
+          }
+          appendFileSync(env.GITHUB_OUTPUT, `source_sha=${env.EXPECTED_SOURCE_SHA}\n`)
+          JS
 
   build:
-    needs: [select, approve]
-    if: needs.select.outputs.action == 'deploy'
-    environment: preview
+    needs: select
+    environment: ${{ inputs.target }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    outputs:
+      source_sha: ${{ steps.build.outputs.source_sha }}
+      artifact_sha256: ${{ steps.build.outputs.artifact_sha256 }}
+      artifact_id: ${{ steps.artifact.outputs.artifact-id }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -118,33 +119,34 @@ jobs:
           cache: true
           run-install: false
       - run: vp install --frozen-lockfile
-      # No API token, dotenv key or signing secret reaches source application execution.
-      - run: node scripts/cloudflareNativeCi.ts build
+      # Only reviewed non-secret configuration reaches application/build execution.
+      - id: build
+        run: node scripts/cloudflareBuild.ts "$DELIVERY_TARGET"
         env:
-          GITHUB_TOKEN: ${{ github.token }}
-          NATIVE_OPERATION: ${{ inputs.operation || 'deploy' }}
-          QUALITY_RUN_ID: ${{ inputs.quality_run_id }}
-          AVATIO_NATIVE_DELIVERY_ENABLED: ${{ vars.AVATIO_NATIVE_DELIVERY_ENABLED }}
-          AVATIO_CF_RESOURCES_JSON: ${{ secrets.AVATIO_CF_RESOURCES_JSON }}
-      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+          DELIVERY_TARGET: ${{ inputs.target }}
+          AVATIO_SOURCE_SHA: ${{ needs.select.outputs.source_sha }}
+          AVATIO_CF_RESOURCES_JSON: ${{ vars.AVATIO_CF_RESOURCES_JSON }}
+          NODE_OPTIONS: --max-old-space-size=4096
+      - id: artifact
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
-          name: native-${{ needs.select.outputs.mode }}-${{ needs.select.outputs.source_sha }}
-          path: .cloudflare/native-artifact
+          name: native-${{ inputs.target }}-${{ needs.select.outputs.source_sha }}
+          path: .output
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 1
 
-  deploy:
+  publish:
     needs: [select, build]
-    environment: preview
+    environment: ${{ inputs.target }}
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
+      # Trusted workflow code handles artifact data; source app code is never run with a deployment token.
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          ref: ${{ needs.select.outputs.trusted_sha }}
+          ref: ${{ github.workflow_sha }}
           persist-credentials: false
-          fetch-depth: 0
       - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
         with:
           node-version-file: .node-version
@@ -152,78 +154,32 @@ jobs:
           cache: true
           run-install: false
       - run: vp install --frozen-lockfile
+      - name: Fetch immutable source for data-only migration comparison
+        run: git -c credential.helper= fetch --no-tags origin "$EXPECTED_SOURCE_SHA"
+        env:
+          EXPECTED_SOURCE_SHA: ${{ needs.select.outputs.source_sha }}
       - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
-          name: native-${{ needs.select.outputs.mode }}-${{ needs.select.outputs.source_sha }}
-          path: .cloudflare/native-incoming
-      - name: Publish once and verify the exact immutable version
-        run: node scripts/cloudflareNativeCi.ts deploy
+          artifact-ids: ${{ needs.build.outputs.artifact_id }}
+          path: .output
+      - *verify-source
+      - name: Validate the matching artifact, migrate the target, and publish once
+        run: node scripts/cloudflareDeploy.ts "$DELIVERY_TARGET" .output
         env:
-          GITHUB_TOKEN: ${{ github.token }}
-          NATIVE_OPERATION: ${{ inputs.operation || 'deploy' }}
-          QUALITY_RUN_ID: ${{ inputs.quality_run_id }}
+          DELIVERY_TARGET: ${{ inputs.target }}
+          EXPECTED_SOURCE_SHA: ${{ needs.select.outputs.source_sha }}
+          EXPECTED_ARTIFACT_SHA256: ${{ needs.build.outputs.artifact_sha256 }}
+          AVATIO_CF_RESOURCES_JSON: ${{ vars.AVATIO_CF_RESOURCES_JSON }}
           AVATIO_NATIVE_DELIVERY_ENABLED: ${{ vars.AVATIO_NATIVE_DELIVERY_ENABLED }}
-          AVATIO_CF_RESOURCES_JSON: ${{ secrets.AVATIO_CF_RESOURCES_JSON }}
+          AVATIO_PRODUCTION_DELIVERY_ENABLED: ${{ vars.AVATIO_PRODUCTION_DELIVERY_ENABLED }}
+          AVATIO_MIGRATION_HISTORY_VERIFIED: ${{ vars.AVATIO_MIGRATION_HISTORY_VERIFIED }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      - name: Preserve actual publication identity even after verification failure
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: Preserve actual publication identity even if verification fails
         if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
-          name: native-publication-${{ needs.select.outputs.source_sha }}
-          path: .cloudflare/native-publication.json
-          include-hidden-files: true
+          name: native-publication-${{ inputs.target }}-${{ needs.select.outputs.source_sha }}
+          path: .cloudflare/delivery/published.json
           if-no-files-found: ignore
           retention-days: 7
-
-  cleanup:
-    needs: select
-    if: needs.select.outputs.action == 'cleanup' && vars.AVATIO_NATIVE_DELIVERY_ENABLED == 'true'
-    environment: preview
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-        with:
-          ref: ${{ needs.select.outputs.trusted_sha }}
-          persist-credentials: false
-      - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
-        with:
-          node-version-file: .node-version
-          version-file: package.json
-          cache: true
-          run-install: false
-      - run: vp install --frozen-lockfile
-      # Delete only the exact closed PR Preview. All preprovisioned data resources survive.
-      - run: node scripts/cloudflareNativeCi.ts cleanup
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          AVATIO_NATIVE_DELIVERY_ENABLED: ${{ vars.AVATIO_NATIVE_DELIVERY_ENABLED }}
-          AVATIO_CF_RESOURCES_JSON: ${{ secrets.AVATIO_CF_RESOURCES_JSON }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-
-  migrate-shared:
-    needs: [select, approve]
-    if: needs.select.outputs.action == 'migrate-shared'
-    environment: preview
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-        with:
-          ref: ${{ needs.select.outputs.trusted_sha }}
-          persist-credentials: false
-      - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
-        with:
-          node-version-file: .node-version
-          version-file: package.json
-          cache: true
-          run-install: false
-      - run: vp install --frozen-lockfile
-      - run: node scripts/cloudflareNativeCi.ts migrate-shared
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          NATIVE_OPERATION: ${{ inputs.operation || 'deploy' }}
-          QUALITY_RUN_ID: ${{ inputs.quality_run_id }}
-          AVATIO_NATIVE_DELIVERY_ENABLED: ${{ vars.AVATIO_NATIVE_DELIVERY_ENABLED }}
-          AVATIO_CF_RESOURCES_JSON: ${{ secrets.AVATIO_CF_RESOURCES_JSON }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

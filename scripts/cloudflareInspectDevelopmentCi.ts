@@ -14,7 +14,7 @@ if (import.meta.main) {
         const line = JSON.stringify(diagnostic)
         console.info(line)
         if (process.env.GITHUB_STEP_SUMMARY)
-            appendFileSync(process.env.GITHUB_STEP_SUMMARY, `Native inspection: ${line}\n`)
+            appendFileSync(process.env.GITHUB_STEP_SUMMARY, `Development inspection: ${line}\n`)
     }
     try {
         const context = await nativePhase('inspection-inputs', report, async () => {
@@ -61,7 +61,7 @@ if (import.meta.main) {
         const result = await inspectCloudflareDevelopment({
             context,
             historicalSourceSha: process.env.REVIEWED_HISTORICAL_SOURCE_SHA ?? '',
-            expectedPreviewId: process.env.REVIEWED_PREVIEW_ID || undefined,
+            expectedPreviewId: process.env.REVIEWED_PREVIEW_ID ?? '',
             deploymentId: process.env.REVIEWED_DEPLOYMENT_ID ?? '',
             reviewedImmutableUrl: process.env.REVIEWED_IMMUTABLE_URL || undefined,
             inventory: JSON.parse(

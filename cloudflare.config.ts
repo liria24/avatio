@@ -5,7 +5,7 @@ import { defineConfig } from 'cf/config'
 import { getBuildEnvironment } from './config/build.ts'
 import { createCloudflareConfig } from './config/cloudflare.ts'
 
-// Preparation only: this does not supply a Nuxt -> Build Output adapter or a deploy command.
+// Select only the existing production Worker or persistent development Preview.
 export default defineConfig((context) => {
     const path = process.env.AVATIO_CF_RESOURCES_FILE
     if (!path)

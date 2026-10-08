@@ -4,28 +4,34 @@ import { join } from 'node:path'
 
 import cloudflareConfig from '../../cloudflare.config'
 import { getBuildEnvironment } from '../../config/build'
-import { createCloudflareConfig } from '../../config/cloudflare'
+import {
+    createCloudflareConfig,
+    getCloudflareDevelopmentInspectionConfiguration,
+    getCloudflareTargetResources,
+} from '../../config/cloudflare'
 import { secretDefinitions } from '../../config/secrets'
 import { createCloudflareResourceFixture } from '../helpers/cloudflareResources'
 
-describe('prepared cf configuration', () => {
-    it('requires a reviewed file and matching build settings at the CLI entry point', async () => {
+describe('Cloudflare configuration', () => {
+    it('requires a reviewed file and matching development build settings at the CLI entry point', async () => {
         const directory = await mkdtemp(join(tmpdir(), 'avatio-cf-config-'))
-        const context = { mode: 'pr-354', isPreview: true }
+        const context = { mode: 'development', isPreview: true }
         try {
             vi.stubEnv('AVATIO_CF_RESOURCES_FILE', '')
             expect(() => cloudflareConfig(context)).toThrow('AVATIO_CF_RESOURCES_FILE')
             const input = createCloudflareResourceFixture()
-            const resources = input.previews!['pr-354']!
             const path = join(directory, 'resources.json')
             await writeFile(path, JSON.stringify(input))
             vi.stubEnv('AVATIO_CF_RESOURCES_FILE', path)
             vi.stubEnv('STAGE', 'development')
-            vi.stubEnv('PREVIEW_NAME', context.mode)
-            vi.stubEnv('PUBLIC_SITE_URL', resources.siteUrl)
-            vi.stubEnv('R2_PUBLIC_BASE_URL', resources.imageBaseUrl)
-            expect(cloudflareConfig(context)).toEqual(createCloudflareConfig(context, input))
+            vi.stubEnv('PREVIEW_NAME', 'development')
+            vi.stubEnv('PUBLIC_SITE_URL', input.development.siteUrl)
             vi.stubEnv('R2_PUBLIC_BASE_URL', input.development.imageBaseUrl)
+            expect(cloudflareConfig(context)).toEqual(createCloudflareConfig(context, input))
+            vi.stubEnv('R2_PUBLIC_BASE_URL', 'https://unreviewed-images.example.test')
+            expect(() => cloudflareConfig(context)).toThrow('must match')
+            vi.stubEnv('R2_PUBLIC_BASE_URL', input.development.imageBaseUrl)
+            vi.stubEnv('PREVIEW_NAME', '')
             expect(() => cloudflareConfig(context)).toThrow('must match')
             vi.stubEnv('STAGE', '')
             expect(() => cloudflareConfig(context)).toThrow()
@@ -35,7 +41,7 @@ describe('prepared cf configuration', () => {
         }
     })
 
-    it('keeps one Worker, all production capabilities, and existing runtime triggers', () => {
+    it('keeps the existing production Worker, capabilities, domain, and runtime triggers', () => {
         const input = createCloudflareResourceFixture()
         input.production.optionalSecrets = secretDefinitions
             .filter(({ required }) => !required)
@@ -43,9 +49,10 @@ describe('prepared cf configuration', () => {
         const { worker } = createCloudflareConfig({ mode: 'production', isPreview: false }, input)
         expect(worker.name).toBe('avatio')
         expect(worker.compatibilityDate).toBe('2026-05-26')
-        expect(worker.compatibilityFlags).toContain('nodejs_compat')
-        expect(worker.compatibilityFlags).not.toContain('no_nodejs_compat_v2')
-        expect(worker.compatibilityFlags).toContain('no_handle_cross_request_promise_resolution')
+        expect(worker.compatibilityFlags).toEqual([
+            'no_handle_cross_request_promise_resolution',
+            'nodejs_compat',
+        ])
         expect(worker.domains).toEqual(['avatio.me'])
         expect(worker.triggers).toEqual([
             { type: 'scheduled', schedule: '0 22 * * *' },
@@ -60,156 +67,147 @@ describe('prepared cf configuration', () => {
         expect(worker.env.APP_DB).toMatchObject({ type: 'd1', ...input.production.database })
         expect(worker.env.CONTENT_CACHE).toMatchObject({ id: input.production.cache.id })
         for (const { key } of secretDefinitions) expect(worker.env[key]).toEqual({ type: 'secret' })
-        expect(worker.env.NUXT_BETTER_AUTH_SECRET).toEqual({ type: 'secret' })
         expect(Object.hasOwn(worker.env, 'BETTER_AUTH_SECRET')).toBe(false)
+        expect(worker.env.PREVIEW_NAME).toBeUndefined()
         expect(
             Object.values(worker.env).filter((binding) => binding.type === 'rate-limit'),
         ).toHaveLength(4)
     })
 
-    it.each(['development', 'pr-354', 'pr-355'])(
-        'isolates %s and omits production side effects',
-        (mode) => {
-            const input = createCloudflareResourceFixture()
-            const { worker } = createCloudflareConfig({ mode, isPreview: true }, input)
-            expect(worker.name).toBe('avatio')
-            expect(worker.compatibilityDate).toBe('2026-05-26')
-            expect(worker.compatibilityFlags).toContain('nodejs_compat')
-            expect(worker.compatibilityFlags).not.toContain('no_nodejs_compat_v2')
-            expect(worker.triggers).toEqual([])
-            expect(worker.domains).toEqual([])
-            expect(worker.env.STAGE).toEqual({ type: 'text', value: 'development' })
-            expect(worker.env.PREVIEW_NAME).toEqual({ type: 'text', value: mode })
-            expect(worker.env.ITEM_REVALIDATION_QUEUE).toBeUndefined()
-            expect(worker.env.CLOUDFLARE_ANALYTICS_READ_TOKEN).toBeUndefined()
-            expect(worker.env.GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET).toBeUndefined()
-            expect(worker.env.LIRIA_DISCORD_ACCESS_TOKEN).toBeUndefined()
-            for (const key of ['EMAIL', 'EMAIL_FROM', 'OG_IMAGE_ENDPOINT', 'OG_IMAGE_SECRET'])
-                expect(worker.env[key]).toBeUndefined()
-            if (mode.startsWith('pr-')) {
-                expect(worker.env.APP_DB).toMatchObject({ name: `avatio-${mode}` })
-                expect(worker.env.R2).toMatchObject({ name: `avatio-${mode}` })
-                expect(worker.env.TWITTER_CLIENT_ID).toBeUndefined()
-                expect(worker.env.TWITTER_CLIENT_SECRET).toBeUndefined()
-                expect(worker.env.AUTH_TRUSTED_ORIGINS).toEqual({
-                    type: 'text',
-                    value: JSON.stringify([`https://${mode}.previews.example.test`]),
-                })
-            }
-            expect(createCloudflareConfig({ mode, isPreview: true }, input)).toEqual({
-                accountId: input.accountId,
-                worker,
-            })
-        },
-    )
+    it('uses the persistent development Preview and omits production side effects', () => {
+        const input = createCloudflareResourceFixture()
+        const { worker } = createCloudflareConfig({ mode: 'development', isPreview: true }, input)
+        expect(worker.name).toBe('avatio')
+        expect(worker.compatibilityDate).toBe('2026-05-26')
+        expect(worker.compatibilityFlags).toEqual([
+            'no_handle_cross_request_promise_resolution',
+            'nodejs_compat',
+        ])
+        expect(worker.triggers).toEqual([])
+        expect(worker.domains).toEqual([])
+        expect(worker.env.STAGE).toEqual({ type: 'text', value: 'development' })
+        expect(worker.env.PREVIEW_NAME).toEqual({ type: 'text', value: 'development' })
+        expect(worker.env.APP_DB).toMatchObject(input.development.database)
+        expect(worker.env.CONTENT_CACHE).toMatchObject({ id: input.development.cache.id })
+        expect(worker.env.R2).toMatchObject({ name: input.development.bucket })
+        expect(worker.env.SELF_URL).toEqual({ type: 'text', value: input.development.siteUrl })
+        expect(worker.env.AUTH_TRUSTED_ORIGINS).toEqual({
+            type: 'text',
+            value: JSON.stringify([input.development.siteUrl]),
+        })
+        expect(worker.env.NUXT_BETTER_AUTH_SECRET).toEqual({ type: 'secret' })
+        expect(worker.env.TWITTER_CLIENT_ID).toMatchObject({ type: 'text' })
+        expect(worker.env.TWITTER_CLIENT_SECRET).toEqual({ type: 'secret' })
+        for (const key of [
+            'ITEM_REVALIDATION_QUEUE',
+            'EMAIL',
+            'EMAIL_FROM',
+            'OG_IMAGE_ENDPOINT',
+            'OG_IMAGE_SECRET',
+            'CLOUDFLARE_ANALYTICS_ACCOUNT_ID',
+            'CLOUDFLARE_ANALYTICS_SITE_TAG',
+            'CLOUDFLARE_ANALYTICS_HOST',
+            'CLOUDFLARE_ANALYTICS_READ_TOKEN',
+            'GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET',
+            'LIRIA_DISCORD_ACCESS_TOKEN',
+            'PREVIEW_STORAGE_ISOLATED',
+        ])
+            expect(worker.env[key]).toBeUndefined()
+        expect(getCloudflareDevelopmentInspectionConfiguration(input)).toEqual({
+            resources: getCloudflareTargetResources('development', input),
+            configuration: { accountId: input.accountId, worker },
+        })
+    })
 
     it.each([
         { mode: undefined, isPreview: false },
         { mode: 'local', isPreview: true },
         { mode: 'production', isPreview: true },
         { mode: 'development', isPreview: false },
+        { mode: 'pr-354', isPreview: true },
         { mode: 'pr-354', isPreview: false },
         { mode: 'pr-0', isPreview: true },
     ])('rejects missing, invalid, or mismatched targets %j', (context) => {
-        expect(() => createCloudflareConfig(context, createCloudflareResourceFixture())).toThrow()
-    })
-
-    it('uses fixed shared PR D1/R2/KV by default, retaining preprovisioned isolated overrides', () => {
         const input = createCloudflareResourceFixture()
-        for (const mode of ['pr-356', 'pr-357']) {
-            const env = createCloudflareConfig({ mode, isPreview: true }, input).worker.env
-            expect(env.APP_DB).toMatchObject(input.sharedPreviewStorage.database)
-            expect(env.CONTENT_CACHE).toMatchObject({ id: input.sharedPreviewStorage.cache.id })
-            expect(env.PREVIEW_STORAGE_ISOLATED).toEqual({ type: 'text', value: 'false' })
-            expect(env.R2).toMatchObject({ name: input.sharedPreviewStorage.bucket })
-            expect(env.SELF_URL).toEqual({
-                type: 'text',
-                value: `https://${mode}.previews.example.test`,
-            })
-        }
-        expect(
-            createCloudflareConfig({ mode: 'pr-354', isPreview: true }, input).worker.env.APP_DB,
-        ).toMatchObject(input.previews!['pr-354']!.database)
-        expect(
-            createCloudflareConfig({ mode: 'pr-354', isPreview: true }, input).worker.env
-                .PREVIEW_STORAGE_ISOLATED,
-        ).toEqual({ type: 'text', value: 'true' })
-        expect(
-            createCloudflareConfig({ mode: 'development', isPreview: true }, input).worker.env
-                .PREVIEW_STORAGE_ISOLATED,
-        ).toEqual({ type: 'text', value: 'false' })
-        input.sharedPreviewStorage.database = { ...input.production.database }
-        expect(() => createCloudflareConfig({ mode: 'pr-354', isPreview: true }, input)).toThrow(
-            /non-production/,
-        )
-    })
-    it('rejects sharing only half of the database/image-storage pair', () => {
-        const databaseOnly = createCloudflareResourceFixture()
-        databaseOnly.previews!['pr-354']!.database = {
-            ...databaseOnly.sharedPreviewStorage.database,
-        }
-        expect(() =>
-            createCloudflareConfig({ mode: 'pr-354', isPreview: true }, databaseOnly),
-        ).toThrow(/pair/)
-        const bucketOnly = createCloudflareResourceFixture()
-        bucketOnly.previews!['pr-354']!.bucket = bucketOnly.sharedPreviewStorage.bucket
-        bucketOnly.previews!['pr-354']!.imageBaseUrl = bucketOnly.sharedPreviewStorage.imageBaseUrl
-        expect(() =>
-            createCloudflareConfig({ mode: 'pr-354', isPreview: true }, bucketOnly),
-        ).toThrow(/pair/)
+        expect(() => createCloudflareConfig(context, input)).toThrow()
+        if (context.mode !== 'production' && context.mode !== 'development')
+            expect(() => getCloudflareTargetResources(context.mode ?? '', input)).toThrow()
     })
 
-    it('rejects absent IDs, cross-target resources, production credentials, and disabled integration inputs', () => {
+    it.each(['sharedPreviewStorage', 'previews', 'pr-354'])(
+        'rejects obsolete inventory key %s for configuration and inspection',
+        (key) => {
+            const input = { ...createCloudflareResourceFixture(), [key]: {} }
+            expect(() =>
+                createCloudflareConfig({ mode: 'development', isPreview: true }, input),
+            ).toThrow()
+            expect(() => getCloudflareTargetResources('development', input)).toThrow()
+            expect(() => getCloudflareDevelopmentInspectionConfiguration(input)).toThrow()
+        },
+    )
+
+    it('rejects missing IDs, production resource reuse, changed identities, and disabled development integrations', () => {
         const mutate = (
             fn: (input: ReturnType<typeof createCloudflareResourceFixture>) => void,
         ) => {
             const input = createCloudflareResourceFixture()
             fn(input)
             expect(() =>
-                createCloudflareConfig({ mode: 'pr-354', isPreview: true }, input),
+                createCloudflareConfig({ mode: 'development', isPreview: true }, input),
             ).toThrow()
+            expect(() => getCloudflareDevelopmentInspectionConfiguration(input)).toThrow()
         }
         mutate((input) => {
             input.production.database.id = ''
         })
         mutate((input) => {
-            input.previews!['pr-354']!.database.id = input.production.database.id
+            input.development.database.id = input.production.database.id
         })
         mutate((input) => {
             input.production.database.id = 'abcdefab-cdef-4abc-8def-abcdefabcdef'
-            input.previews!['pr-354']!.database.id = input.production.database.id.toUpperCase()
+            input.development.database.id = input.production.database.id.toUpperCase()
         })
         mutate((input) => {
-            input.previews!['pr-354']!.cache.id = input.development.cache.id
+            input.development.database.name = 'unreviewed-development'
         })
         mutate((input) => {
-            input.previews!['pr-354']!.bucket = input.production.bucket
+            input.development.cache.id = input.production.cache.id
         })
         mutate((input) => {
-            input.previews!['pr-355']!.database.id = input.previews!['pr-354']!.database.id
+            input.development.bucket = input.production.bucket
         })
         mutate((input) => {
-            input.previews!['pr-354']!.flagshipId = input.production.flagshipId
+            input.development.siteUrl = input.production.siteUrl
         })
         mutate((input) => {
-            input.previews!['pr-354']!.rateLimitNamespaces[0] = 2101
+            input.development.flagshipId = input.production.flagshipId
         })
         mutate((input) => {
-            Object.assign(input.previews!['pr-354']!, { ogImageEndpoint: 'https://og.liria.me' })
+            input.development.rateLimitNamespaces[0] = 2101
         })
         mutate((input) => {
-            input.previews!['pr-354']!.optionalSecrets = ['CLOUDFLARE_ANALYTICS_READ_TOKEN']
+            input.development.imageBaseUrl = 'https://unreviewed.example.test'
         })
         mutate((input) => {
-            Object.assign(input.previews!['pr-354']!, {
-                emailDestinations: ['tester@example.test'],
-            })
+            input.development.emailFrom = 'tester@example.test'
+        })
+        mutate((input) => {
+            input.development.analyticsSiteTag = 'test-site'
+        })
+        mutate((input) => {
+            input.development.optionalSecrets = ['CLOUDFLARE_ANALYTICS_READ_TOKEN']
+        })
+        mutate((input) => {
+            Object.assign(input.development, { ogImageEndpoint: 'https://og.example.test' })
+        })
+        mutate((input) => {
+            Object.assign(input.development, { emailDestinations: ['tester@example.test'] })
         })
     })
 })
 
 describe('Nuxt public build settings', () => {
-    it('resolves stage settings without OAuth or signing secrets', () => {
+    it('resolves stage settings without OAuth or signing secrets and keeps email/password local-only', () => {
         expect(getBuildEnvironment({ STAGE: 'production' }, false)).toMatchObject({
             siteUrl: 'https://avatio.me',
             imageBaseUrl: 'https://images.avatio.me',
@@ -227,22 +225,31 @@ describe('Nuxt public build settings', () => {
         expect(() => getBuildEnvironment({ STAGE: 'staging' }, false)).toThrow()
     })
 
-    it('requires explicit Preview URLs and never infers Preview from a host', () => {
+    it('requires explicit development Preview URLs and never infers Preview identity from a host', () => {
         const env = {
             STAGE: 'development',
-            PREVIEW_NAME: 'pr-354',
-            PUBLIC_SITE_URL: 'https://pr-354.example.test',
+            PREVIEW_NAME: 'development',
+            PUBLIC_SITE_URL: 'https://development.example.test',
             R2_PUBLIC_BASE_URL: 'https://images.example.test',
-            OG_IMAGE_ENDPOINT: 'https://og.example.test',
         }
         expect(getBuildEnvironment(env, false)).toMatchObject({
-            previewKind: 'pr',
+            previewKind: 'development',
             dynamicOgImageEnabled: false,
-            emailPasswordAuthEnabled: true,
-            twitterAuthEnabled: false,
+            emailPasswordAuthEnabled: false,
+            twitterAuthEnabled: true,
         })
+        expect(() => getBuildEnvironment({ ...env, PREVIEW_NAME: 'pr-354' }, false)).toThrow()
         expect(() => getBuildEnvironment({ ...env, STAGE: 'production' }, false)).toThrow()
         expect(() => getBuildEnvironment({ ...env, PUBLIC_SITE_URL: undefined }, false)).toThrow()
+        expect(() =>
+            getBuildEnvironment({ ...env, R2_PUBLIC_BASE_URL: undefined }, false),
+        ).toThrow()
+        expect(() =>
+            getBuildEnvironment({ ...env, PUBLIC_SITE_URL: 'https://avatio.me' }, false),
+        ).toThrow()
+        expect(() =>
+            getBuildEnvironment({ ...env, R2_PUBLIC_BASE_URL: 'https://images.avatio.me' }, false),
+        ).toThrow()
         expect(() =>
             getBuildEnvironment(
                 { ...env, PUBLIC_SITE_URL: 'https://user:password@example.test' },

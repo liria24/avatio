@@ -7,6 +7,7 @@ import type { RouteRuleConfig } from 'nuxt/schema'
 import { withLeadingSlash } from 'ufo'
 
 import { getBuildEnvironment } from './config/build.ts'
+import { createCloudflareWranglerConfig } from './config/cloudflareWrangler.ts'
 import { getLocalAuthSecret } from './config/localDevelopment.ts'
 import {
     defaultI18nLocale,
@@ -195,7 +196,18 @@ export default defineNuxtConfig({
     nitro: {
         sourceMap: false,
         // The Cloudflare preset must retain native Node crypto for Better Auth.
-        cloudflare: { nodeCompat: true },
+        cloudflare: {
+            nodeCompat: true,
+            ...(process.env.AVATIO_CF_RESOURCES_JSON
+                ? {
+                      deployConfig: true,
+                      wrangler: createCloudflareWranglerConfig(
+                          process.env.STAGE ?? '',
+                          JSON.parse(process.env.AVATIO_CF_RESOURCES_JSON),
+                      ),
+                  }
+                : {}),
+        },
         rollupConfig: {
             plugins: [
                 {
@@ -430,7 +442,7 @@ export default defineNuxtConfig({
     },
 
     image: {
-        provider: buildEnvironment.previewKind === 'pr' ? 'none' : 'cloudflare',
+        provider: 'cloudflare',
         cloudflare: { baseURL: publicUrl },
         screens: {
             mdIcon: 48,

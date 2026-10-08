@@ -316,14 +316,10 @@ export const runReportJob = async () => {
 
 export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) => {
     const stage = getRuntimeEnvString('STAGE') ?? 'development'
-    if (
-        !dryRun &&
-        getPreviewKind(stage, getRuntimeEnvString('PREVIEW_NAME')) &&
-        getRuntimeEnvString('PREVIEW_STORAGE_ISOLATED') !== 'true'
-    )
+    if (!dryRun && getPreviewKind(stage, getRuntimeEnvString('PREVIEW_NAME')))
         throw createError({
             statusCode: 403,
-            message: 'Destructive cleanup requires a preprovisioned isolated Preview storage pair.',
+            message: 'Development Preview cleanup is dry-run only.',
         })
     const thresholdDate = new Date(Date.now() - IMAGE_DELETION_THRESHOLD)
     const storageContext = await getStorageContext()

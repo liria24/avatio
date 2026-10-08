@@ -1,18 +1,4 @@
-import { readFileSync } from 'node:fs'
-
-import { parseCloudflarePreviewDeployment } from '../config/cloudflarePreviewLifecycle.ts'
 import { NativeHttpError } from './cloudflareNativeDiagnostics.ts'
-
-/** Read-only checks against the immutable deployment URL, without cookies or response logging. */
-export const verifyCloudflarePreviewHttp = async (
-    input: unknown,
-    expected: { mode: string; siteUrl: string },
-    fetcher: typeof fetch = fetch,
-) => {
-    const deployment = parseCloudflarePreviewDeployment(input, expected)
-    await verifyCloudflareDeploymentHttp(deployment.deploymentUrl, fetcher)
-    return { ...deployment, httpVerified: true as const, realBindingsVerified: false as const }
-}
 
 export const verifyCloudflareDeploymentHttp = async (
     origin: string,
@@ -95,28 +81,14 @@ export const verifyCloudflareStaticDeploymentHttp = async (
     return { staticHttpVerified: true as const, applicationRuntimeVerified: false as const }
 }
 
-// Explicit read-only operator/Actions entry point; no .env, credentials or real inventory reads.
+// Explicit smoke checks never receive signing secrets or deployment credentials.
 if (import.meta.main) {
-    const [resultPath, mode, siteUrl, ...extra] = process.argv.slice(2)
     try {
-        if (!resultPath || !mode || !siteUrl || extra.length)
-            throw new Error('Expected: <cf-result.json> <Preview name> <reviewed stable origin>.')
-        const verified = await verifyCloudflarePreviewHttp(
-            JSON.parse(readFileSync(resultPath, 'utf8')),
-            { mode, siteUrl },
-        )
-        console.info(
-            JSON.stringify({
-                mode,
-                httpVerified: verified.httpVerified,
-                realBindingsVerified: false,
-            }),
-        )
+        const [origin, extra] = process.argv.slice(2)
+        if (!origin || extra) throw new Error('An exact deployment origin is required.')
+        console.info(JSON.stringify(await verifyCloudflareDeploymentHttp(origin)))
     } catch {
-        // The cf result can contain private deployment identifiers; never echo it on failure.
-        console.error(
-            'Preview verification failed. Inspect the private result and target; no cutover is permitted.',
-        )
+        console.error('Deployment smoke verification failed.')
         process.exitCode = 1
     }
 }

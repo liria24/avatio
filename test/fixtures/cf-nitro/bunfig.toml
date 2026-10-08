@@ -1,4 +1,0 @@
-env = false
-
-[install]
-linker = "hoisted"
