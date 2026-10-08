@@ -11,11 +11,13 @@ import { hashCloudflareArtifact } from './cloudflareBuild.ts'
 import { createCloudflareNativeApi } from './cloudflareNativeApi.ts'
 import { inspectCloudflarePreviewMetadata } from './cloudflarePreviewMetadata.ts'
 import { verifyCloudflareDeploymentHttp } from './cloudflarePreviewSmoke.ts'
+import { requireCloudflareQuality } from './cloudflareQuality.ts'
 
 const git = (...args: string[]) =>
     execFileSync('git', args, {
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'ignore'],
+        env: { PATH: process.env.PATH, SystemRoot: process.env.SystemRoot },
     }).trim()
 
 /** Data-only artifact validation. The publisher never imports application output/config code. */
@@ -67,7 +69,9 @@ export const validateCloudflareArtifact = (
     )
         throw new Error('Artifact migrations differ from the committed SQL set.')
     for (const path of paths) {
-        const committed = execFileSync('git', ['show', `${target.sourceSha}:${path}`])
+        const committed = execFileSync('git', ['show', `${target.sourceSha}:${path}`], {
+            env: { PATH: process.env.PATH, SystemRoot: process.env.SystemRoot },
+        })
         if (!committed.equals(readFileSync(resolve(root, 'migrations', path.slice(8)))))
             throw new Error('Artifact contains changed migration SQL.')
     }
@@ -92,7 +96,6 @@ export const requireCurrentCloudflareSource = async (
             signal: AbortSignal.timeout(10_000),
             headers: {
                 accept: 'application/vnd.github+json',
-                authorization: `Bearer ${process.env.GITHUB_TOKEN ?? ''}`,
             },
         },
     )
@@ -257,38 +260,39 @@ export const requireExistingCloudflareTarget = async (
     return {}
 }
 
-if (import.meta.main) {
+/** Workers Builds is the only publisher; application output is consumed as data. */
+export const deployCloudflare = async (mode: string, directory: string, sourceSha: string) => {
     let phase = 'inputs'
     try {
-        const [mode, directory, extra] = process.argv.slice(2)
-        if (!mode || !directory || extra) throw new Error('Expected target and artifact directory.')
         const stage = parseAvatioStage(mode)
-        const sourceSha = process.env.EXPECTED_SOURCE_SHA ?? ''
+        const branch = stage === 'production' ? 'main' : 'development'
         if (
-            process.env.GITHUB_REPOSITORY !== 'liria24/avatio' ||
+            process.env.WORKERS_CI !== '1' ||
+            process.env.WORKERS_CI_BRANCH !== branch ||
+            process.env.WORKERS_CI_COMMIT_SHA !== sourceSha ||
             process.env.AVATIO_NATIVE_DELIVERY_ENABLED !== 'true' ||
             (stage === 'production' && process.env.AVATIO_PRODUCTION_DELIVERY_ENABLED !== 'true') ||
             process.env.AVATIO_MIGRATION_HISTORY_VERIFIED !== 'true' ||
-            git('rev-parse', 'HEAD') !== process.env.GITHUB_WORKFLOW_SHA ||
+            git('rev-parse', 'HEAD') !== sourceSha ||
             git('status', '--porcelain', '--untracked-files=no') ||
-            [
-                'DOTENV_PRIVATE_KEY',
-                'DOTENV_PRIVATE_KEY_PRODUCTION',
-                'DOTENV_PRIVATE_KEY_DEVELOPMENT',
-                'BETTER_AUTH_SECRET',
-                ...secretDefinitions.map(({ key }) => key),
-            ].some((name) => process.env[name])
+            ['BETTER_AUTH_SECRET', ...secretDefinitions.map(({ key }) => key)].some(
+                (name) => process.env[name],
+            ) ||
+            Object.keys(process.env).some(
+                (name) => name.startsWith('DOTENV_PRIVATE_KEY') && process.env[name],
+            )
         )
             throw new Error(
-                'Protected trusted delivery and migration/recovery acceptance are required.',
+                'Reviewed Workers Builds source and migration/recovery acceptance are required.',
             )
         const artifact = resolve(directory)
         const inventory: unknown = JSON.parse(process.env.AVATIO_CF_RESOURCES_JSON ?? '')
+        const buildReceipt = JSON.parse(readFileSync(resolve(artifact, 'delivery.json'), 'utf8'))
         phase = 'artifact'
         const config = validateCloudflareArtifact(artifact, {
             mode: stage,
             sourceSha,
-            artifactHash: process.env.EXPECTED_ARTIFACT_SHA256 ?? '',
+            artifactHash: buildReceipt.artifactHash,
             inventory,
         })
         const env = {
@@ -316,6 +320,8 @@ if (import.meta.main) {
                 })),
             }),
         )
+        phase = 'quality'
+        await requireCloudflareQuality(stage, sourceSha)
         await requireCurrentCloudflareSource(stage, sourceSha)
         phase = 'existing-target'
         const existing = await requireExistingCloudflareTarget(
@@ -384,7 +390,7 @@ if (import.meta.main) {
             const receipt = {
                 stage,
                 sourceSha,
-                artifactHash: process.env.EXPECTED_ARTIFACT_SHA256,
+                artifactHash: buildReceipt.artifactHash,
                 previewId,
                 versionId,
                 immutableUrl,
@@ -392,6 +398,7 @@ if (import.meta.main) {
             // Save actual identities immediately after CLI success, before expected
             // parent/origin/binding/source checks or smoke can fail.
             writeFileSync(resolve(state, 'published.json'), JSON.stringify(receipt))
+            console.info(JSON.stringify({ publication: receipt }))
             if (
                 result.preview?.name !== 'development' ||
                 previewId !== existing.previewId ||
@@ -438,11 +445,12 @@ if (import.meta.main) {
             const receipt = {
                 stage,
                 sourceSha,
-                artifactHash: process.env.EXPECTED_ARTIFACT_SHA256,
+                artifactHash: buildReceipt.artifactHash,
                 versionId: result.version_id,
                 immutableUrl: undefined as string | undefined,
             }
             writeFileSync(resolve(state, 'published.json'), JSON.stringify(receipt))
+            console.info(JSON.stringify({ publication: receipt }))
             phase = 'verification'
             const version = JSON.parse(
                 wrangler(['versions', 'view', result.version_id, '--config', path, '--json'], env),
@@ -488,6 +496,6 @@ if (import.meta.main) {
         console.error(
             'Protected Cloudflare delivery stopped. Retain any saved publication receipt; Worker rollback does not roll back D1.',
         )
-        process.exitCode = 1
+        throw new Error(`Workers Builds delivery failed at ${phase}.`)
     }
 }

@@ -1,20 +1,23 @@
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import {
-    appendFileSync,
     existsSync,
     readFileSync,
     readdirSync,
     lstatSync,
     writeFileSync,
     mkdirSync,
+    mkdtempSync,
+    rmSync,
 } from 'node:fs'
-import { resolve, relative } from 'node:path'
+import { tmpdir } from 'node:os'
+import { resolve, relative, join, delimiter } from 'node:path'
 
 import { createCloudflareWranglerConfig } from '../config/cloudflareWrangler.ts'
 import { parseAvatioStage } from '../config/environment.ts'
 import { secretDefinitions } from '../config/secrets.ts'
 import { readCommittedCloudflareMigrations } from './cloudflareMigrationHistory.ts'
+import { createCloudflareProcessEnvironment } from './cloudflareProcessEnvironment.ts'
 
 /** Hash data and application files without importing or evaluating artifact code. */
 export const hashCloudflareArtifact = (root: string) => {
@@ -36,38 +39,38 @@ export const hashCloudflareArtifact = (root: string) => {
     return hash.digest('hex')
 }
 
-export const buildCloudflare = (mode: string, inventory: unknown, root = process.cwd()) => {
+const applicationSecretNames = new Set([
+    'BETTER_AUTH_SECRET',
+    ...secretDefinitions.map(({ key }) => key),
+])
+
+const requireCredentiallessApplicationEnvironment = (environment: NodeJS.ProcessEnv) => {
+    if (
+        Object.entries(environment).some(
+            ([name, value]) =>
+                value &&
+                (applicationSecretNames.has(name.toUpperCase()) ||
+                    /^DOTENV_PRIVATE_KEY(?:_|$)/i.test(name) ||
+                    /^(?:NUXT_|AVATIO_).*(?:SECRET|TOKEN|PASSWORD|PRIVATE_KEY)(?:_|$)/i.test(name)),
+        )
+    )
+        throw new Error(
+            'Application builds must not receive plaintext application secrets or dotenv private keys.',
+        )
+}
+
+/** The publisher may retain its platform token; no credential is inherited by build children. */
+export const createCloudflareBuildEnvironment = (
+    mode: string,
+    inventory: unknown,
+    environment: NodeJS.ProcessEnv,
+    home: string,
+): NodeJS.ProcessEnv => {
+    requireCredentiallessApplicationEnvironment(environment)
     const stage = parseAvatioStage(mode)
-    if (
-        [
-            'CLOUDFLARE_API_TOKEN',
-            'DOTENV_PRIVATE_KEY',
-            'DOTENV_PRIVATE_KEY_PRODUCTION',
-            'DOTENV_PRIVATE_KEY_DEVELOPMENT',
-            'BETTER_AUTH_SECRET',
-            ...secretDefinitions.map(({ key }) => key),
-        ].some((name) => process.env[name])
-    )
-        throw new Error('Application builds must not receive deployment or signing credentials.')
-    if (existsSync(resolve(root, '.env')))
-        throw new Error('Deployed builds must not import local dotenv overrides.')
     const configuration = createCloudflareWranglerConfig(stage, inventory)
-    const sourceSha = execFileSync('git', ['rev-parse', 'HEAD'], {
-        cwd: root,
-        encoding: 'utf8',
-    }).trim()
-    if (process.env.AVATIO_SOURCE_SHA && process.env.AVATIO_SOURCE_SHA !== sourceSha)
-        throw new Error('Build checkout does not match selected source.')
-    if (
-        process.env.AVATIO_SOURCE_SHA &&
-        execFileSync('git', ['status', '--porcelain', '--untracked-files=no'], {
-            cwd: root,
-            encoding: 'utf8',
-        }).trim()
-    )
-        throw new Error('Delivery builds require a clean selected source checkout.')
-    const env = {
-        ...process.env,
+    return {
+        ...createCloudflareProcessEnvironment(environment, home),
         STAGE: stage,
         PREVIEW_NAME: stage === 'development' ? 'development' : '',
         PUBLIC_SITE_URL: String(configuration.vars.PUBLIC_SITE_URL),
@@ -77,35 +80,90 @@ export const buildCloudflare = (mode: string, inventory: unknown, root = process
         NODE_OPTIONS: '--max-old-space-size=4096',
         WRANGLER_SEND_METRICS: 'false',
     }
-    execFileSync(process.platform === 'win32' ? 'vp.cmd' : 'vp', ['run', 'build'], {
-        cwd: root,
-        env,
-        stdio: 'inherit',
-    })
-    const output = resolve(root, '.output')
-    const path = resolve(output, 'server/wrangler.json')
-    const generated = JSON.parse(readFileSync(path, 'utf8'))
-    // Nitro 2.13.4 writes a v1-only flag despite nodeCompat=true. The reviewed
-    // date enables v2 through nodejs_compat. Only this generated setting changes;
-    // the official Nitro entrypoint, assets and modules are used unchanged.
-    generated.compatibility_flags = configuration.compatibility_flags
-    writeFileSync(path, JSON.stringify(generated))
-    for (const file of readCommittedCloudflareMigrations(root)) {
-        const destination = resolve(output, 'migrations', file.name)
-        mkdirSync(resolve(destination, '..'), { recursive: true })
-        writeFileSync(destination, file.sql)
-    }
-    const artifactHash = hashCloudflareArtifact(output)
-    writeFileSync(
-        resolve(output, 'delivery.json'),
-        JSON.stringify({ sourceSha, stage, artifactHash }),
-    )
-    if (process.env.GITHUB_OUTPUT)
-        appendFileSync(
-            process.env.GITHUB_OUTPUT,
-            `source_sha=${sourceSha}\nartifact_sha256=${artifactHash}\n`,
+}
+
+export const buildCloudflare = (
+    mode: string,
+    inventory: unknown,
+    root = process.cwd(),
+    environment: NodeJS.ProcessEnv = process.env,
+) => {
+    const stage = parseAvatioStage(mode)
+    requireCredentiallessApplicationEnvironment(environment)
+    if (existsSync(resolve(root, '.env')))
+        throw new Error('Deployed builds must not import local dotenv overrides.')
+    const configuration = createCloudflareWranglerConfig(stage, inventory)
+    const home = mkdtempSync(join(tmpdir(), 'avatio-cloudflare-build-'))
+    try {
+        const env = createCloudflareBuildEnvironment(stage, inventory, environment, home)
+        env.PATH = `${resolve(root, 'node_modules/.bin')}${delimiter}${env.PATH ?? env.Path ?? ''}`
+        delete env.Path
+        const vp = resolve(
+            root,
+            'node_modules/.bin',
+            process.platform === 'win32' ? 'vp.cmd' : 'vp',
         )
-    return { sourceSha, stage, artifactHash }
+        for (const name of [
+            'XDG_CONFIG_HOME',
+            'XDG_CACHE_HOME',
+            'XDG_DATA_HOME',
+            'XDG_STATE_HOME',
+            'APPDATA',
+            'LOCALAPPDATA',
+        ] as const)
+            mkdirSync(env[name]!, { recursive: true, mode: 0o700 })
+        const sourceSha = execFileSync('git', ['rev-parse', 'HEAD'], {
+            cwd: root,
+            env,
+            encoding: 'utf8',
+        }).trim()
+        const selectedSources = [
+            environment.WORKERS_CI_COMMIT_SHA,
+            environment.AVATIO_SOURCE_SHA,
+        ].filter((value) => value !== undefined)
+        if (selectedSources.some((value) => value !== sourceSha))
+            throw new Error('Build checkout does not match selected source.')
+        if (
+            selectedSources.length &&
+            execFileSync('git', ['status', '--porcelain', '--untracked-files=no'], {
+                cwd: root,
+                env,
+                encoding: 'utf8',
+            }).trim()
+        )
+            throw new Error('Delivery builds require a clean selected source checkout.')
+        execFileSync(vp, ['exec', 'nuxt', 'prepare'], {
+            cwd: root,
+            env,
+            stdio: 'inherit',
+        })
+        execFileSync(vp, ['run', 'build'], {
+            cwd: root,
+            env,
+            stdio: 'inherit',
+        })
+        const output = resolve(root, '.output')
+        const path = resolve(output, 'server/wrangler.json')
+        const generated = JSON.parse(readFileSync(path, 'utf8'))
+        // Nitro 2.13.4 writes a v1-only flag despite nodeCompat=true. The reviewed
+        // date enables v2 through nodejs_compat. Only this generated setting changes;
+        // the official Nitro entrypoint, assets and modules are used unchanged.
+        generated.compatibility_flags = configuration.compatibility_flags
+        writeFileSync(path, JSON.stringify(generated))
+        for (const file of readCommittedCloudflareMigrations(root, env)) {
+            const destination = resolve(output, 'migrations', file.name)
+            mkdirSync(resolve(destination, '..'), { recursive: true })
+            writeFileSync(destination, file.sql)
+        }
+        const artifactHash = hashCloudflareArtifact(output)
+        writeFileSync(
+            resolve(output, 'delivery.json'),
+            JSON.stringify({ sourceSha, stage, artifactHash }),
+        )
+        return { sourceSha, stage, artifactHash }
+    } finally {
+        rmSync(home, { recursive: true, force: true })
+    }
 }
 
 if (import.meta.main) {
@@ -118,7 +176,9 @@ if (import.meta.main) {
             ),
         )
     } catch {
-        console.error('Cloudflare build stopped; deployment and signing credentials are forbidden.')
+        console.error(
+            'Cloudflare build stopped; plaintext application secrets and dotenv private keys are forbidden.',
+        )
         process.exitCode = 1
     }
 }

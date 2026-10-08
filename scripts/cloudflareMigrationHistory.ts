@@ -135,17 +135,23 @@ export const convertCloudflareMigrationHistoryCopy = (
     return { importedCount: mapping.imports.length, pendingCount: mapping.pending.length }
 }
 
-export const readCommittedCloudflareMigrations = (workspace = process.cwd()) => {
+export const readCommittedCloudflareMigrations = (
+    workspace = process.cwd(),
+    environment?: NodeJS.ProcessEnv,
+) => {
     execFileSync('git', ['diff', '--exit-code', '--quiet', 'HEAD', '--', 'drizzle'], {
         cwd: workspace,
+        env: environment,
     })
     const commit = execFileSync('git', ['rev-parse', 'HEAD'], {
         encoding: 'utf8',
         cwd: workspace,
+        env: environment,
     }).trim()
     const paths = execFileSync('git', ['ls-tree', '-r', '--name-only', commit, 'drizzle'], {
         encoding: 'utf8',
         cwd: workspace,
+        env: environment,
     })
         .trim()
         .split('\n')
@@ -155,6 +161,7 @@ export const readCommittedCloudflareMigrations = (workspace = process.cwd()) => 
         const sql = execFileSync('git', ['show', `${commit}:${path}`], {
             encoding: 'utf8',
             cwd: workspace,
+            env: environment,
         })
         return {
             name: path.slice('drizzle/'.length),

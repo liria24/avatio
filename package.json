@@ -43,7 +43,9 @@
         "db:generate": "drizzle-kit generate",
         "build:cloudflare": "node scripts/cloudflareBuild.ts",
         "test:cloudflare:build": "node test/cloudflare/application.mjs development",
-        "test:cloudflare:migrations": "node test/cloudflare/migrations.mjs"
+        "test:cloudflare:migrations": "node test/cloudflare/migrations.mjs",
+        "build:workers": "node scripts/cloudflareBuilds.ts build",
+        "deploy:workers": "node scripts/cloudflareBuilds.ts deploy"
     },
     "dependencies": {
         "@avatio/cloudflare": "workspace:*",
