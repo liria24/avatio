@@ -80,7 +80,8 @@ beforeEach(() => {
     })
     fetcher = vi.fn<typeof fetch>(async (url) => {
         const path = address(url)
-        if (path.includes('api.github.com')) return Response.json({ commit: { sha: sourceSha } })
+        if (new URL(path).origin === 'https://api.github.com')
+            return Response.json({ commit: { sha: sourceSha } })
         const secret = { type: 'secret_text' }
         const result = path.endsWith('/workers/workers/avatio')
             ? { previews_base_config: { env: { NUXT_BETTER_AUTH_SECRET: secret } } }
@@ -155,7 +156,7 @@ describe('development migration and publication safety', () => {
         const original = fetcher.getMockImplementation()!
         let checks = 0
         fetcher.mockImplementation(async (url, options) => {
-            if (address(url).includes('api.github.com') && ++checks === 2)
+            if (new URL(address(url)).origin === 'https://api.github.com' && ++checks === 2)
                 return Response.json({ commit: { sha: 'b'.repeat(40) } })
             return original(url, options)
         })
