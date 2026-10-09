@@ -3,7 +3,6 @@ name: quality
 on:
   pull_request:
   push:
-    branches: [main, development]
   merge_group:
   workflow_dispatch:
   schedule:

@@ -1,9 +1,10 @@
 import { existsSync } from 'node:fs'
 
+import { installCloudflareDependencies } from '../../scripts/cloudflareBuilds'
 import {
     getCloudflareBuildsContext,
-    installCloudflareDependencies,
-} from '../../scripts/cloudflareBuilds'
+    getCloudflareDevelopmentContext,
+} from '../../scripts/cloudflareDeliveryContext'
 import { requireCloudflareQuality } from '../../scripts/cloudflareQuality'
 
 const { execute } = vi.hoisted(() => ({ execute: vi.fn() }))
@@ -87,21 +88,20 @@ describe('credential-free dependency bootstrap', () => {
 describe('Workers Builds source context', () => {
     const environment = {
         WORKERS_CI: '1',
-        WORKERS_CI_BRANCH: 'development',
+        WORKERS_CI_BRANCH: 'main',
         WORKERS_CI_COMMIT_SHA: sourceSha,
         WORKERS_CI_BUILD_UUID: buildId,
     }
     const checkout = { sourceSha, clean: true }
-    it.each([
-        ['main', 'production'],
-        ['development', 'development'],
-    ])('selects %s from exact clean platform evidence', (branch, stage) => {
-        expect(
-            getCloudflareBuildsContext({ ...environment, WORKERS_CI_BRANCH: branch }, checkout),
-        ).toEqual({ stage, sourceSha })
+    it('selects production from exact clean main platform evidence', () => {
+        expect(getCloudflareBuildsContext(environment, checkout)).toEqual({
+            stage: 'production',
+            sourceSha,
+        })
     })
     it.each([
         { WORKERS_CI: '' },
+        { WORKERS_CI_BRANCH: 'development' },
         { WORKERS_CI_BRANCH: 'feature/example' },
         { WORKERS_CI_BRANCH: 'refs/pull/354/merge' },
         { WORKERS_CI_COMMIT_SHA: 'b'.repeat(40) },
@@ -115,6 +115,54 @@ describe('Workers Builds source context', () => {
     it('rejects tracked changes independently of platform evidence', () => {
         expect(() =>
             getCloudflareBuildsContext(environment, { ...checkout, clean: false }),
+        ).toThrow()
+    })
+})
+
+describe('development GitHub push context', () => {
+    const environment = {
+        GITHUB_ACTIONS: 'true',
+        GITHUB_SERVER_URL: 'https://github.com',
+        GITHUB_REPOSITORY: 'liria24/avatio',
+        GITHUB_EVENT_NAME: 'push',
+        GITHUB_REF: 'refs/heads/development',
+        GITHUB_SHA: sourceSha,
+        GITHUB_RUN_ID: '354',
+        GITHUB_WORKFLOW_REF:
+            'liria24/avatio/.github/workflows/development.yml@refs/heads/development',
+    }
+    const checkout = { sourceSha, clean: true }
+    it('accepts exact clean development pushes without Workers CI variables', () => {
+        expect(getCloudflareDevelopmentContext(environment, checkout)).toEqual({
+            stage: 'development',
+            sourceSha,
+        })
+    })
+    it.each([
+        { GITHUB_ACTIONS: '' },
+        { GITHUB_EVENT_NAME: 'pull_request' },
+        { GITHUB_EVENT_NAME: 'pull_request_target' },
+        { GITHUB_EVENT_NAME: 'workflow_dispatch' },
+        { GITHUB_REF: 'refs/heads/main' },
+        { GITHUB_REF: 'refs/heads/feature/example' },
+        { GITHUB_REF: 'refs/pull/354/merge' },
+        { GITHUB_REPOSITORY: 'fork/avatio' },
+        { GITHUB_SERVER_URL: 'https://unreviewed.example.test' },
+        {
+            GITHUB_WORKFLOW_REF:
+                'liria24/avatio/.github/workflows/other.yml@refs/heads/development',
+        },
+        { GITHUB_RUN_ID: '0' },
+        { GITHUB_SHA: 'b'.repeat(40) },
+        { WORKERS_CI: '1' },
+    ])('rejects unintended privileged context %j', (override) => {
+        expect(() =>
+            getCloudflareDevelopmentContext({ ...environment, ...override }, checkout),
+        ).toThrow()
+    })
+    it('rejects modified checkouts independently of GitHub metadata', () => {
+        expect(() =>
+            getCloudflareDevelopmentContext(environment, { ...checkout, clean: false }),
         ).toThrow()
     })
 })

@@ -8,6 +8,10 @@ import { createCloudflareWranglerConfig } from '../config/cloudflareWrangler.ts'
 import { parseAvatioStage } from '../config/environment.ts'
 import { secretDefinitions } from '../config/secrets.ts'
 import { hashCloudflareArtifact } from './cloudflareBuild.ts'
+import {
+    getCloudflareBuildsContext,
+    getCloudflareDevelopmentContext,
+} from './cloudflareDeliveryContext.ts'
 import { createCloudflareNativeApi } from './cloudflareNativeApi.ts'
 import { inspectCloudflarePreviewMetadata } from './cloudflarePreviewMetadata.ts'
 import { verifyCloudflareDeploymentHttp } from './cloudflarePreviewSmoke.ts'
@@ -57,7 +61,7 @@ export const validateCloudflareArtifact = (
         .filter((path) => path.endsWith('/migration.sql'))
         .sort()
     const received = readdirSync(resolve(root, 'migrations'), { recursive: true })
-        .map(String)
+        .map((path) => String(path).replaceAll('\\', '/'))
         .filter((path) => path.endsWith('/migration.sql'))
         .sort()
     if (
@@ -260,21 +264,27 @@ export const requireExistingCloudflareTarget = async (
     return {}
 }
 
-/** Workers Builds is the only publisher; application output is consumed as data. */
+/** Shared publisher for production Builds and the fixed development push; output is data. */
 export const deployCloudflare = async (mode: string, directory: string, sourceSha: string) => {
     let phase = 'inputs'
     try {
         const stage = parseAvatioStage(mode)
-        const branch = stage === 'production' ? 'main' : 'development'
+        const checkout = {
+            sourceSha: git('rev-parse', 'HEAD'),
+            clean: git('status', '--porcelain', '--untracked-files=no') === '',
+        }
+        const context = (
+            stage === 'production' ? getCloudflareBuildsContext : getCloudflareDevelopmentContext
+        )(process.env, checkout)
         if (
-            process.env.WORKERS_CI !== '1' ||
-            process.env.WORKERS_CI_BRANCH !== branch ||
-            process.env.WORKERS_CI_COMMIT_SHA !== sourceSha ||
+            context.sourceSha !== sourceSha ||
             process.env.AVATIO_NATIVE_DELIVERY_ENABLED !== 'true' ||
             (stage === 'production' && process.env.AVATIO_PRODUCTION_DELIVERY_ENABLED !== 'true') ||
+            (stage === 'development' &&
+                process.env.AVATIO_DEVELOPMENT_DELIVERY_ENABLED !== 'true') ||
+            (stage === 'development' &&
+                process.env.AVATIO_DEVELOPMENT_PREVIEW_AUTOBUILD_DISABLED !== 'true') ||
             process.env.AVATIO_MIGRATION_HISTORY_VERIFIED !== 'true' ||
-            git('rev-parse', 'HEAD') !== sourceSha ||
-            git('status', '--porcelain', '--untracked-files=no') ||
             ['BETTER_AUTH_SECRET', ...secretDefinitions.map(({ key }) => key)].some(
                 (name) => process.env[name],
             ) ||
@@ -283,7 +293,7 @@ export const deployCloudflare = async (mode: string, directory: string, sourceSh
             )
         )
             throw new Error(
-                'Reviewed Workers Builds source and migration/recovery acceptance are required.',
+                'Reviewed delivery source and migration/recovery acceptance are required.',
             )
         const artifact = resolve(directory)
         const inventory: unknown = JSON.parse(process.env.AVATIO_CF_RESOURCES_JSON ?? '')
@@ -329,6 +339,7 @@ export const deployCloudflare = async (mode: string, directory: string, sourceSh
             inventory,
             process.env.CLOUDFLARE_API_TOKEN ?? '',
         )
+        phase = 'migration'
         wrangler(
             ['d1', 'migrations', 'apply', 'APP_DB', '--remote', '--config', migrationsPath],
             env,
@@ -496,6 +507,6 @@ export const deployCloudflare = async (mode: string, directory: string, sourceSh
         console.error(
             'Protected Cloudflare delivery stopped. Retain any saved publication receipt; Worker rollback does not roll back D1.',
         )
-        throw new Error(`Workers Builds delivery failed at ${phase}.`)
+        throw new Error(`Cloudflare delivery failed at ${phase}.`)
     }
 }

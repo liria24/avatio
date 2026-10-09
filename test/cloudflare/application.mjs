@@ -114,23 +114,49 @@ try {
             env: cleanEnvironment,
             encoding: 'utf8',
         }).trim()
-        execFileSync(process.execPath, [join(root, 'scripts/cloudflareBuilds.ts'), 'build'], {
-            cwd: root,
-            env: {
-                ...cleanEnvironment,
-                ...buildProxy,
-                PATH: buildPath,
-                WORKERS_CI: '1',
-                WORKERS_CI_BRANCH: mode === 'production' ? 'main' : 'development',
-                WORKERS_CI_COMMIT_SHA: sourceSha,
-                WORKERS_CI_BUILD_UUID: '00000000-0000-4000-8000-000000000354',
-                SKIP_DEPENDENCY_INSTALL: '1',
-                CLOUDFLARE_API_TOKEN: 'synthetic-platform-token',
-                AVATIO_CF_RESOURCES_JSON: JSON.stringify(inventory),
+        execFileSync(
+            process.execPath,
+            [
+                join(
+                    root,
+                    mode === 'production'
+                        ? 'scripts/cloudflareBuilds.ts'
+                        : 'scripts/cloudflareDevelopment.ts',
+                ),
+                'build',
+            ],
+            {
+                cwd: root,
+                env: {
+                    ...cleanEnvironment,
+                    ...buildProxy,
+                    PATH: buildPath,
+                    ...(mode === 'production'
+                        ? {
+                              WORKERS_CI: '1',
+                              WORKERS_CI_BRANCH: 'main',
+                              WORKERS_CI_COMMIT_SHA: sourceSha,
+                              WORKERS_CI_BUILD_UUID: '00000000-0000-4000-8000-000000000354',
+                              SKIP_DEPENDENCY_INSTALL: '1',
+                          }
+                        : {
+                              GITHUB_ACTIONS: 'true',
+                              GITHUB_SERVER_URL: 'https://github.com',
+                              GITHUB_REPOSITORY: 'liria24/avatio',
+                              GITHUB_EVENT_NAME: 'push',
+                              GITHUB_REF: 'refs/heads/development',
+                              GITHUB_SHA: sourceSha,
+                              GITHUB_RUN_ID: '354',
+                              GITHUB_WORKFLOW_REF:
+                                  'liria24/avatio/.github/workflows/development.yml@refs/heads/development',
+                          }),
+                    CLOUDFLARE_API_TOKEN: 'synthetic-platform-token',
+                    AVATIO_CF_RESOURCES_JSON: JSON.stringify(inventory),
+                },
+                stdio: 'inherit',
+                timeout: 10 * 60_000,
             },
-            stdio: 'inherit',
-            timeout: 10 * 60_000,
-        })
+        )
         for (const name of await readdir(join(root, '.output'), { recursive: true })) {
             try {
                 assert.ok(
@@ -151,7 +177,8 @@ try {
         JSON.stringify({
             mode,
             standardNitroBuild: !reuseOutput,
-            cleanWorkersBuildsEntrypoint: !reuseOutput,
+            cleanDeliveryEntrypoint: !reuseOutput,
+            publisher: mode === 'production' ? 'Workers Builds' : 'GitHub development push',
             artifactReused: reuseOutput,
             runtimePending: true,
         }),

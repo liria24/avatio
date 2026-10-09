@@ -45,7 +45,9 @@
         "test:cloudflare:build": "node test/cloudflare/application.mjs development",
         "test:cloudflare:migrations": "node test/cloudflare/migrations.mjs",
         "build:workers": "node scripts/cloudflareBuilds.ts build",
-        "deploy:workers": "node scripts/cloudflareBuilds.ts deploy"
+        "deploy:workers": "node scripts/cloudflareBuilds.ts deploy",
+        "build:development": "node scripts/cloudflareDevelopment.ts build",
+        "deploy:development": "node scripts/cloudflareDevelopment.ts deploy"
     },
     "dependencies": {
         "@avatio/cloudflare": "workspace:*",

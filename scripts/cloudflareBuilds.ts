@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
+import { getCloudflareBuildsContext } from './cloudflareDeliveryContext.ts'
 import { createCloudflareProcessEnvironment } from './cloudflareProcessEnvironment.ts'
 
 /** Bootstrap before importing installed dependencies. No lifecycle/application code runs here. */
@@ -27,29 +28,6 @@ export const installCloudflareDependencies = (environment: NodeJS.ProcessEnv) =>
     } finally {
         rmSync(home, { recursive: true, force: true })
     }
-}
-
-/** Defense in depth. Platform branch filters must exclude PR builds before credentials exist. */
-export const getCloudflareBuildsContext = (
-    environment: NodeJS.ProcessEnv,
-    checkout: { sourceSha: string; clean: boolean },
-) => {
-    const branch = environment.WORKERS_CI_BRANCH
-    const stage =
-        branch === 'main' ? 'production' : branch === 'development' ? 'development' : undefined
-    const sourceSha = environment.WORKERS_CI_COMMIT_SHA ?? ''
-    if (
-        environment.WORKERS_CI !== '1' ||
-        !stage ||
-        !/^[a-f0-9]{40}$/.test(sourceSha) ||
-        !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(
-            environment.WORKERS_CI_BUILD_UUID ?? '',
-        ) ||
-        checkout.sourceSha !== sourceSha ||
-        !checkout.clean
-    )
-        throw new Error('Exact clean main/development Workers Builds checkout required.')
-    return { stage, sourceSha }
 }
 
 if (import.meta.main) {
