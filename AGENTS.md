@@ -11,6 +11,12 @@ Compact instruction for OpenCode sessions. If a fact is obvious from filenames, 
 
 ## Package manager & runtime
 
+- Renovate targets `development`. Bootstrap only `renovate.json` on default `main`; merging
+  that file still triggers production Workers Builds and requires owner review. Keep identical
+  config filenames on both branches with `useBaseBranchConfig: merge`. Reapply updates on the
+  latest base, regenerate existing locks with the pinned Bun, and require frozen install and
+  every quality check. Do not delete the lock to resolve conflicts or change release workflows.
+
 - **Package manager:** `bun`. `bunfig.toml` uses `linker = "hoisted"` and disables runtime dotenv loading. Bun 1.4.2 installation still loads `.env.production` despite `env = false` and `--no-env-file`. Workers Builds installation disables all lifecycle scripts; fresh credential-free environments for Nuxt preparation/build do not inherit those ciphertext values. Never provide dotenv private keys or plaintext application secrets to installation.
 - **Toolchain:** Vite+ runs package scripts, lint, format, and tests. Node 26 runs Nuxt, TypeScript scripts, tests, and configuration tooling; Bun only installs dependencies. Cloudflare builds use `NODE_OPTIONS=--max-old-space-size=4096` to leave memory for the remaining build processes.
 - **Postinstall:** `vp install` uses Bun and runs `nuxt prepare` only.
