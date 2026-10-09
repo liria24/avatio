@@ -12,6 +12,6 @@
         "./users": "./src/users/index.ts"
     },
     "dependencies": {
-        "zod": "catalog:"
+        "zod": "4.6.5"
     }
 }
