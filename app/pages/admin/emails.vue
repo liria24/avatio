@@ -193,7 +193,10 @@ useSeo({
                                     }}
                                 </span>
 
-                                <p :class="cn('text-toned truncate', email.isRead && 'text-muted')">
+                                <p
+                                    class="text-toned truncate"
+                                    :class="{ 'text-muted': email.isRead }"
+                                >
                                     {{ email.subject ?? '(no subject)' }}
 
                                     <span v-if="email.snippet" class="text-dimmed">

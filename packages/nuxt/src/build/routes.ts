@@ -38,6 +38,3 @@ export const derivePageRoutePolicy = (
     visit(pages)
     return { rootPaths: [...reserved].sort(), staticPaths: [...staticPaths].sort() }
 }
-
-export const deriveReservedRootPaths = (pages: readonly NuxtPage[], locales: readonly string[]) =>
-    derivePageRoutePolicy(pages, locales).rootPaths

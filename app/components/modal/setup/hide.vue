@@ -1,8 +1,9 @@
 <script setup lang="ts">
 interface Props {
     setupId: Setup['id']
+    onSuccess?: () => void
 }
-const { setupId } = defineProps<Props>()
+const props = defineProps<Props>()
 
 const emit = defineEmits(['close'])
 
@@ -24,9 +25,10 @@ const hideSetup = async () => {
     }
 
     await hideSetupAction({
-        setupId,
+        setupId: props.setupId,
         hideReason: hideReason.value,
         onSuccess: () => {
+            props.onSuccess?.()
             hideReason.value = ''
             emit('close')
         },

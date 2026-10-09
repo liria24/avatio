@@ -1,9 +1,9 @@
-import type { H3Event } from 'h3'
+import type { H3Event } from '@nuxt/nitro-server/h3'
 
-import type { WebsiteEnv } from '../../alchemy.run'
+import type { AvatioWorkerEnv } from '../types/cloudflare'
 
-/** Runtime bindings injected by the Alchemy Website resource. */
-type RuntimeEnv = Partial<WebsiteEnv>
+/** Runtime bindings available in requests, background handlers, or local development. */
+type RuntimeEnv = Partial<AvatioWorkerEnv>
 
 const getGlobalRuntimeEnv = (): RuntimeEnv | undefined =>
     (globalThis as typeof globalThis & { __env__?: RuntimeEnv }).__env__
@@ -30,5 +30,9 @@ export const getRuntimeEnvString = (name: keyof RuntimeEnv, event?: H3Event) => 
     for (const env of getRuntimeEnvSources(event)) {
         const value = env[name]
         if (typeof value === 'string' && value) return value
+    }
+    if (import.meta.dev) {
+        const value = process.env[name]
+        if (value) return value
     }
 }

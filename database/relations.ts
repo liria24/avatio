@@ -211,6 +211,11 @@ export const relations = defineRelations(schema, (r) => ({
             from: r.catalogItems.id,
             to: r.setupEntries.itemId,
         }),
+        classification: r.one.catalogItemClassifications({
+            from: r.catalogItems.id,
+            to: r.catalogItemClassifications.itemId,
+            optional: true,
+        }),
     },
     itemSources: {
         item: r.one.catalogItems({
@@ -222,6 +227,22 @@ export const relations = defineRelations(schema, (r) => ({
             from: r.itemSources.publisherSourceId,
             to: r.publisherSources.id,
             optional: true,
+        }),
+        classifications: r.many.catalogItemClassifications({
+            from: r.itemSources.id,
+            to: r.catalogItemClassifications.sourceId,
+        }),
+    },
+    catalogItemClassifications: {
+        item: r.one.catalogItems({
+            from: r.catalogItemClassifications.itemId,
+            to: r.catalogItems.id,
+            optional: false,
+        }),
+        source: r.one.itemSources({
+            from: r.catalogItemClassifications.sourceId,
+            to: r.itemSources.id,
+            optional: false,
         }),
     },
     setups: {
@@ -241,6 +262,10 @@ export const relations = defineRelations(schema, (r) => ({
         images: r.many.setupImages({
             from: r.setups.id,
             to: r.setupImages.setupId,
+        }),
+        points: r.many.setupImagePoints({
+            from: r.setups.id,
+            to: r.setupImagePoints.setupId,
         }),
         coauthors: r.many.setupCoauthors({
             from: r.setups.id,
@@ -270,6 +295,10 @@ export const relations = defineRelations(schema, (r) => ({
             from: r.setupEntries.id,
             to: r.setupEntryShapekeys.setupEntryId,
         }),
+        points: r.many.setupImagePoints({
+            from: r.setupEntries.id,
+            to: r.setupImagePoints.setupEntryId,
+        }),
     },
     setupEntryShapekeys: {
         setupEntry: r.one.setupEntries({
@@ -289,6 +318,18 @@ export const relations = defineRelations(schema, (r) => ({
         setup: r.one.setups({
             from: r.setupImages.setupId,
             to: r.setups.id,
+            optional: false,
+        }),
+    },
+    setupImagePoints: {
+        setup: r.one.setups({
+            from: r.setupImagePoints.setupId,
+            to: r.setups.id,
+            optional: false,
+        }),
+        entry: r.one.setupEntries({
+            from: r.setupImagePoints.setupEntryId,
+            to: r.setupEntries.id,
             optional: false,
         }),
     },

@@ -14,6 +14,14 @@ afterEach(() => {
 })
 
 describe('enforceRateLimit', () => {
+    it('fails closed when a production binding is missing', async () => {
+        vi.stubGlobal('__env__', { STAGE: 'production' })
+        const { enforceRateLimit } = await import('../../../server/utils/rateLimit')
+        await expect(
+            enforceRateLimit({ binding: 'RATE_LIMIT_USER_ACTION', key: 'user:test' }),
+        ).rejects.toMatchObject({ status: 500 })
+        expect(limit).not.toHaveBeenCalled()
+    })
     it('checks the configured Cloudflare Rate Limit binding with the provided key', async () => {
         vi.stubGlobal('__env__', {
             RATE_LIMIT_USER_ACTION: {

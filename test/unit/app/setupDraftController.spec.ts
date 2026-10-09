@@ -62,6 +62,26 @@ describe('setup draft controller owner and recovery boundary', () => {
         await recovery.deleteSetupDraftRecovery(ownerId, initialId)
     })
 
+    it('binds the draft owner when the hydrated session arrives before the first edit', async () => {
+        user.value = null
+        requestFetch.mockResolvedValue({ revision: 1 })
+        const controller = useSetupDraftController(() => {})
+
+        user.value = { id: ownerId }
+        controller.schedule(content('first hydrated edit'), null)
+        await controller.flush()
+
+        expect(requestFetch).toHaveBeenCalledWith(
+            `/api/setup-drafts/${controller.state.id}`,
+            expect.objectContaining({
+                method: 'PUT',
+                body: expect.objectContaining({
+                    content: expect.objectContaining({ name: 'first hydrated edit' }),
+                }),
+            }),
+        )
+    })
+
     it('does not use A recovery when B receives an ownership 404 for A URL', async () => {
         await recovery.saveSetupDraftRecovery(record())
         user.value = { id: 'user-b' }
@@ -90,6 +110,7 @@ describe('setup draft controller owner and recovery boundary', () => {
                 id,
                 revision: 0,
                 content: { name: 'private to A' },
+                recoveredLocally: true,
             })
         },
     )
@@ -152,5 +173,39 @@ describe('setup draft controller owner and recovery boundary', () => {
         expect(controller.state.status).toBe('unsaved')
         await recovery.deleteSetupDraftRecovery(ownerId, controller.state.id)
         vi.clearAllTimers()
+    })
+
+    it('shows saving while the request is in flight and does not mark a newer edit saved', async () => {
+        vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+        const first = Promise.withResolvers<{ revision: number }>()
+        const second = Promise.withResolvers<{ revision: number }>()
+        requestFetch
+            .mockImplementationOnce(() => first.promise)
+            .mockImplementationOnce(() => second.promise)
+        const controller = useSetupDraftController(() => {})
+
+        controller.schedule(content('first'), null)
+        await vi.advanceTimersByTimeAsync(2000)
+        expect(controller.state.status).toBe('saving')
+
+        controller.schedule(content('second'), null)
+        first.resolve({ revision: 1 })
+        await first.promise
+        await vi.waitFor(() => expect(controller.state.status).toBe('unsaved'))
+
+        await vi.advanceTimersByTimeAsync(2000)
+        await vi.waitFor(() => expect(requestFetch).toHaveBeenCalledTimes(2))
+        expect(controller.state.status).toBe('saving')
+        second.resolve({ revision: 2 })
+        await second.promise
+        await vi.waitFor(() => expect(controller.state.status).toBe('saved'))
+        expect(requestFetch).toHaveBeenLastCalledWith(
+            `/api/setup-drafts/${controller.state.id}`,
+            expect.objectContaining({
+                body: expect.objectContaining({
+                    content: expect.objectContaining({ name: 'second' }),
+                }),
+            }),
+        )
     })
 })

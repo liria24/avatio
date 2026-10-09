@@ -33,7 +33,7 @@ useSeo({
                 v-model:search-query="searchQuery"
                 v-model:filter="filter"
                 v-model:row-selection="rowSelection"
-                :data
+                :data="data?.data"
                 :refresh
                 :loading="status === 'pending'"
                 :filter-options="[

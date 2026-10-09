@@ -1,3 +1,4 @@
+import { toCloudflareCacheTags } from '@avatio/cloudflare'
 import { matchSetupPath } from '@avatio/core/setups'
 import { derivePageRoutePolicy } from '@avatio/nuxt/build/routes'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -139,15 +140,13 @@ describe('edge cache policy', () => {
 
 describe('edge cache purge', () => {
     it('purges the deduplicated tag set through the Cloudflare cache context', async () => {
-        const { invalidateCacheResourcesWithContext } =
-            await import('../../../server/utils/edgeCache')
+        const { createCacheInvalidator } = await import('../../../server/utils/infrastructure')
         const purge = vi.fn().mockResolvedValue({ success: true, errors: [] })
 
-        await invalidateCacheResourcesWithContext(
-            { purge },
-            { collections: ['setups', 'setups'], setups: ['abc'] },
-            'test',
-        )
+        await createCacheInvalidator({ purge }).invalidate({
+            collections: ['setups', 'setups'],
+            setups: ['abc'],
+        })
 
         expect(purge).toHaveBeenCalledWith({ tags: ['setup:abc', 'setups'] })
     })
@@ -172,5 +171,18 @@ describe('edge cache purge', () => {
         )
 
         await vi.waitFor(() => expect(purge).toHaveBeenCalledTimes(2))
+    })
+})
+
+describe('Cloudflare resource tag mapping', () => {
+    it('maps semantic IDs without a reverse Setup lookup', () => {
+        expect(
+            toCloudflareCacheTags({
+                items: ['item-1'],
+                setups: ['setup-1'],
+                users: ['user-1'],
+                collections: ['catalog'],
+            }),
+        ).toEqual(['item:item-1', 'setup:setup-1', 'user:user-1', 'catalog'])
     })
 })

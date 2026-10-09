@@ -1,10 +1,11 @@
 import {
     createDefaultSetupComposeForm,
     isEmptySetupComposeForm,
+    setupDraftContentSchema,
     type SetupComposeForm,
     type SetupDraftContent,
 } from '@avatio/core/setups'
-import type { InjectionKey } from 'vue'
+import { watch } from 'vue'
 
 type ComposeUser = Pick<User, 'id' | 'username' | 'name' | 'image'>
 type ComposeCoauthor = SetupComposeForm['coauthors'][number] & { user: ComposeUser }
@@ -14,14 +15,26 @@ const createSetupCompose = () => {
     const router = useRouter()
     const toast = useToast()
     const { t } = useI18n()
+    const { user } = useUserSession()
+    const { switchAccount: switchDeviceAccount } = useDeviceSessions()
+    const requestFetch = useRequestFetch()
     const publishing = ref(false)
+    const switchingAccount = ref(false)
     const restoring = ref(false)
     const loadFailed = ref(false)
     const editingSetupId = ref<Setup['id'] | null>(null)
-    const imageUploading = ref(false)
-    const imageMetadata = ref<Record<string, SetupImageMetadata>>({})
+    const imageMetadata = shallowRef<Record<string, SetupImageMetadata>>({})
     const itemEntities = ref<Record<string, CatalogItemView>>({})
     const userEntities = ref<Record<string, ComposeUser>>({})
+    const itemSearchTerm = ref('')
+    const itemScrollTop = ref(0)
+    const pointEditor = shallowRef<{
+        id: string
+        url: string
+        width?: number
+        height?: number
+        placingEntryId?: string
+    }>()
     const publishIdempotencyKey = ref(crypto.randomUUID())
 
     const updateRouterQuery = (updates: Record<string, string | undefined>) => {
@@ -31,7 +44,7 @@ const createSetupCompose = () => {
         updateRouterQuery({ draftId: id ?? undefined }),
     )
     const { form, values } = useSetupComposeForm((next) => {
-        if (restoring.value || publishing.value) return
+        if (restoring.value || publishing.value || switchingAccount.value) return
         loadFailed.value = false
         draftController.schedule(
             { ...next, imageMetadata: getSelectedImageMetadata() },
@@ -45,7 +58,7 @@ const createSetupCompose = () => {
         totalItemsCount,
         addItem,
         updateItem,
-        removeItem,
+        removeItem: removeEntry,
         changeItemCategory,
         addShapekey,
         removeShapekey,
@@ -55,12 +68,70 @@ const createSetupCompose = () => {
         setItems,
         itemEntities,
     )
-    const { getSelectedImageMetadata, processImages, removeImage } = useSetupComposeImages(
+    const itemSearch = useCatalogItemSearch(addItem, {
+        searchTerm: itemSearchTerm,
+        selectedIds: () => values.value.items.map(({ itemId }) => itemId),
+        atLimit: () => totalItemsCount.value >= MAX_ITEMS_PER_SETUP,
+    })
+    const closeImagePoints = () => {
+        pointEditor.value = undefined
+    }
+    const resetEditorInteractions = () => {
+        closeImagePoints()
+        itemSearch.reset()
+    }
+    watch(() => user.value?.id, resetEditorInteractions, { flush: 'sync' })
+    const {
+        getImageId,
+        getSelectedImageMetadata,
+        uploads,
+        imageUploading,
+        processImages,
+        cancelUpload,
+        cancelAllUploads,
+        retryUpload,
+        removeImage: removeSelectedImage,
+        reorderImages,
+    } = useSetupComposeImages(
         computed(() => values.value.images),
         (images) => form.setFieldValue('images', images),
         imageMetadata,
-        imageUploading,
     )
+    const removeItem = (category: ItemCategory, entryId: string) => {
+        closeImagePoints()
+        removeEntry(category, entryId)
+        form.setFieldValue(
+            'points',
+            values.value.points.filter((point) => point.entryId !== entryId),
+        )
+    }
+    const removeImage = (index: number) => {
+        closeImagePoints()
+        const url = values.value.images[index]
+        if (url)
+            form.setFieldValue(
+                'points',
+                values.value.points.filter((point) => point.imageId !== getImageId(url)),
+            )
+        removeSelectedImage(index)
+    }
+    const openImagePoints = (url: string, placingEntryId?: string) => {
+        if (!values.value.images.includes(url) || restoring.value || switchingAccount.value) return
+        const metadata = imageMetadata.value[url]
+        pointEditor.value = {
+            id: getImageId(url),
+            url,
+            width: metadata?.width,
+            height: metadata?.height,
+            placingEntryId,
+        }
+    }
+    const updateImagePoints = (imageId: string, points: SetupPoint[]) => {
+        if (pointEditor.value?.id !== imageId || restoring.value || switchingAccount.value) return
+        const other = values.value.points.filter((point) => point.imageId !== imageId)
+        if (other.length + points.length > 128) return
+        form.setFieldValue('points', [...other, ...copySetupPoints(points)])
+    }
     const coauthors = computed<ComposeCoauthor[]>(() =>
         values.value.coauthors.map((coauthor) => ({
             ...coauthor,
@@ -83,10 +154,26 @@ const createSetupCompose = () => {
     const changed = computed(() => !isEmptySetupComposeForm(values.value))
 
     const resetFormOnce = async (content: SetupDraftContent) => {
+        resetEditorInteractions()
         restoring.value = true
-        imageMetadata.value = content.imageMetadata ?? {}
+        imageMetadata.value = Object.fromEntries(
+            content.images.map((url) => [
+                url,
+                {
+                    ...content.imageMetadata?.[url],
+                    id: content.imageMetadata?.[url]?.id ?? crypto.randomUUID(),
+                },
+            ]),
+        ) as Record<string, SetupImageMetadata>
         const { imageMetadata: _, ...formValues } = content
-        form.reset(formValues)
+        form.reset({
+            ...formValues,
+            items: formValues.items.map((entry) => ({
+                ...entry,
+                id: entry.id ?? crypto.randomUUID(),
+            })),
+            points: formValues.points ?? [],
+        })
         await nextTick()
         restoring.value = false
     }
@@ -96,7 +183,7 @@ const createSetupCompose = () => {
             Promise.all(
                 content.items.map(async ({ itemId }) => {
                     try {
-                        return await $fetch<CatalogItemView>('/api/items/resolve', {
+                        return await requestFetch<CatalogItemView>('/api/items/resolve', {
                             method: 'POST',
                             body: { reference: itemId },
                         })
@@ -109,7 +196,7 @@ const createSetupCompose = () => {
             Promise.all(
                 content.coauthors.map(async ({ userId, username }) => {
                     try {
-                        return await $fetch<ComposeUser>(`/api/users/${username}`)
+                        return await requestFetch<ComposeUser>(`/api/users/${username}`)
                     } catch (error) {
                         console.error('Failed to hydrate draft coauthor:', userId, error)
                         return null
@@ -134,8 +221,10 @@ const createSetupCompose = () => {
     }
 
     const loadDraft = async (id: string) => {
+        resetEditorInteractions()
         restoring.value = true
         loadFailed.value = false
+        cancelAllUploads()
         try {
             await draftController.flush()
             const draftData = await draftController.load(id)
@@ -143,6 +232,14 @@ const createSetupCompose = () => {
             await hydrateDraftReferences(draftData.content)
             editingSetupId.value = draftData.setupId ?? null
             await draftController.switchSession(draftData.id, draftData.revision)
+            if (draftData.recoveredLocally)
+                draftController.schedule(
+                    setupDraftContentSchema.parse({
+                        ...values.value,
+                        imageMetadata: getSelectedImageMetadata(),
+                    }),
+                    editingSetupId.value,
+                )
             updateRouterQuery({
                 draftId: draftData.id,
                 edit: draftData.setupId ?? undefined,
@@ -162,7 +259,8 @@ const createSetupCompose = () => {
     }
 
     const loadSetup = async (setupId: Setup['id']) => {
-        const setup = await $fetch<Setup>(`/api/me/setups/${setupId}`)
+        resetEditorInteractions()
+        const setup = await requestFetch<Setup>(`/api/me/setups/${setupId}`)
         draftController.requireOwner()
         const content: SetupDraftContent = {
             public: setup.public,
@@ -177,16 +275,19 @@ const createSetupCompose = () => {
                     note: note ?? '',
                 })) ?? [],
             items: setup.entries.map((item) => ({
+                id: item.id,
                 itemId: item.catalogItem.id,
                 category: item.category,
                 note: item.note ?? '',
                 unsupported: item.unsupported ?? false,
                 shapekeys: item.shapekeys ?? [],
             })),
+            points: setup.points ?? [],
             imageMetadata: Object.fromEntries(
                 (setup.images ?? []).map((image) => [
                     image.url,
                     {
+                        id: image.id,
                         objectKey: image.objectKey,
                         contentType: image.contentType ?? undefined,
                         size: image.size ?? undefined,
@@ -213,7 +314,7 @@ const createSetupCompose = () => {
         if (!args.edit) return
 
         try {
-            const drafts = await $fetch<SetupDraftSummary[]>('/api/setup-drafts', {
+            const drafts = await requestFetch<SetupDraftSummary[]>('/api/setup-drafts', {
                 query: { setupId: args.edit },
             })
             if (drafts[0]) {
@@ -238,7 +339,9 @@ const createSetupCompose = () => {
     }
 
     const clearForm = async () => {
+        resetEditorInteractions()
         restoring.value = true
+        cancelAllUploads()
         form.reset(createDefaultSetupComposeForm())
         imageMetadata.value = {}
         itemEntities.value = {}
@@ -251,7 +354,7 @@ const createSetupCompose = () => {
     }
 
     const publish = async (): Promise<Setup['id'] | undefined> => {
-        if (publishing.value) return
+        if (publishing.value || imageUploading.value) return
         publishing.value = true
         try {
             await draftController.flush()
@@ -261,21 +364,18 @@ const createSetupCompose = () => {
                 name: values.value.name,
                 description: values.value.description,
                 items: values.value.items,
-                images: values.value.images.length ? values.value.images : undefined,
+                images: values.value.images,
                 imageMetadata: getSelectedImageMetadata(),
-                tags: values.value.tags.length
-                    ? values.value.tags.map((tag) => ({ tag }))
-                    : undefined,
-                coauthors: values.value.coauthors.length
-                    ? values.value.coauthors.map(({ userId, note }) => ({
-                          userId,
-                          note: note || undefined,
-                      }))
-                    : undefined,
+                points: values.value.points,
+                tags: values.value.tags.map((tag) => ({ tag })),
+                coauthors: values.value.coauthors.map(({ userId, note }) => ({
+                    userId,
+                    note: note || undefined,
+                })),
             }
             if (!setupsInsertSchema.safeParse(body).success) throw new Error('Validation failed')
 
-            const response = await $fetch<Setup>(
+            const response = await requestFetch<Setup>(
                 editingSetupId.value ? `/api/setups/${editingSetupId.value}` : '/api/setups',
                 {
                     method: editingSetupId.value ? 'PUT' : 'POST',
@@ -302,14 +402,64 @@ const createSetupCompose = () => {
         }
     }
 
+    const switchPostingAccount = async (target: DeviceSession) => {
+        if (
+            switchingAccount.value ||
+            publishing.value ||
+            imageUploading.value ||
+            editingSetupId.value ||
+            target.user.id === user.value?.id
+        )
+            return
+
+        switchingAccount.value = true
+        resetEditorInteractions()
+        try {
+            if (!changed.value) {
+                await switchDeviceAccount(target)
+                return
+            }
+
+            draftController.schedule(
+                setupDraftContentSchema.parse({
+                    ...values.value,
+                    imageMetadata: getSelectedImageMetadata(),
+                }),
+                null,
+            )
+            await draftController.flush()
+            if (!['saved', 'restored'].includes(draftController.state.status))
+                throw new Error('Draft must be saved before switching accounts.')
+
+            await requestFetch(`/api/setup-drafts/${draftController.state.id}/transfer`, {
+                method: 'POST',
+                body: {
+                    targetSessionToken: target.session.token,
+                    expectedRevision: draftController.state.revision,
+                },
+            })
+            await draftController.deleteRecovery(draftController.state.id).catch(() => null)
+            reloadNuxtApp({ force: true })
+        } catch {
+            switchingAccount.value = false
+            console.error('Failed to switch setup posting account.')
+            toast.add({
+                icon: 'mingcute:close-line',
+                title: t('setup.compose.switchAccountFailed'),
+                color: 'error',
+            })
+        }
+    }
+
     const reset = async () => {
         await draftController.discard()
         await clearForm()
     }
 
     const addTag = (tag: string) => {
-        if (!tag.trim()) return
-        if (values.value.tags.includes(tag)) {
+        const normalized = tag.trim().slice(0, 32)
+        if (!normalized || values.value.tags.length >= 8) return
+        if (values.value.tags.includes(normalized)) {
             toast.add({
                 id: 'tag-duplicate',
                 icon: 'mingcute:close-line',
@@ -318,7 +468,7 @@ const createSetupCompose = () => {
             })
             return
         }
-        form.setFieldValue('tags', [...values.value.tags, tag])
+        form.setFieldValue('tags', [...values.value.tags, normalized])
     }
     const removeTag = (tag: string) =>
         form.setFieldValue(
@@ -360,7 +510,7 @@ const createSetupCompose = () => {
     } = useFetch<SetupDraftSummary[]>('/api/setup-drafts', { default: () => [], dedupe: 'defer' })
     const deleteDrafts = async (ids: string[]) => {
         for (const id of ids) {
-            await $fetch(`/api/setup-drafts/${id}`, { method: 'DELETE' })
+            await requestFetch(`/api/setup-drafts/${id}`, { method: 'DELETE' })
             await draftController.deleteRecovery(id).catch(() => null)
         }
         if (ids.includes(draftController.state.id)) await reset()
@@ -378,6 +528,8 @@ const createSetupCompose = () => {
         changed,
         editingSetupId,
         publishing,
+        switchingAccount: readonly(switchingAccount),
+        switchPostingAccount,
         draft,
         loadDraft,
         addTag,
@@ -387,8 +539,17 @@ const createSetupCompose = () => {
         setCoauthors,
         updateCoauthorNote,
         imageUploading,
+        uploads,
         processImages,
+        cancelUpload,
+        retryUpload,
         removeImage,
+        reorderImages,
+        getImageId,
+        pointEditor,
+        closeImagePoints,
+        updateImagePoints,
+        openImagePoints,
         totalItemsCount,
         addItem,
         updateItem,
@@ -397,6 +558,9 @@ const createSetupCompose = () => {
         addShapekey,
         removeShapekey,
         reorderCategory,
+        itemSearchTerm,
+        itemSearch,
+        itemScrollTop,
         drafts,
         draftsStatus,
         refreshDrafts,

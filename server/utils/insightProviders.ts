@@ -1,6 +1,6 @@
 import { setups, users } from '@@/database/schema'
+import type { H3Event } from '@nuxt/nitro-server/h3'
 import { and, count, gte, isNull, lt, sql } from 'drizzle-orm'
-import type { H3Event } from 'h3'
 import { defineProvider } from 'insight-ts'
 import { googleSearchConsole } from 'insight-ts/google-search-console'
 import { defineMetricAdapter } from 'insight-ts/metrics'

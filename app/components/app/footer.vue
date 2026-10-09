@@ -38,14 +38,14 @@ const { dismissed, dismissBanner } = useOwnerWarningBanner()
 
                 <div class="flex items-center gap-0.5">
                     <UButton
-                        :to="$localePath('/changelogs')"
+                        :to="$localePath({ path: '/changelogs' })"
                         :label="$t('footer.links.changelogs')"
                         variant="link"
                         size="sm"
                     />
 
                     <UButton
-                        :to="$localePath('/faq')"
+                        :to="$localePath({ path: '/faq' })"
                         :label="$t('footer.links.faq')"
                         variant="link"
                         size="sm"
@@ -63,14 +63,14 @@ const { dismissed, dismissBanner } = useOwnerWarningBanner()
             <div class="flex flex-col items-center justify-center gap-x-4 gap-y-2 sm:flex-row">
                 <div class="flex items-center gap-0.5">
                     <UButton
-                        :to="$localePath('/terms')"
+                        :to="$localePath({ path: '/terms' })"
                         :label="$t('footer.legal.terms')"
                         variant="link"
                         size="sm"
                     />
 
                     <UButton
-                        :to="$localePath('/privacy-policy')"
+                        :to="$localePath({ path: '/privacy-policy' })"
                         :label="$t('footer.legal.privacy')"
                         variant="link"
                         size="sm"

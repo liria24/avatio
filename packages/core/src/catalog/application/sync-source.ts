@@ -1,6 +1,7 @@
 import type { CacheInvalidator } from '../../ports'
 import type { ProviderSnapshot } from '../ports/catalog-provider'
 import type { CatalogRepository } from '../ports/catalog-repository'
+import { applyProviderAdmission } from './provider-admission'
 import type { CatalogProviderRegistry } from './provider-registry'
 
 export interface SyncCatalogSourceInput {
@@ -30,7 +31,7 @@ export const syncCatalogSource = async ({
     if (!source) return { stale: true as const, cacheInvalidationFailed: false }
 
     const provider = providers.get(source.providerKey)
-    const result = initialSnapshot
+    const fetched = initialSnapshot
         ? { status: 'available' as const, snapshot: initialSnapshot }
         : provider
           ? await provider.fetch({
@@ -39,13 +40,26 @@ export const syncCatalogSource = async ({
                 canonicalUrl: source.canonicalUrl,
             })
           : { status: 'transient_error' as const, errorKind: 'provider-not-registered' }
+    const result =
+        fetched.status === 'available' && provider
+            ? (await applyProviderAdmission(provider, fetched.snapshot, repository, now))
+                ? fetched
+                : {
+                      status: 'policy_rejected' as const,
+                      errorKind: 'provider-admission-rejected',
+                      snapshot: fetched.snapshot,
+                  }
+            : fetched
 
     const definitive = result.status !== 'transient_error'
     const itemId = await repository.completeSourceSync({
         sourceId,
         leaseToken,
         availability: definitive ? result.status : undefined,
-        snapshot: result.status === 'available' ? result.snapshot : undefined,
+        snapshot:
+            result.status === 'available' || result.status === 'policy_rejected'
+                ? result.snapshot
+                : undefined,
         checkedAt: now,
         nextCheckAt: new Date(now.getTime() + (definitive ? freshnessMs : retryMs)),
         successful: definitive,

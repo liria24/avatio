@@ -2,14 +2,14 @@ import { z } from 'zod'
 
 export const secretDefinitions = [
     {
-        key: 'BETTER_AUTH_SECRET',
+        key: 'NUXT_BETTER_AUTH_SECRET',
         required: true,
         purpose: 'Better Auth session and token signing',
     },
     {
         key: 'BOOTH_PROXY_URL',
-        required: true,
-        purpose: 'Authenticated BOOTH provider proxy',
+        required: false,
+        purpose: 'Optional BOOTH provider proxy',
     },
     {
         key: 'TWITTER_CLIENT_SECRET',
@@ -54,17 +54,16 @@ export const secretDefinitions = [
 ] as const
 
 export type AvatioSecretName = (typeof secretDefinitions)[number]['key']
-export type SecretInput = Partial<Record<AvatioSecretName, string | undefined>>
 
 const optionalNonEmpty = z.preprocess(
     (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
     z.string().min(1).optional(),
 )
 
-export const avatioSecretsSchema = z
+const avatioSecretsSchema = z
     .object({
-        BETTER_AUTH_SECRET: z.string().min(32, 'must contain at least 32 characters'),
-        BOOTH_PROXY_URL: z.url('must be a valid URL'),
+        NUXT_BETTER_AUTH_SECRET: z.string().min(32, 'must contain at least 32 characters'),
+        BOOTH_PROXY_URL: optionalNonEmpty.pipe(z.url('must be a valid URL').optional()),
         TWITTER_CLIENT_SECRET: z.string().min(1, 'must not be empty'),
         OG_IMAGE_SECRET: z.string().min(16, 'must contain at least 16 characters'),
         LIRIA_DISCORD_ENDPOINT: optionalNonEmpty.pipe(z.url('must be a valid URL').optional()),

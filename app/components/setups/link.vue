@@ -33,13 +33,11 @@ const dominantColor = computed(() => firstImage.value?.themeColors?.[0] || '')
         :to="setup.id ? setupPath(setup.id) : undefined"
         :aria-label="setup.name"
         :data-has-images="hasImages"
+        class="group flex flex-col gap-1.5 overflow-clip rounded-lg p-1.5 shadow-black/10 transition delay-0 duration-100 ease-in-out hover:shadow-xl hover:ring-2 focus:ring-2 focus:outline-none focus-visible:shadow-xl dark:shadow-white/10"
         :class="
-            cn(
-                'group flex flex-col gap-1.5 overflow-clip rounded-lg p-1.5 shadow-black/10 transition delay-0 duration-100 ease-in-out hover:shadow-xl hover:ring-2 focus:ring-2 focus:outline-none focus-visible:shadow-xl dark:shadow-white/10',
-                dominantColor
-                    ? 'link-with-color'
-                    : 'hover:ring-accented hover:bg-elevated focus:ring-accented focus:bg-elevated',
-            )
+            dominantColor
+                ? 'link-with-color'
+                : 'hover:ring-accented hover:bg-elevated focus:ring-accented focus:bg-elevated'
         "
         :style="dominantColor ? { '--dominant-color': dominantColor } : undefined"
     >
@@ -48,7 +46,7 @@ const dominantColor = computed(() => firstImage.value?.themeColors?.[0] || '')
             class="relative w-full rounded-lg"
             :style="{ backgroundColor: dominantColor || undefined }"
         >
-            <NuxtImg
+            <SetupsImage
                 :src="firstImage!.url"
                 :alt="setup.name"
                 :width="firstImage!.width"
@@ -91,7 +89,7 @@ const dominantColor = computed(() => firstImage.value?.themeColors?.[0] || '')
 
         <div class="flex w-full items-center gap-2">
             <UTooltip v-if="!hasImages" :text="avatarName" :delay-duration="100">
-                <NuxtImg
+                <SetupsImage
                     v-if="avatar"
                     :src="avatar.image || undefined"
                     alt=""

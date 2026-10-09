@@ -1,4 +1,6 @@
+import { createError } from '@nuxt/nitro-server/h3'
 import { lt } from 'drizzle-orm'
+import { getPreviewKind } from '~~/config/preview'
 import { idempotencyRequests } from '~~/database/schema'
 
 const reportLog = logger('/api/admin/job/report')
@@ -28,21 +30,25 @@ const STORAGE_OPERATION_CONCURRENCY = 8
 
 const BACKUP_PREFIX = 'backup'
 
-const sendMessage = (message: { content?: string; embeds?: object[] }) =>
-    $fetch('/admin/message', {
-        baseURL:
-            getRuntimeEnvString('LIRIA_DISCORD_ENDPOINT')?.replace(/\/+$/, '') ??
-            'https://discord.liria.me',
+const sendMessage = async (message: { content?: string; embeds?: object[] }) => {
+    if (import.meta.dev) return
+    const endpoint = getRuntimeEnvString('LIRIA_DISCORD_ENDPOINT')?.replace(/\/+$/, '')
+    const token = getRuntimeEnvString('LIRIA_DISCORD_ACCESS_TOKEN')
+    if (!endpoint || !token) return
+    await $fetch('/admin/message', {
+        baseURL: endpoint,
         method: 'POST',
         headers: {
-            Authorization: `Bearer ${getRuntimeEnvString('LIRIA_DISCORD_ACCESS_TOKEN')}`,
+            Authorization: `Bearer ${token}`,
         },
         body: message,
     })
+}
 
-const getStoragePublicBaseUrl = async () => {
+const getStorageContext = async () => {
     try {
-        return new URL('.', await storage.url('cleanup')).href
+        const storage = useServerFiles()
+        return { storage, publicBaseUrl: new URL('.', await storage.url('cleanup')).href }
     } catch {
         return null
     }
@@ -92,6 +98,7 @@ const imageUrlsToStorageKeys = (urls: string[], publicBaseUrl: string) =>
     )
 
 const getStorageObjects = async (prefix: string): Promise<ImageInfo[]> => {
+    const storage = useServerFiles()
     const items: ImageInfo[] = []
 
     try {
@@ -114,6 +121,7 @@ const getCleanupCandidates = (
 ) => storageImages.filter((image) => !usedKeys.has(image.key) && image.lastModified < thresholdDate)
 
 const copyWithConcurrency = async (images: ImageInfo[], backupDate: string) => {
+    const storage = useServerFiles()
     const backedUp: string[] = []
     const backupFailed: FailedImageOperation[] = []
     let index = 0
@@ -308,14 +316,19 @@ export const runReportJob = async () => {
 
 export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) => {
     const stage = getRuntimeEnvString('STAGE') ?? 'development'
+    if (!dryRun && getPreviewKind(stage, getRuntimeEnvString('PREVIEW_NAME')))
+        throw createError({
+            statusCode: 403,
+            message: 'Development Preview cleanup is dry-run only.',
+        })
     const thresholdDate = new Date(Date.now() - IMAGE_DELETION_THRESHOLD)
-    const publicBaseUrl = await getStoragePublicBaseUrl()
+    const storageContext = await getStorageContext()
     const db = useDB()
 
     if (!dryRun)
         await db.delete(idempotencyRequests).where(lt(idempotencyRequests.expiresAt, new Date()))
 
-    if (!publicBaseUrl) {
+    if (!storageContext) {
         const message = 'Storage public base URL is unavailable. Cleanup skipped.'
         cleanupLog.error(message)
         return dryRun
@@ -345,6 +358,8 @@ export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) 
                   },
               }
     }
+
+    const { storage, publicBaseUrl } = storageContext
 
     const [usedImageUrls, [allSetupImages, allUserImages]] = await Promise.all([
         getUsedImageUrls(db),

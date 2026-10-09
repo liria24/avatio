@@ -1,6 +1,7 @@
 export * from './application/enqueue-due-sources'
 export * from './application/force-enqueue-sources'
 export * from './application/provider-registry'
+export * from './application/provider-admission'
 export * from './application/sync-source'
 export * from './domain/category'
 export * from './domain/catalog'

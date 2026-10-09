@@ -1,9 +1,9 @@
-import type { WebsiteEnv } from '../alchemy.run'
+import type { AvatioWorkerEnv } from './types/cloudflare'
 
 declare module 'h3' {
     interface H3EventContext {
         cloudflare?: {
-            env: WebsiteEnv
+            env: AvatioWorkerEnv
         }
     }
 }

@@ -1,6 +1,4 @@
-import { defineConfig } from 'oxlint'
-
-export default defineConfig({
+export default {
     plugins: ['import'],
     categories: {
         correctness: 'error',
@@ -184,4 +182,4 @@ export default defineConfig({
             plugins: ['vue'],
         },
     ],
-})
+}

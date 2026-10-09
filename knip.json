@@ -1,0 +1,33 @@
+{
+    "$schema": "https://unpkg.com/knip@6/schema.json",
+    "ignoreIssues": {
+        "server/utils/createAuditLog.ts": ["exports"],
+        "server/utils/createNotification.ts": ["exports"]
+    },
+    "workspaces": {
+        ".": {
+            "entry": [
+                "cloudflare.config.ts",
+                "auth.config.ts",
+                "files.config.ts",
+                "app/auth.config.ts",
+                "server/auth.config.ts",
+                "oxfmt.config.ts",
+                "taze.config.ts",
+                "test/helpers/runtimeNetwork.mjs"
+            ],
+            "ignoreDependencies": [
+                "@dotenvx/dotenvx",
+                "@iconify-json/fluent-color",
+                "@iconify-json/lucide",
+                "@iconify-json/mingcute",
+                "@iconify-json/simple-icons",
+                "@iconify-json/svg-spinners",
+                "@iconify-json/twemoji",
+                "@nuxt/nitro-server",
+                "@vueuse/router"
+            ],
+            "ignoreUnresolved": ["#nuxt-better-auth"]
+        }
+    }
+}

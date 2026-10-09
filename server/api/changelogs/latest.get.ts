@@ -5,8 +5,8 @@ const query = z.object({
     lang: z.enum(locales).optional().default('ja'),
 })
 
-export default promiseEventHandler(async ({ event, db }) => {
-    const { lang } = await validateQuery(query)
+export default requestEventHandler(async ({ event, db }) => {
+    const { lang } = validateRequestQuery(event, query)
 
     const data = await db.query.changelogs.findFirst({
         orderBy: {
@@ -36,6 +36,6 @@ export default promiseEventHandler(async ({ event, db }) => {
         fallbacked: lang !== 'ja' && !i18nData,
     }
 
-    applyPublicEdgeCache(event, [EDGE_CACHE_TAGS.changelogs])
+    applyPublicRequestCache(event, [EDGE_CACHE_TAGS.changelogs])
     return result
 })

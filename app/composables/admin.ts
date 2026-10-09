@@ -1,3 +1,5 @@
+import type { AppConfig, WritableAppConfig } from '@avatio/core/contracts'
+
 export const useAdmin = () => {
     const { t } = useI18n()
     const toast = useToast()
@@ -54,15 +56,6 @@ export const useAdmin = () => {
         errorTitle: t('toast.admin.error'),
         errorLog: 'Error resolving report:',
         refreshSummary: true,
-    })
-
-    const banUser = defineAction<{ userId: string }>({
-        url: ({ userId }) => `/api/admin/user/${userId}`,
-        method: 'PATCH',
-        body: () => ({ ban: true }),
-        successTitle: t('toast.admin.userBanned'),
-        errorTitle: t('toast.admin.userBanFailed'),
-        errorLog: 'Error banning user:',
     })
 
     const unbanUser = defineAction<{ userId: string }>({
@@ -171,7 +164,6 @@ export const useAdmin = () => {
 
     return {
         resolveReport,
-        banUser,
         unbanUser,
         closeFeedback,
         openFeedback,

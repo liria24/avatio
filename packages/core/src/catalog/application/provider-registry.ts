@@ -1,4 +1,4 @@
-import type { CatalogProvider, ExternalReference } from '../ports/catalog-provider'
+import type { CatalogProvider } from '../ports/catalog-provider'
 
 export class CatalogProviderRegistry {
     readonly #providers: ReadonlyMap<string, CatalogProvider>
@@ -14,15 +14,7 @@ export class CatalogProviderRegistry {
         return this.#providers.get(key) ?? null
     }
 
-    matchUrl(url: URL): ExternalReference | null {
-        for (const provider of this.#providers.values()) {
-            const reference = provider.matchUrl(url)
-            if (reference) return reference
-        }
-        return null
-    }
-
-    keys(): string[] {
-        return [...this.#providers.keys()]
+    values(): CatalogProvider[] {
+        return [...this.#providers.values()]
     }
 }

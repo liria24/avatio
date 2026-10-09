@@ -12,7 +12,7 @@ const query = z.object({
 })
 
 export default promiseEventHandler(async ({ db, event }) => {
-    await requireUserSession(event, { user: { role: 'admin' } })
+    await requireAdminSession(event)
     const {
         q,
         orderBy,
@@ -56,7 +56,11 @@ export default promiseEventHandler(async ({ db, event }) => {
                 },
             },
             images: {
+                orderBy: { position: 'asc' },
                 columns: {
+                    id: true,
+                    stableId: true,
+                    position: true,
                     objectKey: true,
                 },
             },

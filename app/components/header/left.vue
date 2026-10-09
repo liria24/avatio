@@ -5,12 +5,12 @@ const { user } = useUserSession()
 
 <template>
     <div class="flex items-center gap-1.5">
-        <NuxtLinkLocale to="/">
+        <NuxtLinkLocale :to="{ path: '/' }">
             <AppLogo class="-mt-1.5 w-24 sm:w-28" aria-label="Avatio" />
         </NuxtLinkLocale>
 
         <UButton
-            :to="$localePath('/changelogs')"
+            :to="$localePath({ path: '/changelogs' })"
             :label="`v${app.version}`"
             variant="soft"
             color="neutral"
@@ -20,7 +20,7 @@ const { user } = useUserSession()
 
         <UButton
             v-if="user?.role === 'admin'"
-            :to="$localePath('/admin')"
+            :to="$localePath({ path: '/admin' })"
             :label="$t('admin.label')"
             variant="subtle"
             size="xs"

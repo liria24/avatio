@@ -1,15 +1,16 @@
 import { z } from 'zod'
 
-export const avatioStages = ['development', 'production'] as const
+const avatioStages = ['development', 'production'] as const
 export type AvatioStage = (typeof avatioStages)[number]
 
 const aiTaskConfigSchema = z.object({
     catalogEnrichment: z.string().min(1),
+    catalogClassification: z.string().min(1),
     changelogTranslation: z.string().min(1),
     changelogSlug: z.string().min(1),
 })
 
-export const avatioStageConfigSchema = z.object({
+const avatioStageConfigSchema = z.object({
     production: z.boolean(),
     siteUrl: z.url(),
     imageBaseUrl: z.url(),
@@ -23,14 +24,16 @@ export const avatioStageConfigSchema = z.object({
         path: z.string().min(1),
     }),
     infrastructure: z.object({
-        worker: z.string().min(1),
         appDatabase: z.string().min(1),
-        contentDatabase: z.string().min(1),
         cache: z.string().min(1),
         bucket: z.string().min(1),
         queue: z.string().min(1),
-        flags: z.string().min(1),
-        rateLimitNamespaces: z.tuple([z.number().int(), z.number().int(), z.number().int()]),
+        rateLimitNamespaces: z.tuple([
+            z.number().int(),
+            z.number().int(),
+            z.number().int(),
+            z.number().int(),
+        ]),
     }),
 })
 
@@ -41,12 +44,13 @@ const common = {
     twitterClientId: 'QUFuRTNOVjk3MXdxQjU1cnhGdks6MTpjaQ',
     aiModels: {
         catalogEnrichment: 'openai/gpt-5.6-luna',
+        catalogClassification: 'typesafe/jev',
         changelogTranslation: 'openai/gpt-5.6-luna',
         changelogSlug: 'openai/gpt-5.6-luna',
     },
 } as const
 
-export const stageConfig = {
+const stageConfig = {
     production: {
         ...common,
         production: true,
@@ -55,14 +59,11 @@ export const stageConfig = {
         trustedOrigins: ['https://avatio.me'],
         content: { repo: 'liria24/avatio', branch: 'main', path: 'content' },
         infrastructure: {
-            worker: 'avatio',
             appDatabase: 'avatio',
-            contentDatabase: 'avatio-content',
             cache: 'avatio',
             bucket: 'avatio',
             queue: 'item-revalidation',
-            flags: 'avatio-production',
-            rateLimitNamespaces: [2101, 2102, 2103],
+            rateLimitNamespaces: [2101, 2102, 2103, 2104],
         },
     },
     development: {
@@ -73,14 +74,11 @@ export const stageConfig = {
         trustedOrigins: ['http://localhost:3000', 'http://127.0.0.1:3000', 'https://dev.avatio.me'],
         content: { repo: 'liria24/avatio', branch: 'development', path: 'content' },
         infrastructure: {
-            worker: 'avatio-development',
             appDatabase: 'avatio-development',
-            contentDatabase: 'avatio-content-development',
             cache: 'avatio-cache-development',
             bucket: 'avatio-development',
             queue: 'item-revalidation-development',
-            flags: 'avatio-development',
-            rateLimitNamespaces: [2201, 2202, 2203],
+            rateLimitNamespaces: [2201, 2202, 2203, 2204],
         },
     },
 } satisfies Record<AvatioStage, AvatioStageConfig>

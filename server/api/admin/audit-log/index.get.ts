@@ -18,7 +18,7 @@ const query = z.object({
 })
 
 export default promiseEventHandler<PaginationResponse<AuditLog[]>>(async ({ db, event }) => {
-    await requireUserSession(event, { user: { role: 'admin' } })
+    await requireAdminSession(event)
     const { q, sort, userId, action, targetType, targetId, page, limit } =
         await validateQuery(query)
 
@@ -74,13 +74,6 @@ export default promiseEventHandler<PaginationResponse<AuditLog[]>>(async ({ db, 
 
     return {
         data,
-        pagination: {
-            page,
-            limit,
-            total: data[0]?.count || 0,
-            totalPages: Math.ceil((data[0]?.count || 0) / limit),
-            hasNext: offset + limit < (data[0]?.count || 0),
-            hasPrev: offset > 0,
-        },
+        pagination: createPagination(data[0]?.count || 0, page, limit, offset),
     }
 })

@@ -33,9 +33,9 @@ const boothItem = {
     variations: [{ status: 'free_download' }],
 }
 
-const createHttp = (implementation: ProviderHttpClient['get']): ProviderHttpClient => ({
-    get: implementation,
-})
+const createHttp = (
+    implementation: (url: string) => Promise<ProviderHttpResponse<unknown>>,
+): ProviderHttpClient => ({ get: implementation as ProviderHttpClient['get'] })
 const resolvePublisherSource = async (snapshot: { providerKey: string; externalId: string }) =>
     `${snapshot.providerKey}:${snapshot.externalId}`
 
@@ -47,7 +47,6 @@ describe('BOOTH CatalogProvider', () => {
     ])('matches and canonicalizes %s', (value) => {
         const provider = new BoothCatalogProvider({
             proxyBaseUrl: 'https://proxy.example/',
-            allowedCategoryKeys: new Set(['208']),
             categoryMap: { '208': 'avatar' },
             http: createHttp(async () => response(200, boothItem)),
             resolvePublisherSource,
@@ -63,7 +62,6 @@ describe('BOOTH CatalogProvider', () => {
     it.each(['12345', 12345])('normalizes an admitted provider snapshot with ID %s', async (id) => {
         const provider = new BoothCatalogProvider({
             proxyBaseUrl: 'https://proxy.example/api',
-            allowedCategoryKeys: new Set(['208']),
             categoryMap: { '208': 'avatar' },
             http: createHttp(async (url) => {
                 expect(url).toBe('https://proxy.example/api/12345')
@@ -88,6 +86,23 @@ describe('BOOTH CatalogProvider', () => {
         expect(result.snapshot.publisherSourceId).toBe('booth:creator')
     })
 
+    it('reads BOOTH directly when no proxy is configured', async () => {
+        const provider = new BoothCatalogProvider({
+            categoryMap: { '208': 'avatar' },
+            http: createHttp(async (url) => {
+                expect(url).toBe('https://booth.pm/ja/items/12345.json')
+                return response(200, boothItem)
+            }),
+            resolvePublisherSource,
+        })
+        const result = await provider.fetch({
+            providerKey: 'booth',
+            externalId: '12345',
+            canonicalUrl: 'https://booth.pm/items/12345',
+        })
+        expect(result.status).toBe('available')
+    })
+
     it.each([
         [404, 'withdrawn'],
         [410, 'withdrawn'],
@@ -96,7 +111,6 @@ describe('BOOTH CatalogProvider', () => {
     ] as const)('maps HTTP %i to %s', async (status, expected) => {
         const provider = new BoothCatalogProvider({
             proxyBaseUrl: 'https://proxy.example/',
-            allowedCategoryKeys: new Set(['208']),
             categoryMap: { '208': 'avatar' },
             http: createHttp(async () => response(status, null)),
             resolvePublisherSource,
@@ -109,10 +123,9 @@ describe('BOOTH CatalogProvider', () => {
         expect(result.status).toBe(expected)
     })
 
-    it('keeps policy rejection separate from withdrawal', async () => {
+    it('extracts normalized admission signals without rejecting inside fetch', async () => {
         const provider = new BoothCatalogProvider({
             proxyBaseUrl: 'https://proxy.example/',
-            allowedCategoryKeys: new Set(),
             categoryMap: {},
             http: createHttp(async () => response(200, boothItem)),
             resolvePublisherSource,
@@ -122,7 +135,12 @@ describe('BOOTH CatalogProvider', () => {
             externalId: '12345',
             canonicalUrl: 'https://booth.pm/items/12345',
         })
-        expect(result.status).toBe('policy_rejected')
+        expect(result.status).toBe('available')
+        if (result.status !== 'available') return
+        expect(provider.getAdmissionSignals(result.snapshot)).toEqual([
+            { facetKey: 'category', valueKey: '208', label: '3D Characters' },
+            { facetKey: 'tag', valueKey: 'vrchat', label: 'VRChat' },
+        ])
     })
 })
 
@@ -218,7 +236,7 @@ describe('GitHub CatalogProvider', () => {
 })
 
 describe('CatalogProviderRegistry', () => {
-    it('adds a provider without any Setup-domain change', () => {
+    it('looks up registered providers and rejects duplicate keys', () => {
         const futureProvider: CatalogProvider = {
             key: 'future',
             matchUrl: (url) =>
@@ -232,9 +250,11 @@ describe('CatalogProviderRegistry', () => {
             fetch: async () => ({ status: 'transient_error', errorKind: 'not-implemented' }),
         }
         const registry = new CatalogProviderRegistry([futureProvider])
-        expect(registry.keys()).toEqual(['future'])
-        expect(registry.matchUrl(new URL('https://catalog.example/item-1'))?.externalId).toBe(
-            'item-1',
+        expect(registry.get('future')).toBe(futureProvider)
+        expect(registry.get('missing')).toBeNull()
+        expect(registry.values()).toEqual([futureProvider])
+        expect(() => new CatalogProviderRegistry([futureProvider, futureProvider])).toThrow(
+            'unique',
         )
     })
 })

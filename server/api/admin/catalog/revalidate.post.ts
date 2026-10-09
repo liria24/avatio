@@ -6,7 +6,7 @@ const bodySchema = z.object({
 })
 
 export default promiseEventHandler(async ({ event }) => {
-    await requireUserSession(event, { user: { role: 'admin' } })
+    await requireAdminSession(event)
     const { sourceIds } = await validateBody(bodySchema)
     const queue = getCatalogSyncQueue()
     if (!queue)

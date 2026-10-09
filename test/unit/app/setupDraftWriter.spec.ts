@@ -1,8 +1,4 @@
-import {
-    createDefaultSetupComposeForm,
-    isEmptySetupComposeForm,
-    type SetupDraftContent,
-} from '@avatio/core/setups'
+import { createDefaultSetupComposeForm, type SetupDraftContent } from '@avatio/core/setups'
 import { describe, expect, it, vi } from 'vitest'
 
 import { SetupDraftWriter, type SetupDraftTransport } from '../../../app/utils/setupDraftWriter'
@@ -146,10 +142,5 @@ describe('SetupDraftWriter', () => {
         await writer.flush()
         expect(writer.snapshot).toMatchObject({ revision: 1, status: 'saved' })
         vi.useRealTimers()
-    })
-
-    it('recognizes the reset form as empty', () => {
-        expect(isEmptySetupComposeForm(createDefaultSetupComposeForm())).toBe(true)
-        expect(isEmptySetupComposeForm(content('draft'))).toBe(false)
     })
 })

@@ -1,5 +1,5 @@
 export default promiseEventHandler(async ({ event }) => {
-    await requireUserSession(event, { user: { role: 'admin' } })
+    await requireAdminSession(event)
     const { dryRun: dryRunParam } = getQuery(event)
     const dryRun = dryRunParam === 'true' || dryRunParam === '1'
 

@@ -12,7 +12,7 @@ const { locale } = useI18n()
 </script>
 
 <template>
-    <div :class="cn('grid gap-5', !sidebar && 'lg:hidden')">
+    <div class="grid gap-5" :class="{ 'lg:hidden': !sidebar }">
         <div v-if="user?.username === setup.user.username" class="grid grid-cols-2 gap-1">
             <UButton
                 :to="`/setup/compose?edit=${setup.id}`"
@@ -162,7 +162,7 @@ const { locale } = useI18n()
             <UButton
                 v-for="(tag, index) in setup.tags"
                 :key="'tag-' + index"
-                :to="$localePath(`/search?tag=${tag}`)"
+                :to="$localePath({ path: `/search?tag=${tag}` })"
                 :label="tag"
                 variant="link"
                 color="neutral"

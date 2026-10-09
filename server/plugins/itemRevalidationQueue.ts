@@ -15,7 +15,7 @@ export default defineNitroPlugin((nitroApp) => {
                         leaseToken: v2Message.data.leaseToken,
                         repository: getCatalogRepository(),
                         providers: await getCatalogProviderRegistry(),
-                        cacheInvalidator: getCatalogCacheInvalidator(context.cache),
+                        cacheInvalidator: createCacheInvalidator(context.cache),
                     })
                     if (result.cacheInvalidationFailed)
                         log.warn(

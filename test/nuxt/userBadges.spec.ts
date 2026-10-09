@@ -36,12 +36,12 @@ describe('UserBadges', () => {
         expect(wrapper.html()).toContain('fluent-color:code-block-24')
     })
 
-    it('does not render the icon for a non-matching badge', async () => {
+    it('renders the contributor icon without the developer icon', async () => {
         const wrapper = await mountSuspended(UserBadges, {
             props: { badges: [{ badge: 'contributor' as const }] },
             global: { stubs },
         })
-        // developer badge should not be present
+        expect(wrapper.html()).toContain('fluent-color:animal-paw-print-24')
         expect(wrapper.html()).not.toContain('fluent-color:code-block-24')
     })
 })

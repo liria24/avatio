@@ -72,6 +72,7 @@ export const createGithubContentSource = (options: {
     }
     return {
         source: {
+            expensiveReads: true,
             keys: async () => (await resolve()).keys,
             getItem: async (key: string) => (await read(key)).text(),
             getItemRaw: async (key: string) =>

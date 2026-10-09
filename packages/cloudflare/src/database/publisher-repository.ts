@@ -8,9 +8,9 @@ import type {
     PublisherSourceSnapshot,
     PublisherVerificationChallenge,
 } from '@avatio/core/publishers'
-import type { D1Database } from '@cloudflare/workers-types'
 import { and, eq, notExists, or, sql } from 'drizzle-orm'
-import { drizzle } from 'drizzle-orm/d1'
+import type { BatchItem } from 'drizzle-orm/batch'
+import type { SQLiteAsyncDatabase } from 'drizzle-orm/sqlite-core'
 
 import {
     publishers,
@@ -20,7 +20,8 @@ import {
     userBadges,
 } from '../../../../database/schema'
 
-type Database = ReturnType<typeof drizzle>
+type Database = SQLiteAsyncDatabase<'sync' | 'async', unknown>
+type ExecuteBatch = (queries: BatchItem<'sqlite'>[]) => Promise<unknown[]>
 
 const mapPublisher = (row: typeof publishers.$inferSelect): Publisher => ({
     id: row.id,
@@ -64,11 +65,13 @@ const mapOwnership = (
     verifiedAt: row.verifiedAt,
 })
 
-export class D1PublisherRepository implements PublisherRepository {
+export class SQLitePublisherRepository implements PublisherRepository {
     readonly #db: Database
+    readonly #executeBatch: ExecuteBatch
 
-    constructor(database: D1Database) {
-        this.#db = drizzle(database)
+    constructor(database: Database, executeBatch: ExecuteBatch) {
+        this.#db = database
+        this.#executeBatch = executeBatch
     }
 
     async #findSource(providerKey: string, externalId: string) {
@@ -99,7 +102,7 @@ export class D1PublisherRepository implements PublisherRepository {
         const publisherId = crypto.randomUUID()
         const sourceId = crypto.randomUUID()
         try {
-            await this.#db.batch([
+            await this.#executeBatch([
                 this.#db.insert(publishers).values({ id: publisherId }),
                 this.#db.insert(publisherSources).values({
                     id: sourceId,
@@ -186,7 +189,7 @@ export class D1PublisherRepository implements PublisherRepository {
             )
             .returning({ id: publisherVerificationChallenges.id })
 
-        const [, deleted] = await this.#db.batch([insertOwnership, deleteChallenge])
+        const [, deleted] = await this.#executeBatch([insertOwnership, deleteChallenge])
         if (!(deleted as { id: string }[])[0]) return null
 
         await this.#db
@@ -230,7 +233,7 @@ export class D1PublisherRepository implements PublisherRepository {
     }
 
     async deleteOwnership(id: string, userId: string): Promise<boolean> {
-        const [deleted] = await this.#db.batch([
+        const [deleted] = await this.#executeBatch([
             this.#db
                 .delete(publisherSourceOwnerships)
                 .where(

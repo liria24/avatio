@@ -90,10 +90,7 @@ export const createAvatioContentService = (options: AvatioContentOptions) => {
             if (!metadata) return null
             let file = await content.get(metadata.path)
             if (!file) return null
-            if (
-                provenanceSchema.parse(file.meta.provenance).sourceRevision !==
-                provenanceSchema.parse(metadata.meta.provenance).sourceRevision
-            ) {
+            if (file.meta.hash !== metadata.meta.hash) {
                 const key = file.meta.key.slice(file.meta.source.length + 1)
                 if (
                     provenanceSchema.parse(file.meta.provenance).sourceRevision !==
@@ -102,13 +99,9 @@ export const createAvatioContentService = (options: AvatioContentOptions) => {
                     file = await content.get(metadata.path, { fresh: true })
                     if (!file) return null
                 }
-                if (
-                    provenanceSchema.parse(file.meta.provenance).sourceRevision !==
-                    provenanceSchema.parse(metadata.meta.provenance).sourceRevision
-                ) {
-                    // get() already cached the document; update() would write its KV key twice.
+                if (file.meta.hash !== metadata.meta.hash) {
                     Object.assign(metadata, { data: file.data, meta: file.meta })
-                    await content.cache.set('manifest', content.manifest)
+                    await content.cache.set('manifest', await content.manifest())
                 }
             }
             const frontmatter = contentFrontmatterSchema.parse(file.data)

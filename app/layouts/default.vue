@@ -16,7 +16,7 @@ const baseRouteName = computed(() => routeBaseName(route))
                     <div class="flex items-center gap-1">
                         <UButton
                             v-if="loggedIn"
-                            :to="$localePath('/setup/compose')"
+                            :to="$localePath({ path: '/setup/compose' })"
                             icon="mingcute:add-line"
                             :label="$t('header.postSetup')"
                             color="neutral"
@@ -26,7 +26,7 @@ const baseRouteName = computed(() => routeBaseName(route))
 
                         <UTooltip :text="$t('header.searchSetup')" :delay-duration="50">
                             <UButton
-                                :to="$localePath('/search')"
+                                :to="$localePath({ path: '/search' })"
                                 :aria-label="$t('header.searchSetup')"
                                 icon="mingcute:search-line"
                                 variant="ghost"
@@ -62,7 +62,7 @@ const baseRouteName = computed(() => routeBaseName(route))
 
             <UButton
                 v-if="loggedIn"
-                :to="$localePath('/setup/compose')"
+                :to="$localePath({ path: '/setup/compose' })"
                 icon="mingcute:add-line"
                 :aria-label="$t('header.postSetup')"
                 color="neutral"

@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import { setupEntryShapekeysSchema } from '@avatio/core/setups'
+
 import type { SetupComposeEntry } from '~/composables/setupComposeEntries'
 
 const unsupported = defineModel<boolean>('unsupported', {
@@ -13,19 +15,84 @@ const note = defineModel<string | undefined>('note', {
 
 interface Props {
     item: SetupComposeEntry
+    images?: string[]
+    index: number
+    count: number
 }
 const props = defineProps<Props>()
 
-const emit = defineEmits(['change-category', 'remove-item', 'shapekey-add', 'shapekey-remove'])
+const emit = defineEmits([
+    'change-category',
+    'remove-item',
+    'shapekey-add',
+    'shapekey-remove',
+    'place-item',
+    'move',
+])
 
 const itemCategory = useItemCategory()
+const { t } = useI18n()
 
 const inputShapekeyName = ref('')
 const inputShapekeyValue = ref(0)
+const shapekeyName = useTemplateRef<{ inputRef: HTMLInputElement }>('shapekeyName')
+const shapekeyValue = useTemplateRef<{ inputRef: HTMLInputElement }>('shapekeyValue')
+const shapekeyPanel = useTemplateRef<HTMLElement>('shapekeyPanel')
+const shapekeyError = ref('')
+const shapekeyAnnouncement = ref('')
+const errorId = useId()
+
+const addKey = () => {
+    const result = setupEntryShapekeysSchema.safeParse({
+        name: inputShapekeyName.value.trim(),
+        value: inputShapekeyValue.value,
+    })
+    if (!result.success || shapekeys.value.length >= 64) {
+        shapekeyError.value = t(
+            shapekeys.value.length >= 64
+                ? 'dynamicFields.shapekeyLimit'
+                : 'dynamicFields.shapekeyInvalid',
+        )
+        const target =
+            !result.success && result.error.issues[0]?.path[0] === 'value'
+                ? shapekeyValue
+                : shapekeyName
+        target.value?.inputRef.focus()
+        return
+    }
+    emit('shapekey-add', { category: props.item.category, id: props.item.id, ...result.data })
+    inputShapekeyName.value = ''
+    inputShapekeyValue.value = 0
+    shapekeyError.value = ''
+    shapekeyAnnouncement.value = t('dynamicFields.added', { name: result.data.name })
+    shapekeyName.value?.inputRef.focus()
+}
+const removeKey = async (index: number) => {
+    const name = shapekeys.value[index]?.name
+    emit('shapekey-remove', { category: props.item.category, id: props.item.id, index })
+    await nextTick()
+    const buttons =
+        shapekeyPanel.value?.querySelectorAll<HTMLButtonElement>('[data-shapekey-remove]')
+    const target = buttons?.[Math.min(index, buttons.length - 1)] ?? shapekeyName.value?.inputRef
+    target?.focus()
+    shapekeyError.value = ''
+    shapekeyAnnouncement.value = t('dynamicFields.removed', { name })
+}
+const imagePlacementItems = computed(() =>
+    (props.images ?? []).map((image, index) => ({
+        label: `${t('setup.compose.images.title')} ${index + 1}`,
+        onSelect: () => emit('place-item', image),
+    })),
+)
 </script>
 
 <template>
-    <div class="ring-accented flex items-start gap-2 rounded-md p-2 ring-1">
+    <div
+        :data-entry-id="props.item.id"
+        role="group"
+        :aria-label="props.item.name"
+        class="ring-accented flex items-start gap-2 rounded-md p-2 ring-1"
+    >
         <div
             class="draggable hover:bg-elevated grid h-full cursor-move rounded-md px-1 py-2 transition-colors"
         >
@@ -113,7 +180,25 @@ const inputShapekeyValue = ref(0)
                             />
 
                             <template #content>
-                                <div class="flex flex-col items-center gap-2 p-2">
+                                <fieldset
+                                    ref="shapekeyPanel"
+                                    class="flex min-w-0 flex-col items-center gap-2 p-2"
+                                >
+                                    <legend class="sr-only">
+                                        {{
+                                            $t('dynamicFields.shapekeysFor', {
+                                                name: props.item.name,
+                                            })
+                                        }}
+                                    </legend>
+                                    <p
+                                        role="status"
+                                        aria-live="polite"
+                                        aria-atomic="true"
+                                        class="sr-only"
+                                    >
+                                        {{ shapekeyAnnouncement }}
+                                    </p>
                                     <p v-if="!shapekeys?.length" class="text-muted p-3 text-sm">
                                         {{ $t('setup.compose.items.noShapekeys') }}
                                     </p>
@@ -130,54 +215,62 @@ const inputShapekeyValue = ref(0)
                                                 {{ shapekey.value }}
                                             </span>
                                             <UButton
+                                                :aria-label="
+                                                    $t('dynamicFields.remove', {
+                                                        name: shapekey.name,
+                                                    })
+                                                "
+                                                data-shapekey-remove
                                                 icon="mingcute:close-line"
                                                 variant="ghost"
                                                 size="sm"
-                                                @click="
-                                                    emit('shapekey-remove', {
-                                                        category: props.item.category,
-                                                        id: props.item.id,
-                                                        index: index,
-                                                    })
-                                                "
+                                                @click="removeKey(index)"
                                             />
                                         </div>
                                     </template>
                                     <div class="flex items-center gap-1">
                                         <UInput
+                                            ref="shapekeyName"
                                             v-model="inputShapekeyName"
+                                            :aria-label="$t('dynamicFields.shapekeyName')"
+                                            :aria-invalid="!!shapekeyError"
+                                            :aria-describedby="shapekeyError ? errorId : undefined"
                                             :placeholder="
                                                 $t('setup.compose.items.shapekeyPlaceholder')
                                             "
                                             size="sm"
                                             class="max-w-48"
+                                            @keydown.enter.prevent="addKey"
                                         />
                                         <UInputNumber
+                                            ref="shapekeyValue"
                                             v-model="inputShapekeyValue"
+                                            :aria-label="$t('dynamicFields.shapekeyValue')"
+                                            :aria-invalid="!!shapekeyError"
+                                            :aria-describedby="shapekeyError ? errorId : undefined"
                                             :step="0.001"
                                             orientation="vertical"
                                             size="sm"
                                             class="max-w-32"
+                                            @keydown.enter.prevent="addKey"
                                         />
                                         <UButton
+                                            :aria-label="$t('dynamicFields.addShapekey')"
                                             icon="mingcute:add-line"
                                             variant="soft"
                                             size="sm"
-                                            @click="
-                                                () => {
-                                                    emit('shapekey-add', {
-                                                        category: props.item.category,
-                                                        id: props.item.id,
-                                                        name: inputShapekeyName,
-                                                        value: inputShapekeyValue,
-                                                    })
-                                                    inputShapekeyName = ''
-                                                    inputShapekeyValue = 0
-                                                }
-                                            "
+                                            @click="addKey"
                                         />
                                     </div>
-                                </div>
+                                    <p
+                                        v-if="shapekeyError"
+                                        :id="errorId"
+                                        role="alert"
+                                        class="text-error max-w-80 text-sm"
+                                    >
+                                        {{ shapekeyError }}
+                                    </p>
+                                </fieldset>
                             </template>
                         </UPopover>
 
@@ -191,6 +284,12 @@ const inputShapekeyValue = ref(0)
                     </div>
                 </div>
 
+                <ReorderControls
+                    :name="props.item.name"
+                    :index="props.index"
+                    :count="props.count"
+                    @move="emit('move', $event)"
+                />
                 <UDropdownMenu
                     :items="
                         Object.entries(itemCategory).map(([key, value]) => ({
@@ -216,7 +315,8 @@ const inputShapekeyValue = ref(0)
                 </UDropdownMenu>
 
                 <UButton
-                    :aria-label="$t('setup.compose.items.remove')"
+                    :aria-label="$t('dynamicFields.remove', { name: props.item.name })"
+                    data-remove
                     icon="mingcute:close-line"
                     variant="ghost"
                     size="sm"
@@ -226,6 +326,7 @@ const inputShapekeyValue = ref(0)
 
             <UTextarea
                 v-model="note"
+                :aria-label="$t('dynamicFields.noteFor', { name: props.item.name })"
                 :placeholder="$t('setup.compose.items.notePlaceholder')"
                 autoresize
                 size="sm"
@@ -233,6 +334,16 @@ const inputShapekeyValue = ref(0)
                 variant="soft"
                 class="w-full"
             />
+
+            <UDropdownMenu v-if="imagePlacementItems.length" :items="imagePlacementItems">
+                <UButton
+                    :label="$t('setup.compose.points.placeItem')"
+                    icon="mingcute:map-pin-fill"
+                    variant="ghost"
+                    size="xs"
+                    class="ml-auto"
+                />
+            </UDropdownMenu>
         </div>
     </div>
 </template>

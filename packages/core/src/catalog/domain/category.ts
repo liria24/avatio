@@ -14,6 +14,9 @@ export const itemCategories = [
 export const itemCategorySchema = z.enum(itemCategories)
 export type ItemCategory = z.infer<typeof itemCategorySchema>
 
+export const catalogClassificationChoices = [...itemCategories, 'unknown'] as const
+export type CatalogClassificationChoice = (typeof catalogClassificationChoices)[number]
+
 export const categoryOverrideOrigins = ['ai', 'manual', 'rule', 'legacy'] as const
 export const categoryOverrideOriginSchema = z.enum(categoryOverrideOrigins)
 export type CategoryOverrideOrigin = z.infer<typeof categoryOverrideOriginSchema>
