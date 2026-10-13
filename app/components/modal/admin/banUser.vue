@@ -1,8 +1,10 @@
 <script lang="ts" setup>
 interface Props {
     userId: string
+    username: string
     name: string
     image?: string | null
+    onSuccess?: () => void
 }
 const props = defineProps<Props>()
 
@@ -19,6 +21,7 @@ const banUser = async () => {
         banReason: banReasonInput.value,
         banExpiresIn: banExpiresInInput.value || undefined,
         onSuccess: () => {
+            props.onSuccess?.()
             emit('close')
             banReasonInput.value = ''
             banExpiresInInput.value = 0
@@ -33,7 +36,7 @@ const banUser = async () => {
             <div class="flex flex-col gap-4">
                 <UUser
                     :name="props.name"
-                    :description="`@${props.userId}`"
+                    :description="`@${props.username}`"
                     :avatar="{
                         src: props.image || undefined,
                         icon: 'mingcute:user-3-fill',

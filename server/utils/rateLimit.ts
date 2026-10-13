@@ -1,4 +1,8 @@
-type RateLimitBindingName = 'RATE_LIMIT_USER_ACTION' | 'RATE_LIMIT_IMAGE' | 'RATE_LIMIT_DRAFT'
+type RateLimitBindingName =
+    | 'RATE_LIMIT_USER_ACTION'
+    | 'RATE_LIMIT_IMAGE'
+    | 'RATE_LIMIT_DRAFT'
+    | 'RATE_LIMIT_ITEM_RESOLUTION'
 
 interface RateLimitBinding {
     limit(options: { key: string }): Promise<{ success: boolean }>

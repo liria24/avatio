@@ -1,23 +1,35 @@
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
+import type { ModuleOptions as OgImageModuleOptions } from '@liria24/og-image/nuxt'
 import { useNuxt } from '@nuxt/kit'
-import type { NitroConfig, NitroRouteConfig } from 'nitropack'
 import { defineOrganization } from 'nuxt-schema-org/schema'
+import type { RouteRuleConfig } from 'nuxt/schema'
 import { withLeadingSlash } from 'ufo'
 
+import { getBuildEnvironment } from './config/build.ts'
+import { createCloudflareWranglerConfig } from './config/cloudflareWrangler.ts'
+import { getLocalAuthSecret } from './config/localDevelopment.ts'
 import {
     defaultI18nLocale,
     i18nRoutingStrategy,
     prefixedI18nLocales,
-} from './shared/utils/i18nRouting'
+} from './shared/utils/i18nRouting.ts'
 
-const baseUrl = process.env.PUBLIC_SITE_URL || 'http://localhost:3000'
-const publicUrl = process.env.PUBLIC_SITE_URL || 'https://avatio.me'
-const r2PublicBaseUrl = process.env.R2_PUBLIC_BASE_URL
+const buildEnvironment = getBuildEnvironment(process.env, process.env.NODE_ENV === 'development')
+const {
+    siteUrl: baseUrl,
+    publicUrl,
+    twitterAuthEnabled,
+    emailPasswordAuthEnabled,
+} = buildEnvironment
+const r2PublicBaseUrl = buildEnvironment.imageBaseUrl
 const imageDomain = r2PublicBaseUrl ? new URL(r2PublicBaseUrl).hostname : undefined
 const title = 'Avatio'
 const description = 'アバター改変レシピの共有プラットフォーム'
 const insightConfigPath = fileURLToPath(new URL('./app/server/insight.config.ts', import.meta.url))
+const betterAuthRuntimePath = fileURLToPath(
+    new URL('./server/shims/better-auth-minimal.ts', import.meta.url),
+)
 
 const normalizeRuntimeConfigForVitest = () => {
     if (!process.env.VITEST) return
@@ -26,7 +38,7 @@ const normalizeRuntimeConfigForVitest = () => {
     nuxt.options.runtimeConfig = JSON.parse(JSON.stringify(nuxt.options.runtimeConfig))
 }
 
-const baseRouteRules: { [path: string]: NitroRouteConfig } = {
+const baseRouteRules: { [path: string]: RouteRuleConfig } = {
     '/admin/**': {
         appLayout: 'dashboard',
         auth: {
@@ -55,7 +67,7 @@ const baseRouteRules: { [path: string]: NitroRouteConfig } = {
     },
 }
 
-const routeRules: { [path: string]: NitroRouteConfig } = {
+const routeRules: { [path: string]: RouteRuleConfig } = {
     ...baseRouteRules,
     ...Object.fromEntries(
         prefixedI18nLocales.flatMap((locale) =>
@@ -80,16 +92,28 @@ export default defineNuxtConfig({
 
     future: { compatibilityVersion: 5 },
 
+    // The ownerWarning Vapor trial crashes in @comark/vue's VDOM-only slot transform.
+    vue: { vapor: false },
+
     devtools: { timeline: { enabled: true } },
 
+    devServer: { port: 3000 },
+
     hooks: {
+        listen: (_server, listener) => {
+            if (listener.address.port !== 3000)
+                throw new Error(
+                    'Port 3000 is already in use. Avatio local development requires it.',
+                )
+        },
         'modules:done': normalizeRuntimeConfigForVitest,
         'nitro:config': (config) => {
             // Better Auth populates this during modules:done. Clear it afterwards
             // so the Cloudflare secret binding remains authoritative at runtime.
-            const nitroConfig = config as NitroConfig
-            nitroConfig.runtimeConfig ??= {}
-            nitroConfig.runtimeConfig.betterAuthSecret = ''
+            config.runtimeConfig ??= {}
+            config.runtimeConfig.betterAuthSecret = useNuxt().options.dev
+                ? getLocalAuthSecret()
+                : ''
         },
         'vite:extendConfig': normalizeRuntimeConfigForVitest,
     },
@@ -113,19 +137,46 @@ export default defineNuxtConfig({
         '@nuxtjs/i18n',
         '@vueuse/nuxt',
         'motion-v/nuxt',
-        '@stefanobartoletti/nuxt-social-share',
         '@nuxt/a11y',
         '@nuxt/test-utils/module',
-        '@liria24/og-image/nuxt',
+        ...(buildEnvironment.dynamicOgImageEnabled ? ['@liria24/og-image/nuxt'] : []),
+        'nuxt-files-sdk',
         ...(process.env.VITEST ? [] : ['@vite-pwa/nuxt']),
     ],
+
+    imports: {
+        imports: buildEnvironment.dynamicOgImageEnabled
+            ? []
+            : [
+                  {
+                      name: 'useDisabledOgImage',
+                      as: 'useOgImage',
+                      from: fileURLToPath(
+                          new URL('./config/runtime/disabledOgImage.ts', import.meta.url),
+                      ),
+                  },
+              ],
+    },
 
     css: ['~/assets/css/main.css'],
 
     vite: {
         vue: { features: { optionsAPI: false } },
         optimizeDeps: {
+            // Nuxt module entries contain virtual imports that Vite's standalone scanner cannot resolve.
+            noDiscovery: true,
             include: [
+                // Lazy routes and overlays must not trigger a dependency reload during editing.
+                '@unhead/schema-org/vue',
+                'better-auth/client/plugins',
+                'zod',
+                '@yeger/vue-masonry-wall',
+                '@comark/vue',
+                '@formkit/drag-and-drop',
+                '@formkit/drag-and-drop/vue',
+                '@tanstack/vue-form',
+                'cn',
+                'canvas-confetti',
                 '@nuxt/ui > prosemirror-state',
                 '@nuxt/ui > prosemirror-transform',
                 '@nuxt/ui > prosemirror-model',
@@ -143,6 +194,28 @@ export default defineNuxtConfig({
     },
 
     nitro: {
+        sourceMap: false,
+        // The Cloudflare preset must retain native Node crypto for Better Auth.
+        cloudflare: {
+            nodeCompat: true,
+            ...(process.env.AVATIO_CF_RESOURCES_JSON
+                ? {
+                      deployConfig: true,
+                      wrangler: createCloudflareWranglerConfig(
+                          process.env.STAGE ?? '',
+                          JSON.parse(process.env.AVATIO_CF_RESOURCES_JSON),
+                      ),
+                  }
+                : {}),
+        },
+        rollupConfig: {
+            plugins: [
+                {
+                    name: 'avatio-better-auth-minimal',
+                    resolveId: (id) => (id === 'better-auth' ? betterAuthRuntimePath : null),
+                },
+            ],
+        },
         // Workerd's console.createTask getter throws when Unenv and Hookable probe it at import time.
         alias: {
             'node:console': fileURLToPath(
@@ -170,8 +243,15 @@ export default defineNuxtConfig({
 
     typescript: {
         typeCheck: 'build',
+        // These config/module sources share the application's bundled package graph.
+        nodeTsConfig: {
+            compilerOptions: {
+                module: 'esnext',
+                moduleResolution: 'bundler',
+                erasableSyntaxOnly: false,
+            },
+        },
         tsConfig: {
-            include: ['test/unit/**/*'],
             compilerOptions: {
                 noUncheckedIndexedAccess: true,
             },
@@ -190,12 +270,17 @@ export default defineNuxtConfig({
         },
         public: {
             siteUrl: baseUrl,
+            twitterAuthEnabled,
+            emailPasswordAuthEnabled,
         },
     },
+
+    appConfig: { app: { site: baseUrl } },
 
     insight: {
         providers: {
             cloudflare: {
+                // Keep query types available; runtime queries require separate analytics bindings.
                 webAnalytics: true,
             },
         },
@@ -215,7 +300,7 @@ export default defineNuxtConfig({
     },
 
     site: {
-        url: baseUrl,
+        url: publicUrl,
         name: title,
         description,
         trailingSlash: false,
@@ -223,21 +308,17 @@ export default defineNuxtConfig({
 
     app: {
         head: {
-            htmlAttrs: { lang: 'ja', prefix: 'og: https://ogp.me/ns#' },
+            htmlAttrs: { prefix: 'og: https://ogp.me/ns#' },
             title,
             meta: [
-                { property: 'og:site_name', content: title },
-                { property: 'og:type', content: 'website' },
-                { property: 'og:url', content: baseUrl },
                 { property: 'og:title', content: title },
                 { property: 'og:image', content: `${baseUrl}/ogp_2.png` },
-                { name: 'description', content: description },
                 { property: 'og:description', content: description },
                 { name: 'twitter:site', content: '@liria_24' },
                 { name: 'twitter:card', content: 'summary_large_image' },
             ],
             link: [
-                { rel: 'icon', href: `/favicon.ico`, sizes: '48x48' },
+                { rel: 'icon', href: `/favicon.ico`, sizes: '100x100' },
                 { rel: 'apple-touch-icon', href: `/pwa-192x192.png`, sizes: '192x192' },
             ],
         },
@@ -269,7 +350,7 @@ export default defineNuxtConfig({
     },
 
     i18n: {
-        baseUrl,
+        baseUrl: publicUrl,
         strategy: i18nRoutingStrategy,
         defaultLocale: defaultI18nLocale,
         locales: [
@@ -342,7 +423,22 @@ export default defineNuxtConfig({
     },
 
     $development: {
-        image: { provider: 'none' },
+        runtimeConfig: {
+            public: {
+                emailPasswordAuthEnabled: true,
+            },
+        },
+        image: {
+            provider: 'ipx',
+            domains: ['localhost', '127.0.0.1'],
+        },
+        insight: {
+            providers: {
+                cloudflare: {
+                    webAnalytics: false,
+                },
+            },
+        },
     },
 
     image: {
@@ -378,7 +474,7 @@ export default defineNuxtConfig({
                 requireToken: true,
             },
         },
-    },
+    } satisfies OgImageModuleOptions,
 
     pwa: {
         disable: import.meta.test,
@@ -431,13 +527,9 @@ export default defineNuxtConfig({
         blockAiBots: true,
     },
 
-    socialShare: {
-        baseUrl,
-    },
-
     sitemap: {
         sitemaps: true,
-        exclude: ['/welcome', '/on-maintenance', '/admin/**'],
+        exclude: ['/on-maintenance', '/admin/**'],
         sources: ['/api/__sitemap__/urls'],
     },
 
@@ -464,6 +556,14 @@ export default defineNuxtConfig({
     },
 
     experimental: {
+        typedPages: true,
+        routeTypedFetch: true,
+        strictRouteTypes: true,
+        early404: true,
+        extractSerializablePageMeta: true,
+        payloadExtraction: 'client',
+        // Authored content is fetched at runtime with locale/slug closure parameters.
+        extractAsyncDataHandlers: false,
         crossOriginPrefetch: true,
         sharedPrerenderData: true,
         typescriptPlugin: true,
@@ -474,9 +574,11 @@ export default defineNuxtConfig({
 
     $production: {
         nitro: {
-            scheduledTasks: {
-                '0 22 * * *': ['job:report'],
-            },
+            scheduledTasks: buildEnvironment.previewKind
+                ? {}
+                : {
+                      '0 22 * * *': ['job:report'],
+                  },
         },
     },
 })

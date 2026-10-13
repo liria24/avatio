@@ -24,17 +24,17 @@ const openSidebar = ref(true)
                 :items="[
                     [
                         {
-                            to: $localePath('/settings'),
+                            to: $localePath({ path: '/settings' }),
                             label: $t('settings.general.title'),
                             icon: 'mingcute:settings-1-fill',
                         },
                         {
-                            to: $localePath('/settings/publishers'),
+                            to: $localePath({ path: '/settings/publishers' }),
                             label: $t('settings.publisher.title'),
                             icon: 'mingcute:shop-fill',
                         },
                         {
-                            to: $localePath('/settings/account'),
+                            to: $localePath({ path: '/settings/account' }),
                             label: $t('settings.account.title'),
                             icon: 'mingcute:safe-lock-fill',
                         },

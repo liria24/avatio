@@ -2,11 +2,11 @@ name: quality
 
 on:
   pull_request:
-    branches: [main, development]
   push:
-    branches: [main, development]
   merge_group:
   workflow_dispatch:
+  schedule:
+    - cron: '0 8 * * *'
 
 permissions:
   contents: read
@@ -23,17 +23,156 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        check: [lint, typecheck, test, build]
+        check: [format, lint, 'lint:unused', typecheck, build]
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
-          node-version: '26'
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
         with:
-          bun-version-file: package.json
-      - run: bun install --frozen-lockfile
-      - run: bun run ${{ matrix.check }}
+          node-version-file: .node-version
+          version-file: package.json
+          cache: true
+          run-install: false
+      - run: vp install --frozen-lockfile
+      - run: vp run ${{ matrix.check }}
         env:
           NITRO_PRESET: ${{ matrix.check == 'build' && 'cloudflare_module' || '' }}
           NODE_OPTIONS: --max-old-space-size=4096
+
+  test-suites:
+    name: test (${{ matrix.suite }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [unit, integration, nuxt, http, bindings]
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
+        with:
+          node-version-file: .node-version
+          version-file: package.json
+          cache: true
+          run-install: false
+      - run: vp install --frozen-lockfile
+      - run: vp run test:${{ matrix.suite }}
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+
+  cloudflare-application:
+    name: Cloudflare application (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [production, development]
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
+        with:
+          node-version-file: .node-version
+          version-file: package.json
+          cache: true
+          run-install: false
+      - run: vp install --frozen-lockfile
+      - name: Verify the standard build and local synthetic bindings without credentials
+        run: node test/cloudflare/application.mjs "${{ matrix.target }}"
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+      - name: Verify local migration history, integrity, and idempotency
+        if: matrix.target == 'development'
+        run: node test/cloudflare/migrations.mjs
+
+  browser-smoke:
+    name: browser smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
+        with:
+          node-version-file: .node-version
+          version-file: package.json
+          cache: true
+          run-install: false
+      - run: vp install --frozen-lockfile
+      - run: vp exec playwright install --with-deps chromium
+      - run: vp run test:browser:smoke
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: failure()
+        with:
+          name: browser-smoke-diagnostics
+          path: |
+            .cache/playwright-results
+            .cache/playwright-report
+          retention-days: 3
+
+  browser-extended:
+    name: browser (${{ matrix.project }})
+    if: github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project: chromium-extended
+            browser: chromium
+          - project: firefox
+            browser: firefox
+          - project: webkit
+            browser: webkit
+          - project: mobile
+            browser: chromium
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
+        with:
+          node-version-file: .node-version
+          version-file: package.json
+          cache: true
+          run-install: false
+      - run: vp install --frozen-lockfile
+      - run: vp exec playwright install --with-deps ${{ matrix.browser }}
+      - run: vp exec playwright test --project ${{ matrix.project }}
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: failure()
+        with:
+          name: browser-${{ matrix.project }}-diagnostics
+          path: |
+            .cache/playwright-results
+            .cache/playwright-report
+          retention-days: 3
+
+  test:
+    name: test
+    if: always()
+    needs: [test-suites, cloudflare-application, browser-smoke, browser-extended]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every applicable suite to succeed
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+          EXPECT_EXTENDED: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict'
+          const results = JSON.parse(process.env.RESULTS)
+          assert.equal(results['test-suites'].result, 'success', 'Every Vitest suite must succeed')
+          assert.equal(results['cloudflare-application'].result, 'success', 'Cloudflare build and migration safety must succeed')
+          assert.equal(results['browser-smoke'].result, 'success', 'Browser smoke must succeed')
+          assert.equal(results['browser-extended'].result,
+            process.env.EXPECT_EXTENDED === 'true' ? 'success' : 'skipped',
+            'Extended browser suites must succeed whenever scheduled')
+          JS

@@ -2,7 +2,8 @@ import sanitizeHtml from 'sanitize-html'
 
 const unsafeKeys = new Set(['__proto__', 'constructor', 'prototype'])
 
-const sanitizeObject = <T>(obj: T): T => {
+const sanitizeObject = <T>(obj: T, options: { html?: boolean } = { html: true }): T => {
+    if (typeof obj === 'string' && options.html === false) return obj
     if (typeof obj === 'string')
         return sanitizeHtml(obj, {
             allowedTags: [
@@ -46,12 +47,12 @@ const sanitizeObject = <T>(obj: T): T => {
             disallowedTagsMode: 'discard',
         }) as T
 
-    if (Array.isArray(obj)) return obj.map((item) => sanitizeObject(item)) as T
+    if (Array.isArray(obj)) return obj.map((item) => sanitizeObject(item, options)) as T
 
     if (obj && typeof obj === 'object' && obj !== null) {
         const sanitizedObj = {} as Record<string, unknown>
         for (const [key, value] of Object.entries(obj)) {
-            if (!unsafeKeys.has(key)) sanitizedObj[key] = sanitizeObject(value)
+            if (!unsafeKeys.has(key)) sanitizedObj[key] = sanitizeObject(value, options)
         }
 
         return sanitizedObj as T

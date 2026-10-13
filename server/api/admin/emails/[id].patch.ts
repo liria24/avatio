@@ -17,7 +17,7 @@ const body = z
     })
 
 export default promiseEventHandler(async ({ db, event }) => {
-    await requireUserSession(event, { user: { role: 'admin' } })
+    await requireAdminSession(event)
     const { id } = await validateParams(params)
     const { isRead, isArchived } = await validateBody(body)
 

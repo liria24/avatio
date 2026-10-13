@@ -2,6 +2,7 @@
 interface Props {
     itemId: string
     current: string
+    onSuccess?: () => void
 }
 const props = defineProps<Props>()
 
@@ -9,13 +10,21 @@ const emit = defineEmits(['close'])
 
 const { changeItemNiceName: changeItemNiceNameAction } = useAdmin()
 
-const input = ref(props.current)
+const input = ref('')
+watch(
+    () => props.current,
+    (current) => {
+        input.value = current
+    },
+    { immediate: true },
+)
 
 const changeItemNiceName = async () => {
     await changeItemNiceNameAction({
         itemId: props.itemId,
         displayNameOverride: input.value,
         onSuccess: () => {
+            props.onSuccess?.()
             emit('close')
             input.value = ''
         },

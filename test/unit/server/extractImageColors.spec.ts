@@ -39,15 +39,14 @@ describe('extractImageColors', () => {
         vi.unstubAllGlobals()
     })
 
-    it('extracts colors from the PNG sample', async () => {
+    it('filters unsuitable pixels, sorts colors by area and limits the palette to six', async () => {
         mocks.pngRead.mockReturnValue({
             data: Buffer.from([240, 40, 40, 255, 40, 180, 80, 255]),
             width: 2,
             height: 1,
         })
         mocks.extractColorsFromImageData.mockReturnValue([
-            { hex: '#f02828', area: 0.75 },
-            { hex: '#28b450', area: 0.25 },
+            ...[1, 7, 2, 6, 3, 5, 4].map((area) => ({ hex: `#00000${area}`, area })),
         ])
 
         const extractImageColors = await loadExtractImageColors()
@@ -62,13 +61,17 @@ describe('extractImageColors', () => {
             },
             expect.objectContaining({
                 pixels: 2,
-                saturationDistance: 0.5,
-                lightnessDistance: 0.65,
-                hueDistance: 0.3,
             }),
         )
+        const { colorValidator } = mocks.extractColorsFromImageData.mock.calls[0]![1] as {
+            colorValidator: (r: number, g: number, b: number, alpha: number) => boolean
+        }
+        expect(colorValidator(240, 40, 40, 255)).toBe(true)
+        expect(colorValidator(240, 40, 40, 0)).toBe(false)
+        expect(colorValidator(255, 255, 255, 255)).toBe(false)
+        expect(colorValidator(0, 0, 0, 255)).toBe(false)
         expect(result).toEqual({
-            colors: ['#f02828', '#28b450'],
+            colors: ['#000007', '#000006', '#000005', '#000004', '#000003', '#000002'],
             width: 2,
             height: 1,
         })

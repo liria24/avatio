@@ -1,11 +1,11 @@
 import type { CacheInvalidationInput } from '@avatio/core'
 import { drizzleAdapter } from '@better-auth/drizzle-adapter/relations-v2'
+import type { H3Event } from '@nuxt/nitro-server/h3'
 import { defineServerAuth, type ServerAuthContext } from '@nuxtjs/better-auth/config'
 import type { BetterAuthOptions } from 'better-auth'
-import type { H3Event } from 'h3'
 import { nanoid } from 'nanoid'
-import { useEvent } from 'nitropack/runtime'
 
+import { getPreviewKind } from '../config/preview'
 import { SESSION_COOKIE_CACHE_MAX_AGE } from '../shared/utils/constants'
 import { logger } from '../shared/utils/logger'
 import { parseConfiguredAuthOrigins, resolveAuthTrustedOrigins } from './utils/authOrigins'
@@ -39,11 +39,18 @@ const getCurrentEvent = () => {
 }
 
 export const createAvatioAuthOptions = ({ runtimeConfig }: ServerAuthContext) => {
+    const previewKind = getPreviewKind(
+        getRuntimeEnvString('STAGE'),
+        getRuntimeEnvString('PREVIEW_NAME'),
+    )
     const configuredOrigins = parseConfiguredAuthOrigins(
         getRuntimeEnvString('AUTH_TRUSTED_ORIGINS'),
     )
     const publicConfig = runtimeConfig.public as { siteUrl?: unknown } | undefined
-    if (typeof publicConfig?.siteUrl === 'string') configuredOrigins.push(publicConfig.siteUrl)
+    if (!previewKind && typeof publicConfig?.siteUrl === 'string')
+        configuredOrigins.push(publicConfig.siteUrl)
+    const twitterClientId = getRuntimeEnvString('TWITTER_CLIENT_ID')
+    const twitterClientSecret = getRuntimeEnvString('TWITTER_CLIENT_SECRET')
 
     const options = {
         ...authSchemaOptions,
@@ -56,7 +63,11 @@ export const createAvatioAuthOptions = ({ runtimeConfig }: ServerAuthContext) =>
         }),
 
         trustedOrigins: (request?: Request) =>
-            resolveAuthTrustedOrigins({ configuredOrigins, request }),
+            resolveAuthTrustedOrigins({
+                configuredOrigins,
+                request,
+                configuredOnly: Boolean(previewKind),
+            }),
 
         user: {
             ...authSchemaOptions.user,
@@ -69,7 +80,7 @@ export const createAvatioAuthOptions = ({ runtimeConfig }: ServerAuthContext) =>
             expiresIn: 60 * 60 * 24 * 30,
             updateAge: 60 * 60 * 24,
             cookieCache: {
-                enabled: true,
+                enabled: !import.meta.dev,
                 maxAge: SESSION_COOKIE_CACHE_MAX_AGE,
             },
         },
@@ -84,41 +95,47 @@ export const createAvatioAuthOptions = ({ runtimeConfig }: ServerAuthContext) =>
         },
 
         emailAndPassword: {
-            enabled: import.meta.dev,
+            enabled: Boolean(import.meta.dev),
         },
 
-        socialProviders: {
-            twitter: {
-                clientId: getRuntimeEnvString('TWITTER_CLIENT_ID') ?? '',
-                clientSecret: getRuntimeEnvString('TWITTER_CLIENT_SECRET') ?? '',
-                mapProfileToUser: async (profile) => ({
-                    username: profile.data.username,
-                    displayUsername: profile.data.username,
-                    email: profile.data.email,
-                    name: profile.data.name,
-                    bio: profile.data.description,
-                    image: profile.data.profile_image_url?.endsWith('_normal.jpg')
-                        ? profile.data.profile_image_url.replace(/_normal\.jpg$/, '_400x400.jpg')
-                        : profile.data.profile_image_url,
-                    emailVerified: true,
-                }),
-            },
-        },
+        socialProviders:
+            twitterClientId && twitterClientSecret
+                ? {
+                      twitter: {
+                          clientId: twitterClientId,
+                          clientSecret: twitterClientSecret,
+                          mapProfileToUser: async (profile) => ({
+                              username: profile.data.username,
+                              displayUsername: profile.data.username,
+                              email: profile.data.email,
+                              name: profile.data.name,
+                              bio: profile.data.description,
+                              image: profile.data.profile_image_url?.endsWith('_normal.jpg')
+                                  ? profile.data.profile_image_url.replace(
+                                        /_normal\.jpg$/,
+                                        '_400x400.jpg',
+                                    )
+                                  : profile.data.profile_image_url,
+                              emailVerified: true,
+                          }),
+                      },
+                  }
+                : {},
 
         databaseHooks: {
             user: {
                 create: {
                     before: async (user) => {
                         let image = user.image
+                        const username =
+                            user.username ?? (import.meta.dev ? `local_${nanoid(12)}` : null)
 
                         if (image)
                             try {
                                 const imageId = nanoid(JPG_FILENAME_LENGTH)
                                 const { getFileStorage } = await import('./utils/infrastructure')
                                 image = (
-                                    await getFileStorage(
-                                        getCurrentEvent() ?? undefined,
-                                    ).importFromUrl({
+                                    await getFileStorage().importFromUrl({
                                         sourceUrl: image,
                                         destinationKey: `avatar/${imageId}.jpg`,
                                     })
@@ -131,7 +148,8 @@ export const createAvatioAuthOptions = ({ runtimeConfig }: ServerAuthContext) =>
                             data: {
                                 ...user,
                                 image,
-                                lastAgreedToTerms: null,
+                                username,
+                                displayUsername: user.displayUsername ?? username,
                             },
                         }
                     },
@@ -148,7 +166,9 @@ export const createAvatioAuthOptions = ({ runtimeConfig }: ServerAuthContext) =>
                             useDB(),
                             user.id,
                             'better auth user update',
-                            { includePopularAvatars: true },
+                            {
+                                includePopularAvatars: true,
+                            },
                         )
                     },
                 },

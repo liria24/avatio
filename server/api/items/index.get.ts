@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 const query = z.object({
-    q: z.string().optional(),
+    q: z.string().trim().max(100).optional(),
     orderBy: z.enum(['createdAt', 'name']).optional().default('createdAt'),
     sort: z.enum(['asc', 'desc']).optional().default('desc'),
     category: z
@@ -12,8 +12,8 @@ const query = z.object({
     limit: z.coerce.number().min(1).max(API_LIMIT_MAX).optional().default(ITEMS_API_DEFAULT_LIMIT),
 })
 
-export default promiseEventHandler<PaginationResponse<CatalogItemView[]>>(async ({ event, db }) => {
-    const { q, orderBy, sort, category, page, limit } = await validateQuery(query)
+export default requestEventHandler<PaginationResponse<CatalogItemView[]>>(async ({ event, db }) => {
+    const { q, orderBy, sort, category, page, limit } = validateRequestQuery(event, query)
 
     const result = await queryCatalogItems(db, {
         q,
@@ -24,6 +24,6 @@ export default promiseEventHandler<PaginationResponse<CatalogItemView[]>>(async 
         limit,
         availability: ['available'],
     })
-    applyPublicEdgeCache(event, [EDGE_CACHE_TAGS.items])
+    applyPublicRequestCache(event, [EDGE_CACHE_TAGS.items])
     return result
 })

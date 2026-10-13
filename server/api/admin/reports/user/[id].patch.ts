@@ -11,7 +11,7 @@ const body = userReportsUpdateSchema.pick({
 })
 
 export default promiseEventHandler(async ({ db, event }) => {
-    await requireUserSession(event, { user: { role: 'admin' } })
+    await requireAdminSession(event)
     const { id } = await validateParams(params)
     const { isResolved } = await validateBody(body)
 

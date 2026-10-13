@@ -26,7 +26,7 @@ export default promiseEventHandler(async ({ event, db }) => {
     })
     if (idempotency.replay) return idempotency.response
 
-    await executeD1Batch(db, [
+    await executeAppBatch(db, [
         db.insert(feedbacks).values({
             fingerprint,
             comment,

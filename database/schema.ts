@@ -1,8 +1,18 @@
+import {
+    catalogClassificationChoices,
+    catalogClassificationStatuses,
+    categoryOverrideOrigins,
+    itemCategories,
+    providerAdmissionDecisions,
+    sourceAvailabilities,
+    syncStates,
+} from '@avatio/core/catalog'
 import { sql } from 'drizzle-orm'
 import {
     foreignKey,
     index,
     integer,
+    primaryKey,
     real,
     snakeCase,
     text,
@@ -25,19 +35,6 @@ export const userBadge = [
     'publisher_owner',
     'patrol',
     'idea_man',
-] as const
-export const sourceAvailability = ['available', 'withdrawn', 'policy_rejected', 'unknown'] as const
-export const sourceSyncState = ['fresh', 'stale', 'syncing', 'error'] as const
-export const categoryOverrideOrigin = ['ai', 'manual', 'rule', 'legacy'] as const
-export const itemCategory = [
-    'avatar',
-    'clothing',
-    'accessory',
-    'hair',
-    'shader',
-    'texture',
-    'tool',
-    'other',
 ] as const
 export const notificationType = [
     'system_announcement',
@@ -353,11 +350,50 @@ export const changelogAuthors = snakeCase.table(
     ],
 )
 
-/** Booth categories admitted by the item resolver. */
-export const allowedBoothCategories = snakeCase.table('allowed_booth_categories', {
-    categoryId: integer().primaryKey(),
-    createdAt: timestamp().default(now).notNull(),
-})
+/** Provider-owned values surfaced for generic admission management. */
+export const providerAdmissionOptions = snakeCase.table(
+    'provider_admission_options',
+    {
+        providerKey: text().notNull(),
+        facetKey: text().notNull(),
+        valueKey: text().notNull(),
+        label: text().notNull(),
+        firstSeenAt: timestamp().default(now).notNull(),
+        lastSeenAt: timestamp().default(now).notNull(),
+    },
+    (table) => [
+        primaryKey({ columns: [table.providerKey, table.facetKey, table.valueKey] }),
+        index('provider_admission_options_provider_facet_idx').on(
+            table.providerKey,
+            table.facetKey,
+        ),
+    ],
+)
+
+/** Provider-neutral admission decisions. Missing rules are denied. */
+export const providerAdmissionRules = snakeCase.table(
+    'provider_admission_rules',
+    {
+        providerKey: text().notNull(),
+        facetKey: text().notNull(),
+        valueKey: text().notNull(),
+        decision: text({ enum: providerAdmissionDecisions }).notNull(),
+    },
+    (table) => [
+        primaryKey({ columns: [table.providerKey, table.facetKey, table.valueKey] }),
+        foreignKey({
+            name: 'provider_admission_rules_option_fkey',
+            columns: [table.providerKey, table.facetKey, table.valueKey],
+            foreignColumns: [
+                providerAdmissionOptions.providerKey,
+                providerAdmissionOptions.facetKey,
+                providerAdmissionOptions.valueKey,
+            ],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+    ],
+)
 
 /** Avatio-owned publisher identity, independent from a provider account. */
 export const publishers = snakeCase.table(
@@ -518,8 +554,8 @@ export const catalogItems = snakeCase.table(
             .$onUpdate(() => new Date())
             .notNull(),
         displayNameOverride: text(),
-        categoryOverride: text({ enum: itemCategory }),
-        categoryOverrideOrigin: text({ enum: categoryOverrideOrigin }),
+        categoryOverride: text({ enum: itemCategories }),
+        categoryOverrideOrigin: text({ enum: categoryOverrideOrigins }),
     },
     (table) => [index('catalog_items_display_name_override_idx').on(table.displayNameOverride)],
 )
@@ -540,11 +576,11 @@ export const itemSources = snakeCase.table(
         externalId: text().notNull(),
         canonicalUrl: text().notNull(),
         primary: boolean().default(false).notNull(),
-        availability: text({ enum: sourceAvailability }).default('unknown').notNull(),
-        syncState: text({ enum: sourceSyncState }).default('stale').notNull(),
+        availability: text({ enum: sourceAvailabilities }).default('unknown').notNull(),
+        syncState: text({ enum: syncStates }).default('stale').notNull(),
         providerCategoryKey: text(),
         providerCategoryLabel: text(),
-        mappedCategory: text({ enum: itemCategory }),
+        mappedCategory: text({ enum: itemCategories }),
         displayName: text().notNull(),
         image: text(),
         price: text(),
@@ -580,6 +616,50 @@ export const itemSources = snakeCase.table(
             foreignColumns: [publisherSources.id],
         })
             .onDelete('set null')
+            .onUpdate('cascade'),
+    ],
+)
+
+/** Latest Jev classification for a catalog item and source snapshot. */
+export const catalogItemClassifications = snakeCase.table(
+    'catalog_item_classifications',
+    {
+        itemId: text().primaryKey(),
+        sourceId: text().notNull(),
+        sourceUpdatedAt: timestamp().notNull(),
+        inputHash: text().notNull(),
+        classifierVersion: text().notNull(),
+        requestedModel: text().notNull(),
+        responseModel: text(),
+        status: text({ enum: catalogClassificationStatuses }).default('processing').notNull(),
+        category: text({ enum: catalogClassificationChoices }),
+        confidence: real(),
+        probabilities: text({ mode: 'json' }).$type<Record<string, number>>(),
+        errorKind: text(),
+        retryAt: timestamp(),
+        leaseToken: text(),
+        leaseUntil: timestamp(),
+        createdAt: timestamp().default(now).notNull(),
+        updatedAt: timestamp()
+            .default(now)
+            .$onUpdate(() => new Date())
+            .notNull(),
+    },
+    (table) => [
+        index('catalog_item_classifications_source_id_idx').on(table.sourceId),
+        foreignKey({
+            name: 'catalog_item_classifications_item_id_fkey',
+            columns: [table.itemId],
+            foreignColumns: [catalogItems.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+        foreignKey({
+            name: 'catalog_item_classifications_source_id_fkey',
+            columns: [table.sourceId],
+            foreignColumns: [itemSources.id],
+        })
+            .onDelete('cascade')
             .onUpdate('cascade'),
     ],
 )
@@ -626,7 +706,8 @@ export const setupEntries = snakeCase.table(
         id: text().primaryKey(),
         itemId: text().notNull(),
         setupId: text().notNull(),
-        categoryOverride: text({ enum: itemCategory }),
+        position: integer().default(0).notNull(),
+        categoryOverride: text({ enum: itemCategories }),
         unsupported: boolean().default(false).notNull(),
         note: text(),
     },
@@ -696,7 +777,9 @@ export const setupImages = snakeCase.table(
     'setup_images',
     {
         id: identity(),
+        stableId: text().notNull().unique(),
         setupId: text().notNull(),
+        position: integer().default(0).notNull(),
         objectKey: text().notNull(),
         width: integer().notNull(),
         height: integer().notNull(),
@@ -713,6 +796,37 @@ export const setupImages = snakeCase.table(
             name: 'setup_images_setup_id_fkey',
             columns: [table.setupId],
             foreignColumns: [setups.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+    ],
+)
+
+export const setupImagePoints = snakeCase.table(
+    'setup_image_points',
+    {
+        id: text().primaryKey(),
+        setupId: text().notNull(),
+        imageId: text().notNull(),
+        setupEntryId: text().notNull(),
+        x: real().notNull(),
+        y: real().notNull(),
+    },
+    (table) => [
+        index('setup_image_points_setup_id_idx').on(table.setupId),
+        index('setup_image_points_image_id_idx').on(table.imageId),
+        index('setup_image_points_entry_id_idx').on(table.setupEntryId),
+        foreignKey({
+            name: 'setup_image_points_setup_id_fkey',
+            columns: [table.setupId],
+            foreignColumns: [setups.id],
+        })
+            .onDelete('cascade')
+            .onUpdate('cascade'),
+        foreignKey({
+            name: 'setup_image_points_entry_id_fkey',
+            columns: [table.setupEntryId],
+            foreignColumns: [setupEntries.id],
         })
             .onDelete('cascade')
             .onUpdate('cascade'),

@@ -26,7 +26,7 @@ useSeo({
             <UDashboardNavbar title="Changelogs">
                 <template #right>
                     <UButton
-                        :to="$localePath('/admin/changelogs/compose')"
+                        :to="$localePath({ path: '/admin/changelogs/compose' })"
                         icon="mingcute:add-line"
                         label="New Changelog"
                         color="neutral"

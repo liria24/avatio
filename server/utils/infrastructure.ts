@@ -1,9 +1,7 @@
 import { CloudflareCacheInvalidator, CloudflareFeatureFlags } from '@avatio/cloudflare'
 import type { CacheInvalidator, FileStorage } from '@avatio/core'
 import type { CacheContext } from '@cloudflare/workers-types'
-import type { H3Event } from 'h3'
-
-import { getStorage } from './storage'
+import type { H3Event } from '@nuxt/nitro-server/h3'
 
 type CloudflareRequestContext = {
     cloudflare?: {
@@ -14,10 +12,12 @@ type CloudflareRequestContext = {
 }
 
 export const getFeatureFlags = (event?: H3Event) =>
-    new CloudflareFeatureFlags(getRuntimeEnv(event).FLAGS)
+    import.meta.dev
+        ? { isEnabled: async () => false }
+        : new CloudflareFeatureFlags(getRuntimeEnv(event).FLAGS)
 
-export const getFileStorage = (event?: H3Event): FileStorage => {
-    const files = getStorage(event)
+export const getFileStorage = (): FileStorage => {
+    const files = useServerFiles()
     return {
         async importFromUrl({ sourceUrl, destinationKey }) {
             const response = await fetch(sourceUrl)
@@ -26,9 +26,6 @@ export const getFileStorage = (event?: H3Event): FileStorage => {
                 contentType: response.headers.get('content-type') ?? undefined,
             })
             return { key: destinationKey, url: await files.url(destinationKey) }
-        },
-        async delete(key) {
-            await files.delete(key)
         },
     }
 }

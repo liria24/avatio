@@ -1,8 +1,7 @@
 import type { CacheInvalidationInput, CacheInvalidator } from '@avatio/core'
-import type { CacheContext } from '@cloudflare/workers-types'
+import type { H3Event } from '@nuxt/nitro-server/h3'
 import { eq, or } from 'drizzle-orm'
-import { setResponseHeader, setResponseHeaders } from 'h3'
-import type { H3Event } from 'h3'
+import type { RequestEvent } from 'nuxt/server'
 import { setupCoauthors, setups } from '~~/database/schema'
 
 const log = logger('edgeCache')
@@ -27,19 +26,6 @@ const normalizeTags = (tags: Iterable<string>) =>
     [...new Set(tags)].filter(
         (tag) => tag.length > 0 && tag.length <= MAX_TAG_LENGTH && EDGE_CACHE_TAG_PATTERN.test(tag),
     )
-
-const appendVaryHeader = (headers: Record<string, string>, value: string) => {
-    const existingKey = Object.keys(headers).find((key) => key.toLowerCase() === 'vary')
-    const existing = existingKey ? headers[existingKey] : undefined
-    const values = new Set(
-        `${existing || ''},${value}`
-            .split(',')
-            .map((entry) => entry.trim())
-            .filter(Boolean),
-    )
-
-    headers[existingKey || 'Vary'] = [...values].join(', ')
-}
 
 export const getSetupCacheTag = (id: Setup['id']) => `setup:${id}`
 export const getCatalogItemCacheTag = (id: string) => `item:${id}`
@@ -69,7 +55,7 @@ export const getPublicEdgeCacheHeaders = (tags: Iterable<string>, varyCookie = f
     }
 
     if (normalizedTags.length) headers['Cache-Tag'] = normalizedTags.join(',')
-    if (varyCookie) appendVaryHeader(headers, 'Cookie')
+    if (varyCookie) headers.Vary = 'Cookie'
 
     return headers
 }
@@ -92,6 +78,15 @@ export const applyPublicEdgeCache = (
     varyCookie = false,
 ) => {
     setResponseHeaders(event, getPublicEdgeCacheHeaders(tags, varyCookie))
+}
+
+export const applyPublicRequestCache = (
+    event: RequestEvent,
+    tags: Iterable<string>,
+    varyCookie = false,
+) => {
+    for (const [name, value] of Object.entries(getPublicEdgeCacheHeaders(tags, varyCookie)))
+        event.res.headers.set(name, value)
 }
 
 export const applyNoStoreCache = (event: H3Event) => {
@@ -124,19 +119,6 @@ export const invalidateCacheResources = async (
     } catch (error) {
         log.error(`Failed to invalidate cache for ${operation}:`, error)
         runAfterResponse(retryInvalidation(invalidator, input, operation))
-    }
-}
-
-export const invalidateCacheResourcesWithContext = async (
-    cache: CacheContext,
-    input: CacheInvalidationInput,
-    operation: string,
-) => {
-    try {
-        await createCacheInvalidator(cache).invalidate(input)
-    } catch (error) {
-        log.error(`Failed to invalidate cache for ${operation}:`, error)
-        throw error
     }
 }
 

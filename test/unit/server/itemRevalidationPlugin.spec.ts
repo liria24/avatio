@@ -13,7 +13,7 @@ type QueueHandler = (payload: {
 
 type QueuePluginApp = {
     hooks: {
-        hook: (name: string, handler: QueueHandler) => void
+        hook: (name: string, handler: QueueHandler) => () => void
     }
 }
 
@@ -35,16 +35,17 @@ describe('item revalidation queue plugin', () => {
         const markSyncStarted = vi.fn(async () => null)
         vi.stubGlobal('getCatalogRepository', () => ({ markSyncStarted }))
         vi.stubGlobal('getCatalogProviderRegistry', async () => ({}))
-        vi.stubGlobal('getCatalogCacheInvalidator', () => ({}))
+        vi.stubGlobal('createCacheInvalidator', () => ({}))
         const { default: plugin } = await import('../../../server/plugins/itemRevalidationQueue')
         let handler!: QueueHandler
         plugin({
             hooks: {
-                hook: (_name, callback) => {
+                hook: (_name: string, callback: QueueHandler) => {
                     handler = callback
+                    return () => {}
                 },
             },
-        })
+        } as never)
         const message = {
             body: {
                 version: 2,
@@ -68,11 +69,12 @@ describe('item revalidation queue plugin', () => {
         let queueHandler!: QueueHandler
         plugin({
             hooks: {
-                hook: (_name, handler) => {
+                hook: (_name: string, handler: QueueHandler) => {
                     queueHandler = handler
+                    return () => {}
                 },
             },
-        })
+        } as never)
 
         const message: QueueMessage = {
             body: {

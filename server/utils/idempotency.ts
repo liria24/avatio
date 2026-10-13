@@ -1,6 +1,5 @@
+import type { H3Event } from '@nuxt/nitro-server/h3'
 import { and, eq, lt } from 'drizzle-orm'
-import type { H3Event } from 'h3'
-import { getHeader, setResponseHeader } from 'h3'
 import { z } from 'zod'
 import { idempotencyRequests } from '~~/database/schema'
 

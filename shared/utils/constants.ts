@@ -10,7 +10,6 @@ export const API_LIMIT_MAX = 1000
 // API default limits - Server side
 export const SETUPS_API_DEFAULT_LIMIT = 64
 export const ITEMS_API_DEFAULT_LIMIT = 64
-export const SETUPS_BOOKMARKS_API_DEFAULT_LIMIT = 24
 export const SETUP_TAGS_API_DEFAULT_LIMIT = 24
 export const CHANGELOGS_API_DEFAULT_LIMIT = 6
 export const POPULAR_AVATARS_API_DEFAULT_LIMIT = 24
@@ -25,8 +24,6 @@ export const BOOKMARKS_LIST_PER_PAGE = 50
 export const LATEST_SETUPS_LIST_PER_PAGE = 24
 
 // Cache duration
-export const ITEM_CACHE_DURATION_MS = 24 * 60 * 60 * 1000 // 24 hours
-export const GITHUB_ITEM_CACHE_DURATION_MS = 60 * 60 * 1000 // 1 hour
 export const SESSION_COOKIE_CACHE_MAX_AGE = 5 * 60 // 5 minutes
 
 // Booth category map

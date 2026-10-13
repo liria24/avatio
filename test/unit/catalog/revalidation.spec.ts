@@ -1,4 +1,3 @@
-import { toCloudflareCacheTags } from '@avatio/cloudflare'
 import {
     CatalogProviderRegistry,
     enqueueDueCatalogSources,
@@ -28,13 +27,20 @@ const source = (overrides: Partial<ItemSource> = {}): ItemSource => ({
     syncLeaseToken: null,
     lastErrorKind: null,
     lastErrorAt: null,
+    updatedAt: new Date(0),
     ...overrides,
 })
 
 const repository = (implementations: Partial<CatalogRepository> = {}): CatalogRepository => ({
+    findProviderAdmissionRules: vi.fn(async () => []),
+    observeProviderAdmissionOptions: vi.fn(async () => undefined),
     findItem: vi.fn(async () => null),
     findSource: vi.fn(async () => source()),
     findSourceByExternalId: vi.fn(async () => null),
+    findClassification: vi.fn(async () => null),
+    claimClassification: vi.fn(async () => null),
+    completeClassification: vi.fn(async () => undefined),
+    failClassification: vi.fn(async () => undefined),
     ensureSource: vi.fn(async () => source()),
     scheduleSourceCheck: vi.fn(async () => true),
     claimDueSource: vi.fn(async () => null),
@@ -127,11 +133,16 @@ describe('demand-driven Catalog source enqueueing', () => {
 })
 
 describe('Catalog synchronization state machine', () => {
-    const run = async (provider: CatalogProvider, initial = source()) => {
+    const run = async (
+        provider: CatalogProvider,
+        initial = source(),
+        implementations: Partial<CatalogRepository> = {},
+    ) => {
         const completeSourceSync = vi.fn(async () => initial.itemId)
         const repo = repository({
             markSyncStarted: vi.fn(async () => initial),
             completeSourceSync,
+            ...implementations,
         })
         const invalidate = vi.fn(async () => undefined)
         const result = await syncCatalogSource({
@@ -142,7 +153,7 @@ describe('Catalog synchronization state machine', () => {
             cacheInvalidator: { invalidate },
             now: new Date('2026-08-24T00:00:00.000Z'),
         })
-        return { result, completeSourceSync, invalidate }
+        return { result, completeSourceSync, invalidate, repo }
     }
 
     it('records transient errors without changing availability or invalidating public data', async () => {
@@ -203,6 +214,64 @@ describe('Catalog synchronization state machine', () => {
         )
     })
 
+    it('admits an unknown observed category when an allowed configured tag matches', async () => {
+        const provider: CatalogProvider = {
+            key: 'test',
+            admission: {
+                match: 'any',
+                facets: [
+                    { key: 'category', discovery: 'observed' },
+                    { key: 'tag', discovery: 'configured-only' },
+                ],
+            },
+            matchUrl: () => null,
+            getAdmissionSignals: () => [
+                { facetKey: 'category', valueKey: 'new', label: 'New category' },
+                { facetKey: 'tag', valueKey: 'vrchat', label: 'VRChat' },
+            ],
+            fetch: async (reference) => ({
+                status: 'available',
+                snapshot: {
+                    reference,
+                    name: 'Admitted by tag',
+                    image: null,
+                    price: null,
+                    popularityCount: null,
+                    nsfw: false,
+                    category: null,
+                    metadata: {},
+                    publisherSourceId: null,
+                },
+            }),
+        }
+        const findProviderAdmissionRules = vi.fn(async () => [
+            { facetKey: 'tag', valueKey: 'vrchat', decision: 'allow' as const },
+        ])
+        const observeProviderAdmissionOptions = vi.fn(async () => undefined)
+        const { completeSourceSync } = await run(provider, source(), {
+            findProviderAdmissionRules,
+            observeProviderAdmissionOptions,
+        })
+
+        expect(observeProviderAdmissionOptions).toHaveBeenCalledWith(
+            'test',
+            [{ facetKey: 'category', valueKey: 'new', label: 'New category' }],
+            expect.any(Date),
+        )
+        expect(completeSourceSync).toHaveBeenCalledWith(
+            expect.objectContaining({ availability: 'available', successful: true }),
+        )
+
+        const { completeSourceSync: rejectedSync } = await run(provider)
+        expect(rejectedSync).toHaveBeenCalledWith(
+            expect.objectContaining({
+                availability: 'policy_rejected',
+                snapshot: expect.objectContaining({ name: 'Admitted by tag' }),
+                successful: true,
+            }),
+        )
+    })
+
     it('does not fail synchronization correctness when cache purge fails', async () => {
         const repo = repository({ completeSourceSync: vi.fn(async () => 'catalog-item-1') })
         const result = await syncCatalogSource({
@@ -241,18 +310,5 @@ describe('Catalog synchronization state machine', () => {
         expect(markSyncStarted).toHaveBeenCalledWith('source-1', 'old', expect.any(Date))
         expect(completeSourceSync).not.toHaveBeenCalled()
         expect(invalidate).not.toHaveBeenCalled()
-    })
-})
-
-describe('Cloudflare resource tag mapping', () => {
-    it('maps semantic IDs without a reverse Setup lookup', () => {
-        expect(
-            toCloudflareCacheTags({
-                items: ['item-1'],
-                setups: ['setup-1'],
-                users: ['user-1'],
-                collections: ['catalog'],
-            }),
-        ).toEqual(['item:item-1', 'setup:setup-1', 'user:user-1', 'catalog'])
     })
 })

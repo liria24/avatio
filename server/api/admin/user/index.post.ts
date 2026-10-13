@@ -8,7 +8,7 @@ const body = z.object({
 })
 
 export default promiseEventHandler(async ({ event }) => {
-    await requireUserSession(event, { user: { role: 'admin' } })
+    await requireAdminSession(event)
     const { name, email, password, role } = await validateBody(body)
     const { headers } = event
 

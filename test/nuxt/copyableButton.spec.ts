@@ -12,18 +12,12 @@ mockNuxtImport('useClipboard', () => () => ({
 }))
 
 describe('CopyableButton', () => {
-    it('renders the label', async () => {
-        const wrapper = await mountSuspended(CopyableButton, {
-            props: { label: 'Click to copy' },
-        })
-        expect(wrapper.text()).toContain('Click to copy')
-    })
-
     it('calls copy() with the value on click', async () => {
         copyMock.mockClear()
         const wrapper = await mountSuspended(CopyableButton, {
             props: { label: 'Copy test', value: 'copied-value' },
         })
+        expect(wrapper.text()).toContain('Copy test')
         await wrapper.trigger('click')
         expect(copyMock).toHaveBeenCalledWith('copied-value')
     })

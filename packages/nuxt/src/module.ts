@@ -9,7 +9,7 @@ import {
     updateTemplates,
 } from '@nuxt/kit'
 
-import { derivePageRoutePolicy } from './build/routes'
+import { derivePageRoutePolicy } from './build/routes.ts'
 
 export interface AvatioNuxtModuleOptions {
     contentDirectory: string

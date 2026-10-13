@@ -20,8 +20,8 @@ const query = z.object({
 
 const parse = createMarkdownParser({ plugins: [breaks()] })
 
-export default promiseEventHandler(async ({ event, db }) => {
-    const { q, sort, userId, page, limit, lang } = await validateQuery(query)
+export default requestEventHandler(async ({ event, db }) => {
+    const { q, sort, userId, page, limit, lang } = validateRequestQuery(event, query)
 
     const offset = (page - 1) * limit
 
@@ -95,16 +95,9 @@ export default promiseEventHandler(async ({ event, db }) => {
                 }
             }),
         ),
-        pagination: {
-            page,
-            limit,
-            total: data[0]?.count || 0,
-            totalPages: Math.ceil((data[0]?.count || 0) / limit),
-            hasNext: offset + limit < (data[0]?.count || 0),
-            hasPrev: offset > 0,
-        },
+        pagination: createPagination(data[0]?.count || 0, page, limit, offset),
     }
 
-    applyPublicEdgeCache(event, [EDGE_CACHE_TAGS.changelogs])
+    applyPublicRequestCache(event, [EDGE_CACHE_TAGS.changelogs])
     return result
 })

@@ -96,7 +96,11 @@ export default sessionEventHandler(async ({ event, session, db }) => {
             },
             images: {
                 limit: 1,
+                orderBy: { position: 'asc' },
                 columns: {
+                    id: true,
+                    stableId: true,
+                    position: true,
                     objectKey: true,
                     themeColors: true,
                     width: true,
@@ -142,14 +146,7 @@ export default sessionEventHandler(async ({ event, session, db }) => {
 
     const result = {
         data: setupData,
-        pagination: {
-            page,
-            limit,
-            total: data[0]?.count || 0,
-            totalPages: Math.ceil((data[0]?.count || 0) / limit),
-            hasNext: offset + limit < (data[0]?.count || 0),
-            hasPrev: offset > 0,
-        },
+        pagination: createPagination(data[0]?.count || 0, page, limit, offset),
     }
 
     if (!bookmarked && !shouldShowPrivate) applyPublicEdgeCache(event, [EDGE_CACHE_TAGS.setups])

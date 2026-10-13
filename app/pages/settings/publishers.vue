@@ -1,4 +1,7 @@
 <script lang="ts" setup>
+import { useForm } from '@tanstack/vue-form'
+import { z } from 'zod'
+
 definePageMeta({ auth: 'user' })
 
 interface Ownership {
@@ -23,9 +26,8 @@ interface Challenge {
 
 const { locale, t } = useI18n()
 const toast = useToast()
-const itemUrl = ref('')
 const challenge = ref<Challenge | null>(null)
-const processing = ref(false)
+const removing = ref(false)
 const modalVerify = ref(false)
 const pendingRemoval = ref<Ownership | null>(null)
 const { copy, copied } = useClipboard({ source: computed(() => challenge.value?.code ?? '') })
@@ -33,12 +35,11 @@ const { data: ownerships, refresh } = await useFetch<Ownership[]>('/api/me/publi
     default: () => [],
 })
 
-const createChallenge = async () => {
-    processing.value = true
+const createChallenge = async (url: string) => {
     try {
         challenge.value = await $fetch<Challenge>('/api/publisher-verification-challenges', {
             method: 'POST',
-            body: { url: itemUrl.value },
+            body: { url },
         })
     } catch (error) {
         console.error('Failed to create publisher verification challenge:', error)
@@ -47,18 +48,15 @@ const createChallenge = async () => {
             title: t('settings.publisher.toast.challengeFailed'),
             color: 'error',
         })
-    } finally {
-        processing.value = false
     }
 }
 
-const verify = async () => {
+const verify = async (url: string) => {
     if (!challenge.value) return
-    processing.value = true
     try {
         await $fetch(`/api/publisher-verification-challenges/${challenge.value.id}/verify`, {
             method: 'POST',
-            body: { url: itemUrl.value },
+            body: { url },
         })
         await refresh()
         modalVerify.value = false
@@ -74,14 +72,18 @@ const verify = async () => {
             title: t('settings.publisher.toast.verifyFailed'),
             color: 'error',
         })
-    } finally {
-        processing.value = false
     }
 }
 
+const verificationForm = useForm({
+    defaultValues: { url: '' },
+    validators: [{ triggers: ['change'], run: z.object({ url: z.url() }) }],
+    onSubmit: ({ value }) => (challenge.value ? verify(value.url) : createChallenge(value.url)),
+})
+
 const removeOwnership = async () => {
     if (!pendingRemoval.value) return
-    processing.value = true
+    removing.value = true
     try {
         await $fetch(`/api/me/publisher-ownerships/${pendingRemoval.value.id}`, {
             method: 'DELETE',
@@ -101,13 +103,13 @@ const removeOwnership = async () => {
             color: 'error',
         })
     } finally {
-        processing.value = false
+        removing.value = false
     }
 }
 
 watch(modalVerify, (open) => {
     if (open) return
-    itemUrl.value = ''
+    verificationForm.reset({ url: '' })
     challenge.value = null
 })
 
@@ -122,58 +124,78 @@ useSeo({ title: t('settings.title'), description: t('settings.description') })
             :title="$t('settings.publisher.newPublisher')"
         >
             <template #body>
-                <div class="flex flex-col gap-6">
-                    <UFormField :label="$t('settings.publisher.step1')" required>
-                        <UInput
-                            v-model="itemUrl"
-                            type="url"
-                            placeholder="https://booth.pm/items/1234567"
-                            class="w-full"
-                            :disabled="Boolean(challenge)"
-                        />
-                    </UFormField>
-
-                    <UButton
-                        v-if="!challenge"
-                        :disabled="!itemUrl"
-                        :loading="processing"
-                        :label="$t('settings.publisher.createChallenge')"
-                        color="neutral"
-                        block
-                        @click="createChallenge"
-                    />
-
-                    <template v-else>
-                        <UFormField :label="$t('settings.publisher.step2')">
-                            <div class="flex flex-col gap-2 pt-2">
-                                <UButton
-                                    :trailing-icon="
-                                        copied ? 'mingcute:check-line' : 'mingcute:copy-2-fill'
-                                    "
-                                    :label="challenge.code"
-                                    variant="outline"
-                                    color="neutral"
-                                    block
-                                    @click="copy()"
-                                />
-                                <UAlert
-                                    icon="mingcute:information-fill"
-                                    :description="$t('settings.publisher.instruction')"
-                                    variant="outline"
-                                />
-                            </div>
+                <form class="flex flex-col gap-6" @submit.prevent="verificationForm.handleSubmit()">
+                    <verificationForm.Field v-slot="{ field }" name="url">
+                        <UFormField
+                            :label="$t('settings.publisher.step1')"
+                            :error="field.meta.isTouched ? getFormError(field.errors) : undefined"
+                            required
+                        >
+                            <UInput
+                                :model-value="field.value"
+                                type="url"
+                                placeholder="https://booth.pm/items/1234567"
+                                class="w-full"
+                                :disabled="Boolean(challenge)"
+                                @blur="field.handleBlur"
+                                @update:model-value="field.handleChange"
+                            />
                         </UFormField>
+                    </verificationForm.Field>
 
+                    <verificationForm.Subscribe
+                        v-slot="formState"
+                        :selector="
+                            (state) => ({
+                                canSubmit: state.canSubmit,
+                                isSubmitting: state.isSubmitting,
+                                url: state.values.url,
+                            })
+                        "
+                    >
                         <UButton
-                            :loading="processing"
-                            :label="$t('settings.publisher.verify')"
+                            v-if="!challenge"
+                            type="submit"
+                            :disabled="!formState.url || !formState.canSubmit"
+                            :loading="formState.isSubmitting"
+                            :label="$t('settings.publisher.createChallenge')"
                             color="neutral"
-                            size="lg"
                             block
-                            @click="verify"
                         />
-                    </template>
-                </div>
+
+                        <template v-else>
+                            <UFormField :label="$t('settings.publisher.step2')">
+                                <div class="flex flex-col gap-2 pt-2">
+                                    <UButton
+                                        type="button"
+                                        :trailing-icon="
+                                            copied ? 'mingcute:check-line' : 'mingcute:copy-2-fill'
+                                        "
+                                        :label="challenge.code"
+                                        variant="outline"
+                                        color="neutral"
+                                        block
+                                        @click="copy()"
+                                    />
+                                    <UAlert
+                                        icon="mingcute:information-fill"
+                                        :description="$t('settings.publisher.instruction')"
+                                        variant="outline"
+                                    />
+                                </div>
+                            </UFormField>
+
+                            <UButton
+                                type="submit"
+                                :loading="formState.isSubmitting"
+                                :label="$t('settings.publisher.verify')"
+                                color="neutral"
+                                size="lg"
+                                block
+                            />
+                        </template>
+                    </verificationForm.Subscribe>
+                </form>
             </template>
         </UModal>
 
@@ -258,7 +280,7 @@ useSeo({ title: t('settings.title'), description: t('settings.description') })
                 <div class="flex w-full justify-end gap-2">
                     <UButton :label="$t('cancel')" variant="ghost" @click="pendingRemoval = null" />
                     <UButton
-                        :loading="processing"
+                        :loading="removing"
                         :label="$t('settings.publisher.unverify')"
                         color="error"
                         @click="removeOwnership"

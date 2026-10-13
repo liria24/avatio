@@ -1,4 +1,3 @@
-import { destr } from 'destr'
 import type { z } from 'zod'
 import { notifications } from '~~/database/schema'
 
@@ -16,7 +15,7 @@ export default async (db: ReturnType<typeof useDB>, body: Body): Promise<{ id: s
             .values({
                 userId,
                 type,
-                payload: destr(payload),
+                payload,
                 actionUrl,
                 banner,
                 dedupeKey,

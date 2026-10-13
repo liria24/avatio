@@ -1,7 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { createLocalStorage } from '../../../server/storage/local'
-
 interface StorageObject {
     key: string
     lastModified: number
@@ -59,7 +57,7 @@ const arrange = ({
         (name: string) => runtimeGlobal.__env__?.[name] ?? process.env[name],
     )
     vi.stubGlobal('useRuntimeConfig', () => ({ cloudflare: {} }))
-    vi.stubGlobal('storage', storage)
+    vi.stubGlobal('useServerFiles', () => storage)
     vi.stubGlobal('useDB', () => ({
         delete: vi.fn(() => ({
             where: vi.fn().mockResolvedValue(undefined),
@@ -124,6 +122,24 @@ describe('runCleanupJob', () => {
         delete runtimeGlobal.__env__
     })
 
+    it('rejects destructive development Preview cleanup before reading or writing storage', async () => {
+        arrange({ setupObjects: [{ key: 'setup/old-orphan.jpg', lastModified: oldDate }] })
+        runtimeGlobal.__env__ = { STAGE: 'development', PREVIEW_NAME: 'development' }
+        await expect(runCleanupJob()).rejects.toMatchObject({ statusCode: 403 })
+        expect(storage.listAll).not.toHaveBeenCalled()
+        expect(storage.copy).not.toHaveBeenCalled()
+        expect(storage.delete).not.toHaveBeenCalled()
+    })
+
+    it('allows only dry-run cleanup for the persistent development Preview', async () => {
+        arrange({ setupObjects: [{ key: 'setup/old-orphan.jpg', lastModified: oldDate }] })
+        runtimeGlobal.__env__ = { STAGE: 'development', PREVIEW_NAME: 'development' }
+        expect((await runCleanupJob(true)).success).toBe(true)
+        expect(storage.delete).not.toHaveBeenCalled()
+        await expect(runCleanupJob()).rejects.toMatchObject({ statusCode: 403 })
+        expect(storage.copy).not.toHaveBeenCalled()
+        expect(storage.delete).not.toHaveBeenCalled()
+    })
     it('keeps referenced setup and avatar images and skips recent orphan images', async () => {
         arrange({
             rows: {
@@ -170,9 +186,9 @@ describe('runCleanupJob', () => {
     })
 
     it('keeps referenced local avatars using the active storage URL instead of the R2 origin', async () => {
-        const files = createLocalStorage('.data/uploads')
-        const image = await files.url('avatar/local-used.jpg')
-        storage.url.mockImplementation((key: string) => files.url(key))
+        const localBaseUrl = 'http://localhost:3000/api/_local/files'
+        const image = `${localBaseUrl}/avatar/local-used.jpg`
+        storage.url.mockImplementation(async (key: string) => `${localBaseUrl}/${key}`)
         arrange({
             rows: { users: [{ image }] },
             avatarObjects: [
@@ -264,7 +280,7 @@ describe('runCleanupJob', () => {
 
         const result = await runCleanupJob()
 
-        expect(storage.delete).toHaveBeenCalledWith(['setup/backed-up.jpg'], { concurrency: 8 })
+        expect(storage.delete).toHaveBeenCalledWith(['setup/backed-up.jpg'], expect.any(Object))
         expect(result.data).toMatchObject({
             candidates: ['setup/backed-up.jpg', 'setup/backup-failed.jpg'],
             backedUp: ['setup/backed-up.jpg'],

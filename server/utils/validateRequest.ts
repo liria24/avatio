@@ -1,7 +1,6 @@
-import { destr } from 'destr'
 import type { z } from 'zod'
 
-const throwIfFailed = <T>(
+export const throwIfValidationFailed = <T>(
     tag: string,
     result: z.ZodSafeParseSuccess<T> | z.ZodSafeParseError<unknown>,
 ): T => {
@@ -16,28 +15,27 @@ export const validateBody = async <T extends z.ZodTypeAny>(
     s: T,
     o?: { sanitize?: boolean },
 ): Promise<z.infer<T>> =>
-    throwIfFailed(
+    throwIfValidationFailed(
         'validateBody',
         await readValidatedBody(useEvent(), (b) =>
-            s.safeParse(o?.sanitize ? sanitizeObject(b) : b),
+            s.safeParse(sanitizeObject(b, { html: o?.sanitize === true })),
         ),
     )
 
 export const validateFormData = async <T extends z.ZodTypeAny>(s: T): Promise<z.infer<T>> =>
-    throwIfFailed(
+    throwIfValidationFailed(
         'validateFormData',
-        s.safeParse(
-            Object.fromEntries(
-                [...(await readFormData(useEvent())).entries()].map(([k, v]) => [k, destr(v)]),
-            ),
-        ),
+        s.safeParse(Object.fromEntries((await readFormData(useEvent())).entries())),
     )
 
 export const validateParams = async <T extends z.ZodTypeAny>(s: T): Promise<z.infer<T>> =>
-    throwIfFailed(
+    throwIfValidationFailed(
         'validateParams',
         await getValidatedRouterParams(useEvent(), (p) => s.safeParse(p)),
     )
 
 export const validateQuery = async <T extends z.ZodTypeAny>(s: T): Promise<z.infer<T>> =>
-    throwIfFailed('validateQuery', await getValidatedQuery(useEvent(), (q) => s.safeParse(q)))
+    throwIfValidationFailed(
+        'validateQuery',
+        await getValidatedQuery(useEvent(), (q) => s.safeParse(q)),
+    )

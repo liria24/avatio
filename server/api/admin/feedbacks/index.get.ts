@@ -9,7 +9,7 @@ const query = z.object({
 })
 
 export default promiseEventHandler<Feedback[]>(async ({ db, event }) => {
-    await requireUserSession(event, { user: { role: 'admin' } })
+    await requireAdminSession(event)
     const { q, sort, fingerprint, limit, status } = await validateQuery(query)
 
     const data = await db.query.feedbacks.findMany({

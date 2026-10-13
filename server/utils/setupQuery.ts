@@ -14,6 +14,7 @@ export interface SetupQueryResult {
 
 export const projectSetupEntry = (entry: {
     id: string
+    position: number
     categoryOverride: ItemCategory | null
     unsupported: boolean
     note: string | null
@@ -21,6 +22,7 @@ export const projectSetupEntry = (entry: {
     shapekeys: { name: string; value: number }[]
 }): SetupEntryView => ({
     id: entry.id,
+    position: entry.position,
     catalogItem: projectCatalogItem(entry.item),
     category: resolveEffectiveCategory({
         setupOverride: entry.categoryOverride,
@@ -70,6 +72,7 @@ export const querySetupProjection = async (
             entries: {
                 columns: {
                     id: true,
+                    position: true,
                     categoryOverride: true,
                     unsupported: true,
                     note: true,
@@ -81,6 +84,9 @@ export const querySetupProjection = async (
             },
             images: {
                 columns: {
+                    id: true,
+                    stableId: true,
+                    position: true,
                     objectKey: true,
                     width: true,
                     height: true,
@@ -88,6 +94,15 @@ export const querySetupProjection = async (
                     contentType: true,
                     size: true,
                     etag: true,
+                },
+            },
+            points: {
+                columns: {
+                    id: true,
+                    imageId: true,
+                    setupEntryId: true,
+                    x: true,
+                    y: true,
                 },
             },
             tags: { columns: { tag: true } },
@@ -118,12 +133,18 @@ export const querySetupProjection = async (
         (!data.hidAt && data.public) || viewer?.role === 'admin' || viewer?.userId === data.userId
     if (!canView) return null
     const { userId: _userId, entries, ...setup } = data
-    const projectedEntries = entries.map(projectSetupEntry)
+    const projectedEntries = entries
+        .toSorted((a, b) => a.position - b.position)
+        .map(projectSetupEntry)
     return {
         setup: {
             ...setup,
             images: await withSetupImageUrls(data.images),
             entries: projectedEntries,
+            points: data.points.map(({ setupEntryId, ...point }) => ({
+                ...point,
+                entryId: setupEntryId,
+            })),
             tags: data.tags.map(({ tag }) => tag),
             failedItemsCount:
                 projectedEntries.filter(

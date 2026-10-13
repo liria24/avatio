@@ -1,6 +1,8 @@
+import type { H3Event } from '@nuxt/nitro-server/h3'
+
 import type { SitemapUrlInput } from '#sitemap/types'
 
-export default defineSitemapEventHandler(async (event) => {
+export default defineSitemapEventHandler(async (event: H3Event) => {
     const db = useDB()
 
     const setups = await db.query.setups.findMany({
@@ -17,7 +19,11 @@ export default defineSitemapEventHandler(async (event) => {
         },
         with: {
             images: {
+                orderBy: { position: 'asc' },
                 columns: {
+                    id: true,
+                    stableId: true,
+                    position: true,
                     objectKey: true,
                 },
             },

@@ -17,7 +17,7 @@ const body = createInsertSchema(changelogI18ns)
     })
 
 export default promiseEventHandler(async ({ event, db }) => {
-    const session = await requireUserSession(event, { user: { role: 'admin' } })
+    const session = await requireAdminSession(event)
     const { slug, title, markdown, authors, i18n } = await validateBody(body, { sanitize: true })
     const idempotency = await claimIdempotencyRequest({
         event,
@@ -37,15 +37,19 @@ export default promiseEventHandler(async ({ event, db }) => {
     })
 
     if (!slug) {
-        const { changelogSlugGenerator } = useAiCapabilities(event)
-        generatedSlug = await changelogSlugGenerator.generate({
-            title,
-            reservedSlugs: exists.map((entry) => entry.slug),
-        })
-        if (exists.some((entry) => entry.slug === generatedSlug))
-            throw serverError.internalServerError({
-                responseMessage: 'AI generated a duplicate changelog slug. Provide one manually.',
+        if (import.meta.dev) generatedSlug = idempotency.id
+        else {
+            const { changelogSlugGenerator } = useAiCapabilities(event)
+            generatedSlug = await changelogSlugGenerator.generate({
+                title,
+                reservedSlugs: exists.map((entry) => entry.slug),
             })
+            if (exists.some((entry) => entry.slug === generatedSlug))
+                throw serverError.internalServerError({
+                    responseMessage:
+                        'AI generated a duplicate changelog slug. Provide one manually.',
+                })
+        }
     }
 
     const finalSlug = slug || generatedSlug
@@ -53,37 +57,31 @@ export default promiseEventHandler(async ({ event, db }) => {
     const translations: (typeof changelogI18ns.$inferInsert)[] = []
 
     // Handle i18n translations
-    if (!i18n || i18n.length === 0) {
-        // AI generate translations for both en and ja
-        const locales: Array<'en'> = ['en']
-
-        for (const locale of locales) {
-            const targetLanguage = 'English'
-
-            try {
-                const { changelogTranslator } = useAiCapabilities(event)
-                const translated = await changelogTranslator.translate({
+    if ((!i18n || i18n.length === 0) && !import.meta.dev) {
+        try {
+            const { changelogTranslator } = useAiCapabilities(event)
+            const translated = sanitizeObject(
+                await changelogTranslator.translate({
                     title,
                     content: markdown,
                     sourceLocale: 'Japanese',
-                    targetLocale: targetLanguage,
-                })
-
-                translations.push({
-                    changelogSlug: finalSlug,
-                    locale,
-                    title: translated.title,
-                    markdown: translated.content,
-                    aiGenerated: true,
-                })
-            } catch (error) {
-                log.error(`Failed to parse translation for locale ${locale}:`, error)
-                throw serverError.internalServerError({
-                    responseMessage: 'Failed to generate changelog translations.',
-                })
-            }
+                    targetLocale: 'English',
+                }),
+            )
+            translations.push({
+                changelogSlug: finalSlug,
+                locale: 'en',
+                title: translated.title,
+                markdown: translated.content,
+                aiGenerated: true,
+            })
+        } catch (error) {
+            log.error('Failed to generate English translation:', error)
+            throw serverError.internalServerError({
+                responseMessage: 'Failed to generate changelog translations.',
+            })
         }
-    } else {
+    } else if (i18n?.length) {
         // Use provided i18n translations
         translations.push(
             ...i18n.map((translation) => ({
@@ -117,7 +115,7 @@ export default promiseEventHandler(async ({ event, db }) => {
     if (translations.length) queries.push(db.insert(changelogI18ns).values(translations))
     queries.push(completeIdempotencyRequest(db, idempotency, { slug: finalSlug }))
 
-    await executeD1Batch(db, queries)
+    await executeAppBatch(db, queries)
 
     await invalidateCacheResources(
         event,

@@ -5,7 +5,7 @@ const params = z.object({
 })
 
 export default promiseEventHandler(async ({ event }) => {
-    await requireUserSession(event, { user: { role: 'admin' } })
+    await requireAdminSession(event)
     const { id: userId } = await validateParams(params)
     const { headers } = event
 

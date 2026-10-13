@@ -40,8 +40,13 @@ export const catalogItemPublicSchema = z.object({
 })
 export type CatalogItemView = z.infer<typeof catalogItemPublicSchema>
 
+export type AdminCatalogItemView = CatalogItemView & {
+    manualCategoryOverride: z.infer<typeof itemCategorySchema> | null
+}
+
 export const setupEntryPublicSchema = z.object({
     id: z.string(),
+    position: z.number().int().min(0),
     catalogItem: catalogItemPublicSchema,
     category: itemCategorySchema,
     categoryOverride: itemCategorySchema.nullable(),

@@ -2,7 +2,7 @@ import { feedbacks, itemReports, catalogItems, setupReports, userReports } from 
 import { count, eq } from 'drizzle-orm'
 
 export default promiseEventHandler(async ({ db, event }) => {
-    await requireUserSession(event, { user: { role: 'admin' } })
+    await requireAdminSession(event)
     const [
         feedbackCountResult,
         itemCountResult,

@@ -1,6 +1,7 @@
 export const useBookmarks = () => {
     const { t } = useI18n()
     const toast = useToast()
+    const { user } = useUserSession()
 
     const toggle = async (setupId: Setup['id'], isBookmarked: boolean) => {
         try {
@@ -35,16 +36,18 @@ export const useBookmarks = () => {
     }
 
     const getBookmarkStatus = async (setupId: Setup['id'], immediate = true) => {
-        const { data, status, refresh } = await useFetch('/api/setups/bookmarks', {
-            query: { setupId, limit: 1 },
-            transform: (data) => data.data.length > 0,
-            dedupe: 'defer',
-            default: () => false,
-            immediate,
-        })
+        const { data, status, refresh } = await useFetch<{ bookmarked: boolean }>(
+            `/api/setups/bookmarks/${setupId}`,
+            {
+                key: computed(() => `bookmark-${user.value?.id || 'anonymous'}-${setupId}`),
+                dedupe: 'defer',
+                default: () => ({ bookmarked: false }),
+                immediate,
+            },
+        )
 
         return {
-            isBookmarked: data,
+            isBookmarked: computed(() => data.value.bookmarked),
             status,
             refresh,
         }

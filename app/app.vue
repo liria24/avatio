@@ -4,7 +4,13 @@ import * as locales from '@nuxt/ui/locale'
 const { locale, t } = useI18n()
 const toast = useToast()
 const { consented, giveConsent } = useCookiesConsent()
-const { needsAgreement, open: openTermsAgreement } = useTermsAgreement()
+const {
+    needsAgreement,
+    modalKey,
+    open: openTermsAgreement,
+    close: closeTermsAgreement,
+} = useTermsAgreement()
+const openedAgreement = ref('')
 
 useHead({
     htmlAttrs: {
@@ -35,9 +41,16 @@ onMounted(() => {
         })
 
     watch(
-        needsAgreement,
-        (needed) => {
-            if (needed) openTermsAgreement()
+        [needsAgreement, modalKey],
+        ([needed, key]) => {
+            if (needed && key && openedAgreement.value !== key) {
+                openedAgreement.value = key
+                openTermsAgreement()
+            }
+            if (!needed) {
+                openedAgreement.value = ''
+                closeTermsAgreement()
+            }
         },
         { immediate: true },
     )

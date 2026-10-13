@@ -1,3 +1,7 @@
+import { createError } from 'h3'
+
+import { getPreviewKind } from '../../config/preview'
+
 interface EmailAddress {
     email: string
     name?: string
@@ -39,9 +43,21 @@ export interface SendEmailInput {
     attachments?: EmailAttachment[]
 }
 
-const defaultEmailFrom = 'hello@avatio.me'
+const defaultEmailFrom = import.meta.dev ? 'avatio@localhost' : 'hello@avatio.me'
+
+const requireEmailEnabled = () => {
+    if (
+        !import.meta.dev &&
+        getPreviewKind(getRuntimeEnvString('STAGE'), getRuntimeEnvString('PREVIEW_NAME'))
+    )
+        throw createError({
+            statusCode: 503,
+            statusMessage: 'Email sending is disabled in Previews.',
+        })
+}
 
 export const getEmailFromAddress = () => {
+    requireEmailEnabled()
     const bindingAddress = getRuntimeEnvString('EMAIL_FROM')
     if (bindingAddress) return bindingAddress
 
@@ -61,8 +77,15 @@ const getEmailBinding = () => {
     return binding
 }
 
-export const sendEmail = async (input: SendEmailInput) =>
-    await getEmailBinding().send({
+export const sendEmail = async (input: SendEmailInput) => {
+    requireEmailEnabled()
+    const message = {
         ...input,
         from: input.from ?? getEmailFromAddress(),
-    })
+    }
+    if (import.meta.dev) {
+        const { saveLocalEmail } = await import('./email.local')
+        return saveLocalEmail(message)
+    }
+    return getEmailBinding().send(message)
+}

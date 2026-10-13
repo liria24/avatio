@@ -22,15 +22,22 @@ const tab = computed<Tab>({
         return 'latest'
     },
     set(newTab: Tab) {
-        if (newTab === 'latest' && setupsLatest.status.value === 'idle') setupsLatest.refresh()
-        else if (newTab === 'owned' && setupsOwned.status.value === 'idle') setupsOwned.refresh()
-        else if (newTab === 'bookmarked' && setupsBookmarked.status.value === 'idle')
-            setupsBookmarked.refresh()
         _tab.value = newTab !== 'latest' ? newTab : null
     },
 })
+const tabItems = computed(() => [
+    { label: t('index.tabs.latest'), value: 'latest' },
+    { label: t('index.tabs.me'), value: 'owned' },
+    { label: t('index.tabs.bookmarks'), value: 'bookmarked' },
+])
+const setTab = (value: string | number) => {
+    if (value === 'latest' || value === 'owned' || value === 'bookmarked') tab.value = value
+}
+const [DefineSetupList, ReuseSetupList] = createReusableTemplate()
 
 const showPrivate = ref(preferences.value.showPrivateSetups)
+const entrance = useSetupEntrance()
+const displayedTab = computed<Tab>(() => (loggedIn.value ? tab.value : 'latest'))
 const showPrivateDebounced = refDebounced(showPrivate, 300)
 
 watch(
@@ -39,34 +46,43 @@ watch(
 )
 
 const setupsLatest = useSetupsList('latest', {
-    immediate: tab.value === 'latest',
+    immediate: displayedTab.value === 'latest',
+    onAppend: (ids) => entrance.append('latest', ids),
 })
 const setupsOwned = useSetupsList('owned', {
-    username: user.value?.username ?? undefined,
+    username: computed(() => user.value?.username ?? undefined),
     query: computed(() => ({ includePrivate: showPrivateDebounced.value })),
     immediate: loggedIn.value && tab.value === 'owned',
 })
 const setupsBookmarked = useSetupsList('bookmarked', {
     immediate: loggedIn.value && tab.value === 'bookmarked',
 })
-const setups = computed(() =>
-    loggedIn.value
-        ? tab.value === 'owned'
-            ? setupsOwned.setups.value
-            : tab.value === 'bookmarked'
-              ? setupsBookmarked.setups.value
-              : setupsLatest.setups.value
-        : setupsLatest.setups.value,
+const lists = {
+    latest: setupsLatest,
+    owned: setupsOwned,
+    bookmarked: setupsBookmarked,
+}
+const activeList = computed(() => lists[displayedTab.value])
+const setups = computed(() => activeList.value.setups.value)
+const loading = computed(() => activeList.value.status.value === 'pending')
+
+watch(
+    displayedTab,
+    (value) => {
+        entrance.display(value, false, [])
+        if (lists[value].status.value === 'idle') void lists[value].refresh()
+    },
+    { flush: 'sync' },
 )
-const loading = computed(() =>
-    loggedIn.value
-        ? tab.value === 'owned'
-            ? setupsOwned.status.value === 'pending'
-            : tab.value === 'bookmarked'
-              ? setupsBookmarked.status.value === 'pending'
-              : setupsLatest.status.value === 'pending'
-        : setupsLatest.status.value === 'pending',
-)
+
+const cardEntrance = computed(() => {
+    // SSR fetches can finish after setup; commit the first display when rendering the result.
+    return entrance.display(
+        displayedTab.value,
+        activeList.value.status.value === 'success',
+        setups.value.map((setup) => setup.id),
+    )
+})
 
 useInfiniteScroll(import.meta.client ? document : undefined, () => setupsLatest.loadMore(), {
     distance: 600,
@@ -108,7 +124,7 @@ useSeo({
         >
             <template v-if="latestChangelog" #headline>
                 <UButton
-                    :to="$localePath('/changelogs')"
+                    :to="$localePath({ path: '/changelogs' })"
                     :label="latestChangelog.title"
                     variant="soft"
                     color="neutral"
@@ -137,57 +153,51 @@ useSeo({
             </template>
         </UPageHero>
 
-        <div class="flex w-full flex-col items-start gap-5">
-            <div v-if="loggedIn" class="flex w-full items-center gap-1">
-                <UButton
-                    :label="$t('index.tabs.latest')"
-                    :active="tab === 'latest'"
-                    variant="ghost"
-                    active-variant="solid"
-                    color="neutral"
-                    class="px-4 py-2"
-                    @click="tab = 'latest'"
-                />
-                <UButton
-                    :label="$t('index.tabs.me')"
-                    :active="tab === 'owned'"
-                    variant="ghost"
-                    active-variant="solid"
-                    color="neutral"
-                    class="px-4 py-2"
-                    @click="tab = 'owned'"
-                />
-                <UButton
-                    :label="$t('index.tabs.bookmarks')"
-                    :active="tab === 'bookmarked'"
-                    variant="ghost"
-                    active-variant="solid"
-                    color="neutral"
-                    class="px-4 py-2"
-                    @click="tab = 'bookmarked'"
-                />
-
-                <USwitch
-                    v-if="tab === 'owned'"
-                    v-model="showPrivate"
-                    :aria-label="$t('index.showPrivate')"
-                    size="sm"
-                    class="ml-auto"
-                >
-                    <template #label>
-                        <Icon name="mingcute:lock-fill" size="16" />
-                    </template>
-                </USwitch>
-            </div>
-            <h1 v-else class="text-lg font-medium text-nowrap">{{ $t('index.tabs.latest') }}</h1>
-
-            <SetupsList :setups :loading />
+        <DefineSetupList>
+            <SetupsList :key="displayedTab" :setups :loading :entrance="cardEntrance" />
             <UButton
                 v-if="(!loggedIn || tab === 'latest') && setupsLatest.pagination.value?.hasNext"
                 :loading="loading"
                 :label="$t('more')"
                 @click="setupsLatest.loadMore()"
             />
+        </DefineSetupList>
+        <div class="relative flex w-full flex-col items-start gap-5">
+            <template v-if="loggedIn">
+                <h1 class="sr-only">{{ $t('index.seo.title') }}</h1>
+                <UTabs
+                    :model-value="tab"
+                    :items="tabItems"
+                    activation-mode="manual"
+                    color="neutral"
+                    :ui="{
+                        root: 'w-full items-stretch gap-5',
+                        list: 'gap-1 bg-transparent p-0',
+                        indicator: 'hidden',
+                        trigger:
+                            'grow-0 px-4 py-2 data-[state=active]:bg-inverted data-[state=inactive]:text-default hover:data-[state=inactive]:bg-elevated',
+                        content: 'flex flex-col items-start gap-5 data-[state=inactive]:hidden',
+                    }"
+                    @update:model-value="setTab"
+                >
+                    <template #content><ReuseSetupList /></template>
+                </UTabs>
+                <USwitch
+                    v-if="tab === 'owned'"
+                    v-model="showPrivate"
+                    :aria-label="$t('index.showPrivate')"
+                    size="sm"
+                    class="absolute top-2 right-0"
+                >
+                    <template #label>
+                        <Icon name="mingcute:lock-fill" size="16" />
+                    </template>
+                </USwitch>
+            </template>
+            <template v-else>
+                <h1 class="text-lg font-medium text-nowrap">{{ $t('index.tabs.latest') }}</h1>
+                <ReuseSetupList />
+            </template>
         </div>
     </div>
 </template>
