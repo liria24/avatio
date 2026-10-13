@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { defineConfig } from 'cf/config'
 
 import { getBuildEnvironment } from './config/build.ts'
-import { createCloudflareConfig } from './config/cloudflare.ts'
+import { createCloudflareConfig, isCloudflareBinding } from './config/cloudflare.ts'
 
 // Select only the existing production Worker or persistent development Preview.
 export default defineConfig((context) => {
@@ -18,9 +18,11 @@ export default defineConfig((context) => {
     if (
         process.env.STAGE !== (context.isPreview ? 'development' : 'production') ||
         (process.env.PREVIEW_NAME || undefined) !== previewName ||
-        site?.type !== 'text' ||
+        !isCloudflareBinding(site) ||
+        site.type !== 'text' ||
         site.value !== build.siteUrl ||
-        images?.type !== 'text' ||
+        !isCloudflareBinding(images) ||
+        images.type !== 'text' ||
         images.value !== build.imageBaseUrl
     )
         throw new Error('Nuxt build environment must match the selected Cloudflare target.')

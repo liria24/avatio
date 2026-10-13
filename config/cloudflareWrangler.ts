@@ -1,4 +1,4 @@
-import { createCloudflareConfig } from './cloudflare.ts'
+import { createCloudflareConfig, isCloudflareBinding } from './cloudflare.ts'
 import { parseAvatioStage } from './environment.ts'
 
 /** Standard Wrangler settings from the single reviewed binding contract. No resource creation. */
@@ -8,7 +8,9 @@ export const createCloudflareWranglerConfig = (mode: string, inventory: unknown)
         { mode: stage, isPreview: stage === 'development' },
         inventory,
     )
-    const entries = Object.entries(worker.env)
+    const entries = Object.entries(worker.env).flatMap(([name, binding]) =>
+        isCloudflareBinding(binding) ? [[name, binding] as const] : [],
+    )
     const variables = Object.fromEntries(
         entries.flatMap(([name, binding]) =>
             binding.type === 'text' ? [[name, binding.value]] : [],

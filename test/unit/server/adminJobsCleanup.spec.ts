@@ -276,7 +276,7 @@ describe('runCleanupJob', () => {
             if (key === 'setup/backup-failed.jpg') throw new Error('copy failed')
             return Promise.resolve()
         })
-        storage.delete.mockResolvedValue({ deleted: ['setup/backed-up.jpg'] })
+        storage.delete.mockResolvedValue({ results: ['setup/backed-up.jpg'] })
 
         const result = await runCleanupJob()
 
@@ -313,7 +313,7 @@ describe('runCleanupJob', () => {
         })
         storage.copy.mockResolvedValue(undefined)
         storage.delete.mockResolvedValue({
-            deleted: ['setup/deleted.jpg'],
+            results: ['setup/deleted.jpg'],
             errors: [{ key: 'setup/delete-failed.jpg', error: new Error('delete failed') }],
         })
 

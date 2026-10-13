@@ -54,7 +54,7 @@ PRs into `main` require the `format`, `lint`, `lint:unused`, `typecheck`, `test`
 
 ## Project architecture
 
-- **Framework:** Nuxt 4.6.0 (`compatibilityVersion: 5`), using Nitro. The Nuxt CLI v4 is supplied transitively.
+- **Framework:** Nuxt 4.6.1 (`compatibilityVersion: 5`), using Nitro. The Nuxt CLI v4 is supplied transitively.
 - **Deployment target:** One Cloudflare Worker (`avatio`), using the standard Nuxt/Nitro Cloudflare build and pinned official tooling. Prefer `cf` where supported; Wrangler is allowed.
 - **Workspace:** Bun workspaces under `packages/*` with exactly three architectural packages:
   - `@avatio/core` — pure domain, application ports, and explicit contracts. It must not import Nuxt, Nitro, Cloudflare, Drizzle, Better Auth, provider SDKs, or read `process.env`.

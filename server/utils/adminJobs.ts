@@ -409,8 +409,8 @@ export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) 
                   imagesToDelete.map((image) => image.key),
                   { concurrency: STORAGE_OPERATION_CONCURRENCY },
               )
-            : { deleted: [], errors: undefined }
-    const successful = deleteResults.deleted
+            : { results: [] as string[], errors: undefined }
+    const successful = deleteResults.results
     const failed = (deleteResults.errors ?? []).map(({ key, error }) => {
         cleanupLog.error('Failed to delete image:', key, error)
         return {

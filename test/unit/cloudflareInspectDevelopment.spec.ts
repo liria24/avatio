@@ -1,6 +1,9 @@
 import { createHash } from 'node:crypto'
 
-import { getCloudflareDevelopmentInspectionConfiguration } from '../../config/cloudflare'
+import {
+    getCloudflareDevelopmentInspectionConfiguration,
+    isCloudflareBinding,
+} from '../../config/cloudflare'
 import {
     developmentSchemaSql,
     developmentLedgerSql,
@@ -35,36 +38,44 @@ const ledger = [
 const env = Object.fromEntries(
     Object.entries(
         getCloudflareDevelopmentInspectionConfiguration(inventory).configuration.worker.env,
-    ).map(([name, binding]) => {
-        switch (binding.type) {
-            case 'text':
-                return [name, { type: 'plain_text', text: binding.value }]
-            case 'secret':
-                return [
-                    name,
-                    {
-                        type: 'secret_text',
-                        text: 'synthetic-do-not-disclose',
-                        arbitrary: 'secret-extension',
-                    },
-                ]
-            case 'd1':
-                return [name, { type: 'd1', database_id: binding.id }]
-            case 'kv':
-                return [name, { type: 'kv_namespace', namespace_id: binding.id }]
-            case 'r2':
-                return [name, { type: 'r2_bucket', bucket_name: binding.name }]
-            case 'flagship':
-                return [name, { type: 'flagship', id: binding.id }]
-            case 'rate-limit':
-                return [
-                    name,
-                    { type: 'ratelimit', namespace_id: binding.namespace, simple: binding.simple },
-                ]
-            default:
-                return [name, { type: binding.type }]
-        }
-    }),
+    )
+        .flatMap(([name, binding]) =>
+            isCloudflareBinding(binding) ? [[name, binding] as const] : [],
+        )
+        .map(([name, binding]) => {
+            switch (binding.type) {
+                case 'text':
+                    return [name, { type: 'plain_text', text: binding.value }]
+                case 'secret':
+                    return [
+                        name,
+                        {
+                            type: 'secret_text',
+                            text: 'synthetic-do-not-disclose',
+                            arbitrary: 'secret-extension',
+                        },
+                    ]
+                case 'd1':
+                    return [name, { type: 'd1', database_id: binding.id }]
+                case 'kv':
+                    return [name, { type: 'kv_namespace', namespace_id: binding.id }]
+                case 'r2':
+                    return [name, { type: 'r2_bucket', bucket_name: binding.name }]
+                case 'flagship':
+                    return [name, { type: 'flagship', id: binding.id }]
+                case 'rate-limit':
+                    return [
+                        name,
+                        {
+                            type: 'ratelimit',
+                            namespace_id: binding.namespace,
+                            simple: binding.simple,
+                        },
+                    ]
+                default:
+                    return [name, { type: binding.type }]
+            }
+        }),
 )
 const fixture = () => {
     const deployment = {
