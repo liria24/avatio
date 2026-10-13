@@ -15,13 +15,13 @@
     },
     "dependencies": {
         "@avatio/core": "workspace:*",
-        "@nuxt/kit": "catalog:",
-        "@nuxt/schema": "catalog:",
-        "comark": "catalog:",
-        "comark-content": "catalog:",
-        "zod": "catalog:"
+        "@nuxt/kit": "4.6.0",
+        "@nuxt/schema": "4.6.0",
+        "comark": "0.7.0",
+        "comark-content": "0.4.1",
+        "zod": "4.6.5"
     },
     "peerDependencies": {
-        "nuxt": "catalog:"
+        "nuxt": "4.6.0"
     }
 }
