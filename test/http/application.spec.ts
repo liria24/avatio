@@ -37,6 +37,73 @@ const endpoints = await Array.fromAsync(glob('server/api/admin/**/*.ts'), (file)
 })
 
 describe('real HTTP authorization and ownership', () => {
+    it.each(['cleanup', 'report'])('rejects unsafe HTTP requests to the %s job', async (job) => {
+        const path = `/api/admin/job/${job}`
+        for (const method of ['GET', 'HEAD'])
+            expect((await request(path, runtime.admin, { method })).status).toBe(405)
+        for (const origin of ['https://evil.test', 'null', 'http://localhost:3000/'])
+            expect(
+                (await request(path, runtime.admin, { method: 'POST', headers: { origin } }))
+                    .status,
+            ).toBe(403)
+        expect(
+            (
+                await fetch(`${runtime.origin}${path}`, {
+                    method: 'POST',
+                    headers: runtime.admin.headers,
+                })
+            ).status,
+        ).toBe(403)
+    })
+
+    it('round-trips raw Setup and draft text through real HTTP persistence and edits', async () => {
+        const owner = await runtime.createUser()
+        const item = await seedCatalogItem(runtime)
+        const text = 'A & B / A &amp; B / <b>literal</b>'
+        const input = {
+            name: text,
+            description: text,
+            tags: [{ tag: 'a+b/#&日本語' }],
+            items: [{ itemId: item.id, note: text, shapekeys: [{ name: text, value: 0.5 }] }],
+        }
+        const created = await request('/api/setups', owner, {
+            method: 'POST',
+            headers: { 'idempotency-key': randomUUID() },
+            body: JSON.stringify(input),
+        })
+        expect(created.status).toBe(200)
+        const setup = (await created.json()) as { id: string }
+        for (let save = 0; save < 2; save++) {
+            const response = await request(`/api/setups/${setup.id}`, owner, {
+                method: 'PUT',
+                body: JSON.stringify(input),
+            })
+            expect(response.status).toBe(200)
+            const stored = await (await request(`/api/me/setups/${setup.id}`, owner)).json()
+            expect(stored).toMatchObject({
+                name: text,
+                description: text,
+                tags: ['a+b/#&日本語'],
+                entries: [{ note: text, shapekeys: [{ name: text, value: 0.5 }] }],
+            })
+        }
+        const id = randomUUID()
+        const content = { ...draftContent(text), description: text }
+        for (let expectedRevision = 0; expectedRevision < 2; expectedRevision++) {
+            expect(
+                (
+                    await request(`/api/setup-drafts/${id}`, owner, {
+                        method: 'PUT',
+                        body: JSON.stringify({ expectedRevision, setupId: null, content }),
+                    })
+                ).status,
+            ).toBe(200)
+            expect(await (await request(`/api/setup-drafts/${id}`, owner)).json()).toMatchObject({
+                content,
+            })
+        }
+    })
+
     it.each(endpoints)('$method $path rejects anonymous requests', async ({ path, method }) => {
         expect((await request(path, undefined, { method })).status).toBe(401)
     })

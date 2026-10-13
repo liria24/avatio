@@ -17,6 +17,13 @@ import {
 type CreateSetupInput = z.infer<typeof setupsInsertSchema>
 type UpdateSetupInput = z.infer<typeof setupsUpdateSchema>
 
+// D1 limits each statement (including statements in a batch) to 100 binds.
+// Pinned Drizzle binds 7 values per entry, 3 per shapekey, and 6 per point.
+const chunks = <T>(values: T[], size: number) =>
+    Array.from({ length: Math.ceil(values.length / size) }, (_, index) =>
+        values.slice(index * size, (index + 1) * size),
+    )
+
 interface SetupCommandContext {
     event: H3Event
     db: ReturnType<typeof useDB>
@@ -117,13 +124,14 @@ export const createSetup = async (
         }),
     ]
 
-    queries.push(db.insert(setupEntries).values(entries))
-    if (shapekeys.length) queries.push(db.insert(setupEntryShapekeys).values(shapekeys))
+    for (const rows of chunks(entries, 14)) queries.push(db.insert(setupEntries).values(rows))
+    for (const rows of chunks(shapekeys, 33))
+        queries.push(db.insert(setupEntryShapekeys).values(rows))
     if (imageData.length)
         queries.push(
             db.insert(setupImages).values(imageData.map((image) => ({ ...image, setupId }))),
         )
-    if (points.length) queries.push(db.insert(setupImagePoints).values(points))
+    for (const rows of chunks(points, 16)) queries.push(db.insert(setupImagePoints).values(rows))
     if (input.tags?.length)
         queries.push(
             db.insert(setupTags).values(input.tags.map((tag) => ({ setupId, tag: tag.tag }))),
@@ -206,14 +214,14 @@ export const updateSetup = async (
         ? preparePoints(id, input.points, new Set(entryIds), imageIds)
         : undefined
     const pointIds = points?.map(({ id: pointId }) => pointId) ?? []
-    const claimedPoints = pointIds.length
-        ? await db
-              .select({ id: setupImagePoints.id, setupId: setupImagePoints.setupId })
-              .from(setupImagePoints)
-              .where(inArray(setupImagePoints.id, pointIds))
-        : []
-    if (claimedPoints.some(({ setupId }) => setupId !== id))
-        throw serverError.badRequest({ responseMessage: 'Point ID belongs to another setup.' })
+    for (const ids of chunks(pointIds, 100)) {
+        const claimedPoints = await db
+            .select({ setupId: setupImagePoints.setupId })
+            .from(setupImagePoints)
+            .where(inArray(setupImagePoints.id, ids))
+        if (claimedPoints.some(({ setupId }) => setupId !== id))
+            throw serverError.badRequest({ responseMessage: 'Point ID belongs to another setup.' })
+    }
     const queries: BatchItem<'sqlite'>[] = []
 
     if (Object.keys(updateData).length || hasRelationalChanges) {
@@ -242,11 +250,12 @@ export const updateSetup = async (
                     .where(and(eq(setupEntries.id, entry.id), eq(setupEntries.setupId, id))),
             )
     const newEntries = entries.filter(({ id: entryId }) => !existingEntryIds.has(entryId))
-    if (newEntries.length) queries.push(db.insert(setupEntries).values(newEntries))
+    for (const rows of chunks(newEntries, 14)) queries.push(db.insert(setupEntries).values(rows))
     queries.push(
         db.delete(setupEntryShapekeys).where(inArray(setupEntryShapekeys.setupEntryId, entryIds)),
     )
-    if (shapekeys.length) queries.push(db.insert(setupEntryShapekeys).values(shapekeys))
+    for (const rows of chunks(shapekeys, 33))
+        queries.push(db.insert(setupEntryShapekeys).values(rows))
 
     if (input.images !== undefined && imageData !== undefined) {
         const retainedImageIds = imageData.flatMap((image) => (image.id ? [image.id] : []))
@@ -279,34 +288,11 @@ export const updateSetup = async (
             )
     }
     if (points) {
-        queries.push(
-            pointIds.length
-                ? db
-                      .delete(setupImagePoints)
-                      .where(
-                          and(
-                              eq(setupImagePoints.setupId, id),
-                              notInArray(setupImagePoints.id, pointIds),
-                          ),
-                      )
-                : db.delete(setupImagePoints).where(eq(setupImagePoints.setupId, id)),
-        )
-        const existingPointIds = new Set(claimedPoints.map(({ id: pointId }) => pointId))
-        for (const point of points)
-            if (existingPointIds.has(point.id))
-                queries.push(
-                    db
-                        .update(setupImagePoints)
-                        .set(point)
-                        .where(
-                            and(
-                                eq(setupImagePoints.id, point.id),
-                                eq(setupImagePoints.setupId, id),
-                            ),
-                        ),
-                )
-        const newPoints = points.filter(({ id: pointId }) => !existingPointIds.has(pointId))
-        if (newPoints.length) queries.push(db.insert(setupImagePoints).values(newPoints))
+        // The input replaces this setup's complete point collection. Keep deletion
+        // and bounded inserts in the same batch, avoiding an unbounded NOT IN.
+        queries.push(db.delete(setupImagePoints).where(eq(setupImagePoints.setupId, id)))
+        for (const rows of chunks(points, 16))
+            queries.push(db.insert(setupImagePoints).values(rows))
     } else if (imageData) {
         const retainedImageIds = imageData.map(({ stableId }) => stableId)
         queries.push(

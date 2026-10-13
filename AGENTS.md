@@ -258,7 +258,7 @@ Admin and cron routes use `promiseEventHandler` plus `requireAdminSession`, whic
   - `validateParams(schema)` — URL path parameters
   - `validateBody(schema)` — request body
   - `validateFormData(schema)` — form data
-- For POST/PUT endpoints that accept user-supplied text, use `validateBody(schema, { sanitize: true })` to enable XSS sanitization.
+- Validate ordinary text with `validateBody(schema)` so stored text and identifiers retain their exact values. The helper always removes dangerous object keys recursively. Use `{ sanitize: true }` only for content intentionally handled as HTML; retain dedicated email HTML sanitization and escape plain text when rendering it.
 
 ## Logging
 
