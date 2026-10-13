@@ -1,6 +1,9 @@
 import { isDeepStrictEqual } from 'node:util'
 
-import type { getCloudflareDevelopmentInspectionConfiguration } from '../config/cloudflare.ts'
+import {
+    isCloudflareBinding,
+    type getCloudflareDevelopmentInspectionConfiguration,
+} from '../config/cloudflare.ts'
 
 const record = (value: unknown): Record<string, unknown> =>
     value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -29,7 +32,8 @@ export const inspectCloudflarePreviewMetadata = (
     >['configuration']['worker']['env'],
 ) => {
     const env = record(input)
-    const bindingMatches = Object.entries(expected).map(([name, binding]) => {
+    const bindingMatches = Object.entries(expected).flatMap(([name, binding]) => {
+        if (!isCloudflareBinding(binding)) return []
         const actual = record(env[name])
         const expectedType = types[binding.type] ?? 'unrecognized-or-absent'
         const observedType =
@@ -59,7 +63,7 @@ export const inspectCloudflarePreviewMetadata = (
                 actual.namespace_id === binding.namespace &&
                 record(actual.simple).limit === binding.simple.limit &&
                 record(actual.simple).period === binding.simple.period
-        return { name, expectedType, observedType, matches }
+        return [{ name, expectedType, observedType, matches }]
     })
     const observedCount = Object.keys(env).length
     return {

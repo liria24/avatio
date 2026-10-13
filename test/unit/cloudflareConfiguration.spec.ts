@@ -8,6 +8,7 @@ import {
     createCloudflareConfig,
     getCloudflareDevelopmentInspectionConfiguration,
     getCloudflareTargetResources,
+    isCloudflareBinding,
 } from '../../config/cloudflare'
 import { secretDefinitions } from '../../config/secrets'
 import { createCloudflareResourceFixture } from '../helpers/cloudflareResources'
@@ -70,7 +71,9 @@ describe('Cloudflare configuration', () => {
         expect(Object.hasOwn(worker.env, 'BETTER_AUTH_SECRET')).toBe(false)
         expect(worker.env.PREVIEW_NAME).toBeUndefined()
         expect(
-            Object.values(worker.env).filter((binding) => binding.type === 'rate-limit'),
+            Object.values(worker.env).filter(
+                (binding) => isCloudflareBinding(binding) && binding.type === 'rate-limit',
+            ),
         ).toHaveLength(4)
     })
 

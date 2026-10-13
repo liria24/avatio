@@ -5,6 +5,14 @@ import { requireHttpsOrigin } from './build.ts'
 import { getStageConfig, parseAvatioStage, type AvatioStage } from './environment.ts'
 import { secretDefinitions } from './secrets.ts'
 
+type WorkerEnvEntry = NonNullable<WorkerConfig['env']>[string]
+
+/** `cf` allows `false`, `null`, and `undefined` so a binding can be omitted. */
+export const isCloudflareBinding = (
+    binding: WorkerEnvEntry,
+): binding is Exclude<WorkerEnvEntry, false | null | undefined> =>
+    binding != null && binding !== false
+
 const id = z.string().regex(/^[a-f0-9]{32}$/)
 const origin = z.string().refine((value) => {
     try {

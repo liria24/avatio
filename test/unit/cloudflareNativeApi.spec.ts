@@ -1,4 +1,4 @@
-import { createCloudflareConfig } from '../../config/cloudflare'
+import { createCloudflareConfig, isCloudflareBinding } from '../../config/cloudflare'
 import {
     developmentSchemaSql,
     developmentLedgerSql,
@@ -186,19 +186,22 @@ describe('existing-development read-only API', () => {
 describe('production binding metadata projection', () => {
     const expected = createCloudflareConfig({ mode: 'production', isPreview: false }, inventory)
         .worker.env
+    const queue = expected.ITEM_REVALIDATION_QUEUE
+    const email = expected.EMAIL
+    if (!isCloudflareBinding(queue) || queue.type !== 'queue')
+        throw new Error('Expected the production queue binding.')
+    if (!isCloudflareBinding(email) || email.type !== 'send-email')
+        throw new Error('Expected the production email binding.')
     const bindings = {
-        ITEM_REVALIDATION_QUEUE: expected.ITEM_REVALIDATION_QUEUE!,
-        EMAIL: expected.EMAIL!,
+        ITEM_REVALIDATION_QUEUE: queue,
+        EMAIL: email,
     }
     it('compares queue identity and email restrictions without returning their values', () => {
         const result = inspectCloudflarePreviewMetadata(
             {
                 ITEM_REVALIDATION_QUEUE: {
                     type: 'queue',
-                    queue_name:
-                        bindings.ITEM_REVALIDATION_QUEUE.type === 'queue'
-                            ? bindings.ITEM_REVALIDATION_QUEUE.name
-                            : '',
+                    queue_name: bindings.ITEM_REVALIDATION_QUEUE.name,
                 },
                 EMAIL: {
                     type: 'send_email',
