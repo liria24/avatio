@@ -11,7 +11,7 @@ export default authedSessionEventHandler(
     async ({ session, db }) => {
         const [{ id }, { expectedRevision, setupId, content }] = await Promise.all([
             validateParams(paramsSchema),
-            validateBody(bodySchema, { sanitize: true }),
+            validateBody(bodySchema),
         ])
         await enforceRateLimit({ binding: 'RATE_LIMIT_DRAFT', key: `drafts:${session.user.id}` })
 

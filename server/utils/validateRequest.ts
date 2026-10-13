@@ -18,7 +18,7 @@ export const validateBody = async <T extends z.ZodTypeAny>(
     throwIfValidationFailed(
         'validateBody',
         await readValidatedBody(useEvent(), (b) =>
-            s.safeParse(o?.sanitize ? sanitizeObject(b) : b),
+            s.safeParse(sanitizeObject(b, { html: o?.sanitize === true })),
         ),
     )
 
