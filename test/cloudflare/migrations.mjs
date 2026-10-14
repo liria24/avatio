@@ -19,7 +19,7 @@ const cliPackage = 'wrangler'
 const cliRoot = projectRoot
 const configured = JSON.parse(await readFile(join(cliRoot, 'package.json'), 'utf8'))
 const installed = (await import('wrangler/package.json', { with: { type: 'json' } })).default
-assert.equal(installed.version, '4.147.0')
+assert.equal(installed.version, '4.150.0')
 assert.equal(installed.version, configured.devDependencies[cliPackage])
 console.log(
     JSON.stringify({
