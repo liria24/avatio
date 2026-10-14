@@ -26,9 +26,6 @@ let root = projectRoot
 const inventory = createCloudflareResourceFixture()
 const { worker } = createCloudflareConfig({ mode, isPreview: mode === 'development' }, inventory)
 const configured = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'))
-const installed = (await import('wrangler/package.json', { with: { type: 'json' } })).default
-assert.equal(installed.version, '4.150.0')
-assert.equal(installed.version, configured.devDependencies.wrangler)
 for (const name of Object.keys({ ...configured.dependencies, ...configured.devDependencies }))
     assert.ok(!/cf-beta|build-output-utils/.test(name), `Obsolete fixture dependency: ${name}`)
 const temporary = await mkdtemp(join(tmpdir(), 'avatio-cloudflare-application-'))

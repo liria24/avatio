@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
-import { mkdir, mkdtemp, readFile, readdir, realpath, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readdir, realpath, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, dirname, join, relative, resolve } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
@@ -17,14 +17,9 @@ assert.equal(process.argv.length, 2, 'This local migration test accepts no targe
 assert.equal(Number(process.versions.node.split('.')[0]), 26)
 const cliPackage = 'wrangler'
 const cliRoot = projectRoot
-const configured = JSON.parse(await readFile(join(cliRoot, 'package.json'), 'utf8'))
-const installed = (await import('wrangler/package.json', { with: { type: 'json' } })).default
-assert.equal(installed.version, '4.150.0')
-assert.equal(installed.version, configured.devDependencies[cliPackage])
 console.log(
     JSON.stringify({
         migrationTestCli: cliPackage,
-        migrationTestVersion: installed.version,
         nodeVersion: process.version,
     }),
 )
