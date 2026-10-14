@@ -3,7 +3,7 @@ import { readFileSync, readdirSync, mkdirSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { isDeepStrictEqual } from 'node:util'
 
-import { createCloudflareConfig } from '../config/cloudflare.ts'
+import { createCloudflareConfig, isCloudflareBinding } from '../config/cloudflare.ts'
 import { createCloudflareWranglerConfig } from '../config/cloudflareWrangler.ts'
 import { parseAvatioStage } from '../config/environment.ts'
 import { secretDefinitions } from '../config/secrets.ts'
@@ -254,7 +254,10 @@ export const requireExistingCloudflareTarget = async (
     )
     if (
         Object.entries(expected.worker.env).some(
-            ([name, binding]) => binding.type === 'secret' && names.get(name) !== 'secret_text',
+            ([name, binding]) =>
+                isCloudflareBinding(binding) &&
+                binding.type === 'secret' &&
+                names.get(name) !== 'secret_text',
         ) ||
         names.has('BETTER_AUTH_SECRET')
     )

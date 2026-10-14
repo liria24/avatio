@@ -143,7 +143,7 @@ describe('edge cache purge', () => {
         const { createCacheInvalidator } = await import('../../../server/utils/infrastructure')
         const purge = vi.fn().mockResolvedValue({ success: true, errors: [] })
 
-        await createCacheInvalidator({ purge }).invalidate({
+        await createCacheInvalidator({ purge, invalidate: vi.fn() }).invalidate({
             collections: ['setups', 'setups'],
             setups: ['abc'],
         })

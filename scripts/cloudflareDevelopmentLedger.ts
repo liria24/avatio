@@ -4,6 +4,7 @@ import { z } from 'zod'
 
 import {
     getCloudflareDevelopmentInspectionConfiguration,
+    isCloudflareBinding,
     type CloudflareResourceInventory,
 } from '../config/cloudflare.ts'
 import { mapCloudflareMigrationHistory } from './cloudflareMigrationHistory.ts'
@@ -63,7 +64,8 @@ export const requireCloudflareDevelopmentLedger = (input: unknown, expected: Led
     if (
         !sha.test(expected.trustedCodeSha) ||
         expected.filesSha !== expected.trustedCodeSha ||
-        database?.type !== 'd1' ||
+        !isCloudflareBinding(database) ||
+        database.type !== 'd1' ||
         snapshot.accountId !== configuration.accountId ||
         snapshot.databaseId.toLowerCase() !== database.id ||
         !names.length ||
