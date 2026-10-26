@@ -75,7 +75,10 @@ it('stores provider admission rules atomically without touching manual item over
             db: AppDatabase
             event: H3Event
         }) => Promise<AppConfig>
-        const context = { db, event: {} as H3Event }
+        const context = {
+            db,
+            event: { context: { cloudflare: { env: {} } } } as unknown as H3Event,
+        }
         const saved = await route(context)
         expect(
             saved.providerAdmissions[0]?.facets

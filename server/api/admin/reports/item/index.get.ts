@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm'
+import { EmptyFilter } from 'drizzle-orm/relations'
 
 export default promiseEventHandler(async ({ db, event }) => {
     await requireAdminSession(event)
@@ -11,7 +12,7 @@ export default promiseEventHandler(async ({ db, event }) => {
             count: sql<number>`CAST(COUNT(*) OVER() AS INTEGER)`,
         },
         where: {
-            reporterId: reporterId ? { eq: reporterId } : undefined,
+            reporterId: reporterId ? { eq: reporterId } : EmptyFilter,
             isResolved: getAdminReportResolvedFilter(status),
         },
         limit,

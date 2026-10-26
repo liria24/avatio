@@ -3,7 +3,7 @@ import { useNuxtApp } from 'nuxt/app'
 
 import { reservedRootPaths } from '#avatio/routes'
 
-export const avatioSetupIdPolicy = {
+const avatioSetupIdPolicy = {
     isReserved: (id: string) => reservedRootPaths.has(id.toLowerCase()),
 }
 

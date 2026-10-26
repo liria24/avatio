@@ -4,7 +4,7 @@ import { join } from 'node:path'
 
 import { eq } from 'drizzle-orm'
 
-import { sessions, users } from '../../database/schema'
+import { bookmarks, sessions, setups, setupTags, users } from '../../database/schema'
 import { startTestRuntime, type FixtureUser, type TestRuntime } from '../helpers/runtime'
 import { draftContent, fixturePng, seedCatalogItem, seedSetup } from '../helpers/seeds'
 
@@ -37,6 +37,76 @@ const endpoints = await Array.fromAsync(glob('server/api/admin/**/*.ts'), (file)
 })
 
 describe('real HTTP authorization and ownership', () => {
+    it('keeps omitted relational filters, private visibility, bookmarks and pagination under rc.5', async () => {
+        const owner = await runtime.createUser()
+        const other = await runtime.createUser()
+        const publicSetup = await seedSetup(runtime, owner)
+        const privateSetup = await seedSetup(runtime, owner, { public: false })
+        await seedSetup(runtime, owner, { hidden: true })
+        const otherPrivate = await seedSetup(runtime, other, { public: false })
+        const emptyId = randomUUID()
+        await runtime.db
+            .insert(setups)
+            .values({ id: emptyId, userId: owner.id, name: 'Empty', public: true })
+        await runtime.db.insert(setupTags).values({ setupId: publicSetup.id, tag: 'filter-test' })
+        const list = async (query: string, viewer?: FixtureUser) => {
+            const response = await request(`/api/setups?${query}`, viewer)
+            expect(response.status).toBe(200)
+            return (await response.json()) as {
+                data: { id: string }[]
+                pagination: { total: number }
+            }
+        }
+        const byOwner = `username=${owner.username}`
+        const publicRows = await list(byOwner)
+        expect(publicRows.data.map((row) => row.id).sort()).toEqual(
+            [publicSetup.id, emptyId].sort(),
+        )
+        expect(
+            (await list(`${byOwner}&includePrivate=true`, owner)).data.map((row) => row.id).sort(),
+        ).toEqual([publicSetup.id, privateSetup.id, emptyId].sort())
+        expect(
+            (await list(`${byOwner}&includePrivate=true`, other)).data.map((row) => row.id).sort(),
+        ).toEqual([publicSetup.id, emptyId].sort())
+        expect(
+            (await list(`${byOwner}&itemId=${publicSetup.item.id}`)).data.map((row) => row.id),
+        ).toEqual([publicSetup.id])
+        expect((await list(`${byOwner}&tag=filter-test`)).data.map((row) => row.id)).toEqual([
+            publicSetup.id,
+        ])
+        expect((await list(`${byOwner}&tag=absent`)).data).toEqual([])
+        const firstPage = await list(`${byOwner}&limit=1&page=1&orderBy=name`)
+        const secondPage = await list(`${byOwner}&limit=1&page=2&orderBy=name`)
+        expect(firstPage.data).toHaveLength(1)
+        expect(secondPage.data).toHaveLength(1)
+        expect(firstPage.data[0]!.id).not.toBe(secondPage.data[0]!.id)
+        await runtime.db.insert(bookmarks).values(
+            [publicSetup, privateSetup, otherPrivate].map((setup) => ({
+                userId: owner.id,
+                setupId: setup.id,
+            })),
+        )
+        expect((await list('bookmarked=true', owner)).data.map((row) => row.id).sort()).toEqual(
+            [publicSetup.id, privateSetup.id].sort(),
+        )
+        expect((await request('/api/setups?bookmarked=true')).status).toBe(401)
+        await runtime.db.update(users).set({ banned: true }).where(eq(users.id, owner.id))
+        expect((await list(byOwner)).data).toEqual([])
+        const adminResult = await request(
+            `/api/admin/setups?username=${owner.username}&banned=true`,
+            runtime.admin,
+        )
+        expect(adminResult.status).toBe(200)
+        expect(await adminResult.json()).toHaveLength(4)
+        const unbanned = await request(
+            `/api/admin/setups?username=${owner.username}&banned=false`,
+            runtime.admin,
+        )
+        expect(unbanned.status).toBe(200)
+        expect(await unbanned.json()).toEqual([])
+        expect((await request('/api/admin/user', runtime.admin)).status).toBe(200)
+    })
+
     it.each(['cleanup', 'report'])('rejects unsafe HTTP requests to the %s job', async (job) => {
         const path = `/api/admin/job/${job}`
         for (const method of ['GET', 'HEAD'])

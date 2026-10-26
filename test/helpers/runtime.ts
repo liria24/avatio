@@ -1,22 +1,26 @@
-import { spawn, type ChildProcess } from 'node:child_process'
+import { execFile, spawn, type ChildProcess } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
-import { cp, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
-import { DatabaseSync } from 'node:sqlite'
 import { setTimeout as delay } from 'node:timers/promises'
 import { pathToFileURL } from 'node:url'
+import { promisify } from 'node:util'
 
+import type { D1Database } from '@cloudflare/workers-types'
 import { hashPassword } from 'better-auth/crypto'
-import { drizzle } from 'drizzle-orm/node-sqlite'
+import { drizzle } from 'drizzle-orm/d1'
+import { getPlatformProxy } from 'wrangler'
 
+import { getLocalD1Paths } from '../../config/localD1'
 import { relations } from '../../database/relations'
 import { accounts } from '../../database/schema'
 import { createTestAuth } from './auth'
 
 const sourceRoot = resolve(import.meta.dirname, '../..')
 const fixtureOrigin = 'http://localhost:3000'
-const fixturePrefix = join(tmpdir(), 'avatio-http-')
+// Nuxt's component scanner requires fixtures and the linked node_modules on the same Windows drive.
+const fixtureParent = join(sourceRoot, '.data')
+const fixturePrefix = join(fixtureParent, 'avatio-http-')
 
 const childEnvironment = () => {
     const env: NodeJS.ProcessEnv = {}
@@ -70,15 +74,16 @@ const stopChild = async (child: ChildProcess) => {
 export const startTestRuntime = async () => {
     // Leave time for failure logs and child cleanup before the 120-second HTTP hook expires.
     const deadline = Date.now() + 110_000
+    await mkdir(fixtureParent, { recursive: true })
     const root = await mkdtemp(fixturePrefix)
     // Never recursively delete a caller-supplied path or the normal workspace/local state.
-    if (dirname(root) !== tmpdir() || !root.startsWith(fixturePrefix))
+    if (dirname(root) !== fixtureParent || !root.startsWith(fixturePrefix))
         throw new Error('Unsafe test root')
     let child: ChildProcess | undefined
-    let sqlite: DatabaseSync | undefined
+    let proxy: Awaited<ReturnType<typeof getPlatformProxy<{ APP_DB: D1Database }>>> | undefined
     const clean = async () => {
         if (child) await stopChild(child)
-        sqlite?.close()
+        await proxy?.dispose()
         await rm(root, { recursive: true, force: true })
     }
     try {
@@ -97,6 +102,8 @@ export const startTestRuntime = async () => {
             'database',
             'drizzle',
             'config',
+            'deployment',
+            'scripts',
             'packages',
             'i18n',
             'public',
@@ -122,7 +129,7 @@ import application from './application.config.ts'
 export default defineNuxtConfig({
     ...application,
     devtools: { enabled: false },
-    fonts: { providers: { google: false, bunny: false, fontshare: false, fontsource: false, adobe: false } },
+    fonts: { providers: { google: false, googleicons: false, bunny: false, fontshare: false, fontsource: false, adobe: false } },
     pwa: { ...application.pwa, disable: true },
 })
 `,
@@ -144,9 +151,25 @@ export default defineNuxtConfig({
             )
         }
         const log: string[] = []
+        await promisify(execFile)(
+            process.execPath,
+            [
+                '--input-type=module',
+                '--eval',
+                `import { prepareLocalD1 } from './scripts/localDevelopment.ts'; prepareLocalD1()`,
+            ],
+            { cwd: root, env: childEnvironment(), windowsHide: true },
+        )
         child = spawn(
             process.execPath,
-            [join(sourceRoot, 'node_modules/nuxt/bin/nuxt.mjs'), 'dev', root],
+            [
+                join(sourceRoot, 'node_modules/nuxt/bin/nuxt.mjs'),
+                'dev',
+                root,
+                '--port',
+                '3000',
+                '--no-fork',
+            ],
             {
                 cwd: root,
                 env: childEnvironment(),
@@ -184,9 +207,13 @@ export default defineNuxtConfig({
             )
         )
             throw new Error(`Nuxt dependency discovery failed:\n${log.join('').slice(-12_000)}`)
-        sqlite = new DatabaseSync(join(root, '.data/avatio.sqlite'))
-        sqlite.exec('PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000')
-        const db = drizzle({ client: sqlite, relations })
+        const paths = getLocalD1Paths(root)
+        proxy = await getPlatformProxy<{ APP_DB: D1Database }>({
+            configPath: paths.configPath,
+            persist: { path: paths.proxyPersistencePath },
+            remoteBindings: false,
+        })
+        const db = drizzle(proxy.env.APP_DB, { relations })
         const auth = createTestAuth(
             db,
             (await readFile(join(root, '.data/local-auth-secret'), 'utf8')).trim(),
@@ -236,11 +263,11 @@ export default defineNuxtConfig({
         return {
             root,
             db,
-            sqlite,
             admin,
             createUser,
             auth,
             clean,
+            diagnostics: () => log.join(''),
             origin: fixtureOrigin,
         }
     } catch (error) {

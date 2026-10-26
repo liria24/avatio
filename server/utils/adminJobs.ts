@@ -1,6 +1,5 @@
 import { createError } from '@nuxt/nitro-server/h3'
 import { lt } from 'drizzle-orm'
-import { getPreviewKind } from '~~/config/preview'
 import { idempotencyRequests } from '~~/database/schema'
 
 const reportLog = logger('/api/admin/job/report')
@@ -31,7 +30,7 @@ const STORAGE_OPERATION_CONCURRENCY = 8
 const BACKUP_PREFIX = 'backup'
 
 const sendMessage = async (message: { content?: string; embeds?: object[] }) => {
-    if (import.meta.dev) return
+    if (import.meta.dev || !getRuntimeStageConfig().features.discord) return
     const endpoint = getRuntimeEnvString('LIRIA_DISCORD_ENDPOINT')?.replace(/\/+$/, '')
     const token = getRuntimeEnvString('LIRIA_DISCORD_ACCESS_TOKEN')
     if (!endpoint || !token) return
@@ -316,10 +315,10 @@ export const runReportJob = async () => {
 
 export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) => {
     const stage = getRuntimeEnvString('STAGE') ?? 'development'
-    if (!dryRun && getPreviewKind(stage, getRuntimeEnvString('PREVIEW_NAME')))
+    if (!dryRun && !import.meta.dev && !getRuntimeStageConfig().features.cleanup)
         throw createError({
             statusCode: 403,
-            message: 'Development Preview cleanup is dry-run only.',
+            message: 'Development cleanup is dry-run only.',
         })
     const thresholdDate = new Date(Date.now() - IMAGE_DELETION_THRESHOLD)
     const storageContext = await getStorageContext()

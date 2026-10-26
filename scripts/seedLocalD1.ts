@@ -1,286 +1,237 @@
-import { spawn } from 'node:child_process'
-import { mkdtemp, readFile, rename, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { basename, dirname, join } from 'node:path'
+import { execFileSync } from 'node:child_process'
+import { cp, mkdir, mkdtemp, readFile, rename, rm, writeFile } from 'node:fs/promises'
+import { dirname, join, resolve } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
+import { fileURLToPath } from 'node:url'
+
+import type { D1Database } from '@cloudflare/workers-types'
+import { getPlatformProxy } from 'wrangler'
 
 import { getStageConfig } from '../config/environment.ts'
+import { getLocalD1Paths } from '../config/localD1.ts'
+import { createCloudflareProcessEnvironment } from './cloudflareProcessEnvironment.ts'
+import { prepareLocalD1, requireLocalDevelopmentPort } from './localDevelopment.ts'
 
-const LOCAL_DATABASE = join(process.cwd(), '.data', 'avatio.sqlite')
+const wrangler = fileURLToPath(new URL('../bin/wrangler.js', import.meta.resolve('wrangler')))
+const usage = `Usage: vp run db:seed:local -- --yes [--source development|production] [--allow-production]
 
-const sourceStages = ['development', 'production'] as const
-type SourceStage = (typeof sourceStages)[number]
+Copies a remote D1 snapshot into local D1. Stop the local app first.
+The previous local D1 directory is retained as a timestamped backup under .data/.
+Production requires --source production and --allow-production.
+Authenticate Wrangler with D1 Read permission. This command never writes remote D1.`
 
-interface TableName {
-    name: string
+const identifier = (name: string) => {
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) throw new Error('Unexpected database identifier.')
+    return `"${name}"`
 }
-
-interface TableColumn {
-    name: string
-}
-
-interface TableCount {
-    count: number
-}
-
-const usage = `Usage: bun run db:seed:local -- --yes [--source development|production] [--allow-production]
-
-Copies a remote D1 snapshot into the local SQLite database used by bun dev.
-
-Default source: development (avatio-development)
-Production source requires both --source production and --allow-production.
-Authenticate Wrangler first with a D1 Read-capable account or CLOUDFLARE_API_TOKEN.
-The command never creates or writes a remote D1 database.`
-
-const isSourceStage = (value: string): value is SourceStage =>
-    sourceStages.includes(value as SourceStage)
-
-const optionValue = (name: string) => {
-    const index = process.argv.indexOf(name)
-    if (index === -1) return undefined
-    const value = process.argv[index + 1]
-    if (!value || value.startsWith('--')) throw new Error(`${name} requires a value.`)
-    return value
-}
-
-const quoteIdentifier = (value: string) => {
-    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(value))
-        throw new Error(`Unexpected SQLite identifier: ${value}`)
-    return `"${value}"`
-}
-
-const quoteString = (value: string) => `'${value.replaceAll("'", "''")}'`
-
 const appTable = (name: string) =>
     !name.startsWith('_') && !name.startsWith('sqlite_') && name !== 'd1_migrations'
 
-const tableNames = (database: DatabaseSync) =>
-    (
-        database
-            .prepare(
-                "SELECT name FROM sqlite_schema WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name",
-            )
-            .all() as TableName[]
-    ).map((table) => table.name)
-
-const tableColumns = (database: DatabaseSync, table: string) =>
-    (database.prepare(`PRAGMA table_info(${quoteIdentifier(table)})`).all() as TableColumn[]).map(
-        (column) => column.name,
-    )
-
-const tableCount = (database: DatabaseSync, table: string) =>
-    (
-        database
-            .prepare(`SELECT count(*) AS count FROM ${quoteIdentifier(table)}`)
-            .get() as unknown as TableCount
-    ).count
-
-const findLocalAppDatabase = () => {
-    const database = new DatabaseSync(LOCAL_DATABASE, { readOnly: true })
+// Only the official D1 binding/CLI touches persistence; SQLite reads the exported snapshot in memory.
+export const seedLocalD1Snapshot = async (rootDirectory: string, dumpPath: string) => {
+    const parent = resolve(rootDirectory, '.data')
+    await mkdir(parent, { recursive: true })
+    const staging = await mkdtemp(join(parent, 'd1-seed-'))
+    if (dirname(staging) !== parent || !staging.startsWith(join(parent, 'd1-seed-')))
+        throw new Error('Unsafe local D1 staging path.')
+    const snapshot = new DatabaseSync(':memory:')
+    let proxy: Awaited<ReturnType<typeof getPlatformProxy<{ APP_DB: D1Database }>>> | undefined
     try {
-        const tables = new Set(tableNames(database))
-        if (tables.has('users') && tables.has('setups')) return LOCAL_DATABASE
-    } finally {
-        database.close()
-    }
-    throw new Error('Local AppDatabase was not found. Run `bun dev` once before seeding.')
-}
-
-const runExport = async (sourceDatabase: string, output: string) => {
-    const processHandle = spawn(
-        process.platform === 'win32' ? 'bunx.exe' : 'bunx',
-        [
-            'wrangler',
-            'd1',
-            'export',
-            sourceDatabase,
-            '--remote',
-            '--output',
-            output,
-            '--skip-confirmation',
-        ],
-        {
-            cwd: process.cwd(),
-            stdio: ['inherit', 'pipe', 'pipe'],
-        },
-    )
-    let stdout = ''
-    let stderr = ''
-    processHandle.stdout.setEncoding('utf8').on('data', (chunk) => (stdout += chunk))
-    processHandle.stderr.setEncoding('utf8').on('data', (chunk) => (stderr += chunk))
-    const exitCode = await new Promise<number>((resolve, reject) => {
-        processHandle.on('error', reject)
-        processHandle.on('exit', (code) => resolve(code ?? 1))
-    })
-    if (exitCode !== 0) {
-        const diagnostic = `${stdout}\n${stderr}`
-            .replaceAll(/https?:\/\/\S+/g, '[redacted URL]')
-            .trim()
-        if (diagnostic) console.error(diagnostic)
-        throw new Error(
-            'D1 export failed. Authenticate Wrangler with `wrangler login` or provide a valid D1 Read-capable CLOUDFLARE_API_TOKEN.',
+        snapshot.exec(await readFile(dumpPath, 'utf8'))
+        await cp(join(rootDirectory, 'drizzle'), join(staging, 'drizzle'), { recursive: true })
+        const paths = prepareLocalD1(staging)
+        proxy = await getPlatformProxy<{ APP_DB: D1Database }>({
+            configPath: paths.configPath,
+            persist: { path: paths.proxyPersistencePath },
+            remoteBindings: false,
+        })
+        const db = proxy.env.APP_DB
+        const targetTables = (
+            await db
+                .prepare("SELECT name FROM sqlite_schema WHERE type = 'table'")
+                .all<{ name: string }>()
+        ).results
+            .map((row) => row.name)
+            .filter(appTable)
+        const sourceTables = snapshot
+            .prepare("SELECT name FROM sqlite_schema WHERE type = 'table' ORDER BY name")
+            .all()
+            .map((row) => String(row.name))
+            .filter(appTable)
+        if (!sourceTables.includes('users') || !sourceTables.includes('setups'))
+            throw new Error('The snapshot is not an Avatio application database.')
+        const sql = [
+            'PRAGMA defer_foreign_keys = ON;',
+            'DROP TRIGGER local_first_user_admin;',
+            ...targetTables.map((table) => `DELETE FROM ${identifier(table)};`),
+        ]
+        const counts = new Map<string, number>()
+        for (const table of sourceTables) {
+            if (!targetTables.includes(table))
+                throw new Error(`Local schema is missing source table ${table}.`)
+            const columns = snapshot
+                .prepare(`PRAGMA table_info(${identifier(table)})`)
+                .all()
+                .map((row) => String(row.name))
+            const targetColumns = (
+                await db.prepare(`PRAGMA table_info(${identifier(table)})`).all<{ name: string }>()
+            ).results.map((row) => row.name)
+            if (columns.some((column) => !targetColumns.includes(column)))
+                throw new Error(`Local schema is missing source columns in ${table}.`)
+            const columnList = columns.map(identifier).join(', ')
+            // Hex text preserves embedded NULs that SQLite quote() would truncate.
+            const values = columns
+                .map(identifier)
+                .map(
+                    (column) =>
+                        `CASE typeof(${column}) WHEN 'text' THEN 'CAST(X''' || hex(${column}) || ''' AS TEXT)' ELSE quote(${column}) END`,
+                )
+                .join(" || ',' || ")
+            const rows = snapshot
+                .prepare(`SELECT ${values} AS data FROM ${identifier(table)}`)
+                .all()
+            counts.set(table, rows.length)
+            for (const row of rows)
+                sql.push(
+                    `INSERT INTO ${identifier(table)} (${columnList}) VALUES (${String(row.data)});`,
+                )
+        }
+        await proxy.dispose()
+        proxy = undefined
+        const importPath = join(staging, 'data.sql')
+        await writeFile(importPath, sql.join('\n'), { mode: 0o600 })
+        const environment = createCloudflareProcessEnvironment(
+            process.env,
+            join(staging, '.data/tooling-home'),
         )
-    }
-}
-
-const createSnapshotDatabase = async (sqlPath: string, snapshotPath: string) => {
-    const snapshot = new DatabaseSync(snapshotPath)
-    try {
-        snapshot.exec(await readFile(sqlPath, 'utf8'))
+        try {
+            execFileSync(
+                process.execPath,
+                [
+                    wrangler,
+                    'd1',
+                    'execute',
+                    'APP_DB',
+                    '--local',
+                    '--config',
+                    paths.configPath,
+                    '--persist-to',
+                    paths.persistencePath,
+                    '--file',
+                    importPath,
+                ],
+                {
+                    cwd: staging,
+                    env: { ...environment, CI: 'true', WRANGLER_SEND_METRICS: 'false' },
+                    stdio: 'pipe',
+                },
+            )
+        } catch {
+            throw new Error('Local D1 import failed; the previous local database is unchanged.')
+        }
+        prepareLocalD1(staging)
+        proxy = await getPlatformProxy<{ APP_DB: D1Database }>({
+            configPath: paths.configPath,
+            persist: { path: paths.proxyPersistencePath },
+            remoteBindings: false,
+        })
+        if ((await proxy.env.APP_DB.prepare('PRAGMA foreign_key_check').all()).results.length)
+            throw new Error('Snapshot foreign key validation failed.')
+        for (const [table, expected] of counts) {
+            const actual = await proxy.env.APP_DB.prepare(
+                `SELECT count(*) AS count FROM ${identifier(table)}`,
+            ).first<number>('count')
+            if (actual !== expected) throw new Error(`Row-count verification failed for ${table}.`)
+        }
+        await proxy.dispose()
+        proxy = undefined
+        await requireLocalDevelopmentPort()
+        const target = getLocalD1Paths(resolve(rootDirectory)).persistencePath
+        const backup = join(parent, `d1-before-seed-${Date.now()}`)
+        if (
+            dirname(target) !== parent ||
+            dirname(backup) !== parent ||
+            dirname(paths.persistencePath) !== join(staging, '.data')
+        )
+            throw new Error('Unsafe local D1 replacement path.')
+        let retained = false
+        try {
+            await rename(target, backup)
+            retained = true
+        } catch (error) {
+            if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
+        }
+        try {
+            await rename(paths.persistencePath, target)
+        } catch (error) {
+            if (retained) await rename(backup, target)
+            throw error
+        }
+        return {
+            rows: [...counts.values()].reduce((sum, count) => sum + count, 0),
+            tables: counts.size,
+            backup: retained ? backup : undefined,
+        }
     } finally {
         snapshot.close()
-    }
-}
-
-const createStagedLocalDatabase = (localPath: string, stagedPath: string) => {
-    const local = new DatabaseSync(localPath, { readOnly: true })
-    try {
-        local.exec(`VACUUM INTO ${quoteString(stagedPath)}`)
-    } finally {
-        local.close()
-    }
-}
-
-const seedStagedDatabase = (stagedPath: string, snapshotPath: string) => {
-    const staged = new DatabaseSync(stagedPath)
-    try {
-        staged.exec('PRAGMA journal_mode = DELETE')
-        const targetTables = tableNames(staged).filter(appTable)
-        const snapshot = new DatabaseSync(snapshotPath, { readOnly: true })
-        let sourceTables: string[]
-        let sourceColumns: Map<string, string[]>
-        try {
-            sourceTables = tableNames(snapshot).filter(appTable)
-            sourceColumns = new Map(
-                sourceTables.map((table) => [table, tableColumns(snapshot, table)]),
-            )
-        } finally {
-            snapshot.close()
-        }
-
-        const targetTableSet = new Set(targetTables)
-        const missingTargetTables = sourceTables.filter((table) => !targetTableSet.has(table))
-        if (missingTargetTables.length)
-            throw new Error(
-                `Local schema is missing source tables: ${missingTargetTables.join(', ')}. Run the current app once before seeding.`,
-            )
-
-        staged.exec('PRAGMA foreign_keys = OFF')
-        staged.exec(`ATTACH DATABASE ${quoteString(snapshotPath)} AS source_snapshot`)
-        let inTransaction = false
-        try {
-            staged.exec('BEGIN IMMEDIATE')
-            inTransaction = true
-
-            for (const table of targetTables) staged.exec(`DELETE FROM ${quoteIdentifier(table)}`)
-
-            for (const table of sourceTables) {
-                const targetColumns = new Set(tableColumns(staged, table))
-                const columns = sourceColumns
-                    .get(table)!
-                    .filter((column) => targetColumns.has(column))
-                if (!columns.length)
-                    throw new Error(`No compatible columns found for source table ${table}.`)
-
-                const columnList = columns.map(quoteIdentifier).join(', ')
-                staged.exec(
-                    `INSERT INTO ${quoteIdentifier(table)} (${columnList}) SELECT ${columnList} FROM source_snapshot.${quoteIdentifier(table)}`,
-                )
-            }
-
-            const foreignKeyViolations = staged.prepare('PRAGMA foreign_key_check').all()
-            if (foreignKeyViolations.length)
-                throw new Error(
-                    `Foreign key verification failed with ${foreignKeyViolations.length} violation(s).`,
-                )
-
-            staged.exec('COMMIT')
-            inTransaction = false
-        } catch (error) {
-            if (inTransaction) staged.exec('ROLLBACK')
-            throw error
-        } finally {
-            staged.exec('DETACH DATABASE source_snapshot')
-            staged.exec('PRAGMA foreign_keys = ON')
-        }
-
-        const verificationSnapshot = new DatabaseSync(snapshotPath, { readOnly: true })
-        try {
-            const copied = sourceTables.map((table) => {
-                const sourceCount = tableCount(verificationSnapshot, table)
-                const localCount = tableCount(staged, table)
-                if (sourceCount !== localCount)
-                    throw new Error(
-                        `Row-count verification failed for ${table}: source=${sourceCount}, local=${localCount}.`,
-                    )
-                return { table, count: localCount }
-            })
-            return copied
-        } finally {
-            verificationSnapshot.close()
-        }
-    } finally {
-        staged.close()
+        await proxy?.dispose()
+        await rm(staging, { recursive: true, force: true })
     }
 }
 
 const main = async () => {
-    if (process.argv.includes('--help')) {
-        console.info(usage)
-        return
-    }
+    if (process.argv.includes('--help')) return console.info(usage)
     if (!process.argv.includes('--yes'))
-        throw new Error(`Refusing to overwrite the local D1 database without --yes.\n\n${usage}`)
-
-    const source = optionValue('--source') ?? 'development'
-    if (!isSourceStage(source))
-        throw new Error(`--source must be one of: ${sourceStages.join(', ')}.`)
+        throw new Error(`Local replacement requires --yes.\n${usage}`)
+    const sourceIndex = process.argv.indexOf('--source')
+    const source = sourceIndex === -1 ? 'development' : process.argv[sourceIndex + 1]
+    if (source !== 'development' && source !== 'production')
+        throw new Error('--source must be development or production.')
     if (source === 'production' && !process.argv.includes('--allow-production'))
         throw new Error('Production source requires --allow-production.')
-
-    const sourceDatabase = getStageConfig(source).infrastructure.appDatabase
-    const localPath = findLocalAppDatabase()
-    const tempDirectory = await mkdtemp(join(tmpdir(), 'avatio-d1-seed-'))
-    const dumpPath = join(tempDirectory, 'source.sql')
-    const snapshotPath = join(tempDirectory, 'source.sqlite')
-    const stagedPath = join(dirname(localPath), `${basename(localPath)}.seed`)
-    const backupPath = join(dirname(localPath), `${basename(localPath)}.before-seed`)
-
+    await requireLocalDevelopmentPort()
+    const root = process.cwd()
+    const parent = resolve(root, '.data')
+    await mkdir(parent, { recursive: true })
+    const directory = await mkdtemp(join(parent, 'd1-export-'))
+    if (dirname(directory) !== parent || !directory.startsWith(join(parent, 'd1-export-')))
+        throw new Error('Unsafe export path.')
+    const dump = join(directory, 'source.sql')
     try {
-        await runExport(sourceDatabase, dumpPath)
-        await createSnapshotDatabase(dumpPath, snapshotPath)
-        createStagedLocalDatabase(localPath, stagedPath)
-        const copied = seedStagedDatabase(stagedPath, snapshotPath)
-
-        await rm(backupPath, { force: true })
-        await rename(localPath, backupPath)
         try {
-            await rename(stagedPath, localPath)
-        } catch (error) {
-            await rename(backupPath, localPath)
-            throw error
+            execFileSync(
+                process.execPath,
+                [
+                    wrangler,
+                    'd1',
+                    'export',
+                    getStageConfig(source).infrastructure.appDatabase,
+                    '--remote',
+                    '--output',
+                    dump,
+                    '--skip-confirmation',
+                ],
+                { stdio: 'pipe' },
+            )
+        } catch {
+            throw new Error(
+                'Remote D1 export failed. Authenticate Wrangler with D1 Read permission.',
+            )
         }
-        await Promise.all([
-            rm(`${localPath}-shm`, { force: true }),
-            rm(`${localPath}-wal`, { force: true }),
-        ])
-        await rm(backupPath, { force: true })
-
-        const rowCount = copied.reduce((total, table) => total + table.count, 0)
+        const result = await seedLocalD1Snapshot(root, dump)
         console.info(
-            `Seeded ${localPath} from ${sourceDatabase}: ${rowCount} rows across ${copied.length} table(s).`,
+            `Seeded local D1: ${result.rows} rows across ${result.tables} tables.${result.backup ? ` Previous data: ${result.backup}` : ''}`,
         )
     } finally {
-        await rm(stagedPath, { force: true })
-        await rm(`${stagedPath}-shm`, { force: true })
-        await rm(`${stagedPath}-wal`, { force: true })
-        await rm(tempDirectory, { force: true, recursive: true })
+        await rm(directory, { recursive: true, force: true })
     }
 }
 
-try {
-    await main()
-} catch (error) {
-    console.error(error instanceof Error ? error.message : 'Local D1 seed failed.')
-    process.exit(1)
+if (import.meta.main) {
+    try {
+        await main()
+    } catch (error) {
+        console.error(error instanceof Error ? error.message : 'Local D1 seed failed.')
+        process.exitCode = 1
+    }
 }

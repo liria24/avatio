@@ -1,6 +1,7 @@
 import { createMarkdownParser } from 'comark'
 import breaks from 'comark/plugins/breaks'
 import { sql } from 'drizzle-orm'
+import { EmptyFilter } from 'drizzle-orm/relations'
 import { z } from 'zod'
 import { locales } from '~~/database/schema'
 
@@ -35,8 +36,8 @@ export default requestEventHandler(async ({ event, db }) => {
             createdAt: sort,
         },
         where: {
-            title: q ? { like: `%${q}%` } : undefined,
-            authors: userId ? { userId: { eq: userId || undefined } } : undefined,
+            RAW: (table) => (q ? searchText(table.title, q) : EmptyFilter),
+            authors: userId ? { userId: { eq: userId } } : EmptyFilter,
         },
         columns: {
             slug: true,

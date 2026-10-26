@@ -11,7 +11,7 @@ it('names the fullscreen dialog and restores the initiating control after closin
     const launcher = document.createElement('button')
     launcher.dataset.viewerTest = ''
     launcher.textContent = 'Open image'
-    document.body.append(launcher)
+    document.body.appendChild(launcher)
     const wrapper = await mountSuspended(ImageViewer, {
         props: { src: '/test.png', alt: 'Portrait', open: false },
         attachTo: document.body,

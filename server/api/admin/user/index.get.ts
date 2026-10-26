@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm'
+import { EmptyFilter } from 'drizzle-orm/relations'
 import { z } from 'zod'
 
 const querySchema = z.object({
@@ -27,14 +28,6 @@ export default promiseEventHandler(async ({ db, event }) => {
         banned,
     } = await validateQuery(querySchema)
 
-    const searchPattern = searchValue
-        ? searchOperator === 'starts_with'
-            ? `${searchValue}%`
-            : searchOperator === 'ends_with'
-              ? `%${searchValue}`
-              : `%${searchValue}%`
-        : undefined
-
     const result = await db.query.users.findMany({
         limit,
         offset,
@@ -42,24 +35,21 @@ export default promiseEventHandler(async ({ db, event }) => {
             [sortBy]: sortDirection,
         },
         where: {
-            name:
-                searchValue && (!searchField || searchField === 'name')
-                    ? { like: searchPattern! }
-                    : undefined,
-            email: searchValue && searchField === 'email' ? { like: searchPattern! } : undefined,
-            username:
-                searchValue && searchField === 'username' ? { like: searchPattern! } : undefined,
+            RAW: (table) =>
+                searchValue
+                    ? searchText(table[searchField ?? 'name'], searchValue, searchOperator)
+                    : EmptyFilter,
             role:
                 role === 'user'
                     ? { OR: [{ isNull: true }, { eq: 'user' }] }
                     : role === 'admin'
                       ? { eq: 'admin' }
-                      : undefined,
+                      : EmptyFilter,
             banned: banned
                 ? { eq: true }
                 : banned === false
                   ? { OR: [{ isNull: true }, { eq: false }] }
-                  : undefined,
+                  : EmptyFilter,
         },
         with: {
             badges: {

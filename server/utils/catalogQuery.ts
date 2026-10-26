@@ -1,5 +1,5 @@
 import { resolveEffectiveCategory } from '@avatio/core/catalog'
-import { and, asc, count, desc, eq, inArray, isNull, like, or, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, inArray, isNull, or, sql } from 'drizzle-orm'
 import {
     catalogItems,
     itemSources,
@@ -160,9 +160,9 @@ export const queryCatalogItems = async (
     const ordering = query
         ? sql<number>`case
               when coalesce(${catalogItems.displayNameOverride}, ${itemSources.displayName}) = ${query} then 0
-              when coalesce(${catalogItems.displayNameOverride}, ${itemSources.displayName}) like ${`${query}%`} then 1
+              when ${searchText(sql`coalesce(${catalogItems.displayNameOverride}, ${itemSources.displayName})`, query, 'starts_with')} then 1
               when ${publisherSources.name} = ${query} then 2
-              when ${publisherSources.name} like ${`${query}%`} then 3
+              when ${searchText(publisherSources.name, query, 'starts_with')} then 3
               else 4
           end`
         : input.suggestedByOwnerId
@@ -189,10 +189,10 @@ export const queryCatalogItems = async (
             and(
                 query
                     ? or(
-                          like(itemSources.displayName, `%${query}%`),
-                          like(catalogItems.displayNameOverride, `%${query}%`),
-                          like(publisherSources.name, `%${query}%`),
-                          like(itemSources.metadata, `%${query}%`),
+                          searchText(itemSources.displayName, query),
+                          searchText(catalogItems.displayNameOverride, query),
+                          searchText(publisherSources.name, query),
+                          searchText(itemSources.metadata, query),
                       )
                     : undefined,
                 input.category?.length && !input.ownerId && !input.publicAvatars

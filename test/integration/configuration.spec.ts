@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { promisify } from 'node:util'
 
 import { secretDefinitions } from '../../config/secrets'
+import { createCloudflareProcessEnvironment } from '../../scripts/cloudflareProcessEnvironment'
 
 const execFileAsync = promisify(execFile)
 
@@ -49,17 +50,17 @@ describe('stage configuration', () => {
         ).resolves.toBeDefined()
     })
 
-    it.each([
-        ['production', ''],
-        ['development', ''],
-        ['development', 'development'],
-    ])(
-        'keeps secrets out of Nuxt configuration for %s / %s',
-        async (stage, preview) => {
-            await execFileAsync(process.execPath, [
-                '--input-type=module',
-                '-e',
-                `
+    it.each(['production', 'development'])(
+        'keeps secrets out of Nuxt configuration for %s',
+        async (stage) => {
+            const home = await mkdtemp(join(tmpdir(), 'avatio-config-test-'))
+            try {
+                await execFileAsync(
+                    process.execPath,
+                    [
+                        '--input-type=module',
+                        '-e',
+                        `
             import assert from 'node:assert/strict'
             import { loadNuxt } from '@nuxt/kit'
             const authSecret = 'synthetic-build-secret-never-inline-123456789'
@@ -67,31 +68,23 @@ describe('stage configuration', () => {
             process.env.NUXT_BETTER_AUTH_SECRET = authSecret
             process.env.OG_IMAGE_SECRET = ogSecret
             process.env.STAGE = ${JSON.stringify(stage)}
-            process.env.PREVIEW_NAME = ${JSON.stringify(preview)}
-            process.env.PUBLIC_SITE_URL = 'https://preview.example.test'
-            process.env.R2_PUBLIC_BASE_URL = 'https://preview-images.example.test'
-            process.env.OG_IMAGE_ENDPOINT = 'https://preview-og.example.test'
-            const preview = Boolean(process.env.PREVIEW_NAME)
-            const siteUrl = preview ? process.env.PUBLIC_SITE_URL
-                : process.env.STAGE === 'production' ? 'https://avatio.me' : 'https://dev.avatio.me'
-            const nuxt = await loadNuxt({ cwd: process.cwd(), dev: false, ready: true })
+            const siteUrl = process.env.STAGE === 'production' ? 'https://avatio.me' : 'https://dev.avatio.me'
+            const nuxt = await loadNuxt({ cwd: process.cwd(), dev: false, ready: true, dotenv: false, envName: 'production' })
             try {
                 const runtimeConfig = nuxt._nitro.options.runtimeConfig
                 const serialized = JSON.stringify(runtimeConfig)
                 const publicSerialized = JSON.stringify(runtimeConfig.public)
                 assert.equal(runtimeConfig.betterAuthSecret, '')
-                if (!preview) assert.equal(runtimeConfig.ogImage.secret, '{{OG_IMAGE_SECRET}}')
+                assert.equal(runtimeConfig.ogImage.secret, '{{OG_IMAGE_SECRET}}')
                 assert.equal(runtimeConfig.public.siteUrl, siteUrl)
                 assert.equal(nuxt.options.appConfig.app.site, siteUrl)
                 assert.equal(nuxt.options.i18n.baseUrl, siteUrl)
                 assert.equal(runtimeConfig.public.emailPasswordAuthEnabled, false)
                 assert.equal(runtimeConfig.public.twitterAuthEnabled, true)
                 assert.equal(nuxt.options.image.provider, 'cloudflare')
-                if (preview) {
-                    assert.equal(runtimeConfig.ogImage, undefined)
-                    assert.equal(nuxt._nitro.options.handlers.some(handler => handler.route === '/api/og-image'), false)
-                    assert.ok(nuxt.options.imports.imports.some(entry => entry.name === 'useDisabledOgImage' && entry.as === 'useOgImage'))
-                    assert.deepEqual(nuxt._nitro.options.scheduledTasks, {})
+                assert.equal(nuxt._nitro.options.handlers.some(handler => handler.route === '/api/og-image'), true)
+                assert.deepEqual(nuxt._nitro.options.scheduledTasks, { '0 22 * * *': ['job:report'] })
+                if (process.env.STAGE === 'development') {
                     assert.equal(runtimeConfig.cloudflare.apiToken, '')
                     assert.equal(runtimeConfig.cloudflare.siteTag, '')
                 }
@@ -102,7 +95,12 @@ describe('stage configuration', () => {
                 await nuxt.close()
             }
         `,
-            ])
+                    ],
+                    { env: createCloudflareProcessEnvironment(process.env, home) },
+                )
+            } finally {
+                await rm(home, { recursive: true, force: true })
+            }
         },
         30_000,
     )

@@ -3,7 +3,7 @@ import { nanoid } from 'nanoid'
 
 import { reservedRootPaths, routeLocales, staticPagePaths } from '#avatio/routes'
 
-export const setupIdPolicy = {
+const setupIdPolicy = {
     isReserved: (id: string) => reservedRootPaths.has(id.toLowerCase()),
 }
 

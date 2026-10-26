@@ -29,3 +29,7 @@ logs
 .env*.local
 
 .wrangler
+.void
+.void-wrangler.jsonc
+/void.config.ts
+/void.lock.json

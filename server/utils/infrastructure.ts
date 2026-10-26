@@ -30,7 +30,7 @@ export const getFileStorage = (): FileStorage => {
     }
 }
 
-export const getRequestCacheContext = (event: H3Event) =>
+const getRequestCacheContext = (event: H3Event) =>
     (event.context as CloudflareRequestContext).cloudflare?.context?.cache
 
 export const createCacheInvalidator = (cache?: CacheContext): CacheInvalidator =>

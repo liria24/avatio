@@ -1,6 +1,7 @@
 import { notifications } from '@@/database/schema'
 import type { Notification } from '@@/shared/types/database'
 import { and, eq, isNull } from 'drizzle-orm'
+import { EmptyFilter } from 'drizzle-orm/relations'
 import { z } from 'zod'
 
 const query = z.object({
@@ -34,11 +35,11 @@ export default authedSessionEventHandler<{
                         ? { isNotNull: true }
                         : !status.includes('read') && status.includes('unread')
                           ? { isNull: true }
-                          : undefined,
+                          : EmptyFilter,
                 id:
                     !status.includes('read') && !status.includes('unread')
                         ? { isNull: true }
-                        : undefined,
+                        : EmptyFilter,
             },
             columns: {
                 id: true,

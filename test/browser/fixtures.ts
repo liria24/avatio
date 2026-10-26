@@ -32,13 +32,18 @@ export const test = nuxtTest.extend<{ account: FixtureUser }, { runtime: TestRun
     account: async ({ runtime }, use) => {
         await use(await runtime.createUser())
     },
-    context: async ({ context }, use) => {
+    context: async ({ context, runtime }, use, testInfo) => {
         await context.route('**/*', async (route) => {
             const url = new URL(route.request().url())
             if (['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)) await route.continue()
             else await route.abort('blockedbyclient')
         })
         await use(context)
+        if (testInfo.status !== testInfo.expectedStatus)
+            await testInfo.attach('nuxt-server.log', {
+                body: runtime.diagnostics(),
+                contentType: 'text/plain',
+            })
     },
 })
 

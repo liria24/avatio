@@ -1,3 +1,5 @@
+import { or } from 'drizzle-orm'
+import { EmptyFilter } from 'drizzle-orm/relations'
 import { z } from 'zod'
 
 const query = z.object({
@@ -16,7 +18,8 @@ export default requestEventHandler<User[]>(async ({ event, db }) => {
         where: {
             banned: { OR: [{ eq: false }, { isNull: true }] },
             setups: true,
-            OR: q ? [{ username: { like: `%${q}%` } }, { name: { like: `%${q}%` } }] : undefined,
+            RAW: (table) =>
+                q ? or(searchText(table.username, q), searchText(table.name, q))! : EmptyFilter,
         },
         columns: {
             id: true,

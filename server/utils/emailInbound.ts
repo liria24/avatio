@@ -53,7 +53,12 @@ const mapAttachments = (email: ParsedEmail): EmailAttachmentMetadata[] =>
         filename: attachment.filename,
         size: attachmentSize(attachment.content),
         type: attachment.mimeType,
-        disposition: attachment.disposition,
+        disposition:
+            attachment.disposition === 'inline'
+                ? 'inline'
+                : attachment.disposition === 'attachment'
+                  ? 'attachment'
+                  : null,
         contentId: attachment.contentId,
     }))
 

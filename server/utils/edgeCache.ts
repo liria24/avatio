@@ -14,7 +14,7 @@ export const EDGE_CACHE_TAGS = {
     users: 'users',
 } as const
 
-export const EDGE_CACHE_BROWSER_CONTROL = 'public, max-age=60'
+const EDGE_CACHE_BROWSER_CONTROL = 'public, max-age=60'
 export const EDGE_CACHE_CONTROL =
     'public, max-age=900, stale-while-revalidate=3600, stale-if-error=3600'
 export const NO_STORE_CACHE_CONTROL = 'private, no-store'

@@ -1,12 +1,12 @@
 import { SQLiteCatalogRepository } from '@avatio/cloudflare'
-import type { D1Database, KVNamespace } from '@cloudflare/workers-types'
+import type { D1Database } from '@cloudflare/workers-types'
 import { drizzle } from 'drizzle-orm/d1'
 import { migrate } from 'drizzle-orm/d1/migrator'
 import { convertV4MiniflareOptions, Miniflare } from 'miniflare'
 import { createStorage } from 'unstorage'
 import kvDriver from 'unstorage/drivers/cloudflare-kv-binding'
 
-import { getPreviewCachePrefix } from '../../config/preview'
+import { getContentCachePrefix } from '../../config/environment'
 import { relations } from '../../database/relations'
 
 let miniflare: Miniflare
@@ -110,27 +110,29 @@ it('keeps authored-content cache writes inside the prefix without changing retai
     }
 })
 
-it('keeps persistent development Preview cache writes separate from retained KV keys', async () => {
+it('retains development content cache keys when moving from Preview to Worker', async () => {
     const binding = await miniflare.getKVNamespace('CONTENT_CACHE')
-    const base = 'authored-content:v1:fixture:development'
-    const storage = (name?: string) =>
+    const base = 'authored-content:v1:liria24/avatio:development'
+    const storage = (prefix: string) =>
         createStorage({
             driver: kvDriver({
                 binding: binding as unknown as KVNamespace,
-                base: getPreviewCachePrefix(base, 'development', name),
+                base: prefix,
             }),
         })
-    const preview = storage('development'),
-        retained = storage()
+    const preview = storage(getContentCachePrefix('development')),
+        retained = storage(base)
     try {
         await preview.setItem('manifest', { revision: 'preview' })
         await retained.setItem('manifest', { revision: 'retained' })
         expect(await preview.getItem('manifest')).toEqual({ revision: 'preview' })
         expect(await retained.getItem('manifest')).toEqual({ revision: 'retained' })
         await preview.removeItem('manifest')
-        expect(await binding.get(`${base}:manifest`, 'json')).toEqual({ revision: 'retained' })
-        expect(() => getPreviewCachePrefix(base, 'development', 'pr-356')).toThrow()
-        expect(() => getPreviewCachePrefix(base, 'production', 'development')).toThrow()
+        expect(
+            await binding.get('authored-content:v1:liria24:avatio:development:manifest', 'json'),
+        ).toEqual({ revision: 'retained' })
+        expect(getContentCachePrefix('development')).toBe(`${base}:preview:development`)
+        expect(getContentCachePrefix('production')).toBe('authored-content:v1:liria24/avatio:main')
     } finally {
         await Promise.all([preview.dispose(), retained.dispose()])
     }

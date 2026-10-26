@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm'
+import { EmptyFilter } from 'drizzle-orm/relations'
 import { z } from 'zod'
 
 const query = z.object({
@@ -34,11 +35,11 @@ export default promiseEventHandler<PaginationResponse<AuditLog[]>>(async ({ db, 
             createdAt: sort,
         },
         where: {
-            details: q ? { like: `%${q}%` } : undefined,
-            userId: userId ? { eq: userId } : undefined,
-            action: action ? { eq: action } : undefined,
-            targetType: targetType ? { eq: targetType } : undefined,
-            targetId: targetId ? { eq: targetId } : undefined,
+            RAW: (table) => (q ? searchText(table.details, q) : EmptyFilter),
+            userId: userId ? { eq: userId } : EmptyFilter,
+            action: action ? { eq: action } : EmptyFilter,
+            targetType: targetType ? { eq: targetType } : EmptyFilter,
+            targetId: targetId ? { eq: targetId } : EmptyFilter,
         },
         columns: {
             id: true,

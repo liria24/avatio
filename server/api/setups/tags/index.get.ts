@@ -1,4 +1,4 @@
-import { asc, desc, like, sql } from 'drizzle-orm'
+import { asc, desc, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { setupTags } from '~~/database/schema'
 
@@ -29,7 +29,7 @@ export default requestEventHandler(async ({ event, db }) => {
         .groupBy(setupTags.tag)
         .limit(limit)
         .orderBy(sortFn(orderByFn))
-        .where(q ? like(setupTags.tag, `%${q}%`) : undefined)
+        .where(q ? searchText(setupTags.tag, q) : undefined)
 
     applyPublicRequestCache(event, [EDGE_CACHE_TAGS.setups])
     return data

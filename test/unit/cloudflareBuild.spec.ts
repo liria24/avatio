@@ -2,28 +2,18 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { createCloudflareWranglerConfig } from '../../config/cloudflareWrangler'
 import { secretDefinitions } from '../../config/secrets'
+import { getVoidConfig } from '../../config/void'
 import {
     buildCloudflare,
     createCloudflareBuildEnvironment,
     hashCloudflareArtifact,
 } from '../../scripts/cloudflareBuild'
-import { createCloudflareResourceFixture } from '../helpers/cloudflareResources'
 
-const { execute, migrations } = vi.hoisted(() => ({ execute: vi.fn(), migrations: vi.fn() }))
+const { execute } = vi.hoisted(() => ({ execute: vi.fn() }))
 vi.mock('node:child_process', () => ({ execFileSync: execute }))
-vi.mock('../../scripts/cloudflareMigrationHistory.ts', () => ({
-    readCommittedCloudflareMigrations: migrations,
-}))
 
-const inventory = createCloudflareResourceFixture()
 const sourceSha = 'a'.repeat(40)
-const migration = {
-    name: '20260101000000_synthetic/migration.sql',
-    sql: 'SELECT 1;',
-    hash: 'b'.repeat(64),
-}
 const syntheticEnvironment = (): NodeJS.ProcessEnv => ({
     PATH: '/synthetic/bin',
     SystemRoot: '/synthetic/system',
@@ -64,7 +54,7 @@ const syntheticEnvironment = (): NodeJS.ProcessEnv => ({
     PUBLIC_SITE_URL: 'https://unreviewed.example.test',
     NITRO_PRESET: 'unreviewed',
     GITHUB_OUTPUT: '/synthetic/obsolete-output',
-    WORKERS_CI_COMMIT_SHA: sourceSha,
+    AVATIO_SOURCE_SHA: sourceSha,
 })
 const privateHome = join(tmpdir(), 'synthetic-build-home')
 
@@ -98,8 +88,8 @@ describe('Cloudflare build child environment', () => {
             const outer = syntheticEnvironment()
             const original = { ...outer }
             const globalEnvironment = process.env
-            const child = createCloudflareBuildEnvironment(mode, inventory, outer, privateHome)
-            const config = createCloudflareWranglerConfig(mode, inventory)
+            const child = createCloudflareBuildEnvironment(mode, outer, privateHome)
+            const config = getVoidConfig(mode).cloudflare
             expectNoCredentials(child)
             expect(child).toMatchObject({
                 PATH: outer.PATH,
@@ -128,10 +118,8 @@ describe('Cloudflare build child environment', () => {
                 APPDATA: join(privateHome, 'AppData', 'Roaming'),
                 LOCALAPPDATA: join(privateHome, 'AppData', 'Local'),
                 STAGE: mode,
-                PREVIEW_NAME: mode === 'development' ? 'development' : '',
                 PUBLIC_SITE_URL: config.vars.PUBLIC_SITE_URL,
                 R2_PUBLIC_BASE_URL: config.vars.R2_PUBLIC_BASE_URL,
-                AVATIO_CF_RESOURCES_JSON: JSON.stringify(inventory),
                 NITRO_PRESET: 'cloudflare_module',
                 NODE_OPTIONS: '--max-old-space-size=4096',
                 WRANGLER_SEND_METRICS: 'false',
@@ -144,7 +132,6 @@ describe('Cloudflare build child environment', () => {
     it('does not inherit future or unknown environment variables', () => {
         const child = createCloudflareBuildEnvironment(
             'development',
-            inventory,
             {
                 PATH: '/synthetic/bin',
                 NEW_PLATFORM_CREDENTIAL: 'synthetic-new-credential',
@@ -174,7 +161,6 @@ describe('Cloudflare build child environment', () => {
         expect(() =>
             createCloudflareBuildEnvironment(
                 'development',
-                inventory,
                 {
                     ...syntheticEnvironment(),
                     [name]: 'synthetic-forbidden-value',
@@ -185,14 +171,13 @@ describe('Cloudflare build child environment', () => {
     })
 })
 
-describe('Workers Builds standard application build', () => {
+describe('Void standard application build', () => {
     let root: string
     let spawnedHome: string | undefined
     beforeEach(() => {
         root = mkdtempSync(join(tmpdir(), 'avatio-build-unit-'))
         spawnedHome = undefined
         execute.mockReset()
-        migrations.mockReset().mockReturnValue([migration])
         execute.mockImplementation(
             (command: string, args: string[], options: { env: NodeJS.ProcessEnv }) => {
                 expectNoCredentials(options.env)
@@ -204,9 +189,8 @@ describe('Workers Builds standard application build', () => {
                     if (args[0] === 'status') return ''
                     throw new Error('Unexpected Git command')
                 }
-                expect(command).toBe(
-                    join(root, 'node_modules/.bin', process.platform === 'win32' ? 'vp.cmd' : 'vp'),
-                )
+                expect(command).toBe(process.execPath)
+                expect(args.shift()).toBe(join(root, 'node_modules/vite-plus/bin/vp'))
                 expect(options.env.PATH).toContain(join(root, 'node_modules/.bin'))
                 if (args[0] === 'exec') {
                     expect(args).toEqual(['exec', 'nuxt', 'prepare'])
@@ -218,7 +202,7 @@ describe('Workers Builds standard application build', () => {
                 const output = join(root, '.output')
                 mkdirSync(join(output, 'server'), { recursive: true })
                 mkdirSync(join(output, 'public'), { recursive: true })
-                const configuration = createCloudflareWranglerConfig('development', inventory)
+                const configuration = getVoidConfig('development').cloudflare
                 writeFileSync(
                     join(output, 'server/wrangler.json'),
                     JSON.stringify({
@@ -248,7 +232,7 @@ describe('Workers Builds standard application build', () => {
     it('accepts the outer platform token and verifies source with clean Git/vp environments', () => {
         const outer = syntheticEnvironment()
         const original = { ...outer }
-        const receipt = buildCloudflare('development', inventory, root, outer)
+        const receipt = buildCloudflare('development', root, outer)
         expect(receipt).toEqual({
             sourceSha,
             stage: 'development',
@@ -258,14 +242,11 @@ describe('Workers Builds standard application build', () => {
             readFileSync(join(root, '.output/server/wrangler.json'), 'utf8'),
         )
         expect(generated.compatibility_flags).toEqual(
-            createCloudflareWranglerConfig('development', inventory).compatibility_flags,
+            getVoidConfig('development').cloudflare.compatibility_flags,
         )
         expect(generated.main).toBe('index.mjs')
         expect(readFileSync(join(root, '.output/server/index.mjs'), 'utf8')).toBe(
             'export default {}',
-        )
-        expect(readFileSync(join(root, '.output/migrations', migration.name), 'utf8')).toBe(
-            migration.sql,
         )
         expect(JSON.parse(readFileSync(join(root, '.output/delivery.json'), 'utf8'))).toEqual(
             receipt,
@@ -276,11 +257,6 @@ describe('Workers Builds standard application build', () => {
             ['exec', 'nuxt', 'prepare'],
             ['run', 'build'],
         ])
-        expect(migrations).toHaveBeenCalledWith(
-            root,
-            expect.objectContaining({ HOME: spawnedHome }),
-        )
-        for (const [, environment] of migrations.mock.calls) expectNoCredentials(environment)
         expect(outer).toEqual(original)
         expect(outer.CLOUDFLARE_API_TOKEN).toBe('synthetic-platform-token')
         expect(existsSync(outer.GITHUB_OUTPUT!)).toBe(false)
@@ -295,7 +271,7 @@ describe('Workers Builds standard application build', () => {
         const original = { ...globalEnvironment }
         vi.stubGlobal('process', { ...process, env: globalEnvironment })
         try {
-            buildCloudflare('development', inventory, root, syntheticEnvironment())
+            buildCloudflare('development', root, syntheticEnvironment())
             expect(process.env).toBe(globalEnvironment)
             expect(process.env).toEqual(original)
         } finally {
@@ -303,19 +279,18 @@ describe('Workers Builds standard application build', () => {
         }
     })
     it.each(['b'.repeat(40), '', 'not-a-sha'])(
-        'rejects a mismatched Workers CI commit %s before Nuxt',
+        'rejects a mismatched delivery commit %s before Nuxt',
         (sha) => {
             expect(() =>
-                buildCloudflare('development', inventory, root, {
+                buildCloudflare('development', root, {
                     ...syntheticEnvironment(),
-                    WORKERS_CI_COMMIT_SHA: sha,
+                    AVATIO_SOURCE_SHA: sha,
                 }),
             ).toThrow('does not match selected source')
             expect(execute).toHaveBeenCalledTimes(1)
-            expect(migrations).not.toHaveBeenCalled()
         },
     )
-    it('rejects tracked edits when Workers CI selects the checkout', () => {
+    it('rejects tracked edits when delivery selects the checkout', () => {
         execute
             .mockImplementationOnce(
                 (_: string, __: string[], options: { env: NodeJS.ProcessEnv }) => {
@@ -324,26 +299,25 @@ describe('Workers Builds standard application build', () => {
                 },
             )
             .mockImplementationOnce(() => ' M nuxt.config.ts\n')
-        expect(() =>
-            buildCloudflare('development', inventory, root, syntheticEnvironment()),
-        ).toThrow('clean selected source checkout')
+        expect(() => buildCloudflare('development', root, syntheticEnvironment())).toThrow(
+            'clean selected source checkout',
+        )
         expect(execute).toHaveBeenCalledTimes(2)
-        expect(migrations).not.toHaveBeenCalled()
     })
     it('permits local uncommitted iteration only when no platform commit is selected', () => {
         const outer = syntheticEnvironment()
-        delete outer.WORKERS_CI_COMMIT_SHA
-        expect(buildCloudflare('development', inventory, root, outer).stage).toBe('development')
+        delete outer.AVATIO_SOURCE_SHA
+        expect(buildCloudflare('development', root, outer).stage).toBe('development')
         expect(execute.mock.calls.some(([, args]) => args[0] === 'status')).toBe(false)
     })
     it('rejects dotenv overrides and plaintext secrets before spawning any command', () => {
         writeFileSync(join(root, '.env'), 'synthetic override')
-        expect(() =>
-            buildCloudflare('development', inventory, root, syntheticEnvironment()),
-        ).toThrow('dotenv overrides')
+        expect(() => buildCloudflare('development', root, syntheticEnvironment())).toThrow(
+            'dotenv overrides',
+        )
         rmSync(join(root, '.env'))
         expect(() =>
-            buildCloudflare('development', inventory, root, {
+            buildCloudflare('development', root, {
                 ...syntheticEnvironment(),
                 NUXT_BETTER_AUTH_SECRET: 'synthetic-signing-value',
             }),
@@ -362,8 +336,8 @@ describe('Workers Builds standard application build', () => {
             .mockImplementationOnce(() => {
                 throw new Error('synthetic build failure')
             })
-        expect(() =>
-            buildCloudflare('development', inventory, root, syntheticEnvironment()),
-        ).toThrow('synthetic build failure')
+        expect(() => buildCloudflare('development', root, syntheticEnvironment())).toThrow(
+            'synthetic build failure',
+        )
     })
 })

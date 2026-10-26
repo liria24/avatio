@@ -2,8 +2,7 @@ import { createGithubContentSource } from '@avatio/nuxt/runtime/server/content/g
 import { createAvatioContentService } from '@avatio/nuxt/runtime/server/content/service'
 import type { H3Event } from '@nuxt/nitro-server/h3'
 import kvDriver from 'unstorage/drivers/cloudflare-kv-binding'
-import { getStageConfig } from '~~/config/environment'
-import { getPreviewCachePrefix } from '~~/config/preview'
+import { getContentCachePrefix, getStageConfig } from '~~/config/environment'
 
 import { contentConfig } from '#avatio/content-config'
 
@@ -28,12 +27,8 @@ export const getContentService = async (event?: H3Event) => {
         ...contentConfig,
         cache: {
             driver: kvDriver({
-                binding: env.CONTENT_CACHE,
-                base: getPreviewCachePrefix(
-                    `authored-content:v1:${config.repo}:${config.branch}`,
-                    env.STAGE,
-                    env.PREVIEW_NAME,
-                ),
+                binding: env.CONTENT_CACHE as unknown as KVNamespace,
+                base: getContentCachePrefix(env.STAGE),
             }),
             ttl: 300_000,
             swr: false,

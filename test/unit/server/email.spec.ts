@@ -11,8 +11,6 @@ type SendEmailMock = (message: EmailMessage) => Promise<{ messageId: string }>
 type RuntimeGlobal = typeof globalThis & {
     __env__?: {
         STAGE?: string
-        PREVIEW_NAME?: string
-        EMAIL_FROM?: string
         EMAIL?: {
             send: SendEmailMock
         }
@@ -34,7 +32,7 @@ describe('email', () => {
         const send = vi.fn<SendEmailMock>().mockResolvedValue({
             messageId: 'sent-1',
         })
-        runtimeGlobal.__env__ = { EMAIL_FROM: 'support@avatio.me', EMAIL: { send } }
+        runtimeGlobal.__env__ = { STAGE: 'production', EMAIL: { send } }
 
         const { sendEmail } = await loadEmail()
         await expect(
@@ -49,7 +47,7 @@ describe('email', () => {
             to: 'sender@example.com',
             subject: 'Re: Hello',
             text: 'Reply',
-            from: 'support@avatio.me',
+            from: 'hello@avatio.me',
         })
     })
 
@@ -57,7 +55,7 @@ describe('email', () => {
         const send = vi.fn<SendEmailMock>().mockResolvedValue({
             messageId: 'sent-2',
         })
-        runtimeGlobal.__env__ = { EMAIL: { send } }
+        runtimeGlobal.__env__ = { STAGE: 'production', EMAIL: { send } }
 
         const { sendEmail } = await loadEmail()
         await sendEmail({
@@ -85,31 +83,45 @@ describe('email', () => {
         })
     })
 
-    it.each(['development'])(
-        'refuses %s email before sender fallback or binding access',
-        async (name) => {
+    it('sends development mail only to the approved recipient and prefixes the subject', async () => {
+        const send = vi.fn<SendEmailMock>().mockResolvedValue({ messageId: 'development' })
+        runtimeGlobal.__env__ = { STAGE: 'development', EMAIL: { send } }
+        const { sendEmail } = await loadEmail()
+        await sendEmail({
+            to: 'hello@liria.me',
+            cc: { name: 'Owner', email: 'hello@liria.me' },
+            subject: 'Test',
+            text: 'Body',
+        })
+        expect(send).toHaveBeenCalledWith(
+            expect.objectContaining({ from: 'hello@avatio.me', subject: '[development] Test' }),
+        )
+    })
+
+    it.each(['to', 'cc', 'bcc'] as const)(
+        'rejects the entire development message for an unapproved %s recipient',
+        async (field) => {
             const send = vi.fn<SendEmailMock>()
-            runtimeGlobal.__env__ = {
-                STAGE: 'development',
-                PREVIEW_NAME: name,
-                EMAIL_FROM: 'hello@avatio.me',
-                EMAIL: { send },
+            runtimeGlobal.__env__ = { STAGE: 'development', EMAIL: { send } }
+            const { sendEmail } = await loadEmail()
+            for (const recipient of [
+                'other@example.test',
+                { name: 'Other', email: 'other@example.test' },
+            ]) {
+                await expect(
+                    sendEmail({
+                        to: 'hello@liria.me',
+                        subject: 'Blocked',
+                        [field]: ['hello@liria.me', recipient],
+                    }),
+                ).rejects.toMatchObject({ statusCode: 403 })
             }
-            const { sendEmail, getEmailFromAddress } = await loadEmail()
-            expect(() => getEmailFromAddress()).toThrow(/disabled in Previews/)
-            await expect(
-                sendEmail({
-                    from: 'explicit@example.test',
-                    to: 'recipient@example.test',
-                    subject: 'Blocked',
-                }),
-            ).rejects.toMatchObject({ statusCode: 503 })
             expect(send).not.toHaveBeenCalled()
         },
     )
 
     it('reports a missing Cloudflare Email binding clearly', async () => {
-        runtimeGlobal.__env__ = {}
+        runtimeGlobal.__env__ = { STAGE: 'production' }
         const { sendEmail } = await loadEmail()
 
         await expect(

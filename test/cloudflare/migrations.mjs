@@ -46,7 +46,7 @@ const run = async (args) => {
                     HOME: root,
                     USERPROFILE: root,
                     XDG_CONFIG_HOME: root,
-                    NODE_OPTIONS: `--import=${fileURLToPath(new URL('../helpers/runtimeNetwork.mjs', import.meta.url))}`,
+                    NODE_OPTIONS: `--import=${new URL('../helpers/runtimeNetwork.mjs', import.meta.url).href}`,
                     WRANGLER_SEND_METRICS: 'false',
                     CI: 'true',
                 },

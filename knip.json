@@ -25,8 +25,7 @@
                 "@iconify-json/svg-spinners",
                 "@iconify-json/twemoji",
                 "@nuxt/nitro-server",
-                "@vueuse/router",
-                "wrangler"
+                "@vueuse/router"
             ],
             "ignoreUnresolved": ["#nuxt-better-auth"]
         }

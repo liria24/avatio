@@ -1,3 +1,4 @@
+import { EmptyFilter } from 'drizzle-orm/relations'
 import { z } from 'zod'
 
 const query = z.object({
@@ -28,13 +29,16 @@ export default promiseEventHandler(async ({ db, event }) => {
         limit,
         where: {
             user: {
-                // OR: [{ banned: { eq: false } }, { banned: { isNull: true } }],
-                username: username ? { eq: username } : undefined,
+                username: username ? { eq: username } : EmptyFilter,
+                banned: banned
+                    ? { eq: true }
+                    : banned === false
+                      ? { OR: [{ eq: false }, { isNull: true }] }
+                      : EmptyFilter,
             },
-            name: q ? { like: `%${q}%` } : undefined,
-            public: isPrivate !== undefined ? { eq: !isPrivate } : undefined,
-            hidAt: hidden ? { isNotNull: true } : hidden === false ? { isNull: true } : undefined,
-            banned: banned ? { eq: true } : banned === false ? { eq: false } : undefined,
+            RAW: (table) => (q ? searchText(table.name, q) : EmptyFilter),
+            public: isPrivate !== undefined ? { eq: !isPrivate } : EmptyFilter,
+            hidAt: hidden ? { isNotNull: true } : hidden === false ? { isNull: true } : EmptyFilter,
         },
         orderBy: {
             [orderBy]: sort,
