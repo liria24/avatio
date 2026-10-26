@@ -27,7 +27,7 @@ const root = await mkdtemp(join(tmpdir(), 'avatio-cloudflare-migrations-'))
 const persistence = join(root, '.cloudflare', 'verification', 'copies', 'runtime')
 const cli = join(cliRoot, 'node_modules', cliPackage, 'bin', 'wrangler.js')
 const files = readCommittedCloudflareMigrations(projectRoot)
-assert.equal(files.length, 17, 'Review migration coverage when adding committed history')
+assert.equal(files.length, 18, 'Review migration coverage when adding committed history')
 const historyDirectory = join(root, 'history')
 const cutoff = files.findIndex((file) => file.name.startsWith('20260910151556_'))
 const freshId = '00000000-0000-4000-8000-000000003541'
