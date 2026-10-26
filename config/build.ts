@@ -1,13 +1,5 @@
 import { getStageConfig } from './environment.ts'
 
-export const requireHttpsOrigin = (value: string | undefined, name: string) => {
-    if (!value) throw new Error(`${name} is required.`)
-    const url = new URL(value)
-    if (url.protocol !== 'https:' || value !== url.origin)
-        throw new Error(`${name} must be an HTTPS origin without a path or credentials.`)
-    return url.origin
-}
-
 /** Build-time public settings, independent of either deployment CLI and of signing secrets. */
 export const getBuildEnvironment = (env: Record<string, string | undefined>, dev: boolean) => {
     const stage = !dev && env.STAGE ? getStageConfig(env.STAGE) : undefined

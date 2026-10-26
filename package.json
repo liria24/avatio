@@ -111,7 +111,6 @@
         "@types/pngjs": "^6.0.5",
         "@types/sanitize-html": "2.16.2",
         "@vue/test-utils": "^2.5.1",
-        "cf": "1.0.0-beta.16",
         "drizzle-kit": "1.0.0-rc.5",
         "fake-indexeddb": "^6.2.6",
         "happy-dom": "^21.0.4",
