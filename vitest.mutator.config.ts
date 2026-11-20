@@ -1,3 +1,5 @@
+import { resolve } from 'node:path'
+
 import { loadEnv } from 'vite-plus'
 import { defineConfig } from 'vitest/config'
 
@@ -11,6 +13,7 @@ export default defineConfig({
                     alias: {
                         '@@': process.cwd(),
                         '~~': process.cwd(),
+                        '#shared': resolve(process.cwd(), 'shared'),
                     },
                 },
                 test: {
@@ -32,7 +35,13 @@ export default defineConfig({
                 },
             },
             {
-                resolve: { alias: { '@@': process.cwd(), '~~': process.cwd() } },
+                resolve: {
+                    alias: {
+                        '@@': process.cwd(),
+                        '~~': process.cwd(),
+                        '#shared': resolve(process.cwd(), 'shared'),
+                    },
+                },
                 test: {
                     name: 'integration',
                     include: ['test/integration/**/*.{test,spec}.ts'],
