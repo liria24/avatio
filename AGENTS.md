@@ -17,12 +17,12 @@ Compact instruction for OpenCode sessions. If a fact is obvious from filenames, 
   latest base, regenerate existing locks with the pinned Bun, and require frozen install and
   every quality check. Do not delete the lock to resolve conflicts or change release workflows.
 
-- **Package manager:** Bun 1.4.4. `bunfig.toml` uses `linker = "hoisted"` and disables runtime dotenv loading. Installation has loaded `.env.production` despite `env = false` and `--no-env-file`; run CI installation with lifecycle scripts disabled and a clean environment. Nuxt preparation/build runs separately without inherited ciphertext. Never provide dotenv private keys or plaintext application secrets to installation.
+- **Package manager:** Bun 1.4.5. `bunfig.toml` uses `linker = "hoisted"` and disables runtime dotenv loading. Installation has loaded `.env.production` despite `env = false` and `--no-env-file`; run CI installation with lifecycle scripts disabled and a clean environment. Nuxt preparation/build runs separately without inherited ciphertext. Never provide dotenv private keys or plaintext application secrets to installation.
 - **Toolchain:** Vite+ runs package scripts, lint, format, and tests. Node 26 runs Nuxt, TypeScript scripts, tests, and configuration tooling; Bun only installs dependencies. Cloudflare builds use `NODE_OPTIONS=--max-old-space-size=4096` to leave memory for the remaining build processes.
 - **Postinstall:** `vp install` uses Bun and runs `nuxt prepare` only.
 - **Development URL:** `vp run dev` runs the Node.js Nuxt dev server at `http://localhost:3000`; the port is fixed and fails if already in use.
 - **Environment split:** local uses persistent local D1/filesystem/IPX. The prepared development target is the separate `avatio-development` Worker at `dev.avatio.me`, with retained development data resources. Its creation, Access policy and live acceptance remain pending; production cutover is separate.
-- **Verified dependency holds:** TypeScript 6.0.3 (`vue-tsc` cannot load TypeScript 7's compiler entry), `vue-tsc` 3.3.11 (3.3.13 loses Vue 3.6 template bindings), Comark 0.7.0 (`comark-content` parser types), and `@nuxtjs/better-auth` 0.3.10 (0.3.13 loses server plugin inference). Reproduce these incompatibilities before lifting the pins.
+- **Verified dependency holds:** TypeScript 6.0.3 (`vue-tsc` cannot load TypeScript 7's compiler entry), `vue-tsc` 3.3.11 (3.3.13–3.3.14 lose Vue 3.6 template bindings), Nuxt / `@nuxt/kit` / `@nuxt/schema` 4.6.3 (`@nuxt/schema` 4.6.4 resolves unset `devServer.host` to `{}` under `untyped` 2.0.0 and crashes `nuxt dev`), and `@vite-pwa/nuxt` 1.1.1 (`2.0.2` deprecates `workbox` for `generateSW` and fails strict `**/_payload.json` precache glob matching in SSR builds). Reproduce or resolve these incompatibilities before lifting the pins.
 
 ## Developer commands
 
@@ -61,7 +61,7 @@ PRs into `main` require the `format`, `lint`, `lint:unused`, `typecheck`, `test`
 
 ## Project architecture
 
-- **Framework:** Nuxt 4.6.2 (`compatibilityVersion: 5`), using Nitro. The Nuxt CLI v4 is supplied transitively.
+- **Framework:** Nuxt 4.6.3 (`compatibilityVersion: 5`), using Nitro. The Nuxt CLI v4 is supplied transitively.
 - **Deployment targets:** Separate `avatio` production (`main`) and `avatio-development` development (`development`) Workers, built as standard Nuxt/Nitro `cloudflare_module` artifacts and published through checked-in `deployment/<stage>/wrangler.json` and gated `.github/workflows/quality.yml` (`AVATIO_DEVELOPMENT_DELIVERY_ENABLED` / `AVATIO_PRODUCTION_DELIVERY_ENABLED`). Do not enable delivery gates, merge `main`, or modify remote Cloudflare/GitHub settings without explicit owner approval.
 - **Workspace:** Bun workspaces under `packages/*` with exactly three architectural packages:
   - `@avatio/core` — pure domain, application ports, and explicit contracts. It must not import Nuxt, Nitro, Cloudflare, Drizzle, Better Auth, provider SDKs, or read `process.env`.
