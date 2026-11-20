@@ -6,12 +6,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { getVoidConfig } from '../../config/void.ts'
-import { hashCloudflareArtifact } from '../../scripts/cloudflareBuild.ts'
-import {
-    verifyCloudflareDeploymentHttp,
-    verifyCloudflareStaticDeploymentHttp,
-} from '../../scripts/cloudflarePreviewSmoke.ts'
+import { getCloudflareConfig } from '../../config/cloudflare.ts'
 import { createCloudflareProcessEnvironment } from '../../scripts/cloudflareProcessEnvironment.ts'
 
 const [mode, ...extra] = process.argv.slice(2)
@@ -19,7 +14,7 @@ assert.ok(mode === 'development' || mode === 'production', 'An explicit stage is
 const reuseOutput = extra.length === 1 && extra[0] === '--reuse-output'
 assert.ok(extra.length === 0 || reuseOutput, 'Only test-only --reuse-output is accepted')
 const root = fileURLToPath(new URL('../../', import.meta.url))
-const configuration = getVoidConfig(mode).cloudflare
+const configuration = getCloudflareConfig(mode)
 const temporary = await mkdtemp(join(tmpdir(), 'avatio-cloudflare-application-'))
 const cleanEnvironment = {
     ...createCloudflareProcessEnvironment(process.env, temporary),
@@ -50,10 +45,12 @@ try {
             stdio: 'inherit',
             timeout: 10 * 60_000,
         })
+    const sourceSha = execFileSync('git', ['rev-parse', 'HEAD'], {
+        cwd: root,
+        env: cleanEnvironment,
+        encoding: 'utf8',
+    }).trim()
     const output = resolve(root, '.output')
-    const receipt = JSON.parse(await readFile(join(output, 'delivery.json'), 'utf8'))
-    assert.equal(receipt.stage, mode)
-    assert.equal(hashCloudflareArtifact(output), receipt.artifactHash)
     const server = join(output, 'server')
     const configPath = join(server, 'wrangler.json')
     const generated = JSON.parse(await readFile(configPath, 'utf8'))
@@ -70,12 +67,16 @@ try {
     assert.equal(generated.assets.run_worker_first, true)
     assert.deepEqual(generated.vars, {
         ...configuration.vars,
-        AVATIO_SOURCE_SHA: receipt.sourceSha,
+        AVATIO_SOURCE_SHA: sourceSha,
     })
+    assert.equal(generated.d1_databases.length, 1)
     assert.equal(generated.d1_databases[0].database_id, configuration.d1_databases[0].database_id)
     assert.equal(generated.d1_databases[0].binding, 'APP_DB')
     assert.equal(generated.d1_databases[0].migrations_pattern, '../../drizzle/*/migration.sql')
     assert.equal(generated.d1_databases[0].migrations_table, 'd1_migrations')
+    assert.deepEqual(generated.kv_namespaces, configuration.kv_namespaces)
+    assert.deepEqual(generated.r2_buckets, configuration.r2_buckets)
+    assert.deepEqual(generated.ratelimits, configuration.ratelimits)
     assert.equal(generated.preview_urls, false)
     assert.deepEqual(generated.queues, configuration.queues)
     assert.deepEqual(generated.triggers.crons, ['0 22 * * *'])
@@ -167,26 +168,26 @@ try {
     await migrate(drizzle(database), { migrationsFolder: join(root, 'drizzle') })
     const origin = configuration.vars.PUBLIC_SITE_URL
     const request = (path, options) => miniflare.dispatchFetch(new URL(path, origin), options)
-    const fetcher = (url, options) => miniflare.dispatchFetch(url, options)
     const rateLimitsBefore = await database
         .prepare('SELECT COUNT(*) AS count FROM rate_limits')
         .first('count')
-    const staticPaths = []
-    assert.deepEqual(
-        await verifyCloudflareStaticDeploymentHttp(origin, (url, options) => {
-            staticPaths.push(new URL(url).pathname)
-            return fetcher(url, options)
-        }),
-        { staticHttpVerified: true, applicationRuntimeVerified: false },
-    )
-    assert.deepEqual(staticPaths, ['/sw.js', '/manifest.webmanifest'])
+    for (const path of ['/sw.js', '/manifest.webmanifest']) {
+        const response = await request(path, { redirect: 'error' })
+        assert.equal(response.status, 200)
+        assert.ok(response.headers.get('cache-control')?.includes('must-revalidate'))
+        if (path === '/manifest.webmanifest') await response.json()
+        else assert.ok((await response.text()).length > 0)
+    }
     assert.equal(
         await database.prepare('SELECT COUNT(*) AS count FROM rate_limits').first('count'),
         rateLimitsBefore,
     )
-    assert.deepEqual(await verifyCloudflareDeploymentHttp(origin, fetcher), { httpVerified: true })
     for (const path of ['/', '/en']) {
-        const html = await (await request(path)).text()
+        const response = await request(path, { redirect: 'error' })
+        assert.equal(response.status, 200)
+        assert.ok(response.headers.get('content-type')?.includes('text/html'))
+        const html = await response.text()
+        assert.ok(html.includes('__nuxt') && /data-ssr=["']true["']/.test(html))
         const canonical = [...html.matchAll(/<link\b[^>]*>/g)].filter(([tag]) =>
             /rel="canonical"/.test(tag),
         )
@@ -225,7 +226,8 @@ try {
         const items = await request(`/api/items?limit=1&runtime=${randomUUID()}`, { headers })
         assert.equal(items.status, 200)
         assert.ok(items.headers.get('cache-control')?.includes('public'))
-        assert.ok(Array.isArray((await items.json()).data))
+        const payload = await items.json()
+        assert.ok(Array.isArray(payload.data) && 'pagination' in payload)
     }
     const unknown = await request('/en/fixture/unknown/route')
     assert.equal(unknown.status, 404)
@@ -261,19 +263,27 @@ try {
             attempts: 1,
             body: { version: 2, type: 'catalog.sync-source', sourceId: 'synthetic-source' },
         },
+        {
+            id: 'stale-lease',
+            timestamp: new Date(),
+            attempts: 1,
+            body: {
+                version: 2,
+                type: 'catalog.sync-source',
+                sourceId: 'absent-source',
+                leaseToken: 'obsolete-lease',
+            },
+        },
     ])
+    assert.equal(queueResult.outcome, 'ok', JSON.stringify(queueResult))
     assert.ok(queueResult.retryMessages.some((message) => message.msgId === 'missing-lease'))
     assert.ok(!queueResult.explicitAcks.includes('missing-lease'))
+    assert.ok(queueResult.explicitAcks.includes('stale-lease'))
     assert.equal((await worker.scheduled({ cron: '0 22 * * *' })).outcome, 'ok')
     const og = await request('/api/og-image', { method: 'DELETE' })
     assert.equal(og.status, 403)
     await og.arrayBuffer()
     assert.equal(outboundAttempts, 0)
-    assert.equal(
-        hashCloudflareArtifact(output),
-        receipt.artifactHash,
-        'Dry-run and runtime must not change the deployable artifact',
-    )
     console.log(
         JSON.stringify({
             mode,
@@ -288,11 +298,10 @@ try {
             emailPasswordDisabled: true,
             publicD1: true,
             r2: true,
-            queueLeaseRejected: true,
+            queueLeaseChecked: true,
             cron: true,
             ogAuthorization: true,
             outboundAttempts,
-            deploymentVerified: false,
         }),
     )
 } finally {

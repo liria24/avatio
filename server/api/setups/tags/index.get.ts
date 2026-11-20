@@ -14,8 +14,8 @@ const query = z.object({
         .default(SETUP_TAGS_API_DEFAULT_LIMIT),
 })
 
-export default requestEventHandler(async ({ event, db }) => {
-    const { q, orderBy, sort, limit } = validateRequestQuery(event, query)
+export default promiseEventHandler(async ({ event, db }) => {
+    const { q, orderBy, sort, limit } = await validateQuery(query)
 
     const sortFn = sort === 'asc' ? asc : desc
     const orderByFn = orderBy === 'name' ? setupTags.tag : sql<number>`count(*)`
@@ -31,6 +31,6 @@ export default requestEventHandler(async ({ event, db }) => {
         .orderBy(sortFn(orderByFn))
         .where(q ? searchText(setupTags.tag, q) : undefined)
 
-    applyPublicRequestCache(event, [EDGE_CACHE_TAGS.setups])
+    applyPublicEdgeCache(event, [EDGE_CACHE_TAGS.setups])
     return data
 })

@@ -27,7 +27,7 @@ export const getContentService = async (event?: H3Event) => {
         ...contentConfig,
         cache: {
             driver: kvDriver({
-                binding: env.CONTENT_CACHE as unknown as KVNamespace,
+                binding: env.CONTENT_CACHE,
                 base: getContentCachePrefix(env.STAGE),
             }),
             ttl: 300_000,

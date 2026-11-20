@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { createGithubContentSource } from '@avatio/nuxt/runtime/server/content/github'
 import { createLocalContentService } from '@avatio/nuxt/runtime/server/content/local'
 import { createAvatioContentService } from '@avatio/nuxt/runtime/server/content/service'
+import type { KVNamespace } from '@cloudflare/workers-types'
 import kvDriver from 'unstorage/drivers/cloudflare-kv-binding'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 

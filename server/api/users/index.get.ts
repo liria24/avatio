@@ -7,8 +7,8 @@ const query = z.object({
     limit: z.coerce.number().min(1).max(50).optional().default(24),
 })
 
-export default requestEventHandler<User[]>(async ({ event, db }) => {
-    const { q, limit } = validateRequestQuery(event, query)
+export default promiseEventHandler<User[]>(async ({ event, db }) => {
+    const { q, limit } = await validateQuery(query)
 
     const data = await db.query.users.findMany({
         limit,
@@ -37,6 +37,6 @@ export default requestEventHandler<User[]>(async ({ event, db }) => {
         },
     })
 
-    applyPublicRequestCache(event, [EDGE_CACHE_TAGS.users])
+    applyPublicEdgeCache(event, [EDGE_CACHE_TAGS.users])
     return data
 })

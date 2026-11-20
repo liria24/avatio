@@ -185,12 +185,12 @@ jobs:
           JS
 
   delivery:
-    name: Void migration and publication
+    name: Worker migration and publication
     needs: [quality, test]
     if: >-
       github.repository == 'liria24/avatio' && github.event_name == 'push' &&
-      ((github.ref == 'refs/heads/development' && vars.AVATIO_VOID_DEVELOPMENT_DELIVERY_ENABLED == 'true') ||
-       (github.ref == 'refs/heads/main' && vars.AVATIO_VOID_PRODUCTION_DELIVERY_ENABLED == 'true'))
+      ((github.ref == 'refs/heads/development' && vars.AVATIO_DEVELOPMENT_DELIVERY_ENABLED == 'true') ||
+       (github.ref == 'refs/heads/main' && vars.AVATIO_PRODUCTION_DELIVERY_ENABLED == 'true'))
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
@@ -212,16 +212,15 @@ jobs:
           cache: true
           run-install: false
       - run: node scripts/installDependencies.ts
-      - run: node scripts/prepareVoid.ts "$STAGE"
-      - name: Require the current branch head and reviewed D1 history before migration
+      - run: node scripts/cloudflareBuild.ts "$STAGE"
+      - name: Verify target D1 migration history approval
         env:
           AVATIO_MIGRATION_HISTORY_VERIFIED: ${{ vars.AVATIO_MIGRATION_HISTORY_VERIFIED }}
         run: |
-          test "$(git ls-remote origin "$GITHUB_REF" | cut -f1)" = "$GITHUB_SHA"
           node --input-type=module <<'JS'
           import assert from 'node:assert/strict'
           import { readFileSync } from 'node:fs'
-          const config = JSON.parse(readFileSync('.void-wrangler.jsonc', 'utf8'))
+          const config = JSON.parse(readFileSync('.output/server/wrangler.json', 'utf8'))
           assert.equal(process.env.AVATIO_MIGRATION_HISTORY_VERIFIED, config.d1_databases[0].database_id,
             'This exact target database must have verified migration and recovery evidence')
           JS
@@ -233,35 +232,16 @@ jobs:
           import assert from 'node:assert/strict'
           import { execFileSync } from 'node:child_process'
           import { readFileSync } from 'node:fs'
-          const config = JSON.parse(readFileSync('.void-wrangler.jsonc', 'utf8'))
+          const config = JSON.parse(readFileSync('.output/server/wrangler.json', 'utf8'))
           const names = JSON.parse(execFileSync(process.execPath,
-            ['node_modules/wrangler/bin/wrangler.js', 'secret', 'list', '--config', '.void-wrangler.jsonc', '--format', 'json'],
+            ['node_modules/wrangler/bin/wrangler.js', 'secret', 'list', '--config', '.output/server/wrangler.json', '--format', 'json'],
             { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }))
           for (const name of config.secrets.required)
             assert.ok(names.some(binding => binding.name === name && binding.type === 'secret_text'),
               'Required runtime secret must already be initialized: ' + name)
           JS
-          node node_modules/wrangler/bin/wrangler.js d1 migrations apply APP_DB --remote --config .void-wrangler.jsonc
-      - name: Recheck current source before publication
-        run: test "$(git ls-remote origin "$GITHUB_REF" | cut -f1)" = "$GITHUB_SHA"
-      - name: Publish with Void
-        id: publish
-        run: node node_modules/void/dist/cli/cli.mjs deploy --platform cloudflare
+          node node_modules/wrangler/bin/wrangler.js d1 migrations apply APP_DB --remote --config .output/server/wrangler.json
+      - name: Publish the verified Worker artifact
+        run: node node_modules/wrangler/bin/wrangler.js deploy --config .output/server/wrangler.json
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_WORKERS_SUBDOMAIN: ${{ vars.CLOUDFLARE_WORKERS_SUBDOMAIN }}
-          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
-          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
-      - name: Record observed publication IDs and verify the source
-        if: always() && (steps.publish.outcome == 'success' || steps.publish.outcome == 'failure')
-        run: node scripts/cloudflarePublicationReceipt.ts "$STAGE"
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      - name: Retain publication evidence even after a failed verification
-        if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
-        with:
-          name: publication-${{ github.sha }}-${{ github.run_id }}
-          path: .cloudflare/delivery/published.json
-          if-no-files-found: ignore
-          retention-days: 7

@@ -2,14 +2,15 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import type { ModuleOptions as OgImageModuleOptions } from '@liria24/og-image/nuxt'
 import { useNuxt } from '@nuxt/kit'
+import type { NitroConfig } from 'nitropack/types'
 import { defineOrganization } from 'nuxt-schema-org/schema'
 import type { RouteRuleConfig } from 'nuxt/schema'
 import { withLeadingSlash } from 'ufo'
 
 import { getBuildEnvironment } from './config/build.ts'
+import { getNitroCloudflareConfig } from './config/cloudflare.ts'
 import { getLocalD1Paths } from './config/localD1.ts'
 import { getLocalAuthSecret } from './config/localDevelopment.ts'
-import { getVoidConfig } from './config/void.ts'
 import {
     defaultI18nLocale,
     i18nRoutingStrategy,
@@ -193,7 +194,9 @@ export default defineNuxtConfig({
             ...(process.env.STAGE && process.env.NODE_ENV !== 'development'
                 ? {
                       deployConfig: true,
-                      wrangler: getVoidConfig(process.env.STAGE).cloudflare,
+                      wrangler: getNitroCloudflareConfig(process.env.STAGE) as NonNullable<
+                          NitroConfig['cloudflare']
+                      >['wrangler'],
                   }
                 : {}),
         },

@@ -1,5 +1,4 @@
 import type { H3Event } from '@nuxt/nitro-server/h3'
-import { env } from 'void/env'
 
 import { getStageConfig } from '../../config/environment'
 import type { AvatioWorkerEnv } from '../types/cloudflare'
@@ -7,8 +6,11 @@ import type { AvatioWorkerEnv } from '../types/cloudflare'
 /** Runtime bindings available in requests, background handlers, or local development. */
 type RuntimeEnv = Partial<AvatioWorkerEnv>
 
+const getGlobalRuntimeEnv = (): RuntimeEnv | undefined =>
+    (globalThis as typeof globalThis & { __env__?: RuntimeEnv }).__env__
+
 export const getRuntimeEnv = (event?: H3Event): RuntimeEnv =>
-    import.meta.prerender ? {} : (event?.context?.cloudflare?.env ?? (env as RuntimeEnv))
+    import.meta.prerender ? {} : (event?.context?.cloudflare?.env ?? getGlobalRuntimeEnv() ?? {})
 
 export const getRuntimeEnvString = (name: keyof RuntimeEnv, event?: H3Event) => {
     const value = getRuntimeEnv(event)[name]
