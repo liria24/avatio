@@ -1,0 +1,51 @@
+import { defineConfig } from '@mizchi/mutator'
+
+export default defineConfig({
+    runner: 'vitest',
+    vitestConfig: 'vitest.mutator.config.ts',
+    // Root tsconfig.json is solution-style ("files": []), which mutator-typecheck 0.5.0 cannot traverse.
+    typecheck: false,
+    include: [
+        'packages/core/src/**/*.ts',
+        'packages/nuxt/src/**/*.ts',
+        'shared/utils/**/*.ts',
+        'app/utils/**/*.ts',
+        'server/utils/**/*.ts',
+    ],
+    exclude: [
+        '**/*.d.ts',
+        '**/index.ts',
+        'packages/core/src/**/ports/**',
+        'packages/core/src/ports.ts',
+        'packages/nuxt/src/module.ts',
+        'packages/nuxt/src/runtime/app/**',
+        'app/utils/uploadImage.ts',
+        'server/utils/ai.ts',
+        'server/utils/content.ts',
+        'server/utils/createAuditLog.ts',
+        'server/utils/createNotification.ts',
+        'server/utils/database.ts',
+        'server/utils/waitUntil.ts',
+        'server/utils/email.local.ts',
+        'server/utils/imageProcessing.local.ts',
+        'server/utils/infrastructure.ts',
+        'server/utils/providerHttpClient.ts',
+        'server/utils/publisherVerificationRuntime.ts',
+        'server/utils/runtimeEnv.ts',
+    ],
+    critical: [
+        'server/utils/adminSession.ts',
+        'server/utils/adminJobRequest.ts',
+        'server/utils/eventHandler.ts',
+        'server/utils/validateRequest.ts',
+        'server/utils/sanitizeObject.ts',
+        'server/utils/legal.ts',
+        'packages/core/src/catalog/application/sync-source.ts',
+        'packages/core/src/legal.ts',
+        'app/utils/setupDraftRecovery.ts',
+    ],
+    thresholds: {
+        high: 80,
+        low: 60,
+    },
+})

@@ -50,6 +50,7 @@ export default defineConfig({
             '**/.env.*',
             '!**/.env.example',
             '**/.wrangler',
+            '**/.mutator',
             '**/.netlify',
             '**/public',
         ],

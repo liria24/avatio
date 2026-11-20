@@ -11,6 +11,14 @@ describe('quality and gated Worker delivery workflow', () => {
         expect(checks).not.toMatch(/secrets\.|environment:|--remote/)
     })
 
+    it('keeps diff mutation checking non-blocking and scoped to pull requests', () => {
+        const [, mutationSection] = checks.split('\n  mutation:\n')
+        expect(mutationSection).toContain('name: mutation (diff)')
+        expect(mutationSection).toContain("if: github.event_name == 'pull_request'")
+        expect(mutationSection).toContain('continue-on-error: true')
+        expect(delivery).not.toContain('mutation')
+    })
+
     it('gates delivery by branch and stage variables with serialized D1 migrations before deploy', () => {
         expect(delivery).toContain('needs: [quality, test]')
         expect(delivery).toContain(

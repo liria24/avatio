@@ -24,9 +24,6 @@ const sanitizeObject = <T>(obj: T, options: { html?: boolean } = { html: true })
                 'h4',
                 'h5',
                 'h6',
-                'ul',
-                'ol',
-                'li',
                 'blockquote',
                 'a',
                 'img',
@@ -49,7 +46,7 @@ const sanitizeObject = <T>(obj: T, options: { html?: boolean } = { html: true })
 
     if (Array.isArray(obj)) return obj.map((item) => sanitizeObject(item, options)) as T
 
-    if (obj && typeof obj === 'object' && obj !== null) {
+    if (obj && typeof obj === 'object') {
         const sanitizedObj = {} as Record<string, unknown>
         for (const [key, value] of Object.entries(obj)) {
             if (!unsafeKeys.has(key)) sanitizedObj[key] = sanitizeObject(value, options)

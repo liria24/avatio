@@ -9,6 +9,8 @@
             "entry": [
                 "auth.config.ts",
                 "files.config.ts",
+                "mutator.config.ts",
+                "vitest.mutator.config.ts",
                 "app/auth.config.ts",
                 "server/auth.config.ts",
                 "oxfmt.config.ts",

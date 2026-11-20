@@ -184,6 +184,37 @@ jobs:
             'Extended browser suites must succeed whenever scheduled')
           JS
 
+  mutation:
+    name: mutation (diff)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@cab1ab9eaff52d4857875f4f2c016e36af8f2c76 # v1.22.0
+        with:
+          node-version-file: .node-version
+          version-file: package.json
+          cache: true
+          run-install: false
+      - run: node scripts/installDependencies.ts
+      - run: vp exec nuxt prepare
+      - uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: .mutator
+          key: mutator-${{ runner.os }}-${{ github.base_ref }}-${{ hashFiles('mutator.config.ts', 'vitest.mutator.config.ts', 'bun.lock') }}-${{ github.sha }}
+          restore-keys: |
+            mutator-${{ runner.os }}-${{ github.base_ref }}-${{ hashFiles('mutator.config.ts', 'vitest.mutator.config.ts', 'bun.lock') }}-
+            mutator-${{ runner.os }}-${{ github.base_ref }}-
+      - name: Run diff-driven mutation check
+        continue-on-error: true
+        run: vp exec mutator --since "origin/${{ github.base_ref }}" --include-test-changes --time-budget 300 --reporter text --reporter simplify
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+
   delivery:
     name: Worker migration and publication
     needs: [quality, test]
