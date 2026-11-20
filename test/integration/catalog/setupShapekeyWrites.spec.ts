@@ -3,9 +3,9 @@ import { drizzle } from 'drizzle-orm/d1'
 import { expect, it, vi } from 'vitest'
 
 import { relations } from '../../../database/relations'
-import { executeAppBatch } from '../../../server/utils/executeAppBatch'
+import { executeAppBatch } from '../../../server/utils/database'
 import { completeIdempotencyRequest } from '../../../server/utils/idempotency'
-import { createSetup, updateSetup } from '../../../server/utils/setupCommands'
+import { createSetup, updateSetup } from '../../../server/utils/setups/commands'
 import { createTestD1 } from '../../helpers/d1'
 
 it('persists CatalogItem references, notes and shapekeys atomically across create and update', async () => {

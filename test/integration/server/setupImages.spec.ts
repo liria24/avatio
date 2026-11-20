@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { relations } from '../../../database/relations'
 import { users, setups, setupImages } from '../../../database/schema'
-import * as setupImagesModule from '../../../server/utils/setupImages'
+import * as setupImagesModule from '../../../server/utils/setups/images'
 import { createTestD1 } from '../../helpers/d1'
 const databases: ReturnType<typeof createTestD1>[] = []
 afterEach(() => {

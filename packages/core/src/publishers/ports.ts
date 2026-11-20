@@ -4,7 +4,7 @@ import type {
     PublisherSourceOwnership,
     PublisherSourceSnapshot,
     PublisherVerificationChallenge,
-} from '../domain/publisher'
+} from './domain/publisher'
 
 export interface PublisherChallengeDetails {
     challenge: PublisherVerificationChallenge
@@ -22,4 +22,22 @@ export interface PublisherRepository {
     ): Promise<PublisherSourceOwnership | null>
     listOwnerships(userId: string): Promise<PublisherOwnershipDetails[]>
     deleteOwnership(id: string, userId: string): Promise<boolean>
+}
+
+export interface PublisherVerificationInstruction {
+    type: string
+    url: string
+}
+
+export interface ResolvedPublisherVerificationTarget {
+    source: PublisherSourceSnapshot
+    method: string
+    instruction: PublisherVerificationInstruction
+    proof: unknown
+}
+
+export interface PublisherVerificationProvider {
+    readonly key: string
+    resolveTarget(url: URL): Promise<ResolvedPublisherVerificationTarget | null>
+    verify(input: { target: ResolvedPublisherVerificationTarget; code: string }): Promise<boolean>
 }

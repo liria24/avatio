@@ -1,4 +1,4 @@
-import type { SetupId } from '../domain/setup'
+export type SetupId = string
 
 export interface SetupIdPolicy {
     isReserved(id: SetupId): boolean

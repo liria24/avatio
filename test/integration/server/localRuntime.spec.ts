@@ -16,7 +16,7 @@ import { getLocalAuthSecret } from '../../../config/localDevelopment'
 import { relations } from '../../../database/relations'
 import { catalogItems, itemSources, users } from '../../../database/schema'
 import { prepareLocalD1 } from '../../../scripts/localDevelopment'
-import { executeAppBatch } from '../../../server/utils/executeAppBatch'
+import { executeAppBatch } from '../../../server/utils/database'
 
 describe('local D1 runtime', () => {
     let directory: string

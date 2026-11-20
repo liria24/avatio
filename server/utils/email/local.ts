@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
-import type { SendEmailInput } from './email'
+import type { SendEmailInput } from './send'
 
 export const saveLocalEmail = async (message: SendEmailInput) => {
     const messageId = randomUUID()

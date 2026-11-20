@@ -1,6 +1,5 @@
 import type { ItemSourceId } from '../domain/catalog'
-import type { CatalogRepository, SourceLease } from '../ports/catalog-repository'
-import type { CatalogSyncQueue } from '../ports/catalog-sync-queue'
+import type { CatalogRepository, CatalogSyncQueue, SourceLease } from '../ports'
 
 export interface EnqueueDueSourcesInput {
     sourceIds: readonly ItemSourceId[]
@@ -52,4 +51,35 @@ export const enqueueDueCatalogSources = async ({
     }
 
     return { claimed, enqueued, failed }
+}
+
+export interface ForceEnqueueCatalogSourcesInput {
+    sourceIds: readonly ItemSourceId[]
+    repository: CatalogRepository
+    queue: CatalogSyncQueue
+    now?: Date
+}
+
+export interface ForceEnqueueCatalogSourcesResult extends EnqueueDueSourcesResult {
+    notFound: ItemSourceId[]
+}
+
+export const forceEnqueueCatalogSources = async ({
+    sourceIds,
+    repository,
+    queue,
+    now = new Date(),
+}: ForceEnqueueCatalogSourcesInput): Promise<ForceEnqueueCatalogSourcesResult> => {
+    const scheduled: ItemSourceId[] = []
+    const notFound: ItemSourceId[] = []
+
+    for (const sourceId of new Set(sourceIds)) {
+        if (await repository.scheduleSourceCheck(sourceId, now)) scheduled.push(sourceId)
+        else notFound.push(sourceId)
+    }
+
+    return {
+        ...(await enqueueDueCatalogSources({ sourceIds: scheduled, repository, queue, now })),
+        notFound,
+    }
 }

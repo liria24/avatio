@@ -12,7 +12,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { relations } from '../../../database/relations'
-import { executeAppBatch } from '../../../server/utils/executeAppBatch'
+import { executeAppBatch } from '../../../server/utils/database'
 import { createTestD1 } from '../../helpers/d1'
 
 let database: ReturnType<typeof createTestD1>

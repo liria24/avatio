@@ -297,6 +297,120 @@ export default defineConfig({
                     ],
                 },
             },
+            {
+                files: ['packages/cloudflare/src/**/*.ts'],
+                rules: {
+                    'no-restricted-imports': [
+                        'error',
+                        {
+                            patterns: [
+                                {
+                                    group: [
+                                        'nuxt',
+                                        'nuxt/*',
+                                        'h3',
+                                        'h3/*',
+                                        '@avatio/nuxt',
+                                        '@avatio/nuxt/*',
+                                    ],
+                                    message:
+                                        '@avatio/cloudflare must not depend on Nuxt, H3, or @avatio/nuxt.',
+                                },
+                            ],
+                        },
+                    ],
+                },
+            },
+            {
+                files: ['server/utils/catalog/**/*.ts'],
+                rules: {
+                    'no-restricted-imports': [
+                        'error',
+                        {
+                            patterns: [
+                                {
+                                    group: [
+                                        '**/server/utils/setups',
+                                        '**/server/utils/setups/**',
+                                        '**/server/utils/admin',
+                                        '**/server/utils/admin/**',
+                                        '../setups/**',
+                                        '../admin/**',
+                                    ],
+                                    message:
+                                        'Catalog server modules must not depend on setups or admin modules.',
+                                },
+                            ],
+                        },
+                    ],
+                },
+            },
+            {
+                files: ['server/utils/setups/**/*.ts'],
+                rules: {
+                    'no-restricted-imports': [
+                        'error',
+                        {
+                            patterns: [
+                                {
+                                    group: [
+                                        '**/server/utils/admin',
+                                        '**/server/utils/admin/**',
+                                        '../admin/**',
+                                    ],
+                                    message:
+                                        'Setup server modules must not depend on admin modules.',
+                                },
+                            ],
+                        },
+                    ],
+                },
+            },
+            {
+                files: ['server/utils/email/**/*.ts'],
+                rules: {
+                    'no-restricted-imports': [
+                        'error',
+                        {
+                            patterns: [
+                                {
+                                    group: [
+                                        '**/server/utils/admin/**',
+                                        '**/server/utils/catalog/**',
+                                        '**/server/utils/setups/**',
+                                        '../admin/**',
+                                        '../catalog/**',
+                                        '../setups/**',
+                                    ],
+                                    message: 'Email server modules must stay domain-independent.',
+                                },
+                            ],
+                        },
+                    ],
+                },
+            },
+            {
+                files: ['server/utils/*.ts'],
+                rules: {
+                    'no-restricted-imports': [
+                        'error',
+                        {
+                            patterns: [
+                                {
+                                    group: [
+                                        './admin/**',
+                                        './catalog/**',
+                                        './setups/**',
+                                        '**/server/utils/admin/**',
+                                    ],
+                                    message:
+                                        'Shared server primitives must not depend on feature modules.',
+                                },
+                            ],
+                        },
+                    ],
+                },
+            },
         ],
     },
 })

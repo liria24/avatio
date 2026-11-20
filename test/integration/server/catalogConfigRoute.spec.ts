@@ -6,9 +6,8 @@ import type { ZodType } from 'zod'
 
 import { relations } from '../../../database/relations'
 import { readAppConfig } from '../../../server/utils/appConfig'
-import { queryAdminCatalogItem } from '../../../server/utils/catalogQuery'
-import type { AppDatabase } from '../../../server/utils/database'
-import { executeAppBatch } from '../../../server/utils/executeAppBatch'
+import { queryAdminCatalogItem } from '../../../server/utils/catalog/query'
+import { executeAppBatch, type AppDatabase } from '../../../server/utils/database'
 import { createTestD1 } from '../../helpers/d1'
 
 afterEach(() => {

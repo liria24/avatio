@@ -1,7 +1,4 @@
-import type {
-    PublisherVerificationProvider,
-    ResolvedPublisherVerificationTarget,
-} from '../ports/publisher-verification-provider'
+import type { PublisherVerificationProvider, ResolvedPublisherVerificationTarget } from '../ports'
 
 export class PublisherVerificationProviderRegistry {
     readonly #providers: ReadonlyMap<string, PublisherVerificationProvider>

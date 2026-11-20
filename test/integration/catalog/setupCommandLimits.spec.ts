@@ -4,10 +4,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { relations } from '../../../database/relations'
 import { setupEntries, setupEntryShapekeys, setupImagePoints } from '../../../database/schema'
-import { executeAppBatch } from '../../../server/utils/executeAppBatch'
+import { executeAppBatch } from '../../../server/utils/database'
 import { completeIdempotencyRequest } from '../../../server/utils/idempotency'
-import { createSetup, updateSetup } from '../../../server/utils/setupCommands'
-import { resolveSetupImageData } from '../../../server/utils/setupImages'
+import { createSetup, updateSetup } from '../../../server/utils/setups/commands'
+import { resolveSetupImageData } from '../../../server/utils/setups/images'
 import { setupsInsertSchema, setupsUpdateSchema } from '../../../shared/types/database'
 import { createTestD1 } from '../../helpers/d1'
 

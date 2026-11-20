@@ -1,5 +1,11 @@
 import { assertMethod, getHeader, type H3Event } from '@nuxt/nitro-server/h3'
 
+export const requireAdminSession = async (event: H3Event) => {
+    const session = await requireUserSession(event, { user: { role: 'admin' } })
+    assertSessionNotBanned(session)
+    return session
+}
+
 /** Cookie-authenticated HTTP jobs require a deliberate same-application POST. */
 export const requireAdminJobRequest = async (event: H3Event) => {
     await requireAdminSession(event)

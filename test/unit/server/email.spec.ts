@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import type { SendEmailInput } from '../../../server/utils/email'
+import type { SendEmailInput } from '../../../server/utils/email/send'
 
 type EmailMessage = SendEmailInput & {
     from: NonNullable<SendEmailInput['from']>
@@ -19,7 +19,7 @@ type RuntimeGlobal = typeof globalThis & {
 
 const runtimeGlobal = globalThis as RuntimeGlobal
 
-const loadEmail = async () => await import('../../../server/utils/email')
+const loadEmail = async () => await import('../../../server/utils/email/send')
 
 describe('email', () => {
     afterEach(() => {

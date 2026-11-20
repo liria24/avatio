@@ -1,6 +1,8 @@
 import { useServerFiles } from 'nuxt-files-sdk/runtime'
 
-import { requireAdminSession } from '../server/utils/adminSession'
+import { requireAdminSession } from '../server/utils/admin/session'
+import { searchText } from '../server/utils/database'
+import { sanitizeEmailHtml } from '../server/utils/email/sanitizeHtml'
 import { serverError } from '../server/utils/error'
 import { assertSessionNotBanned } from '../server/utils/eventHandler'
 import {
@@ -14,8 +16,6 @@ import {
     getRuntimeEnvString,
     getRuntimeStageConfig,
 } from '../server/utils/runtimeEnv'
-import { sanitizeEmailHtml } from '../server/utils/sanitizeEmailHtml'
-import { searchText } from '../server/utils/searchText'
 import { authAdditionalFields } from '../shared/utils/authAdditionalFields'
 import { hasBetterAuthSessionCookie } from '../shared/utils/authCookie'
 import * as constants from '../shared/utils/constants'

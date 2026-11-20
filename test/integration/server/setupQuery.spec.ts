@@ -7,9 +7,9 @@ import {
     catalogItemRelations,
     projectCatalogItem,
     queryCatalogItems,
-} from '../../../server/utils/catalogQuery'
+} from '../../../server/utils/catalog/query'
 import type { AppDatabase } from '../../../server/utils/database'
-import { projectSetupEntry, querySetupProjection } from '../../../server/utils/setupQuery'
+import { projectSetupEntry, querySetupProjection } from '../../../server/utils/setups/query'
 import { createTestD1 } from '../../helpers/d1'
 
 let database: ReturnType<typeof createTestD1>

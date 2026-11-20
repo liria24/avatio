@@ -5,7 +5,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
 import { relations } from '../../../database/relations'
-import { queryCatalogItem } from '../../../server/utils/catalogQuery'
+import { queryCatalogItem } from '../../../server/utils/catalog/query'
 import { createTestD1 } from '../../helpers/d1'
 
 let database: ReturnType<typeof createTestD1>
@@ -66,7 +66,7 @@ afterEach(async () => {
     vi.resetModules()
 })
 const resolve = async (input = 'https://booth.pm/items/123') => {
-    const { resolveCatalogReference } = await import('../../../server/utils/catalogResolution')
+    const { resolveCatalogReference } = await import('../../../server/utils/catalog/resolution')
     return resolveCatalogReference({} as H3Event, db, input, 'user')
 }
 it('resolves a provider reference once and returns the same Avatio ID for later reads', async () => {

@@ -1,5 +1,4 @@
 export * from './application/provider-registry'
 export * from './application/verification'
 export * from './domain/publisher'
-export * from './ports/publisher-repository'
-export * from './ports/publisher-verification-provider'
+export * from './ports'

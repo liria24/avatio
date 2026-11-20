@@ -4,8 +4,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import type { ZodType } from 'zod'
 
 import { relations } from '../../../database/relations'
-import type { AppDatabase } from '../../../server/utils/database'
-import { executeAppBatch } from '../../../server/utils/executeAppBatch'
+import { executeAppBatch, type AppDatabase } from '../../../server/utils/database'
 import { createTestD1 } from '../../helpers/d1'
 
 const draftId = '00000000-0000-4000-8000-000000000001'

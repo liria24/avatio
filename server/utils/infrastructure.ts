@@ -1,5 +1,6 @@
 import { CloudflareCacheInvalidator, CloudflareFeatureFlags } from '@avatio/cloudflare'
 import type { CacheInvalidator, FileStorage } from '@avatio/core'
+import type { ProviderHttpClient } from '@avatio/nuxt/runtime/server/catalog/providers'
 import type { CacheContext } from '@cloudflare/workers-types'
 import type { H3Event } from '@nuxt/nitro-server/h3'
 
@@ -38,3 +39,31 @@ export const createCacheInvalidator = (cache?: CacheContext): CacheInvalidator =
 
 export const getCacheInvalidator = (event: H3Event): CacheInvalidator =>
     createCacheInvalidator(getRequestCacheContext(event))
+
+export const runAfterResponse = (promise: Promise<unknown>) => {
+    try {
+        const event = useEvent()
+
+        if (event.waitUntil) {
+            event.waitUntil(promise)
+            return
+        }
+    } catch {
+        // Not running inside an H3 request context, such as a Cloudflare Queue consumer.
+    }
+
+    void promise.catch((error) => {
+        logger('waitUntil').error('Background task failed:', error)
+    })
+}
+
+export const providerHttpClient: ProviderHttpClient = {
+    async get<T>(url: string) {
+        const response = await $fetch.raw<T | null>(url, { ignoreResponseError: true })
+        return {
+            status: response.status,
+            ok: response.ok,
+            data: response._data ?? null,
+        }
+    },
+}

@@ -8,9 +8,10 @@ import {
 } from '@nuxt/nitro-server/h3'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { requireAdminJobRequest } from '../../../server/utils/adminJobRequest'
+import { requireAdminJobRequest } from '../../../server/utils/admin/session'
+import { assertSessionNotBanned } from '../../../server/utils/eventHandler'
 
-const requireAdminSession = vi.fn()
+const requireUserSession = vi.fn()
 const runTask = vi.fn(async () => ({ result: { ok: true } }))
 let trustedOrigins: string[]
 let siteUrl: string
@@ -18,12 +19,15 @@ let siteUrl: string
 beforeEach(() => {
     trustedOrigins = ['http://localhost:3000']
     siteUrl = 'http://localhost:3000'
-    requireAdminSession.mockReset().mockResolvedValue({ user: { id: 'admin' } })
+    requireUserSession
+        .mockReset()
+        .mockResolvedValue({ user: { id: 'admin', role: 'admin', banned: false } })
     runTask.mockClear()
     Object.entries({
+        assertSessionNotBanned,
         createError,
         getQuery,
-        requireAdminSession,
+        requireUserSession,
         requireAdminJobRequest,
         runTask,
         getRuntimeStageConfig: () => ({ trustedOrigins }),
@@ -117,7 +121,7 @@ describe('requireAdminJobRequest', () => {
 
     it('preserves session rejection status codes', async () => {
         for (const statusCode of [401, 403]) {
-            requireAdminSession.mockRejectedValueOnce(createError({ statusCode }))
+            requireUserSession.mockRejectedValueOnce(createError({ statusCode }))
             expect((await runGuard()).status).toBe(statusCode)
         }
     })
@@ -147,7 +151,7 @@ describe('requireAdminJobRequest', () => {
 describe.each(['cleanup', 'report'] as const)('%s HTTP job route', (job) => {
     it('dispatches an approved local POST once and preserves cleanup dry-run query', async () => {
         expect((await requestRoute(job)).status).toBe(200)
-        expect(requireAdminSession).toHaveBeenCalledTimes(1)
+        expect(requireUserSession).toHaveBeenCalledTimes(1)
         expect(runTask.mock.calls).toEqual(
             job === 'cleanup' ? [['job:cleanup', { payload: { dryRun: true } }]] : [['job:report']],
         )
@@ -156,7 +160,7 @@ describe.each(['cleanup', 'report'] as const)('%s HTTP job route', (job) => {
     it('does not dispatch when authorization fails', async () => {
         expect((await requestRoute(job, 'GET')).status).toBe(405)
         expect((await requestRoute(job, 'POST', 'https://evil.test')).status).toBe(403)
-        requireAdminSession.mockRejectedValueOnce(createError({ statusCode: 401 }))
+        requireUserSession.mockRejectedValueOnce(createError({ statusCode: 401 }))
         expect((await requestRoute(job)).status).toBe(401)
         expect(runTask).not.toHaveBeenCalled()
     })

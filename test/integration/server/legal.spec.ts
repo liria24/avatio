@@ -4,7 +4,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { relations } from '../../../database/relations'
-import { executeAppBatch } from '../../../server/utils/executeAppBatch'
+import { executeAppBatch } from '../../../server/utils/database'
 import {
     acceptLegalDocuments,
     getLegalStatus,

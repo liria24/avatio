@@ -36,7 +36,7 @@ describe('banned-user policy', () => {
         vi.stubGlobal('serverError', { forbidden: () => new Error('forbidden') })
         const { assertSessionNotBanned } = await import('../../../server/utils/eventHandler')
         vi.stubGlobal('assertSessionNotBanned', assertSessionNotBanned)
-        const { requireAdminSession } = await import('../../../server/utils/adminSession')
+        const { requireAdminSession } = await import('../../../server/utils/admin/session')
 
         const event = { path: '/api/admin/test' } as H3Event
         await expect(requireAdminSession(event)).resolves.toBe(session)
@@ -52,7 +52,7 @@ describe('banned-user policy', () => {
         vi.stubGlobal('serverError', { forbidden: () => forbidden })
         const { assertSessionNotBanned } = await import('../../../server/utils/eventHandler')
         vi.stubGlobal('assertSessionNotBanned', assertSessionNotBanned)
-        const { requireAdminSession } = await import('../../../server/utils/adminSession')
+        const { requireAdminSession } = await import('../../../server/utils/admin/session')
 
         await expect(requireAdminSession({} as H3Event)).rejects.toThrow(forbidden)
     })
