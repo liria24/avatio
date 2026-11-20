@@ -38,11 +38,14 @@ describe('sanitizeObject — non-string input', () => {
             { text: '', safe: '<p>ok</p>' },
         ],
         ['array', ['<script>xss</script>', '<p>ok</p>'], ['', '<p>ok</p>']],
-        ['number', 42, 42],
-        ['boolean', true, true],
-        ['null', null, null],
     ])('%s', (_label, input, expected) => {
         expect(sanitizeObject(input)).toEqual(expected)
+    })
+
+    it('leaves non-string primitives unchanged', () => {
+        expect(sanitizeObject(42)).toBe(42)
+        expect(sanitizeObject(true)).toBe(true)
+        expect(sanitizeObject(null)).toBeNull()
     })
 
     it('drops prototype-pollution keys at every depth', () => {

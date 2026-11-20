@@ -104,11 +104,10 @@ describe('BOOTH CatalogProvider', () => {
     })
 
     it.each([
-        [404, 'withdrawn'],
-        [410, 'withdrawn'],
-        [500, 'transient_error'],
-        [502, 'transient_error'],
-    ] as const)('maps HTTP %i to %s', async (status, expected) => {
+        [404, 'withdrawn', 'provider-not-found'],
+        [410, 'withdrawn', 'provider-gone'],
+        [500, 'transient_error', 'provider-http-500'],
+    ] as const)('maps HTTP %i to %s (%s)', async (status, expectedStatus, expectedErrorKind) => {
         const provider = new BoothCatalogProvider({
             proxyBaseUrl: 'https://proxy.example/',
             categoryMap: { '208': 'avatar' },
@@ -120,7 +119,8 @@ describe('BOOTH CatalogProvider', () => {
             externalId: '12345',
             canonicalUrl: 'https://booth.pm/items/12345',
         })
-        expect(result.status).toBe(expected)
+        expect(result.status).toBe(expectedStatus)
+        if (result.status !== 'available') expect(result.errorKind).toBe(expectedErrorKind)
     })
 
     it('extracts normalized admission signals without rejecting inside fetch', async () => {

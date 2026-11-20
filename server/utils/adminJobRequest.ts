@@ -6,9 +6,10 @@ export const requireAdminJobRequest = async (event: H3Event) => {
     assertMethod(event, 'POST')
 
     const origin = getHeader(event, 'origin')
+    if (!origin) throw serverError.forbidden()
     let url: URL
     try {
-        url = new URL(origin ?? '')
+        url = new URL(origin)
     } catch {
         throw serverError.forbidden()
     }

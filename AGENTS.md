@@ -45,6 +45,8 @@ Compact instruction for OpenCode sessions. If a fact is obvious from filenames, 
 | Browser smoke (CI)          | `vp run test:browser:smoke`                                                      |
 | Extended browsers (CI)      | `vp run test:browser:extended`                                                   |
 | Nuxt tests only             | `vp run test:nuxt`                                                               |
+| Diff mutation tests         | `vp run test:mutation`                                                           |
+| Full mutation audit         | `vp run test:mutation:audit`                                                     |
 | Watch tests                 | `vp run test:watch`                                                              |
 | Generate Drizzle migrations | `vp run db:generate`                                                             |
 | Seed local D1 from remote   | `vp run db:seed:local -- --yes`                                                  |
@@ -134,6 +136,7 @@ PRs into `main` require the `format`, `lint`, `lint:unused`, `typecheck`, `test`
 
 - **Runner:** Vitest, configured in `vitest.config.ts`.
 - Local `test`, `test:unit`, and `test:watch` select only `test/unit/`; they do not initialize Nuxt or execute SQLite integration, HTTP, browser, Miniflare, or build checks.
+- Diff-driven mutation testing uses `@mizchi/mutator@0.5.0` (`mutator.config.ts`, `vitest.mutator.config.ts`), with `typecheck: false` because root `tsconfig.json` uses project references (`"files": []`). Pull requests also run a non-blocking `mutation (diff)` job (`continue-on-error: true`, outside the `test` aggregate) in `.github/workflows/quality.yml`.
 - CI runs every Vitest project (`unit`, `integration`, `nuxt`, `http`, `cloudflare`) plus Chromium smoke on every PR, branch push and merge group. Extended Chromium, Firefox, WebKit, and mobile checks run on branch pushes, daily, and manual runs. The required `test` check aggregates applicable suites and fails on failed, cancelled, or unexpectedly skipped jobs. All six existing required check names remain. Only the gated `quality.yml` delivery job can receive a Cloudflare deployment credential, on the corresponding protected stage branch after operator activation.
 - Heavy tests live under `test/integration/`, `test/nuxt/`, `test/http/`, `test/cloudflare/`, and `test/browser/`. Historical migrations and idempotency regression coverage remain in CI; add migration cases when schema/migrations change, rather than duplicating request-replay suites in Miniflare.
 - HTTP/browser fixtures copy application sources into a fresh temporary root, exclude real local state and environment files, create private local D1/files/mail/auth-secret directories, and reject an occupied port 3000. Better Auth `testUtils` is confined to test-only auth instances; actual HTTP login and device switching use the application's auth server. No test auth bypass route or production plugin is added.
