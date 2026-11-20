@@ -283,7 +283,12 @@ export default defineConfig({
                         {
                             patterns: [
                                 {
-                                    group: ['drizzle-orm', 'drizzle-orm/*', '**/database/schema'],
+                                    group: [
+                                        'drizzle-orm',
+                                        'drizzle-orm/*',
+                                        '**/database/schema',
+                                        '**/database/tables/*',
+                                    ],
                                     message:
                                         'Shared HTTP contracts must not depend on database schema types.',
                                 },

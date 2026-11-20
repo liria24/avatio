@@ -73,7 +73,7 @@ PRs into `main` require the `format`, `lint`, `lint:unused`, `typecheck`, `test`
 - **Structure:**
   - `app/` — Vue frontend (pages, layouts, composables, components).
   - `server/` — Nitro API routes and server middleware.
-  - `database/schema.ts` — shared Drizzle SQLite schema for local and deployed Cloudflare D1.
+  - `database/schema.ts` & `database/tables/` — shared Drizzle SQLite domain tables (`database/tables/*`) re-exported through `database/schema.ts` for local and deployed Cloudflare D1.
   - `shared/` — Utilities shared between client and server.
   - `content/` — canonical Markdown sources, split by `en/` and `ja/`. `@avatio/nuxt` uses `comark-content` with filesystem sources in local dev and commit-pinned GitHub sources in deployed Workers. Nuxt Content is intentionally not active.
 
@@ -149,7 +149,7 @@ PRs into `main` require the `format`, `lint`, `lint:unused`, `typecheck`, `test`
 
 - **Dialect:** SQLite. Local and deployed application code use `drizzle-orm/d1` with `APP_DB`. Local Nuxt uses Wrangler's platform proxy and the same persistence path as local migration/seed commands; do not introduce a second local driver.
 - Drizzle ORM and Kit are pinned together at 1.0.0-rc.5. Use `EmptyFilter` when a relational condition is absent. User text searches use the shared SQLite string-function filters because D1 limits LIKE pattern length; preserve literal `%`/`_` handling and existing case/ranking behavior.
-- Schema file: `database/schema.ts`.
+- Schema entry: `database/schema.ts` (barrel re-exporting domain table modules under `database/tables/`).
 - Config: `drizzle.config.ts`.
 - Migration output: `./drizzle`.
 - Naming convention: `snakeCase` (Drizzle `snakeCase` helper is used).
