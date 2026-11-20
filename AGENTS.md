@@ -73,6 +73,7 @@ PRs into `main` require the `format`, `lint`, `lint:unused`, `typecheck`, `test`
 - **Structure:**
   - `app/` — Vue frontend (pages, layouts, composables, components).
   - `server/` — Nitro API routes and server middleware.
+  - `layers/admin/` — Admin vertical Nuxt layer (pages under `/admin/**`, `dashboard` layout, admin components/modals/composables, `/api/admin/**` routes, `job:cleanup`/`job:report` Nitro tasks, and admin server utils).
   - `database/schema.ts` & `database/tables/` — shared Drizzle SQLite domain tables (`database/tables/*`) re-exported through `database/schema.ts` for local and deployed Cloudflare D1.
   - `shared/` — Utilities shared between client and server.
   - `content/` — canonical Markdown sources, split by `en/` and `ja/`. `@avatio/nuxt` uses `comark-content` with filesystem sources in local dev and commit-pinned GitHub sources in deployed Workers. Nuxt Content is intentionally not active.
@@ -229,7 +230,7 @@ PRs into `main` require the `format`, `lint`, `lint:unused`, `typecheck`, `test`
 
 ### Runtime organization
 
-- `server/utils` is Avatio's formal Nuxt/Nitro server runtime integration and continues to use framework auto-imports (`server/utils/**/*`). Shared server primitives live at root (`database.ts`, `infrastructure.ts`, `eventHandler.ts`, `validateRequest.ts`, `edgeCache.ts`, etc.), while domain runtime modules are organized under `admin/`, `catalog/`, `setups/`, and `email/` (enforced by `oxlint` `no-restricted-imports` rules in `vite.config.ts`).
+- `server/utils` is Avatio's formal Nuxt/Nitro server runtime integration and continues to use framework auto-imports (`server/utils/**/*`). Shared server primitives (including `createAuditLog.ts`) live at root (`database.ts`, `infrastructure.ts`, `eventHandler.ts`, `validateRequest.ts`, `edgeCache.ts`, etc.), while domain runtime modules are organized under `catalog/`, `setups/`, and `email/` (with admin runtime modules isolated in `layers/admin/server/utils/`, enforced by `oxlint` `no-restricted-imports` rules in `vite.config.ts`).
 - Organize runtime utilities by one coherent responsibility per file; one exported function per file is not required. Never introduce catch-all names such as `misc.ts`, `helpers.ts`, or `common.ts`.
 - Migration-only, rollout compatibility, and backfill implementations must not live in `server/utils`.
 - All API handlers, Better Auth session/admin handlers, Nitro plugins/tasks, sitemap integration, and Cloudflare composition use unified H3/Nitro boundaries (`server/utils/eventHandler.ts`, `server/utils/validateRequest.ts`, `server/utils/edgeCache.ts`). Keep domain/application behavior independent of H3 event types.
@@ -285,7 +286,7 @@ Admin and cron routes use `promiseEventHandler` plus `requireAdminSession`, whic
 ## Common mistakes to avoid
 
 - Do not use Vue Options API (disabled in Vite config).
-- Admin pages live under `app/pages/admin/` and use the `dashboard` layout. Typed Better Auth route rules provide navigation authorization.
+- Admin pages live under `layers/admin/app/pages/admin/` and use the `dashboard` layout (`layers/admin/app/layouts/dashboard.vue`). Typed Better Auth route rules provide navigation authorization.
 
 ## Documentation maintenance
 

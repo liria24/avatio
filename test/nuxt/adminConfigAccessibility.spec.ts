@@ -1,8 +1,7 @@
 import { mockNuxtImport, mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { createError } from 'h3'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-
-import ConfigPage from '~/pages/admin/config.vue'
+import ConfigPage from '~~/layers/admin/app/pages/admin/config.vue'
 
 mockNuxtImport('useAdmin', () => () => ({ saveAppConfig: vi.fn() }))
 

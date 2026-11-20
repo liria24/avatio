@@ -1,7 +1,6 @@
 import { mockNuxtImport, mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import AdminReportsPage from '~/pages/admin/reports.vue'
+import AdminReportsPage from '~~/layers/admin/app/pages/admin/reports.vue'
 
 const mocks = vi.hoisted(() => ({
     resolveReport: vi.fn(),

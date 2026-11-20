@@ -1,6 +1,6 @@
 import { useServerFiles } from 'nuxt-files-sdk/runtime'
 
-import { requireAdminSession } from '../server/utils/admin/session'
+import { requireAdminSession } from '../layers/admin/server/utils/session'
 import { searchText } from '../server/utils/database'
 import { sanitizeEmailHtml } from '../server/utils/email/sanitizeHtml'
 import { serverError } from '../server/utils/error'
