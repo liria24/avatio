@@ -1,7 +1,7 @@
 import { useManualRefHistory } from '@vueuse/core'
 import { shallowRef, watch, type Ref } from 'vue'
 
-import { copySetupPoints } from '../../shared/utils/setupPoints'
+import { copySetupPoints } from '#shared/utils/setupPoints'
 
 export const useSetupPointHistory = (
     points: Readonly<Ref<SetupPoint[]>>,

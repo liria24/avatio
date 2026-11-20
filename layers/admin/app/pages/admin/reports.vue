@@ -1,27 +1,5 @@
 <script setup lang="ts">
-import type { DropdownMenuItem, TabsItem } from '@nuxt/ui'
-
-const reasonLabels = {
-    user: {
-        spam: 'admin.reports.user.reasons.spam',
-        hate: 'admin.reports.user.reasons.malicious',
-        infringe: 'admin.reports.user.reasons.infringement',
-        badImage: 'admin.reports.user.reasons.inappropriate',
-        other: 'admin.reports.user.reasons.other',
-    },
-    setup: {
-        spam: 'admin.reports.setup.reasons.spam',
-        hate: 'admin.reports.setup.reasons.hate',
-        infringe: 'admin.reports.setup.reasons.infringement',
-        badImage: 'admin.reports.setup.reasons.extreme',
-        other: 'admin.reports.setup.reasons.other',
-    },
-    item: {
-        nameError: 'admin.reports.item.reasons.wrongName',
-        irrelevant: 'admin.reports.item.reasons.unrelated',
-        other: 'admin.reports.item.reasons.other',
-    },
-} as const
+import type { TabsItem } from '@nuxt/ui'
 
 const REPORTS_PER_PAGE = 20
 
@@ -30,13 +8,7 @@ type Status = 'all' | 'open' | 'closed'
 type Sort = 'asc' | 'desc'
 
 const { t } = useI18n()
-const { resolveReport, unbanUser } = useAdmin()
-const banUser = useBanUserModal()
-const setupHide = useSetupHideModal()
-const setupUnhide = useSetupUnhideModal()
-const changeItemNiceName = useChangeItemNiceNameModal()
-const itemCategory = useItemCategory()
-const setupPath = useSetupPath()
+const { resolveReport } = useAdmin()
 
 const _tab = useRouteQuery<Tab | null>('tab', null, { mode: 'push' })
 const tab = computed<Tab>({
@@ -189,6 +161,9 @@ const refreshAfterAction = () => {
     void refresh()
 }
 
+const { userReportActions, setupReportActions, itemReportActions } =
+    useAdminReportActions(refreshAfterAction)
+
 watch([tab, status, sort], () => {
     if (page.value === 1) void refresh()
     else page.value = 1
@@ -209,94 +184,6 @@ const resolve = (id: number, isResolved: boolean) =>
         isResolved,
         onSuccess: refreshAfterResolution,
     })
-
-type UserReport = (typeof userData.value.data)[number]
-type SetupReport = (typeof setupData.value.data)[number]
-type ItemReport = (typeof itemData.value.data)[number]
-
-const userReportActions = (report: UserReport): DropdownMenuItem[][] => [
-    [
-        {
-            label: t('admin.reports.actions.viewUser'),
-            icon: 'mingcute:user-3-fill',
-            to: `/@${report.reportee.username}`,
-            target: '_blank',
-        },
-    ],
-    [
-        {
-            label: report.reportee.banned
-                ? t('admin.reports.actions.unbanUser')
-                : t('admin.reports.actions.banUser'),
-            icon: report.reportee.banned ? 'mingcute:back-fill' : 'mingcute:forbid-circle-fill',
-            onSelect: () => {
-                if (report.reportee.banned) {
-                    void unbanUser({
-                        userId: report.reportee.id,
-                        onSuccess: refreshAfterAction,
-                    })
-                    return
-                }
-
-                banUser.open({
-                    userId: report.reportee.id,
-                    username: report.reportee.username,
-                    name: report.reportee.name,
-                    image: report.reportee.image,
-                    onSuccess: refreshAfterAction,
-                })
-            },
-        },
-    ],
-]
-
-const setupReportActions = (report: SetupReport): DropdownMenuItem[][] => [
-    [
-        {
-            label: t('admin.reports.actions.viewSetup'),
-            icon: 'mingcute:external-link-line',
-            to: setupPath(report.setup.id),
-            target: '_blank',
-        },
-    ],
-    [
-        {
-            label: report.setup.hidAt
-                ? t('admin.reports.actions.unhideSetup')
-                : t('admin.reports.actions.hideSetup'),
-            icon: report.setup.hidAt ? 'mingcute:eye-fill' : 'mingcute:eye-close-line',
-            onSelect: () => {
-                const props = { setupId: report.setup.id, onSuccess: refreshAfterAction }
-                if (report.setup.hidAt) setupUnhide.open(props)
-                else setupHide.open(props)
-            },
-        },
-    ],
-]
-
-const itemReportActions = (report: ItemReport): DropdownMenuItem[][] => [
-    [
-        {
-            label: t('admin.reports.actions.viewSource'),
-            icon: 'mingcute:external-link-line',
-            to: report.item.primarySource?.canonicalUrl,
-            target: '_blank',
-            disabled: !report.item.primarySource?.canonicalUrl,
-        },
-    ],
-    [
-        {
-            label: t('admin.reports.actions.changeItemName'),
-            icon: 'mingcute:edit-3-line',
-            onSelect: () =>
-                changeItemNiceName.open({
-                    itemId: report.item.id,
-                    current: report.item.displayNameOverride || '',
-                    onSuccess: refreshAfterAction,
-                }),
-        },
-    ],
-]
 
 useSeo({
     title: 'Admin - Reports',
@@ -408,230 +295,17 @@ useSeo({
                     class="min-h-72"
                 />
 
-                <UPageList v-else class="gap-4">
-                    <template v-if="tab === 'user'">
-                        <UCard v-for="report in userData.data" :key="report.id">
-                            <template #header>
-                                <AdminReportHeader
-                                    :id="report.id"
-                                    :is-resolved="report.isResolved"
-                                    :created-at="report.createdAt"
-                                    :reporter="report.reporter"
-                                    :actions="userReportActions(report)"
-                                    @resolve="resolve"
-                                />
-                            </template>
-
-                            <div class="grid w-full grid-cols-1 items-start gap-4 sm:grid-cols-2">
-                                <UPageCard
-                                    :to="`/@${report.reportee.username}`"
-                                    target="_blank"
-                                    :ui="{ container: 'p-2 sm:p-2' }"
-                                >
-                                    <UUser
-                                        :name="report.reportee.name"
-                                        :description="`@${report.reportee.username}`"
-                                        :avatar="{
-                                            src: report.reportee.image || undefined,
-                                            alt: report.reportee.name,
-                                            icon: 'mingcute:user-3-fill',
-                                        }"
-                                    >
-                                        <template #trailing>
-                                            <UBadge
-                                                v-if="report.reportee.banned"
-                                                :label="$t('admin.reports.user.banned')"
-                                                color="error"
-                                                variant="subtle"
-                                            />
-                                        </template>
-                                    </UUser>
-                                </UPageCard>
-
-                                <div class="flex w-full flex-col gap-2">
-                                    <div class="flex flex-wrap items-center gap-1">
-                                        <template
-                                            v-for="(label, reason) in reasonLabels.user"
-                                            :key="reason"
-                                        >
-                                            <UBadge
-                                                v-if="report[reason]"
-                                                :label="$t(label)"
-                                                variant="outline"
-                                                class="rounded-full px-2"
-                                            />
-                                        </template>
-                                    </div>
-
-                                    <p
-                                        v-if="report.comment?.length"
-                                        class="text-toned ring-muted w-full rounded-xl px-3 py-1.5 text-sm break-words whitespace-pre-wrap ring-1"
-                                    >
-                                        {{ report.comment }}
-                                    </p>
-                                </div>
-                            </div>
-                        </UCard>
-                    </template>
-
-                    <template v-else-if="tab === 'setup'">
-                        <UCard v-for="report in setupData.data" :key="report.id">
-                            <template #header>
-                                <AdminReportHeader
-                                    :id="report.id"
-                                    :is-resolved="report.isResolved"
-                                    :created-at="report.createdAt"
-                                    :reporter="report.reporter"
-                                    :actions="setupReportActions(report)"
-                                    @resolve="resolve"
-                                />
-                            </template>
-
-                            <div class="grid w-full grid-cols-1 items-start gap-4 sm:grid-cols-2">
-                                <UPageCard
-                                    :to="setupPath(report.setup.id)"
-                                    target="_blank"
-                                    :ui="{ container: 'p-2 sm:p-2' }"
-                                >
-                                    <div class="flex items-center gap-3">
-                                        <NuxtImg
-                                            v-if="report.setup.images?.length"
-                                            :src="report.setup.images[0]?.url"
-                                            class="aspect-square size-16 shrink-0 rounded-lg object-cover"
-                                        />
-
-                                        <div class="flex min-w-0 flex-col gap-1">
-                                            <p class="text-sm leading-tight font-medium">
-                                                {{ report.setup.name }}
-                                            </p>
-                                            <UBadge
-                                                v-if="report.setup.hidAt"
-                                                :label="$t('admin.reports.setup.hidden')"
-                                                color="warning"
-                                                variant="subtle"
-                                                class="w-fit"
-                                            />
-                                        </div>
-                                    </div>
-                                </UPageCard>
-
-                                <div class="flex w-full flex-col gap-2">
-                                    <div class="flex flex-wrap items-center gap-1">
-                                        <template
-                                            v-for="(label, reason) in reasonLabels.setup"
-                                            :key="reason"
-                                        >
-                                            <UBadge
-                                                v-if="report[reason]"
-                                                :label="$t(label)"
-                                                variant="outline"
-                                                class="rounded-full px-2"
-                                            />
-                                        </template>
-                                    </div>
-
-                                    <p
-                                        v-if="report.comment?.length"
-                                        class="text-toned ring-muted w-full rounded-xl px-3 py-1.5 text-sm break-words whitespace-pre-wrap ring-1"
-                                    >
-                                        {{ report.comment }}
-                                    </p>
-                                </div>
-                            </div>
-                        </UCard>
-                    </template>
-
-                    <template v-else>
-                        <UCard v-for="report in itemData.data" :key="report.id">
-                            <template #header>
-                                <AdminReportHeader
-                                    :id="report.id"
-                                    :is-resolved="report.isResolved"
-                                    :created-at="report.createdAt"
-                                    :reporter="report.reporter"
-                                    :actions="itemReportActions(report)"
-                                    @resolve="resolve"
-                                />
-                            </template>
-
-                            <div class="grid w-full grid-cols-1 items-start gap-4 sm:grid-cols-2">
-                                <UPageCard
-                                    :to="report.item.primarySource?.canonicalUrl"
-                                    target="_blank"
-                                    :ui="{ container: 'p-2 sm:p-2' }"
-                                >
-                                    <div class="flex items-center gap-1">
-                                        <NuxtImg
-                                            v-if="report.item.image"
-                                            :src="report.item.image"
-                                            class="aspect-square size-16 shrink-0 rounded-lg object-cover"
-                                        />
-
-                                        <div class="flex min-w-0 flex-col gap-1 px-2">
-                                            <p
-                                                class="text-sm leading-tight font-medium break-words"
-                                            >
-                                                {{
-                                                    report.item.displayNameOverride ||
-                                                    report.item.name
-                                                }}
-                                            </p>
-
-                                            <p
-                                                class="text-dimmed line-clamp-1 text-[10px] leading-tight break-all"
-                                            >
-                                                {{ report.item.name }}
-                                            </p>
-
-                                            <div class="flex flex-wrap items-center gap-1">
-                                                <UBadge
-                                                    :label="report.item.primarySource?.providerKey"
-                                                    variant="outline"
-                                                    size="sm"
-                                                    class="rounded-full px-2.5"
-                                                />
-                                                <UBadge
-                                                    :label="
-                                                        itemCategory[
-                                                            report.item
-                                                                .category as keyof typeof itemCategory
-                                                        ].label
-                                                    "
-                                                    variant="outline"
-                                                    size="sm"
-                                                    class="rounded-full px-2.5"
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </UPageCard>
-
-                                <div class="flex w-full flex-col gap-2">
-                                    <div class="flex flex-wrap items-center gap-1">
-                                        <template
-                                            v-for="(label, reason) in reasonLabels.item"
-                                            :key="reason"
-                                        >
-                                            <UBadge
-                                                v-if="report[reason]"
-                                                :label="$t(label)"
-                                                variant="outline"
-                                                class="rounded-full px-2"
-                                            />
-                                        </template>
-                                    </div>
-
-                                    <p
-                                        v-if="report.comment?.length"
-                                        class="text-toned ring-muted w-full rounded-xl px-3 py-1.5 text-sm break-words whitespace-pre-wrap ring-1"
-                                    >
-                                        {{ report.comment }}
-                                    </p>
-                                </div>
-                            </div>
-                        </UCard>
-                    </template>
-                </UPageList>
+                <AdminReportCards
+                    v-else
+                    :tab="tab"
+                    :user-reports="userData.data"
+                    :setup-reports="setupData.data"
+                    :item-reports="itemData.data"
+                    :user-actions="userReportActions"
+                    :setup-actions="setupReportActions"
+                    :item-actions="itemReportActions"
+                    @resolve="resolve"
+                />
 
                 <div
                     v-if="!activeError && activePagination.totalPages > 1"

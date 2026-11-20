@@ -83,7 +83,7 @@ const arrange = ({
 }
 
 const runCleanupJob = async (dryRun = false) => {
-    const module = await import('../../../layers/admin/server/utils/jobs')
+    const module = await import('../../../layers/admin/server/utils/jobs/cleanup')
     return await module.runCleanupJob({ dryRun })
 }
 
