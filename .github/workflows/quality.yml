@@ -187,7 +187,6 @@ jobs:
   mutation:
     name: mutation (diff)
     if: github.event_name == 'pull_request'
-    continue-on-error: true
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -211,6 +210,7 @@ jobs:
             mutator-${{ runner.os }}-${{ github.base_ref }}-${{ hashFiles('mutator.config.ts', 'vitest.mutator.config.ts', 'bun.lock') }}-
             mutator-${{ runner.os }}-${{ github.base_ref }}-
       - name: Run diff-driven mutation check
+        continue-on-error: true
         run: vp exec mutator --since "origin/${{ github.base_ref }}" --include-test-changes --time-budget 300 --reporter text --reporter simplify
         env:
           NODE_OPTIONS: --max-old-space-size=4096
