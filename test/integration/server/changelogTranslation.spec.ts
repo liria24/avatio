@@ -3,8 +3,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { relations } from '../../../database/relations'
-import type { AppDatabase } from '../../../server/utils/database'
-import { executeAppBatch } from '../../../server/utils/executeAppBatch'
+import { executeAppBatch, type AppDatabase } from '../../../server/utils/database'
 import {
     claimIdempotencyRequest,
     completeIdempotencyRequest,

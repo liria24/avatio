@@ -1,5 +1,6 @@
 import { useServerFiles } from 'nuxt-files-sdk/runtime'
 
+import { sanitizeEmailHtml } from '../server/utils/email/sanitizeHtml'
 import { serverError } from '../server/utils/error'
 import {
     createCacheInvalidator,
@@ -12,7 +13,6 @@ import {
     getRuntimeEnvString,
     getRuntimeStageConfig,
 } from '../server/utils/runtimeEnv'
-import { sanitizeEmailHtml } from '../server/utils/sanitizeEmailHtml'
 import { authAdditionalFields } from '../shared/utils/authAdditionalFields'
 import { hasBetterAuthSessionCookie } from '../shared/utils/authCookie'
 import * as constants from '../shared/utils/constants'

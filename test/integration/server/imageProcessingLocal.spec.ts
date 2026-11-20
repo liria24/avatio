@@ -5,7 +5,7 @@ import { createIPX, type IPXStorage } from 'ipx'
 import { PNG } from 'pngjs/browser'
 import { beforeAll, describe, expect, it } from 'vitest'
 
-import { processLocalUploadImage } from '../../../server/utils/imageProcessing.local'
+import { processLocalUploadImage } from '../../../server/utils/setups/imageProcessing.local'
 
 describe('local IPX upload processing', () => {
     let source: Buffer

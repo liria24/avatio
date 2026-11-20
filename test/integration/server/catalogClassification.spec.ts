@@ -101,7 +101,7 @@ it('applies only current high-confidence classifications and preserves manual ov
             model: 'jev-1.13.0',
         })
     let source = await createAvailableSource()
-    const { classifyCatalogSource } = await import('../../../server/utils/catalogClassification')
+    const { classifyCatalogSource } = await import('../../../server/utils/catalog/classification')
 
     await classifyCatalogSource({} as H3Event, repository, source)
     await classifyCatalogSource({} as H3Event, repository, source)

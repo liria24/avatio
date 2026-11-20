@@ -21,7 +21,7 @@ vi.mock('pngjs/browser', () => ({
 const imageBuffer = Buffer.from([1, 2, 3])
 
 const loadExtractImageColors = async () => {
-    const module = await import('../../../server/utils/extractImageColors')
+    const module = await import('../../../server/utils/setups/extractImageColors')
     return module.extractImageColors
 }
 

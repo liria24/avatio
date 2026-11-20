@@ -1,4 +1,4 @@
-import { getCatalogSyncQueue } from '../../../server/utils/catalogRuntime'
+import { getCatalogSyncQueue } from '../../../server/utils/catalog/runtime'
 import { getRuntimeStageConfig } from '../../../server/utils/runtimeEnv'
 
 afterEach(() => vi.unstubAllGlobals())

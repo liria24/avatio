@@ -1,9 +1,9 @@
 import type {
     CatalogProvider,
+    CatalogRepository,
     ProviderAdmissionRule,
     ProviderSnapshot,
-} from '../ports/catalog-provider'
-import type { CatalogRepository } from '../ports/catalog-repository'
+} from '../ports'
 
 export const evaluateProviderAdmission = (
     provider: CatalogProvider,

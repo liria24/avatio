@@ -229,7 +229,7 @@ PRs into `main` require the `format`, `lint`, `lint:unused`, `typecheck`, `test`
 
 ### Runtime organization
 
-- `server/utils` is Avatio's formal Nuxt/Nitro server runtime integration and continues to use framework auto-imports.
+- `server/utils` is Avatio's formal Nuxt/Nitro server runtime integration and continues to use framework auto-imports (`server/utils/**/*`). Shared server primitives live at root (`database.ts`, `infrastructure.ts`, `eventHandler.ts`, `validateRequest.ts`, `edgeCache.ts`, etc.), while domain runtime modules are organized under `admin/`, `catalog/`, `setups/`, and `email/` (enforced by `oxlint` `no-restricted-imports` rules in `vite.config.ts`).
 - Organize runtime utilities by one coherent responsibility per file; one exported function per file is not required. Never introduce catch-all names such as `misc.ts`, `helpers.ts`, or `common.ts`.
 - Migration-only, rollout compatibility, and backfill implementations must not live in `server/utils`.
 - All API handlers, Better Auth session/admin handlers, Nitro plugins/tasks, sitemap integration, and Cloudflare composition use unified H3/Nitro boundaries (`server/utils/eventHandler.ts`, `server/utils/validateRequest.ts`, `server/utils/edgeCache.ts`). Keep domain/application behavior independent of H3 event types.

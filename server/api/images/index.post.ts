@@ -47,7 +47,7 @@ export default authedSessionEventHandler(
         try {
             if (import.meta.dev) {
                 const { processLocalUploadImage } =
-                    await import('~~/server/utils/imageProcessing.local')
+                    await import('~~/server/utils/setups/imageProcessing.local')
                 const processed = await processLocalUploadImage(bytes)
                 info = processed
                 sampleBytes = processed.sample

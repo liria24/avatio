@@ -1,4 +1,4 @@
-import type { CatalogProvider } from '../ports/catalog-provider'
+import type { CatalogProvider } from '../ports'
 
 export class CatalogProviderRegistry {
     readonly #providers: ReadonlyMap<string, CatalogProvider>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-const loadParser = async () => await import('../../../server/utils/emailInbound')
+const loadParser = async () => await import('../../../server/utils/email/inbound')
 
 const encodeEmail = (source: string): ArrayBuffer => {
     const bytes = new TextEncoder().encode(source)

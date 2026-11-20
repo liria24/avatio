@@ -1,6 +1,5 @@
 import type { CacheInvalidator } from '../../ports'
-import type { ProviderSnapshot } from '../ports/catalog-provider'
-import type { CatalogRepository } from '../ports/catalog-repository'
+import type { CatalogRepository, ProviderSnapshot } from '../ports'
 import { applyProviderAdmission } from './provider-admission'
 import type { CatalogProviderRegistry } from './provider-registry'
 

@@ -46,7 +46,7 @@ export const sendEmail = async (input: SendEmailInput) => {
         subject: import.meta.dev ? input.subject : `${config.emailSubjectPrefix}${input.subject}`,
     }
     if (import.meta.dev) {
-        const { saveLocalEmail } = await import('./email.local')
+        const { saveLocalEmail } = await import('./local')
         return saveLocalEmail(message)
     }
     return getEmailBinding().send(message)
