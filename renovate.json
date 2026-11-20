@@ -15,7 +15,7 @@
     "updateNotScheduled": true,
     "ignoreScripts": true,
     "constraints": {
-        "bun": "1.4.4"
+        "bun": "1.4.5"
     },
     "lockFileMaintenance": {
         "enabled": false
@@ -156,24 +156,24 @@
             "matchCurrentVersion": "/-/"
         },
         {
-            "description": "vue-tsc 3.3.13 loses v-for and slot bindings with Vue 3.6 RC; recheck after upstream correction",
+            "description": "vue-tsc 3.3.13-3.3.14 lose v-for and slot bindings with Vue 3.6 RC; recheck after upstream correction",
             "matchPackageNames": ["vue-tsc"],
             "allowedVersions": "3.3.11"
         },
         {
-            "description": "vue-tsc 3.3.13 cannot load TypeScript 7 lib/tsc; remain on the supported compiler until that integration works",
+            "description": "vue-tsc 3.3.11 cannot load TypeScript 7 lib/tsc; remain on the supported compiler until that integration works",
             "matchPackageNames": ["typescript"],
             "allowedVersions": "<7"
         },
         {
-            "description": "Better Auth Nuxt 0.3.11-0.3.13 erases plugin API inference required by admin and multi-session calls",
-            "matchPackageNames": ["@nuxtjs/better-auth"],
-            "allowedVersions": "0.3.10"
+            "description": "@nuxt/schema 4.6.4 resolves unset devServer.host to {} under untyped 2.0.0, crashing @nuxt/cli dev server",
+            "matchPackageNames": ["nuxt", "@nuxt/kit", "@nuxt/schema"],
+            "allowedVersions": "4.6.3"
         },
         {
-            "description": "comark-content 0.4.1 exposes the 0.7 Markdown plugin contract; update together when 0.8 is supported",
-            "matchPackageNames": ["comark", "@comark/nuxt"],
-            "allowedVersions": "0.7.0"
+            "description": "@vite-pwa/nuxt 2.0.2 deprecates workbox for generateSW and fails strict **/_payload.json precache glob matching in SSR builds",
+            "matchPackageNames": ["@vite-pwa/nuxt"],
+            "allowedVersions": "1.1.1"
         }
     ]
 }
