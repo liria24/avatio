@@ -1,29 +1,18 @@
 import { getStageConfig } from './environment.ts'
-import { getPreviewKind } from './preview.ts'
-
-export const requireHttpsOrigin = (value: string | undefined, name: string) => {
-    if (!value) throw new Error(`${name} is required.`)
-    const url = new URL(value)
-    if (url.protocol !== 'https:' || value !== url.origin)
-        throw new Error(`${name} must be an HTTPS origin without a path or credentials.`)
-    return url.origin
-}
 
 /** Build-time public settings, independent of either deployment CLI and of signing secrets. */
 export const getBuildEnvironment = (env: Record<string, string | undefined>, dev: boolean) => {
     const stage = !dev && env.STAGE ? getStageConfig(env.STAGE) : undefined
-    const previewKind = dev ? undefined : getPreviewKind(env.STAGE, env.PREVIEW_NAME)
-    const siteUrl = previewKind
-        ? requireHttpsOrigin(env.PUBLIC_SITE_URL, 'PUBLIC_SITE_URL')
-        : (stage?.siteUrl ?? env.PUBLIC_SITE_URL ?? 'http://localhost:3000')
-    const imageBaseUrl = previewKind
-        ? requireHttpsOrigin(env.R2_PUBLIC_BASE_URL, 'R2_PUBLIC_BASE_URL')
-        : (stage?.imageBaseUrl ?? env.R2_PUBLIC_BASE_URL)
-    if (previewKind) {
-        const production = getStageConfig('production')
-        if (siteUrl === production.siteUrl || imageBaseUrl === production.imageBaseUrl)
-            throw new Error('Preview build URLs must not target production services.')
-    }
+    if (env.PREVIEW_NAME)
+        throw new Error('Native Preview builds are retired; select a stage Worker.')
+    if (
+        stage &&
+        ((env.PUBLIC_SITE_URL && env.PUBLIC_SITE_URL !== stage.siteUrl) ||
+            (env.R2_PUBLIC_BASE_URL && env.R2_PUBLIC_BASE_URL !== stage.imageBaseUrl))
+    )
+        throw new Error('Build URLs must match the selected stage.')
+    const siteUrl = stage?.siteUrl ?? env.PUBLIC_SITE_URL ?? 'http://localhost:3000'
+    const imageBaseUrl = stage?.imageBaseUrl ?? env.R2_PUBLIC_BASE_URL
     const publicUrl = ['localhost', '127.0.0.1'].includes(new URL(siteUrl).hostname)
         ? 'https://avatio.me'
         : siteUrl
@@ -32,8 +21,6 @@ export const getBuildEnvironment = (env: Record<string, string | undefined>, dev
         siteUrl,
         publicUrl,
         imageBaseUrl,
-        dynamicOgImageEnabled: !previewKind,
-        previewKind,
         twitterAuthEnabled: Boolean(stage || (env.TWITTER_CLIENT_ID && env.TWITTER_CLIENT_SECRET)),
         emailPasswordAuthEnabled: dev,
     }

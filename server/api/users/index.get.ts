@@ -1,3 +1,5 @@
+import { or } from 'drizzle-orm'
+import { EmptyFilter } from 'drizzle-orm/relations'
 import { z } from 'zod'
 
 const query = z.object({
@@ -5,8 +7,8 @@ const query = z.object({
     limit: z.coerce.number().min(1).max(50).optional().default(24),
 })
 
-export default requestEventHandler<User[]>(async ({ event, db }) => {
-    const { q, limit } = validateRequestQuery(event, query)
+export default promiseEventHandler<User[]>(async ({ event, db }) => {
+    const { q, limit } = await validateQuery(query)
 
     const data = await db.query.users.findMany({
         limit,
@@ -16,7 +18,8 @@ export default requestEventHandler<User[]>(async ({ event, db }) => {
         where: {
             banned: { OR: [{ eq: false }, { isNull: true }] },
             setups: true,
-            OR: q ? [{ username: { like: `%${q}%` } }, { name: { like: `%${q}%` } }] : undefined,
+            RAW: (table) =>
+                q ? or(searchText(table.username, q), searchText(table.name, q))! : EmptyFilter,
         },
         columns: {
             id: true,
@@ -34,6 +37,6 @@ export default requestEventHandler<User[]>(async ({ event, db }) => {
         },
     })
 
-    applyPublicRequestCache(event, [EDGE_CACHE_TAGS.users])
+    applyPublicEdgeCache(event, [EDGE_CACHE_TAGS.users])
     return data
 })

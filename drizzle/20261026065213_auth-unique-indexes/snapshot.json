@@ -1,0 +1,5748 @@
+{
+    "version": "7",
+    "dialect": "sqlite",
+    "id": "03717f6e-3d6e-4fc5-9993-2458233f0815",
+    "prevIds": ["c7457ece-f591-45dc-8b2d-1d371d5dc492"],
+    "ddl": [
+        {
+            "name": "accounts",
+            "entityType": "tables"
+        },
+        {
+            "name": "audit_logs",
+            "entityType": "tables"
+        },
+        {
+            "name": "bookmarks",
+            "entityType": "tables"
+        },
+        {
+            "name": "catalog_item_classifications",
+            "entityType": "tables"
+        },
+        {
+            "name": "catalog_items",
+            "entityType": "tables"
+        },
+        {
+            "name": "changelog_authors",
+            "entityType": "tables"
+        },
+        {
+            "name": "changelog_i18ns",
+            "entityType": "tables"
+        },
+        {
+            "name": "changelogs",
+            "entityType": "tables"
+        },
+        {
+            "name": "emails",
+            "entityType": "tables"
+        },
+        {
+            "name": "feedbacks",
+            "entityType": "tables"
+        },
+        {
+            "name": "follow_users",
+            "entityType": "tables"
+        },
+        {
+            "name": "idempotency_requests",
+            "entityType": "tables"
+        },
+        {
+            "name": "item_reports",
+            "entityType": "tables"
+        },
+        {
+            "name": "item_sources",
+            "entityType": "tables"
+        },
+        {
+            "name": "legal_acceptances",
+            "entityType": "tables"
+        },
+        {
+            "name": "notifications",
+            "entityType": "tables"
+        },
+        {
+            "name": "provider_admission_options",
+            "entityType": "tables"
+        },
+        {
+            "name": "provider_admission_rules",
+            "entityType": "tables"
+        },
+        {
+            "name": "publisher_source_ownerships",
+            "entityType": "tables"
+        },
+        {
+            "name": "publisher_sources",
+            "entityType": "tables"
+        },
+        {
+            "name": "publisher_source_verification_challenges",
+            "entityType": "tables"
+        },
+        {
+            "name": "publishers",
+            "entityType": "tables"
+        },
+        {
+            "name": "rate_limits",
+            "entityType": "tables"
+        },
+        {
+            "name": "sessions",
+            "entityType": "tables"
+        },
+        {
+            "name": "setup_coauthors",
+            "entityType": "tables"
+        },
+        {
+            "name": "setup_draft_images",
+            "entityType": "tables"
+        },
+        {
+            "name": "setup_drafts",
+            "entityType": "tables"
+        },
+        {
+            "name": "setup_entries",
+            "entityType": "tables"
+        },
+        {
+            "name": "setup_entry_shapekeys",
+            "entityType": "tables"
+        },
+        {
+            "name": "setup_image_points",
+            "entityType": "tables"
+        },
+        {
+            "name": "setup_images",
+            "entityType": "tables"
+        },
+        {
+            "name": "setup_reports",
+            "entityType": "tables"
+        },
+        {
+            "name": "setup_tags",
+            "entityType": "tables"
+        },
+        {
+            "name": "setups",
+            "entityType": "tables"
+        },
+        {
+            "name": "user_badges",
+            "entityType": "tables"
+        },
+        {
+            "name": "user_publishers",
+            "entityType": "tables"
+        },
+        {
+            "name": "user_reports",
+            "entityType": "tables"
+        },
+        {
+            "name": "user_settings",
+            "entityType": "tables"
+        },
+        {
+            "name": "users",
+            "entityType": "tables"
+        },
+        {
+            "name": "verifications",
+            "entityType": "tables"
+        },
+        {
+            "table": "accounts",
+            "name": "id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "accounts",
+            "name": "provider_account_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "accounts",
+            "name": "provider_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "accounts",
+            "name": "user_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "accounts",
+            "name": "access_token",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "accounts",
+            "name": "refresh_token",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "accounts",
+            "name": "id_token",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "accounts",
+            "name": "access_token_expires_at",
+            "type": "integer",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "accounts",
+            "name": "refresh_token_expires_at",
+            "type": "integer",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "accounts",
+            "name": "scope",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "accounts",
+            "name": "password",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "accounts",
+            "name": "created_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "accounts",
+            "name": "updated_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "audit_logs",
+            "name": "id",
+            "type": "integer",
+            "notNull": false,
+            "autoincrement": true,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "audit_logs",
+            "name": "created_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "audit_logs",
+            "name": "user_id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "audit_logs",
+            "name": "action",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "audit_logs",
+            "name": "target_type",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "audit_logs",
+            "name": "target_id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "audit_logs",
+            "name": "details",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "bookmarks",
+            "name": "id",
+            "type": "integer",
+            "notNull": false,
+            "autoincrement": true,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "bookmarks",
+            "name": "created_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "bookmarks",
+            "name": "user_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "bookmarks",
+            "name": "setup_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "catalog_item_classifications",
+            "name": "item_id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "catalog_item_classifications",
+            "name": "source_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "catalog_item_classifications",
+            "name": "source_updated_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "catalog_item_classifications",
+            "name": "input_hash",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "catalog_item_classifications",
+            "name": "classifier_version",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "catalog_item_classifications",
+            "name": "requested_model",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "catalog_item_classifications",
+            "name": "response_model",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "catalog_item_classifications",
+            "name": "status",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "'processing'",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "catalog_item_classifications",
+            "name": "category",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "catalog_item_classifications",
+            "name": "confidence",
+            "type": "real",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "catalog_item_classifications",
+            "name": "probabilities",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "catalog_item_classifications",
+            "name": "error_kind",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "catalog_item_classifications",
+            "name": "retry_at",
+            "type": "integer",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "catalog_item_classifications",
+            "name": "lease_token",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "catalog_item_classifications",
+            "name": "lease_until",
+            "type": "integer",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "catalog_item_classifications",
+            "name": "created_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "catalog_item_classifications",
+            "name": "updated_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "catalog_items",
+            "name": "id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "catalog_items",
+            "name": "created_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "catalog_items",
+            "name": "updated_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "catalog_items",
+            "name": "display_name_override",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "catalog_items",
+            "name": "category_override",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "catalog_items",
+            "name": "category_override_origin",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "changelog_authors",
+            "name": "id",
+            "type": "integer",
+            "notNull": false,
+            "autoincrement": true,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "changelog_authors",
+            "name": "changelog_slug",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "changelog_authors",
+            "name": "user_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "changelog_i18ns",
+            "name": "id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "changelog_i18ns",
+            "name": "changelog_slug",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "changelog_i18ns",
+            "name": "locale",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "changelog_i18ns",
+            "name": "title",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "changelog_i18ns",
+            "name": "markdown",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "changelog_i18ns",
+            "name": "html",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "changelog_i18ns",
+            "name": "ai_generated",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "false",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "changelogs",
+            "name": "slug",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "changelogs",
+            "name": "created_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "changelogs",
+            "name": "updated_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "changelogs",
+            "name": "title",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "changelogs",
+            "name": "markdown",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "changelogs",
+            "name": "html",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "changelogs",
+            "name": "idempotency_request_id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "emails",
+            "name": "id",
+            "type": "integer",
+            "notNull": false,
+            "autoincrement": true,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "emails",
+            "name": "message_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "emails",
+            "name": "subject",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "emails",
+            "name": "from_address",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "emails",
+            "name": "from_name",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "emails",
+            "name": "to_address",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "emails",
+            "name": "snippet",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "emails",
+            "name": "text_body",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "emails",
+            "name": "html_body",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "emails",
+            "name": "attachments",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "'[]'",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "emails",
+            "name": "raw_size",
+            "type": "integer",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "emails",
+            "name": "is_read",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "false",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "emails",
+            "name": "is_archived",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "false",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "emails",
+            "name": "received_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "emails",
+            "name": "created_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "emails",
+            "name": "updated_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "feedbacks",
+            "name": "id",
+            "type": "integer",
+            "notNull": false,
+            "autoincrement": true,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "feedbacks",
+            "name": "created_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "feedbacks",
+            "name": "fingerprint",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "feedbacks",
+            "name": "comment",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "feedbacks",
+            "name": "context_path",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "feedbacks",
+            "name": "is_closed",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "false",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "feedbacks",
+            "name": "idempotency_request_id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "follow_users",
+            "name": "id",
+            "type": "integer",
+            "notNull": false,
+            "autoincrement": true,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "follow_users",
+            "name": "created_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "follow_users",
+            "name": "user_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "follow_users",
+            "name": "target_user_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "idempotency_requests",
+            "name": "id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "idempotency_requests",
+            "name": "created_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "idempotency_requests",
+            "name": "updated_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "idempotency_requests",
+            "name": "scope",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "idempotency_requests",
+            "name": "route",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "idempotency_requests",
+            "name": "key",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "idempotency_requests",
+            "name": "request_hash",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "idempotency_requests",
+            "name": "status",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "'pending'",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "idempotency_requests",
+            "name": "resource_id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "idempotency_requests",
+            "name": "response",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "idempotency_requests",
+            "name": "status_code",
+            "type": "integer",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "idempotency_requests",
+            "name": "lease_expires_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "idempotency_requests",
+            "name": "expires_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_reports",
+            "name": "id",
+            "type": "integer",
+            "notNull": false,
+            "autoincrement": true,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_reports",
+            "name": "created_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_reports",
+            "name": "reporter_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_reports",
+            "name": "catalog_item_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_reports",
+            "name": "name_error",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "false",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_reports",
+            "name": "irrelevant",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "false",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_reports",
+            "name": "other",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "false",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_reports",
+            "name": "comment",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_reports",
+            "name": "is_resolved",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "false",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_reports",
+            "name": "idempotency_request_id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_sources",
+            "name": "id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_sources",
+            "name": "created_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_sources",
+            "name": "updated_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_sources",
+            "name": "item_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_sources",
+            "name": "publisher_source_id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_sources",
+            "name": "provider_key",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_sources",
+            "name": "external_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_sources",
+            "name": "canonical_url",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_sources",
+            "name": "primary",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "false",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_sources",
+            "name": "availability",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "'unknown'",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_sources",
+            "name": "sync_state",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "'stale'",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_sources",
+            "name": "provider_category_key",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_sources",
+            "name": "provider_category_label",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_sources",
+            "name": "mapped_category",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_sources",
+            "name": "display_name",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_sources",
+            "name": "image",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_sources",
+            "name": "price",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_sources",
+            "name": "popularity_count",
+            "type": "integer",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_sources",
+            "name": "nsfw",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "false",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_sources",
+            "name": "metadata",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_sources",
+            "name": "last_checked_at",
+            "type": "integer",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_sources",
+            "name": "last_successful_sync_at",
+            "type": "integer",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_sources",
+            "name": "next_check_at",
+            "type": "integer",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_sources",
+            "name": "sync_lease_until",
+            "type": "integer",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_sources",
+            "name": "sync_lease_token",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_sources",
+            "name": "last_error_kind",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "item_sources",
+            "name": "last_error_at",
+            "type": "integer",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "legal_acceptances",
+            "name": "id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "legal_acceptances",
+            "name": "user_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "legal_acceptances",
+            "name": "document",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "legal_acceptances",
+            "name": "version",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "legal_acceptances",
+            "name": "source_revision",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "legal_acceptances",
+            "name": "source_commit",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "legal_acceptances",
+            "name": "source_locale",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "legal_acceptances",
+            "name": "accepted_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "notifications",
+            "name": "id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "notifications",
+            "name": "created_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "notifications",
+            "name": "user_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "notifications",
+            "name": "type",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "notifications",
+            "name": "read_at",
+            "type": "integer",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "notifications",
+            "name": "payload",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "notifications",
+            "name": "action_url",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "notifications",
+            "name": "banner",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "false",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "notifications",
+            "name": "dedupe_key",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "provider_admission_options",
+            "name": "provider_key",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "provider_admission_options",
+            "name": "facet_key",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "provider_admission_options",
+            "name": "value_key",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "provider_admission_options",
+            "name": "label",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "provider_admission_options",
+            "name": "first_seen_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "provider_admission_options",
+            "name": "last_seen_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "provider_admission_rules",
+            "name": "provider_key",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "provider_admission_rules",
+            "name": "facet_key",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "provider_admission_rules",
+            "name": "value_key",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "provider_admission_rules",
+            "name": "decision",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "publisher_source_ownerships",
+            "name": "id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "publisher_source_ownerships",
+            "name": "user_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "publisher_source_ownerships",
+            "name": "publisher_source_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "publisher_source_ownerships",
+            "name": "method",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "publisher_source_ownerships",
+            "name": "verified_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "publisher_sources",
+            "name": "id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "publisher_sources",
+            "name": "created_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "publisher_sources",
+            "name": "updated_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "publisher_sources",
+            "name": "publisher_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "publisher_sources",
+            "name": "provider_key",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "publisher_sources",
+            "name": "external_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "publisher_sources",
+            "name": "canonical_url",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "publisher_sources",
+            "name": "name",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "publisher_sources",
+            "name": "image",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "publisher_sources",
+            "name": "provider_verified",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "false",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "publisher_sources",
+            "name": "metadata",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "publisher_source_verification_challenges",
+            "name": "id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "publisher_source_verification_challenges",
+            "name": "code",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "publisher_source_verification_challenges",
+            "name": "created_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "publisher_source_verification_challenges",
+            "name": "user_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "publisher_source_verification_challenges",
+            "name": "publisher_source_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "publisher_source_verification_challenges",
+            "name": "method",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "publisher_source_verification_challenges",
+            "name": "expires_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "publishers",
+            "name": "id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "publishers",
+            "name": "created_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "publishers",
+            "name": "updated_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "publishers",
+            "name": "display_name_override",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "publishers",
+            "name": "image_override",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "rate_limits",
+            "name": "id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "rate_limits",
+            "name": "key",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "rate_limits",
+            "name": "count",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "rate_limits",
+            "name": "last_request",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "sessions",
+            "name": "id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "sessions",
+            "name": "expires_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "sessions",
+            "name": "token",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "sessions",
+            "name": "created_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "sessions",
+            "name": "updated_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "sessions",
+            "name": "ip_address",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "sessions",
+            "name": "user_agent",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "sessions",
+            "name": "user_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "sessions",
+            "name": "impersonated_by",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_coauthors",
+            "name": "id",
+            "type": "integer",
+            "notNull": false,
+            "autoincrement": true,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_coauthors",
+            "name": "setup_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_coauthors",
+            "name": "user_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_coauthors",
+            "name": "note",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_draft_images",
+            "name": "id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_draft_images",
+            "name": "setup_draft_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_draft_images",
+            "name": "object_key",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_drafts",
+            "name": "id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_drafts",
+            "name": "created_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_drafts",
+            "name": "updated_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_drafts",
+            "name": "user_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_drafts",
+            "name": "setup_id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_drafts",
+            "name": "revision",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "1",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_drafts",
+            "name": "content",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_entries",
+            "name": "id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_entries",
+            "name": "item_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_entries",
+            "name": "setup_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_entries",
+            "name": "position",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "0",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_entries",
+            "name": "category_override",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_entries",
+            "name": "unsupported",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "false",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_entries",
+            "name": "note",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_entry_shapekeys",
+            "name": "id",
+            "type": "integer",
+            "notNull": false,
+            "autoincrement": true,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_entry_shapekeys",
+            "name": "setup_entry_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_entry_shapekeys",
+            "name": "name",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_entry_shapekeys",
+            "name": "value",
+            "type": "real",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_image_points",
+            "name": "id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_image_points",
+            "name": "setup_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_image_points",
+            "name": "image_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_image_points",
+            "name": "setup_entry_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_image_points",
+            "name": "x",
+            "type": "real",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_image_points",
+            "name": "y",
+            "type": "real",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_images",
+            "name": "id",
+            "type": "integer",
+            "notNull": false,
+            "autoincrement": true,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_images",
+            "name": "stable_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_images",
+            "name": "setup_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_images",
+            "name": "position",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "0",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_images",
+            "name": "object_key",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_images",
+            "name": "width",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_images",
+            "name": "height",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_images",
+            "name": "theme_colors",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_images",
+            "name": "content_type",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_images",
+            "name": "size",
+            "type": "integer",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_images",
+            "name": "etag",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_images",
+            "name": "created_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_reports",
+            "name": "id",
+            "type": "integer",
+            "notNull": false,
+            "autoincrement": true,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_reports",
+            "name": "created_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_reports",
+            "name": "reporter_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_reports",
+            "name": "setup_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_reports",
+            "name": "spam",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "false",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_reports",
+            "name": "hate",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "false",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_reports",
+            "name": "infringe",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "false",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_reports",
+            "name": "bad_image",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "false",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_reports",
+            "name": "other",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "false",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_reports",
+            "name": "comment",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_reports",
+            "name": "is_resolved",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "false",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_reports",
+            "name": "idempotency_request_id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_tags",
+            "name": "id",
+            "type": "integer",
+            "notNull": false,
+            "autoincrement": true,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_tags",
+            "name": "setup_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setup_tags",
+            "name": "tag",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setups",
+            "name": "id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setups",
+            "name": "created_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setups",
+            "name": "updated_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setups",
+            "name": "user_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setups",
+            "name": "public",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "true",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setups",
+            "name": "name",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setups",
+            "name": "description",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setups",
+            "name": "hid_at",
+            "type": "integer",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setups",
+            "name": "hid_reason",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "setups",
+            "name": "idempotency_request_id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "user_badges",
+            "name": "id",
+            "type": "integer",
+            "notNull": false,
+            "autoincrement": true,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "user_badges",
+            "name": "created_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "user_badges",
+            "name": "user_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "user_badges",
+            "name": "badge",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "user_publishers",
+            "name": "id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "user_publishers",
+            "name": "created_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "user_publishers",
+            "name": "user_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "user_publishers",
+            "name": "publisher_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "user_reports",
+            "name": "id",
+            "type": "integer",
+            "notNull": false,
+            "autoincrement": true,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "user_reports",
+            "name": "created_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "user_reports",
+            "name": "reporter_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "user_reports",
+            "name": "reportee_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "user_reports",
+            "name": "spam",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "false",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "user_reports",
+            "name": "hate",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "false",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "user_reports",
+            "name": "infringe",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "false",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "user_reports",
+            "name": "bad_image",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "false",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "user_reports",
+            "name": "other",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "false",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "user_reports",
+            "name": "comment",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "user_reports",
+            "name": "is_resolved",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "false",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "user_reports",
+            "name": "idempotency_request_id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "user_settings",
+            "name": "id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "user_settings",
+            "name": "created_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "user_settings",
+            "name": "updated_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "user_settings",
+            "name": "user_id",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "user_settings",
+            "name": "show_private_setups",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "true",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "user_settings",
+            "name": "show_nsfw",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "false",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "users",
+            "name": "id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "users",
+            "name": "name",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "users",
+            "name": "username",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "users",
+            "name": "display_username",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "users",
+            "name": "email",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "users",
+            "name": "email_verified",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "false",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "users",
+            "name": "image",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "users",
+            "name": "created_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "users",
+            "name": "updated_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "users",
+            "name": "role",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "users",
+            "name": "banned",
+            "type": "integer",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "users",
+            "name": "ban_reason",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "users",
+            "name": "ban_expires",
+            "type": "integer",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "users",
+            "name": "bio",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "users",
+            "name": "links",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "users",
+            "name": "last_agreed_to_terms",
+            "type": "integer",
+            "notNull": false,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "verifications",
+            "name": "id",
+            "type": "text",
+            "notNull": false,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "verifications",
+            "name": "identifier",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "verifications",
+            "name": "value",
+            "type": "text",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "verifications",
+            "name": "expires_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": null,
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "verifications",
+            "name": "created_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "verifications",
+            "name": "updated_at",
+            "type": "integer",
+            "notNull": true,
+            "autoincrement": false,
+            "default": "(unixepoch() * 1000)",
+            "generated": null,
+            "entityType": "columns"
+        },
+        {
+            "table": "accounts",
+            "name": "account_user_id_index",
+            "columns": [
+                {
+                    "value": "user_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "accounts",
+            "name": "accounts_providerId_providerAccountId_uidx",
+            "columns": [
+                {
+                    "value": "provider_id",
+                    "isExpression": false
+                },
+                {
+                    "value": "provider_account_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": true,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "audit_logs",
+            "name": "audit_logs_created_at_index",
+            "columns": [
+                {
+                    "value": "created_at",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "audit_logs",
+            "name": "audit_logs_user_id_index",
+            "columns": [
+                {
+                    "value": "user_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "audit_logs",
+            "name": "audit_logs_action_index",
+            "columns": [
+                {
+                    "value": "action",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "audit_logs",
+            "name": "audit_logs_target_type_index",
+            "columns": [
+                {
+                    "value": "target_type",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "audit_logs",
+            "name": "audit_logs_target_id_index",
+            "columns": [
+                {
+                    "value": "target_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "bookmarks",
+            "name": "bookmarks_id_index",
+            "columns": [
+                {
+                    "value": "id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "bookmarks",
+            "name": "bookmarks_user_id_index",
+            "columns": [
+                {
+                    "value": "user_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "bookmarks",
+            "name": "bookmarks_setup_id_index",
+            "columns": [
+                {
+                    "value": "setup_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "bookmarks",
+            "name": "bookmarks_user_setup_uidx",
+            "columns": [
+                {
+                    "value": "user_id",
+                    "isExpression": false
+                },
+                {
+                    "value": "setup_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": true,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "catalog_item_classifications",
+            "name": "catalog_item_classifications_source_id_idx",
+            "columns": [
+                {
+                    "value": "source_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "catalog_items",
+            "name": "catalog_items_display_name_override_idx",
+            "columns": [
+                {
+                    "value": "display_name_override",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "changelog_authors",
+            "name": "changelog_authors_changelog_slug_index",
+            "columns": [
+                {
+                    "value": "changelog_slug",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "changelog_authors",
+            "name": "changelog_authors_user_id_index",
+            "columns": [
+                {
+                    "value": "user_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "changelog_authors",
+            "name": "changelog_authors_slug_user_uidx",
+            "columns": [
+                {
+                    "value": "changelog_slug",
+                    "isExpression": false
+                },
+                {
+                    "value": "user_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": true,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "changelog_i18ns",
+            "name": "changelog_i18ns_changelog_slug_index",
+            "columns": [
+                {
+                    "value": "changelog_slug",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "changelog_i18ns",
+            "name": "changelog_i18ns_locale_index",
+            "columns": [
+                {
+                    "value": "locale",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "changelog_i18ns",
+            "name": "changelog_i18ns_slug_locale_uidx",
+            "columns": [
+                {
+                    "value": "changelog_slug",
+                    "isExpression": false
+                },
+                {
+                    "value": "locale",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": true,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "changelogs",
+            "name": "changelogs_slug_index",
+            "columns": [
+                {
+                    "value": "slug",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "emails",
+            "name": "emails_message_id_idx",
+            "columns": [
+                {
+                    "value": "message_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": true,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "emails",
+            "name": "emails_received_at_idx",
+            "columns": [
+                {
+                    "value": "received_at",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "emails",
+            "name": "emails_status_idx",
+            "columns": [
+                {
+                    "value": "is_read",
+                    "isExpression": false
+                },
+                {
+                    "value": "is_archived",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "feedbacks",
+            "name": "feedbacks_id_index",
+            "columns": [
+                {
+                    "value": "id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "feedbacks",
+            "name": "feedbacks_fingerprint_index",
+            "columns": [
+                {
+                    "value": "fingerprint",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "follow_users",
+            "name": "follow_users_id_index",
+            "columns": [
+                {
+                    "value": "id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "follow_users",
+            "name": "follow_users_user_id_index",
+            "columns": [
+                {
+                    "value": "user_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "follow_users",
+            "name": "follow_users_target_user_id_index",
+            "columns": [
+                {
+                    "value": "target_user_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "follow_users",
+            "name": "follow_users_user_target_uidx",
+            "columns": [
+                {
+                    "value": "user_id",
+                    "isExpression": false
+                },
+                {
+                    "value": "target_user_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": true,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "idempotency_requests",
+            "name": "idempotency_requests_scope_route_key_uidx",
+            "columns": [
+                {
+                    "value": "scope",
+                    "isExpression": false
+                },
+                {
+                    "value": "route",
+                    "isExpression": false
+                },
+                {
+                    "value": "key",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": true,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "idempotency_requests",
+            "name": "idempotency_requests_expires_at_idx",
+            "columns": [
+                {
+                    "value": "expires_at",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "idempotency_requests",
+            "name": "idempotency_requests_status_lease_idx",
+            "columns": [
+                {
+                    "value": "status",
+                    "isExpression": false
+                },
+                {
+                    "value": "lease_expires_at",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "item_reports",
+            "name": "item_reports_id_index",
+            "columns": [
+                {
+                    "value": "id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "item_reports",
+            "name": "item_reports_catalog_item_id_index",
+            "columns": [
+                {
+                    "value": "catalog_item_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "item_reports",
+            "name": "item_reports_reporter_id_index",
+            "columns": [
+                {
+                    "value": "reporter_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "item_sources",
+            "name": "item_sources_item_id_idx",
+            "columns": [
+                {
+                    "value": "item_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "item_sources",
+            "name": "item_sources_publisher_source_id_idx",
+            "columns": [
+                {
+                    "value": "publisher_source_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "item_sources",
+            "name": "item_sources_due_lease_idx",
+            "columns": [
+                {
+                    "value": "next_check_at",
+                    "isExpression": false
+                },
+                {
+                    "value": "sync_lease_until",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "item_sources",
+            "name": "item_sources_provider_external_uidx",
+            "columns": [
+                {
+                    "value": "provider_key",
+                    "isExpression": false
+                },
+                {
+                    "value": "external_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": true,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "item_sources",
+            "name": "item_sources_primary_item_uidx",
+            "columns": [
+                {
+                    "value": "item_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": true,
+            "where": "\"item_sources\".\"primary\" = 1",
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "legal_acceptances",
+            "name": "legal_acceptances_user_document_version_uidx",
+            "columns": [
+                {
+                    "value": "user_id",
+                    "isExpression": false
+                },
+                {
+                    "value": "document",
+                    "isExpression": false
+                },
+                {
+                    "value": "version",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": true,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "notifications",
+            "name": "notifications_user_id_index",
+            "columns": [
+                {
+                    "value": "user_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "notifications",
+            "name": "notifications_type_index",
+            "columns": [
+                {
+                    "value": "type",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "notifications",
+            "name": "notifications_user_dedupe_uidx",
+            "columns": [
+                {
+                    "value": "user_id",
+                    "isExpression": false
+                },
+                {
+                    "value": "dedupe_key",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": true,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "provider_admission_options",
+            "name": "provider_admission_options_provider_facet_idx",
+            "columns": [
+                {
+                    "value": "provider_key",
+                    "isExpression": false
+                },
+                {
+                    "value": "facet_key",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "publisher_source_ownerships",
+            "name": "publisher_source_ownerships_user_id_idx",
+            "columns": [
+                {
+                    "value": "user_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "publisher_source_ownerships",
+            "name": "publisher_source_ownerships_source_id_idx",
+            "columns": [
+                {
+                    "value": "publisher_source_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "publisher_source_ownerships",
+            "name": "publisher_source_ownerships_user_source_uidx",
+            "columns": [
+                {
+                    "value": "user_id",
+                    "isExpression": false
+                },
+                {
+                    "value": "publisher_source_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": true,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "publisher_sources",
+            "name": "publisher_sources_publisher_id_idx",
+            "columns": [
+                {
+                    "value": "publisher_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "publisher_sources",
+            "name": "publisher_sources_provider_external_uidx",
+            "columns": [
+                {
+                    "value": "provider_key",
+                    "isExpression": false
+                },
+                {
+                    "value": "external_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": true,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "publisher_source_verification_challenges",
+            "name": "publisher_verification_challenges_user_id_idx",
+            "columns": [
+                {
+                    "value": "user_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "publisher_source_verification_challenges",
+            "name": "publisher_verification_challenges_source_id_idx",
+            "columns": [
+                {
+                    "value": "publisher_source_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "publisher_source_verification_challenges",
+            "name": "publisher_verification_challenges_expires_at_idx",
+            "columns": [
+                {
+                    "value": "expires_at",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "publishers",
+            "name": "publishers_display_name_override_idx",
+            "columns": [
+                {
+                    "value": "display_name_override",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "sessions",
+            "name": "session_userId_idx",
+            "columns": [
+                {
+                    "value": "user_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "setup_coauthors",
+            "name": "setup_coauthors_id_index",
+            "columns": [
+                {
+                    "value": "id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "setup_coauthors",
+            "name": "setup_coauthors_setup_id_index",
+            "columns": [
+                {
+                    "value": "setup_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "setup_coauthors",
+            "name": "setup_coauthors_user_id_index",
+            "columns": [
+                {
+                    "value": "user_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "setup_coauthors",
+            "name": "setup_coauthors_setup_user_uidx",
+            "columns": [
+                {
+                    "value": "setup_id",
+                    "isExpression": false
+                },
+                {
+                    "value": "user_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": true,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "setup_draft_images",
+            "name": "setup_draft_images_id_index",
+            "columns": [
+                {
+                    "value": "id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "setup_draft_images",
+            "name": "setup_draft_images_setup_draft_id_index",
+            "columns": [
+                {
+                    "value": "setup_draft_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "setup_draft_images",
+            "name": "setup_draft_images_object_key_index",
+            "columns": [
+                {
+                    "value": "object_key",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "setup_draft_images",
+            "name": "setup_draft_images_draft_object_uidx",
+            "columns": [
+                {
+                    "value": "setup_draft_id",
+                    "isExpression": false
+                },
+                {
+                    "value": "object_key",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": true,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "setup_drafts",
+            "name": "setup_drafts_id_index",
+            "columns": [
+                {
+                    "value": "id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "setup_drafts",
+            "name": "setup_drafts_setup_id_index",
+            "columns": [
+                {
+                    "value": "setup_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "setup_drafts",
+            "name": "setup_drafts_user_id_index",
+            "columns": [
+                {
+                    "value": "user_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "setup_entries",
+            "name": "setup_entries_setup_id_idx",
+            "columns": [
+                {
+                    "value": "setup_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "setup_entries",
+            "name": "setup_entries_item_id_idx",
+            "columns": [
+                {
+                    "value": "item_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "setup_entry_shapekeys",
+            "name": "setup_entry_shapekeys_entry_id_idx",
+            "columns": [
+                {
+                    "value": "setup_entry_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "setup_image_points",
+            "name": "setup_image_points_setup_id_idx",
+            "columns": [
+                {
+                    "value": "setup_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "setup_image_points",
+            "name": "setup_image_points_image_id_idx",
+            "columns": [
+                {
+                    "value": "image_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "setup_image_points",
+            "name": "setup_image_points_entry_id_idx",
+            "columns": [
+                {
+                    "value": "setup_entry_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "setup_images",
+            "name": "setup_images_id_index",
+            "columns": [
+                {
+                    "value": "id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "setup_images",
+            "name": "setup_images_setup_id_index",
+            "columns": [
+                {
+                    "value": "setup_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "setup_reports",
+            "name": "setup_reports_id_index",
+            "columns": [
+                {
+                    "value": "id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "setup_reports",
+            "name": "setup_reports_setup_id_index",
+            "columns": [
+                {
+                    "value": "setup_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "setup_reports",
+            "name": "setup_reports_reporter_id_index",
+            "columns": [
+                {
+                    "value": "reporter_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "setup_tags",
+            "name": "setup_tags_id_index",
+            "columns": [
+                {
+                    "value": "id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "setup_tags",
+            "name": "setup_tags_setup_id_index",
+            "columns": [
+                {
+                    "value": "setup_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "setup_tags",
+            "name": "setup_tags_tag_index",
+            "columns": [
+                {
+                    "value": "tag",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "setup_tags",
+            "name": "setup_tags_setup_tag_uidx",
+            "columns": [
+                {
+                    "value": "setup_id",
+                    "isExpression": false
+                },
+                {
+                    "value": "tag",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": true,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "setups",
+            "name": "setups_id_index",
+            "columns": [
+                {
+                    "value": "id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "setups",
+            "name": "setups_user_id_index",
+            "columns": [
+                {
+                    "value": "user_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "setups",
+            "name": "setups_name_index",
+            "columns": [
+                {
+                    "value": "name",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "user_badges",
+            "name": "user_badges_user_id_index",
+            "columns": [
+                {
+                    "value": "user_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "user_badges",
+            "name": "user_badges_user_badge_uidx",
+            "columns": [
+                {
+                    "value": "user_id",
+                    "isExpression": false
+                },
+                {
+                    "value": "badge",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": true,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "user_publishers",
+            "name": "user_publishers_user_id_idx",
+            "columns": [
+                {
+                    "value": "user_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "user_publishers",
+            "name": "user_publishers_publisher_id_idx",
+            "columns": [
+                {
+                    "value": "publisher_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "user_publishers",
+            "name": "user_publishers_user_publisher_uidx",
+            "columns": [
+                {
+                    "value": "user_id",
+                    "isExpression": false
+                },
+                {
+                    "value": "publisher_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": true,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "user_reports",
+            "name": "user_reports_id_index",
+            "columns": [
+                {
+                    "value": "id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "user_reports",
+            "name": "user_reports_reporter_id_index",
+            "columns": [
+                {
+                    "value": "reporter_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "user_reports",
+            "name": "user_reports_reportee_id_index",
+            "columns": [
+                {
+                    "value": "reportee_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "user_settings",
+            "name": "user_settings_user_id_unique",
+            "columns": [
+                {
+                    "value": "user_id",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": true,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "users",
+            "name": "user_email_unique",
+            "columns": [
+                {
+                    "value": "email",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": true,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "verifications",
+            "name": "verification_identifier_idx",
+            "columns": [
+                {
+                    "value": "identifier",
+                    "isExpression": false
+                }
+            ],
+            "isUnique": false,
+            "where": null,
+            "origin": "manual",
+            "entityType": "indexes"
+        },
+        {
+            "table": "accounts",
+            "name": "fk_accounts_user_id_users_id_fk",
+            "columns": ["user_id"],
+            "tableTo": "users",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": false,
+            "entityType": "fks"
+        },
+        {
+            "table": "audit_logs",
+            "name": "audit_logs_user_id_fkey",
+            "columns": ["user_id"],
+            "tableTo": "users",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "SET NULL",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "bookmarks",
+            "name": "bookmarks_user_id_fkey",
+            "columns": ["user_id"],
+            "tableTo": "users",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "bookmarks",
+            "name": "bookmarks_setup_id_fkey",
+            "columns": ["setup_id"],
+            "tableTo": "setups",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "catalog_item_classifications",
+            "name": "catalog_item_classifications_item_id_fkey",
+            "columns": ["item_id"],
+            "tableTo": "catalog_items",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "catalog_item_classifications",
+            "name": "catalog_item_classifications_source_id_fkey",
+            "columns": ["source_id"],
+            "tableTo": "item_sources",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "changelog_authors",
+            "name": "changelog_authors_changelog_slug_fkey",
+            "columns": ["changelog_slug"],
+            "tableTo": "changelogs",
+            "columnsTo": ["slug"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "changelog_authors",
+            "name": "changelog_authors_user_id_fkey",
+            "columns": ["user_id"],
+            "tableTo": "users",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "changelog_i18ns",
+            "name": "changelog_i18ns_changelog_slug_fkey",
+            "columns": ["changelog_slug"],
+            "tableTo": "changelogs",
+            "columnsTo": ["slug"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "changelogs",
+            "name": "fk_changelogs_idempotency_request_id_idempotency_requests_id_fk",
+            "columns": ["idempotency_request_id"],
+            "tableTo": "idempotency_requests",
+            "columnsTo": ["id"],
+            "onUpdate": "NO ACTION",
+            "onDelete": "SET NULL",
+            "nameExplicit": false,
+            "entityType": "fks"
+        },
+        {
+            "table": "feedbacks",
+            "name": "fk_feedbacks_idempotency_request_id_idempotency_requests_id_fk",
+            "columns": ["idempotency_request_id"],
+            "tableTo": "idempotency_requests",
+            "columnsTo": ["id"],
+            "onUpdate": "NO ACTION",
+            "onDelete": "SET NULL",
+            "nameExplicit": false,
+            "entityType": "fks"
+        },
+        {
+            "table": "follow_users",
+            "name": "follow_users_user_id_fkey",
+            "columns": ["user_id"],
+            "tableTo": "users",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "follow_users",
+            "name": "follow_users_target_user_id_fkey",
+            "columns": ["target_user_id"],
+            "tableTo": "users",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "item_reports",
+            "name": "fk_item_reports_catalog_item_id_catalog_items_id_fk",
+            "columns": ["catalog_item_id"],
+            "tableTo": "catalog_items",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": false,
+            "entityType": "fks"
+        },
+        {
+            "table": "item_reports",
+            "name": "fk_item_reports_idempotency_request_id_idempotency_requests_id_fk",
+            "columns": ["idempotency_request_id"],
+            "tableTo": "idempotency_requests",
+            "columnsTo": ["id"],
+            "onUpdate": "NO ACTION",
+            "onDelete": "SET NULL",
+            "nameExplicit": false,
+            "entityType": "fks"
+        },
+        {
+            "table": "item_reports",
+            "name": "item_reports_reporter_id_fkey",
+            "columns": ["reporter_id"],
+            "tableTo": "users",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "item_sources",
+            "name": "item_sources_item_id_fkey",
+            "columns": ["item_id"],
+            "tableTo": "catalog_items",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "RESTRICT",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "item_sources",
+            "name": "item_sources_publisher_source_id_fkey",
+            "columns": ["publisher_source_id"],
+            "tableTo": "publisher_sources",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "SET NULL",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "legal_acceptances",
+            "name": "fk_legal_acceptances_user_id_users_id_fk",
+            "columns": ["user_id"],
+            "tableTo": "users",
+            "columnsTo": ["id"],
+            "onUpdate": "NO ACTION",
+            "onDelete": "CASCADE",
+            "nameExplicit": false,
+            "entityType": "fks"
+        },
+        {
+            "table": "notifications",
+            "name": "notifications_user_id_fkey",
+            "columns": ["user_id"],
+            "tableTo": "users",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "provider_admission_rules",
+            "name": "provider_admission_rules_option_fkey",
+            "columns": ["provider_key", "facet_key", "value_key"],
+            "tableTo": "provider_admission_options",
+            "columnsTo": ["provider_key", "facet_key", "value_key"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "publisher_source_ownerships",
+            "name": "publisher_source_ownerships_user_id_fkey",
+            "columns": ["user_id"],
+            "tableTo": "users",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "publisher_source_ownerships",
+            "name": "publisher_source_ownerships_source_id_fkey",
+            "columns": ["publisher_source_id"],
+            "tableTo": "publisher_sources",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "RESTRICT",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "publisher_sources",
+            "name": "publisher_sources_publisher_id_fkey",
+            "columns": ["publisher_id"],
+            "tableTo": "publishers",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "RESTRICT",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "publisher_source_verification_challenges",
+            "name": "publisher_verification_challenges_user_id_fkey",
+            "columns": ["user_id"],
+            "tableTo": "users",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "publisher_source_verification_challenges",
+            "name": "publisher_verification_challenges_source_id_fkey",
+            "columns": ["publisher_source_id"],
+            "tableTo": "publisher_sources",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "sessions",
+            "name": "session_user_id_fkey",
+            "columns": ["user_id"],
+            "tableTo": "users",
+            "columnsTo": ["id"],
+            "onUpdate": "NO ACTION",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "setup_coauthors",
+            "name": "setup_coauthors_setup_id_fkey",
+            "columns": ["setup_id"],
+            "tableTo": "setups",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "setup_coauthors",
+            "name": "setup_coauthors_user_id_fkey",
+            "columns": ["user_id"],
+            "tableTo": "users",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "setup_draft_images",
+            "name": "setup_draft_images_setup_draft_id_fkey",
+            "columns": ["setup_draft_id"],
+            "tableTo": "setup_drafts",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "setup_drafts",
+            "name": "setup_drafts_setup_id_fkey",
+            "columns": ["setup_id"],
+            "tableTo": "setups",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "setup_drafts",
+            "name": "setup_drafts_user_id_fkey",
+            "columns": ["user_id"],
+            "tableTo": "users",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "setup_entries",
+            "name": "setup_entries_item_id_fkey",
+            "columns": ["item_id"],
+            "tableTo": "catalog_items",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "RESTRICT",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "setup_entries",
+            "name": "setup_entries_setup_id_fkey",
+            "columns": ["setup_id"],
+            "tableTo": "setups",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "setup_entry_shapekeys",
+            "name": "setup_entry_shapekeys_entry_id_fkey",
+            "columns": ["setup_entry_id"],
+            "tableTo": "setup_entries",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "setup_image_points",
+            "name": "setup_image_points_setup_id_fkey",
+            "columns": ["setup_id"],
+            "tableTo": "setups",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "setup_image_points",
+            "name": "setup_image_points_entry_id_fkey",
+            "columns": ["setup_entry_id"],
+            "tableTo": "setup_entries",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "setup_images",
+            "name": "setup_images_setup_id_fkey",
+            "columns": ["setup_id"],
+            "tableTo": "setups",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "setup_reports",
+            "name": "fk_setup_reports_idempotency_request_id_idempotency_requests_id_fk",
+            "columns": ["idempotency_request_id"],
+            "tableTo": "idempotency_requests",
+            "columnsTo": ["id"],
+            "onUpdate": "NO ACTION",
+            "onDelete": "SET NULL",
+            "nameExplicit": false,
+            "entityType": "fks"
+        },
+        {
+            "table": "setup_reports",
+            "name": "setup_reports_reporter_id_fkey",
+            "columns": ["reporter_id"],
+            "tableTo": "users",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "setup_reports",
+            "name": "setup_reports_setup_id_fkey",
+            "columns": ["setup_id"],
+            "tableTo": "setups",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "setup_tags",
+            "name": "setup_tags_setup_id_fkey",
+            "columns": ["setup_id"],
+            "tableTo": "setups",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "setups",
+            "name": "fk_setups_idempotency_request_id_idempotency_requests_id_fk",
+            "columns": ["idempotency_request_id"],
+            "tableTo": "idempotency_requests",
+            "columnsTo": ["id"],
+            "onUpdate": "NO ACTION",
+            "onDelete": "SET NULL",
+            "nameExplicit": false,
+            "entityType": "fks"
+        },
+        {
+            "table": "setups",
+            "name": "setups_user_id_fkey",
+            "columns": ["user_id"],
+            "tableTo": "users",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "user_badges",
+            "name": "user_badges_user_id_fkey",
+            "columns": ["user_id"],
+            "tableTo": "users",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "user_publishers",
+            "name": "user_publishers_user_id_fkey",
+            "columns": ["user_id"],
+            "tableTo": "users",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "user_publishers",
+            "name": "user_publishers_publisher_id_fkey",
+            "columns": ["publisher_id"],
+            "tableTo": "publishers",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "RESTRICT",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "user_reports",
+            "name": "fk_user_reports_idempotency_request_id_idempotency_requests_id_fk",
+            "columns": ["idempotency_request_id"],
+            "tableTo": "idempotency_requests",
+            "columnsTo": ["id"],
+            "onUpdate": "NO ACTION",
+            "onDelete": "SET NULL",
+            "nameExplicit": false,
+            "entityType": "fks"
+        },
+        {
+            "table": "user_reports",
+            "name": "user_reports_reporter_id_fkey",
+            "columns": ["reporter_id"],
+            "tableTo": "users",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "user_reports",
+            "name": "user_reports_reportee_id_fkey",
+            "columns": ["reportee_id"],
+            "tableTo": "users",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "user_settings",
+            "name": "user_settings_user_id_fkey",
+            "columns": ["user_id"],
+            "tableTo": "users",
+            "columnsTo": ["id"],
+            "onUpdate": "CASCADE",
+            "onDelete": "CASCADE",
+            "nameExplicit": true,
+            "entityType": "fks"
+        },
+        {
+            "table": "provider_admission_options",
+            "name": "provider_admission_options_pk",
+            "columns": ["provider_key", "facet_key", "value_key"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "provider_admission_rules",
+            "name": "provider_admission_rules_pk",
+            "columns": ["provider_key", "facet_key", "value_key"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "accounts",
+            "name": "accounts_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "audit_logs",
+            "name": "audit_logs_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "bookmarks",
+            "name": "bookmarks_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "catalog_item_classifications",
+            "name": "catalog_item_classifications_pk",
+            "columns": ["item_id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "catalog_items",
+            "name": "catalog_items_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "changelog_authors",
+            "name": "changelog_authors_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "changelog_i18ns",
+            "name": "changelog_i18ns_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "changelogs",
+            "name": "changelogs_pk",
+            "columns": ["slug"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "emails",
+            "name": "emails_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "feedbacks",
+            "name": "feedbacks_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "follow_users",
+            "name": "follow_users_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "idempotency_requests",
+            "name": "idempotency_requests_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "item_reports",
+            "name": "item_reports_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "item_sources",
+            "name": "item_sources_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "legal_acceptances",
+            "name": "legal_acceptances_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "notifications",
+            "name": "notifications_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "publisher_source_ownerships",
+            "name": "publisher_source_ownerships_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "publisher_sources",
+            "name": "publisher_sources_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "publisher_source_verification_challenges",
+            "name": "publisher_source_verification_challenges_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "publishers",
+            "name": "publishers_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "rate_limits",
+            "name": "rate_limits_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "sessions",
+            "name": "sessions_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "setup_coauthors",
+            "name": "setup_coauthors_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "setup_draft_images",
+            "name": "setup_draft_images_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "setup_drafts",
+            "name": "setup_drafts_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "setup_entries",
+            "name": "setup_entries_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "setup_entry_shapekeys",
+            "name": "setup_entry_shapekeys_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "setup_image_points",
+            "name": "setup_image_points_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "setup_images",
+            "name": "setup_images_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "setup_reports",
+            "name": "setup_reports_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "setup_tags",
+            "name": "setup_tags_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "setups",
+            "name": "setups_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "user_badges",
+            "name": "user_badges_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "user_publishers",
+            "name": "user_publishers_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "user_reports",
+            "name": "user_reports_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "user_settings",
+            "name": "user_settings_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "users",
+            "name": "users_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "verifications",
+            "name": "verifications_pk",
+            "columns": ["id"],
+            "nameExplicit": false,
+            "entityType": "pks"
+        },
+        {
+            "table": "changelogs",
+            "name": "changelogs_idempotency_request_id_unique",
+            "columns": ["idempotency_request_id"],
+            "nameExplicit": false,
+            "entityType": "uniques"
+        },
+        {
+            "table": "feedbacks",
+            "name": "feedbacks_idempotency_request_id_unique",
+            "columns": ["idempotency_request_id"],
+            "nameExplicit": false,
+            "entityType": "uniques"
+        },
+        {
+            "table": "item_reports",
+            "name": "item_reports_idempotency_request_id_unique",
+            "columns": ["idempotency_request_id"],
+            "nameExplicit": false,
+            "entityType": "uniques"
+        },
+        {
+            "table": "rate_limits",
+            "name": "rate_limits_key_unique",
+            "columns": ["key"],
+            "nameExplicit": false,
+            "entityType": "uniques"
+        },
+        {
+            "table": "sessions",
+            "name": "sessions_token_unique",
+            "columns": ["token"],
+            "nameExplicit": false,
+            "entityType": "uniques"
+        },
+        {
+            "table": "setup_images",
+            "name": "setup_images_stable_id_unique",
+            "columns": ["stable_id"],
+            "nameExplicit": false,
+            "entityType": "uniques"
+        },
+        {
+            "table": "setup_reports",
+            "name": "setup_reports_idempotency_request_id_unique",
+            "columns": ["idempotency_request_id"],
+            "nameExplicit": false,
+            "entityType": "uniques"
+        },
+        {
+            "table": "setups",
+            "name": "setups_idempotency_request_id_unique",
+            "columns": ["idempotency_request_id"],
+            "nameExplicit": false,
+            "entityType": "uniques"
+        },
+        {
+            "table": "user_reports",
+            "name": "user_reports_idempotency_request_id_unique",
+            "columns": ["idempotency_request_id"],
+            "nameExplicit": false,
+            "entityType": "uniques"
+        },
+        {
+            "table": "users",
+            "name": "users_username_unique",
+            "columns": ["username"],
+            "nameExplicit": false,
+            "entityType": "uniques"
+        }
+    ],
+    "renames": []
+}

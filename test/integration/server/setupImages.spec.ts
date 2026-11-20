@@ -1,3 +1,4 @@
+import { drizzle as drizzleD1 } from 'drizzle-orm/d1'
 import { drizzle } from 'drizzle-orm/node-sqlite'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -47,7 +48,7 @@ const createDb = (...results: Partial<typeof setupImages.$inferInsert>[][]) => {
             })
             .run()
     }
-    return db
+    return drizzleD1(database.binding, { relations })
 }
 
 describe('resolveSetupImageData', () => {

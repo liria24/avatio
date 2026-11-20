@@ -9,8 +9,8 @@ const query = z.object({
         .default(POPULAR_AVATARS_API_DEFAULT_LIMIT),
 })
 
-export default requestEventHandler(async ({ event, db }) => {
-    const { limit } = validateRequestQuery(event, query)
+export default promiseEventHandler(async ({ event, db }) => {
+    const { limit } = await validateQuery(query)
 
     const result = await queryCatalogItems(db, {
         limit,
@@ -18,6 +18,6 @@ export default requestEventHandler(async ({ event, db }) => {
         orderBy: 'popular',
         availability: ['available'],
     })
-    applyPublicRequestCache(event, [EDGE_CACHE_TAGS.popularAvatars])
+    applyPublicEdgeCache(event, [EDGE_CACHE_TAGS.popularAvatars])
     return result.data
 })

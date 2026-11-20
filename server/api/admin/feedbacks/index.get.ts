@@ -1,3 +1,4 @@
+import { EmptyFilter } from 'drizzle-orm/relations'
 import { z } from 'zod'
 
 const query = z.object({
@@ -15,10 +16,14 @@ export default promiseEventHandler<Feedback[]>(async ({ db, event }) => {
     const data = await db.query.feedbacks.findMany({
         limit,
         where: {
-            fingerprint: fingerprint ? { eq: fingerprint } : undefined,
-            comment: q ? { like: `%${q}%` } : undefined,
+            fingerprint: fingerprint ? { eq: fingerprint } : EmptyFilter,
+            RAW: (table) => (q ? searchText(table.comment, q) : EmptyFilter),
             isClosed:
-                status === 'open' ? { eq: false } : status === 'closed' ? { eq: true } : undefined,
+                status === 'open'
+                    ? { eq: false }
+                    : status === 'closed'
+                      ? { eq: true }
+                      : EmptyFilter,
         },
         orderBy: {
             createdAt: sort,

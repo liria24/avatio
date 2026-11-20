@@ -2,12 +2,14 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import type { ModuleOptions as OgImageModuleOptions } from '@liria24/og-image/nuxt'
 import { useNuxt } from '@nuxt/kit'
+import type { NitroConfig } from 'nitropack/types'
 import { defineOrganization } from 'nuxt-schema-org/schema'
 import type { RouteRuleConfig } from 'nuxt/schema'
 import { withLeadingSlash } from 'ufo'
 
 import { getBuildEnvironment } from './config/build.ts'
-import { createCloudflareWranglerConfig } from './config/cloudflareWrangler.ts'
+import { getNitroCloudflareConfig } from './config/cloudflare.ts'
+import { getLocalD1Paths } from './config/localD1.ts'
 import { getLocalAuthSecret } from './config/localDevelopment.ts'
 import {
     defaultI18nLocale,
@@ -139,24 +141,10 @@ export default defineNuxtConfig({
         'motion-v/nuxt',
         '@nuxt/a11y',
         '@nuxt/test-utils/module',
-        ...(buildEnvironment.dynamicOgImageEnabled ? ['@liria24/og-image/nuxt'] : []),
+        '@liria24/og-image/nuxt',
         'nuxt-files-sdk',
         ...(process.env.VITEST ? [] : ['@vite-pwa/nuxt']),
     ],
-
-    imports: {
-        imports: buildEnvironment.dynamicOgImageEnabled
-            ? []
-            : [
-                  {
-                      name: 'useDisabledOgImage',
-                      as: 'useOgImage',
-                      from: fileURLToPath(
-                          new URL('./config/runtime/disabledOgImage.ts', import.meta.url),
-                      ),
-                  },
-              ],
-    },
 
     css: ['~/assets/css/main.css'],
 
@@ -194,17 +182,21 @@ export default defineNuxtConfig({
     },
 
     nitro: {
+        preset: 'cloudflare_module',
         sourceMap: false,
         // The Cloudflare preset must retain native Node crypto for Better Auth.
         cloudflare: {
             nodeCompat: true,
-            ...(process.env.AVATIO_CF_RESOURCES_JSON
+            dev: {
+                configPath: getLocalD1Paths(process.cwd()).configPath,
+                persistDir: getLocalD1Paths(process.cwd()).proxyPersistencePath,
+            },
+            ...(process.env.STAGE && process.env.NODE_ENV !== 'development'
                 ? {
                       deployConfig: true,
-                      wrangler: createCloudflareWranglerConfig(
-                          process.env.STAGE ?? '',
-                          JSON.parse(process.env.AVATIO_CF_RESOURCES_JSON),
-                      ),
+                      wrangler: getNitroCloudflareConfig(process.env.STAGE) as NonNullable<
+                          NitroConfig['cloudflare']
+                      >['wrangler'],
                   }
                 : {}),
         },
@@ -212,7 +204,8 @@ export default defineNuxtConfig({
             plugins: [
                 {
                     name: 'avatio-better-auth-minimal',
-                    resolveId: (id) => (id === 'better-auth' ? betterAuthRuntimePath : null),
+                    resolveId: (id: string) =>
+                        id === 'better-auth' ? betterAuthRuntimePath : null,
                 },
             ],
         },
@@ -574,11 +567,7 @@ export default defineNuxtConfig({
 
     $production: {
         nitro: {
-            scheduledTasks: buildEnvironment.previewKind
-                ? {}
-                : {
-                      '0 22 * * *': ['job:report'],
-                  },
+            scheduledTasks: { '0 22 * * *': ['job:report'] },
         },
     },
 })

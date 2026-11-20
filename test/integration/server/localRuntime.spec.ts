@@ -1,140 +1,121 @@
 import { execFile } from 'node:child_process'
-import { cp, mkdtemp, rm } from 'node:fs/promises'
+import { cp, mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
-import { Worker } from 'node:worker_threads'
 
 import { SQLiteCatalogRepository, SQLitePublisherRepository } from '@avatio/cloudflare'
+import type { D1Database } from '@cloudflare/workers-types'
 import { eq } from 'drizzle-orm'
+import { drizzle } from 'drizzle-orm/d1'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { getPlatformProxy } from 'wrangler'
 
-import { catalogItems, itemSources } from '../../../database/schema'
+import { getLocalAuthSecret } from '../../../config/localDevelopment'
+import { relations } from '../../../database/relations'
+import { catalogItems, itemSources, users } from '../../../database/schema'
+import { prepareLocalD1 } from '../../../scripts/localDevelopment'
 import { executeAppBatch } from '../../../server/utils/executeAppBatch'
-import { initializeLocalRuntime } from '../../../server/utils/localRuntime'
 
-describe('local SQLite runtime', () => {
+describe('local D1 runtime', () => {
     let directory: string
-    let runtime: ReturnType<typeof initializeLocalRuntime>
+    let proxy: Awaited<ReturnType<typeof getPlatformProxy<{ APP_DB: D1Database }>>>
+    let db: ReturnType<typeof drizzle<typeof relations>>
+
+    const open = async () => {
+        const paths = prepareLocalD1(directory)
+        proxy = await getPlatformProxy<{ APP_DB: D1Database }>({
+            configPath: paths.configPath,
+            persist: { path: paths.proxyPersistencePath },
+            remoteBindings: false,
+        })
+        db = drizzle(proxy.env.APP_DB, { relations })
+    }
 
     beforeAll(async () => {
-        directory = await mkdtemp(join(tmpdir(), 'avatio-local-runtime-'))
+        directory = await mkdtemp(join(tmpdir(), 'avatio-local-d1-'))
         await cp(join(process.cwd(), 'drizzle'), join(directory, 'drizzle'), { recursive: true })
-        runtime = initializeLocalRuntime(directory)
-    })
+        await open()
+    }, 120_000)
 
     afterAll(async () => {
-        runtime.client.close()
-        await rm(directory, { force: true, recursive: true })
+        await proxy?.dispose()
+        if (
+            directory &&
+            dirname(directory) === tmpdir() &&
+            directory.startsWith(join(tmpdir(), 'avatio-local-d1-'))
+        )
+            await rm(directory, { force: true, recursive: true })
     })
 
-    it('persists one secret and applies all migrations once', () => {
-        expect(initializeLocalRuntime(directory).secret).toBe(runtime.secret)
-        expect(runtime.secret).toHaveLength(64)
+    it('shares the CLI database, enforces foreign keys and persists across restarts', async () => {
         expect(
-            runtime.client
-                .prepare("SELECT count(*) AS count FROM sqlite_schema WHERE type = 'table'")
-                .get(),
-        ).toMatchObject({ count: expect.any(Number) })
-        expect(runtime.client.prepare('PRAGMA foreign_keys').get()).toEqual({ foreign_keys: 1 })
-    })
+            await proxy.env.APP_DB.prepare('SELECT count(*) AS count FROM d1_migrations').first(),
+        ).toEqual({ count: 18 })
+        expect(await proxy.env.APP_DB.prepare('PRAGMA foreign_keys').first()).toEqual({
+            foreign_keys: 1,
+        })
+        await db.insert(catalogItems).values({ id: 'persisted' })
+        const secret = getLocalAuthSecret(directory)
+        expect(secret).toHaveLength(64)
+        await proxy.dispose()
+        await open()
+        expect(getLocalAuthSecret(directory)).toBe(secret)
+        expect(await db.query.catalogItems.findFirst({ where: { id: 'persisted' } })).toMatchObject(
+            { id: 'persisted' },
+        )
+        expect(
+            await proxy.env.APP_DB.prepare('SELECT count(*) AS count FROM d1_migrations').first(),
+        ).toEqual({ count: 18 })
+    }, 120_000)
 
     it('shares one secret across concurrent Node processes', async () => {
-        const secretDirectory = await mkdtemp(join(tmpdir(), 'avatio-local-secret-'))
         const moduleUrl = pathToFileURL(join(process.cwd(), 'config', 'localDevelopment.ts')).href
-        const script = `
-            import { getLocalAuthSecret } from ${JSON.stringify(moduleUrl)}
-            process.stdout.write(getLocalAuthSecret(${JSON.stringify(secretDirectory)}))
-        `
-        try {
-            const results = await Promise.all(
-                Array.from({ length: 4 }, () =>
-                    promisify(execFile)(process.execPath, [
-                        '--input-type=module',
-                        '--eval',
-                        script,
-                    ]),
-                ),
-            )
-            expect(new Set(results.map(({ stdout }) => stdout))).toEqual(
-                new Set([results[0]!.stdout]),
-            )
-        } finally {
-            await rm(secretDirectory, { force: true, recursive: true })
-        }
+        const script = `import { getLocalAuthSecret } from ${JSON.stringify(moduleUrl)}; process.stdout.write(getLocalAuthSecret(${JSON.stringify(directory)}))`
+        const results = await Promise.all(
+            Array.from({ length: 4 }, () =>
+                promisify(execFile)(process.execPath, ['--input-type=module', '--eval', script]),
+            ),
+        )
+        expect(new Set(results.map(({ stdout }) => stdout))).toEqual(
+            new Set([(await readFile(join(directory, '.data/local-auth-secret'), 'utf8')).trim()]),
+        )
     })
 
-    it('assigns admin only to the first successful user while users are empty', () => {
-        expect(() =>
-            runtime.client.exec(
-                "INSERT INTO users (id, name, username, display_username, email) VALUES ('failed', NULL, 'failed', 'Failed', 'failed@example.com')",
-            ),
-        ).toThrow()
-        runtime.client.exec(`
-            INSERT INTO users (id, name, username, display_username, email, role)
-            VALUES ('first', 'First', 'first', 'First', 'first@example.com', 'user');
-            INSERT INTO users (id, name, username, display_username, email, role)
-            VALUES ('second', 'Second', 'second', 'Second', 'second@example.com', 'user');
-        `)
-        expect(runtime.client.prepare('SELECT id, role FROM users ORDER BY id').all()).toEqual([
-            { id: 'first', role: 'admin' },
-            { id: 'second', role: 'user' },
-        ])
-
-        runtime.client.exec("DELETE FROM users WHERE id = 'first'")
-        runtime.client.exec(
-            "INSERT INTO users (id, name, username, display_username, email, role) VALUES ('third', 'Third', 'third', 'Third', 'third@example.com', 'user')",
-        )
-        expect(runtime.client.prepare("SELECT role FROM users WHERE id = 'third'").get()).toEqual({
+    it('promotes exactly one first successful user, including concurrent signups', async () => {
+        await expect(
+            proxy.env.APP_DB.prepare(
+                "INSERT INTO users (id, name, email) VALUES ('failed', NULL, 'failed@example.test')",
+            ).run(),
+        ).rejects.toThrow()
+        const insert = (id: string) =>
+            db.insert(users).values({
+                id,
+                name: id,
+                username: id,
+                displayUsername: id,
+                email: `${id}@example.test`,
+                role: 'user',
+            })
+        await Promise.all([insert('first'), insert('second')])
+        const firstUsers = await db.select({ id: users.id, role: users.role }).from(users)
+        expect(firstUsers.filter((user) => user.role === 'admin')).toHaveLength(1)
+        await db
+            .delete(users)
+            .where(eq(users.id, firstUsers.find((user) => user.role === 'admin')!.id))
+        await insert('third')
+        expect(await db.query.users.findFirst({ where: { id: 'third' } })).toMatchObject({
             role: 'user',
         })
-
-        runtime.client.exec('DELETE FROM users')
-        runtime.client.exec(
-            "INSERT INTO users (id, name, username, display_username, email, role) VALUES ('reset', 'Reset', 'reset', 'Reset', 'reset@example.com', 'user')",
-        )
-        expect(runtime.client.prepare("SELECT role FROM users WHERE id = 'reset'").get()).toEqual({
+        await db.delete(users)
+        await insert('reset')
+        expect(await db.query.users.findFirst({ where: { id: 'reset' } })).toMatchObject({
             role: 'admin',
         })
     })
 
-    it('serializes concurrent first-user inserts at the database trigger', async () => {
-        runtime.client.exec('DELETE FROM users')
-        const databasePath = join(directory, '.data', 'avatio.sqlite')
-        const insert = (id: string) =>
-            new Promise<void>((resolve, reject) => {
-                const worker = new Worker(
-                    `
-                        const { parentPort, workerData } = require('node:worker_threads')
-                        const { DatabaseSync } = require('node:sqlite')
-                        const database = new DatabaseSync(workerData.databasePath)
-                        database.exec('PRAGMA busy_timeout = 5000')
-                        database.prepare(
-                            'INSERT INTO users (id, name, username, display_username, email, role) VALUES (?, ?, ?, ?, ?, ?)'
-                        ).run(workerData.id, workerData.id, workerData.id, workerData.id, workerData.id + '@example.test', 'user')
-                        database.close()
-                        parentPort.postMessage('done')
-                    `,
-                    { eval: true, workerData: { databasePath, id } },
-                )
-                worker.once('message', () => resolve())
-                worker.once('error', reject)
-                worker.once('exit', (code) => {
-                    if (code) reject(new Error(`Worker exited with ${code}.`))
-                })
-            })
-
-        await Promise.all([insert('racer_a'), insert('racer_b')])
-        expect(
-            runtime.client
-                .prepare("SELECT count(*) AS count FROM users WHERE role = 'admin'")
-                .get(),
-        ).toEqual({ count: 1 })
-    })
-
-    it('rolls back a failed multi-write', async () => {
-        const db = runtime.database
+    it('rolls back a failed D1 batch', async () => {
         await expect(
             executeAppBatch(db, [
                 db.insert(catalogItems).values({ id: 'rolled-back' }),
@@ -157,8 +138,7 @@ describe('local SQLite runtime', () => {
         ).toEqual([])
     })
 
-    it('runs the shared Catalog and Publisher repositories on Node SQLite', async () => {
-        const db = runtime.database
+    it('runs the shared Catalog and Publisher repositories on D1', async () => {
         const executeBatch = (queries: Parameters<typeof executeAppBatch>[1]) =>
             executeAppBatch(db, queries)
         const catalog = new SQLiteCatalogRepository(db, executeBatch)
@@ -171,17 +151,17 @@ describe('local SQLite runtime', () => {
             itemId: source.itemId,
             providerKey: 'github',
         })
-
         const publishers = new SQLitePublisherRepository(db, executeBatch)
-        const publisherSource = await publishers.upsertSource({
-            providerKey: 'booth',
-            externalId: 'local-shop',
-            canonicalUrl: 'https://local-shop.booth.pm',
-            name: 'Local Shop',
-            image: null,
-            providerVerified: false,
-            metadata: {},
-        })
-        expect(publisherSource).toMatchObject({ providerKey: 'booth', name: 'Local Shop' })
+        expect(
+            await publishers.upsertSource({
+                providerKey: 'booth',
+                externalId: 'local-shop',
+                canonicalUrl: 'https://local-shop.booth.pm',
+                name: 'Local Shop',
+                image: null,
+                providerVerified: false,
+                metadata: {},
+            }),
+        ).toMatchObject({ providerKey: 'booth', name: 'Local Shop' })
     })
 })

@@ -7,7 +7,6 @@
     "workspaces": {
         ".": {
             "entry": [
-                "cloudflare.config.ts",
                 "auth.config.ts",
                 "files.config.ts",
                 "app/auth.config.ts",

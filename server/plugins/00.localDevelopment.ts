@@ -1,6 +1,6 @@
-export default defineNitroPlugin(async () => {
-    if (!import.meta.dev) return
+import { getDatabaseBinding } from '../utils/database'
 
-    const { initializeLocalRuntime } = await import('../utils/localRuntime')
-    initializeLocalRuntime()
+export default defineNitroPlugin(() => {
+    // Nitro does not await plugin promises; throw synchronously if its proxy fell back to a stub.
+    if (import.meta.dev) getDatabaseBinding()
 })

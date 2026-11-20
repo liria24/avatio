@@ -12,7 +12,7 @@ import { z } from 'zod'
 import { setupEntryPublicSchema } from './catalog'
 
 // Explicit HTTP contracts remain independent from database schema types.
-export const userBadgeSchema = z.enum([
+const userBadgeSchema = z.enum([
     'developer',
     'contributor',
     'translator',
@@ -27,12 +27,12 @@ export type UserBadge = z.infer<typeof userBadgeSchema>
 export { itemCategorySchema }
 export type ItemCategory = z.infer<typeof itemCategorySchema>
 
-export const userBadgesPublicSchema = z.object({
+const userBadgesPublicSchema = z.object({
     createdAt: z.date(),
     badge: userBadgeSchema,
 })
 
-export const publisherSourcePublicSchema = z.object({
+const publisherSourcePublicSchema = z.object({
     id: z.string(),
     providerKey: z.string(),
     externalId: z.string(),
@@ -42,7 +42,7 @@ export const publisherSourcePublicSchema = z.object({
     providerVerified: z.boolean(),
 })
 
-export const publisherOwnershipPublicSchema = z.object({
+const publisherOwnershipPublicSchema = z.object({
     id: z.string(),
     method: z.string(),
     verifiedAt: z.date(),
@@ -72,7 +72,7 @@ export const usersUpdateSchema = z.object({
     links: z.string().array().max(8, 'リンクは最大 8 個です。').nullable().optional(),
 })
 
-export const usersPublicSchema = z.object({
+const usersPublicSchema = z.object({
     id: z.string(),
     username: z.string(),
     createdAt: z.date().optional(),
@@ -88,24 +88,22 @@ export const usersPublicSchema = z.object({
 })
 export type User = z.infer<typeof usersPublicSchema>
 
-export const setupEntryShapekeysInsertSchema = setupEntryShapekeysSchema
-export const setupEntryShapekeysPublicSchema = setupEntryShapekeysSchema
-export type SetupEntryShapekey = z.infer<typeof setupEntryShapekeysPublicSchema>
+export type SetupEntryShapekey = z.infer<typeof setupEntryShapekeysSchema>
 
-export const setupEntriesInsertSchema = z.object({
+const setupEntriesInsertSchema = z.object({
     id: z.string().min(1).optional(),
     itemId: z.string().min(1),
     category: itemCategorySchema.nullable().optional(),
     unsupported: z.boolean().default(false),
     note: z.string().max(300, 'ノートは最大 300 文字です。').nullable().optional(),
-    shapekeys: setupEntryShapekeysPublicSchema.array().max(64).optional(),
+    shapekeys: setupEntryShapekeysSchema.array().max(64).optional(),
 })
 
-export const setupTagsInsertSchema = z.object({
+const setupTagsInsertSchema = z.object({
     tag: z.string().min(1, 'タグは 1 文字以上必要です。').max(32, 'タグは最大 32 文字です。'),
 })
 
-export const setupImagesPublicSchema = z.object({
+const setupImagesPublicSchema = z.object({
     id: z.string(),
     position: z.number().int().min(0),
     objectKey: z.string(),
@@ -118,16 +116,16 @@ export const setupImagesPublicSchema = z.object({
     url: z.string().min(1),
 })
 
-export const setupImageMetadataSchema = setupDraftImageMetadataSchema
+const setupImageMetadataSchema = setupDraftImageMetadataSchema
 export type SetupImageMetadata = z.infer<typeof setupImageMetadataSchema>
 
 export type SetupPoint = z.infer<typeof setupPointSchema>
 
-export const setupCoauthorsInsertSchema = z.object({
+const setupCoauthorsInsertSchema = z.object({
     userId: z.string(),
     note: z.string().max(140, 'ノートは最大 140 文字です。').nullable().optional(),
 })
-export const setupCoauthorsPublicSchema = z.object({
+const setupCoauthorsPublicSchema = z.object({
     note: z.string().nullable().optional(),
     user: usersPublicSchema,
 })
@@ -168,7 +166,7 @@ export const setupsUpdateSchema = z.object({
         .max(MAX_ITEMS_PER_SETUP, `アイテムは最大 ${MAX_ITEMS_PER_SETUP} 個です。`),
 })
 
-export const setupsPublicSchema = z.object({
+const setupsPublicSchema = z.object({
     id: z.string(),
     createdAt: z.date(),
     updatedAt: z.date(),
@@ -194,7 +192,7 @@ export const setupDraftsUpdateSchema = z.object({
     setupId: z.string().nullable(),
     content: setupDraftContentSchema,
 })
-export const setupDraftsPublicSchema = z.object({
+const setupDraftsPublicSchema = z.object({
     id: z.string(),
     createdAt: z.date(),
     updatedAt: z.date(),
@@ -202,7 +200,7 @@ export const setupDraftsPublicSchema = z.object({
     revision: z.number().int().min(1),
     content: setupDraftContentSchema,
 })
-export const setupDraftSummarySchema = setupDraftsPublicSchema
+const setupDraftSummarySchema = setupDraftsPublicSchema
     .omit({ content: true })
     .extend({ name: z.string(), description: z.string(), itemCount: z.number().int().min(0) })
 export type { SetupDraftContent }
@@ -216,7 +214,7 @@ export const feedbacksInsertSchema = z.object({
         .max(1000, 'コメントは最大 1000 文字です。'),
     contextPath: z.string().nullable().optional(),
 })
-export const feedbacksPublicSchema = z.object({
+const feedbacksPublicSchema = z.object({
     id: z.number().int(),
     createdAt: z.date(),
     fingerprint: z.string(),
@@ -301,7 +299,7 @@ export const auditLogsInsertSchema = z.object({
     targetId: z.string().nullable().optional(),
     details: z.string().nullable().optional(),
 })
-export const auditLogsPublicSchema = z.object({
+const auditLogsPublicSchema = z.object({
     id: z.number().int(),
     createdAt: z.date(),
     action: auditActionTypeSchema,
@@ -319,8 +317,7 @@ export interface EmailAttachmentMetadata {
     disposition?: 'attachment' | 'inline' | null
     contentId?: string
 }
-export type EmailAttachment = EmailAttachmentMetadata
-export const emailsPublicSchema = z.object({
+const emailsPublicSchema = z.object({
     id: z.number().int(),
     messageId: z.string(),
     subject: z.string().nullable(),
@@ -334,7 +331,7 @@ export const emailsPublicSchema = z.object({
 })
 export type Email = z.infer<typeof emailsPublicSchema>
 
-export const notificationTypeSchema = z.enum([
+const notificationTypeSchema = z.enum([
     'system_announcement',
     'user_badge_granted',
     'setup_coauthor_added',

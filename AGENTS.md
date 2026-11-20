@@ -11,11 +11,18 @@ Compact instruction for OpenCode sessions. If a fact is obvious from filenames, 
 
 ## Package manager & runtime
 
-- **Package manager:** `bun`. `bunfig.toml` uses `linker = "hoisted"` and disables runtime dotenv loading. Bun 1.4.2 installation still loads `.env.production` despite `env = false` and `--no-env-file`. Workers Builds installation disables all lifecycle scripts; fresh credential-free environments for Nuxt preparation/build do not inherit those ciphertext values. Never provide dotenv private keys or plaintext application secrets to installation.
+- Renovate targets `development`. Bootstrap only `renovate.json` on default `main`; merging
+  that file still triggers production Workers Builds and requires owner review. Keep identical
+  config filenames on both branches with `useBaseBranchConfig: merge`. Reapply updates on the
+  latest base, regenerate existing locks with the pinned Bun, and require frozen install and
+  every quality check. Do not delete the lock to resolve conflicts or change release workflows.
+
+- **Package manager:** Bun 1.4.4. `bunfig.toml` uses `linker = "hoisted"` and disables runtime dotenv loading. Installation has loaded `.env.production` despite `env = false` and `--no-env-file`; run CI installation with lifecycle scripts disabled and a clean environment. Nuxt preparation/build runs separately without inherited ciphertext. Never provide dotenv private keys or plaintext application secrets to installation.
 - **Toolchain:** Vite+ runs package scripts, lint, format, and tests. Node 26 runs Nuxt, TypeScript scripts, tests, and configuration tooling; Bun only installs dependencies. Cloudflare builds use `NODE_OPTIONS=--max-old-space-size=4096` to leave memory for the remaining build processes.
 - **Postinstall:** `vp install` uses Bun and runs `nuxt prepare` only.
 - **Development URL:** `vp run dev` runs the Node.js Nuxt dev server at `http://localhost:3000`; the port is fixed and fails if already in use.
-- **Environment split:** local uses SQLite/filesystem/IPX. The native development target is one persistent Cloudflare Preview with preprovisioned resources; its endpoint access policy still needs operator approval.
+- **Environment split:** local uses persistent local D1/filesystem/IPX. The prepared development target is the separate `avatio-development` Worker at `dev.avatio.me`, with retained development data resources. Its creation, Access policy and live acceptance remain pending; production cutover is separate.
+- **Verified dependency holds:** TypeScript 6.0.3 (`vue-tsc` cannot load TypeScript 7's compiler entry), `vue-tsc` 3.3.11 (3.3.13 loses Vue 3.6 template bindings), Comark 0.7.0 (`comark-content` parser types), and `@nuxtjs/better-auth` 0.3.10 (0.3.13 loses server plugin inference). Reproduce these incompatibilities before lifting the pins.
 
 ## Developer commands
 
@@ -40,10 +47,10 @@ Compact instruction for OpenCode sessions. If a fact is obvious from filenames, 
 | Nuxt tests only             | `vp run test:nuxt`                                                               |
 | Watch tests                 | `vp run test:watch`                                                              |
 | Generate Drizzle migrations | `vp run db:generate`                                                             |
-| Seed local SQLite from D1   | `vp run db:seed:local -- --yes`                                                  |
+| Seed local D1 from remote   | `vp run db:seed:local -- --yes`                                                  |
 | Generate Better Auth schema | `bunx --bun auth generate --config auth.config.ts --output .data/auth-schema.ts` |
 
-Cloudflare delivery uses `vp run build:cloudflare -- development` (or `-- production`) with reviewed non-secret `AVATIO_CF_RESOURCES_JSON`. Local credentialless regression checks are `vp run test:cloudflare:build` and `vp run test:cloudflare:migrations`; they never publish or use remote data.
+Credentialless Cloudflare builds use `vp run build:cloudflare -- development` (or `-- production`) with the checked-in `deployment/<stage>/wrangler.json` configuration (`config/cloudflare.ts`). `scripts/cloudflareBuild.ts` passes `--dotenv .env.disabled` to Nuxt `prepare`/`build`, rejects `.env` only when `AVATIO_SOURCE_SHA` is set (delivery builds), and patches `.output/server/wrangler.json`; local `.data/` does not block builds. Local regression checks are `vp run test:cloudflare:build`, `vp exec node test/cloudflare/application.mjs production`, and `vp run test:cloudflare:migrations`; they never publish or use remote data.
 
 ## After making changes
 
@@ -54,8 +61,8 @@ PRs into `main` require the `format`, `lint`, `lint:unused`, `typecheck`, `test`
 
 ## Project architecture
 
-- **Framework:** Nuxt 4.6.0 (`compatibilityVersion: 5`), using Nitro. The Nuxt CLI v4 is supplied transitively.
-- **Deployment target:** One Cloudflare Worker (`avatio`), using the standard Nuxt/Nitro Cloudflare build and pinned official tooling. Prefer `cf` where supported; Wrangler is allowed.
+- **Framework:** Nuxt 4.6.2 (`compatibilityVersion: 5`), using Nitro. The Nuxt CLI v4 is supplied transitively.
+- **Deployment targets:** Separate `avatio` production (`main`) and `avatio-development` development (`development`) Workers, built as standard Nuxt/Nitro `cloudflare_module` artifacts and published through checked-in `deployment/<stage>/wrangler.json` and gated `.github/workflows/quality.yml` (`AVATIO_DEVELOPMENT_DELIVERY_ENABLED` / `AVATIO_PRODUCTION_DELIVERY_ENABLED`). Do not enable delivery gates, merge `main`, or modify remote Cloudflare/GitHub settings without explicit owner approval.
 - **Workspace:** Bun workspaces under `packages/*` with exactly three architectural packages:
   - `@avatio/core` — pure domain, application ports, and explicit contracts. It must not import Nuxt, Nitro, Cloudflare, Drizzle, Better Auth, provider SDKs, or read `process.env`.
   - `@avatio/nuxt` — Nuxt integration, content/routing build hooks, and catalog provider adapters. It may depend on core but never on `@avatio/cloudflare`.
@@ -64,7 +71,7 @@ PRs into `main` require the `format`, `lint`, `lint:unused`, `typecheck`, `test`
 - **Structure:**
   - `app/` — Vue frontend (pages, layouts, composables, components).
   - `server/` — Nitro API routes and server middleware.
-  - `database/schema.ts` — shared Drizzle SQLite schema for local Node SQLite and deployed Cloudflare D1.
+  - `database/schema.ts` — shared Drizzle SQLite schema for local and deployed Cloudflare D1.
   - `shared/` — Utilities shared between client and server.
   - `content/` — canonical Markdown sources, split by `en/` and `ja/`. `@avatio/nuxt` uses `comark-content` with filesystem sources in local dev and commit-pinned GitHub sources in deployed Workers. Nuxt Content is intentionally not active.
 
@@ -97,8 +104,7 @@ PRs into `main` require the `format`, `lint`, `lint:unused`, `typecheck`, `test`
 - `.env.development` and `.env.production` contain committed dotenvx ciphertext. `.env.keys` contains local private keys and must never be committed.
 - Use `vp run config:check:development` or `vp run config:check:production` for an explicit owner configuration check. Stage selection fails closed; these commands cannot deploy or migrate.
 - Production and development use canonical `NUXT_BETTER_AUTH_SECRET`. No derived duplicate binding or stage-specific application secret names are managed. The encrypted key rename preserves the signing value and does not rotate sessions.
-- Production `main` uses Workers Builds; only the fixed native `development` Preview uses GitHub Actions. The owner reported development-only Builds unsupported and approved this split on 2026-10-09. Keep Cloudflare Preview automatic builds OFF to avoid competing publishers. The owner deleted only the obsolete `avatio-development` Worker on 2026-10-08; do not recreate it or delete its retained data resources. Never replace a failed check with a silent success command.
-- Native Cloudflare configuration declares existing resource bindings. The owner initializes non-production `NUXT_BETTER_AUTH_SECRET` in Previews Base, and initializes that same value plus `TWITTER_CLIENT_SECRET` only in the existing development Preview. Never place Twitter or production credentials in Base. Do not send signing secrets through CI.
+- Initialize runtime secrets directly in the intended Worker (`NUXT_BETTER_AUTH_SECRET`, etc.); never send signing secrets through CI or place production credentials in development or shared settings. Preserve existing Preview/Base settings and secrets until explicitly retired. Never replace a failed check with a silent success command.
 - OG image runtime configuration uses Nitro environment expansion to read the canonical `OG_IMAGE_SECRET` binding. Builds must work without that secret and must never inline its value.
 - Local development generates and reuses a Better Auth secret under `.data/`. Clear Better Auth's build-time secret for deployed builds in `nitro:config`, after the module's `modules:done` initialization, so only the runtime Worker binding supplies the deployed key.
 - Do not print decrypted values or expose secrets through public runtime config, app config, client payloads, logs, snapshots, or generated artifacts.
@@ -108,7 +114,7 @@ PRs into `main` require the `format`, `lint`, `lint:unused`, `typecheck`, `test`
 
 1. Run `vp install` and `vp run dev`; no Cloudflare credentials or `.env.keys` are required.
 2. Optional local overrides use Nuxt's standard `.env` loading. Bun runtime dotenv loading is disabled; its installer limitation is described above.
-3. Local state is gitignored under `.data/`: `avatio.sqlite`, `local-auth-secret`, `uploads/`, and `mail/`.
+3. Local state is gitignored under `.data/`: persistent D1 in `d1/`, `local-auth-secret`, `uploads/`, and `mail/`. Preserve the signing key across local database resets.
 4. Do not point normal local startup at deployed development resources. Stage secrets are decrypted only by explicit config check commands.
 
 ### Secret rotation
@@ -128,17 +134,18 @@ PRs into `main` require the `format`, `lint`, `lint:unused`, `typecheck`, `test`
 
 - **Runner:** Vitest, configured in `vitest.config.ts`.
 - Local `test`, `test:unit`, and `test:watch` select only `test/unit/`; they do not initialize Nuxt or execute SQLite integration, HTTP, browser, Miniflare, or build checks.
-- CI runs every Vitest project (`unit`, `integration`, `nuxt`, `http`, `cloudflare`) plus Chromium smoke on every PR, branch push and merge group. Extended Chromium, Firefox, WebKit, and mobile checks run on branch pushes, daily, and manual runs. The required `test` check aggregates applicable suites and fails on failed, cancelled, or unexpectedly skipped jobs. All six existing required check names remain. Only `development.yml` can receive a Cloudflare deployment credential, and only on `push` to `development` after operator activation.
+- CI runs every Vitest project (`unit`, `integration`, `nuxt`, `http`, `cloudflare`) plus Chromium smoke on every PR, branch push and merge group. Extended Chromium, Firefox, WebKit, and mobile checks run on branch pushes, daily, and manual runs. The required `test` check aggregates applicable suites and fails on failed, cancelled, or unexpectedly skipped jobs. All six existing required check names remain. Only the gated `quality.yml` delivery job can receive a Cloudflare deployment credential, on the corresponding protected stage branch after operator activation.
 - Heavy tests live under `test/integration/`, `test/nuxt/`, `test/http/`, `test/cloudflare/`, and `test/browser/`. Historical migrations and idempotency regression coverage remain in CI; add migration cases when schema/migrations change, rather than duplicating request-replay suites in Miniflare.
-- HTTP/browser fixtures copy application sources into a fresh temporary root, exclude real local state and environment files, create a private SQLite/files/mail/auth-secret directory, and reject an occupied port 3000. Better Auth `testUtils` is confined to test-only auth instances; actual HTTP login and device switching use the application's auth server. No test auth bypass route or production plugin is added.
+- HTTP/browser fixtures copy application sources into a fresh temporary root, exclude real local state and environment files, create private local D1/files/mail/auth-secret directories, and reject an occupied port 3000. Better Auth `testUtils` is confined to test-only auth instances; actual HTTP login and device switching use the application's auth server. No test auth bypass route or production plugin is added.
 - Fixture child processes and browser contexts deny external network requests. CI traces/screenshots contain synthetic fixture users only and are retained for three days after failure. Fixture databases, files, signing secrets, and normal browser profiles are never cached or uploaded; traces may include disposable fixture session cookies.
 - Browser retries do not permit flaky success: `failOnFlakyTests` is enabled in CI. Smoke/full runtime budgets are measured from CI results, not inferred from local unit timing.
-- `test/setup.ts` supplies shared server auto-imports; database regression tests use a migrated in-memory SQLite D1 adapter.
+- `test/setup.ts` supplies shared server auto-imports; database regression tests use migrated local D1. Historical migration tooling retains an isolated Node SQLite adapter for populated-data and failure-recovery checks.
 - Test env is loaded from `.env` via `loadEnv('test', ...)`.
 
 ## Database (Drizzle)
 
-- **Dialect:** SQLite. Local uses `node:sqlite` + `drizzle-orm/node-sqlite`; deployed stages use Cloudflare D1 bound as `APP_DB`.
+- **Dialect:** SQLite. Local and deployed application code use `drizzle-orm/d1` with `APP_DB`. Local Nuxt uses Wrangler's platform proxy and the same persistence path as local migration/seed commands; do not introduce a second local driver.
+- Drizzle ORM and Kit are pinned together at 1.0.0-rc.5. Use `EmptyFilter` when a relational condition is absent. User text searches use the shared SQLite string-function filters because D1 limits LIKE pattern length; preserve literal `%`/`_` handling and existing case/ranking behavior.
 - Schema file: `database/schema.ts`.
 - Config: `drizzle.config.ts`.
 - Migration output: `./drizzle`.
@@ -147,10 +154,10 @@ PRs into `main` require the `format`, `lint`, `lint:unused`, `typecheck`, `test`
 - Do not edit generated migration SQL by hand; regenerate with `vp run db:generate`.
 - For data-only migrations, generate an empty migration with `vp run db:generate --custom --name=<name>` and fill its SQL. Keep historical migrations unchanged.
 - Stored Setup images require a unique `stableId`. The image ID backfill preserves existing IDs and fills nulls with `CAST(id AS TEXT)` before the generated NOT NULL migration; collisions fail instead of renumbering images.
-- Both drivers keep foreign keys enabled. Parent-table rebuilds must preserve retained child rows and be tested with populated data.
-- `vp run dev` creates `.data/avatio.sqlite` and applies the checked-in migrations with Drizzle's official Node SQLite migrator before serving requests. Build/prerender must not create local state.
-- `executeAppBatch` preserves D1 `batch()` semantics and uses a synchronous Node SQLite transaction locally. Never return an async callback from the local transaction.
-- `vp run db:seed:local -- --yes` explicitly copies the remote `avatio-development` D1 into local SQLite; authenticate Wrangler separately with D1 read permission. Its `--source production --allow-production` form requires explicit operator approval and is only for one-off local seeding. It never writes to remote D1.
+- Local and deployed D1 keep foreign keys enabled. Parent-table rebuilds must preserve retained child rows and be tested with populated data.
+- `vp run dev` applies checked-in migrations with Wrangler's local D1 migrator, installs the local-only first-user trigger, and then starts Nuxt. Both use `.data/d1`; build/prerender must not create local state.
+- `executeAppBatch` uses D1 `batch()` in both application environments. Migration rehearsal's Node SQLite adapter keeps a synchronous transaction callback.
+- `vp run db:seed:local -- --yes` explicitly copies the remote `avatio-development` D1 into local D1; authenticate Wrangler separately with D1 read permission. Its `--source production --allow-production` form requires explicit operator approval and is only for one-off local seeding. It never writes to remote D1.
 
 ## Auth
 
@@ -177,30 +184,24 @@ PRs into `main` require the `format`, `lint`, `lint:unused`, `typecheck`, `test`
 ## Deployment & infra quirks
 
 - **Cloudflare Flagship** owns true operational flags such as `is-maintenance`; unavailable evaluation fails closed. Catalog admission/category configuration lives in D1. Explicit catalog revalidation uses `POST /api/admin/catalog/revalidate` rather than a global force-update flag.
-- Alchemy and its legacy plan/deploy/adopt commands are removed. Code removal never destroys, adopts, deletes or migrates existing Cloudflare resources. Only the reviewed production Builds or fixed development GitHub integration may publish when its target and acceptance gates permit. Use supported official CLI operations, without replacement IaC or a custom deployment framework.
-- Content D1 remains unbound. The retained production Cache KV is named `avatio` and bound as `CONTENT_CACHE` for authored content; preserve its identity and existing keys through the prefixed cache driver.
-- Production cutover remains on hold. Existing production resources and secrets remain untouched; changes to encrypted variable names affect future owner tooling only. The new Workers Builds configuration and live acceptance remain pending; changing source code does not change existing live build settings.
+- **Publisher boundary:** Alchemy and Native Preview delivery are retired. Keep one approved publisher per target (`wrangler` via `.github/workflows/quality.yml`), and never destroy, adopt, delete, or recreate existing Cloudflare resources (including the retained development D1/R2/KV and production Cache KV `avatio` / `CONTENT_CACHE`). Content D1 remains unbound.
 - **Workers Cron Triggers**:
   - `/api/admin/job/report` — daily at 22:00
   - `/api/admin/job/cleanup` — manual/admin only
 - **Images:** served through `@nuxt/image`. Allowed external domains are whitelisted in `nuxt.config.ts` (Booth, GitHub, R2 public domain).
-- **Storage:** `nuxt-files-sdk` is configured in `files.config.ts`; runtime code uses `useServerFiles()`. Its `$development.storage` selects the filesystem adapter under gitignored `.data/uploads`, served at `/api/_local/files/*`, including imported OAuth avatars. Local Nuxt Image uses IPX with only localhost HTTP sources; the local route rejects traversal and metadata sidecars. The deployed development Preview and production Worker use their stage-specific `R2` binding and public domain; R2 HTTP credentials remain unsupported. The local file route returns 404 in deployed builds.
+- **Storage:** `nuxt-files-sdk` is configured in `files.config.ts`; runtime code uses `useServerFiles()`. Its `$development.storage` selects the filesystem adapter under gitignored `.data/uploads`, served at `/api/_local/files/*`, including imported OAuth avatars. Local Nuxt Image uses IPX with only localhost HTTP sources; the local route rejects traversal and metadata sidecars. The development and production Workers use their stage-specific `R2` binding and public domain; R2 HTTP credentials remain unsupported. The local file route returns 404 in deployed builds.
 - **files-sdk build compatibility:** The native R2 binding does not use `@aws-sdk/*`; `nuxt-files-sdk` generates shims for optional AWS imports during the Cloudflare build. Nitro source maps are disabled because their generation exceeded the 4 GB heap limit. Check the Cloudflare preset after SDK updates.
 - **PWA:** `@vite-pwa/nuxt` is enabled; `sw.js` and `manifest.webmanifest` are served with `must-revalidate`.
 
-## Production Builds and development GitHub delivery (#354, acceptance pending)
+## Stage Worker delivery (#354, acceptance pending)
 
-- The owner-approved split is production `main` through Workers Builds, and only `push` to `development` through `.github/workflows/development.yml` to one persistent native Preview named `development` under the existing `avatio` Worker. Development-only Builds is unsupported according to the owner; do not retry trigger-creation API experiments. A native Preview is not another Worker or a Wrangler environment. Every PR and feature branch gets secretless GitHub quality/build checks only, with no privileged publisher or remote data binding.
-- Keep one publisher per target. Cloudflare Preview automatic builds must be OFF, the existing Preview persistent, and production Builds restricted to `main` before activation. Draft PR #358 stays open until actual development Preview publication succeeds and the owner's conditional close instruction applies, then close without merging. #354 stays open through live acceptance.
-- Use standard Nuxt/Nitro `cloudflare_module`, root-only dependency installation and pinned tooling. `vp run build:cloudflare -- development` is the credentialless local build. Production entrypoints remain `node scripts/cloudflareBuilds.ts build|deploy`, restricted to exact clean `main` Workers Builds metadata. The thin `node scripts/cloudflareDevelopment.ts check|build|deploy` entrypoint validates actual GitHub repository, workflow, push ref and SHA; never forge `WORKERS_CI` variables for GitHub. Both reuse build/bootstrap and data-only artifact, target, quality, migration and smoke validations. Prefer `cf` where supported; pinned Wrangler handles standard publication and D1 migrations. Never restore custom Build Output packaging or fixture-dependent builds.
-- Keep compatibility date `2026-05-26`, native Node compatibility v2, `no_handle_cross_request_promise_resolution`, Nitro crypto/console/async-context compatibility and disabled source maps. Never restore `no_nodejs_compat_v2`. Test the generated config and application in local workerd.
-- Production's trusted build wrapper may retain the platform deployment credential only in its outer process. GitHub passes the development deployment token only to the deploy step, never dependency installation or build. Nuxt/vp and migration-reading Git children receive a strict clean environment and private temporary HOME/config directories. Reject plaintext runtime app secrets and every dotenv private-key suffix; never decrypt or inject ciphertext into a build. Production requires Workers Builds `SKIP_DEPENDENCY_INSTALL=1`; both entrypoints share frozen Bun installation with `--ignore-scripts --no-env-file`, then clean Nuxt prepare/build through checkout-local Vite+. Verify the actual production platform lifecycle before acceptance.
-- `cloudflare.config.ts` and reviewed nonsecret `AVATIO_CF_RESOURCES_JSON` declare existing two-target identities only. Missing or ambiguous bindings fail closed. Preserve all retained D1/R2/KV and unrelated services. Production retains domain, Cron `0 22 * * *`, Queue settings (batch 10, wait 5 seconds, 3 retries), image domains/CORS and storage retention. Development uses separate D1/R2/KV/flags/rate limits and has no production Queue, Cron, email, dynamic OG, analytics or optional production credentials.
-- Platform-level branch exclusion is required before credentials exist. GitHub delivery is push-only development, with the protected `development` environment limited to that branch; its branch/security settings and token setup require separate approval. Cloudflare production filters must exclude every other branch/PR, and Preview auto-build must be OFF. Repository guards are defense in depth. GitHub migration plus publication uses one fixed `avatio-development-APP_DB` concurrency group with `cancel-in-progress: false`; queued stale sources fail before migration and are rechecked before publication. Production platform serialization remains an acceptance prerequisite.
-- The publisher requires exact successful branch-push quality for the actual source, validates the standard artifact/config/migration SQL as data, checks existing targets and secret names/types, applies target migrations, rechecks current source, and publishes with the official CLI once. Public GitHub readiness waiting is bounded and fails closed on missing, failed, incomplete or unavailable evidence. It sends no GitHub credential. Preserve actual publication IDs in a secret-free receipt/log before later metadata or HTTP checks can fail.
-- `AVATIO_NATIVE_DELIVERY_ENABLED` gates the shared publisher; production additionally requires `AVATIO_PRODUCTION_DELIVERY_ENABLED`. Development requires repository activation `AVATIO_DEVELOPMENT_DELIVERY_ENABLED=true` and protected-environment `AVATIO_DEVELOPMENT_PREVIEW_AUTOBUILD_DISABLED=true`, an operator attestation after checking actual CF settings, not automatic proof or a setting change. Missing flags leave delivery disabled. Keep production cutover separate and obtain explicit approval for live configuration/activation. Require target-specific `AVATIO_MIGRATION_HISTORY_VERIFIED` only after populated-data/idempotency/recovery proof and exact existing D1 bookkeeping reconciliation. Preserve all 17 historical migrations, nested Drizzle files and `d1_migrations`; never guess/replay Alchemy history. Stop on migration failure. Worker rollback does not roll back D1.
-- The owner initializes unchanged nonproduction `NUXT_BETTER_AUTH_SECRET` in Previews Base and in the existing development Preview; Base inheritance alone does not initialize an existing Preview. Keep `TWITTER_CLIENT_SECRET` development-only and production credentials out of Base. Inspect names/types only. Development access, auth callbacks and image CORS need owner approval and verification; `noindex` is not access control.
-- Keep bounded manual historical D1/metadata and isolated-copy compatibility tooling only until its acceptance evidence is retained. Historical deployed provenance is separate from proof of the new exact-source deployment. Credentialless CI builds, synthetic workerd and migration regressions are implementation evidence, not live acceptance. Populated-data recovery, platform trigger isolation, actual development publication and later production cutover remain open. No resource/data deletion, new credential/access setting or production action is implied by implementation work.
+- `.github/workflows/quality.yml` runs credentialless checks on every PR/branch and gates delivery on branch + variable: `push` to `development` targets `avatio-development` (`AVATIO_DEVELOPMENT_DELIVERY_ENABLED == 'true'`), and `push` to `main` targets `avatio` (`AVATIO_PRODUCTION_DELIVERY_ENABLED == 'true'`). Existing live production Workers Builds remains until owner-approved cutover; verify platform branch exclusions and Preview auto-build OFF before pushing feature branches.
+- `deployment/<stage>/wrangler.json` and `config/cloudflare.ts` declare the reviewed bindings (`APP_DB`, `CONTENT_CACHE`, `R2`, `FLAGS`, `ratelimits`, `AI`, `IMAGES`, `EMAIL`, `ITEM_REVALIDATION_QUEUE`) with `no_bundle: true`, `compatibility_date: 2026-05-26`, `compatibility_flags: ["no_handle_cross_request_promise_resolution", "nodejs_compat"]`, disabled source maps, and `preview_urls: false`. Keep `getNitroCloudflareConfig()` stripping `$schema`, `main`, and `assets.directory` for `nitro.cloudflare.wrangler` so Nitro writes canonical `.output/server/wrangler.json`, then `scripts/cloudflareBuild.ts` patches `compatibility_flags`, `AVATIO_SOURCE_SHA`, and D1 migration settings onto that artifact. Verify generated artifacts in local workerd with outbound requests denied (`test/cloudflare/application.mjs`).
+- Installation (`scripts/installDependencies.ts`) uses frozen Bun, `--ignore-scripts --no-env-file`, and a clean environment; builds run in private temp HOME/config dirs, reject plaintext app secrets or `DOTENV_PRIVATE_KEY*`, and isolate the platform token strictly to migration/publication steps.
+- Preserve retained D1/R2/KV, existing keys, image domains/CORS, storage retention, Queues (`item-revalidation` / `item-revalidation-development`, batch 10 / wait 5s / 3 retries), and Cron `0 22 * * *` (`job:report`; `cleanup` manual/admin). Development uses separate resources, restricted email (recipients limited to `hello@liria.me`, subjects `[development]`), dry-run cleanup, and no production analytics/optional credentials.
+- Delivery serializes per-target D1 migration + publish (`avatio-${stage}-APP_DB`, `cancel-in-progress: false`), checks `AVATIO_MIGRATION_HISTORY_VERIFIED == d1_databases[0].database_id`, verifies `secrets.required` exist on the Worker, runs `wrangler d1 migrations apply APP_DB --remote`, and runs `wrangler deploy --config .output/server/wrangler.json`. Stop on migration failure; Worker rollback does not roll back D1.
+- Preserve all 17 historical migrations, `20261026065213_auth-unique-indexes`, nested Drizzle files, and `d1_migrations`. Keep `scripts/cloudflareMigrationHistory.ts` until cutover acceptance is complete; never guess or replay Alchemy history.
+- Protect both `dev.avatio.me` and its `workers.dev` hostname with Access + CI Service Auth only (`preview_urls: false`); `noindex` is not access control. Access, OAuth callbacks/origins, image CORS, and development secret initialization require live verification. Close #358 without merging after development publication succeeds; keep #354 open through live acceptance and reuse #362 for `development` → `main`. Do not merge `main` or enable production cutover without explicit owner approval.
 
 ## i18n
 
@@ -228,27 +229,23 @@ PRs into `main` require the `format`, `lint`, `lint:unused`, `typecheck`, `test`
 - `server/utils` is Avatio's formal Nuxt/Nitro server runtime integration and continues to use framework auto-imports.
 - Organize runtime utilities by one coherent responsibility per file; one exported function per file is not required. Never introduce catch-all names such as `misc.ts`, `helpers.ts`, or `common.ts`.
 - Migration-only, rollout compatibility, and backfill implementations must not live in `server/utils`.
-- Portable public HTTP handlers use `requestEventHandler` and explicit imports from `nuxt/server`. Their `RequestEvent` exposes `req: Request`, `url: URL`, and `res.headers: Headers`. Never mix H3 auto-imports into them. Pass that event explicitly to `validateRequestQuery`/`validateRequestParams`; shared Zod failure handling preserves the existing validation contract.
-- Better Auth session/admin handlers, Nitro plugins/tasks, sitemap integration, and Cloudflare composition retain explicit H3/Nitro boundaries. Keep domain/application behavior independent of either event type. The new Nuxt cookie-session helpers and `appSecret` do not replace Better Auth or its signing key.
+- All API handlers, Better Auth session/admin handlers, Nitro plugins/tasks, sitemap integration, and Cloudflare composition use unified H3/Nitro boundaries (`server/utils/eventHandler.ts`, `server/utils/validateRequest.ts`, `server/utils/edgeCache.ts`). Keep domain/application behavior independent of H3 event types.
 
 ### API handlers
 
-Wrap every API handler with the appropriate factory:
-
-- `requestEventHandler` from `server/utils/requestEventHandler.ts` — portable public HTTP handlers; no auth required
-
-Factories from `server/utils/eventHandler.ts` retain the Better Auth/H3 boundary:
+Wrap every API handler with the appropriate factory from `server/utils/eventHandler.ts`:
 
 - `promiseEventHandler` — no auth required
 - `sessionEventHandler` — session available but optional (null-safe)
 - `authedSessionEventHandler` — login required (throws 401 if unauthenticated)
 
+Public cacheable routes apply `applyPublicEdgeCache(event, tags)` from `server/utils/edgeCache.ts`.
 Admin and cron routes use `promiseEventHandler` plus `requireAdminSession`, which composes the module-native admin role guard with the independent banned-user policy. The handler wrappers provide DB injection and conflict normalization; they do not own authorization.
 
 ### Database queries
 
 - Prefer Drizzle ORM query builder (`db.query.*`, `db.select()`, `db.insert()`, etc.) over raw `sql` template literals. Use `sql` only when the query builder cannot express the logic.
-- D1 does not expose Drizzle callback transactions. Build all required statements first and pass them in order to `executeAppBatch(db, queries)` so D1 batch or the local synchronous transaction commits or rolls back atomically.
+- D1 does not expose Drizzle callback transactions. Build all required statements first and pass them in order to `executeAppBatch(db, queries)` so the D1 batch commits or rolls back atomically.
 - Generate parent and child IDs in the application before a batch when later statements need those IDs.
 
 ## Security

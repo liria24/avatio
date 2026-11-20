@@ -1,3 +1,4 @@
+import { EmptyFilter } from 'drizzle-orm/relations'
 import { z } from 'zod'
 
 export const adminReportQuerySchema = z.object({
@@ -14,4 +15,4 @@ export const adminReportQuerySchema = z.object({
 })
 
 export const getAdminReportResolvedFilter = (status: 'open' | 'closed' | 'all') =>
-    status === 'open' ? { eq: false } : status === 'closed' ? { eq: true } : undefined
+    status === 'open' ? { eq: false } : status === 'closed' ? { eq: true } : EmptyFilter

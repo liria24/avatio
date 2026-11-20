@@ -1,6 +1,6 @@
 import type { RemovableRef } from '@vueuse/core'
 
-export interface AppSettings {
+interface AppSettings {
     cookiesConsent: boolean
     ownerWarningBannerDismissed?: boolean
 }
@@ -14,7 +14,7 @@ const STORAGE_KEY = 'avatio-settings'
 
 let settingsRef: RemovableRef<AppSettings> | null = null
 
-export const useAppSettings = () => {
+const useAppSettings = () => {
     if (!settingsRef)
         settingsRef = useLocalStorage<AppSettings>(STORAGE_KEY, DEFAULT_SETTINGS, {
             mergeDefaults: true,

@@ -5,13 +5,11 @@ import { defineServerAuth, type ServerAuthContext } from '@nuxtjs/better-auth/co
 import type { BetterAuthOptions } from 'better-auth'
 import { nanoid } from 'nanoid'
 
-import { getPreviewKind } from '../config/preview'
 import { SESSION_COOKIE_CACHE_MAX_AGE } from '../shared/utils/constants'
 import { logger } from '../shared/utils/logger'
-import { parseConfiguredAuthOrigins, resolveAuthTrustedOrigins } from './utils/authOrigins'
 import { authSchemaOptions } from './utils/authSchemaOptions'
 import { dbProxy, schema } from './utils/database'
-import { getRuntimeEnvString } from './utils/runtimeEnv'
+import { getRuntimeEnvString, getRuntimeStageConfig } from './utils/runtimeEnv'
 
 const JPG_FILENAME_LENGTH = 16
 const authLog = logger('better-auth')
@@ -39,17 +37,17 @@ const getCurrentEvent = () => {
 }
 
 export const createAvatioAuthOptions = ({ runtimeConfig }: ServerAuthContext) => {
-    const previewKind = getPreviewKind(
-        getRuntimeEnvString('STAGE'),
-        getRuntimeEnvString('PREVIEW_NAME'),
-    )
-    const configuredOrigins = parseConfiguredAuthOrigins(
-        getRuntimeEnvString('AUTH_TRUSTED_ORIGINS'),
-    )
+    const config = getRuntimeStageConfig()
     const publicConfig = runtimeConfig.public as { siteUrl?: unknown } | undefined
-    if (!previewKind && typeof publicConfig?.siteUrl === 'string')
-        configuredOrigins.push(publicConfig.siteUrl)
-    const twitterClientId = getRuntimeEnvString('TWITTER_CLIENT_ID')
+    const configuredOrigins = import.meta.dev
+        ? [
+              typeof publicConfig?.siteUrl === 'string'
+                  ? publicConfig.siteUrl
+                  : 'http://localhost:3000',
+              'http://127.0.0.1:3000',
+          ]
+        : config.trustedOrigins
+    const twitterClientId = config.twitterClientId
     const twitterClientSecret = getRuntimeEnvString('TWITTER_CLIENT_SECRET')
 
     const options = {
@@ -62,12 +60,7 @@ export const createAvatioAuthOptions = ({ runtimeConfig }: ServerAuthContext) =>
             usePlural: true,
         }),
 
-        trustedOrigins: (request?: Request) =>
-            resolveAuthTrustedOrigins({
-                configuredOrigins,
-                request,
-                configuredOnly: Boolean(previewKind),
-            }),
+        trustedOrigins: configuredOrigins,
 
         user: {
             ...authSchemaOptions.user,

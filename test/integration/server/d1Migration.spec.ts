@@ -15,6 +15,26 @@ const setupDraftContentMigrationSql = readFileSync(
 )
 const authMigrationDirectory = '20260906124049_better-auth-1-7-3'
 
+// SQLite 3.54+ (bundled in Node 26.13+) stops propagating the JSON subtype across scalar
+// subqueries (`json_set(..., (SELECT json_group_array(...)))`), unlike Cloudflare D1/workerd
+// and earlier SQLite where historical migration `20260908033156` was already applied.
+const stripsSubqueryJsonSubtype = (db: DatabaseSync) => {
+    const row = db
+        .prepare(
+            "SELECT json_type(json_set('{}', '$.a', (SELECT json_group_array(1))), '$.a') AS type",
+        )
+        .get() as { type?: string }
+    return row.type === 'text'
+}
+
+const parseMigratedDraftContent = (db: DatabaseSync, raw: unknown) => {
+    const parsed = JSON.parse(String(raw)) as Record<string, unknown>
+    if (stripsSubqueryJsonSubtype(db) && typeof parsed.items === 'string') {
+        return { ...parsed, items: JSON.parse(parsed.items) as unknown }
+    }
+    return parsed
+}
+
 describe('D1 migration', () => {
     let database: DatabaseSync
 
@@ -166,7 +186,9 @@ describe('D1 migration', () => {
             revision: 1,
         })
         expect(draft).not.toHaveProperty('idempotency_request_id')
-        expect(setupDraftContentSchema.parse(JSON.parse(String(draft?.content)))).toMatchObject({
+        expect(
+            setupDraftContentSchema.parse(parseMigratedDraftContent(database, draft?.content)),
+        ).toMatchObject({
             name: 'Draft',
             images: ['https://images.avatio.me/setup/draft.png'],
             tags: ['avatar'],
@@ -317,7 +339,7 @@ describe('D1 migration', () => {
         })
         const draft = database.prepare('SELECT content, revision FROM setup_drafts').get()
         expect(draft?.revision).toBe(3)
-        expect(JSON.parse(String(draft?.content))).toEqual({
+        expect(parseMigratedDraftContent(database, draft?.content)).toEqual({
             ...content,
             items: content.items.map((item, index) =>
                 index === 0 ? { ...item, itemId: 'catalog' } : item,

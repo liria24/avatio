@@ -12,11 +12,11 @@ import { requireAdminJobRequest } from '../../../server/utils/adminJobRequest'
 
 const requireAdminSession = vi.fn()
 const runTask = vi.fn(async () => ({ result: { ok: true } }))
-let configuration: Record<string, string>
+let trustedOrigins: string[]
 let siteUrl: string
 
 beforeEach(() => {
-    configuration = {}
+    trustedOrigins = ['http://localhost:3000']
     siteUrl = 'http://localhost:3000'
     requireAdminSession.mockReset().mockResolvedValue({ user: { id: 'admin' } })
     runTask.mockClear()
@@ -26,7 +26,7 @@ beforeEach(() => {
         requireAdminSession,
         requireAdminJobRequest,
         runTask,
-        getRuntimeEnvString: (name: string) => configuration[name],
+        getRuntimeStageConfig: () => ({ trustedOrigins }),
         useRuntimeConfig: () => ({ public: { siteUrl } }),
         promiseEventHandler: (handler: unknown) => handler,
     }).forEach(([key, value]) => vi.stubGlobal(key, value))
@@ -99,22 +99,22 @@ describe.each(['cleanup', 'report'])('%s HTTP job authorization', (job) => {
     })
     it('accepts the configured production origin', async () => {
         siteUrl = 'https://avatio.me'
-        configuration = { STAGE: 'production', AUTH_TRUSTED_ORIGINS: '["https://avatio.me"]' }
+        trustedOrigins = ['https://avatio.me']
         expect((await request(job)).status).toBe(200)
         expect(runTask).toHaveBeenCalledTimes(1)
     })
-    it('trusts only the exact configured Preview origin and fails closed when unconfigured', async () => {
-        const origin = 'https://development-avatio.example.workers.dev'
-        configuration = {
-            STAGE: 'development',
-            PREVIEW_NAME: 'development',
-            AUTH_TRUSTED_ORIGINS: JSON.stringify([origin]),
-        }
+    it('trusts only the development custom domain and fails closed with no approved origin', async () => {
+        const origin = 'https://dev.avatio.me'
+        trustedOrigins = [origin]
         expect((await request(job, 'POST', origin)).status).toBe(200)
         runTask.mockClear()
-        for (const disallowed of [siteUrl, 'https://other-avatio.example.workers.dev'])
+        for (const disallowed of [
+            siteUrl,
+            'https://other.example.workers.dev',
+            'https://avatio.me',
+        ])
             expect((await request(job, 'POST', disallowed)).status).toBe(403)
-        delete configuration.AUTH_TRUSTED_ORIGINS
+        trustedOrigins = []
         expect((await request(job, 'POST', origin)).status).toBe(403)
         expect(runTask).not.toHaveBeenCalled()
     })

@@ -1,0 +1,179 @@
+{
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
+    "baseBranchPatterns": ["development"],
+    "useBaseBranchConfig": "merge",
+    "branchPrefix": "renovate/",
+    "automerge": false,
+    "dependencyDashboard": true,
+    "timezone": "Asia/Tokyo",
+    "schedule": ["* * * * 0"],
+    "prConcurrentLimit": 1,
+    "branchConcurrentLimit": 1,
+    "prHourlyLimit": 1,
+    "rebaseWhen": "behind-base-branch",
+    "updateNotScheduled": true,
+    "ignoreScripts": true,
+    "constraints": {
+        "bun": "1.4.4"
+    },
+    "lockFileMaintenance": {
+        "enabled": false
+    },
+    "vulnerabilityAlerts": {
+        "enabled": true,
+        "schedule": [],
+        "minimumReleaseAge": null,
+        "dependencyDashboardApproval": false,
+        "automerge": false
+    },
+    "prBodyNotes": [
+        "Rebase onto the latest base, reapply manifest changes and regenerate existing bun.lock files with the pinned Bun. Commit manifests and locks together; frozen installation and all quality checks must pass."
+    ],
+    "packageRules": [
+        {
+            "description": "Apply npm policy to native Bun and npm dependencies",
+            "matchDatasources": ["npm"],
+            "minimumReleaseAge": "3 days"
+        },
+        {
+            "description": "Keep runtime and package-manager upgrades owner-managed",
+            "matchDepTypes": [
+                "engines",
+                "packageManager",
+                "devEngines.runtime",
+                "devEngines.packageManager"
+            ],
+            "enabled": false
+        },
+        {
+            "description": "Keep Bun pinned in manifests, workflow inputs and Renovate tool constraints",
+            "matchDepNames": ["bun"],
+            "enabled": false
+        },
+        {
+            "description": "Require approval for major updates",
+            "matchUpdateTypes": ["major"],
+            "dependencyDashboardApproval": true
+        },
+        {
+            "description": "Review public compatibility range changes",
+            "matchDepTypes": ["peerDependencies"],
+            "enabled": true,
+            "dependencyDashboardApproval": true,
+            "rangeStrategy": "replace"
+        },
+        {
+            "description": "Review breaking zero-major minor updates separately",
+            "matchDatasources": ["npm"],
+            "matchCurrentVersion": "/^0\\./",
+            "matchUpdateTypes": ["minor"],
+            "dependencyDashboardApproval": true
+        },
+        {
+            "description": "Pin and review GitHub Actions separately",
+            "matchManagers": ["github-actions"],
+            "groupName": "GitHub Actions",
+            "pinDigests": true,
+            "automerge": false
+        },
+        {
+            "description": "Keep Nuxt framework packages together",
+            "matchPackageNames": ["nuxt", "@nuxt/kit", "@nuxt/schema", "@nuxt/vite-builder"],
+            "groupName": "Nuxt framework"
+        },
+        {
+            "description": "Keep Vue and compiler packages together",
+            "matchPackageNames": ["vue", "/^@vue\\//"],
+            "groupName": "Vue and compiler"
+        },
+        {
+            "description": "Keep Drizzle generator and runtime together",
+            "matchPackageNames": ["drizzle-kit", "drizzle-orm"],
+            "groupName": "Drizzle"
+        },
+        {
+            "description": "Keep Vite+ core, Vite+ and Vitest together",
+            "matchPackageNames": [
+                "vite",
+                "vite-plus",
+                "@voidzero-dev/vite-plus-core",
+                "vitest",
+                "/^@vitest\\//"
+            ],
+            "groupName": "Vite and test tooling"
+        },
+        {
+            "description": "Keep Better Auth and its adapters together",
+            "matchPackageNames": ["better-auth", "auth", "/^@better-auth\\//"],
+            "groupName": "Better Auth"
+        },
+        {
+            "description": "Keep Comark integrations together",
+            "matchPackageNames": ["comark", "comark-content", "/^@comark\\//"],
+            "groupName": "Comark"
+        },
+        {
+            "description": "Preserve the existing prerelease series",
+            "matchDepNames": ["@tanstack/vue-form"],
+            "allowedVersions": "/^2\\.0\\.\\d+-alpha(?:[.\\d-]|$)/",
+            "dependencyDashboardApproval": true,
+            "matchCurrentVersion": "/-/"
+        },
+        {
+            "description": "Preserve the existing prerelease series",
+            "matchDepNames": ["drizzle-orm", "drizzle-kit"],
+            "allowedVersions": "/^1\\.0\\.\\d+-rc(?:[.\\d-]|$)/",
+            "dependencyDashboardApproval": true,
+            "matchCurrentVersion": "/-/"
+        },
+        {
+            "description": "Preserve the existing prerelease series",
+            "matchDepNames": ["insight-ts"],
+            "allowedVersions": "/^0\\.0\\.\\d+-alpha(?:[.\\d-]|$)/",
+            "dependencyDashboardApproval": true,
+            "matchCurrentVersion": "/-/"
+        },
+        {
+            "description": "Preserve the existing prerelease series",
+            "matchDepNames": ["vue"],
+            "allowedVersions": "/^3\\.6\\.\\d+-rc(?:[.\\d-]|$)/",
+            "dependencyDashboardApproval": true,
+            "matchCurrentVersion": "/-/"
+        },
+        {
+            "description": "Preserve the existing prerelease series",
+            "matchDepNames": ["@nuxt/a11y"],
+            "allowedVersions": "/^1\\.0\\.\\d+-alpha(?:[.\\d-]|$)/",
+            "dependencyDashboardApproval": true,
+            "matchCurrentVersion": "/-/"
+        },
+        {
+            "description": "Preserve the existing prerelease series",
+            "matchDepNames": ["miniflare"],
+            "allowedVersions": "/^5\\.\\d+\\.\\d+-(?:alpha|beta)(?:[.\\d-]|$)/",
+            "dependencyDashboardApproval": true,
+            "matchCurrentVersion": "/-/"
+        },
+        {
+            "description": "vue-tsc 3.3.13 loses v-for and slot bindings with Vue 3.6 RC; recheck after upstream correction",
+            "matchPackageNames": ["vue-tsc"],
+            "allowedVersions": "3.3.11"
+        },
+        {
+            "description": "vue-tsc 3.3.13 cannot load TypeScript 7 lib/tsc; remain on the supported compiler until that integration works",
+            "matchPackageNames": ["typescript"],
+            "allowedVersions": "<7"
+        },
+        {
+            "description": "Better Auth Nuxt 0.3.11-0.3.13 erases plugin API inference required by admin and multi-session calls",
+            "matchPackageNames": ["@nuxtjs/better-auth"],
+            "allowedVersions": "0.3.10"
+        },
+        {
+            "description": "comark-content 0.4.1 exposes the 0.7 Markdown plugin contract; update together when 0.8 is supported",
+            "matchPackageNames": ["comark", "@comark/nuxt"],
+            "allowedVersions": "0.7.0"
+        }
+    ]
+}

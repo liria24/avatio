@@ -1,4 +1,4 @@
-import { asc, desc, like, sql } from 'drizzle-orm'
+import { asc, desc, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { setupTags } from '~~/database/schema'
 
@@ -14,8 +14,8 @@ const query = z.object({
         .default(SETUP_TAGS_API_DEFAULT_LIMIT),
 })
 
-export default requestEventHandler(async ({ event, db }) => {
-    const { q, orderBy, sort, limit } = validateRequestQuery(event, query)
+export default promiseEventHandler(async ({ event, db }) => {
+    const { q, orderBy, sort, limit } = await validateQuery(query)
 
     const sortFn = sort === 'asc' ? asc : desc
     const orderByFn = orderBy === 'name' ? setupTags.tag : sql<number>`count(*)`
@@ -29,8 +29,8 @@ export default requestEventHandler(async ({ event, db }) => {
         .groupBy(setupTags.tag)
         .limit(limit)
         .orderBy(sortFn(orderByFn))
-        .where(q ? like(setupTags.tag, `%${q}%`) : undefined)
+        .where(q ? searchText(setupTags.tag, q) : undefined)
 
-    applyPublicRequestCache(event, [EDGE_CACHE_TAGS.setups])
+    applyPublicEdgeCache(event, [EDGE_CACHE_TAGS.setups])
     return data
 })

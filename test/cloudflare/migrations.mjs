@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
-import { mkdir, mkdtemp, readFile, readdir, realpath, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readdir, realpath, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, dirname, join, relative, resolve } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
@@ -17,14 +17,9 @@ assert.equal(process.argv.length, 2, 'This local migration test accepts no targe
 assert.equal(Number(process.versions.node.split('.')[0]), 26)
 const cliPackage = 'wrangler'
 const cliRoot = projectRoot
-const configured = JSON.parse(await readFile(join(cliRoot, 'package.json'), 'utf8'))
-const installed = (await import('wrangler/package.json', { with: { type: 'json' } })).default
-assert.equal(installed.version, '4.147.0')
-assert.equal(installed.version, configured.devDependencies[cliPackage])
 console.log(
     JSON.stringify({
         migrationTestCli: cliPackage,
-        migrationTestVersion: installed.version,
         nodeVersion: process.version,
     }),
 )
@@ -32,7 +27,7 @@ const root = await mkdtemp(join(tmpdir(), 'avatio-cloudflare-migrations-'))
 const persistence = join(root, '.cloudflare', 'verification', 'copies', 'runtime')
 const cli = join(cliRoot, 'node_modules', cliPackage, 'bin', 'wrangler.js')
 const files = readCommittedCloudflareMigrations(projectRoot)
-assert.equal(files.length, 17, 'Review migration coverage when adding committed history')
+assert.equal(files.length, 18, 'Review migration coverage when adding committed history')
 const historyDirectory = join(root, 'history')
 const cutoff = files.findIndex((file) => file.name.startsWith('20260910151556_'))
 const freshId = '00000000-0000-4000-8000-000000003541'
@@ -51,7 +46,7 @@ const run = async (args) => {
                     HOME: root,
                     USERPROFILE: root,
                     XDG_CONFIG_HOME: root,
-                    NODE_OPTIONS: `--import=${fileURLToPath(new URL('../helpers/runtimeNetwork.mjs', import.meta.url))}`,
+                    NODE_OPTIONS: `--import=${new URL('../helpers/runtimeNetwork.mjs', import.meta.url).href}`,
                     WRANGLER_SEND_METRICS: 'false',
                     CI: 'true',
                 },

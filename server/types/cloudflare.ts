@@ -17,7 +17,6 @@ export type AvatioWorkerEnv = Partial<Record<AvatioSecretName, string>> & {
     APP_DB: D1Database
     CONTENT_CACHE: KVNamespace
     R2: R2Bucket
-    SELF_URL: string
     ITEM_REVALIDATION_QUEUE?: Queue
     FLAGS: FlagshipBinding
     AI: Parameters<typeof createWorkersAiCapabilities>[0]['binding']
@@ -30,16 +29,7 @@ export type AvatioWorkerEnv = Partial<Record<AvatioSecretName, string>> & {
     PUBLIC_SITE_URL: string
     R2_PUBLIC_BASE_URL: string
     STAGE: AvatioStage
-    PREVIEW_NAME?: 'development'
-    OG_IMAGE_ENDPOINT?: string
-    EMAIL_FROM: string
     NUXT_BETTER_AUTH_SECRET: string
-    TWITTER_CLIENT_ID?: string
-    AI_MODEL_CATALOG_ENRICHMENT: string
-    AI_MODEL_CATALOG_CLASSIFICATION: string
-    AI_MODEL_CHANGELOG_TRANSLATION: string
-    AI_MODEL_CHANGELOG_SLUG: string
-    AUTH_TRUSTED_ORIGINS: string
     CLOUDFLARE_ANALYTICS_ACCOUNT_ID?: string
     CLOUDFLARE_ANALYTICS_SITE_TAG?: string
     CLOUDFLARE_ANALYTICS_HOST?: string

@@ -9,8 +9,13 @@ import {
     getFeatureFlags,
 } from '../server/utils/infrastructure'
 import { createPagination } from '../server/utils/pagination'
-import { getRuntimeEnv, getRuntimeEnvString } from '../server/utils/runtimeEnv'
+import {
+    getRuntimeEnv,
+    getRuntimeEnvString,
+    getRuntimeStageConfig,
+} from '../server/utils/runtimeEnv'
 import { sanitizeEmailHtml } from '../server/utils/sanitizeEmailHtml'
+import { searchText } from '../server/utils/searchText'
 import { authAdditionalFields } from '../shared/utils/authAdditionalFields'
 import { hasBetterAuthSessionCookie } from '../shared/utils/authCookie'
 import * as constants from '../shared/utils/constants'
@@ -25,10 +30,12 @@ Object.assign(globalThis, constants, {
     getFeatureFlags,
     getRuntimeEnv,
     getRuntimeEnvString,
+    getRuntimeStageConfig,
     hasBetterAuthSessionCookie,
     prefixedI18nLocales,
     requireAdminSession,
     sanitizeEmailHtml,
+    searchText,
     serverError,
     useServerFiles,
 })

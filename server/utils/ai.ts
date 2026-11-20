@@ -1,28 +1,6 @@
-import {
-    createCatalogItemClassifier,
-    createWorkersAiCapabilities,
-    type AiTaskModels,
-} from '@avatio/cloudflare'
+import { createCatalogItemClassifier, createWorkersAiCapabilities } from '@avatio/cloudflare'
 import { itemCategories } from '@avatio/core/catalog'
 import type { H3Event } from '@nuxt/nitro-server/h3'
-
-const modelBindings = {
-    catalogEnrichment: 'AI_MODEL_CATALOG_ENRICHMENT',
-    catalogClassification: 'AI_MODEL_CATALOG_CLASSIFICATION',
-    changelogTranslation: 'AI_MODEL_CHANGELOG_TRANSLATION',
-    changelogSlug: 'AI_MODEL_CHANGELOG_SLUG',
-} as const
-
-const requireModel = (name: keyof AiTaskModels, event: H3Event) => {
-    const bindingName = modelBindings[name]
-    const model = getRuntimeEnvString(bindingName, event)
-    if (!model)
-        throw createError({
-            statusCode: 503,
-            message: `AI task configuration is unavailable: ${name}.`,
-        })
-    return model
-}
 
 /** Root composition boundary for semantic AI capabilities. */
 export const useAiCapabilities = (event: H3Event) => {
@@ -35,18 +13,14 @@ export const useAiCapabilities = (event: H3Event) => {
 
     return createWorkersAiCapabilities({
         binding,
-        models: {
-            catalogEnrichment: requireModel('catalogEnrichment', event),
-            changelogTranslation: requireModel('changelogTranslation', event),
-            changelogSlug: requireModel('changelogSlug', event),
-        },
+        models: getRuntimeStageConfig(event).aiModels,
     })
 }
 
 export const getCatalogItemClassifier = (event: H3Event) => {
     const binding = getRuntimeEnv(event).AI
-    const model = getRuntimeEnvString(modelBindings.catalogClassification, event)
-    if (!binding || !model) return null
+    if (!binding) return null
+    const model = getRuntimeStageConfig(event).aiModels.catalogClassification
     return {
         classifier: createCatalogItemClassifier({ binding, model, itemCategories }),
         model,

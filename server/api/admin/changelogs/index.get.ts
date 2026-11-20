@@ -1,3 +1,4 @@
+import { EmptyFilter } from 'drizzle-orm/relations'
 import { z } from 'zod'
 import { locales } from '~~/database/schema'
 
@@ -20,8 +21,8 @@ export default promiseEventHandler(async ({ db, event }) => {
             createdAt: sort,
         },
         where: {
-            title: q ? { like: `%${q}%` } : undefined,
-            authors: userId ? { userId: { eq: userId || undefined } } : undefined,
+            RAW: (table) => (q ? searchText(table.title, q) : EmptyFilter),
+            authors: userId ? { userId: { eq: userId } } : EmptyFilter,
         },
         columns: {
             slug: true,

@@ -116,7 +116,7 @@ export const users = snakeCase.table(
         name: text().notNull(),
         username: text().unique().notNull(),
         displayUsername: text().notNull(),
-        email: text().notNull().unique(),
+        email: text().notNull(),
         emailVerified: boolean().default(false).notNull(),
         image: text(),
         createdAt: timestamp().default(now).notNull(),
@@ -129,7 +129,7 @@ export const users = snakeCase.table(
         links: text({ mode: 'json' }).$type<string[]>(),
         lastAgreedToTerms: timestamp().default(now),
     },
-    (table) => [index('user_email_index').on(table.email)],
+    (table) => [uniqueIndex('user_email_unique').on(table.email)],
 )
 
 export const legalAcceptances = snakeCase.table(
@@ -262,12 +262,12 @@ export const userSettings = snakeCase.table(
             .default(now)
             .$onUpdate(() => new Date())
             .notNull(),
-        userId: text().notNull().unique(),
+        userId: text().notNull(),
         showPrivateSetups: boolean().default(true).notNull(),
         showNSFW: boolean().default(false).notNull(),
     },
     (table) => [
-        index('user_settings_user_id_index').on(table.userId),
+        uniqueIndex('user_settings_user_id_unique').on(table.userId),
         foreignKey({
             name: 'user_settings_user_id_fkey',
             columns: [table.userId],

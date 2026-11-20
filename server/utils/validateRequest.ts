@@ -1,6 +1,6 @@
 import type { z } from 'zod'
 
-export const throwIfValidationFailed = <T>(
+const throwIfValidationFailed = <T>(
     tag: string,
     result: z.ZodSafeParseSuccess<T> | z.ZodSafeParseError<unknown>,
 ): T => {

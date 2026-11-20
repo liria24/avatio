@@ -92,7 +92,8 @@ describe('runCleanupJob', () => {
         vi.useFakeTimers()
         vi.setSystemTime(new Date('2026-06-07T12:00:00.000Z'))
         process.env.R2_PUBLIC_BASE_URL = publicBaseUrl
-        process.env.STAGE = 'development'
+        process.env.STAGE = 'production'
+        runtimeGlobal.__env__ = { STAGE: 'production' }
         process.env.LIRIA_DISCORD_ENDPOINT = `${discordEndpoint}/`
         process.env.LIRIA_DISCORD_ACCESS_TOKEN = 'test-token'
         discordFetch.mockReset()
@@ -122,18 +123,18 @@ describe('runCleanupJob', () => {
         delete runtimeGlobal.__env__
     })
 
-    it('rejects destructive development Preview cleanup before reading or writing storage', async () => {
+    it('rejects destructive development Worker cleanup before reading or writing storage', async () => {
         arrange({ setupObjects: [{ key: 'setup/old-orphan.jpg', lastModified: oldDate }] })
-        runtimeGlobal.__env__ = { STAGE: 'development', PREVIEW_NAME: 'development' }
+        runtimeGlobal.__env__ = { STAGE: 'development' }
         await expect(runCleanupJob()).rejects.toMatchObject({ statusCode: 403 })
         expect(storage.listAll).not.toHaveBeenCalled()
         expect(storage.copy).not.toHaveBeenCalled()
         expect(storage.delete).not.toHaveBeenCalled()
     })
 
-    it('allows only dry-run cleanup for the persistent development Preview', async () => {
+    it('allows only dry-run cleanup for the persistent development Worker', async () => {
         arrange({ setupObjects: [{ key: 'setup/old-orphan.jpg', lastModified: oldDate }] })
-        runtimeGlobal.__env__ = { STAGE: 'development', PREVIEW_NAME: 'development' }
+        runtimeGlobal.__env__ = { STAGE: 'development' }
         expect((await runCleanupJob(true)).success).toBe(true)
         expect(storage.delete).not.toHaveBeenCalled()
         await expect(runCleanupJob()).rejects.toMatchObject({ statusCode: 403 })
@@ -225,7 +226,7 @@ describe('runCleanupJob', () => {
 
     it('uses R2 public base URL from runtime env when process env is unavailable', async () => {
         delete process.env.R2_PUBLIC_BASE_URL
-        runtimeGlobal.__env__ = { R2_PUBLIC_BASE_URL: `${publicBaseUrl}/` }
+        runtimeGlobal.__env__ = { STAGE: 'production', R2_PUBLIC_BASE_URL: `${publicBaseUrl}/` }
         arrange({
             rows: {
                 setupImages: [{ objectKey: 'setup/used.jpg' }],
@@ -276,7 +277,7 @@ describe('runCleanupJob', () => {
             if (key === 'setup/backup-failed.jpg') throw new Error('copy failed')
             return Promise.resolve()
         })
-        storage.delete.mockResolvedValue({ deleted: ['setup/backed-up.jpg'] })
+        storage.delete.mockResolvedValue({ results: ['setup/backed-up.jpg'] })
 
         const result = await runCleanupJob()
 
@@ -298,7 +299,7 @@ describe('runCleanupJob', () => {
             headers: { Authorization: 'Bearer test-token' },
             body: expect.objectContaining({
                 embeds: expect.arrayContaining([
-                    expect.objectContaining({ title: 'Avatio Data Cleanup [development]' }),
+                    expect.objectContaining({ title: 'Avatio Data Cleanup [production]' }),
                 ]),
             }),
         })
@@ -313,7 +314,7 @@ describe('runCleanupJob', () => {
         })
         storage.copy.mockResolvedValue(undefined)
         storage.delete.mockResolvedValue({
-            deleted: ['setup/deleted.jpg'],
+            results: ['setup/deleted.jpg'],
             errors: [{ key: 'setup/delete-failed.jpg', error: new Error('delete failed') }],
         })
 

@@ -15,6 +15,14 @@ const avatioStageConfigSchema = z.object({
     siteUrl: z.url(),
     imageBaseUrl: z.url(),
     emailFrom: z.email(),
+    emailSubjectPrefix: z.string(),
+    emailAllowedRecipients: z.array(z.email()).optional(),
+    features: z.object({
+        cleanup: z.boolean(),
+        discord: z.boolean(),
+        analytics: z.boolean(),
+        searchConsole: z.boolean(),
+    }),
     twitterClientId: z.string().min(1),
     trustedOrigins: z.url().array(),
     aiModels: aiTaskConfigSchema,
@@ -54,6 +62,8 @@ const stageConfig = {
     production: {
         ...common,
         production: true,
+        emailSubjectPrefix: '',
+        features: { cleanup: true, discord: true, analytics: true, searchConsole: true },
         siteUrl: 'https://avatio.me',
         imageBaseUrl: 'https://images.avatio.me',
         trustedOrigins: ['https://avatio.me'],
@@ -69,9 +79,12 @@ const stageConfig = {
     development: {
         ...common,
         production: false,
+        emailSubjectPrefix: '[development] ',
+        emailAllowedRecipients: ['hello@liria.me'],
+        features: { cleanup: false, discord: false, analytics: false, searchConsole: false },
         siteUrl: 'https://dev.avatio.me',
         imageBaseUrl: 'https://images-dev.avatio.me',
-        trustedOrigins: ['http://localhost:3000', 'http://127.0.0.1:3000', 'https://dev.avatio.me'],
+        trustedOrigins: ['https://dev.avatio.me'],
         content: { repo: 'liria24/avatio', branch: 'development', path: 'content' },
         infrastructure: {
             appDatabase: 'avatio-development',
@@ -92,3 +105,9 @@ export const parseAvatioStage = (value: string): AvatioStage => {
 
 export const getStageConfig = (stage: string): AvatioStageConfig =>
     avatioStageConfigSchema.parse(stageConfig[parseAvatioStage(stage)])
+
+export const getContentCachePrefix = (stage: AvatioStage) => {
+    const { repo, branch } = getStageConfig(stage).content
+    // Retain development's Preview-era keys when the same KV moves to a Worker.
+    return `authored-content:v1:${repo}:${branch}${stage === 'development' ? ':preview:development' : ''}`
+}
