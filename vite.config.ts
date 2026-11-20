@@ -332,10 +332,9 @@ export default defineConfig({
                                     group: [
                                         '**/server/utils/setups',
                                         '**/server/utils/setups/**',
-                                        '**/server/utils/admin',
-                                        '**/server/utils/admin/**',
                                         '../setups/**',
-                                        '../admin/**',
+                                        '**/layers/admin',
+                                        '**/layers/admin/**',
                                     ],
                                     message:
                                         'Catalog server modules must not depend on setups or admin modules.',
@@ -353,11 +352,7 @@ export default defineConfig({
                         {
                             patterns: [
                                 {
-                                    group: [
-                                        '**/server/utils/admin',
-                                        '**/server/utils/admin/**',
-                                        '../admin/**',
-                                    ],
+                                    group: ['**/layers/admin', '**/layers/admin/**'],
                                     message:
                                         'Setup server modules must not depend on admin modules.',
                                 },
@@ -375,10 +370,10 @@ export default defineConfig({
                             patterns: [
                                 {
                                     group: [
-                                        '**/server/utils/admin/**',
+                                        '**/layers/admin',
+                                        '**/layers/admin/**',
                                         '**/server/utils/catalog/**',
                                         '**/server/utils/setups/**',
-                                        '../admin/**',
                                         '../catalog/**',
                                         '../setups/**',
                                     ],
@@ -398,13 +393,46 @@ export default defineConfig({
                             patterns: [
                                 {
                                     group: [
-                                        './admin/**',
                                         './catalog/**',
                                         './setups/**',
-                                        '**/server/utils/admin/**',
+                                        '**/layers/admin',
+                                        '**/layers/admin/**',
                                     ],
                                     message:
                                         'Shared server primitives must not depend on feature modules.',
+                                },
+                            ],
+                        },
+                    ],
+                },
+            },
+            {
+                files: ['app/**/*.ts', 'app/**/*.vue'],
+                rules: {
+                    'no-restricted-imports': [
+                        'error',
+                        {
+                            patterns: [
+                                {
+                                    group: ['**/layers/admin', '**/layers/admin/**'],
+                                    message:
+                                        'Main app files must not directly import from layers/admin.',
+                                },
+                            ],
+                        },
+                    ],
+                },
+            },
+            {
+                files: ['server/**/*.ts'],
+                rules: {
+                    'no-restricted-imports': [
+                        'error',
+                        {
+                            patterns: [
+                                {
+                                    group: ['**/layers/admin', '**/layers/admin/**'],
+                                    message: 'Main server files must not import from layers/admin.',
                                 },
                             ],
                         },

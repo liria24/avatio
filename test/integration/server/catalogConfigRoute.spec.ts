@@ -69,7 +69,7 @@ it('stores provider admission rules atomically without touching manual item over
         database.sqlite.exec(
             "INSERT INTO catalog_items (id, category_override, category_override_origin) VALUES ('catalog', 'texture', 'manual')",
         )
-        const route = (await import('../../../server/api/admin/config/index.put'))
+        const route = (await import('../../../layers/admin/server/api/admin/config/index.put'))
             .default as unknown as (context: {
             db: AppDatabase
             event: H3Event
@@ -155,7 +155,7 @@ it('sets and clears one manual item category override', async () => {
     }).forEach(([key, value]) => vi.stubGlobal(key, value))
     try {
         database.sqlite.exec("INSERT INTO catalog_items (id) VALUES ('catalog')")
-        const route = (await import('../../../server/api/admin/items/[...id].patch'))
+        const route = (await import('../../../layers/admin/server/api/admin/items/[...id].patch'))
             .default as unknown as (context: {
             db: AppDatabase
             event: H3Event

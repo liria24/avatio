@@ -25,7 +25,7 @@ const request = (path: string, user?: FixtureUser, init: RequestInit = {}) => {
     for (const [key, value] of new Headers(init.headers)) headers.set(key, value)
     return fetch(`http://localhost:3000${path}`, { ...init, headers })
 }
-const endpoints = await Array.fromAsync(glob('server/api/admin/**/*.ts'), (file) => {
+const endpoints = await Array.fromAsync(glob('layers/admin/server/api/admin/**/*.ts'), (file) => {
     const match = file
         .replaceAll('\\', '/')
         .match(/server\/api\/(.+?)(?:\.(get|post|put|patch|delete))?\.ts$/)

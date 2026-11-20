@@ -11,6 +11,7 @@ export default defineConfig({
         'shared/utils/**/*.ts',
         'app/utils/**/*.ts',
         'server/utils/**/*.ts',
+        'layers/admin/server/utils/**/*.ts',
     ],
     exclude: [
         '**/*.d.ts',
@@ -21,7 +22,7 @@ export default defineConfig({
         'app/utils/uploadImage.ts',
         'server/utils/ai.ts',
         'server/utils/content.ts',
-        'server/utils/admin/createAuditLog.ts',
+        'server/utils/createAuditLog.ts',
         'server/utils/createNotification.ts',
         'server/utils/database.ts',
         'server/utils/email/local.ts',
@@ -31,7 +32,7 @@ export default defineConfig({
         'server/utils/runtimeEnv.ts',
     ],
     critical: [
-        'server/utils/admin/session.ts',
+        'layers/admin/server/utils/session.ts',
         'server/utils/eventHandler.ts',
         'server/utils/validateRequest.ts',
         'server/utils/sanitizeObject.ts',

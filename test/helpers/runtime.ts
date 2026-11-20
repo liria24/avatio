@@ -97,6 +97,7 @@ export const startTestRuntime = async () => {
         if (occupied) throw new Error('Test port 3000 is occupied; refusing to use an existing app')
         for (const path of [
             'app',
+            'layers',
             'server',
             'shared',
             'database',

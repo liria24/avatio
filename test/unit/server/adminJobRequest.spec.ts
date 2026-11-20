@@ -8,7 +8,7 @@ import {
 } from '@nuxt/nitro-server/h3'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { requireAdminJobRequest } from '../../../server/utils/admin/session'
+import { requireAdminJobRequest } from '../../../layers/admin/server/utils/session'
 import { assertSessionNotBanned } from '../../../server/utils/eventHandler'
 
 const requireUserSession = vi.fn()
@@ -62,8 +62,8 @@ const requestRoute = async (
     origin: string | null = siteUrl,
 ) => {
     const handler = (job === 'cleanup'
-        ? await import('../../../server/api/admin/job/cleanup')
-        : await import('../../../server/api/admin/job/report')
+        ? await import('../../../layers/admin/server/api/admin/job/cleanup')
+        : await import('../../../layers/admin/server/api/admin/job/report')
     ).default as unknown as (context: { event: H3Event }) => Promise<unknown>
     const app = createApp().use(eventHandler((event) => handler({ event })))
     return toWebHandler(app)(

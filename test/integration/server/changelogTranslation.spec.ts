@@ -42,7 +42,7 @@ afterEach(() => {
 })
 
 const createChangelog = async (db: AppDatabase) => {
-    const handler = (await import('../../../server/api/admin/changelogs/index.post'))
+    const handler = (await import('../../../layers/admin/server/api/admin/changelogs/index.post'))
         .default as unknown as (context: { db: AppDatabase; event: H3Event }) => Promise<unknown>
     return handler({ db, event: {} as H3Event })
 }
