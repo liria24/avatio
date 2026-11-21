@@ -1,0 +1,28 @@
+import { feedbacks, itemReports, catalogItems, setupReports, userReports } from '@@/database/schema'
+import { count, eq } from 'drizzle-orm'
+
+export default promiseEventHandler(async ({ db, event }) => {
+    await requireAdminSession(event)
+    const [
+        feedbackCountResult,
+        itemCountResult,
+        itemReportCountResult,
+        setupReportCountResult,
+        userReportCountResult,
+    ] = await Promise.all([
+        db.select({ count: count() }).from(feedbacks).where(eq(feedbacks.isClosed, false)),
+        db.select({ count: count() }).from(catalogItems),
+        db.select({ count: count() }).from(itemReports).where(eq(itemReports.isResolved, false)),
+        db.select({ count: count() }).from(setupReports).where(eq(setupReports.isResolved, false)),
+        db.select({ count: count() }).from(userReports).where(eq(userReports.isResolved, false)),
+    ])
+
+    return {
+        feedbackOpenCount: feedbackCountResult[0]?.count ?? 0,
+        itemCount: itemCountResult[0]?.count ?? 0,
+        reportOpenCount:
+            (itemReportCountResult[0]?.count ?? 0) +
+            (setupReportCountResult[0]?.count ?? 0) +
+            (userReportCountResult[0]?.count ?? 0),
+    }
+})

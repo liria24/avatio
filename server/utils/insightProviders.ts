@@ -1,6 +1,6 @@
 import { setups, users } from '@@/database/schema'
+import type { H3Event } from '@nuxt/nitro-server/h3'
 import { and, count, gte, isNull, lt, sql } from 'drizzle-orm'
-import type { H3Event } from 'h3'
 import { defineProvider } from 'insight-ts'
 import { googleSearchConsole } from 'insight-ts/google-search-console'
 import { defineMetricAdapter } from 'insight-ts/metrics'
@@ -169,12 +169,14 @@ export const googleSearchConsoleProvider = googleSearchConsole({
 
 export const isGoogleSearchConsoleConfigured = (event: H3Event) =>
     Boolean(
+        getRuntimeStageConfig(event).features.searchConsole &&
         getRuntimeEnvString('GOOGLE_SEARCH_CONSOLE_CLIENT_ID', event) &&
         getRuntimeEnvString('GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET', event) &&
         getRuntimeEnvString('GOOGLE_SEARCH_CONSOLE_REFRESH_TOKEN', event),
     )
 
 export const configureCloudflareInsight = (event: H3Event) => {
+    if (!getRuntimeStageConfig(event).features.analytics) return false
     const accountId = getRuntimeEnvString('CLOUDFLARE_ANALYTICS_ACCOUNT_ID', event) ?? ''
     const apiToken = getRuntimeEnvString('CLOUDFLARE_ANALYTICS_READ_TOKEN', event) ?? ''
     const host = getRuntimeEnvString('CLOUDFLARE_ANALYTICS_HOST', event) ?? ''

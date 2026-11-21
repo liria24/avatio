@@ -1,0 +1,56 @@
+import { join } from 'node:path'
+
+const buildEnvironmentKeys = [
+    'PATH',
+    'Path',
+    'PATHEXT',
+    'SystemRoot',
+    'SYSTEMROOT',
+    'WINDIR',
+    'windir',
+    'COMSPEC',
+    'ComSpec',
+    'TMPDIR',
+    'TMP',
+    'TEMP',
+    'LANG',
+    'LC_ALL',
+    'LC_CTYPE',
+    'TZ',
+    'CI',
+    'TERM',
+    'FORCE_COLOR',
+    'NO_COLOR',
+    'HTTP_PROXY',
+    'HTTPS_PROXY',
+    'ALL_PROXY',
+    'NO_PROXY',
+    'http_proxy',
+    'https_proxy',
+    'all_proxy',
+    'no_proxy',
+    'NODE_USE_ENV_PROXY',
+    'NODE_USE_SYSTEM_CA',
+    'NODE_EXTRA_CA_CERTS',
+    'SSL_CERT_FILE',
+    'SSL_CERT_DIR',
+] as const
+/** Standard-library-only environment for dependency installation and application children. */
+export const createCloudflareProcessEnvironment = (
+    environment: NodeJS.ProcessEnv,
+    home: string,
+): NodeJS.ProcessEnv => ({
+    ...Object.fromEntries(
+        buildEnvironmentKeys.flatMap((name) =>
+            environment[name] === undefined ? [] : [[name, environment[name]]],
+        ),
+    ),
+    HOME: home,
+    USERPROFILE: home,
+    XDG_CONFIG_HOME: join(home, 'config'),
+    XDG_CACHE_HOME: join(home, 'cache'),
+    XDG_DATA_HOME: join(home, 'data'),
+    XDG_STATE_HOME: join(home, 'state'),
+    APPDATA: join(home, 'AppData', 'Roaming'),
+    LOCALAPPDATA: join(home, 'AppData', 'Local'),
+})

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-const loadParser = async () => await import('../../../server/utils/emailInbound')
+const loadParser = async () => await import('../../../server/utils/email/inbound')
 
 const encodeEmail = (source: string): ArrayBuffer => {
     const bytes = new TextEncoder().encode(source)
@@ -106,9 +106,15 @@ Body`)
         expect(row.subject).toBe('こんにちは')
     })
 
-    it('stores attachment metadata without attachment content', async () => {
-        const { parseInboundEmail } = await loadParser()
-        const raw = encodeEmail(`From: sender@example.com
+    it.each([
+        ['attachment', 'attachment'],
+        ['inline', 'inline'],
+        ['x-custom', null],
+    ])(
+        'stores %s attachment metadata without attachment content',
+        async (disposition, expectedDisposition) => {
+            const { parseInboundEmail } = await loadParser()
+            const raw = encodeEmail(`From: sender@example.com
 To: hello@avatio.me
 Subject: Attachment
 Message-ID: <attachment-1@example.com>
@@ -120,31 +126,32 @@ Content-Type: text/plain; charset=utf-8
 
 See attached.
 --boundary
-Content-Type: text/plain; name="note.txt"
-Content-Disposition: attachment; filename="note.txt"
+Content-Type: application/octet-stream; name="note.txt"
+Content-Disposition: ${disposition}; filename="note.txt"
 Content-Transfer-Encoding: base64
 
 SGVsbG8=
 --boundary--`)
 
-        const row = await parseInboundEmail({
-            from: 'sender@example.com',
-            to: 'hello@avatio.me',
-            headers: new Headers(),
-            raw,
-            rawSize: raw.byteLength,
-        })
+            const row = await parseInboundEmail({
+                from: 'sender@example.com',
+                to: 'hello@avatio.me',
+                headers: new Headers(),
+                raw,
+                rawSize: raw.byteLength,
+            })
 
-        expect(row.attachments).toEqual([
-            {
-                filename: 'note.txt',
-                size: 5,
-                type: 'text/plain',
-                disposition: 'attachment',
-                contentId: undefined,
-            },
-        ])
-    })
+            expect(row.attachments).toEqual([
+                {
+                    filename: 'note.txt',
+                    size: 5,
+                    type: 'application/octet-stream',
+                    disposition: expectedDisposition,
+                    contentId: undefined,
+                },
+            ])
+        },
+    )
 
     it('builds a deterministic fallback message id for duplicate handling', async () => {
         const { parseInboundEmail } = await loadParser()

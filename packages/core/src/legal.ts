@@ -19,6 +19,7 @@ export interface LegalDocumentStatus extends LegalDocumentMetadata {
     active: boolean
     accepted: boolean
     legacyAccepted: boolean
+    agreement: 'initial' | 'updated' | null
 }
 
 export interface LegalStatus {
@@ -45,6 +46,12 @@ export const resolveLegalStatus = (
             active: now >= effectiveAt,
             accepted: accepted || legacyAccepted,
             legacyAccepted,
+            agreement:
+                now < effectiveAt || accepted || legacyAccepted
+                    ? null
+                    : recorded.length || legacyAcceptedAt
+                      ? 'updated'
+                      : 'initial',
         }
     })
     return {

@@ -1,5 +1,5 @@
 import type { PublisherSourceOwnership } from '../domain/publisher'
-import type { PublisherRepository } from '../ports/publisher-repository'
+import type { PublisherRepository } from '../ports'
 import type { PublisherVerificationProviderRegistry } from './provider-registry'
 
 const challengeLifetimeMs = 15 * 60 * 1000

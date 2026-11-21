@@ -1,7 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { createLocalStorage } from '../../../server/storage/local'
-
 interface StorageObject {
     key: string
     lastModified: number
@@ -59,7 +57,7 @@ const arrange = ({
         (name: string) => runtimeGlobal.__env__?.[name] ?? process.env[name],
     )
     vi.stubGlobal('useRuntimeConfig', () => ({ cloudflare: {} }))
-    vi.stubGlobal('storage', storage)
+    vi.stubGlobal('useServerFiles', () => storage)
     vi.stubGlobal('useDB', () => ({
         delete: vi.fn(() => ({
             where: vi.fn().mockResolvedValue(undefined),
@@ -85,7 +83,7 @@ const arrange = ({
 }
 
 const runCleanupJob = async (dryRun = false) => {
-    const module = await import('../../../server/utils/adminJobs')
+    const module = await import('../../../layers/admin/server/utils/jobs/cleanup')
     return await module.runCleanupJob({ dryRun })
 }
 
@@ -94,7 +92,8 @@ describe('runCleanupJob', () => {
         vi.useFakeTimers()
         vi.setSystemTime(new Date('2026-06-07T12:00:00.000Z'))
         process.env.R2_PUBLIC_BASE_URL = publicBaseUrl
-        process.env.STAGE = 'development'
+        process.env.STAGE = 'production'
+        runtimeGlobal.__env__ = { STAGE: 'production' }
         process.env.LIRIA_DISCORD_ENDPOINT = `${discordEndpoint}/`
         process.env.LIRIA_DISCORD_ACCESS_TOKEN = 'test-token'
         discordFetch.mockReset()
@@ -124,6 +123,24 @@ describe('runCleanupJob', () => {
         delete runtimeGlobal.__env__
     })
 
+    it('rejects destructive development Worker cleanup before reading or writing storage', async () => {
+        arrange({ setupObjects: [{ key: 'setup/old-orphan.jpg', lastModified: oldDate }] })
+        runtimeGlobal.__env__ = { STAGE: 'development' }
+        await expect(runCleanupJob()).rejects.toMatchObject({ statusCode: 403 })
+        expect(storage.listAll).not.toHaveBeenCalled()
+        expect(storage.copy).not.toHaveBeenCalled()
+        expect(storage.delete).not.toHaveBeenCalled()
+    })
+
+    it('allows only dry-run cleanup for the persistent development Worker', async () => {
+        arrange({ setupObjects: [{ key: 'setup/old-orphan.jpg', lastModified: oldDate }] })
+        runtimeGlobal.__env__ = { STAGE: 'development' }
+        expect((await runCleanupJob(true)).success).toBe(true)
+        expect(storage.delete).not.toHaveBeenCalled()
+        await expect(runCleanupJob()).rejects.toMatchObject({ statusCode: 403 })
+        expect(storage.copy).not.toHaveBeenCalled()
+        expect(storage.delete).not.toHaveBeenCalled()
+    })
     it('keeps referenced setup and avatar images and skips recent orphan images', async () => {
         arrange({
             rows: {
@@ -170,9 +187,9 @@ describe('runCleanupJob', () => {
     })
 
     it('keeps referenced local avatars using the active storage URL instead of the R2 origin', async () => {
-        const files = createLocalStorage('.data/uploads')
-        const image = await files.url('avatar/local-used.jpg')
-        storage.url.mockImplementation((key: string) => files.url(key))
+        const localBaseUrl = 'http://localhost:3000/api/_local/files'
+        const image = `${localBaseUrl}/avatar/local-used.jpg`
+        storage.url.mockImplementation(async (key: string) => `${localBaseUrl}/${key}`)
         arrange({
             rows: { users: [{ image }] },
             avatarObjects: [
@@ -209,7 +226,7 @@ describe('runCleanupJob', () => {
 
     it('uses R2 public base URL from runtime env when process env is unavailable', async () => {
         delete process.env.R2_PUBLIC_BASE_URL
-        runtimeGlobal.__env__ = { R2_PUBLIC_BASE_URL: `${publicBaseUrl}/` }
+        runtimeGlobal.__env__ = { STAGE: 'production', R2_PUBLIC_BASE_URL: `${publicBaseUrl}/` }
         arrange({
             rows: {
                 setupImages: [{ objectKey: 'setup/used.jpg' }],
@@ -260,11 +277,11 @@ describe('runCleanupJob', () => {
             if (key === 'setup/backup-failed.jpg') throw new Error('copy failed')
             return Promise.resolve()
         })
-        storage.delete.mockResolvedValue({ deleted: ['setup/backed-up.jpg'] })
+        storage.delete.mockResolvedValue({ results: ['setup/backed-up.jpg'] })
 
         const result = await runCleanupJob()
 
-        expect(storage.delete).toHaveBeenCalledWith(['setup/backed-up.jpg'], { concurrency: 8 })
+        expect(storage.delete).toHaveBeenCalledWith(['setup/backed-up.jpg'], expect.any(Object))
         expect(result.data).toMatchObject({
             candidates: ['setup/backed-up.jpg', 'setup/backup-failed.jpg'],
             backedUp: ['setup/backed-up.jpg'],
@@ -282,7 +299,7 @@ describe('runCleanupJob', () => {
             headers: { Authorization: 'Bearer test-token' },
             body: expect.objectContaining({
                 embeds: expect.arrayContaining([
-                    expect.objectContaining({ title: 'Avatio Data Cleanup [development]' }),
+                    expect.objectContaining({ title: 'Avatio Data Cleanup [production]' }),
                 ]),
             }),
         })
@@ -297,7 +314,7 @@ describe('runCleanupJob', () => {
         })
         storage.copy.mockResolvedValue(undefined)
         storage.delete.mockResolvedValue({
-            deleted: ['setup/deleted.jpg'],
+            results: ['setup/deleted.jpg'],
             errors: [{ key: 'setup/delete-failed.jpg', error: new Error('delete failed') }],
         })
 

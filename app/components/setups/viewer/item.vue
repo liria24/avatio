@@ -1,14 +1,17 @@
 <script lang="ts" setup>
+import { cn } from 'cn'
 import { withoutProtocol, withoutTrailingSlash } from 'ufo'
 
 interface Props {
     entry: SetupEntryView
     showNsfw?: boolean
+    pointCount?: number
 }
-const { entry, showNsfw = false } = defineProps<Props>()
+const { entry, showNsfw = false, pointCount = 0 } = defineProps<Props>()
 
 const emit = defineEmits<{
     'report-item': [itemId: string]
+    'show-points': []
 }>()
 
 const item = computed(() => entry.catalogItem)
@@ -30,7 +33,7 @@ const providerIcon = computed(() => getCatalogProviderData(source.value?.provide
         <UDropdownMenu
             :items="[
                 {
-                    to: $localePath(`/search?itemId=${item.id}`),
+                    to: $localePath({ path: `/search?itemId=${item.id}` }),
                     icon: 'mingcute:search-line',
                     label: $t('setup.viewer.searchByItem'),
                 },
@@ -116,12 +119,7 @@ const providerIcon = computed(() => getCatalogProviderData(source.value?.provide
             </NuxtLink>
 
             <div
-                :class="
-                    cn(
-                        'flex flex-wrap items-center gap-y-2',
-                        '[&>*:not(:first-child)]:before:bg-accented [&>*:not(:first-child)]:relative [&>*:not(:first-child)]:before:absolute [&>*:not(:first-child)]:before:top-1/2 [&>*:not(:first-child)]:before:left-0 [&>*:not(:first-child)]:before:h-3 [&>*:not(:first-child)]:before:w-px [&>*:not(:first-child)]:before:-translate-y-1/2 [&>*:not(:first-child)]:before:content-[\'\']',
-                    )
-                "
+                class="[&>*:not(:first-child)]:before:bg-accented flex flex-wrap items-center gap-y-2 [&>*:not(:first-child)]:relative [&>*:not(:first-child)]:before:absolute [&>*:not(:first-child)]:before:top-1/2 [&>*:not(:first-child)]:before:left-0 [&>*:not(:first-child)]:before:h-3 [&>*:not(:first-child)]:before:w-px [&>*:not(:first-child)]:before:-translate-y-1/2 [&>*:not(:first-child)]:before:content-['']"
             >
                 <UTooltip
                     v-if="publisher"
@@ -206,12 +204,7 @@ const providerIcon = computed(() => getCatalogProviderData(source.value?.provide
                     </span>
                 </div>
 
-                <LazyUAvatarGroup
-                    v-if="source?.contributors?.length"
-                    :max="3"
-                    size="2xs"
-                    class="px-2"
-                >
+                <UAvatarGroup v-if="source?.contributors?.length" :max="3" size="2xs" class="px-2">
                     <UTooltip
                         v-for="contributor in source?.contributors"
                         :key="encodeURIComponent(contributor.name)"
@@ -224,7 +217,7 @@ const providerIcon = computed(() => getCatalogProviderData(source.value?.provide
                             icon="mingcute:user-3-fill"
                         />
                     </UTooltip>
-                </LazyUAvatarGroup>
+                </UAvatarGroup>
 
                 <LazyUBadge
                     v-if="item.nsfw"
@@ -250,6 +243,17 @@ const providerIcon = computed(() => getCatalogProviderData(source.value?.provide
                     {{ entry.note }}
                 </p>
             </div>
+
+            <UTooltip v-if="pointCount" :text="$t('setup.viewer.showItemPoints')">
+                <UButton
+                    icon="mingcute:map-pin-fill"
+                    :label="String(pointCount)"
+                    variant="soft"
+                    size="sm"
+                    class="rounded-lg p-2"
+                    @click="emit('show-points')"
+                />
+            </UTooltip>
 
             <UTooltip
                 v-if="entry.unsupported"

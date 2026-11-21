@@ -1,165 +1,207 @@
 <script setup lang="ts">
-const emit = defineEmits<{
-    select: [item: CatalogItemView]
-}>()
+import type { CatalogItemSearchSession } from '~/composables/catalogItemSearch'
 
-const props = defineProps<{
-    loading?: boolean
-}>()
-
-const searchTerm = ref('')
-const loadingRef = ref(false)
-const { t } = useI18n()
-
-const itemCategory = useItemCategory()
-const toast = useToast()
-
-const { data, status } = useFetch('/api/items', {
-    query: {
-        limit: 1000,
-    },
-    dedupe: 'defer',
-    transform: (data) => {
-        return itemCategorySchema.options.map((category) => ({
-            id: category,
-            label: itemCategory[category].label,
-            items: data.data
-                .filter((item) => item.category === category)
-                .map((item) => ({
-                    id: item.id,
-                    label: item.name,
-                    publisher: item.primarySource?.publisher?.name,
-                    image: item.image,
-                    slot: 'item' as const,
-                })),
-        }))
-    },
-    getCachedData: (key, nuxtApp, ctx) =>
-        ctx.cause === 'refresh:manual'
-            ? undefined
-            : nuxtApp.payload.data[key] || nuxtApp.static.data[key],
-})
-
-const groups = computed(() => {
-    try {
-        new URL(searchTerm.value)
-
-        if (searchTerm.value.length) {
-            return [
-                {
-                    id: 'search',
-                    label: t('commandPalette.itemSearch.addFromUrl'),
-                    items: [
-                        {
-                            id: 'url',
-                            label: searchTerm.value,
-                            slot: 'url',
-                            onSelect: () => onSelected(searchTerm.value, true),
-                        },
-                    ],
-                },
-                ...(data.value?.map((category) => ({
-                    ...category,
-                    items: category.items.map((item) => ({
-                        ...item,
-                        onSelect: () => onSelected(item.id),
-                    })),
-                })) || []),
-            ]
-        }
-        return (
-            data.value?.map((category) => ({
-                ...category,
-                items: category.items.map((item) => ({
-                    ...item,
-                    onSelect: () => onSelected(item.id),
-                })),
-            })) || []
-        )
-    } catch {
-        return (
-            data.value?.map((category) => ({
-                ...category,
-                items: category.items.map((item) => ({
-                    ...item,
-                    onSelect: () => onSelected(item.id),
-                })),
-            })) || []
-        )
-    }
-})
-
-const loadingComputed = computed(
-    () => props.loading || loadingRef.value || status.value === 'pending',
+const emit = defineEmits<{ select: [item: CatalogItemView] }>()
+const props = withDefaults(
+    defineProps<{
+        loading?: boolean
+        allowResolve?: boolean
+        endpoint?: string
+        session?: CatalogItemSearchSession
+    }>(),
+    { allowResolve: true, endpoint: '/api/items' },
 )
-
-const onSelected = async (id: string, resolve = false) => {
-    loadingRef.value = true
-
-    try {
-        const response = resolve
-            ? await $fetch<CatalogItemView>('/api/items/resolve', {
-                  method: 'POST',
-                  body: { reference: id },
-              })
-            : await $fetch<CatalogItemView>(`/api/items/${encodeURIComponent(id)}`)
-        emit('select', response)
-        searchTerm.value = ''
-    } catch (error) {
-        console.error('Failed to fetch item:', error)
-        toast.add({
-            title: t('commandPalette.itemSearch.fetchError'),
-            description: t('commandPalette.itemSearch.fetchErrorDescription'),
-            color: 'error',
-        })
-        return
-    } finally {
-        loadingRef.value = false
-    }
+const searchTerm = defineModel<string>('searchTerm', { default: '' })
+const session =
+    props.session ??
+    useCatalogItemSearch((item) => emit('select', item), {
+        searchTerm,
+        endpoint: () => props.endpoint,
+    })
+const { results, pending, failedPage, composing, jobs, urls, tooManyUrls, selectedIds, atLimit } =
+    session
+const inputTerm = session.searchTerm
+const open = ref(false)
+const menu = ref<{ inputRef?: HTMLInputElement; viewportRef?: HTMLElement }>()
+const { t } = useI18n()
+const focusInput = () => nextTick(() => menu.value?.inputRef?.focus())
+const finishSelection = () => {
+    open.value = false
+    if (props.session) void focusInput()
+}
+const selectItem = (item: CatalogItemView) => {
+    if (composing.value || session.selectItem(item) !== 'added') return
+    inputTerm.value = ''
+    finishSelection()
+}
+const rows = computed(() => [
+    ...(props.allowResolve && urls.value.some((url) => !jobs.value.some((job) => job.url === url))
+        ? [
+              {
+                  id: 'resolve-urls',
+                  label: t('commandPalette.itemSearch.addUrls', { count: urls.value.length }),
+                  icon: 'mingcute:link-fill',
+                  disabled: atLimit.value,
+                  item: undefined,
+                  onSelect: (event: Event) => {
+                      event.preventDefault()
+                      if (!composing.value) {
+                          session.resolveUrls()
+                          finishSelection()
+                      }
+                  },
+              },
+          ]
+        : []),
+    ...results.value.map((item) => ({
+        id: item.id,
+        label: item.name,
+        description: item.primarySource?.publisher?.name,
+        disabled: selectedIds.value.includes(item.id) || atLimit.value,
+        item,
+        onSelect: (event: Event) => {
+            event.preventDefault()
+            selectItem(item)
+        },
+    })),
+])
+watch(open, (value) => {
+    if (value) session.activate()
+})
+useInfiniteScroll(
+    computed(() => menu.value?.viewportRef),
+    () => session.fetchResults((session.pagination.value?.page ?? 0) + 1),
+    {
+        distance: 120,
+        canLoadMore: () =>
+            open.value &&
+            !pending.value &&
+            !failedPage.value &&
+            !!session.pagination.value?.hasNext,
+    },
+)
+const onKeydown = (event: KeyboardEvent) => {
+    if (event.key !== 'Enter') return
+    // Reka handles the selected option before this bubbles; keep Enter out of the parent form.
+    event.preventDefault()
+    if (event.isComposing || composing.value) event.stopPropagation()
+}
+const onComposition = (value: boolean) => {
+    composing.value = value
+    session.queueSearch()
 }
 </script>
 
 <template>
-    <UCommandPalette
-        v-model:search-term="searchTerm"
-        virtualize
-        :loading="loadingComputed"
-        :placeholder="$t('commandPalette.itemSearch.placeholder')"
-        :groups="groups"
-        :ui="{
-            root: 'min-w-72 md:min-w-96',
-            input: '[&>input]:text-sm',
-        }"
-        class="max-h-80"
-    >
-        <template #item="{ item }">
-            <NuxtImg
-                v-slot="{ isLoaded, src, imgAttrs }"
-                :src="item.image"
-                :width="24"
-                :height="24"
-                format="avif"
-                custom
-            >
-                <img
-                    v-if="isLoaded"
-                    v-bind="imgAttrs"
-                    :src
-                    :alt="item.label"
-                    loading="lazy"
-                    fetchpriority="low"
-                    class="aspect-square size-6 shrink-0 rounded-md object-cover"
+    <div class="flex min-w-0 flex-col gap-2" @keydown="onKeydown">
+        <UInputMenu
+            ref="menu"
+            v-model="inputTerm"
+            v-model:open="open"
+            mode="autocomplete"
+            :items="rows"
+            value-key="id"
+            ignore-filter
+            :reset-search-term-on-blur="false"
+            :reset-search-term-on-select="false"
+            open-on-click
+            :virtualize="{ estimateSize: 56, overscan: 8 }"
+            :loading="props.loading || pending"
+            icon="mingcute:package-2-fill"
+            :placeholder="$t('commandPalette.itemSearch.placeholder')"
+            :aria-label="$t('commandPalette.itemSearch.placeholder')"
+            variant="soft"
+            size="lg"
+            autocomplete="off"
+            class="w-full"
+            :ui="{
+                content: 'max-w-[calc(100vw-2rem)]',
+                viewport: 'max-h-72',
+                item: 'min-h-14',
+                itemLabel: 'text-toned',
+                itemDescription: 'text-toned',
+                empty: 'text-toned',
+            }"
+            @compositionstart="onComposition(true)"
+            @compositionend="onComposition(false)"
+        >
+            <template #item-leading="{ item: row }">
+                <UAvatar
+                    v-if="row.item"
+                    :src="row.item.image || undefined"
+                    :alt="row.item.name"
+                    icon="mingcute:package-2-fill"
+                    size="lg"
+                    class="rounded-md"
                 />
-                <USkeleton v-else class="aspect-square size-6 shrink-0 rounded-md" />
-            </NuxtImg>
-            <div class="flex w-full cursor-pointer items-center gap-2">
-                <span class="text-toned line-clamp-1 grow text-left text-xs">
-                    {{ item.label }}
+                <Icon v-else name="mingcute:link-fill" size="20" />
+            </template>
+            <template #item-trailing="{ item: row }">
+                <span v-if="selectedIds.includes(row.id)" class="text-toned text-xs">
+                    {{ $t('commandPalette.itemSearch.alreadyAdded') }}
                 </span>
-                <span class="text-muted line-clamp-1 text-xs leading-none break-all">
-                    {{ item.publisher }}
+            </template>
+            <template #empty>
+                <span role="option" aria-disabled="true">
+                    {{
+                        pending
+                            ? $t('commandPalette.itemSearch.searching')
+                            : failedPage
+                              ? $t('commandPalette.itemSearch.searchFailed')
+                              : $t('commandPalette.itemSearch.noResults')
+                    }}
                 </span>
+            </template>
+            <template v-if="failedPage" #content-bottom>
+                <UButton
+                    :label="$t('content.retry')"
+                    icon="mingcute:refresh-2-fill"
+                    variant="soft"
+                    color="error"
+                    block
+                    class="m-2 w-[calc(100%-1rem)]"
+                    @click="session.fetchResults(failedPage)"
+                />
+            </template>
+        </UInputMenu>
+        <UAlert
+            v-if="atLimit || tooManyUrls"
+            color="warning"
+            variant="soft"
+            :title="$t('commandPalette.itemSearch.' + (atLimit ? 'itemLimit' : 'urlLimit'))"
+        />
+        <div
+            v-if="jobs.length"
+            class="flex max-h-40 flex-col gap-1 overflow-y-auto"
+            aria-live="polite"
+        >
+            <div v-for="job in jobs" :key="job.id" class="flex min-w-0 items-center gap-2 text-xs">
+                <Icon
+                    :name="
+                        job.status === 'resolving'
+                            ? 'svg-spinners:ring-resize'
+                            : job.status === 'queued'
+                              ? 'mingcute:time-fill'
+                              : job.status === 'failed'
+                                ? 'mingcute:warning-fill'
+                                : 'mingcute:check-fill'
+                    "
+                    size="16"
+                    class="shrink-0"
+                />
+                <span class="text-toned min-w-0 grow truncate" :title="job.url">{{ job.url }}</span>
+                <span class="text-toned shrink-0">{{
+                    $t('commandPalette.itemSearch.' + (job.error ?? job.status))
+                }}</span>
+                <UButton
+                    v-if="job.status === 'failed'"
+                    :label="$t('content.retry')"
+                    variant="ghost"
+                    size="xs"
+                    :disabled="atLimit"
+                    @click="session.retryJob(job.id)"
+                />
             </div>
-        </template>
-    </UCommandPalette>
+        </div>
+    </div>
 </template>

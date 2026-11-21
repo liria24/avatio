@@ -12,7 +12,7 @@ const { deleteSetup: deleteSetupAction } = useDeleteSetup(setupId)
 const deleteSetup = async () => {
     await deleteSetupAction()
     emit('close')
-    navigateTo(localePath('/'))
+    navigateTo(localePath({ path: '/' }))
 }
 </script>
 

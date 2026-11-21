@@ -92,8 +92,11 @@ export class SetupDraftWriter {
                 this.#retryCount = 0
                 this.#emit(
                     result
-                        ? { revision: result.revision, status: 'saved' }
-                        : { revision: 0, status: 'new' },
+                        ? {
+                              revision: result.revision,
+                              status: this.#pending ? 'unsaved' : 'saved',
+                          }
+                        : { revision: 0, status: this.#pending ? 'unsaved' : 'new' },
                 )
             } catch (error) {
                 if (save.generation !== this.#generation) continue
@@ -136,6 +139,13 @@ export class SetupDraftWriter {
         await this.#running
         this.#retryCount = 0
         this.#emit({ id, revision, status })
+    }
+
+    cancel() {
+        this.#generation += 1
+        this.#pending = null
+        if (this.#retryTimer) clearTimeout(this.#retryTimer)
+        this.#retryTimer = null
     }
 
     async discard() {

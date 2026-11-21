@@ -1,4 +1,5 @@
 import { setupDraftContentSchema } from '@avatio/core/setups'
+import { EmptyFilter } from 'drizzle-orm/relations'
 import { z } from 'zod'
 
 const querySchema = z.object({ setupId: z.string().optional() })
@@ -9,7 +10,7 @@ export default authedSessionEventHandler<SetupDraftSummary[]>(
         const drafts = await db.query.setupDrafts.findMany({
             where: {
                 userId: { eq: session.user.id },
-                setupId: setupId ? { eq: setupId } : undefined,
+                setupId: setupId ? { eq: setupId } : EmptyFilter,
             },
             columns: {
                 id: true,

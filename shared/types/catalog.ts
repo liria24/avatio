@@ -1,7 +1,7 @@
 import { itemCategorySchema } from '@avatio/core/catalog'
 import { z } from 'zod'
 
-export const catalogSourcePublicSchema = z.object({
+const catalogSourcePublicSchema = z.object({
     id: z.string(),
     providerKey: z.string(),
     externalId: z.string(),
@@ -27,7 +27,7 @@ export const catalogSourcePublicSchema = z.object({
 })
 export type CatalogSourceView = z.infer<typeof catalogSourcePublicSchema>
 
-export const catalogItemPublicSchema = z.object({
+const catalogItemPublicSchema = z.object({
     id: z.string(),
     createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime(),
@@ -40,8 +40,13 @@ export const catalogItemPublicSchema = z.object({
 })
 export type CatalogItemView = z.infer<typeof catalogItemPublicSchema>
 
+export type AdminCatalogItemView = CatalogItemView & {
+    manualCategoryOverride: z.infer<typeof itemCategorySchema> | null
+}
+
 export const setupEntryPublicSchema = z.object({
     id: z.string(),
+    position: z.number().int().min(0),
     catalogItem: catalogItemPublicSchema,
     category: itemCategorySchema,
     categoryOverride: itemCategorySchema.nullable(),

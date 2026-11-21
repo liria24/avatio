@@ -17,6 +17,28 @@
     "report": "Report",
     "unknownAvatar": "Unknown Base Avatar",
     "jsWarning": "This website uses JavaScript. It may not display correctly if JavaScript is disabled.",
+    "imageViewer": {
+        "title": "Image viewer",
+        "open": "View {name}, image {index}"
+    },
+    "reorder": {
+        "label": "Reorder {name}",
+        "up": "Move up",
+        "down": "Move down",
+        "position": "{name} moved to position {position} of {count}."
+    },
+    "dynamicFields": {
+        "remove": "Remove {name}",
+        "removed": "Removed {name}.",
+        "added": "Added {name}.",
+        "noteFor": "Note for {name}",
+        "shapekeysFor": "Shapekeys for {name}",
+        "shapekeyName": "Shapekey name",
+        "shapekeyValue": "Shapekey value",
+        "addShapekey": "Add shapekey",
+        "shapekeyInvalid": "Enter a name of 1–64 characters and a numeric value.",
+        "shapekeyLimit": "You can add up to 64 shapekeys."
+    },
     "shareButton": {
         "copyLink": "Copy Link",
         "copied": "Copied",
@@ -54,6 +76,7 @@
             "settings": "Settings",
             "feedback": "Feedback",
             "switchAccount": "Switch Account",
+            "switchAccountFailed": "Failed to switch accounts",
             "newAccount": "New Account",
             "logout": "Logout"
         }
@@ -72,6 +95,7 @@
                 "bio": "Bio",
                 "links": "Links",
                 "addLink": "Add Link",
+                "editLink": "Edit Link",
                 "removeLink": "Remove Link",
                 "avatarAlt": "Your avatar image"
             },
@@ -188,10 +212,6 @@
             "otherRequiresComment": "Please enter details when selecting Other"
         }
     },
-    "welcome": {
-        "title": "Welcome!",
-        "changeUsername": "Change User ID"
-    },
     "index": {
         "hero": {
             "title": "Share Your Avatar Setups",
@@ -229,6 +249,22 @@
         "itemSearch": {
             "placeholder": "Search items / Enter URL",
             "addFromUrl": "Add from URL",
+            "addUrls": "Add {count} URL | Add {count} URLs",
+            "urlProgress": "URL imports",
+            "results": "Catalog",
+            "loadMore": "Load more",
+            "noResults": "No matching items",
+            "alreadyAdded": "Already added",
+            "searching": "Searching…",
+            "searchFailed": "Search failed",
+            "itemLimit": "A Setup can contain up to 32 items. Remove an item before adding another.",
+            "urlLimit": "Add up to 32 URLs at a time.",
+            "queued": "Queued",
+            "resolving": "Fetching",
+            "added": "Added",
+            "duplicate": "Already added",
+            "resolveFailed": "Fetch failed",
+            "addFailed": "Unable to add",
             "invalidUrl": "Invalid URL",
             "invalidUrlDescription": "Please enter a valid item URL.",
             "fetchError": "Failed to fetch item",
@@ -269,7 +305,9 @@
                 "unsaved": "Unsaved changes",
                 "saving": "Saving...",
                 "saved": "Saved",
-                "error": "Failed to save"
+                "error": "Failed to save",
+                "offline": "Offline — saves after reconnecting",
+                "conflict": "Conflicts with another edit"
             },
             "draftAlert": {
                 "errorNotSaved": "Draft not saved due to an error!",
@@ -284,12 +322,44 @@
                 "shapekeyPlaceholder": "Shape key name",
                 "notePlaceholder": "Add note",
                 "empty": "No items registered",
+                "emptyPrompt": "List the items used in this setup",
+                "supportedPlatforms": "Supported platforms: BOOTH, GitHub",
                 "noShapekeys": "No shapekeys"
             },
             "images": {
+                "title": "Images",
                 "add": "Add Image",
                 "dropAdd": "Drop to Add",
-                "uploading": "Uploading image..."
+                "uploading": "Uploading image...",
+                "cover": "Cover",
+                "preview": "Setup image",
+                "remove": "Remove image",
+                "retry": "Retry"
+            },
+            "points": {
+                "title": "Item Points",
+                "description": "Click the image, then choose an item to place at that position.",
+                "selectItem": "Choose an item to place",
+                "move": "Move",
+                "remove": "Remove",
+                "clickToMove": "Click the new position on the image",
+                "placeItem": "Place on image",
+                "add": "Add point",
+                "undo": "Undo",
+                "redo": "Redo",
+                "done": "Done",
+                "changeItem": "Change item",
+                "help": "Drag a point to move it. With a keyboard, choose Add point and use the arrow keys to adjust its position. Hold Shift to move farther. Completed changes are saved to your draft automatically.",
+                "placedCount": "Placed: {count}",
+                "count": "Entire Setup: {count} / {max} points",
+                "clickToPlace": "Click or tap the image to place “{name}”",
+                "noItems": "Add an item to the Setup first.",
+                "limit": "A Setup can contain up to 128 points across all images.",
+                "imageFailed": "The image could not be loaded. Close the editor and open it again."
+            },
+            "mobile": {
+                "details": "Post info & images",
+                "items": "Items"
             },
             "tags": {
                 "title": "Tags",
@@ -324,10 +394,14 @@
             "coauthorDuplicate": "Cannot add duplicate co-authors",
             "itemAlreadyAdded": "Item already added",
             "draftRestored": "Found and restored draft in progress",
+            "switchAccountFailed": "Failed to switch the posting account",
             "limitedPublic": "Limited Access",
             "limitedPublicDescription": "Only people with the URL can view this setup."
         },
         "viewer": {
+            "expandPoints": "Expand item points",
+            "collapsePoints": "Collapse item points",
+            "showItemPoints": "Show this item on the image",
             "show": "Show Setup",
             "hide": "Hide Setup",
             "hiddenNotice": "This setup is currently hidden",
@@ -382,14 +456,30 @@
             "title": "Welcome to Avatio",
             "description": "Log in to post your setup",
             "loginWith": "Login with {provider}",
-            "agreement": "By logging in, you agree to the following:",
+            "agreement": "By logging in or creating an account, you agree to:",
             "firstTimeNotice": "A new account will be automatically created for first-time users.",
+            "local": {
+                "name": "Display name",
+                "login": "Log in with email",
+                "register": "Create local account",
+                "switchToLogin": "Log in to an existing account",
+                "switchToRegister": "Create a new local account"
+            },
             "footer": {
                 "terms": "Terms of Service",
                 "privacy": "Privacy Policy"
             }
         },
         "agreeTerms": {
+            "initial": {
+                "title": "Review before continuing",
+                "intro": "You need to agree to Avatio's policies before continuing.",
+                "description": "Please review any Terms of Service or Privacy Policy documents you have not previously accepted."
+            },
+            "mixed": {
+                "title": "Policy review required",
+                "description": "Some documents are new to you and others have been updated. Please review them below."
+            },
             "title": {
                 "terms": "Terms of Service Updated",
                 "privacy": "Privacy Policy Updated",
@@ -617,7 +707,50 @@
             "cleanup": "Cleanup"
         },
         "reports": {
+            "title": "Reports",
+            "tabs": {
+                "user": "Users",
+                "setup": "Setups",
+                "item": "Items"
+            },
+            "status": {
+                "label": "Status",
+                "all": "All",
+                "open": "Open",
+                "closed": "Closed"
+            },
+            "sort": {
+                "label": "Sort",
+                "newest": "Newest first",
+                "oldest": "Oldest first"
+            },
+            "actions": {
+                "label": "Actions",
+                "refresh": "Refresh",
+                "retry": "Retry",
+                "resolve": "Mark as resolved",
+                "reopen": "Mark as unresolved",
+                "viewUser": "View user",
+                "banUser": "Ban user",
+                "unbanUser": "Unban user",
+                "viewSetup": "View setup",
+                "hideSetup": "Hide setup",
+                "unhideSetup": "Unhide setup",
+                "viewSource": "View source",
+                "changeItemName": "Change item name"
+            },
+            "loading": "Loading reports",
+            "empty": {
+                "title": "No matching reports",
+                "description": "Try another report type or status."
+            },
+            "error": {
+                "title": "Could not load reports",
+                "description": "Please wait a moment and try again."
+            },
+            "pagination": "{start}–{end} of {total}",
             "user": {
+                "banned": "Banned",
                 "reasons": {
                     "spam": "Spam",
                     "malicious": "Malicious User",
@@ -627,6 +760,7 @@
                 }
             },
             "setup": {
+                "hidden": "Hidden",
                 "reasons": {
                     "spam": "Spam, Personal Info, Inappropriate Content",
                     "hate": "Discrimination, Violence, Defamation",

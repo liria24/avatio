@@ -15,7 +15,13 @@ export const createTestD1 = () => {
     sqlite.exec('PRAGMA foreign_keys = ON')
     sqlite.exec(migrations)
     const prepare = (query: string, parameters: SQLInputValue[] = []) => ({
-        bind: (...values: SQLInputValue[]) => prepare(query, values),
+        bind: (...values: SQLInputValue[]) => {
+            if (values.length > 100)
+                throw new Error(
+                    `D1 supports at most 100 bound parameters; received ${values.length}`,
+                )
+            return prepare(query, values)
+        },
         async all() {
             const results = sqlite.prepare(query).all(...parameters)
             return {

@@ -6,7 +6,7 @@ const bodySchema = setupsUpdateSchema
 export default authedSessionEventHandler(
     async ({ event, session, db }) => {
         const { id } = await validateParams(paramsSchema)
-        const input = await validateBody(bodySchema, { sanitize: true })
+        const input = await validateBody(bodySchema)
         return updateSetup(
             { event, db, user: { id: session.user.id, role: session.user.role } },
             id,

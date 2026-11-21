@@ -1,0 +1,76 @@
+<script lang="ts" setup>
+interface Props {
+    userId: string
+    username: string
+    name: string
+    image?: string | null
+    onSuccess?: () => void
+}
+const props = defineProps<Props>()
+
+const emit = defineEmits(['close'])
+
+const { banUserWithReason } = useAdmin()
+
+const banReasonInput = ref('')
+const banExpiresInInput = ref(0)
+
+const banUser = async () => {
+    await banUserWithReason({
+        userId: props.userId,
+        banReason: banReasonInput.value,
+        banExpiresIn: banExpiresInInput.value || undefined,
+        onSuccess: () => {
+            props.onSuccess?.()
+            emit('close')
+            banReasonInput.value = ''
+            banExpiresInInput.value = 0
+        },
+    })
+}
+</script>
+
+<template>
+    <UModal :title="$t('admin.modal.banUser.title')">
+        <template #body>
+            <div class="flex flex-col gap-4">
+                <UUser
+                    :name="props.name"
+                    :description="`@${props.username}`"
+                    :avatar="{
+                        src: props.image || undefined,
+                        icon: 'mingcute:user-3-fill',
+                    }"
+                />
+
+                <UFormField :label="$t('admin.modal.banUser.reason')">
+                    <UTextarea
+                        v-model="banReasonInput"
+                        :placeholder="$t('admin.modal.banUser.reasonPlaceholder')"
+                        autoresize
+                        class="w-full"
+                    />
+                </UFormField>
+                <UFormField :label="$t('admin.modal.banUser.duration')">
+                    <UInputNumber
+                        v-model="banExpiresInInput"
+                        :placeholder="$t('admin.modal.banUser.durationPlaceholder')"
+                        class="w-full"
+                    />
+                </UFormField>
+            </div>
+        </template>
+
+        <template #footer>
+            <div class="flex w-full justify-end">
+                <UButton
+                    loading-auto
+                    :label="$t('admin.modal.banUser.button')"
+                    color="error"
+                    variant="subtle"
+                    @click="banUser()"
+                />
+            </div>
+        </template>
+    </UModal>
+</template>

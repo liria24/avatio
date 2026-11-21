@@ -1,6 +1,4 @@
-import { defineConfig } from 'oxfmt'
-
-export default defineConfig({
+export default {
     tabWidth: 4,
     semi: false,
     singleQuote: true,
@@ -12,4 +10,4 @@ export default defineConfig({
     sortPackageJson: {},
     ignorePatterns: [],
     overrides: [{ files: ['**/*.yml', '**/*.yaml', '**/*.md'], options: { tabWidth: 2 } }],
-})
+}
