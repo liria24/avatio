@@ -3,6 +3,8 @@ const bodySchema = setupsInsertSchema
 export default authedSessionEventHandler(
     async ({ event, session, db }) => {
         const input = await validateBody(bodySchema)
+        const includeItemPoints = await canUseSetupItemPoints(event, session.user)
+        if (!includeItemPoints && input.points.length) throw serverError.forbidden()
         await enforceRateLimit({
             binding: 'RATE_LIMIT_USER_ACTION',
             key: `setups:${session.user.id}`,
@@ -19,16 +21,18 @@ export default authedSessionEventHandler(
         })
         if (idempotency.replay) {
             if (!idempotency.resourceId) throw serverError.internalServerError()
-            const projection = await querySetupProjection(db, idempotency.resourceId, {
-                userId: session.user.id,
-                role: session.user.role,
-            })
+            const projection = await querySetupProjection(
+                db,
+                idempotency.resourceId,
+                { userId: session.user.id, role: session.user.role },
+                includeItemPoints,
+            )
             if (!projection) throw serverError.internalServerError()
             return projection.setup
         }
 
         return createSetup(
-            { event, db, user: { id: session.user.id, role: session.user.role } },
+            { event, db, user: session.user, includeItemPoints },
             input,
             idempotency.resourceId ?? generatedSetupId,
             idempotency,

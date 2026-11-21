@@ -1,9 +1,12 @@
 import { setupDraftContentSchema, type SetupDraftContent } from '@avatio/core/setups'
-import { getCurrentScope, onScopeDispose } from 'vue'
+import { getCurrentScope, onScopeDispose, type Ref } from 'vue'
 
 const debounceMs = 2000
 
-export const useSetupDraftController = (onDraftId: (id: string | null) => void) => {
+export const useSetupDraftController = (
+    onDraftId: (id: string | null) => void,
+    canUseItemPoints?: Readonly<Ref<boolean>>,
+) => {
     const { user } = useUserSession()
     let ownerId = user.value?.id
     const requestFetch = useRequestFetch()
@@ -23,25 +26,54 @@ export const useSetupDraftController = (onDraftId: (id: string | null) => void) 
     const transport: SetupDraftTransport = {
         async put({ id, ...body }) {
             const owner = requireOwner()
+            const includeItemPoints = canUseItemPoints?.value ?? true
+            const { points: _points, ...content } = body.content
             const result = await requestFetch<{ revision: number } | null>(
                 `/api/setup-drafts/${id}`,
                 {
                     method: 'PUT',
-                    body,
+                    body: { ...body, content: includeItemPoints ? body.content : content },
                 },
             )
-            await acknowledgeSetupDraftRecovery(owner, id, result?.revision ?? 0, body).catch(
-                () => null,
-            )
+            await acknowledgeSetupDraftRecovery(owner, id, result?.revision ?? 0, {
+                ...body,
+                content: includeItemPoints ? body.content : { ...body.content, points: [] },
+            }).catch(() => null)
             return result
         },
-        async delete(id) {
-            requireOwner()
+        async delete(id, publishedSetupId) {
+            const owner = requireOwner()
+            const local =
+                publishedSetupId && canUseItemPoints?.value === false
+                    ? await loadRecovery(id)
+                    : null
             try {
-                await requestFetch(`/api/setup-drafts/${id}`, { method: 'DELETE' })
+                const result = await requestFetch<{ retainedRevision?: number }>(
+                    `/api/setup-drafts/${id}`,
+                    {
+                        method: 'DELETE',
+                        query: publishedSetupId
+                            ? {
+                                  published: publishedSetupId,
+                                  preservePoints: local?.content.points.length ? 'true' : undefined,
+                              }
+                            : undefined,
+                    },
+                )
+                if (result?.retainedRevision !== undefined) {
+                    const recovery = local ?? (await loadRecovery(id))
+                    if (recovery)
+                        await saveSetupDraftRecovery({
+                            ...recovery,
+                            setupId: publishedSetupId ?? null,
+                            revision: result.retainedRevision,
+                        }).catch(() => null)
+                    return
+                }
             } catch (error) {
                 if ((error as { statusCode?: number }).statusCode !== 404) throw error
             }
+            await deleteSetupDraftRecovery(owner, id).catch(() => null)
         },
         isConflict: (error) =>
             user.value?.id !== ownerId || (error as { statusCode?: number }).statusCode === 409,
@@ -98,13 +130,11 @@ export const useSetupDraftController = (onDraftId: (id: string | null) => void) 
         await writer.switchSession(id, revision)
     }
 
-    const discard = async () => {
+    const discard = async (publishedSetupId?: string) => {
         if (debounceTimer) clearTimeout(debounceTimer)
         debounceTimer = null
         latest = null
-        const id = state.id
-        await writer.discard()
-        await deleteSetupDraftRecovery(requireOwner(), id).catch(() => null)
+        await writer.discard(publishedSetupId)
     }
 
     if (getCurrentScope())

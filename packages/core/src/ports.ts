@@ -13,7 +13,7 @@ export interface CacheInvalidator {
 }
 
 export interface FeatureFlags {
-    isEnabled(flag: 'maintenance'): Promise<boolean>
+    isEnabled(flag: 'maintenance' | 'itemPoints'): Promise<boolean>
 }
 
 export interface StoredFile {

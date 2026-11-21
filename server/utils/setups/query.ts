@@ -1,6 +1,8 @@
 import { resolveEffectiveCategory } from '@avatio/core/catalog'
 import type { SetupEntryView } from '~~/shared/types/catalog'
 
+import { projectSetupItemPoints } from './itemPoints'
+
 export interface SetupQueryViewer {
     userId: string
     role?: string | null
@@ -39,6 +41,7 @@ export const querySetupProjection = async (
     db: AppDatabase,
     id: string,
     viewer?: SetupQueryViewer,
+    includeItemPoints = false,
 ): Promise<SetupQueryResult | null> => {
     const data = await db.query.setups.findFirst({
         where: {
@@ -132,7 +135,7 @@ export const querySetupProjection = async (
     const canView =
         (!data.hidAt && data.public) || viewer?.role === 'admin' || viewer?.userId === data.userId
     if (!canView) return null
-    const { userId: _userId, entries, ...setup } = data
+    const { userId: _userId, entries, points, ...setup } = data
     const projectedEntries = entries
         .toSorted((a, b) => a.position - b.position)
         .map(projectSetupEntry)
@@ -141,10 +144,7 @@ export const querySetupProjection = async (
             ...setup,
             images: await withSetupImageUrls(data.images),
             entries: projectedEntries,
-            points: data.points.map(({ setupEntryId, ...point }) => ({
-                ...point,
-                entryId: setupEntryId,
-            })),
+            ...(includeItemPoints && { points: projectSetupItemPoints(points) }),
             tags: data.tags.map(({ tag }) => tag),
             failedItemsCount:
                 projectedEntries.filter(

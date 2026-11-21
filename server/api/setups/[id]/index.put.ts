@@ -7,11 +7,9 @@ export default authedSessionEventHandler(
     async ({ event, session, db }) => {
         const { id } = await validateParams(paramsSchema)
         const input = await validateBody(bodySchema)
-        return updateSetup(
-            { event, db, user: { id: session.user.id, role: session.user.role } },
-            id,
-            input,
-        )
+        const includeItemPoints = await canUseSetupItemPoints(event, session.user)
+        if (!includeItemPoints && input.points !== undefined) throw serverError.forbidden()
+        return updateSetup({ event, db, user: session.user, includeItemPoints }, id, input)
     },
     { rejectBannedUser: true },
 )
