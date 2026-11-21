@@ -75,6 +75,14 @@ describe('reviewed Worker target configuration', () => {
             'TWITTER_CLIENT_SECRET',
             'OG_IMAGE_SECRET',
         ])
+        expect(production.secrets.required).toEqual([
+            'NUXT_BETTER_AUTH_SECRET',
+            'TWITTER_CLIENT_SECRET',
+            'OG_IMAGE_SECRET',
+            'BOOTH_PROXY_URL',
+            'LIRIA_DISCORD_ENDPOINT',
+            'LIRIA_DISCORD_ACCESS_TOKEN',
+        ])
         expect(
             Object.keys(development.vars).some((name) => /ANALYTICS|SEARCH_CONSOLE/.test(name)),
         ).toBe(false)

@@ -145,11 +145,7 @@
             "OG_IMAGE_SECRET",
             "BOOTH_PROXY_URL",
             "LIRIA_DISCORD_ENDPOINT",
-            "LIRIA_DISCORD_ACCESS_TOKEN",
-            "CLOUDFLARE_ANALYTICS_READ_TOKEN",
-            "GOOGLE_SEARCH_CONSOLE_CLIENT_ID",
-            "GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET",
-            "GOOGLE_SEARCH_CONSOLE_REFRESH_TOKEN"
+            "LIRIA_DISCORD_ACCESS_TOKEN"
         ]
     },
     "no_bundle": true,
