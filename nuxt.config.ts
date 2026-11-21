@@ -124,7 +124,7 @@ export default defineNuxtConfig({
         '@avatio/nuxt',
         'insight-ts/nuxt',
         '@nuxtjs/better-auth',
-        '@comark/nuxt',
+        '@comark/vue',
         '@nuxt/ui',
         '@nuxt/image',
         '@nuxt/fonts',

@@ -9,15 +9,17 @@ export const useSetup = (id: MaybeRefOrGetter<Setup['id']>) =>
         },
     )
 
-export const useViewerSetup = (id: MaybeRefOrGetter<Setup['id']>) =>
-    useFetch(
+export const useViewerSetup = (id: MaybeRefOrGetter<Setup['id']>) => {
+    const { user } = useUserSession()
+    return useFetch(
         computed(() => `/api/me/setups/${toValue(id)}` as '/api/me/setups/:id'),
         {
-            key: computed(() => `viewer-setup-${toValue(id)}`),
+            key: computed(() => `viewer-setup-${user.value?.id ?? ''}-${toValue(id)}`),
             dedupe: 'defer',
             headers: useRequestHeaders(['cookie']),
         },
     )
+}
 
 export const useSetupsList = (
     type?: 'latest' | 'owned' | 'bookmarked',

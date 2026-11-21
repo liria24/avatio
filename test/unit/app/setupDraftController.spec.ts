@@ -175,6 +175,24 @@ describe('setup draft controller owner and recovery boundary', () => {
         vi.clearAllTimers()
     })
 
+    it('omits item points when saving drafts while disabled and cleanly discards on publish', async () => {
+        const controller = useSetupDraftController(() => {}, ref(false))
+        const draftId = controller.state.id
+        const data = {
+            ...content('Draft'),
+            points: [{ id: 'point', entryId: 'entry', imageId: 'image', x: 0.25, y: 0.5 }],
+        }
+        requestFetch.mockResolvedValueOnce({ revision: 1 }).mockResolvedValueOnce({ success: true })
+        controller.schedule(data, null)
+        await controller.flush()
+        expect(requestFetch.mock.calls[0]?.[1].body.content).not.toHaveProperty('points')
+        await controller.discard()
+        expect(requestFetch).toHaveBeenLastCalledWith(`/api/setup-drafts/${draftId}`, {
+            method: 'DELETE',
+        })
+        await expect(controller.loadRecovery(draftId)).resolves.toBeNull()
+    })
+
     it('shows saving while the request is in flight and does not mark a newer edit saved', async () => {
         vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
         const first = Promise.withResolvers<{ revision: number }>()

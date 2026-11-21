@@ -230,5 +230,6 @@ describe('setupComposePayload', () => {
                 { userId: 'u-2', note: undefined },
             ],
         })
+        expect(buildSetupPublishPayload(form, imageMetadata, false)).not.toHaveProperty('points')
     })
 })

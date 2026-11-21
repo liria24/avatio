@@ -139,7 +139,20 @@ export default defineNuxtConfig({
         const marker = randomUUID()
         await writeFile(
             join(root, 'server/middleware/00-test-fixture.ts'),
-            `export default defineEventHandler(event => setResponseHeader(event, 'x-avatio-test-fixture', ${JSON.stringify(marker)}))`,
+            `export default defineEventHandler(event => {
+                setResponseHeader(event, 'x-avatio-test-fixture', ${JSON.stringify(marker)})
+                const cloudflare = event.context.cloudflare ??= {}
+                cloudflare.env = {
+                    ...cloudflare.env,
+                    FLAGS: {
+                        async getBooleanValue(key, fallback) {
+                            return key === 'item-points'
+                                ? getHeader(event, 'x-fixture-item-points') !== 'off'
+                                : fallback
+                        },
+                    },
+                }
+            })`,
         )
         for (const document of ['terms', 'privacy-policy']) {
             const path = join(root, `content/ja/${document}.md`)

@@ -1,9 +1,12 @@
 import { setupDraftContentSchema, type SetupDraftContent } from '@avatio/core/setups'
-import { getCurrentScope, onScopeDispose } from 'vue'
+import { getCurrentScope, onScopeDispose, type Ref } from 'vue'
 
 const debounceMs = 2000
 
-export const useSetupDraftController = (onDraftId: (id: string | null) => void) => {
+export const useSetupDraftController = (
+    onDraftId: (id: string | null) => void,
+    canUseItemPoints?: Readonly<Ref<boolean>>,
+) => {
     const { user } = useUserSession()
     let ownerId = user.value?.id
     const requestFetch = useRequestFetch()
@@ -23,16 +26,19 @@ export const useSetupDraftController = (onDraftId: (id: string | null) => void) 
     const transport: SetupDraftTransport = {
         async put({ id, ...body }) {
             const owner = requireOwner()
+            const includeItemPoints = canUseItemPoints?.value ?? true
+            const { points: _points, ...content } = body.content
             const result = await requestFetch<{ revision: number } | null>(
                 `/api/setup-drafts/${id}`,
                 {
                     method: 'PUT',
-                    body,
+                    body: { ...body, content: includeItemPoints ? body.content : content },
                 },
             )
-            await acknowledgeSetupDraftRecovery(owner, id, result?.revision ?? 0, body).catch(
-                () => null,
-            )
+            await acknowledgeSetupDraftRecovery(owner, id, result?.revision ?? 0, {
+                ...body,
+                content: includeItemPoints ? body.content : { ...body.content, points: [] },
+            }).catch(() => null)
             return result
         },
         async delete(id) {

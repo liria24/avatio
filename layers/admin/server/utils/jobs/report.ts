@@ -1,81 +1,19 @@
-import { sendAdminDiscordMessage } from './discord'
-
-const reportLog = logger('/api/admin/job/report')
-
-export const runReportJob = async () => {
-    const db = useDB()
-    const stage = getRuntimeEnvString('STAGE') ?? 'development'
+export const runReportJob = async (
+    scope: ServerBackgroundScope = createBackgroundScope('task'),
+) => {
+    const stage = scope.stage
 
     const now = new Date()
     const yesterday = new Date()
     yesterday.setDate(yesterday.getDate() - 1)
 
-    const [feedbacksData, setupReportsData, userReportsData] = await Promise.all([
-        db.query.feedbacks
-            .findMany({
-                where: {
-                    isClosed: { eq: false },
-                    createdAt: { gte: yesterday, lt: now },
-                },
-                orderBy: {
-                    createdAt: 'desc',
-                },
-                columns: {
-                    id: true,
-                    createdAt: true,
-                    fingerprint: true,
-                    contextPath: true,
-                    comment: true,
-                },
-            })
-            .catch((error) => {
-                reportLog.error('Failed to fetch feedback data:', error)
-                return null
-            }),
-        db.query.setupReports
-            .findMany({
-                where: {
-                    isResolved: { eq: false },
-                    createdAt: { gte: yesterday, lt: now },
-                },
-                orderBy: {
-                    createdAt: 'desc',
-                },
-            })
-            .catch((error) => {
-                reportLog.error('Failed to fetch setup report data:', error)
-                return null
-            }),
-        db.query.userReports
-            .findMany({
-                where: {
-                    isResolved: { eq: false },
-                    createdAt: { gte: yesterday, lt: now },
-                },
-                orderBy: {
-                    createdAt: 'desc',
-                },
-            })
-            .catch((error) => {
-                reportLog.error('Failed to fetch user report data:', error)
-                return null
-            }),
-    ])
+    const digest = await scope.moderationReports.readPendingDigest({ from: yesterday, to: now })
 
     const response = {
-        feedback: {
-            data: feedbacksData,
-            error: feedbacksData === null,
-        },
+        feedback: digest.feedbacks,
         report: {
-            setup: {
-                data: setupReportsData,
-                error: setupReportsData === null,
-            },
-            user: {
-                data: userReportsData,
-                error: userReportsData === null,
-            },
+            setup: digest.setupReports,
+            user: digest.userReports,
         },
     }
 
@@ -147,7 +85,7 @@ export const runReportJob = async () => {
         }
 
         try {
-            await sendAdminDiscordMessage({ embeds: [embed, ...embedsFeedback] })
+            await scope.discordNotifier.send({ embeds: [embed, ...embedsFeedback] })
         } catch (error) {
             throw serverError.internalServerError({
                 log: {

@@ -6,6 +6,8 @@ export default defineNitroPlugin((nitroApp) => {
     nitroApp.hooks.hook('cloudflare:queue', async ({ batch, context }) => {
         if (!batch.queue.startsWith('item-revalidation')) return
 
+        const scope = createBackgroundScope('queue', { cache: context.cache })
+
         for (const message of batch.messages)
             try {
                 const v2Message = catalogSyncMessageSchema.safeParse(message.body)
@@ -13,9 +15,9 @@ export default defineNitroPlugin((nitroApp) => {
                     const result = await syncCatalogSource({
                         sourceId: v2Message.data.sourceId,
                         leaseToken: v2Message.data.leaseToken,
-                        repository: getCatalogRepository(),
-                        providers: await getCatalogProviderRegistry(),
-                        cacheInvalidator: createCacheInvalidator(context.cache),
+                        repository: scope.getCatalogRepository(),
+                        providers: await scope.getCatalogProviderRegistry(),
+                        cacheInvalidator: scope.getCacheInvalidator(),
                     })
                     if (result.cacheInvalidationFailed)
                         log.warn(

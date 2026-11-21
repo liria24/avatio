@@ -47,7 +47,10 @@ export const seedSetup = async (
     return { id, item }
 }
 
-export const draftContent = (name: string) => ({ ...createDefaultSetupComposeForm(), name })
+export const draftContent = (name: string) => {
+    const { points: _points, ...form } = createDefaultSetupComposeForm()
+    return { ...form, name }
+}
 export const fixturePng = (width = 32, height = 32) => {
     const png = new PNG({ width, height })
     for (let i = 0; i < png.data.length; i += 4) {

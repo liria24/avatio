@@ -21,6 +21,7 @@ export default defineConfig({
         'packages/nuxt/src/runtime/app/**',
         'app/utils/uploadImage.ts',
         'server/utils/ai.ts',
+        'server/utils/composition.ts',
         'server/utils/content.ts',
         'server/utils/createAuditLog.ts',
         'server/utils/createNotification.ts',

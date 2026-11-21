@@ -4,14 +4,12 @@ const paramsSchema = z.object({ id: z.string() })
 const bodySchema = setupsUpdateSchema
 
 export default authedSessionEventHandler(
-    async ({ event, session, db }) => {
+    async ({ event, session, db, services }) => {
         const { id } = await validateParams(paramsSchema)
         const input = await validateBody(bodySchema)
-        return updateSetup(
-            { event, db, user: { id: session.user.id, role: session.user.role } },
-            id,
-            input,
-        )
+        const includeItemPoints = await canUseSetupItemPoints(services)
+        if (!includeItemPoints && input.points !== undefined) throw serverError.forbidden()
+        return updateSetup({ event, db, user: session.user, includeItemPoints }, id, input)
     },
     { rejectBannedUser: true },
 )

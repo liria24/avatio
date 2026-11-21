@@ -126,9 +126,20 @@ export const createAvatioAuthOptions = ({ runtimeConfig }: ServerAuthContext) =>
                         if (image)
                             try {
                                 const imageId = nanoid(JPG_FILENAME_LENGTH)
-                                const { getFileStorage } = await import('./utils/infrastructure')
+                                const {
+                                    createBackgroundScope,
+                                    createRequestScope,
+                                    getRequestScope,
+                                } = await import('./utils/composition')
+                                const event = getCurrentEvent()
+                                const storage = (
+                                    event
+                                        ? (getRequestScope(event) ??
+                                          createRequestScope(event, null))
+                                        : createBackgroundScope('task')
+                                ).getFileStorage()
                                 image = (
-                                    await getFileStorage().importFromUrl({
+                                    await storage.importFromUrl({
                                         sourceUrl: image,
                                         destinationKey: `avatar/${imageId}.jpg`,
                                     })
@@ -152,11 +163,13 @@ export const createAvatioAuthOptions = ({ runtimeConfig }: ServerAuthContext) =>
                         const event = getCurrentEvent()
                         if (!event) return
 
+                        const { getRequestScope } = await import('./utils/composition')
                         const { invalidateUserContentCache } = await import('./utils/edgeCache')
-                        const { useDB } = await import('./utils/database')
+                        const db =
+                            getRequestScope(event)?.db ?? (await import('./utils/database')).useDB()
                         await invalidateUserContentCache(
                             event,
-                            useDB(),
+                            db,
                             user.id,
                             'better auth user update',
                             {
@@ -170,10 +183,12 @@ export const createAvatioAuthOptions = ({ runtimeConfig }: ServerAuthContext) =>
                         const event = getCurrentEvent()
                         if (!event) return
 
+                        const { getRequestScope } = await import('./utils/composition')
                         const { getUserContentCacheResources } = await import('./utils/edgeCache')
-                        const { useDB } = await import('./utils/database')
+                        const db =
+                            getRequestScope(event)?.db ?? (await import('./utils/database')).useDB()
                         event.context.userDeletionCacheResources =
-                            await getUserContentCacheResources(useDB(), user.id)
+                            await getUserContentCacheResources(db, user.id)
                     },
                     after: async () => {
                         const event = getCurrentEvent()

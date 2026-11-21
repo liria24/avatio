@@ -190,7 +190,9 @@ export { setupComposeFormSchema, setupDraftContentSchema, setupPointSchema }
 export const setupDraftsUpdateSchema = z.object({
     expectedRevision: z.number().int().min(0),
     setupId: z.string().nullable(),
-    content: setupDraftContentSchema,
+    content: setupDraftContentSchema.extend({
+        points: setupComposeFormSchema.shape.points.optional(),
+    }),
 })
 const setupDraftsPublicSchema = z.object({
     id: z.string(),

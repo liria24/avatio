@@ -23,12 +23,12 @@ test.describe('point editor', () => {
         page,
         goto,
         context,
-        account,
         runtime,
     }, testInfo) => {
         test.setTimeout(120_000)
         page.setDefaultNavigationTimeout(60_000)
-        await authenticate(context, account)
+        const admin = await runtime.createUser({ role: 'admin' })
+        await authenticate(context, admin)
         // Cold Nuxt dev hydration compiles the client graph; retain Playwright's
         // normal readiness window before enforcing the shorter interaction waits.
         await goto('/en/setup/compose', { waitUntil: 'hydration' })
@@ -205,6 +205,11 @@ test.describe('point editor', () => {
         await expect(
             dialog.getByRole('button', { name: labels.setup.compose.points.add, exact: true }),
         ).toBeEnabled()
+        await runtime.db.update(users).set({ role: 'user' }).where(eq(users.id, admin.id))
+        await goto(draftUrl, { waitUntil: 'hydration' })
+        await openDetails(page)
+        await expect(triggers).toHaveCount(0)
+        await expect(dialog).toHaveCount(0)
     })
 })
 

@@ -22,6 +22,10 @@ const createSetupCompose = () => {
     const toast = useToast()
     const { t } = useI18n()
     const { user } = useUserSession()
+    const { data: itemPointsAccess } = useFetch('/api/me/item-points', {
+        key: computed(() => `setup-item-points-${user.value?.id ?? ''}`),
+    })
+    const canUseItemPoints = computed(() => itemPointsAccess.value?.enabled === true)
     const { switchAccount: switchDeviceAccount } = useDeviceSessions()
     const requestFetch = useRequestFetch()
     const publishing = ref(false)
@@ -39,8 +43,9 @@ const createSetupCompose = () => {
     const updateRouterQuery = (updates: Record<string, string | undefined>) => {
         void router.replace({ query: { ...route.query, ...updates } })
     }
-    const draftController = useSetupDraftController((id) =>
-        updateRouterQuery({ draftId: id ?? undefined }),
+    const draftController = useSetupDraftController(
+        (id) => updateRouterQuery({ draftId: id ?? undefined }),
+        canUseItemPoints,
     )
     const { form, values } = useSetupComposeForm((next) => {
         if (restoring.value || publishing.value || switchingAccount.value) return
@@ -101,7 +106,7 @@ const createSetupCompose = () => {
         setPoints: (points) => form.setFieldValue('points', points),
         imageMetadata,
         getImageId,
-        isBusy: () => restoring.value || switchingAccount.value,
+        isBusy: () => restoring.value || switchingAccount.value || !canUseItemPoints.value,
     })
     const {
         coauthors,
@@ -295,7 +300,11 @@ const createSetupCompose = () => {
         try {
             await draftController.flush()
             draftController.requireOwner()
-            const body = buildSetupPublishPayload(values.value, getSelectedImageMetadata())
+            const body = buildSetupPublishPayload(
+                values.value,
+                getSelectedImageMetadata(),
+                canUseItemPoints.value,
+            )
             if (!setupsInsertSchema.safeParse(body).success) throw new Error('Validation failed')
 
             const response = await requestFetch<Setup>(
@@ -423,6 +432,7 @@ const createSetupCompose = () => {
         reorderImages,
         getImageId,
         pointEditor,
+        canUseItemPoints,
         closeImagePoints,
         updateImagePoints,
         openImagePoints,

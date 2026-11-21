@@ -8,17 +8,30 @@ const paramsSchema = z.object({ id: z.uuid() })
 const bodySchema = setupDraftsUpdateSchema
 
 export default authedSessionEventHandler(
-    async ({ session, db }) => {
-        const [{ id }, { expectedRevision, setupId, content }] = await Promise.all([
+    async ({ session, db, services }) => {
+        const [{ id }, { expectedRevision, setupId, content: input }] = await Promise.all([
             validateParams(paramsSchema),
             validateBody(bodySchema),
         ])
+        if (input.points !== undefined && !(await canUseSetupItemPoints(services)))
+            throw serverError.forbidden()
         await enforceRateLimit({ binding: 'RATE_LIMIT_DRAFT', key: `drafts:${session.user.id}` })
 
         const existing = await db.query.setupDrafts.findFirst({
             where: { id: { eq: id }, userId: { eq: session.user.id } },
-            columns: { id: true, revision: true },
+            columns: { id: true, revision: true, content: true },
         })
+        const content = {
+            ...input,
+            points:
+                input.points ??
+                (existing
+                    ? retainDraftItemPoints(
+                          input,
+                          setupDraftContentSchema.parse(existing.content).points,
+                      )
+                    : []),
+        }
 
         if (isEmptySetupComposeForm(content)) {
             if (!existing) {

@@ -330,7 +330,7 @@ describe('real HTTP authorization and ownership', () => {
     })
 
     it('preserves stable image IDs and points when images are reordered or removed', async () => {
-        const owner = await runtime.createUser()
+        const owner = await runtime.createUser({ role: 'admin' })
         const item = await seedCatalogItem(runtime)
         const entryId = randomUUID()
         const images: (Record<string, unknown> & { id: string; url: string })[] = []
@@ -358,6 +358,7 @@ describe('real HTTP authorization and ownership', () => {
             y: 0.75,
         }))
         const items = [{ id: entryId, itemId: item.id }]
+        const disabled = { 'x-fixture-item-points': 'off' }
         const response = await request('/api/setups', owner, {
             method: 'POST',
             headers: { 'Idempotency-Key': randomUUID() },
@@ -371,6 +372,48 @@ describe('real HTTP authorization and ownership', () => {
         })
         expect(response.status).toBe(200)
         const setup = (await response.json()) as { id: string }
+        const path = `/api/setups/${setup.id}`
+        const viewerPath = `/api/me/setups/${setup.id}`
+        const ordinary = await runtime.createUser()
+        expect(
+            (
+                await request('/api/setups', ordinary, {
+                    method: 'POST',
+                    body: JSON.stringify({ name: 'Disallowed points', items, points }),
+                })
+            ).status,
+        ).toBe(403)
+        for (const viewer of [undefined, ordinary, owner])
+            expect(await (await request(path, viewer)).json()).not.toHaveProperty('points')
+        for (const viewer of [ordinary, bannedAdmin])
+            expect(await (await request(viewerPath, viewer)).json()).not.toHaveProperty('points')
+        const hidden = await request(viewerPath, owner, { headers: disabled })
+        expect(hidden.headers.get('cache-control')).toContain('no-store')
+        expect(await hidden.json()).not.toHaveProperty('points')
+        expect(await (await request(viewerPath, owner)).json()).toHaveProperty(
+            'points',
+            expect.arrayContaining(points),
+        )
+        expect(
+            (
+                await request(path, owner, {
+                    method: 'PUT',
+                    headers: disabled,
+                    body: JSON.stringify({ items, points: [] }),
+                })
+            ).status,
+        ).toBe(403)
+        const regularEdit = await request(path, owner, {
+            method: 'PUT',
+            headers: disabled,
+            body: JSON.stringify({ items, description: 'Ordinary edit while the flag is off' }),
+        })
+        expect(regularEdit.status).toBe(200)
+        expect(await regularEdit.json()).not.toHaveProperty('points')
+        expect(await (await request(viewerPath, owner)).json()).toHaveProperty(
+            'points',
+            expect.arrayContaining(points),
+        )
         const edit = async (ordered: typeof images, retainedPoints: typeof points) => {
             const response = await request(`/api/setups/${setup.id}`, owner, {
                 method: 'PUT',
@@ -393,6 +436,47 @@ describe('real HTTP authorization and ownership', () => {
         const removed = await edit([images[1]!], [points[1]!])
         expect(removed.images).toMatchObject([{ id: images[1]!.id, position: 0 }])
         expect(removed.points).toEqual([points[1]])
+
+        const draftPath = `/api/setup-drafts/${randomUUID()}`
+        const content = {
+            ...draftContent('Draft with points'),
+            images: [images[1]!.url],
+            imageMetadata: metadata,
+            items: [
+                {
+                    ...items[0],
+                    category: 'other',
+                    note: '',
+                    unsupported: false,
+                    shapekeys: [],
+                },
+            ],
+        }
+        const saveDraft = (
+            expectedRevision: number,
+            draft: typeof content & { points?: typeof points },
+            headers?: HeadersInit,
+        ) =>
+            request(draftPath, owner, {
+                method: 'PUT',
+                headers,
+                body: JSON.stringify({ expectedRevision, setupId: null, content: draft }),
+            })
+        expect((await saveDraft(0, { ...content, points: removed.points })).status).toBe(200)
+        expect((await saveDraft(1, { ...content, points: [] }, disabled)).status).toBe(403)
+        expect(
+            (await saveDraft(1, { ...content, description: 'Draft autosave' }, disabled)).status,
+        ).toBe(200)
+        const hiddenDraft = await request(draftPath, owner, { headers: disabled })
+        expect(hiddenDraft.headers.get('cache-control')).toContain('no-store')
+        expect(await hiddenDraft.json()).toHaveProperty('content.points', [])
+        expect(await (await request(draftPath, owner)).json()).toMatchObject({
+            content: { points: removed.points, description: 'Draft autosave' },
+        })
+        expect(
+            (await request(draftPath, owner, { method: 'DELETE', headers: disabled })).status,
+        ).toBe(200)
+        expect((await request(draftPath, owner)).status).toBe(404)
     })
 
     it('retains legal provenance, rejects stale review and fails closed when content is unavailable', async () => {

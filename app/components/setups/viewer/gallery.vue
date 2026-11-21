@@ -91,79 +91,14 @@ defineExpose({ showEntry })
                         />
                     </button>
 
-                    <svg
-                        v-if="expanded"
-                        class="pointer-events-none absolute inset-0 size-full overflow-visible"
-                        aria-hidden="true"
-                    >
-                        <line
-                            v-for="(point, pointIndex) in imagePoints(image.id)"
-                            :key="`line-${point.id}`"
-                            :x1="`${point.x * 100}%`"
-                            :y1="`${point.y * 100}%`"
-                            :x2="`${setupExpandedPointPosition(pointIndex, imagePoints(image.id).length).x * 100}%`"
-                            :y2="`${setupExpandedPointPosition(pointIndex, imagePoints(image.id).length).y * 100}%`"
-                            class="stroke-primary"
-                            stroke-width="2"
-                        />
-                    </svg>
-
-                    <button
-                        v-for="point in imagePoints(image.id)"
-                        :key="point.id"
-                        type="button"
-                        :style="setupPointStyle(point)"
-                        :aria-label="
-                            entryById.get(point.entryId)?.catalogItem.name ?? point.entryId
-                        "
-                        :class="
-                            cn(
-                                'ring-default absolute z-10 -translate-1/2 overflow-hidden rounded-full shadow-lg ring-2 transition-transform',
-                                expanded ? 'bg-primary size-3' : 'size-9 bg-white',
-                                highlightedPointId === point.id && 'ring-primary scale-125',
-                            )
-                        "
-                        @click.stop="selectPoint(point)"
-                    >
-                        <NuxtImg
-                            v-if="!expanded && entryById.get(point.entryId)?.catalogItem.image"
-                            :src="entryById.get(point.entryId)?.catalogItem.image || undefined"
-                            alt=""
-                            width="40"
-                            height="40"
-                            class="size-full object-cover"
-                        />
-                        <Icon v-else-if="!expanded" name="mingcute:package-2-fill" size="18" />
-                    </button>
-
-                    <button
-                        v-for="(point, pointIndex) in expanded ? imagePoints(image.id) : []"
-                        :key="`expanded-${point.id}`"
-                        type="button"
-                        :style="
-                            setupPointStyle(
-                                setupExpandedPointPosition(
-                                    pointIndex,
-                                    imagePoints(image.id).length,
-                                ),
-                            )
-                        "
-                        :aria-label="
-                            entryById.get(point.entryId)?.catalogItem.name ?? point.entryId
-                        "
-                        class="ring-default absolute z-10 size-16 -translate-1/2 overflow-hidden rounded-xl bg-white shadow-xl ring-2"
-                        @click.stop="selectPoint(point)"
-                    >
-                        <NuxtImg
-                            v-if="entryById.get(point.entryId)?.catalogItem.image"
-                            :src="entryById.get(point.entryId)?.catalogItem.image || undefined"
-                            alt=""
-                            width="72"
-                            height="72"
-                            class="size-full object-cover"
-                        />
-                        <Icon v-else name="mingcute:package-2-fill" size="28" />
-                    </button>
+                    <SetupsViewerItemPoints
+                        v-if="imagePoints(image.id).length"
+                        :points="imagePoints(image.id)"
+                        :entry-by-id="entryById"
+                        :expanded="expanded"
+                        :highlighted-point-id="highlightedPointId"
+                        @select="selectPoint"
+                    />
                 </div>
             </template>
         </UCarousel>
