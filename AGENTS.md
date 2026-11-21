@@ -21,7 +21,7 @@ Compact instruction for OpenCode sessions. If a fact is obvious from filenames, 
 - **Toolchain:** Vite+ runs package scripts, lint, format, and tests. Node 26 runs Nuxt, TypeScript scripts, tests, and configuration tooling; Bun only installs dependencies. Cloudflare builds use `NODE_OPTIONS=--max-old-space-size=4096` to leave memory for the remaining build processes.
 - **Postinstall:** `vp install` uses Bun and runs `nuxt prepare` only.
 - **Development URL:** `vp run dev` runs the Node.js Nuxt dev server at `http://localhost:3000`; the port is fixed and fails if already in use.
-- **Environment split:** local uses persistent local D1/filesystem/IPX. The prepared development target is the separate `avatio-development` Worker at `dev.avatio.me`, with retained development data resources. Its creation, Access policy and live acceptance remain pending; production cutover is separate.
+- **Environment split:** local uses persistent local D1/filesystem/IPX. The prepared development target is the separate `avatio-development` Worker at `dev.avatio.me`, with retained development data resources. It is deployed with Cloudflare Zero Trust Access and verified live; production cutover remains separate.
 - **Verified dependency holds:** TypeScript 6.0.3 (`vue-tsc` cannot load TypeScript 7's compiler entry), `vue-tsc` 3.3.11 (3.3.13–3.3.14 lose Vue 3.6 template bindings), Nuxt / `@nuxt/kit` / `@nuxt/schema` 4.6.3 (`@nuxt/schema` 4.6.4 resolves unset `devServer.host` to `{}` under `untyped` 2.0.0 and crashes `nuxt dev`), and `@vite-pwa/nuxt` 1.1.1 (`2.0.2` deprecates `workbox` for `generateSW` and fails strict `**/_payload.json` precache glob matching in SSR builds). Reproduce or resolve these incompatibilities before lifting the pins.
 
 ## Developer commands
