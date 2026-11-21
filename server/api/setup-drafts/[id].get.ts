@@ -4,7 +4,7 @@ import { z } from 'zod'
 const paramsSchema = z.object({ id: z.uuid() })
 
 export default authedSessionEventHandler<SetupDraft>(
-    async ({ event, session, db }) => {
+    async ({ event, session, db, services }) => {
         const { id } = await validateParams(paramsSchema)
         const draft = await db.query.setupDrafts.findFirst({
             where: { id: { eq: id }, userId: { eq: session.user.id } },
@@ -20,7 +20,7 @@ export default authedSessionEventHandler<SetupDraft>(
         if (!draft) throw serverError.notFound()
         applyNoStoreCache(event)
         const content = setupDraftContentSchema.parse(draft.content)
-        if (!(await canUseSetupItemPoints(event, session.user))) content.points = []
+        if (!(await canUseSetupItemPoints(services))) content.points = []
         return { ...draft, content }
     },
     { rejectBannedUser: true },

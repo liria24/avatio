@@ -1,4 +1,4 @@
-export default authedSessionEventHandler(async ({ event, session }) => {
+export default authedSessionEventHandler(async ({ event, services }) => {
     applyNoStoreCache(event)
-    return { enabled: await canUseSetupItemPoints(event, session.user) }
+    return { enabled: await canUseSetupItemPoints(services) }
 })

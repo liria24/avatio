@@ -41,39 +41,13 @@ export const useSetupDraftController = (
             }).catch(() => null)
             return result
         },
-        async delete(id, publishedSetupId) {
-            const owner = requireOwner()
-            const local =
-                publishedSetupId && canUseItemPoints?.value === false
-                    ? await loadRecovery(id)
-                    : null
+        async delete(id) {
+            requireOwner()
             try {
-                const result = await requestFetch<{ retainedRevision?: number }>(
-                    `/api/setup-drafts/${id}`,
-                    {
-                        method: 'DELETE',
-                        query: publishedSetupId
-                            ? {
-                                  published: publishedSetupId,
-                                  preservePoints: local?.content.points.length ? 'true' : undefined,
-                              }
-                            : undefined,
-                    },
-                )
-                if (result?.retainedRevision !== undefined) {
-                    const recovery = local ?? (await loadRecovery(id))
-                    if (recovery)
-                        await saveSetupDraftRecovery({
-                            ...recovery,
-                            setupId: publishedSetupId ?? null,
-                            revision: result.retainedRevision,
-                        }).catch(() => null)
-                    return
-                }
+                await requestFetch(`/api/setup-drafts/${id}`, { method: 'DELETE' })
             } catch (error) {
                 if ((error as { statusCode?: number }).statusCode !== 404) throw error
             }
-            await deleteSetupDraftRecovery(owner, id).catch(() => null)
         },
         isConflict: (error) =>
             user.value?.id !== ownerId || (error as { statusCode?: number }).statusCode === 409,
@@ -130,11 +104,13 @@ export const useSetupDraftController = (
         await writer.switchSession(id, revision)
     }
 
-    const discard = async (publishedSetupId?: string) => {
+    const discard = async () => {
         if (debounceTimer) clearTimeout(debounceTimer)
         debounceTimer = null
         latest = null
-        await writer.discard(publishedSetupId)
+        const id = state.id
+        await writer.discard()
+        await deleteSetupDraftRecovery(requireOwner(), id).catch(() => null)
     }
 
     if (getCurrentScope())

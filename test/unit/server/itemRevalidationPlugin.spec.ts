@@ -33,9 +33,12 @@ afterEach(() => {
 describe('item revalidation queue plugin', () => {
     it('acknowledges a stale fenced message without retrying or fetching', async () => {
         const markSyncStarted = vi.fn(async () => null)
-        vi.stubGlobal('getCatalogRepository', () => ({ markSyncStarted }))
-        vi.stubGlobal('getCatalogProviderRegistry', async () => ({}))
-        vi.stubGlobal('createCacheInvalidator', () => ({}))
+        const createBackgroundScope = vi.fn(() => ({
+            getCatalogRepository: () => ({ markSyncStarted }),
+            getCatalogProviderRegistry: async () => ({}),
+            getCacheInvalidator: () => ({}),
+        }))
+        vi.stubGlobal('createBackgroundScope', createBackgroundScope)
         const { default: plugin } = await import('../../../server/plugins/itemRevalidationQueue')
         let handler!: QueueHandler
         plugin({
@@ -56,15 +59,23 @@ describe('item revalidation queue plugin', () => {
             ack: vi.fn(),
             retry: vi.fn(),
         }
+        const cache = {}
         await handler({
             batch: { queue: 'item-revalidation', messages: [message] },
-            context: { cache: {} },
+            context: { cache },
         })
+        expect(createBackgroundScope).toHaveBeenCalledWith('queue', { cache })
         expect(markSyncStarted).toHaveBeenCalledWith('source', 'old', expect.any(Date))
         expect(message.ack).toHaveBeenCalledOnce()
         expect(message.retry).not.toHaveBeenCalled()
     })
     it('rejects an unfenced retained message without fetching', async () => {
+        const createBackgroundScope = vi.fn(() => ({
+            getCatalogRepository: () => ({}),
+            getCatalogProviderRegistry: async () => ({}),
+            getCacheInvalidator: () => ({}),
+        }))
+        vi.stubGlobal('createBackgroundScope', createBackgroundScope)
         const { default: plugin } = await import('../../../server/plugins/itemRevalidationQueue')
         let queueHandler!: QueueHandler
         plugin({

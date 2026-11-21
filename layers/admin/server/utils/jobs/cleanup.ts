@@ -2,8 +2,6 @@ import { createError } from '@nuxt/nitro-server/h3'
 import { lt } from 'drizzle-orm'
 import { idempotencyRequests } from '~~/database/schema'
 
-import { sendAdminDiscordMessage } from './discord'
-
 const cleanupLog = logger('/api/admin/job/cleanup')
 
 interface ImageInfo {
@@ -221,16 +219,19 @@ const buildCleanupDiscordEmbed = ({
     },
 })
 
-export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) => {
-    const stage = getRuntimeEnvString('STAGE') ?? 'development'
-    if (!dryRun && !import.meta.dev && !getRuntimeStageConfig().features.cleanup)
+export const runCleanupJob = async (
+    { dryRun = false }: CleanupJobOptions = {},
+    scope: ServerBackgroundScope = createBackgroundScope('task'),
+) => {
+    const stage = scope.stage
+    if (!dryRun && !scope.isDev && !scope.stageConfig.features.cleanup)
         throw createError({
             statusCode: 403,
             message: 'Development cleanup is dry-run only.',
         })
     const thresholdDate = new Date(Date.now() - IMAGE_DELETION_THRESHOLD)
     const storageContext = await getStorageContext()
-    const db = useDB()
+    const db = scope.db
 
     if (!dryRun)
         await db.delete(idempotencyRequests).where(lt(idempotencyRequests.expiresAt, new Date()))
@@ -330,7 +331,7 @@ export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) 
 
     if (allImages.length > 0) {
         try {
-            await sendAdminDiscordMessage({
+            await scope.discordNotifier.send({
                 embeds: [
                     buildCleanupDiscordEmbed({
                         stage,

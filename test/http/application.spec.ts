@@ -470,18 +470,13 @@ describe('real HTTP authorization and ownership', () => {
         const hiddenDraft = await request(draftPath, owner, { headers: disabled })
         expect(hiddenDraft.headers.get('cache-control')).toContain('no-store')
         expect(await hiddenDraft.json()).toHaveProperty('content.points', [])
-        expect(
-            (
-                await request(`${draftPath}?published=${setup.id}`, owner, {
-                    method: 'DELETE',
-                    headers: disabled,
-                })
-            ).status,
-        ).toBe(200)
         expect(await (await request(draftPath, owner)).json()).toMatchObject({
-            setupId: setup.id,
             content: { points: removed.points, description: 'Draft autosave' },
         })
+        expect(
+            (await request(draftPath, owner, { method: 'DELETE', headers: disabled })).status,
+        ).toBe(200)
+        expect((await request(draftPath, owner)).status).toBe(404)
     })
 
     it('retains legal provenance, rejects stale review and fails closed when content is unavailable', async () => {

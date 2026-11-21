@@ -24,7 +24,7 @@ export interface SetupDraftTransport {
         setupId: string | null
         content: SetupDraftContent
     }): Promise<{ revision: number } | null>
-    delete(id: string, publishedSetupId?: string): Promise<void>
+    delete(id: string): Promise<void>
     isConflict(error: unknown): boolean
     isOffline(): boolean
 }
@@ -148,15 +148,14 @@ export class SetupDraftWriter {
         this.#retryTimer = null
     }
 
-    async discard(publishedSetupId?: string) {
+    async discard() {
         const discardedId = this.state.id
         this.#generation += 1
         this.#pending = null
         if (this.#retryTimer) clearTimeout(this.#retryTimer)
         this.#retryTimer = null
         await this.#running
-        if (publishedSetupId) await this.transport.delete(discardedId, publishedSetupId)
-        else await this.transport.delete(discardedId)
+        await this.transport.delete(discardedId)
         this.#retryCount = 0
         this.#emit({ id: crypto.randomUUID(), revision: 0, status: 'new' })
     }
