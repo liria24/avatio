@@ -27,6 +27,63 @@ afterEach(() => {
     vi.restoreAllMocks()
 })
 
+const createGithubKvHarness = (initialCommit = 'a'.repeat(40)) => {
+    let commit = initialCommit
+    const fetcher = vi.fn(async (input: string | URL | Request) => {
+        const url = requestUrl(input)
+        if (url.includes('/info/refs?service=git-upload-pack'))
+            return new Response(gitReferences(commit))
+        if (url.startsWith('https://ungh.cc/') && url.endsWith(`/files/${commit}`))
+            return Response.json({
+                files: ['terms', 'privacy-policy'].map((slug) => ({
+                    path: `content/ja/${slug}.md`,
+                })),
+            })
+        if (new URL(url).hostname === 'raw.githubusercontent.com')
+            return new Response(markdown(commit))
+        throw new Error(`Unexpected content URL: ${url}`)
+    })
+    vi.stubGlobal('fetch', fetcher)
+    const values = new Map<string, string>()
+    const writes = new Set<string>()
+    const binding = {
+        get: vi.fn(async (key: string) => values.get(key) ?? null),
+        put: vi.fn(async (key: string, value: string) => {
+            if (writes.has(key)) throw new Error(`KV key written twice in one request: ${key}`)
+            writes.add(key)
+            values.set(key, value)
+        }),
+        delete: vi.fn(async (key: string) => {
+            values.delete(key)
+        }),
+        list: vi.fn(async () => ({
+            keys: [...values.keys()].map((name) => ({ name })),
+            list_complete: true,
+        })),
+    } as unknown as KVNamespace
+    const create = () =>
+        createAvatioContentService({
+            ...createGithubContentSource({
+                repo: 'liria24/avatio',
+                branch: 'main',
+                path: 'content',
+            }),
+            locales: ['ja', 'en'],
+            fallbackLocale: 'ja',
+            cache: { driver: kvDriver({ binding }), ttl: 300_000, swr: false },
+        })
+    return {
+        fetcher,
+        values,
+        writes,
+        create,
+        setCommit: (next: string) => {
+            commit = next
+        },
+        getCommit: () => commit,
+    }
+}
+
 describe('comark authored content', () => {
     it('uses filesystem content, shared TOC, and intentional Japanese fallback', async () => {
         const directory = await mkdtemp(join(tmpdir(), 'avatio-content-fallback-'))
@@ -87,62 +144,20 @@ describe('comark authored content', () => {
     })
 
     it('pins the GitHub source to one commit and keeps cached metadata independent of source reads', async () => {
-        let commit = 'a'.repeat(40)
-        const fetcher = vi.fn(async (input: string | URL | Request) => {
-            const url = requestUrl(input)
-            if (url.includes('/info/refs?service=git-upload-pack'))
-                return new Response(gitReferences(commit))
-            if (url.startsWith('https://ungh.cc/') && url.endsWith(`/files/${commit}`))
-                return Response.json({
-                    files: ['terms', 'privacy-policy'].map((slug) => ({
-                        path: `content/ja/${slug}.md`,
-                    })),
-                })
-            if (new URL(url).hostname === 'raw.githubusercontent.com')
-                return new Response(markdown(commit))
-            throw new Error(`Unexpected content URL: ${url}`)
-        })
-        vi.stubGlobal('fetch', fetcher)
-        const values = new Map<string, string>()
-        const writes = new Set<string>()
-        const binding = {
-            get: vi.fn(async (key: string) => values.get(key) ?? null),
-            put: vi.fn(async (key: string, value: string) => {
-                if (writes.has(key)) throw new Error(`KV key written twice in one request: ${key}`)
-                writes.add(key)
-                values.set(key, value)
-            }),
-            delete: vi.fn(async (key: string) => {
-                values.delete(key)
-            }),
-            list: vi.fn(async () => ({
-                keys: [...values.keys()].map((name) => ({ name })),
-                list_complete: true,
-            })),
-        } as unknown as KVNamespace
-        const create = () =>
-            createAvatioContentService({
-                ...createGithubContentSource({
-                    repo: 'liria24/avatio',
-                    branch: 'main',
-                    path: 'content',
-                }),
-                locales: ['ja', 'en'],
-                fallbackLocale: 'ja',
-                cache: { driver: kvDriver({ binding }), ttl: 300_000, swr: false },
-            })
+        const harness = createGithubKvHarness()
+        const { fetcher, values, writes, create } = harness
         const service = create()
         const metadata = await service.getLegalDocuments('en')
-        expect(metadata[0]).toMatchObject({ locale: 'ja', sourceCommit: commit })
+        expect(metadata[0]).toMatchObject({ locale: 'ja', sourceCommit: harness.getCommit() })
         const page = await service.getPage('terms', 'en')
         expect(page?.source.sourceRevision).toBe(metadata[0]?.sourceRevision)
-        expect(page?.source.sourceUrl).toContain(`/blob/${commit}/content/ja/terms.md`)
+        expect(page?.source.sourceUrl).toContain(`/blob/${harness.getCommit()}/content/ja/terms.md`)
         expect(
             fetcher.mock.calls
                 .filter(
                     ([url]) => new URL(requestUrl(url)).hostname === 'raw.githubusercontent.com',
                 )
-                .every(([url]) => requestUrl(url).includes(commit)),
+                .every(([url]) => requestUrl(url).includes(harness.getCommit())),
         ).toBe(true)
         fetcher.mockClear()
         await create().getLegalDocuments('en')
@@ -155,9 +170,9 @@ describe('comark authored content', () => {
             values.set(key, JSON.stringify({ ...envelope, time: 0 }))
         }
         writes.clear()
-        commit = 'b'.repeat(40)
+        harness.setCommit('b'.repeat(40))
         const refreshed = await create().getPage('terms', 'en')
-        expect(refreshed?.source.sourceCommit).toBe(commit)
+        expect(refreshed?.source.sourceCommit).toBe(harness.getCommit())
         expect(refreshed?.source.sourceRevision).not.toBe(page?.source.sourceRevision)
         expect(refreshed?.frontmatter.version).toBe(page?.frontmatter.version)
 
@@ -166,12 +181,48 @@ describe('comark authored content', () => {
             values.set(key, JSON.stringify({ ...JSON.parse(value), time: 0 }))
         }
         writes.clear()
-        commit = 'd'.repeat(40)
+        harness.setCommit('d'.repeat(40))
         const corrected = await create().getPage('terms', 'en')
-        expect(corrected?.source.sourceCommit).toBe(commit)
+        expect(corrected?.source.sourceCommit).toBe(harness.getCommit())
         expect((await create().getLegalDocuments('en'))[0]?.sourceRevision).toBe(
             corrected?.source.sourceRevision,
         )
+    })
+
+    it('preserves provenance across cached __raw__ parses and heals legacy cached entries without provenance', async () => {
+        const { fetcher, values, writes, create, getCommit } = createGithubKvHarness()
+        const metadata = await create().getLegalDocuments('en')
+        expect(metadata[0]?.sourceCommit).toBe(getCommit())
+
+        fetcher.mockClear()
+        writes.clear()
+        const crossRequestPage = await create().getPage('terms', 'en')
+        expect(fetcher).not.toHaveBeenCalled()
+        expect(crossRequestPage?.source.sourceRevision).toBe(metadata[0]?.sourceRevision)
+        expect(crossRequestPage?.source.sourceCommit).toBe(getCommit())
+        expect(crossRequestPage?.source.sourceUrl).toContain(
+            `/blob/${getCommit()}/content/ja/terms.md`,
+        )
+
+        writes.clear()
+        const cachedPage = await create().getPage('terms', 'en')
+        expect(fetcher).not.toHaveBeenCalled()
+        expect(cachedPage?.source).toEqual(crossRequestPage?.source)
+
+        for (const [key, value] of values) {
+            if (!key.endsWith('ja:terms.md')) continue
+            const envelope = JSON.parse(value) as {
+                value: { meta: Record<string, unknown> }
+                time: number
+            }
+            delete envelope.value.meta.provenance
+            values.set(key, JSON.stringify(envelope))
+        }
+        writes.clear()
+        const healedPage = await create().getPage('terms', 'en')
+        expect(fetcher).not.toHaveBeenCalled()
+        expect(healedPage?.source.sourceRevision).toBe(metadata[0]?.sourceRevision)
+        expect(healedPage?.source.sourceCommit).toBe(getCommit())
     })
 
     it.each(['0003', 'xxxx', '000aabc', gitPacket(`${'a'.repeat(40)} refs/heads/other\n`)])(
