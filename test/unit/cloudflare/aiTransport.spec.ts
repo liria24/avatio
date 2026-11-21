@@ -1,4 +1,4 @@
-import { createWorkersAiCapabilities } from '@avatio/cloudflare'
+import { createCatalogItemClassifier, createWorkersAiCapabilities } from '@avatio/cloudflare'
 import { generateText } from 'ai'
 
 import { openaiProvider } from '../../../packages/cloudflare/src/ai/openai-provider'
@@ -45,9 +45,7 @@ describe('OpenAI provider request transport', () => {
     it('runs all semantic tasks through the Cloudflare binding using Responses wire format', async () => {
         const run = vi
             .fn()
-            .mockResolvedValueOnce(
-                response(JSON.stringify({ displayName: 'Avatar', category: 'avatar' })),
-            )
+            .mockResolvedValueOnce(response(JSON.stringify({ displayName: 'Avatar' })))
             .mockResolvedValueOnce(response(JSON.stringify({ title: 'Title', content: 'Content' })))
             .mockResolvedValueOnce(response('new-release'))
         const capabilities = createWorkersAiCapabilities({
@@ -56,14 +54,13 @@ describe('OpenAI provider request transport', () => {
             >[0]['binding'],
             models: {
                 catalogEnrichment: 'openai/gpt-5.6-luna',
-                changelogTranslation: 'openai/gpt-5.6-luna',
-                changelogSlug: 'openai/gpt-5.6-luna',
+                changelogTranslation: 'openai/gpt-5.6-translation',
+                changelogSlug: 'openai/gpt-5.6-slug',
             },
-            itemCategories: ['avatar', 'other'],
         })
-        expect(
-            await capabilities.catalogItemEnricher.enrich({ sourceId: 'source', name: 'Avatar' }),
-        ).toEqual({ displayName: 'Avatar', category: 'avatar' })
+        expect(await capabilities.catalogDisplayNameGenerator.generate({ name: 'Avatar' })).toBe(
+            'Avatar',
+        )
         expect(
             await capabilities.changelogTranslator.translate({
                 sourceLocale: 'ja',
@@ -75,11 +72,49 @@ describe('OpenAI provider request transport', () => {
         expect(await capabilities.changelogSlugGenerator.generate({ title: 'Release' })).toBe(
             'new-release',
         )
-        for (const [model, input, options] of run.mock.calls) {
-            expect(model).toBe('openai/gpt-5.6-luna')
+        expect(run.mock.calls.map(([model]) => model)).toEqual([
+            'openai/gpt-5.6-luna',
+            'openai/gpt-5.6-translation',
+            'openai/gpt-5.6-slug',
+        ])
+        for (const [, input, options] of run.mock.calls) {
             expect(input.input).toEqual(expect.any(Array))
             expect(input).not.toHaveProperty('messages')
             expect(options.returnRawResponse).toBe(true)
         }
+    })
+
+    it('runs Jev through the default AI Gateway and validates its choice response', async () => {
+        const run = vi.fn().mockResolvedValue({
+            model: 'jev-1.13.0',
+            answers: {
+                category: {
+                    type: 'choice',
+                    choice: 'avatar',
+                    confidence: 0.91,
+                    probabilities: { avatar: 0.91, other: 0.09, unknown: 0 },
+                },
+            },
+        })
+        const classifier = createCatalogItemClassifier({
+            binding: { run } as unknown as Parameters<
+                typeof createCatalogItemClassifier
+            >[0]['binding'],
+            model: 'typesafe/jev',
+            itemCategories: ['avatar', 'other'],
+        })
+        const signal = new AbortController().signal
+
+        await expect(classifier.classify({ name: 'Avatar' }, { signal })).resolves.toEqual({
+            category: 'avatar',
+            confidence: 0.91,
+            probabilities: { avatar: 0.91, other: 0.09, unknown: 0 },
+            model: 'jev-1.13.0',
+        })
+        expect(run).toHaveBeenCalledWith(
+            'typesafe/jev',
+            expect.objectContaining({ state: { name: 'Avatar' } }),
+            { gateway: { id: 'default' }, signal },
+        )
     })
 })

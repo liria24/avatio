@@ -17,6 +17,28 @@
     "report": "報告",
     "unknownAvatar": "不明なベースアバター",
     "jsWarning": "このWebサイトはJavaScriptを使用しています。JavaScriptが無効の場合、正しく表示されません。",
+    "imageViewer": {
+        "title": "画像ビューアー",
+        "open": "{name}の画像{index}を拡大"
+    },
+    "reorder": {
+        "label": "{name}を並べ替え",
+        "up": "上に移動",
+        "down": "下に移動",
+        "position": "{name}を{count}件中{position}番目に移動しました。"
+    },
+    "dynamicFields": {
+        "remove": "{name}を削除",
+        "removed": "{name}を削除しました。",
+        "added": "{name}を追加しました。",
+        "noteFor": "{name}のメモ",
+        "shapekeysFor": "{name}のシェイプキー",
+        "shapekeyName": "シェイプキー名",
+        "shapekeyValue": "シェイプキーの値",
+        "addShapekey": "シェイプキーを追加",
+        "shapekeyInvalid": "1〜64文字の名前と数値を入力してください。",
+        "shapekeyLimit": "シェイプキーは64件まで追加できます。"
+    },
     "shareButton": {
         "copyLink": "リンクをコピー",
         "copied": "コピーしました",
@@ -54,6 +76,7 @@
             "settings": "設定",
             "feedback": "フィードバック",
             "switchAccount": "アカウント切替",
+            "switchAccountFailed": "アカウントを切り替えられませんでした",
             "newAccount": "新しいアカウント",
             "logout": "ログアウト"
         }
@@ -72,6 +95,7 @@
                 "bio": "bio",
                 "links": "リンク",
                 "addLink": "リンクを追加",
+                "editLink": "リンクを編集",
                 "removeLink": "リンクを削除",
                 "avatarAlt": "あなたのアバター画像"
             },
@@ -188,10 +212,6 @@
             "otherRequiresComment": "その他を選択した場合は詳細を入力してください"
         }
     },
-    "welcome": {
-        "title": "ようこそ！",
-        "changeUsername": "ユーザーIDを変更"
-    },
     "index": {
         "hero": {
             "title": "お気に入りの<wbr>改変を<wbr>記録して<wbr>共有しよう",
@@ -229,6 +249,22 @@
         "itemSearch": {
             "placeholder": "アイテムを検索 / URLを入力",
             "addFromUrl": "URLから追加",
+            "addUrls": "{count}件のURLを追加",
+            "urlProgress": "URL追加の進捗",
+            "results": "カタログ",
+            "loadMore": "さらに読み込む",
+            "noResults": "一致するアイテムがありません",
+            "alreadyAdded": "追加済み",
+            "searching": "検索中…",
+            "searchFailed": "検索に失敗しました",
+            "itemLimit": "アイテムは最大32個です。追加するには先にアイテムを削除してください。",
+            "urlLimit": "URLは一度に32件まで追加できます。",
+            "queued": "待機中",
+            "resolving": "取得中",
+            "added": "追加済み",
+            "duplicate": "追加済み",
+            "resolveFailed": "取得に失敗",
+            "addFailed": "追加できません",
             "invalidUrl": "無効なURL",
             "invalidUrlDescription": "正しいアイテムのURLを入力してください。",
             "fetchError": "アイテムの取得に失敗しました",
@@ -269,7 +305,9 @@
                 "unsaved": "未保存の変更",
                 "saving": "保存中...",
                 "saved": "保存しました",
-                "error": "保存に失敗"
+                "error": "保存に失敗",
+                "offline": "オフライン — 再接続後に保存",
+                "conflict": "別の編集と競合しました"
             },
             "draftAlert": {
                 "errorNotSaved": "エラーにより下書きが保存されていません！",
@@ -284,12 +322,44 @@
                 "shapekeyPlaceholder": "シェイプキー名称",
                 "notePlaceholder": "ノートの追加",
                 "empty": "アイテムが登録されていません",
+                "emptyPrompt": "アバター改変に使用したアイテムをリストしましょう",
+                "supportedPlatforms": "対応プラットフォーム: BOOTH, GitHub",
                 "noShapekeys": "シェイプキーがありません"
             },
             "images": {
+                "title": "画像",
                 "add": "画像を追加",
                 "dropAdd": "ドロップして追加",
-                "uploading": "画像をアップロード中..."
+                "uploading": "画像をアップロード中...",
+                "cover": "カバー",
+                "preview": "セットアップ画像",
+                "remove": "画像を削除",
+                "retry": "再試行"
+            },
+            "points": {
+                "title": "アイテムポイント",
+                "description": "画像をクリックし、その位置に配置するアイテムを選択します。",
+                "selectItem": "配置するアイテムを選択",
+                "move": "移動",
+                "remove": "削除",
+                "clickToMove": "移動先を画像上でクリックしてください",
+                "placeItem": "画像に配置",
+                "add": "ポイントを追加",
+                "undo": "元に戻す",
+                "redo": "やり直す",
+                "done": "完了",
+                "changeItem": "アイテムを変更",
+                "help": "ポイントをドラッグして移動できます。キーボードでは「ポイントを追加」から配置し、矢印キーで位置を調整できます。Shift＋矢印キーで大きく移動します。確定した変更は下書きに自動保存されます。",
+                "placedCount": "配置数: {count}",
+                "count": "Setup全体: {count} / {max}ポイント",
+                "clickToPlace": "「{name}」を配置する位置をクリック／タップしてください",
+                "noItems": "先にSetupにアイテムを追加してください。",
+                "limit": "ポイントはSetup全体で最大128個です。",
+                "imageFailed": "画像を読み込めませんでした。閉じてからもう一度開いてください。"
+            },
+            "mobile": {
+                "details": "投稿情報・画像",
+                "items": "アイテム"
             },
             "tags": {
                 "title": "タグ",
@@ -324,10 +394,14 @@
             "coauthorDuplicate": "共同作者を重複して追加することはできません",
             "itemAlreadyAdded": "アイテムはすでに追加されています",
             "draftRestored": "編集途中の下書きが見つかったため復元されました",
+            "switchAccountFailed": "投稿アカウントを切り替えられませんでした",
             "limitedPublic": "限定公開",
             "limitedPublicDescription": "URLを知っている人だけ閲覧可能になります"
         },
         "viewer": {
+            "expandPoints": "アイテムポイントを展開",
+            "collapsePoints": "アイテムポイントを閉じる",
+            "showItemPoints": "画像上のこのアイテムを表示",
             "show": "セットアップを表示",
             "hide": "セットアップを非表示",
             "hiddenNotice": "このセットアップは現在非表示です",
@@ -382,14 +456,30 @@
             "title": "Avatioへようこそ",
             "description": "ログインしてセットアップを投稿しよう",
             "loginWith": "{provider} でログイン",
-            "agreement": "ログインすることで以下に同意したことになります:",
+            "agreement": "ログインまたはアカウント作成により、以下に同意します:",
             "firstTimeNotice": "初めての方は自動的にアカウントが作成されます。",
+            "local": {
+                "name": "表示名",
+                "login": "メールアドレスでログイン",
+                "register": "ローカルアカウントを作成",
+                "switchToLogin": "既存アカウントでログイン",
+                "switchToRegister": "新しいローカルアカウントを作成"
+            },
             "footer": {
                 "terms": "利用規約",
                 "privacy": "プライバシーポリシー"
             }
         },
         "agreeTerms": {
+            "initial": {
+                "title": "利用開始前の確認",
+                "intro": "Avatioをご利用いただくには、規約への同意が必要です。",
+                "description": "以下の利用規約およびプライバシーポリシーのうち、未確認の文書をご確認ください。"
+            },
+            "mixed": {
+                "title": "規約の確認が必要です",
+                "description": "未確認の文書と更新された文書があります。以下の内容をご確認ください。"
+            },
             "title": {
                 "terms": "利用規約が更新されました",
                 "privacy": "プライバシーポリシーが更新されました",
@@ -617,7 +707,50 @@
             "cleanup": "クリーンアップ"
         },
         "reports": {
+            "title": "報告",
+            "tabs": {
+                "user": "ユーザー",
+                "setup": "セットアップ",
+                "item": "アイテム"
+            },
+            "status": {
+                "label": "状態",
+                "all": "すべて",
+                "open": "未解決",
+                "closed": "解決済み"
+            },
+            "sort": {
+                "label": "並び順",
+                "newest": "新しい順",
+                "oldest": "古い順"
+            },
+            "actions": {
+                "label": "操作",
+                "refresh": "更新",
+                "retry": "再試行",
+                "resolve": "解決済みにする",
+                "reopen": "未解決に戻す",
+                "viewUser": "ユーザーを表示",
+                "banUser": "ユーザーをBAN",
+                "unbanUser": "BANを解除",
+                "viewSetup": "セットアップを表示",
+                "hideSetup": "セットアップを非表示",
+                "unhideSetup": "セットアップを再表示",
+                "viewSource": "配布元を表示",
+                "changeItemName": "アイテム名称を変更"
+            },
+            "loading": "報告を読み込んでいます",
+            "empty": {
+                "title": "該当する報告はありません",
+                "description": "種別または状態を変更して確認してください。"
+            },
+            "error": {
+                "title": "報告を取得できませんでした",
+                "description": "時間をおいて再試行してください。"
+            },
+            "pagination": "{start}～{end} / {total} 件",
             "user": {
+                "banned": "BAN済み",
                 "reasons": {
                     "spam": "スパム",
                     "malicious": "悪意のあるユーザー",
@@ -627,6 +760,7 @@
                 }
             },
             "setup": {
+                "hidden": "非表示",
                 "reasons": {
                     "spam": "スパム、個人情報、不適切な内容",
                     "hate": "差別、暴力、誹謗中傷",

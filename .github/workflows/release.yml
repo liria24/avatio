@@ -19,7 +19,7 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: danielroe/uppt/pr@09882a5a0a1a20a0e802613a77ad59fcb1c1611c # v0.6.9
+      - uses: danielroe/uppt/pr@2c9a289359311b9661cc99886a71121209b89d17 # v0.6.14
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -37,6 +37,6 @@ jobs:
       contents: write
       actions: write
     steps:
-      - uses: danielroe/uppt/release@09882a5a0a1a20a0e802613a77ad59fcb1c1611c # v0.6.9
+      - uses: danielroe/uppt/release@2c9a289359311b9661cc99886a71121209b89d17 # v0.6.14
         with:
           token: ${{ secrets.GITHUB_TOKEN }}

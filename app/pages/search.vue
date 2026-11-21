@@ -25,7 +25,7 @@ const query = computed(() => ({
     limit: SETUP_SEARCH_PER_PAGE,
 }))
 
-const { setups, status, pagination, loadMore, refresh } = useSetupsList(undefined, {
+const { setups, status, pagination, loadMore, refresh, clear } = useSetupsList(undefined, {
     query,
     immediate: false,
     watch: false,
@@ -34,7 +34,7 @@ const { setups, status, pagination, loadMore, refresh } = useSetupsList(undefine
 const search = async () => {
     if (!q.value.length && !itemIds.value.length && !tags.value.length) {
         searchStatus.value = 'idle'
-        setups.value = []
+        clear()
         return
     }
 

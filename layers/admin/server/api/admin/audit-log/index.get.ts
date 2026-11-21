@@ -1,0 +1,80 @@
+import { sql } from 'drizzle-orm'
+import { EmptyFilter } from 'drizzle-orm/relations'
+import { z } from 'zod'
+
+const query = z.object({
+    q: z.string().optional(),
+    sort: z.enum(['asc', 'desc']).optional().default('desc'),
+    userId: z.string().nullable().optional(),
+    action: auditActionTypeSchema.optional(),
+    targetType: auditTargetTypeSchema.optional(),
+    targetId: z.string().optional(),
+    page: z.coerce.number().min(1).optional().default(1),
+    limit: z.coerce
+        .number()
+        .min(1)
+        .max(API_LIMIT_MAX)
+        .optional()
+        .default(ADMIN_AUDIT_LOG_API_DEFAULT_LIMIT),
+})
+
+export default promiseEventHandler<PaginationResponse<AuditLog[]>>(async ({ db, event }) => {
+    await requireAdminSession(event)
+    const { q, sort, userId, action, targetType, targetId, page, limit } =
+        await validateQuery(query)
+
+    const offset = (page - 1) * limit
+
+    const data = await db.query.auditLogs.findMany({
+        extras: {
+            count: sql<number>`CAST(COUNT(*) OVER() AS INTEGER)`,
+        },
+        limit,
+        offset,
+        orderBy: {
+            createdAt: sort,
+        },
+        where: {
+            RAW: (table) => (q ? searchText(table.details, q) : EmptyFilter),
+            userId: userId ? { eq: userId } : EmptyFilter,
+            action: action ? { eq: action } : EmptyFilter,
+            targetType: targetType ? { eq: targetType } : EmptyFilter,
+            targetId: targetId ? { eq: targetId } : EmptyFilter,
+        },
+        columns: {
+            id: true,
+            createdAt: true,
+            userId: true,
+            action: true,
+            targetType: true,
+            targetId: true,
+            details: true,
+        },
+        with: {
+            user: {
+                columns: {
+                    id: true,
+                    username: true,
+                    createdAt: true,
+                    name: true,
+                    image: true,
+                    bio: true,
+                    links: true,
+                },
+                with: {
+                    badges: {
+                        columns: {
+                            badge: true,
+                            createdAt: true,
+                        },
+                    },
+                },
+            },
+        },
+    })
+
+    return {
+        data,
+        pagination: createPagination(data[0]?.count || 0, page, limit, offset),
+    }
+})

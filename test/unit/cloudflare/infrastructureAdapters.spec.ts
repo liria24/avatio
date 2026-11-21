@@ -1,18 +1,25 @@
 import { CloudflareFeatureFlags } from '@avatio/cloudflare'
 
+import { getMaintenanceFlag } from '../../../server/utils/appConfig'
 import { getFileStorage } from '../../../server/utils/infrastructure'
 
 afterEach(() => vi.unstubAllGlobals())
 
 describe('Cloudflare infrastructure adapters', () => {
+    it('keeps root composition fail-closed when Flagship is absent or unavailable', async () => {
+        vi.stubGlobal('__env__', {})
+        await expect(getMaintenanceFlag()).resolves.toBe(false)
+        vi.stubGlobal('__env__', {
+            FLAGS: { getBooleanValue: vi.fn().mockRejectedValue(new Error('unavailable')) },
+        })
+        await expect(getMaintenanceFlag()).resolves.toBe(false)
+    })
     it('maps semantic flags and fails closed', async () => {
         const getBooleanValue = vi.fn(async (key: string) => key === 'is-maintenance')
         const flags = new CloudflareFeatureFlags({ getBooleanValue })
 
         await expect(flags.isEnabled('maintenance')).resolves.toBe(true)
-        await expect(flags.isEnabled('catalogV2Reads')).resolves.toBe(false)
         expect(getBooleanValue).toHaveBeenNthCalledWith(1, 'is-maintenance', false)
-        expect(getBooleanValue).toHaveBeenNthCalledWith(2, 'catalog-v2-reads', false)
 
         const unavailable = new CloudflareFeatureFlags({
             getBooleanValue: vi.fn(async () => {
@@ -23,12 +30,11 @@ describe('Cloudflare infrastructure adapters', () => {
     })
 
     it('imports external files into R2 and exposes the configured public URL', async () => {
-        const put = vi.fn(async () => null)
-        const remove = vi.fn(async () => undefined)
-        vi.stubGlobal('__env__', {
-            R2: { put, delete: remove },
-            R2_PUBLIC_BASE_URL: 'https://images.example.com/',
-        })
+        const upload = vi.fn(async () => undefined)
+        vi.stubGlobal('useServerFiles', () => ({
+            upload,
+            url: async (key: string) => `https://images.example.com/${encodeURI(key)}`,
+        }))
         vi.stubGlobal(
             'fetch',
             vi.fn(
@@ -49,15 +55,10 @@ describe('Cloudflare infrastructure adapters', () => {
             key: 'avatar/user image.jpg',
             url: 'https://images.example.com/avatar/user%20image.jpg',
         })
-        expect(put).toHaveBeenCalledWith(
+        expect(upload).toHaveBeenCalledWith(
             'avatar/user image.jpg',
             expect.anything(),
-            expect.objectContaining({
-                httpMetadata: expect.objectContaining({ contentType: 'image/jpeg' }),
-            }),
+            expect.objectContaining({ contentType: 'image/jpeg' }),
         )
-
-        await storage.delete('avatar/user image.jpg')
-        expect(remove).toHaveBeenCalledWith('avatar/user image.jpg')
     })
 })

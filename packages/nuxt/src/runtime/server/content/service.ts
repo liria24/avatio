@@ -71,7 +71,16 @@ export const createAvatioContentService = (options: AvatioContentOptions) => {
             legalVersionSchema.parse(file.data)
         const key = file.meta.key.slice(file.meta.source.length + 1)
         const source = revisions.get(key)
-        if (source) file.meta.provenance = source
+        if (source) {
+            file.meta.provenance = source
+            return
+        }
+        // When comark-content parses from a cached __raw__ body across requests,
+        // options.source.getItem is bypassed; reuse manifest provenance matching the git blob hash.
+        const indexed = content.stat(file.path)
+        if (!indexed || !file.meta.hash || indexed.meta.hash !== file.meta.hash) return
+        const indexedProvenance = provenanceSchema.safeParse(indexed.meta.provenance)
+        if (indexedProvenance.success) file.meta.provenance = indexedProvenance.data
     })
 
     const resolveMetadata = async (slug: string, locale: string) => {
@@ -90,25 +99,27 @@ export const createAvatioContentService = (options: AvatioContentOptions) => {
             if (!metadata) return null
             let file = await content.get(metadata.path)
             if (!file) return null
-            if (
-                provenanceSchema.parse(file.meta.provenance).sourceRevision !==
-                provenanceSchema.parse(metadata.meta.provenance).sourceRevision
-            ) {
+            const fileProvenance = provenanceSchema.safeParse(file.meta.provenance)
+            if (file.meta.hash !== metadata.meta.hash) {
                 const key = file.meta.key.slice(file.meta.source.length + 1)
                 if (
-                    provenanceSchema.parse(file.meta.provenance).sourceRevision !==
-                    revisions.get(key)?.sourceRevision
+                    !fileProvenance.success ||
+                    fileProvenance.data.sourceRevision !== revisions.get(key)?.sourceRevision
                 ) {
                     file = await content.get(metadata.path, { fresh: true })
                     if (!file) return null
                 }
-                if (
-                    provenanceSchema.parse(file.meta.provenance).sourceRevision !==
-                    provenanceSchema.parse(metadata.meta.provenance).sourceRevision
-                ) {
-                    // get() already cached the document; update() would write its KV key twice.
+                if (file.meta.hash !== metadata.meta.hash) {
                     Object.assign(metadata, { data: file.data, meta: file.meta })
-                    await content.cache.set('manifest', content.manifest)
+                    await content.cache.set('manifest', await content.manifest())
+                }
+            } else if (!fileProvenance.success) {
+                const indexedProvenance = provenanceSchema.safeParse(metadata.meta.provenance)
+                if (indexedProvenance.success) {
+                    file = { ...file, meta: { ...file.meta, provenance: indexedProvenance.data } }
+                } else {
+                    file = await content.get(metadata.path, { fresh: true })
+                    if (!file) return null
                 }
             }
             const frontmatter = contentFrontmatterSchema.parse(file.data)

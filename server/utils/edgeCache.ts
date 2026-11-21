@@ -1,8 +1,6 @@
 import type { CacheInvalidationInput, CacheInvalidator } from '@avatio/core'
-import type { CacheContext } from '@cloudflare/workers-types'
+import type { H3Event } from '@nuxt/nitro-server/h3'
 import { eq, or } from 'drizzle-orm'
-import { setResponseHeader, setResponseHeaders } from 'h3'
-import type { H3Event } from 'h3'
 import { setupCoauthors, setups } from '~~/database/schema'
 
 const log = logger('edgeCache')
@@ -15,7 +13,7 @@ export const EDGE_CACHE_TAGS = {
     users: 'users',
 } as const
 
-export const EDGE_CACHE_BROWSER_CONTROL = 'public, max-age=60'
+const EDGE_CACHE_BROWSER_CONTROL = 'public, max-age=60'
 export const EDGE_CACHE_CONTROL =
     'public, max-age=900, stale-while-revalidate=3600, stale-if-error=3600'
 export const NO_STORE_CACHE_CONTROL = 'private, no-store'
@@ -27,19 +25,6 @@ const normalizeTags = (tags: Iterable<string>) =>
     [...new Set(tags)].filter(
         (tag) => tag.length > 0 && tag.length <= MAX_TAG_LENGTH && EDGE_CACHE_TAG_PATTERN.test(tag),
     )
-
-const appendVaryHeader = (headers: Record<string, string>, value: string) => {
-    const existingKey = Object.keys(headers).find((key) => key.toLowerCase() === 'vary')
-    const existing = existingKey ? headers[existingKey] : undefined
-    const values = new Set(
-        `${existing || ''},${value}`
-            .split(',')
-            .map((entry) => entry.trim())
-            .filter(Boolean),
-    )
-
-    headers[existingKey || 'Vary'] = [...values].join(', ')
-}
 
 export const getSetupCacheTag = (id: Setup['id']) => `setup:${id}`
 export const getCatalogItemCacheTag = (id: string) => `item:${id}`
@@ -69,7 +54,7 @@ export const getPublicEdgeCacheHeaders = (tags: Iterable<string>, varyCookie = f
     }
 
     if (normalizedTags.length) headers['Cache-Tag'] = normalizedTags.join(',')
-    if (varyCookie) appendVaryHeader(headers, 'Cookie')
+    if (varyCookie) headers.Vary = 'Cookie'
 
     return headers
 }
@@ -124,19 +109,6 @@ export const invalidateCacheResources = async (
     } catch (error) {
         log.error(`Failed to invalidate cache for ${operation}:`, error)
         runAfterResponse(retryInvalidation(invalidator, input, operation))
-    }
-}
-
-export const invalidateCacheResourcesWithContext = async (
-    cache: CacheContext,
-    input: CacheInvalidationInput,
-    operation: string,
-) => {
-    try {
-        await createCacheInvalidator(cache).invalidate(input)
-    } catch (error) {
-        log.error(`Failed to invalidate cache for ${operation}:`, error)
-        throw error
     }
 }
 

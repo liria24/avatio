@@ -1,5 +1,6 @@
 import { bookmarks } from '@@/database/schema'
 import { sql } from 'drizzle-orm'
+import { EmptyFilter } from 'drizzle-orm/relations'
 import { z } from 'zod'
 
 const query = z.object({
@@ -45,14 +46,14 @@ export default sessionEventHandler(async ({ event, session, db }) => {
                     : [{ public: { eq: true } }],
             user: {
                 OR: [{ banned: { eq: false } }, { banned: { isNull: true } }],
-                username: username ? { eq: username } : undefined,
+                username: username ? { eq: username } : EmptyFilter,
             },
-            name: q ? { like: `%${q}%` } : undefined,
-            entries: {
-                itemId: itemId ? { in: Array.isArray(itemId) ? itemId : [itemId] } : undefined,
-            },
-            tags: tag ? { tag: { in: Array.isArray(tag) ? tag : [tag] } } : undefined,
-            bookmarks: bookmarked && session ? { userId: { eq: session.user.id } } : undefined,
+            RAW: (table) => (q ? searchText(table.name, q) : EmptyFilter),
+            entries: itemId
+                ? { itemId: { in: Array.isArray(itemId) ? itemId : [itemId] } }
+                : EmptyFilter,
+            tags: tag ? { tag: { in: Array.isArray(tag) ? tag : [tag] } } : EmptyFilter,
+            bookmarks: bookmarked && session ? { userId: { eq: session.user.id } } : EmptyFilter,
         },
         orderBy:
             effectiveOrderBy === 'bookmarkCreatedAt'
@@ -96,7 +97,11 @@ export default sessionEventHandler(async ({ event, session, db }) => {
             },
             images: {
                 limit: 1,
+                orderBy: { position: 'asc' },
                 columns: {
+                    id: true,
+                    stableId: true,
+                    position: true,
                     objectKey: true,
                     themeColors: true,
                     width: true,
@@ -142,14 +147,7 @@ export default sessionEventHandler(async ({ event, session, db }) => {
 
     const result = {
         data: setupData,
-        pagination: {
-            page,
-            limit,
-            total: data[0]?.count || 0,
-            totalPages: Math.ceil((data[0]?.count || 0) / limit),
-            hasNext: offset + limit < (data[0]?.count || 0),
-            hasPrev: offset > 0,
-        },
+        pagination: createPagination(data[0]?.count || 0, page, limit, offset),
     }
 
     if (!bookmarked && !shouldShowPrivate) applyPublicEdgeCache(event, [EDGE_CACHE_TAGS.setups])

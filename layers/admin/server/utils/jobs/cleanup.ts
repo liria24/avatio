@@ -1,0 +1,366 @@
+import { createError } from '@nuxt/nitro-server/h3'
+import { lt } from 'drizzle-orm'
+import { idempotencyRequests } from '~~/database/schema'
+
+import { sendAdminDiscordMessage } from './discord'
+
+const cleanupLog = logger('/api/admin/job/cleanup')
+
+interface ImageInfo {
+    key: string
+    lastModified: Date
+}
+
+interface UsedImageUrls {
+    setup: string[]
+    avatar: string[]
+}
+
+interface FailedImageOperation {
+    key: string
+    error: string
+}
+
+interface CleanupJobOptions {
+    dryRun?: boolean
+}
+
+const IMAGE_DELETION_THRESHOLD = 24 * 60 * 60 * 1000
+const STORAGE_OPERATION_CONCURRENCY = 8
+
+const BACKUP_PREFIX = 'backup'
+
+const getStorageContext = async () => {
+    try {
+        const storage = useServerFiles()
+        return { storage, publicBaseUrl: new URL('.', await storage.url('cleanup')).href }
+    } catch {
+        return null
+    }
+}
+
+const extractStorageKeyFromUrl = (url: string, publicBaseUrl: string): string | null => {
+    try {
+        const parsedUrl = new URL(url)
+        const parsedBaseUrl = new URL(publicBaseUrl)
+        if (parsedUrl.origin !== parsedBaseUrl.origin) return null
+
+        const basePath = parsedBaseUrl.pathname.replace(/\/+$/, '')
+        if (basePath && !parsedUrl.pathname.startsWith(`${basePath}/`)) return null
+
+        const key = parsedUrl.pathname.slice(basePath.length).replace(/^\/+/, '')
+        return key ? decodeURIComponent(key) : null
+    } catch {
+        return null
+    }
+}
+
+const getUsedImageUrls = async (db: ReturnType<typeof useDB>): Promise<UsedImageUrls> => {
+    const [setupImagesFromDB, setupDraftImagesFromDB, userImagesFromDB] = await Promise.all([
+        db.query.setupImages.findMany({ columns: { objectKey: true } }),
+        db.query.setupDraftImages.findMany({ columns: { objectKey: true } }),
+        db.query.users.findMany({ columns: { image: true } }),
+    ])
+
+    return {
+        setup: [
+            ...setupImagesFromDB.map((image) => image.objectKey),
+            ...setupDraftImagesFromDB.map((image) => image.objectKey),
+        ],
+        avatar: userImagesFromDB
+            .map((user) => user.image)
+            .filter((image): image is string => Boolean(image?.trim())),
+    }
+}
+
+const imageUrlsToStorageKeys = (urls: string[], publicBaseUrl: string) =>
+    new Set(
+        urls
+            .map((url) =>
+                url.includes('://') ? extractStorageKeyFromUrl(url, publicBaseUrl) : url,
+            )
+            .filter((key): key is string => key !== null),
+    )
+
+const getStorageObjects = async (prefix: string): Promise<ImageInfo[]> => {
+    const storage = useServerFiles()
+    const items: ImageInfo[] = []
+
+    try {
+        for await (const obj of storage.listAll({ prefix: `${prefix}/` }))
+            items.push({
+                key: obj.key,
+                lastModified: new Date(obj.lastModified ?? Date.now()),
+            })
+    } catch (error) {
+        cleanupLog.error(`Failed to get storage objects for prefix ${prefix}:`, error)
+    }
+
+    return items
+}
+
+const getCleanupCandidates = (
+    storageImages: ImageInfo[],
+    usedKeys: Set<string>,
+    thresholdDate: Date,
+) => storageImages.filter((image) => !usedKeys.has(image.key) && image.lastModified < thresholdDate)
+
+const copyWithConcurrency = async (images: ImageInfo[], backupDate: string) => {
+    const storage = useServerFiles()
+    const backedUp: string[] = []
+    const backupFailed: FailedImageOperation[] = []
+    let index = 0
+
+    await Promise.all(
+        Array.from({ length: Math.min(STORAGE_OPERATION_CONCURRENCY, images.length) }, async () => {
+            while (index < images.length) {
+                const current = index
+                index += 1
+                const image = images[current]
+                if (!image) return
+
+                try {
+                    await storage.copy(image.key, `${BACKUP_PREFIX}/${backupDate}/${image.key}`)
+                    backedUp.push(image.key)
+                } catch (error) {
+                    cleanupLog.warn('Failed to backup image before deletion:', image.key, error)
+                    backupFailed.push({
+                        key: image.key,
+                        error: error instanceof Error ? error.message : String(error),
+                    })
+                }
+            }
+        }),
+    )
+
+    return { backedUp, backupFailed }
+}
+
+const buildCleanupDiscordEmbed = ({
+    stage,
+    message,
+    totalCount,
+    backedUpCount,
+    deletedCount,
+    skippedBecauseBackupFailed,
+    backupFailures,
+    failed,
+}: {
+    stage: string
+    message: string
+    totalCount: number
+    backedUpCount: number
+    deletedCount: number
+    skippedBecauseBackupFailed: string[]
+    backupFailures: FailedImageOperation[]
+    failed: FailedImageOperation[]
+}) => ({
+    title: `Avatio Data Cleanup [${stage}]`,
+    description: message,
+    color: 0xeeeeee,
+    timestamp: new Date().toISOString(),
+    fields: [
+        {
+            name: 'Total Processed',
+            value: totalCount.toString(),
+            inline: true,
+        },
+        {
+            name: 'Backed Up',
+            value: backedUpCount.toString(),
+            inline: true,
+        },
+        {
+            name: 'Successfully Deleted',
+            value: deletedCount.toString(),
+            inline: true,
+        },
+        {
+            name: 'Failed',
+            value: failed.length.toString(),
+            inline: true,
+        },
+        ...(skippedBecauseBackupFailed.length
+            ? [
+                  {
+                      name: 'Skipped Because Backup Failed',
+                      value: skippedBecauseBackupFailed.join('\n').slice(0, 1024),
+                      inline: false,
+                  },
+              ]
+            : []),
+        ...(backupFailures.length
+            ? [
+                  {
+                      name: 'Backup Failed',
+                      value: backupFailures
+                          .map((f) => `${f.key}: ${f.error}`)
+                          .join('\n')
+                          .slice(0, 1024),
+                      inline: false,
+                  },
+              ]
+            : []),
+        ...(failed.length
+            ? [
+                  {
+                      name: 'Failed Images',
+                      value: failed
+                          .map((f) => `${f.key}: ${f.error}`)
+                          .join('\n')
+                          .slice(0, 1024),
+                      inline: false,
+                  },
+              ]
+            : []),
+    ],
+    author: {
+        name: 'Avatio',
+        url: 'https://avatio.me',
+        icon_url: 'https://avatio.me/icon_outlined.png',
+    },
+})
+
+export const runCleanupJob = async ({ dryRun = false }: CleanupJobOptions = {}) => {
+    const stage = getRuntimeEnvString('STAGE') ?? 'development'
+    if (!dryRun && !import.meta.dev && !getRuntimeStageConfig().features.cleanup)
+        throw createError({
+            statusCode: 403,
+            message: 'Development cleanup is dry-run only.',
+        })
+    const thresholdDate = new Date(Date.now() - IMAGE_DELETION_THRESHOLD)
+    const storageContext = await getStorageContext()
+    const db = useDB()
+
+    if (!dryRun)
+        await db.delete(idempotencyRequests).where(lt(idempotencyRequests.expiresAt, new Date()))
+
+    if (!storageContext) {
+        const message = 'Storage public base URL is unavailable. Cleanup skipped.'
+        cleanupLog.error(message)
+        return dryRun
+            ? {
+                  success: false,
+                  dryRun: true,
+                  message,
+                  data: {
+                      candidates: [],
+                      wouldDelete: [],
+                      wouldBackupTo: [],
+                      totalWouldProcess: 0,
+                  },
+              }
+            : {
+                  success: false,
+                  message,
+                  data: {
+                      candidates: [],
+                      backedUp: [],
+                      backupFailed: [],
+                      backupFailures: [],
+                      skippedBecauseBackupFailed: [],
+                      successfulDeletes: [],
+                      failedDeletes: [],
+                      totalProcessed: 0,
+                  },
+              }
+    }
+
+    const { storage, publicBaseUrl } = storageContext
+
+    const [usedImageUrls, [allSetupImages, allUserImages]] = await Promise.all([
+        getUsedImageUrls(db),
+        Promise.all([getStorageObjects('setup'), getStorageObjects('avatar')]),
+    ])
+
+    const usedSetupKeys = imageUrlsToStorageKeys(usedImageUrls.setup, publicBaseUrl)
+    const usedUserKeys = imageUrlsToStorageKeys(usedImageUrls.avatar, publicBaseUrl)
+
+    cleanupLog.info('Used setup image keys from DB:', Array.from(usedSetupKeys))
+    cleanupLog.info('Used user image keys from DB:', Array.from(usedUserKeys))
+
+    const allImages = [
+        ...getCleanupCandidates(allSetupImages, usedSetupKeys, thresholdDate),
+        ...getCleanupCandidates(allUserImages, usedUserKeys, thresholdDate),
+    ]
+    const candidates = allImages.map((image) => image.key)
+
+    const today = new Date().toISOString().slice(0, 10)
+
+    if (dryRun) {
+        cleanupLog.info(`[DRY RUN] Would delete ${allImages.length} image(s):`, candidates)
+        return {
+            success: true,
+            dryRun: true,
+            message: 'Dry run completed. No images were deleted.',
+            data: {
+                candidates,
+                wouldDelete: candidates,
+                wouldBackupTo: candidates.map((key) => `${BACKUP_PREFIX}/${today}/${key}`),
+                totalWouldProcess: allImages.length,
+            },
+        }
+    }
+
+    const { backedUp, backupFailed: backupFailures } = await copyWithConcurrency(allImages, today)
+    const backedUpSet = new Set(backedUp)
+    const imagesToDelete = allImages.filter((image) => backedUpSet.has(image.key))
+    const backupFailed = backupFailures.map((failure) => failure.key)
+    const skippedBecauseBackupFailed = backupFailed
+
+    for (const image of imagesToDelete) cleanupLog.info('Deleting image from storage:', image.key)
+
+    const deleteResults =
+        imagesToDelete.length > 0
+            ? await storage.delete(
+                  imagesToDelete.map((image) => image.key),
+                  { concurrency: STORAGE_OPERATION_CONCURRENCY },
+              )
+            : { results: [] as string[], errors: undefined }
+    const successful = deleteResults.results
+    const failed = (deleteResults.errors ?? []).map(({ key, error }) => {
+        cleanupLog.error('Failed to delete image:', key, error)
+        return {
+            key,
+            error: error.message || 'Unknown error',
+        }
+    })
+
+    const message = 'Cleanup completed.'
+
+    if (allImages.length > 0) {
+        try {
+            await sendAdminDiscordMessage({
+                embeds: [
+                    buildCleanupDiscordEmbed({
+                        stage,
+                        message,
+                        totalCount: allImages.length,
+                        backedUpCount: backedUp.length,
+                        deletedCount: successful.length,
+                        skippedBecauseBackupFailed,
+                        backupFailures,
+                        failed,
+                    }),
+                ],
+            })
+        } catch (error) {
+            cleanupLog.error('Failed to send Discord notification:', error)
+        }
+    }
+
+    return {
+        success: true,
+        message,
+        data: {
+            candidates,
+            backedUp,
+            backupFailed,
+            backupFailures,
+            skippedBecauseBackupFailed,
+            successfulDeletes: successful,
+            failedDeletes: failed,
+            totalProcessed: allImages.length,
+        },
+    }
+}

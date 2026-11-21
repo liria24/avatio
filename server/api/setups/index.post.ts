@@ -2,7 +2,7 @@ const bodySchema = setupsInsertSchema
 
 export default authedSessionEventHandler(
     async ({ event, session, db }) => {
-        const input = await validateBody(bodySchema, { sanitize: true })
+        const input = await validateBody(bodySchema)
         await enforceRateLimit({
             binding: 'RATE_LIMIT_USER_ACTION',
             key: `setups:${session.user.id}`,

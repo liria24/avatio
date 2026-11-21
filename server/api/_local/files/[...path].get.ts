@@ -29,15 +29,18 @@ export default promiseEventHandler(async ({ event }) => {
 
     let file
     try {
+        const storage = useServerFiles()
         file = await storage.download(key)
     } catch {
         throw createError({ statusCode: 404, statusMessage: 'Object not found' })
     }
 
-    setResponseHeader(event, 'Content-Type', file.type || 'application/octet-stream')
-    setResponseHeader(event, 'Cache-Control', 'no-store')
-    setResponseHeader(event, 'X-Content-Type-Options', 'nosniff')
-    setResponseHeader(event, 'Content-Length', file.size)
-    if (file.etag) setResponseHeader(event, 'ETag', file.etag)
+    setResponseHeaders(event, {
+        'Content-Type': file.type || 'application/octet-stream',
+        'Cache-Control': 'no-store',
+        'X-Content-Type-Options': 'nosniff',
+        'Content-Length': String(file.size),
+        ...(file.etag ? { ETag: file.etag } : {}),
+    })
     return file.stream()
 })

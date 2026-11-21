@@ -1,0 +1,163 @@
+{
+    "$schema": "../../node_modules/wrangler/config-schema.json",
+    "main": "../../.output/server/index.mjs",
+    "name": "avatio",
+    "account_id": "422bd946004c77eb0d569ec489b40196",
+    "compatibility_date": "2026-05-26",
+    "compatibility_flags": ["no_handle_cross_request_promise_resolution", "nodejs_compat"],
+    "workers_dev": true,
+    "preview_urls": false,
+    "assets": {
+        "binding": "ASSETS",
+        "run_worker_first": true,
+        "directory": "../../.output/public"
+    },
+    "routes": [
+        {
+            "pattern": "avatio.me",
+            "custom_domain": true
+        }
+    ],
+    "observability": {
+        "enabled": true,
+        "head_sampling_rate": 1,
+        "logs": {
+            "enabled": true,
+            "invocation_logs": true,
+            "head_sampling_rate": 1,
+            "persist": true
+        },
+        "traces": {
+            "enabled": false
+        }
+    },
+    "cache": {
+        "enabled": true
+    },
+    "vars": {
+        "STAGE": "production",
+        "PUBLIC_SITE_URL": "https://avatio.me",
+        "R2_PUBLIC_BASE_URL": "https://images.avatio.me",
+        "CLOUDFLARE_ANALYTICS_ACCOUNT_ID": "422bd946004c77eb0d569ec489b40196",
+        "CLOUDFLARE_ANALYTICS_SITE_TAG": "44f7dae8a14c44e0971ce442bb6ccd21",
+        "CLOUDFLARE_ANALYTICS_HOST": "avatio.me"
+    },
+    "d1_databases": [
+        {
+            "binding": "APP_DB",
+            "database_id": "3e7627f7-08e9-4875-875d-073c9ff0815e",
+            "database_name": "avatio",
+            "migrations_dir": "../../drizzle",
+            "migrations_pattern": "../../drizzle/*/migration.sql",
+            "migrations_table": "d1_migrations"
+        }
+    ],
+    "kv_namespaces": [
+        {
+            "binding": "CONTENT_CACHE",
+            "id": "9a4db36877e14aeba112fdd207a278e1"
+        }
+    ],
+    "r2_buckets": [
+        {
+            "binding": "R2",
+            "bucket_name": "avatio"
+        }
+    ],
+    "flagship": [
+        {
+            "binding": "FLAGS",
+            "app_id": "92ad57f5-05ee-41f6-90de-b984a22a7e3d"
+        }
+    ],
+    "ratelimits": [
+        {
+            "name": "RATE_LIMIT_USER_ACTION",
+            "namespace_id": "2101",
+            "simple": {
+                "limit": 5,
+                "period": 60
+            }
+        },
+        {
+            "name": "RATE_LIMIT_IMAGE",
+            "namespace_id": "2102",
+            "simple": {
+                "limit": 30,
+                "period": 60
+            }
+        },
+        {
+            "name": "RATE_LIMIT_DRAFT",
+            "namespace_id": "2103",
+            "simple": {
+                "limit": 120,
+                "period": 60
+            }
+        },
+        {
+            "name": "RATE_LIMIT_ITEM_RESOLUTION",
+            "namespace_id": "2104",
+            "simple": {
+                "limit": 32,
+                "period": 60
+            }
+        }
+    ],
+    "ai": {
+        "binding": "AI"
+    },
+    "images": {
+        "binding": "IMAGES"
+    },
+    "send_email": [
+        {
+            "name": "EMAIL",
+            "allowed_sender_addresses": ["hello@avatio.me"]
+        }
+    ],
+    "queues": {
+        "producers": [
+            {
+                "binding": "ITEM_REVALIDATION_QUEUE",
+                "queue": "item-revalidation"
+            }
+        ],
+        "consumers": [
+            {
+                "queue": "item-revalidation",
+                "max_batch_size": 10,
+                "max_batch_timeout": 5,
+                "max_retries": 3
+            }
+        ]
+    },
+    "triggers": {
+        "crons": ["0 22 * * *"]
+    },
+    "version_metadata": {
+        "binding": "CF_VERSION_METADATA"
+    },
+    "secrets": {
+        "required": [
+            "NUXT_BETTER_AUTH_SECRET",
+            "TWITTER_CLIENT_SECRET",
+            "OG_IMAGE_SECRET",
+            "BOOTH_PROXY_URL",
+            "LIRIA_DISCORD_ENDPOINT",
+            "LIRIA_DISCORD_ACCESS_TOKEN"
+        ]
+    },
+    "no_bundle": true,
+    "rules": [
+        {
+            "type": "ESModule",
+            "globs": ["**/*.mjs", "**/*.js"]
+        },
+        {
+            "type": "CompiledWasm",
+            "globs": ["**/*.wasm"],
+            "fallthrough": true
+        }
+    ]
+}

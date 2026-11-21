@@ -8,7 +8,7 @@ const reportUser = useReportUserModal()
 
 const username = useRouteParams('username', undefined, { transform: String })
 
-const { data: user, status: userStatus } = await useUser(username.value)
+const { data: user, status: userStatus } = await useUser(username)
 
 if (userStatus.value === 'success' && !user.value)
     showError({
@@ -45,7 +45,7 @@ onBeforeRouteLeave(() => {
 })
 
 const { setups, status } = useSetupsList('owned', {
-    username: user.value?.username,
+    username,
 })
 
 useSeo({
@@ -149,7 +149,7 @@ useSeo({
                 <div class="flex items-center gap-1 self-end sm:self-auto">
                     <UButton
                         v-if="viewer?.username === user.username"
-                        :to="$localePath('/settings')"
+                        :to="$localePath({ path: '/settings' })"
                         :label="$t('user.editProfile')"
                         icon="mingcute:edit-3-fill"
                         variant="ghost"

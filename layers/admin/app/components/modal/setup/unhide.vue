@@ -1,0 +1,56 @@
+<script setup lang="ts">
+interface Props {
+    setupId: Setup['id']
+    onSuccess?: () => void
+}
+const props = defineProps<Props>()
+
+const emit = defineEmits(['close'])
+
+const { t } = useI18n()
+const { user } = useUserSession()
+const toast = useToast()
+const { unhideSetup: unhideSetupAction } = useAdmin()
+
+const unhideSetup = async () => {
+    if (user.value?.role !== 'admin') {
+        toast.add({
+            title: t('errors.unauthorized'),
+            description: t('errors.adminRequired'),
+            color: 'error',
+        })
+        return
+    }
+
+    await unhideSetupAction({
+        setupId: props.setupId,
+        onSuccess: () => {
+            props.onSuccess?.()
+            emit('close')
+        },
+    })
+}
+</script>
+
+<template>
+    <UModal :title="$t('admin.modal.unhideSetup.title')">
+        <template #body>
+            <UAlert
+                icon="mingcute:eye-2-fill"
+                :title="$t('admin.modal.unhideSetup.adminNote')"
+                :description="$t('admin.modal.unhideSetup.description')"
+                color="info"
+                variant="subtle"
+            />
+        </template>
+        <template #footer>
+            <UButton
+                :label="$t('admin.modal.unhideSetup.button')"
+                color="neutral"
+                size="lg"
+                block
+                @click="unhideSetup"
+            />
+        </template>
+    </UModal>
+</template>

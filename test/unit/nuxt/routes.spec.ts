@@ -1,4 +1,4 @@
-import { deriveReservedRootPaths } from '@avatio/nuxt/build/routes'
+import { derivePageRoutePolicy } from '@avatio/nuxt/build/routes'
 import type { NuxtPage } from '@nuxt/schema'
 
 describe('reserved Setup root paths', () => {
@@ -16,7 +16,7 @@ describe('reserved Setup root paths', () => {
             { path: '/legacy', alias: ['/Alias'], file: 'legacy.vue' },
         ]
 
-        expect(deriveReservedRootPaths(pages, ['ja', 'en'])).toEqual([
+        expect(derivePageRoutePolicy(pages, ['ja', 'en']).rootPaths).toEqual([
             'alias',
             'faq',
             'legacy',

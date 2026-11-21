@@ -2,6 +2,9 @@ import { itemCategorySchema } from '@avatio/core/catalog'
 import {
     setupComposeFormSchema,
     setupDraftContentSchema,
+    setupDraftImageMetadataSchema,
+    setupEntryShapekeysSchema,
+    setupPointSchema,
     type SetupDraftContent,
 } from '@avatio/core/setups'
 import { z } from 'zod'
@@ -9,7 +12,7 @@ import { z } from 'zod'
 import { setupEntryPublicSchema } from './catalog'
 
 // Explicit HTTP contracts remain independent from database schema types.
-export const userBadgeSchema = z.enum([
+const userBadgeSchema = z.enum([
     'developer',
     'contributor',
     'translator',
@@ -24,12 +27,12 @@ export type UserBadge = z.infer<typeof userBadgeSchema>
 export { itemCategorySchema }
 export type ItemCategory = z.infer<typeof itemCategorySchema>
 
-export const userBadgesPublicSchema = z.object({
+const userBadgesPublicSchema = z.object({
     createdAt: z.date(),
     badge: userBadgeSchema,
 })
 
-export const publisherSourcePublicSchema = z.object({
+const publisherSourcePublicSchema = z.object({
     id: z.string(),
     providerKey: z.string(),
     externalId: z.string(),
@@ -39,7 +42,7 @@ export const publisherSourcePublicSchema = z.object({
     providerVerified: z.boolean(),
 })
 
-export const publisherOwnershipPublicSchema = z.object({
+const publisherOwnershipPublicSchema = z.object({
     id: z.string(),
     method: z.string(),
     verifiedAt: z.date(),
@@ -51,7 +54,7 @@ export const userSettingsUpdateSchema = z.object({
     showNSFW: z.boolean().optional(),
 })
 
-const usernameSchema = z
+export const usernameSchema = z
     .string()
     .min(3, 'ID は 3 文字以上必要です。')
     .max(64, 'ID は最大 64 文字です。')
@@ -69,7 +72,7 @@ export const usersUpdateSchema = z.object({
     links: z.string().array().max(8, 'リンクは最大 8 個です。').nullable().optional(),
 })
 
-export const usersPublicSchema = z.object({
+const usersPublicSchema = z.object({
     id: z.string(),
     username: z.string(),
     createdAt: z.date().optional(),
@@ -85,29 +88,24 @@ export const usersPublicSchema = z.object({
 })
 export type User = z.infer<typeof usersPublicSchema>
 
-export const setupEntryShapekeysInsertSchema = z.object({
-    name: z.string().min(1).max(64),
-    value: z.number(),
-})
-export const setupEntryShapekeysPublicSchema = setupEntryShapekeysInsertSchema.pick({
-    name: true,
-    value: true,
-})
-export type SetupEntryShapekey = z.infer<typeof setupEntryShapekeysPublicSchema>
+export type SetupEntryShapekey = z.infer<typeof setupEntryShapekeysSchema>
 
-export const setupEntriesInsertSchema = z.object({
+const setupEntriesInsertSchema = z.object({
+    id: z.string().min(1).optional(),
     itemId: z.string().min(1),
     category: itemCategorySchema.nullable().optional(),
     unsupported: z.boolean().default(false),
     note: z.string().max(300, 'ノートは最大 300 文字です。').nullable().optional(),
-    shapekeys: setupEntryShapekeysPublicSchema.array().max(64).optional(),
+    shapekeys: setupEntryShapekeysSchema.array().max(64).optional(),
 })
 
-export const setupTagsInsertSchema = z.object({
+const setupTagsInsertSchema = z.object({
     tag: z.string().min(1, 'タグは 1 文字以上必要です。').max(32, 'タグは最大 32 文字です。'),
 })
 
-export const setupImagesPublicSchema = z.object({
+const setupImagesPublicSchema = z.object({
+    id: z.string(),
+    position: z.number().int().min(0),
     objectKey: z.string(),
     width: z.number().int(),
     height: z.number().int(),
@@ -118,28 +116,16 @@ export const setupImagesPublicSchema = z.object({
     url: z.string().min(1),
 })
 
-export const setupImageMetadataSchema = z.object({
-    objectKey: z.string().min(1),
-    contentType: z.string().optional(),
-    size: z.number().int().min(1).optional(),
-    etag: z.string().nullable().optional(),
-    width: z.number().int().min(1).max(8192),
-    height: z.number().int().min(1).max(8192),
-    themeColors: z
-        .string()
-        .regex(/^#[\da-f]{6}$/i)
-        .array()
-        .max(8)
-        .nullable()
-        .optional(),
-})
+const setupImageMetadataSchema = setupDraftImageMetadataSchema
 export type SetupImageMetadata = z.infer<typeof setupImageMetadataSchema>
 
-export const setupCoauthorsInsertSchema = z.object({
+export type SetupPoint = z.infer<typeof setupPointSchema>
+
+const setupCoauthorsInsertSchema = z.object({
     userId: z.string(),
     note: z.string().max(140, 'ノートは最大 140 文字です。').nullable().optional(),
 })
-export const setupCoauthorsPublicSchema = z.object({
+const setupCoauthorsPublicSchema = z.object({
     note: z.string().nullable().optional(),
     user: usersPublicSchema,
 })
@@ -151,9 +137,10 @@ const setupNameSchema = z
 const setupDescriptionSchema = z.string().max(512, '説明文は最大 512 文字です。').nullable()
 const setupRelationsSchema = {
     tags: setupTagsInsertSchema.array().max(8, 'タグは最大 8 個です。').optional(),
-    images: z.string().min(1).array().max(1, '画像は最大 1 個です。').optional(),
+    images: z.string().min(1).array().max(4, '画像は最大 4 個です。').optional(),
     imageMetadata: z.record(z.string(), setupImageMetadataSchema).optional(),
     coauthors: setupCoauthorsInsertSchema.array().max(8, '共同作者は最大 8 人です。').optional(),
+    points: setupPointSchema.array().max(128).optional(),
 } as const
 
 export const setupsInsertSchema = z.object({
@@ -161,6 +148,7 @@ export const setupsInsertSchema = z.object({
     name: setupNameSchema,
     description: setupDescriptionSchema.optional(),
     ...setupRelationsSchema,
+    points: setupPointSchema.array().max(128).default([]),
     items: setupEntriesInsertSchema
         .array()
         .min(1, 'アイテムは1個以上必要です。')
@@ -178,20 +166,7 @@ export const setupsUpdateSchema = z.object({
         .max(MAX_ITEMS_PER_SETUP, `アイテムは最大 ${MAX_ITEMS_PER_SETUP} 個です。`),
 })
 
-export const setupsClientFormSchema = z.object({
-    public: z.boolean(),
-    name: setupNameSchema,
-    description: setupDescriptionSchema.optional(),
-    tags: z.string().array().max(8, 'タグは最大 8 個です。'),
-    images: z.url().array().max(1, '画像は最大 1 個です。'),
-    coauthors: setupCoauthorsInsertSchema
-        .extend({ user: usersPublicSchema.pick({ username: true, name: true, image: true }) })
-        .array()
-        .max(8, '共同作者は最大 8 人です。'),
-    entries: setupEntryPublicSchema.array().min(1).max(MAX_ITEMS_PER_SETUP),
-})
-
-export const setupsPublicSchema = z.object({
+const setupsPublicSchema = z.object({
     id: z.string(),
     createdAt: z.date(),
     updatedAt: z.date(),
@@ -205,18 +180,19 @@ export const setupsPublicSchema = z.object({
     images: setupImagesPublicSchema.array().optional(),
     tags: z.string().array().optional(),
     coauthors: setupCoauthorsPublicSchema.array().optional(),
+    points: setupPointSchema.array().optional(),
     failedItemsCount: z.number().min(0).optional(),
 })
 export type Setup = z.infer<typeof setupsPublicSchema>
 
-export { setupComposeFormSchema, setupDraftContentSchema }
+export { setupComposeFormSchema, setupDraftContentSchema, setupPointSchema }
 
 export const setupDraftsUpdateSchema = z.object({
     expectedRevision: z.number().int().min(0),
     setupId: z.string().nullable(),
     content: setupDraftContentSchema,
 })
-export const setupDraftsPublicSchema = z.object({
+const setupDraftsPublicSchema = z.object({
     id: z.string(),
     createdAt: z.date(),
     updatedAt: z.date(),
@@ -224,18 +200,12 @@ export const setupDraftsPublicSchema = z.object({
     revision: z.number().int().min(1),
     content: setupDraftContentSchema,
 })
-export const setupDraftSummarySchema = setupDraftsPublicSchema
+const setupDraftSummarySchema = setupDraftsPublicSchema
     .omit({ content: true })
     .extend({ name: z.string(), description: z.string(), itemCount: z.number().int().min(0) })
 export type { SetupDraftContent }
 export type SetupDraft = z.infer<typeof setupDraftsPublicSchema>
 export type SetupDraftSummary = z.infer<typeof setupDraftSummarySchema>
-
-export const bookmarksPublicSchema = z.object({
-    createdAt: z.date(),
-    setup: setupsPublicSchema,
-})
-export type Bookmark = z.infer<typeof bookmarksPublicSchema>
 
 export const feedbacksInsertSchema = z.object({
     comment: z
@@ -244,7 +214,7 @@ export const feedbacksInsertSchema = z.object({
         .max(1000, 'コメントは最大 1000 文字です。'),
     contextPath: z.string().nullable().optional(),
 })
-export const feedbacksPublicSchema = z.object({
+const feedbacksPublicSchema = z.object({
     id: z.number().int(),
     createdAt: z.date(),
     fingerprint: z.string(),
@@ -329,7 +299,7 @@ export const auditLogsInsertSchema = z.object({
     targetId: z.string().nullable().optional(),
     details: z.string().nullable().optional(),
 })
-export const auditLogsPublicSchema = z.object({
+const auditLogsPublicSchema = z.object({
     id: z.number().int(),
     createdAt: z.date(),
     action: auditActionTypeSchema,
@@ -347,8 +317,7 @@ export interface EmailAttachmentMetadata {
     disposition?: 'attachment' | 'inline' | null
     contentId?: string
 }
-export type EmailAttachment = EmailAttachmentMetadata
-export const emailsPublicSchema = z.object({
+const emailsPublicSchema = z.object({
     id: z.number().int(),
     messageId: z.string(),
     subject: z.string().nullable(),
@@ -362,7 +331,7 @@ export const emailsPublicSchema = z.object({
 })
 export type Email = z.infer<typeof emailsPublicSchema>
 
-export const notificationTypeSchema = z.enum([
+const notificationTypeSchema = z.enum([
     'system_announcement',
     'user_badge_granted',
     'setup_coauthor_added',
