@@ -8,12 +8,12 @@ const paramsSchema = z.object({ id: z.uuid() })
 const bodySchema = setupDraftsUpdateSchema
 
 export default authedSessionEventHandler(
-    async ({ event, session, db }) => {
+    async ({ session, db, services }) => {
         const [{ id }, { expectedRevision, setupId, content: input }] = await Promise.all([
             validateParams(paramsSchema),
             validateBody(bodySchema),
         ])
-        if (input.points !== undefined && !(await canUseSetupItemPoints(event, session.user)))
+        if (input.points !== undefined && !(await canUseSetupItemPoints(services)))
             throw serverError.forbidden()
         await enforceRateLimit({ binding: 'RATE_LIMIT_DRAFT', key: `drafts:${session.user.id}` })
 

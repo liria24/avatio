@@ -12,11 +12,9 @@ export const createSetupPointStatements = (
 ) => {
     if (new Set(points.map(({ id }) => id)).size !== points.length)
         throw serverError.badRequest({ responseMessage: 'Duplicate point ID.' })
-    if (
-        points.some(
-            ({ entryId, imageId }) => !entryIds.includes(entryId) || !imageIds.includes(imageId),
-        )
-    )
+    const entryIdSet = new Set(entryIds)
+    const imageIdSet = new Set(imageIds)
+    if (points.some(({ entryId, imageId }) => !entryIdSet.has(entryId) || !imageIdSet.has(imageId)))
         throw serverError.badRequest({
             responseMessage: 'Point references must belong to this setup.',
         })

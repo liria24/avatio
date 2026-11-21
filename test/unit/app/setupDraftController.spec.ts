@@ -175,30 +175,22 @@ describe('setup draft controller owner and recovery boundary', () => {
         vi.clearAllTimers()
     })
 
-    it('retains local point edits when publishing while points are disabled', async () => {
+    it('omits item points when saving drafts while disabled and cleanly discards on publish', async () => {
         const controller = useSetupDraftController(() => {}, ref(false))
         const draftId = controller.state.id
         const data = {
             ...content('Draft'),
             points: [{ id: 'point', entryId: 'entry', imageId: 'image', x: 0.25, y: 0.5 }],
         }
-        requestFetch
-            .mockResolvedValueOnce({ revision: 1 })
-            .mockResolvedValueOnce({ retainedRevision: 2 })
+        requestFetch.mockResolvedValueOnce({ revision: 1 }).mockResolvedValueOnce({ success: true })
         controller.schedule(data, null)
         await controller.flush()
         expect(requestFetch.mock.calls[0]?.[1].body.content).not.toHaveProperty('points')
-        await controller.discard('published-setup')
+        await controller.discard()
         expect(requestFetch).toHaveBeenLastCalledWith(`/api/setup-drafts/${draftId}`, {
             method: 'DELETE',
-            query: { published: 'published-setup', preservePoints: 'true' },
         })
-        await expect(controller.loadRecovery(draftId)).resolves.toMatchObject({
-            revision: 2,
-            setupId: 'published-setup',
-            content: { points: data.points },
-        })
-        await recovery.deleteSetupDraftRecovery(ownerId, draftId)
+        await expect(controller.loadRecovery(draftId)).resolves.toBeNull()
     })
 
     it('shows saving while the request is in flight and does not mark a newer edit saved', async () => {

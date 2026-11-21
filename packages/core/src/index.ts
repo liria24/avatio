@@ -1,6 +1,7 @@
 export * from './catalog'
 export * from './contracts'
 export * from './publishers'
+export * from './services'
 export * from './setups'
 export * from './users'
 export * from './ports'

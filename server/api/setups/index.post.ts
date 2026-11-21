@@ -1,9 +1,9 @@
 const bodySchema = setupsInsertSchema
 
 export default authedSessionEventHandler(
-    async ({ event, session, db }) => {
+    async ({ event, session, db, services }) => {
         const input = await validateBody(bodySchema)
-        const includeItemPoints = await canUseSetupItemPoints(event, session.user)
+        const includeItemPoints = await canUseSetupItemPoints(services)
         if (!includeItemPoints && input.points.length) throw serverError.forbidden()
         await enforceRateLimit({
             binding: 'RATE_LIMIT_USER_ACTION',

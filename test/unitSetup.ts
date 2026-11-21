@@ -1,5 +1,11 @@
 import { useServerFiles } from 'nuxt-files-sdk/runtime'
 
+import {
+    createBackgroundScope,
+    createRequestScope,
+    getRequestScope,
+    requireRequestScope,
+} from '../server/utils/composition'
 import { sanitizeEmailHtml } from '../server/utils/email/sanitizeHtml'
 import { serverError } from '../server/utils/error'
 import {
@@ -20,15 +26,19 @@ import { prefixedI18nLocales } from '../shared/utils/i18nRouting'
 
 Object.assign(globalThis, constants, {
     authAdditionalFields,
+    createBackgroundScope,
     createCacheInvalidator,
     createPagination,
+    createRequestScope,
     getCacheInvalidator,
     getFeatureFlags,
+    getRequestScope,
     getRuntimeEnv,
     getRuntimeEnvString,
     getRuntimeStageConfig,
     hasBetterAuthSessionCookie,
     prefixedI18nLocales,
+    requireRequestScope,
     sanitizeEmailHtml,
     serverError,
     useServerFiles,

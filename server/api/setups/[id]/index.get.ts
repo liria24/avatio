@@ -5,7 +5,7 @@ const params = z.object({ id: z.string() })
 
 export default promiseEventHandler<Setup>(async ({ event, db }) => {
     const { id } = await validateParams(params)
-    const result = await querySetupProjection(db, id, undefined, await canUseSetupItemPoints(event))
+    const result = await querySetupProjection(db, id)
     if (!result) throw serverError.notFound()
 
     const queue = getCatalogSyncQueue()

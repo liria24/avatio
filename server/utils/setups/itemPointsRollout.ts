@@ -1,9 +1,6 @@
-import type { H3Event } from '@nuxt/nitro-server/h3'
+import type { AvatioRequestScope } from '@avatio/core'
+import { canViewerUseSetupItemPoints } from '@avatio/core/setups'
 
-export const canUseSetupItemPoints = async (
-    event: H3Event,
-    viewer?: { role?: string | null; banned?: boolean | null } | null,
-) =>
-    viewer?.role === 'admin' &&
-    !viewer.banned &&
-    (await getFeatureFlags(event).isEnabled('itemPoints'))
+export const canUseSetupItemPoints = (
+    services: Pick<AvatioRequestScope, 'viewer' | 'getFeatureFlags'>,
+) => canViewerUseSetupItemPoints(services.viewer, services.getFeatureFlags())

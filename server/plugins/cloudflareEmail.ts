@@ -14,7 +14,7 @@ export default defineNitroPlugin((nitroApp) => {
             rawSize: message.rawSize,
         })
 
-        await useDB().insert(emails).values(row).onConflictDoNothing()
+        await createBackgroundScope('email').db.insert(emails).values(row).onConflictDoNothing()
         log.info(`Stored inbound email ${row.messageId}`)
     })
 })

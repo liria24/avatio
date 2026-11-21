@@ -317,7 +317,7 @@ const createSetupCompose = () => {
                     body,
                 },
             )
-            await draftController.discard(response.id)
+            await draftController.discard()
             await clearForm()
             return response.id
         } catch (error) {

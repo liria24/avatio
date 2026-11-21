@@ -27,7 +27,7 @@ const chunks = <T>(values: T[], size: number) =>
 
 interface SetupCommandContext {
     event: H3Event
-    db: ReturnType<typeof useDB>
+    db: AppDatabase
     user: { id: string; role?: string | null }
     includeItemPoints?: boolean
 }
