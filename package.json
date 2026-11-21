@@ -80,7 +80,7 @@
         "cn": "0.5.2",
         "comark": "0.9.2",
         "consola": "^3.4.2",
-        "drizzle-orm": "1.0.0-rc.5",
+        "drizzle-orm": "1.0.0-rc.6",
         "extract-colors": "^4.2.1",
         "http-status-codes": "^2.3.0",
         "insight-ts": "0.0.1-alpha.1",
@@ -100,7 +100,7 @@
     },
     "devDependencies": {
         "@axe-core/playwright": "4.14.0",
-        "@cloudflare/workers-types": "^5.20261120.1",
+        "@cloudflare/workers-types": "^5.20261121.1",
         "@dotenvx/dotenvx": "2.38.2",
         "@mizchi/mutator": "0.5.0",
         "@nuxt/a11y": "1.0.0-alpha.1",
@@ -112,25 +112,25 @@
         "@types/pngjs": "^6.0.5",
         "@types/sanitize-html": "2.16.2",
         "@vue/test-utils": "^2.6.0",
-        "drizzle-kit": "1.0.0-rc.5",
+        "drizzle-kit": "1.0.0-rc.6",
         "fake-indexeddb": "^6.2.8",
         "happy-dom": "^21.0.4",
         "ipx": "4.1.0",
         "knip": "6.47.0",
-        "miniflare": "5.20261118.0-beta",
+        "miniflare": "5.20261119.0-beta",
         "nitropack": "^2.13.6",
         "taze": "^21.3.0",
         "typescript": "6.0.3",
         "vite": "npm:@voidzero-dev/vite-plus-core@8.3.8000",
         "vite-plus": "1.7.0",
-        "vitest": "5.1.0",
+        "vitest": "5.1.1",
         "vitest-environment-nuxt": "2.0.0",
         "vue-tsc": "3.3.11",
-        "wrangler": "4.165.0"
+        "wrangler": "4.166.0"
     },
     "overrides": {
         "vite": "npm:@voidzero-dev/vite-plus-core@8.3.8000",
-        "vitest": "5.1.0",
+        "vitest": "5.1.1",
         "vue": "3.6.0-rc.16"
     },
     "packageManager": "bun@1.4.5"

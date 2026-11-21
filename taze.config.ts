@@ -7,7 +7,7 @@ export default defineConfig({
     interactive: true,
     recursive: true,
     includeLocked: true,
-    ignorePaths: ['**/node_modules/**'],
+    ignorePaths: ['**/node_modules/**', '**/.data/**', '**/.output/**'],
     ignoreOtherWorkspaces: true,
     depFields: {
         overrides: false,
