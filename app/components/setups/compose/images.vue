@@ -6,6 +6,7 @@ const {
     uploads,
     getImageId,
     openImagePoints,
+    canUseItemPoints,
     processImages,
     cancelUpload,
     retryUpload,
@@ -53,9 +54,12 @@ onChange((files) => {
                     class="group flex flex-col gap-1"
                 >
                     <div class="relative size-32">
-                        <button
-                            type="button"
-                            :aria-label="$t('setup.compose.points.title')"
+                        <component
+                            :is="canUseItemPoints ? 'button' : 'div'"
+                            :type="canUseItemPoints ? 'button' : undefined"
+                            :aria-label="
+                                canUseItemPoints ? $t('setup.compose.points.title') : undefined
+                            "
                             class="image-drag relative size-full cursor-move overflow-clip rounded-lg select-none"
                             @click="openImagePoints(image)"
                         >
@@ -67,6 +71,7 @@ onChange((files) => {
                                 class="size-full object-cover"
                             />
                             <span
+                                v-if="canUseItemPoints"
                                 class="pointer-events-none absolute inset-0 flex items-center justify-center bg-white/30 opacity-0 transition-opacity group-hover:opacity-100 dark:bg-black/30"
                             >
                                 <Icon
@@ -78,7 +83,7 @@ onChange((files) => {
                             <span
                                 class="ring-inverted/15 pointer-events-none absolute inset-0 rounded-lg ring-2"
                             />
-                        </button>
+                        </component>
                         <UButton
                             :aria-label="$t('setup.compose.images.remove')"
                             icon="mingcute:close-line"
@@ -90,6 +95,7 @@ onChange((files) => {
                     </div>
 
                     <UButton
+                        v-if="canUseItemPoints"
                         :label="String(pointCount(image))"
                         :aria-label="$t('setup.compose.points.title')"
                         icon="mingcute:map-pin-fill"

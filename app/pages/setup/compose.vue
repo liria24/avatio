@@ -17,6 +17,7 @@ const {
     loadDraft,
     initialize,
     pointEditor,
+    canUseItemPoints,
     closeImagePoints,
     updateImagePoints,
     entries,
@@ -101,7 +102,7 @@ await initialize({ draftId: queryValue(route.query.draftId), edit: queryValue(ro
 
 <template>
     <ModalSetupImagePoints
-        v-if="pointEditor"
+        v-if="canUseItemPoints && pointEditor"
         :key="pointEditor.id"
         :open="true"
         :image-id="pointEditor.id"

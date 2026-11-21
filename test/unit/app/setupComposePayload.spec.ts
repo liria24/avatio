@@ -216,7 +216,7 @@ describe('setupComposePayload', () => {
             },
         }
 
-        expect(buildSetupPublishPayload(form, imageMetadata)).toEqual({
+        expect(buildSetupPublishPayload(form, imageMetadata, true)).toEqual({
             public: true,
             name: 'Published Setup',
             description: 'Desc',

@@ -15,11 +15,13 @@ describe('Cloudflare infrastructure adapters', () => {
         await expect(getMaintenanceFlag()).resolves.toBe(false)
     })
     it('maps semantic flags and fails closed', async () => {
-        const getBooleanValue = vi.fn(async (key: string) => key === 'is-maintenance')
+        const getBooleanValue = vi.fn(async () => true)
         const flags = new CloudflareFeatureFlags({ getBooleanValue })
 
         await expect(flags.isEnabled('maintenance')).resolves.toBe(true)
         expect(getBooleanValue).toHaveBeenNthCalledWith(1, 'is-maintenance', false)
+        await expect(flags.isEnabled('itemPoints')).resolves.toBe(true)
+        expect(getBooleanValue).toHaveBeenNthCalledWith(2, 'item-points', false)
 
         const unavailable = new CloudflareFeatureFlags({
             getBooleanValue: vi.fn(async () => {
@@ -27,6 +29,7 @@ describe('Cloudflare infrastructure adapters', () => {
             }),
         })
         await expect(unavailable.isEnabled('maintenance')).resolves.toBe(false)
+        await expect(unavailable.isEnabled('itemPoints')).resolves.toBe(false)
     })
 
     it('imports external files into R2 and exposes the configured public URL', async () => {

@@ -10,6 +10,7 @@ const route = useRoute()
 const { t } = useI18n()
 const toast = useToast()
 const { user, loggedIn, preferences } = useViewerContext()
+const pointViewerId = user.value?.id
 const { share, isSupported: shareSupported } = useShare()
 const location = useBrowserLocation()
 const { copy, copied } = useClipboard({ source: location.value.href })
@@ -72,8 +73,11 @@ const showEntryPoints = (entryId: string) => {
     void selectEntry(entryId)
 }
 
+const visiblePoints = computed(() =>
+    user.value?.id === pointViewerId && !user.value?.banned ? (setup.value?.points ?? []) : [],
+)
 const pointCount = (entryId: string) =>
-    setup.value?.points?.filter((point) => point.entryId === entryId).length ?? 0
+    visiblePoints.value.filter((point) => point.entryId === entryId).length
 
 const categorizedItems = computed(() => {
     const itemsByCategory = setup.value?.entries
@@ -169,7 +173,7 @@ useSeo({
             v-if="setup.images?.length"
             ref="gallery"
             :images="setup.images"
-            :points="setup.points ?? []"
+            :points="visiblePoints"
             :entries="setup.entries"
             :name="setup.name"
             @select-entry="selectEntry"

@@ -8,6 +8,7 @@ export interface FlagshipBinding {
 
 const defaultFlagKeys = {
     maintenance: 'is-maintenance',
+    itemPoints: 'item-points',
 } satisfies Record<FeatureFlag, string>
 
 export class CloudflareFeatureFlags implements FeatureFlags {

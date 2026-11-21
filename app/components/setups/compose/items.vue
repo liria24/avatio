@@ -16,6 +16,7 @@ const {
     itemScrollTop,
     values,
     openImagePoints,
+    canUseItemPoints,
 } = useSetupCompose()
 const list = ref<HTMLElement>()
 const root = useTemplateRef<HTMLElement>('root')
@@ -176,7 +177,7 @@ onBeforeUnmount(() => {
                             :shapekeys="item.shapekeys"
                             :note="item.note"
                             :item="item"
-                            :images="values.images"
+                            :images="canUseItemPoints ? values.images : undefined"
                             class="m-0.5"
                             @change-category="changeItemCategory(item.id, $event)"
                             @remove-item="removeEntry(item)"

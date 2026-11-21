@@ -68,6 +68,7 @@ export const mapSetupToDraftContent = (setup: Setup): SetupDraftContent => ({
 export const buildSetupPublishPayload = (
     values: SetupComposeForm,
     imageMetadata: Record<string, SetupImageMetadata> | undefined,
+    includeItemPoints: boolean,
 ) => ({
     public: values.public,
     name: values.name,
@@ -75,7 +76,7 @@ export const buildSetupPublishPayload = (
     items: values.items,
     images: values.images,
     imageMetadata,
-    points: values.points,
+    ...(includeItemPoints && { points: values.points }),
     tags: values.tags.map((tag) => ({ tag })),
     coauthors: values.coauthors.map(({ userId, note }) => ({
         userId,
