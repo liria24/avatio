@@ -22,7 +22,6 @@ export default defineConfig({
                     exclude: [
                         'test/unit/cloudflareBuild.spec.ts',
                         'test/unit/cloudflareConfiguration.spec.ts',
-                        'test/unit/cloudflareMigrationHistory.spec.ts',
                         'test/unit/cloudflareWorkflow.spec.ts',
                         'test/unit/configuration.spec.ts',
                         'test/unit/installDependencies.spec.ts',
@@ -46,7 +45,6 @@ export default defineConfig({
                     name: 'integration',
                     include: ['test/integration/**/*.{test,spec}.ts'],
                     exclude: [
-                        'test/integration/cloudflareMigrationHistory.spec.ts',
                         'test/integration/configuration.spec.ts',
                         'test/integration/server/authUniqueIndexes.spec.ts',
                         'test/integration/server/d1Migration.spec.ts',

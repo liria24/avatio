@@ -1,15 +1,40 @@
 import assert from 'node:assert/strict'
-import { spawn } from 'node:child_process'
+import { execFileSync, spawn } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import { mkdir, mkdtemp, readdir, realpath, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, dirname, join, relative, resolve } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { fileURLToPath } from 'node:url'
 
-import {
-    convertCloudflareMigrationHistoryCopy,
-    readCommittedCloudflareMigrations,
-} from '../../scripts/cloudflareMigrationHistory.ts'
+const readCommittedCloudflareMigrations = (workspace) => {
+    execFileSync('git', ['diff', '--exit-code', '--quiet', 'HEAD', '--', 'drizzle'], {
+        cwd: workspace,
+    })
+    const commit = execFileSync('git', ['rev-parse', 'HEAD'], {
+        encoding: 'utf8',
+        cwd: workspace,
+    }).trim()
+    const paths = execFileSync('git', ['ls-tree', '-r', '--name-only', commit, 'drizzle'], {
+        encoding: 'utf8',
+        cwd: workspace,
+    })
+        .trim()
+        .split('\n')
+        .filter((path) => path.endsWith('/migration.sql'))
+        .sort()
+    return paths.map((path) => {
+        const sql = execFileSync('git', ['show', `${commit}:${path}`], {
+            encoding: 'utf8',
+            cwd: workspace,
+        })
+        return {
+            name: path.slice('drizzle/'.length),
+            hash: createHash('sha256').update(sql).digest('hex'),
+            sql,
+        }
+    })
+}
 
 // Only the root pinned Wrangler and synthetic local persistence are exercised.
 const projectRoot = fileURLToPath(new URL('../../', import.meta.url))
@@ -209,20 +234,9 @@ try {
         await writeFile(path, file.sql)
     }
     await migrate(populatedId, prefix)
-    const history = files
-        .slice(0, cutoff)
-        .map(
-            (file, index) =>
-                `INSERT INTO __alchemy_migrations (name, hash, applied_at) VALUES ('${index === 0 ? file.name : file.name.replace('/migration.sql', '')}', '${file.hash}', '2026-01-01 00:00:00');`,
-        )
-        .join('\n')
     await query(
         populatedId,
-        `CREATE TABLE __alchemy_migrations (
-        id INTEGER PRIMARY KEY, name TEXT, hash TEXT NOT NULL, applied_at TEXT
-    ); ${history}
-    DELETE FROM d1_migrations WHERE name != '${files[0].name}';
-    INSERT INTO users (id, name, username, display_username, email)
+        `INSERT INTO users (id, name, username, display_username, email)
     VALUES ('fixture-owner', 'Fixture Owner', 'fixture_owner', 'Fixture Owner', 'owner@example.invalid');
     INSERT INTO sessions (id, token, user_id, expires_at)
     VALUES ('fixture-session', 'synthetic-session', 'fixture-owner', 9999999999999);
@@ -236,36 +250,29 @@ try {
     const candidates = (await readdir(persistence, { recursive: true })).filter((path) =>
         path.endsWith('.sqlite'),
     )
-    let converted = false
+    let inspected = false
     for (const candidate of candidates) {
         const database = new DatabaseSync(join(persistence, candidate))
         try {
-            if (!database.prepare('PRAGMA table_info(__alchemy_migrations)').all().length) continue
+            if (!database.prepare('PRAGMA table_info(setup_images)').all().length) continue
+            const appRows = database.prepare('SELECT id FROM setup_images').all()
+            if (appRows.length !== 1 || appRows[0].id !== 7) continue
             assert.deepEqual(inspectLedgerSchema(database), ledgerSchema)
-            const oldRows = database.prepare('SELECT * FROM __alchemy_migrations').all()
-            const appRows = database.prepare('SELECT * FROM setup_images').all()
             assert.equal(
-                convertCloudflareMigrationHistoryCopy(database, files).importedCount,
-                cutoff - 1,
+                database.prepare('SELECT count(*) AS count FROM d1_migrations').get().count,
+                cutoff,
             )
-            assert.equal(convertCloudflareMigrationHistoryCopy(database, files).importedCount, 0)
-            assert.deepEqual(database.prepare('SELECT * FROM __alchemy_migrations').all(), oldRows)
-            assert.deepEqual(database.prepare('SELECT * FROM setup_images').all(), appRows)
-            converted = true
+            inspected = true
         } finally {
             database.close()
         }
     }
     assert.ok(
-        converted,
+        inspected,
         'The isolated local D1 persistence must contain the synthetic populated database',
     )
     await migrate(populatedId)
     await requireLedger(populatedId)
-    assert.equal(
-        (await query(populatedId, 'SELECT count(*) AS count FROM __alchemy_migrations'))[0].count,
-        cutoff,
-    )
     assert.equal(
         (await query(populatedId, 'SELECT count(*) AS count FROM d1_migrations'))[0].count,
         files.length,
