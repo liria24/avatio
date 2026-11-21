@@ -6,10 +6,10 @@
         ".": "./src/index.ts"
     },
     "dependencies": {
-        "@ai-sdk/openai": "4.0.121",
+        "@ai-sdk/openai": "4.0.122",
         "@avatio/core": "workspace:*",
-        "ai": "7.0.177",
-        "drizzle-orm": "1.0.0-rc.5",
+        "ai": "7.0.179",
+        "drizzle-orm": "1.0.0-rc.6",
         "workers-ai-provider": "^4.0.1",
         "zod": "4.6.7"
     }
